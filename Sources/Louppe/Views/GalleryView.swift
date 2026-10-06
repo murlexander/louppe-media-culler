@@ -88,6 +88,8 @@ struct GalleryView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .clipped()
         }
         .background(SessionRenderMarker(kind: .gallery))
     }

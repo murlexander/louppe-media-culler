@@ -5,7 +5,9 @@ by the app are defined in `VERSION`; `build_app.sh` verifies that the marketing
 version and build number have a matching entry below before it creates a
 release bundle.
 
-## 1.10.0 (12) — 2026-09-29
+## 1.10.0 (12) — 2026-10-06
+
+- Kept zoomed photos inside the Gallery pane so pinching no longer covers the Browser.
 
 - Removed explanatory footers beneath Review and Quality Cues settings.
 

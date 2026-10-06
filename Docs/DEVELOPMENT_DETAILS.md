@@ -308,6 +308,10 @@ Clean Up. It records ownership boundaries, cache budgets, and verification.
   session shortcuts and menus cannot act behind the sheet. The email action
   opens the system mail handler for `a@alex-markin.com`; it sends nothing.
 
+- The Gallery media pane clips rendering and bounds hit testing to its allocated
+  frame. Keep this boundary after the flexible frame so the live fitted-image
+  pinch cannot paint over the Browser, Info panel, or footer.
+
 - Gallery video transport, full-screen, and Picture-in-Picture controls stay
   visible throughout playback. Do not remove them behind pointer hover.
 - Filter drafts track explicit endpoint edits. Opening/closing Filter must not
