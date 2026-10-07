@@ -1,86 +1,80 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<!-- sparkle-sign-warning:
+<?xml version="1.0" standalone="yes"?><!-- sparkle-sign-warning:
 IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
--->
-<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
-        <title>Louppe Updates</title>
-        <link>https://github.com/murlexander/louppe-media-culler</link>
-        <description>Secure automatic updates for Louppe.</description>
-        <language>en</language>
+        <title>Louppe</title>
         <item>
-            <title>1.9.0</title>
-            <pubDate>Sun, 27 Sep 2026 00:43:59 +0200</pubDate>
-            <link>https://github.com/murlexander/louppe-media-culler/releases/tag/v1.9.0</link>
-            <sparkle:version>11</sparkle:version>
-            <sparkle:shortVersionString>1.9.0</sparkle:shortVersionString>
+            <title>1.10.0</title>
+            <pubDate>Wed, 07 Oct 2026 22:42:14 +0200</pubDate>
+            <link>https://github.com/murlexander/louppe-media-culler/releases/tag/v1.10.0</link>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>1.10.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description sparkle:format="markdown"><![CDATA[
-Read [A Proper Hello](https://louppe.eu/blog/a-proper-hello/) for an introduction
-to Louppe and its approach to reviewing media.
+- Added Spanish, Simplified Chinese, Hindi, Portuguese, and Arabic across the
+  app, including menus, Help, VoiceOver actions, and file-safety messages.
+  macOS language preferences select the interface, with English fallback;
+  Arabic uses right-to-left layout while shortcuts and filenames stay stable.
 
-- Made the start-page logo open [louppe.eu](https://louppe.eu/).
+- Prevented oversized session saves from replacing readable ratings files, and
+  kept Retry, Close, and Quit safe when saving fails.
+- Checked lazy JPEG metadata against the original scanned file before and after
+  reading; changed files now offer Rescan without mixing identities or decisions.
+- Made scan cancellation stop the final identity pass after saved-session loading.
+- Kept selected-folder access when reopening Recent folders, routing Back or
+  Retry, and handing exports to background workers. Refreshed stale bookmarks
+  without losing saved access.
+- Refused unsupported export destinations before creating media or recovery
+  records, with an APFS remedy; ExFAT source cards can still copy onto the Mac.
+- Added Privacy Policy links in Help and About.
+- Declared the Store category and existing local privacy API uses; verified
+  Store signing identities and package payloads before replacing upload artifacts.
 
-- Fixed the standalone video check's missing exact-path dependency so the
-  complete GitHub quality workflow can run after the Copy safety changes.
-- Pinned CI checkout, disabled saved checkout credentials, added redacted
-  credential checks and weekly action updates, and ignored local signing secrets.
+- Kept zoomed photos inside the Gallery pane so pinching no longer covers the Browser.
 
-- Shortened the bottom-panel save status to “Saved” or “Saving…” so it stays
-  compact while ratings are written.
+- Removed explanatory footers beneath Review and Quality Cues settings.
 
-- Made the start screen a compact window and let folders be dropped anywhere
-  in it to open them.
+- Added a closable, one-time invitation for early users to email Alex their
+  experience, workflow, and feature requests. Its shown status stays local.
 
-- Removed the explanatory text below the Info panel's star rating.
+- Added a compact RAW display choice for Apple RAW rendering at every zoom
+  level, with Preview/RAW source labels and explicit preview fallback.
+  The zoom slider now spans 30–400% while Fit still shows the whole photo.
+- Added opt-in RAW 9 on supported macOS 27 files, bounded model preparation, explicit Retry/Apple Default remedies, and decoder-specific preview/100% caches.
 
-- Added read-only serif text previews for TXT, Markdown, XML, and common text
-  formats, with basic Markdown formatting and clickable web/email links.
+- Fixed all 17 confirmed findings from the full audit: exact RAW/JPEG Clean Up
+  scope, save durability and Retry, filtered selection, source-bound XMP and
+  media reads, interrupted file recovery, transparent-image analysis, precise
+  filters, persistent video controls, and actionable save errors.
+- Made repeated-basename export planning scale with batch size; cancelled abandoned audio analysis before it delays the next recording.
 
-- Updated Sparkle to 2.10.0 and Expat to 2.8.5 with current security fixes.
-- Made unusually complex XMP sidecars fail gracefully while keeping originals
-  and unrelated metadata intact; affected media can still export without XMP.
-- Bound Copy writes to the chosen folder so replacing its path cannot redirect
-  exported photos; a changed destination can be selected again and retried.
+- Clarified how to load saved ratings after moving or renaming a folder.
+- Anchored the start-page Help button to the window's bottom-right corner.
+- Added **Open in Louppe** to Finder's Services menu for a selected media folder.
+- Simplified the start page. Quality thresholds are directly editable; disabling a cue retains its threshold.
+- Added folder-hierarchy review in Sort, with parent folders before their
+  descendants and full relative folder names in Browser and Grid.
+- Added Review settings for advancement after a decision and the starting
+  view, sort, and group dividers for new folders. Rating under a decision
+  filter now advances without skipping the next undecided item.
+- Added connected drives and cards to the compact start screen with available capacity, drive-specific folder selection, and scrollable overflow.
+- Isolated the local “louppe - to review” app from the stable app's identity,
+  preferences, recents, and window restoration; automatic updates stay off.
 
-- Updated the About description to say “for creators.”
-- Added a working Help window, searchable shortcuts, and dismissible review tips.
-- Combined filter information, save feedback, and review completion into one
-  compact bottom panel without repeating the toolbar's actions.
-- Kept the bottom panel height consistent across photos, video, and audio,
-  centered photo zoom, and removed clipped QuickTime artwork from audio controls.
-- Added a continuous photo zoom slider and pinch-to-zoom while retaining the
-  S (100%) and A (Phone size) shortcuts.
-- Prevented the zoom slider from briefly jumping to its minimum and flickering
-  when A or S switches back to Phone size or Fit.
-- Fixed a stuck loading spinner caused by late layout updates restarting
-  high-resolution loading after leaving the zoomed photo view.
-- Fixed pinch completion so the enlarged photo remains pannable and the
-  slider keeps responding. Added click-and-drag panning and a smooth return
-  from custom zoom to centered 100% with S.
-- Replaced separate RAW + JPEG palette commands with one searchable toggle
-  that explains the current mode and any temporary availability restriction.
-- Made explicit selections the default export scope, added keeper and star
-  quick picks, clarified independent review metadata and same-drive Move,
-  and simplified editing-app options.
-- Added quick decision filters, visible active filters, direct filter reset,
-  a RAW + JPEG pairing choice, and preview retry and Finder actions.
-- Clarified Trash No + Undecided with separate counts, refreshed first-run
-  instructions, and added separately named local review packaging.
-
-- Reorganized the Command Palette into predictable sections, improved search
-  ranking and aliases, displayed all applicable keyboard shortcuts, and added
-  missing folder, search, selection, and zoom actions.
-- Kept the native macOS toolbar appearance in local release builds by recording
-  the current SDK version in the packaged app.
+- Strengthened Move, Rename, Organize, and undo against folder-path replacement
+  on standard macOS volumes.
+- Moved the heavier session-save preparation off the main thread so large
+  folders stay more responsive while ratings are saved.
+- Improved VoiceOver labels, recovery focus, progress feedback, Reduce Motion,
+  increased contrast, and long folder names without adding visible instructions.
+- Added Homebrew distribution with automatic cask updates for new releases.
 
 ]]></description>
-            <enclosure url="https://github.com/murlexander/louppe-media-culler/releases/download/v1.9.0/Louppe.zip" length="6096278" type="application/octet-stream" sparkle:edSignature="bzXNYJXzvw9o/Nwqv9kmizb9CplJQiwPZKgInybguOS8ob4QEmV705E/5n6MZ8M7zs9IUBALKej/MGiLwUuYBQ=="/>
+            <enclosure url="https://github.com/murlexander/louppe-media-culler/releases/download/v1.10.0/Louppe.zip" length="6706813" type="application/octet-stream" sparkle:edSignature="FeLYZ3uO+RPCi4CKM4zwN14sBKdtW1D139uVWM4QI+WRgGpXgIZxI4Cq5N+iJO/AtUlMiT3tnv7+4LC/umnzCQ=="></enclosure>
         </item>
     </channel>
-</rss>
-<!-- sparkle-signatures:
-edSignature: kQJwTMaqCm2pMHdEjQAfPvJ4n7RMkyFm5PuGUVM9uiYqKhqWG/6NoJYOmzG0mHlcV/8Yi0kuaqudZGO3i20DAw==
-length: 4807
+</rss><!-- sparkle-signatures:
+edSignature: HzJPAESbzgFH2NYXKkBoWDRSYaIlT6yOWqjdw6ri8wOlwdnjtYKQQDoU0hKeT4nghBXfGBbQo/VFMmX0yeB6Bg==
+length: 5144
 -->

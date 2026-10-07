@@ -1,7 +1,7 @@
 # Louppe Media Culler backlog
 
 App product and engineering work lives here. Research, publicity, and CAS notes
-stay in Obsidian. Latest public release: [1.9.0 (11)](Docs/RELEASE_1.9.0.md).
+stay in Obsidian. Latest public release: [1.10.0 (12)](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.10.0).
 
 ## Completed readiness work — 7 October 2026
 
@@ -47,8 +47,8 @@ physical/provider/power tests remain under AUD-05/AUD-18.
   and Gallery/Grid view.
 - [x] External drive/card capacity and a folder chooser at the selected drive.
 
-Installed in `/Applications/Louppe.app` with RAW display, Apple Default / RAW 9,
-and early-user feedback. Unreleased; see [review evidence](Docs/REVIEW_BUILD.md).
+Released in 1.10.0 with RAW display, Apple Default / RAW 9, and early-user
+feedback. See [review evidence](Docs/REVIEW_BUILD.md).
 Configurable shortcuts remain deferred to preserve keyboard safety.
 
 ## Product improvements
