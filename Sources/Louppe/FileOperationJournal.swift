@@ -453,25 +453,25 @@ enum FileOperationJournal {
         var errorDescription: String? {
             switch self {
             case .invalidFileIndex:
-                return "The operation journal contains an invalid file index."
+                return L10n.text("The operation journal contains an invalid file index.")
             case .invalidFileSystemPath:
-                return "Louppe refused a filename whose exact filesystem representation could not be preserved safely."
+                return L10n.text("Louppe refused a filename whose exact filesystem representation could not be preserved safely.")
             case .missingFileIdentity(let url):
-                return "Louppe couldn't identify \(url.lastPathComponent) before starting the file operation."
+                return L10n.text("Louppe couldn't identify \(url.lastPathComponent) before starting the file operation.")
             case .sourceChangedSinceScan(let url):
-                return "\(url.lastPathComponent) changed after it was scanned. Rescan the folder before changing files."
+                return L10n.text("\(url.lastPathComponent) changed after it was scanned. Rescan the folder before changing files.")
             case .unsafePlan:
-                return "Louppe refused an unsafe file-operation plan before changing any files."
+                return L10n.text("Louppe refused an unsafe file-operation plan before changing any files.")
             case .corruptPlan:
-                return "An interrupted-operation journal is unreadable."
+                return L10n.text("An interrupted-operation journal is unreadable.")
             case .operationInUse:
-                return "Another Louppe process is currently changing files."
+                return L10n.text("Another Louppe process is currently changing files.")
             case .recoveryRequired:
-                return "An interrupted file operation must be recovered before another one can start."
+                return L10n.text("An interrupted file operation must be recovered before another one can start.")
             case .cannotInspectOperations:
-                return "Louppe couldn't verify that its operation journal is clear."
+                return L10n.text("Louppe couldn't verify that its operation journal is clear.")
             case .cannotLockOperations(let code):
-                return "Louppe couldn't lock its operation journal (system error \(code))."
+                return L10n.text("Louppe couldn't lock its operation journal (system error \(code)).")
             }
         }
     }
@@ -811,7 +811,7 @@ enum FileOperationJournal {
                         report.unresolvedOperations += 1
                         report.unresolvedFiles += ambiguousPairFiles
                         report.details.append(
-                            "A paired Trash action stopped between its files. Louppe left every file where it is."
+                            L10n.text("A paired Trash action stopped between its files. Louppe left every file where it is.")
                         )
                         continue
                     }
@@ -3014,23 +3014,23 @@ enum FileOperationJournal {
         var errorDescription: String? {
             switch self {
             case .missingMovedFile(let source):
-                return "The interrupted move couldn't locate \(source.lastPathComponent)."
+                return L10n.text("The interrupted move couldn't locate \(source.lastPathComponent).")
             case .missingCopySource(let source):
-                return "Recovery couldn't verify the original \(source.lastPathComponent), so it preserved every copy."
+                return L10n.text("Recovery couldn't verify the original \(source.lastPathComponent), so it preserved every copy.")
             case .missingTrashedFile(let source):
-                return "The interrupted Trash undo couldn't locate \(source.lastPathComponent)."
+                return L10n.text("The interrupted Trash undo couldn't locate \(source.lastPathComponent).")
             case .bothLocationsExist(let source):
-                return "\(source.lastPathComponent) exists in both locations; Louppe left both untouched."
+                return L10n.text("\(source.lastPathComponent) exists in both locations; Louppe left both untouched.")
             case .multipleRecoveryCandidates(let source):
-                return "Recovery found multiple possible copies of \(source.lastPathComponent), so it left every file untouched."
+                return L10n.text("Recovery found multiple possible copies of \(source.lastPathComponent). All remain untouched.")
             case .refusesOverwrite(let url):
-                return "Recovery refused to overwrite \(url.lastPathComponent)."
+                return L10n.text("Recovery refused to overwrite \(url.lastPathComponent).")
             case .unsafeTemporaryPath:
-                return "Recovery found an invalid temporary path and left it untouched."
+                return L10n.text("Recovery found an invalid temporary path and left it untouched.")
             case .unverifiedOwnedFile(let url):
-                return "Recovery couldn't verify that \(url.lastPathComponent) belongs to the interrupted operation, so it left the file untouched."
+                return L10n.text("Recovery couldn't verify ownership of \(url.lastPathComponent). The file remains untouched.")
             case .contentMismatch(let source, let copy):
-                return "Recovery found different contents in \(source.lastPathComponent) and \(copy.lastPathComponent), so it preserved both files."
+                return L10n.text("Recovery found different contents in \(source.lastPathComponent) and \(copy.lastPathComponent). Both remain intact.")
             }
         }
     }

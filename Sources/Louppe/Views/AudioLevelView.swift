@@ -21,11 +21,11 @@ struct AudioLevelsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Audio levels")
+            Text(L10n.text("Audio levels"))
                 .font(.subheadline.weight(.semibold))
 
             if let analysis {
-                Text(isMetering ? "Live playback loudness" : "Play media to monitor loudness")
+                Text(isMetering ? L10n.text("Live playback loudness") : L10n.text("Play media to monitor loudness"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 ForEach(Array(analysis.channels.enumerated()), id: \.offset) {
@@ -45,12 +45,12 @@ struct AudioLevelsSection: View {
                 HStack(spacing: 7) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Preparing audio meter…")
+                    Text(L10n.text("Preparing audio meter…"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
             } else if loadFailed {
-                Text("No readable audio track")
+                Text(L10n.text("No readable audio track"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -59,8 +59,8 @@ struct AudioLevelsSection: View {
     }
 
     private func channelLabel(for index: Int, total: Int) -> String {
-        if total == 1 { return "Mono" }
-        return "Channel \(index + 1)"
+        if total == 1 { return L10n.text("Mono") }
+        return L10n.text("Channel \(index + 1)")
     }
 }
 
@@ -70,9 +70,10 @@ private struct AudioLoudnessChannelRow: View {
     let label: String
 
     private var levelLabel: String {
-        guard isMetering else { return "Paused" }
+        guard isMetering else { return L10n.text("Paused") }
         guard let decibels else { return "−∞ dBFS" }
-        return String(format: "%.1f dBFS", decibels)
+        let value = String(format: "%.1f", decibels)
+        return L10n.text("\(value) dBFS")
     }
 
     var body: some View {
@@ -87,10 +88,10 @@ private struct AudioLoudnessChannelRow: View {
             }
             AudioLoudnessMeter(decibels: decibels)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(label) live audio level")
+                .accessibilityLabel(L10n.text("\(label) live audio level"))
                 .accessibilityValue(levelLabel)
                 .accessibilityHint(
-                    "Green is below minus 12 dBFS, orange is minus 12 to minus 3 dBFS, and red is above minus 3 dBFS."
+                    L10n.text("Green is below minus 12 dBFS, orange is minus 12 to minus 3 dBFS, and red is above minus 3 dBFS.")
                 )
         }
     }
@@ -251,7 +252,7 @@ struct AudioWaveformView: View {
             )
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Audio waveform")
-        .accessibilityValue("Playback position \(Int(min(max(progress, 0), 1) * 100)) percent")
+        .accessibilityLabel(L10n.text("Audio waveform"))
+        .accessibilityValue(L10n.text("Playback position \(Int(min(max(progress, 0), 1) * 100)) percent"))
     }
 }

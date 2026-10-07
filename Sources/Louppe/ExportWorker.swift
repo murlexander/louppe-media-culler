@@ -53,9 +53,9 @@ enum ExportWorker {
         var userMessage: String {
             switch self {
             case .userConfirmed:
-                return "You chose to stop copying."
+                return L10n.text("You chose to stop copying.")
             case .unrecorded:
-                return "Louppe stopped copying without a recorded reason. Please send Louppe’s diagnostic log with this report."
+                return L10n.text("Copy stopped without a recorded reason. Send Alex the diagnostic log with this report.")
             }
         }
 
@@ -278,9 +278,9 @@ enum ExportWorker {
         var errorDescription: String? {
             switch self {
             case .conflictingFamilyNames:
-                return "Some files in one media/XMP family have equivalent destination names. Export them separately without XMP, or give them distinct names before exporting."
+                return L10n.text("One media/XMP family has equivalent destination names. Export separately without XMP, or rename the files first.")
             case .collisionSearchExhausted:
-                return "Louppe could not reserve a distinct destination name. Choose another folder and retry."
+                return L10n.text("Louppe could not reserve a distinct destination name. Choose another folder and retry.")
             }
         }
     }
@@ -564,7 +564,7 @@ enum ExportWorker {
                 cancellationReason: nil,
                 journalFailure: false,
                 requiresRecovery: false,
-                failureMessage: "A destination name was claimed after confirmation. Review and confirm a fresh export plan.",
+                failureMessage: L10n.text("A destination name was claimed after confirmation. Review and confirm a fresh export plan."),
                 xmpSummary: xmpSummary
             )
         }
@@ -580,7 +580,7 @@ enum ExportWorker {
                 cancellationReason: nil,
                 journalFailure: true,
                 requiresRecovery: false,
-                failureMessage: "One or more source files could not be verified before copying",
+                failureMessage: L10n.text("One or more source files could not be verified before copying"),
                 xmpSummary: xmpSummary
             )
         }
@@ -595,7 +595,7 @@ enum ExportWorker {
                 let binding = try plan.destinationBindings.first {
                     FileOperationJournal.exactPathsEqual($0.url, parent)
                 } ?? DurableFileIO.DirectoryBinding(url: parent)
-                try binding.requireCurrentPath()
+                try ExportDestinationValidator.requireCollisionSafePublication(at: binding)
                 directories[key] = try DurableFileIO.BoundDirectory(binding)
             }
             boundDirectories = directories
@@ -706,7 +706,7 @@ enum ExportWorker {
                     journalFailure = true
                     failed = true
                     failureMessage = failureMessage
-                        ?? "Louppe could not resolve its protected temporary copy path"
+                        ?? L10n.text("Louppe could not resolve its protected temporary copy path")
                     touchedForItem.append(touched)
                     reporter.advance()
                     break
@@ -1001,7 +1001,7 @@ enum ExportWorker {
         if !journalFinalized {
             journalFailure = true
             failureMessage = failureMessage
-                ?? "Louppe could not seal the completed file-safety record"
+                ?? L10n.text("Louppe could not seal the completed file-safety record")
         }
         return CopyResult(
             copiedFiles: copied,
@@ -1049,7 +1049,7 @@ enum ExportWorker {
                 inconsistentPhotos: 0,
                 journalFailure: false,
                 requiresRecovery: false,
-                failureMessage: "Move requires the source and destination to be on the same storage volume",
+                failureMessage: L10n.text("Move requires the source and destination to be on the same storage volume"),
                 xmpSummary: xmpSummary
             )
         }
@@ -1073,7 +1073,7 @@ enum ExportWorker {
                 inconsistentPhotos: 0,
                 journalFailure: true,
                 requiresRecovery: false,
-                failureMessage: "Louppe could not preserve the exact source paths safely",
+                failureMessage: L10n.text("Louppe could not preserve the exact source paths safely"),
                 xmpSummary: xmpSummary
             )
         }
@@ -1110,7 +1110,7 @@ enum ExportWorker {
                 inconsistentPhotos: 0,
                 journalFailure: false,
                 requiresRecovery: false,
-                failureMessage: "A destination name was claimed after confirmation. Review and confirm a fresh export plan.",
+                failureMessage: L10n.text("A destination name was claimed after confirmation. Review and confirm a fresh export plan."),
                 xmpSummary: xmpSummary
             )
         }
@@ -1125,9 +1125,32 @@ enum ExportWorker {
                 inconsistentPhotos: 0,
                 journalFailure: true,
                 requiresRecovery: false,
-                failureMessage: "One or more source files could not be verified before moving",
+                failureMessage: L10n.text("One or more source files could not be verified before moving"),
                 xmpSummary: xmpSummary
             )
+        }
+        // Source Organization/Rename owns its separately probed ExFAT
+        // fallback. Ordinary Export Move needs the same exclusive publication
+        // contract as Copy and must refuse unsupported folders before journaling.
+        if journalKind == .exportMove {
+            do {
+                var checkedParents = Set<Data>()
+                for file in plan.items.flatMap(\.files) {
+                    let parent = try XMPExactFileSystemPath(url: file.target).parent
+                    guard checkedParents.insert(parent.bytes).inserted else { continue }
+                    let binding = try plan.destinationBindings.first {
+                        FileOperationJournal.exactPathsEqual($0.url, parent.url)
+                    } ?? DurableFileIO.DirectoryBinding(url: parent.url)
+                    try ExportDestinationValidator.requireCollisionSafePublication(at: binding)
+                }
+            } catch {
+                return MoveResult(
+                    movedItemIDs: [], movedFiles: 0, failedPhotos: items.count,
+                    inconsistentPhotos: 0, journalFailure: false,
+                    requiresRecovery: false, failureMessage: error.localizedDescription,
+                    xmpSummary: xmpSummary
+                )
+            }
         }
         let writer: FileOperationJournal.Writer
         do {
@@ -1188,7 +1211,7 @@ enum ExportWorker {
                 inconsistentPhotos: 0,
                 journalFailure: !journalFinalized,
                 requiresRecovery: !journalFinalized,
-                failureMessage: "No photos were moved. \(error.localizedDescription)",
+                failureMessage: L10n.text("No photos were moved. \(error.localizedDescription)"),
                 xmpSummary: xmpSummary
             )
         }
@@ -1243,7 +1266,7 @@ enum ExportWorker {
                     journalFailure = true
                     failed = true
                     failureMessage = failureMessage
-                        ?? "Louppe could not reserve a safe temporary path for \(file.source.lastPathComponent)."
+                        ?? L10n.text("Louppe could not reserve a safe temporary path for \(file.source.lastPathComponent).")
                     touchedForItem.append(touched)
                     reporter.advance()
                     break
@@ -1627,7 +1650,7 @@ enum ExportWorker {
             requiresRecovery: inconsistentPhotos > 0 || !journalFinalized,
             failureMessage: failedPhotos > 0 || journalFailure
                 ? failureMessage
-                    ?? "A source, destination, or file-safety checkpoint became unavailable during the move"
+                    ?? L10n.text("A source, destination, or file-safety checkpoint became unavailable during the move")
                 : nil,
             xmpSummary: xmpSummary
         )
@@ -2259,24 +2282,24 @@ enum ExportWorker {
             candidate.domain == NSPOSIXErrorDomain ? candidate.code : nil
         })
         if posixCodes.contains(Int(EEXIST)) {
-            return "The destination for \(filename) was claimed after confirmation. Louppe stopped without overwriting it."
+            return L10n.text("The destination for \(filename) was claimed after confirmation. Louppe stopped without overwriting it.")
         }
         if !posixCodes.isDisjoint(with: [Int(ENOTSUP), Int(EOPNOTSUPP)]) {
-            return "This storage does not support the collision-safe rename needed to move \(filename)."
+            return L10n.text("This storage does not support the collision-safe rename needed to move \(filename).")
         }
         if posixCodes.contains(Int(ENOSPC)) {
-            return "The storage ran out of free space while moving \(filename)."
+            return L10n.text("The storage ran out of free space while moving \(filename).")
         }
         if !posixCodes.isDisjoint(with: [Int(EACCES), Int(EPERM), Int(EROFS)]) {
-            return "The storage stopped allowing changes while Louppe was moving \(filename)."
+            return L10n.text("The storage stopped allowing changes while Louppe was moving \(filename).")
         }
         switch phase {
         case .staging:
-            return "Louppe could not safely begin moving \(filename): \(error.localizedDescription)"
+            return L10n.text("Louppe could not safely begin moving \(filename): \(error.localizedDescription)")
         case .publishing:
-            return "Louppe could not place \(filename) at its confirmed destination: \(error.localizedDescription)"
+            return L10n.text("Louppe could not place \(filename) at its confirmed destination: \(error.localizedDescription)")
         case .safetyRecord:
-            return "Louppe could not update the file-safety record for \(filename): \(error.localizedDescription)"
+            return L10n.text("Louppe could not update the file-safety record for \(filename): \(error.localizedDescription)")
         }
     }
 
@@ -2285,7 +2308,7 @@ enum ExportWorker {
         phase: CopyFailurePhase
     ) -> String {
         if isUnavailableSourceError(error) {
-            return "The source drive disconnected and did not remount in time"
+            return L10n.text("The source drive disconnected and did not remount in time")
         }
         let chain = errorChain(error)
         if chain.contains(where: {
@@ -2294,25 +2317,25 @@ enum ExportWorker {
             $0.domain == NSCocoaErrorDomain
                 && $0.code == NSFileWriteOutOfSpaceError
         }) {
-            return "The destination ran out of free space"
+            return L10n.text("The destination ran out of free space")
         }
         if chain.contains(where: {
             $0.domain == NSPOSIXErrorDomain
                 && [Int(EACCES), Int(EPERM), Int(EROFS)].contains($0.code)
         }) {
             return phase == .readingSource
-                ? "The source file could no longer be read"
-                : "The destination could no longer be written"
+                ? L10n.text("The source file could no longer be read")
+                : L10n.text("The destination could no longer be written")
         }
         switch phase {
         case .planning:
-            return "Louppe could not create a safe export plan: \(error.localizedDescription)"
+            return L10n.text("Louppe could not create a safe export plan: \(error.localizedDescription)")
         case .readingSource:
-            return "A source file could not be copied: \(error.localizedDescription)"
+            return L10n.text("A source file could not be copied: \(error.localizedDescription)")
         case .publishingDestination:
-            return "A completed copy could not be published at the destination: \(error.localizedDescription)"
+            return L10n.text("A completed copy could not be published at the destination: \(error.localizedDescription)")
         case .safetyRecord:
-            return "Louppe could not advance its durable file-safety record: \(error.localizedDescription)"
+            return L10n.text("Louppe could not advance its durable file-safety record: \(error.localizedDescription)")
         }
     }
 

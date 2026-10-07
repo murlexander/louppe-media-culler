@@ -143,8 +143,8 @@ final class VideoPlaybackController: ObservableObject {
         errorMessage = nil
         guard item.isPlayableMedia else {
             errorMessage = item.isAudio
-                ? "This audio format or codec isn't supported by macOS."
-                : "This video's format or codec isn't supported by macOS."
+                ? L10n.text("This audio format or codec isn't supported by macOS.")
+                : L10n.text("This video's format or codec isn't supported by macOS.")
             return
         }
 
@@ -377,13 +377,13 @@ final class VideoPlaybackController: ObservableObject {
                 guard self?.playbackGeneration == observedGeneration,
                       self?.contentRevision == observedRevision else { return }
                 self?.isPlaying = false
-                self?.errorMessage = message ?? "This media file couldn't be played."
+                self?.errorMessage = message ?? L10n.text("This media file couldn't be played.")
             }
         })
         itemStatusObservation = playerItem.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             let status = item.status
             guard status == .failed || status == .readyToPlay else { return }
-            let message = item.error?.localizedDescription ?? "This media file couldn't be played."
+            let message = item.error?.localizedDescription ?? L10n.text("This media file couldn't be played.")
             Task { @MainActor in
                 if status == .readyToPlay {
                     let matches = await Task.detached(priority: .userInitiated) {

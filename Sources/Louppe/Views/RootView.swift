@@ -59,7 +59,7 @@ struct RootView: View {
                 if store.recoveryNeedsAttention {
                     RecoveryWarningBanner(
                         message: store.recoveryAttentionMessage
-                            ?? "Some interrupted files are still untouched.",
+                            ?? L10n.text("Some interrupted files are still untouched."),
                         canRetry: store.canRetryInterruptedOperationRecovery,
                         retry: store.retryInterruptedOperationRecovery,
                         keepFilesAsTheyAre: store.keepInterruptedFilesAsTheyAre
@@ -95,10 +95,10 @@ struct RootView: View {
             }
         }
         .alert(
-            "Interrupted operation recovered",
+            L10n.text("Interrupted operation recovered"),
             isPresented: operationRecoveryReportIsPresented
         ) {
-            Button("OK") {
+            Button(L10n.text("OK")) {
                 store.dismissOperationRecoveryReport()
             }
         } message: {
@@ -164,33 +164,19 @@ struct RootView: View {
         } ?? ""
         var actions: [String] = []
         if report.preservedCopies > 0 {
-            actions.append(
-                "kept \(report.preservedCopies) completed cop"
-                    + (report.preservedCopies == 1 ? "y" : "ies")
-                    + " at the destination"
-            )
+            actions.append(report.preservedCopies == 1 ? L10n.text("kept 1 completed copy at the destination") : L10n.text("kept \(report.preservedCopies) completed copies at the destination"))
         }
         if report.preservedMoves > 0 {
-            actions.append(
-                "kept \(report.preservedMoves) completed Move file"
-                    + (report.preservedMoves == 1 ? "" : "s")
-                    + " at the destination"
-            )
+            actions.append(report.preservedMoves == 1 ? L10n.text("kept 1 completed Move file at the destination") : L10n.text("kept \(report.preservedMoves) completed Move files at the destination"))
         }
         if report.restoredFiles > 0 {
-            actions.append(
-                "restored \(report.restoredFiles) original file"
-                    + (report.restoredFiles == 1 ? "" : "s")
-            )
+            actions.append(report.restoredFiles == 1 ? L10n.text("restored 1 original file") : L10n.text("restored \(report.restoredFiles) original files"))
         }
         if report.removedPartialCopies > 0 {
-            actions.append(
-                "removed \(report.removedPartialCopies) incomplete cop"
-                    + (report.removedPartialCopies == 1 ? "y" : "ies")
-            )
+            actions.append(report.removedPartialCopies == 1 ? L10n.text("removed 1 incomplete copy") : L10n.text("removed \(report.removedPartialCopies) incomplete copies"))
         }
         return interruptionPrefix
-            + "Louppe \(actions.joined(separator: " and ")). No existing file was overwritten."
+            + L10n.text("Louppe \(actions.joined(separator: L10n.text(" and "))). No existing file was overwritten.")
     }
 }
 
@@ -201,10 +187,10 @@ private struct InterruptedOperationRecoveryOverlay: View {
         VStack(spacing: 12) {
             ProgressView()
                 .controlSize(.large)
-                .accessibilityLabel("Recovering interrupted files")
-            Text("Making interrupted file operations safe…")
+                .accessibilityLabel(L10n.text("Recovering interrupted files"))
+            Text(L10n.text("Making interrupted file operations safe…"))
                 .font(.headline)
-            Text("Checking files before opening the folder.")
+            Text(L10n.text("Checking files before opening the folder."))
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
@@ -234,13 +220,13 @@ private struct RecoveryWarningBanner: View {
             Text(message)
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
-                .accessibilityLabel("Interrupted operation warning. \(message)")
+                .accessibilityLabel(L10n.text("Interrupted operation warning. \(message)"))
                 .accessibilityFocused($isWarningFocused)
                 .onAppear { isWarningFocused = true }
             Spacer(minLength: 12)
-            Button("Keep Files As They Are", action: keepFilesAsTheyAre)
+            Button(L10n.text("Keep Files As They Are"), action: keepFilesAsTheyAre)
                 .disabled(!canRetry)
-            Button("Retry Recovery", action: retry)
+            Button(L10n.text("Retry Recovery"), action: retry)
                 .disabled(!canRetry)
         }
         .padding(.horizontal, 14)
@@ -267,12 +253,12 @@ private struct PersistenceWarningBanner: View {
             Text(message)
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
-                .accessibilityLabel("Session save warning. \(message)")
+                .accessibilityLabel(L10n.text("Session save warning. \(message)"))
                 .accessibilityFocused($isWarningFocused)
                 .onAppear { isWarningFocused = true }
             Spacer(minLength: 12)
             if showsRetry {
-                Button("Retry Saving", action: retry)
+                Button(L10n.text("Retry Saving"), action: retry)
             }
         }
         .padding(.horizontal, 14)

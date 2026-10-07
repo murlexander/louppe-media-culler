@@ -35,13 +35,11 @@ in ignored `dist/notarization.json` and `dist/notarization-log.json`.
 - Installed signed/notarized app launched on the compact start page. The logo
   is an accessible native website link; clicking it opened `https://louppe.eu/`
   in the default browser, verified through its URL and loaded page.
-- Actual upgrade: a disposable, unmodified copy of the public signed 1.8 app
-  was upgraded to the exact 1.9 archive using Sparkle 2.9.4. The official CLI
-  source was built with its published compiler definitions against the official,
-  checksum-verified 2.9.4 framework. A separately signed loopback-only feed
-  allowed testing before the public feed changed. Probe found the update;
-  download, signature validation, extraction, and installation completed.
-  The replaced app reports 1.9.0 and its deep/strict signature verifies.
+- A disposable public signed 1.8 app upgraded to the exact 1.9 archive through
+  Sparkle 2.9.4’s official CLI/compiler definitions and checksum-verified framework.
+  A signed loopback feed enabled testing before publication. Discovery, download,
+  signature checks, extraction, and installation passed; the resulting 1.9.0
+  deep/strict signature verifies.
 
 Test logs and the disposable app/tool/feed are retained in
 `/private/tmp/louppe-1.9-update-test/`; other release logs are
@@ -52,7 +50,6 @@ Test logs and the disposable app/tool/feed are retained in
 Both the embedded update notes and GitHub release link to
 [the 1.9 introduction](https://louppe.eu/blog/a-proper-hello/).
 
-This is the direct-download release. No App Store submission was made. Existing
-external acceptance/research proposals in `BACKLOG.md` are not claims of new
-Bridge/Lightroom/darktable/Capture One matrix verification. The open Dependabot
-PR updates CI checkout only and is independent of this shipped app.
+Direct download; no App Store submission. Bridge/Lightroom/darktable/Capture One
+acceptance remained in `BACKLOG.md`. The open Dependabot PR covered CI checkout
+only and was separate from this release.

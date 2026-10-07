@@ -37,6 +37,7 @@ struct LouppeApp: App {
     var body: some Scene {
         Window(AppBuildInfo.displayName, id: "main") {
             RootView(store: store)
+                .localizedInterface()
                 .onAppear {
                     appDelegate.store = store
                     appDelegate.showMainWindow = { openWindow(id: "main") }
@@ -64,7 +65,7 @@ struct LouppeApp: App {
             // Standard About panel reads its version from the release bundle
             // and adds credits plus a link to the complete release history.
             CommandGroup(replacing: .appInfo) {
-                Button("About Louppe") {
+                Button(L10n.text("About Louppe")) {
                     NSApp.orderFrontStandardAboutPanel(options: [.credits: Self.aboutCredits])
                 }
             }
@@ -79,7 +80,7 @@ struct LouppeApp: App {
             }
             #endif
             CommandGroup(replacing: .newItem) {
-                Button("Open Folder…") {
+                Button(L10n.text("Open Folder…")) {
                     store.promptForSourceFolder()
                 }
                 .keyboardShortcut("o")
@@ -90,25 +91,32 @@ struct LouppeApp: App {
             }
             FocusedLouppeSessionCommands(store: store)
             CommandGroup(replacing: .help) {
-                Button("Louppe Help") {
+                Button(L10n.text("Louppe Help")) {
                     openWindow(id: LouppeHelpWindow.id)
                 }
+                Link(L10n.text("Privacy Policy"), destination: Self.privacyPolicyURL)
             }
         }
 
-        Window("\(AppBuildInfo.displayName) Help", id: LouppeHelpWindow.id) {
+        Window(L10n.text("\(AppBuildInfo.displayName) Help"), id: LouppeHelpWindow.id) {
             LouppeHelpView()
+                .localizedInterface()
         }
         .defaultSize(width: 630, height: 620)
 
         Settings {
+            Group {
             #if !APP_STORE
             LouppeSettingsView(updater: updaterController.updater)
             #else
             LouppeSettingsView()
             #endif
+            }
+            .localizedInterface()
         }
     }
+
+    private static let privacyPolicyURL = URL(string: "https://louppe.eu/privacy/")!
 
     /// Credits block for the About panel. Links are clickable.
     private static var aboutCredits: NSAttributedString {
@@ -124,18 +132,22 @@ struct LouppeApp: App {
         let credits = NSMutableAttributedString()
 
         credits.append(NSAttributedString(
-            string: "Fast photo, video, and audio culling for creators.\n\n", attributes: base))
+            string: L10n.text("Fast photo, video, and audio culling for creators.\n\n"), attributes: base))
 
         link[.link] = URL(string: "https://louppe.eu")!
         credits.append(NSAttributedString(string: "louppe.eu", attributes: link))
         credits.append(NSAttributedString(string: "\n", attributes: base))
 
+        link[.link] = Self.privacyPolicyURL
+        credits.append(NSAttributedString(string: L10n.text("Privacy Policy"), attributes: link))
+        credits.append(NSAttributedString(string: "\n", attributes: base))
+
         link[.link] = URL(string: "https://github.com/murlexander/louppe-media-culler/releases")!
-        credits.append(NSAttributedString(string: "Version History", attributes: link))
+        credits.append(NSAttributedString(string: L10n.text("Version History"), attributes: link))
         credits.append(NSAttributedString(string: "\n\n", attributes: base))
 
         credits.append(NSAttributedString(
-            string: "Created by Alex Markin\n", attributes: base))
+            string: L10n.text("Created by Alex Markin\n"), attributes: base))
 
         link[.link] = URL(string: "mailto:a@alex-markin.com")!
         credits.append(NSAttributedString(string: "a@alex-markin.com", attributes: link))
@@ -178,7 +190,7 @@ private struct FocusedLouppeSessionCommands: Commands {
 
     var body: some Commands {
         CommandGroup(after: .newItem) {
-            Button("Command Palette…") {
+            Button(L10n.text("Command Palette…")) {
                 actionableStore?.presentActionPalette()
             }
             .disabled(
@@ -187,7 +199,7 @@ private struct FocusedLouppeSessionCommands: Commands {
 
             Divider()
 
-            Button("Rescan Folder") {
+            Button(L10n.text("Rescan Folder")) {
                 actionableStore?.rescan()
             }
             .disabled(
@@ -195,7 +207,7 @@ private struct FocusedLouppeSessionCommands: Commands {
                     || actionableStore?.isFileOperationRunning != false
             )
 
-            Button("Close Session") {
+            Button(L10n.text("Close Session")) {
                 actionableStore?.closeSession()
             }
             .disabled(
@@ -205,7 +217,7 @@ private struct FocusedLouppeSessionCommands: Commands {
         }
 
         CommandGroup(after: .undoRedo) {
-            Button("Undo Louppe Action") {
+            Button(L10n.text("Undo Louppe Action")) {
                 actionableStore?.undo()
             }
             .disabled(
@@ -213,7 +225,7 @@ private struct FocusedLouppeSessionCommands: Commands {
                     || actionableStore?.canUndo != true
             )
 
-            Button("Clear All Decisions") {
+            Button(L10n.text("Clear All Decisions")) {
                 actionableStore?.requestClearAllRatings()
             }
             .disabled(
@@ -223,14 +235,14 @@ private struct FocusedLouppeSessionCommands: Commands {
         }
 
         CommandGroup(after: .saveItem) {
-            Button("Organize Source Folder…") {
+            Button(L10n.text("Organize Source Folder…")) {
                 actionableStore?.presentSourceOrganization()
             }
             .disabled(
                 actionableStore?.canOrganizeSource != true
             )
 
-            Button("Export…") {
+            Button(L10n.text("Export…")) {
                 actionableStore?.presentExport()
             }
             .disabled(
@@ -241,7 +253,7 @@ private struct FocusedLouppeSessionCommands: Commands {
 
             // Clean Up asks for confirmation in the session window
             // (SessionView presents the dialog when pendingCleanUp is set).
-            Menu("Clean Up") {
+            Menu(L10n.text("Clean Up")) {
                 CleanUpMenuItems(store: store)
             }
             .disabled(
@@ -250,31 +262,31 @@ private struct FocusedLouppeSessionCommands: Commands {
         }
 
         CommandGroup(after: .toolbar) {
-            Button("Larger Thumbnails") {
+            Button(L10n.text("Larger Thumbnails")) {
                 actionableStore?.zoomGrid(larger: true)
             }
             .disabled(actionableStore?.viewMode != .grid)
 
-            Button("Smaller Thumbnails") {
+            Button(L10n.text("Smaller Thumbnails")) {
                 actionableStore?.zoomGrid(larger: false)
             }
             .disabled(actionableStore?.viewMode != .grid)
 
             Divider()
 
-            Button("Fit Photo in Gallery") {
+            Button(L10n.text("Fit Photo in Gallery")) {
                 actionableStore?.zoomToFit()
             }
             .disabled(!canChangeGalleryImageSize)
 
-            Button("View Photo at 100%") {
+            Button(L10n.text("View Photo at 100%")) {
                 if actionableStore?.isAtActualSize != true {
                     actionableStore?.toggleZoom(.actual)
                 }
             }
             .disabled(!canChangeGalleryImageSize)
 
-            Button("View Photo at Phone Size") {
+            Button(L10n.text("View Photo at Phone Size")) {
                 if actionableStore?.zoomMode != .small {
                     actionableStore?.toggleZoom(.small)
                 }
@@ -283,8 +295,8 @@ private struct FocusedLouppeSessionCommands: Commands {
 
             Divider()
 
-            Menu("Review Groups") {
-                Button("Analyze Folder Locally") {
+            Menu(L10n.text("Review Groups")) {
+                Button(L10n.text("Analyze Folder Locally")) {
                     actionableStore?.analyzeDuplicateAndBurstGroups()
                 }
                 .disabled(
@@ -296,13 +308,13 @@ private struct FocusedLouppeSessionCommands: Commands {
                 Divider()
 
                 Group {
-                    Button("Exact Duplicates") {
+                    Button(L10n.text("Exact Duplicates")) {
                         actionableStore?.enterGroupedReview(.exactDuplicates)
                     }
-                    Button("Likely Similar Photos") {
+                    Button(L10n.text("Likely Similar Photos")) {
                         actionableStore?.enterGroupedReview(.likelySimilarPhotos)
                     }
-                    Button("Capture Bursts") {
+                    Button(L10n.text("Capture Bursts")) {
                         actionableStore?.enterGroupedReview(.captureBursts)
                     }
                 }
@@ -314,12 +326,12 @@ private struct FocusedLouppeSessionCommands: Commands {
 
                 Divider()
 
-                Button("Return to Normal Review") {
+                Button(L10n.text("Return to Normal Review")) {
                     actionableStore?.exitGroupedReview()
                 }
                 .disabled(actionableStore?.isGroupedReviewActive != true)
 
-                Button("Review Group Settings…") {
+                Button(L10n.text("Review Group Settings…")) {
                     actionableStore?.isSortPresented = true
                 }
                 .disabled(actionableStore?.isFileOperationRunning != false)
@@ -365,14 +377,14 @@ private final class LouppeApplicationDelegate: NSObject, NSApplicationDelegate {
         ) as? [URL] ?? []
         guard urls.count == 1,
               (try? urls[0].resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else {
-            error.pointee = "Select one folder in Finder to open in Louppe."
+            error.pointee = L10n.text("Select one folder in Finder to open in Louppe.") as NSString
             return
         }
 
         let folder = urls[0].standardizedFileURL
         if let store {
             guard !store.isFileOperationRunning else {
-                error.pointee = "Wait for Louppe to finish its current operation, then try again."
+                error.pointee = L10n.text("Wait for Louppe to finish its current operation, then try again.") as NSString
                 return
             }
             store.openFolder(folder)
@@ -397,8 +409,8 @@ private final class LouppeApplicationDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if store?.isRecoveringInterruptedOperations == true {
             let alert = NSAlert()
-            alert.messageText = "File recovery is still running"
-            alert.informativeText = "Wait for Louppe to finish making the interrupted operation safe, then quit."
+            alert.messageText = L10n.text("File recovery is still running")
+            alert.informativeText = L10n.text("Wait for recovery to finish, then quit.")
             alert.alertStyle = .warning
             alert.runModal()
             return .terminateCancel
@@ -407,20 +419,20 @@ private final class LouppeApplicationDelegate: NSObject, NSApplicationDelegate {
             let alert = NSAlert()
             switch operation {
             case .exportCopy:
-                alert.messageText = "Export is still copying files"
-                alert.informativeText = "Stop the copy or wait for it to finish, then quit Louppe."
+                alert.messageText = L10n.text("Export is still copying files")
+                alert.informativeText = L10n.text("Stop Copy or wait for it to finish, then quit.")
             case .exportMove:
-                alert.messageText = "Export is still moving files"
-                alert.informativeText = "Wait for the move to finish, then quit Louppe."
+                alert.messageText = L10n.text("Export is still moving files")
+                alert.informativeText = L10n.text("Wait for Move to finish, then quit.")
             case .organizeSource:
-                alert.messageText = "The source folder is still being organized"
-                alert.informativeText = "Wait for Louppe to finish moving or restoring the files, then quit."
+                alert.messageText = L10n.text("The source folder is still being organized")
+                alert.informativeText = L10n.text("Wait for moving or restoring to finish, then quit.")
             case .renameSource:
-                alert.messageText = "Files are still being renamed"
-                alert.informativeText = "Wait for Louppe to finish renaming or restoring the files, then quit."
+                alert.messageText = L10n.text("Files are still being renamed")
+                alert.informativeText = L10n.text("Wait for renaming or restoring to finish, then quit.")
             case .cleanUp:
-                alert.messageText = "Clean Up is still running"
-                alert.informativeText = "Wait for the Trash or restore progress to finish, then quit Louppe."
+                alert.messageText = L10n.text("Clean Up is still running")
+                alert.informativeText = L10n.text("Wait for Trash or restore to finish, then quit.")
             }
             alert.alertStyle = .warning
             alert.runModal()
@@ -483,13 +495,11 @@ private final class LouppeApplicationDelegate: NSObject, NSApplicationDelegate {
         application: NSApplication
     ) {
         let alert = NSAlert()
-        alert.messageText = "Session data failed a safety check"
-        alert.informativeText = "Louppe refused to replace your saved ratings because the new snapshot "
-            + "was internally inconsistent. Cancel Quit and keep this session open; you can quit without "
-            + "saving only if you accept losing the latest in-memory changes."
+        alert.messageText = L10n.text("Session data failed a safety check")
+        alert.informativeText = L10n.text("Louppe kept your saved ratings: the new snapshot failed a safety check. Cancel Quit to keep this session open. Quit without saving discards your latest changes.")
         alert.alertStyle = .critical
-        alert.addButton(withTitle: "Cancel Quit")
-        alert.addButton(withTitle: "Quit Without Saving")
+        alert.addButton(withTitle: L10n.text("Cancel Quit"))
+        alert.addButton(withTitle: L10n.text("Quit Without Saving"))
 
         if alert.runModal() == .alertSecondButtonReturn {
             isPreparingToTerminate = false
@@ -506,13 +516,13 @@ private final class LouppeApplicationDelegate: NSObject, NSApplicationDelegate {
         application: NSApplication
     ) {
         let alert = NSAlert()
-        alert.messageText = "Your latest ratings aren't saved"
+        alert.messageText = L10n.text("Your latest ratings aren't saved")
         alert.informativeText = store.persistenceWarning
-            ?? "Louppe couldn't save them in the media folder or its backup. Retry in a moment."
+            ?? L10n.text("Couldn’t save to the media folder or backup. Retry.")
         alert.alertStyle = .critical
-        alert.addButton(withTitle: "Retry Saving")
-        alert.addButton(withTitle: "Cancel Quit")
-        alert.addButton(withTitle: "Quit Without Saving")
+        alert.addButton(withTitle: L10n.text("Retry Saving"))
+        alert.addButton(withTitle: L10n.text("Cancel Quit"))
+        alert.addButton(withTitle: L10n.text("Quit Without Saving"))
 
         switch alert.runModal() {
         case .alertFirstButtonReturn:

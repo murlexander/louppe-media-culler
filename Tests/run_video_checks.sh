@@ -8,11 +8,13 @@ mkdir -p .build/video-checks/module-cache
 swiftc \
     -sdk "$SDK" \
     -module-cache-path .build/video-checks/module-cache \
+    -D LOUPPE_TESTING \
     -parse-as-library \
     Sources/Louppe/XMP/XMPExactFileSystemPath.swift \
     Sources/Louppe/DurableFileIO.swift \
     Sources/Louppe/SourceOrganizationStorageSafety.swift \
     Sources/Louppe/FileOperationJournal.swift \
+    Sources/Louppe/Localization.swift \
     Sources/Louppe/Models.swift \
     Sources/Louppe/AppDateFormat.swift \
     Sources/Louppe/FolderScanner.swift \

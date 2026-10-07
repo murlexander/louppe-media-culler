@@ -1,23 +1,19 @@
 # Audit implementation — 2026-09-29
 
-All **17 confirmed findings** from the [full audit](README.md) have been implemented
-in the canonical app and website repositories. Three implementation agents owned
-file safety, session state, and media/UI; the coordinator owned standalone XMP,
-website consent, integration, documentation, and packaging. Separate independent
-reviews of XMP and consent caught additional concrete boundary cases, which were
-fixed and regression-tested before completion.
+All **17 confirmed findings** from the [full audit](README.md) were fixed in the
+canonical repositories. Three agents owned file safety, session state, and media/UI;
+the coordinator owned XMP, consent, integration, docs, and packaging. Independent
+XMP/consent reviews found further boundary cases, fixed and regression-tested.
 
-Changes remain local on `main`. Existing work was preserved. No commits, pushes,
-public release, website deployment, or original user-media operations were made.
-The current version remains **1.10.0 (12)**, the existing unreleased cycle after
-verified latest public **v1.9.0 (11)**. The requested Help button remains anchored
-24 points from the window's bottom/trailing edges, with reserved overflow footer.
+As of 29 September, changes were local on `main`, with existing work preserved.
+No commits, pushes, release, deployment, or original user-media operations occurred.
+Version remained **1.10.0 (12)** after public **v1.9.0 (11)**. The Help button stayed
+24 points from the bottom/trailing window edges, with reserved overflow footer.
 
-The audit is retired as an active work list. Remaining app investigations,
-optimizations, and acceptance are transferred to [BACKLOG.md](../../../BACKLOG.md#audit-follow-ups)
-(AUD-01–AUD-24); implemented website consent publication is WEB-AUD-01 in the
-[website backlog](../../../../website/BACKLOG.md#implemented-locally-awaiting-publication).
-The original reports, tests, and evidence remain historical records.
+The audit is retired. App follow-ups are in [BACKLOG.md](../../../BACKLOG.md#audit-follow-ups)
+(AUD-01–AUD-24). Website consent was unpublished at closeout and is now published;
+WEB-AUD-01 acceptance remains in the [website backlog](../../../../website/BACKLOG.md#browser-acceptance).
+Reports, tests, and evidence preserve the 29 September record.
 
 ## Finding-to-fix map
 
@@ -43,48 +39,38 @@ The original reports, tests, and evidence remain historical records.
 
 ## Critical publication and recovery boundaries
 
-Standalone XMP freezes review metadata at confirmation as before. It retains
-three long-lived workers and per-worker serial parsing, with one packet in
-memory at a time. The new authority covers selected and unselected same-stem
-siblings. Identity failure reports external modification with **Rescan**; it cannot
-be disguised as successful “Already current.” Existing packet raw-byte/revision
-CAS remains mandatory for updates.
+Standalone XMP freezes metadata at confirmation, with three long-lived workers,
+serial parsing per worker, and one packet in memory at a time. Authority includes
+unselected same-stem siblings. Identity failure reports external modification with
+**Rescan**, including “Already current.” Updates still require raw-byte/revision CAS.
 
-The original parent is held throughout temporary creation/write/full sync,
-final source and packet validation, rename, owned-temp cleanup, and directory
-flush. A folder pathname replacement cannot redirect writes or cleanup into the
-replacement directory. Final rename also verifies the named temporary against
-its immutable post-flush stat: regular type, device/inode, birth, size, mtime,
-ctime. Independent review reproduced an unowned temporary substitution before
-that guard; the final production helper throws DestinationChanged and preserves
-the original sidecar. Same-inode edits are covered separately. An unowned
-replacement temporary is preserved, while Louppe may clean its own inode.
+A held original-parent descriptor covers temporary creation/write/full sync,
+validation, rename, owned cleanup, and directory flush, preventing pathname
+replacement from redirecting mutation. Final rename checks immutable post-flush
+stat: regular type, device/inode, birth, size, mtime, and ctime. Independent review
+reproduced temporary substitution; the final helper throws DestinationChanged and
+preserves the sidecar and foreign temporary. Same-inode edits have separate tests;
+only an owned inode may be cleaned.
 
-Save recovery separates *observed desired bytes* from *durably saved state*.
-An observed rename may advance exact CAS lineage/generation without advancing
-the successful sequence. Directory-sync recovery runs under the existing stable
-folder lock, validating exact bytes and authority before and after a real full
-flush. A fully synced backup is also discard-safe. If both fail, in-memory
-ratings stay dirty, Retry can reuse the request sequence, and unsafe Quit is
-refused. Disconnect/reconnect can adopt only this access's marked interrupted
-commit, never arbitrary older backup equality.
+Observed desired bytes advance CAS lineage/generation, not the successful save
+sequence. Recovery validates bytes and authority before/after full directory sync
+under the stable folder lock; a fully synced backup is also discard-safe. If both
+fail, ratings stay dirty, Retry keeps its sequence, and Quit is refused.
+Disconnect/reconnect may adopt only this access's marked interrupted commit,
+never arbitrary older-backup equality.
 
-Generated Move partials require checkpointed inode ownership for cleanup; a
-started incomplete packet cannot satisfy the final intended digest. Staged or
-completed packets still require that digest. Retirement recognizes its two
-reserved names and refuses dual/replaced candidates. Unrecorded or ambiguous
-artifacts remain preserved/unresolved. The global identity-capture API continues
-to support directories; only media/journal mutation boundaries require regular
-files. No filename alone establishes ownership.
+Generated Move partial cleanup requires checkpointed inode ownership; `.started`
+bytes need not match the final digest, but staged/completed packets must.
+Retirement checks both reserved names and refuses dual/replaced candidates.
+Unrecorded or ambiguous artifacts stay unresolved. Generic identity capture still
+supports directories; media/journal mutation requires regular files. Names alone
+never establish ownership.
 
-Website withdrawal disables the local GA property before further custom events,
-reconciles all active tabs, and removes stale saved acceptance if quota prevents
-writing a rejection. It does not automatically reload an unpersistable refusal.
-A delayed earlier acceptance event cannot clear the current visit's refusal.
-If the browser refuses both writes and removal, that refusal is necessarily
-limited to the current visit; navigation cannot remember a choice the browser
-will not store. No production Google traffic/compliance claim is made from VM
-state tests. Website source fixes remain unpublished.
+Withdrawal disables GA before custom events, reconciles tabs, and removes stale
+acceptance if rejection writes fail. Unpersistable refusal neither auto-reloads nor
+accepts delayed earlier acceptance. If writes and removal both fail, refusal lasts
+only for that visit. VM tests prove no Google-traffic/compliance result. Website
+fixes were unpublished on 29 September.
 
 ## Measured optimizations
 
@@ -95,11 +81,10 @@ state tests. Website source fixes remain unpublished.
 | Next short WAV after canceling abandoned one-hour stereo reader | 4.013112 s | 0.257031 s, about 94% less | Serial lane held until cancellation exits; renewed request has fresh result |
 | Re-request canceled long WAV | 0.000039 s stale abandoned cache hit | 4.574135 s fresh complete read | Canceled partial analysis is not cached |
 
-These are diagnostic measurements on this machine, not latency promises or
-hardware-dependent test thresholds. Collision search still needs work for
-externally occupied suffixes or overlapping nonidentical families; it remains
-cancellable. Unconfirmed main-thread/index opportunities listed in the baseline
-audit were not promoted into speculative architectural changes.
+Timings are local diagnostics, not latency promises or hardware-dependent test
+thresholds. Externally occupied suffixes and overlapping nonidentical families
+still need cancellable search. Untimed index/main-thread opportunities did not
+justify architectural changes.
 
 ## Integrated verification
 
@@ -124,19 +109,15 @@ Final checks completed against the frozen production sources:
 | Stable app relaunch and preferences | Process running; before/after preferences exactly equal |
 | Source freeze/diff validation | Production build inputs unchanged through final checks/package; only two test synchronization files changed; both repositories' `git diff --check` clean |
 
-The existing skipped drive-row test is the same baseline environment limitation:
-SwiftUI's XCTest host supplies no in-process AX children. Gallery's optional
-control-by-control AX/Tab checks are likewise not exercised on this host; its
-actual native playback and mounted visible controls regression passes.
+The drive-row skip is the baseline host limit: no SwiftUI AX children. Gallery's
+optional AX/Tab checks were also unavailable; native playback and mounted-control
+regressions passed.
 
-The first post-guard full run exposed two **test observation races**, not product
-failures: Gallery accepted `toggle()`'s optimistic Bool before native asset
-startup, and the Quit test read save-status/Retry before its completion observer
-cleared the active count. Tests now wait for actual ready/playing/advancing time
-and the existing persistence-idle barrier. Exact failed/successful durability
-outcomes and on-disk bytes remain independently asserted. The durability case
-also passed five isolated repetitions; 69 related media/native/Hotkey integration
-cases passed after synchronization. The final complete run has zero failures.
+The first full run exposed two **test observation races**: Gallery read optimistic
+`toggle()` state before native startup; Quit read status/Retry before the completion
+observer cleared the count. Tests now await ready/playing/advancing time and
+persistence idle. Save outcomes and disk bytes remain asserted. Durability passed
+five isolated repeats; 69 media/native/Hotkey cases passed. Final full run: zero failures.
 
 The installed executable SHA-256 is
 `487290060dd74a37031aeb27dfde5da49783345b49c9d4f94d5e49c2ed63faef`.
@@ -146,12 +127,9 @@ of that exact installed executable with a temporary bundle identity and updates
 and Finder service registration disabled; the stable identity/preferences were
 not used for its fixture session. The stable app was relaunched afterward.
 
-
-The environment requires full Xcode and temporary SwiftPM scratch paths to
-avoid File Provider FinderInfo metadata breaking XCTest signing. Test-only
-synchronization waits for actual native playback and the save completion
-observer; it does not substitute optimistic controller flags or arbitrary
-sleep for production completion.
+Full Xcode and temporary SwiftPM paths avoid File Provider FinderInfo signing
+failures. Synchronization waits for native playback and save completion, not
+optimistic flags or arbitrary sleep.
 
 ## Detailed reports and evidence
 

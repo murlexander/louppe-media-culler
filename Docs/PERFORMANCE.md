@@ -1,347 +1,261 @@
 # Performance architecture
 
-Read this before changing scanning, filtering, image decoding, sidecar
-persistence, or Clean Up. It records the active ownership and resource limits.
+Ownership and resource limits for scanning, filtering, decoding, persistence,
+and Clean Up. Read the relevant sections before editing.
+
+## Disposable verification fixtures
+
+Performance fixtures use `/private/tmp`. On 7 October 2026, a Documents control
+acquired external `UF_TRACKED`/`UF_HIDDEN` flags without Louppe running. ctime
+and scan visibility changed; bytes, inode, size, and mtime did not. Temporary
+controls and twenty pairing repetitions stayed stable. Retain failure
+checkpoints/identities and original-byte assertions; production replacement
+checks and five-second waits remain unchanged. Actual volume/provider acceptance
+uses separately selected disposable mounts.
 
 ## Main-actor rule
 
-`SessionStore` owns UI state and is `@MainActor`. It freezes mutable file
-metadata for saving and applies completed results; entry construction,
-encoding, and file operations belong elsewhere:
+`SessionStore` is `@MainActor`: it owns UI state, freezes mutable file metadata,
+and applies results. Entry construction, encoding, and filesystem loops run
+off-main. Snapshot reads, revision checks, and writes share a 512 MiB ceiling;
+encoded excess fails before locks/writes without consuming Retry's sequence.
+Lazy JPEG metadata verifies identity before/after I/O; scan cancellation covers
+persistence reads and final identity checks.
 
-- `SessionPersistence` is an actor. It serializes JSON encoding, typed
-  sidecar/backup outcomes, schema validation, newest-valid reads, and durable
-  atomic writes. `DurableFileIO` flushes each new snapshot, atomically
-  replaces its destination, and flushes the parent directory. Each open
-  session carries a stable volume/inode/birth identity for its source folder
-  plus the SHA-256 revision of the exact raw sidecar bytes that were read.
-  Both are rechecked at the final replacement boundary. Backups and a
-  cross-process advisory lock are keyed by that stable folder identity. The
-  lock spans exact sidecar and backup revision checks, replacement or fallback
-  writing, and local lineage update, so two Louppe processes cannot advance
-  from the same snapshot. Actor-assigned snapshot generations—not wall time—
-  order current sidecar and backup copies. Save sequence numbers prevent a
-  late older task from replacing a newer snapshot. Folder switching, rescan,
-  and Close Session await a safe result before discarding the live item array.
-  When the exact opened path is absent because its card/drive disconnected,
-  saving advances only that stable identity's local backup under the same lock;
-  it never recreates the path, and any replacement or ambiguous path failure
-  remains a conflict. Post-rename sync errors adopt exact observed bytes only
-  into CAS lineage. They count as durable only after a real recovery directory
-  flush under the same lock, or a fully synced backup; failed durability keeps
-  the generation dirty and its save sequence retryable. A reconnect can adopt
-  only the one sidecar revision that the same
-  access marked as a possible interrupted commit, never an ordinary rollback
-  to an older backup. `SessionStore` tracks a monotonic live-change generation
-  against the generation captured by each successful sidecar/backup request.
-  The just-opened scan is generation zero and is already a discard-safe
-  baseline. Quit first awaits an active checkpoint, starts no new I/O when the
-  live generation is already durable, and submits one fresh snapshot only when
-  live ratings are newer. Failure of an already-running generation-zero repair
-  does not block Quit; failure to secure a newer live generation does.
-  Pairing-mode changes never
-  discard it: they reproject the discovered physical-file records in memory.
-  App termination uses AppKit's asynchronous terminate-later reply, so it can
-  retry/refuse an unsafe Quit without blocking the main actor; a dedicated
-  termination barrier rejects mutations after the final snapshot boundary.
-  Rating saves use a 500 ms trailing delay plus a five-second maximum dirty
-  age. While one actor write is slow, repeated maximum-age checkpoints
-  coalesce into one replaceable request for the newest live snapshot. A save
-  freezes per-file rating metadata and identity on the main actor, then a
-  detached task builds entries and reconciles retained missing files before
-  the persistence actor encodes and writes them. The 100,000-file check on
-  2026-09-28 measured 105 ms for capture and 123 ms for background construction;
-  keep measuring the capture cost before considering a rating write-ahead log.
-- `CleanUpWorker` receives immutable snapshots and uses a fresh `FileManager`
-  inside its detached task. Trash and restore roll back RAW+JPEG pairs after a
-  partial failure and explicitly warn if rollback itself fails. `SessionStore`
-  applies the returned batch once.
-- `XMPMetadataStore` is a non-main actor and the only owner of XMPCore packet
-  parsing plus XMP read/merge/CAS/atomic publication. Standalone Metadata
-  (XMP) preflight and publication each use exactly three long-lived worker
-  tasks with one serial store per worker; they never create one task per photo
-  or retain a batch of complete packets. The immutable preflight plan keeps
-  only exact paths, metadata snapshots, file revisions, and SHA-256 packet
-  fingerprints. Standalone publication also carries every selected and
-  unselected stem-family member's scanned identity, the original parent binding,
-  and the opened source-folder authority. Preflight and final publication
-  revalidate them. Temporary creation, rename, cleanup, and directory flush
-  use one held parent descriptor; the flushed temporary's identity is checked
-  before rename. Existing packet-byte/revision CAS remains mandatory.
-  Each worker reparses one packet immediately before commit, so
-  a change after confirmation becomes a visible conflict. Reads refuse leaf
-  symlinks and non-regular
-  files, stop at 64 MiB, and retain the exact bytes plus device/inode/time
-  revision. The final validation immediately precedes a flushed same-directory
-  temporary rename through `DurableFileIO`; creates use an exclusive rename,
-  updates compare the live raw bytes and identity, and committed bytes are
-  reparsed before success. Exact filesystem bytes remain plan authority.
-  `SessionStore` owns the one XMP publication generation and cancellation
-  flag separately from `activeFileOperation`: rating/navigation may continue,
-  while a second file mutation is blocked. Open/Close Folder, Rescan, and Quit
-  request cancellation and await the worker's between-file or completed atomic
-  boundary; a late completion is applied only to the same scan/folder token.
-- `ImagePipeline` uses two bounded `OperationQueue`s: full-size decodes stay
-  limited to two (peak-memory bound for 4096 px images), while thumbnails get
-  their own lane of `min(4, cores/2)` because 320 px decodes are small and a
-  fresh Grid fills visibly faster. Requests for the same URL/size are
-  coalesced; foreground and prefetch calls share the same in-flight operation,
-  and a foreground join promotes utility prefetch work. With separate queues
-  the current full image never waits behind tile backlog at all.
-- `HistogramPipeline` decodes at most two 1,024-pixel photo previews at once,
-  coalesces same-photo requests, and retains only 256 small histogram value
-  results. A cancelled Info-panel request removes its own waiter and cancels a
-  queued decode when it was the last waiter; a safely finishing in-flight
-  decode cannot publish into that removed request. Videos, audio, unsupported files,
-  and multi-selection summaries do not enqueue analysis.
-  `RawHistogramPipeline` is a separate RAW-primary-only lane. It waits 700 ms,
-  runs one utility-priority Core Image `CIRAWFilter` decode at a time, and uses
-  the filter's native scale plus a final lazy bound so neither dimension of
-  its linear-light RGBA-float analysis buffer exceeds about 1,024 pixels.
-  Duplicate content-revision requests coalesce; cancellation removes stale
-  waiters and queued work. Its 128-entry LRU retains numeric histogram results
-  only, never decoded pixels. Unsupported/unknown RAW decoders return no result
-  and leave the rendered-preview analysis in place.
-  `ClippingPreviewPipeline` reuses `ImagePipeline`'s coalesced full preview and
-  transforms at most two images concurrently.
-- `AudioLevelPipeline` starts only for the selected playable video or audio
-  recording (after the Info-panel dwell, or when the Gallery needs an audio
-  waveform). One utility-priority `AVAssetReader` PCM decode runs at a time,
-  same-content requests coalesce, and cancellation removes stale waiters.
-  Canceling the last waiter stops a running reader at its checked boundary;
-  the serial lane stays occupied until that task exits. Completion compares
-  operation identity, so an abandoned request cannot consume/cache a renewed
-  same-revision request. Histogram lanes share that completion guard. Its
-  64-entry LRU retains only per-channel min/max/RMS envelope bins and sample
-  peaks, never decoded samples or on-disk output. Temporal resolution is 20
-  bins per second, clamped to 256...6,000 bins per recording; this keeps the
-  live playback meter responsive while bounding a stereo result to roughly
-  144 KiB of numeric payload. The LRU also has a 768,000-envelope total budget
-  (roughly 9 MiB of three-float result payload), so multichannel recordings
-  evict older results proportionally sooner. Channels are analyzed
-  independently; never mix them down for the Info meter or Gallery waveform.
-- `HighResolutionImagePipeline` is the separate 100% lane. It keeps lazy,
-  oriented Core Image source recipes for at most four recent photos, renders
-  at most two 1,024-source-pixel tiles concurrently, coalesces identical tile
-  requests, and discards stale generations before the AppKit viewport can
-  display them. The viewport requests only its visible tiles plus one tile of
-  margin.
-- Video first frames share the bounded thumbnail lane, memory/disk cache, and
-  in-flight request coalescing. `AVAssetImageGenerator` is called
-  asynchronously from that background operation with exact zero-time
-  tolerances; never generate movie frames from a SwiftUI body or main actor.
-- `FolderScanner` reads per-file EXIF on concurrent workers
-  (`DispatchQueue.concurrentPerform`, up to 8 chunks) because metadata
-  extraction dominates scan time. Workers return chunks through a small
-  lock-protected `ChunkResults` owner and the chunks are concatenated in index
-  order; the final chronological sort settles ordering, so output is identical
-  to a serial pass (verified by order-hash benchmark). The `isCancelled`
-  closure is `@Sendable` and polled from those workers; a bare
-  `{ Task.isCancelled }` silently reads false on GCD threads, which is why
-  `SessionStore.openFolder` bridges task cancellation through
-  `FolderScanner.CancelFlag` via `withTaskCancellationHandler`.
+- `SessionPersistence` serializes encoding, schema validation, newest-valid
+  reads, typed sidecar/backup outcomes, and durable writes on one actor.
+  `DurableFileIO` writes → flushes → atomically replaces → flushes the parent.
+  Each session carries source-folder volume/inode/birth identity and SHA-256 of
+  the exact sidecar bytes. Recheck both before replacement. Stable folder
+  identity keys backups and the cross-process advisory lock; that lock spans
+  sidecar/backup revision checks, replacement/fallback, and lineage update.
+  Actor-assigned generations order copies; sequence numbers reject late older
+  saves. Switching, rescan, and Close Session await a safe result before discard.
+- A disconnected source saves only to its stable-identity backup under the same
+  lock. Never recreate missing paths or accept replacements/ambiguous failures.
+  Rename followed by sync failure establishes observed CAS lineage, but becomes
+  durable only after a recovery directory flush under that lock or a fully
+  synced backup. Otherwise retain dirty state and the retryable save sequence.
+  Reconnect may adopt only the possible interrupted-commit revision marked by
+  that access, never an older backup rollback.
+- `SessionStore` compares live change generation with each successful request's
+  captured generation. The opened scan is a safe generation-zero baseline.
+  Quit awaits checkpoints, starts no I/O for durable state, and saves once if
+  ratings are newer. Optional generation-zero repair failure does not block
+  Quit; unsecured new changes do. Pairing reprojects files without discarding
+  them. AppKit's asynchronous terminate-later reply allows retry/refusal, and
+  the termination barrier rejects mutations after the final snapshot boundary.
+- Saves use a 500 ms trailing delay and five-second maximum dirty age. While a
+  write is slow, checkpoints coalesce into one replaceable newest request.
+  Main-actor capture freezes metadata/identity; a detached task builds entries
+  and reconciles missing files before actor encoding/writing. On 2026-09-28,
+  100,000 files took 105 ms to capture and 123 ms to construct in background.
+  Measure capture cost before considering a rating write-ahead log.
+- `CleanUpWorker` takes immutable snapshots and a fresh `FileManager` in its
+  detached task. It handles RAW+JPEG partial-failure rollback and reports rollback
+  failures; `SessionStore` applies one batch.
+- `XMPMetadataStore` alone owns XMPCore parsing and XMP read/merge/CAS/publication
+  off-main. Standalone Metadata (XMP) preflight and publication each use exactly
+  three long-lived tasks, one serial store each. Never create tasks per photo or
+  retain complete packet batches. Plans retain exact paths, metadata snapshots,
+  revisions, and SHA-256 fingerprints. Publication also carries selected and
+  unselected stem-family scan identities, parent binding, and opened-folder
+  authority. Revalidate them in preflight and immediately before commit.
+  One held parent descriptor owns temporary creation, rename, cleanup, and
+  flush; check the flushed temporary's identity before its same-directory rename. Reads reject
+  leaf symlinks/non-regular files, stop at 64 MiB, and retain raw bytes plus
+  device/inode/time revision. Reparse one packet immediately before commit; post-confirmation
+  changes become conflicts. Creates rename exclusively; updates compare live
+  bytes/identity. Reparse committed bytes before success. Exact filesystem bytes
+  own plans; packet-byte/revision CAS remains mandatory.
+- XMP publication has one `SessionStore` generation/cancellation flag, separate
+  from `activeFileOperation`. Ratings/navigation continue; other file mutations
+  wait. Open/Close Folder, Rescan, and Quit cancel and await a between-file or
+  completed atomic boundary. Apply late results only to the same scan/folder token.
+- Welcome drive discovery uses one serial actor. Physical eligibility and Disk
+  Arbitration UUID/path identity precede fresh capacity reads; a second DA lookup
+  discards replacements during I/O. No filesystem identity reads, recursive scans,
+  or per-volume tasks run before the folder picker. Discovery stops during review.
+- `ImagePipeline` has separate bounded `OperationQueue`s: two full decodes
+  (4096 px bound) and `min(4, cores/2)` thumbnail decodes (320 px). Same URL/size
+  requests coalesce across foreground/prefetch; foreground joins promote utility
+  work. Thumbnail backlog cannot delay the full-image lane.
+- `HistogramPipeline` runs two 1,024-pixel photo decodes, coalesces requests,
+  and retains 256 numeric results. Cancellation removes its waiter and cancels
+  queued work when no waiter remains; finishing decodes cannot publish to removed
+  requests. Videos, audio, unsupported files, and multi-selection skip analysis.
+  `RawHistogramPipeline` handles RAW primaries after 700 ms: one utility
+  `CIRAWFilter` decode, native scaling, and a final lazy bound keeping each
+  extended-linear RGBA-float dimension near 1,024 pixels. Its 128-entry LRU
+  retains numbers, never pixels. Same revisions coalesce; cancellation removes
+  stale waiters/queued work. Unsupported/unknown decoders leave rendered analysis
+  in place. `ClippingPreviewPipeline` shares the coalesced full preview and runs
+  two transforms.
+- `AudioLevelPipeline` runs only for the selected playable video/audio after
+  Info dwell or a Gallery waveform request. One utility `AVAssetReader` PCM
+  task runs at a time; same revisions coalesce. Last-waiter cancellation stops
+  the reader at a checked boundary, and its lane stays occupied until exit.
+  Completion checks operation identity so abandoned work cannot consume/cache a
+  renewed request; histogram lanes share this guard. The 64-entry LRU stores
+  independent channel min/max/RMS envelopes and sample peaks, never samples or
+  disk output. Use 20 bins/second, clamped to 256...6,000 per recording: stereo
+  payload is about 144 KiB. The 768,000-envelope budget (roughly 9 MiB of
+  three-float payload) evicts multichannel results sooner. Never mix channels
+  for meters/waveforms.
+- `HighResolutionImagePipeline` retains four lazy oriented Core Image recipes
+  and runs two 1,024-source-pixel tile renders. Identical requests coalesce;
+  stale generations cannot display. Request visible tiles plus one tile margin.
+- Video first frames share thumbnail queues, caches, and coalescing.
+  `AVAssetImageGenerator` runs asynchronously in background with exact zero-time
+  tolerances; never generate frames from SwiftUI bodies or the main actor.
+- `FolderScanner` uses `DispatchQueue.concurrentPerform` with up to 8 metadata
+  chunks. Lock-protected `ChunkResults` concatenates chunks in index order;
+  chronological sorting matches serial output, verified by order-hash benchmark.
+  Workers poll the `@Sendable` `isCancelled` closure. `{ Task.isCancelled }` reads false on
+  GCD threads, so `SessionStore.openFolder` bridges task cancellation through
+  `FolderScanner.CancelFlag` and `withTaskCancellationHandler`.
 
-Folder enumeration fails visibly when any subfolder cannot be read; an
-incomplete traversal must never become a successful session snapshot. Final
-identity validation iterates physical files without allocating a second flat
-array and checks cancellation between files, including before an empty pass.
-Sorting also checks cancellation before returning its completed result.
-
-Do not move filesystem loops or JSON encoding back onto `SessionStore`.
+Unreadable subfolders fail visibly; incomplete traversal cannot become a saved
+session. Final identity checks iterate physical files without a flattened copy,
+poll cancellation between files and before an empty pass, and check again after
+sorting. Keep filesystem loops and JSON encoding off `SessionStore`.
 
 ## Shared review-metadata storage
 
-`PhotoItem` is mostly immutable scan metadata. Copying the complete
-`@Published [PhotoItem]` array for one F/D decision made rating latency grow
-with the folder size: the 100,000-item check measured 20.5 ms for one rating.
-Each physical `PhotoFile` therefore keeps its decision, stars, color, and
-change dates in one small shared, lock-protected storage object. A read captures
-the complete per-file snapshot. Pair projection, filtering, persistence, and
-Export planning therefore cannot combine mutable fields observed at different
-moments. `SessionStore` sends one `objectWillChange`, updates the touched file
-or RAW+JPEG pair, and adjusts the cached tallies without replacing `items`; the
-same check is about 0.2 ms.
+Copying `@Published [PhotoItem]` for F/D cost 20.5 ms at 100,000 items.
+Each physical `PhotoFile` now shares one small locked store for decisions,
+stars, colors, and change dates. Complete snapshots keep projection, filtering,
+persistence, and Export from mixing fields read at different moments.
+`SessionStore` sends one `objectWillChange`, mutates touched files/pairs, and
+updates tallies without replacing `items`; the same check takes about 0.2 ms.
 
-Value copies of a `PhotoItem` intentionally share that physical-file metadata
-storage. This preserves independent RAW and JPEG metadata through pairing
-projection and gives detached readers a coherent snapshot. Do not
-put the mutable fields back directly into the large value array. Clear All
-remains O(N), but it mutates only the small rating records and publishes once;
-normal single-photo culling is O(1). The large-session rating, clear-all, batch
-rating, pairing, persistence, and undo checks enforce these boundaries.
+Value copies intentionally share physical-file metadata, preserving independent
+RAW/JPEG decisions and coherent detached reads. Keep mutable fields out of the
+large value array. Clear All mutates small records once and publishes once:
+O(N), while single-photo culling is O(1). Rating, clear-all, batch, pairing,
+persistence, and undo checks cover this boundary.
 
-The Info panel's multi-selection summary is cached by `SessionStore` and
-invalidated on every `items` or `selectedIndices` assignment, including an
-item replacement at the same index. It contains only scan metadata; decisions,
-stars, colors, playback, and other view publications do not invalidate it.
-Review controls read each aggregate once per body evaluation, iterate the
-selection without sorting or allocating a states array, and stop at the first
-mixed value. These live aggregates must not use the immutable-summary cache.
+`SessionStore` caches the multi-selection scan-metadata summary. Every `items`
+or `selectedIndices` assignment invalidates it, including same-index replacement;
+ratings, stars, colors, playback, and unrelated publications do not. Live review
+aggregates read once per body, walk without sorting/state-array allocation, and
+stop at the first mixed value. Never cache them as immutable scan summaries.
 
 ## Lazy thumbnail invalidation
 
-Batching alone did not cure the stale Browser: on macOS 26 a `LazyVStack`'s
-diff of already-created rows is not a reliable invalidation path — realized
-rows kept old rating badges and the current-photo frame until the view was
-recreated (e.g. Grid and back). Each strip row is therefore `BrowserRow` with
-its own `@ObservedObject` store reference, so every publish invalidates the
-row directly, independent of the container's caching. Two invariants:
+On macOS 26, realized `LazyVStack` rows retained stale badges/current frames
+until recreation (e.g. Grid and back). `BrowserRow` therefore observes the
+store directly through `@ObservedObject`; do not restore a plain `ForEach`
+subtree. Keep `.id(item.id)` for follow-scroll and `ThumbnailView` `@State`
+reset when Clean Up/undo changes the photo at an index.
 
-- Do not turn `BrowserRow` back into a plain value subtree inside the
-  `ForEach` — that reintroduces the freeze.
-- The row's `.id(item.id)` must stay: it is the follow-scroll target and it
-  resets `ThumbnailView`'s cached `@State` image when Clean Up or its undo
-  remaps an absolute index to a different photo.
+Each realized `GridCell` likewise observes `SessionStore` and reads current
+`PhotoItem` in `body`; the outer grid keeps `.id(item.id)`. Pointer, keyboard,
+Clear All, and undo must redraw controls without replacing `items`. Photo/rating
+clicks suppress the next follow-scroll because the tile is already under the
+pointer; keyboard and structural changes still follow stable media IDs.
 
-The Grid has the same lazy-container boundary. Each realized `GridCell`
-observes `SessionStore` directly and reads its current `PhotoItem` inside
-`body`, while the outer lazy grid retains `.id(item.id)` for follow-scroll and
-thumbnail-state correctness. This is especially important because the Grid's
-interactive rating control must redraw immediately after pointer, keyboard,
-Clear All, or undo changes without replacing the large `items` array.
-Direct Grid photo and rating-control clicks suppress the next one-shot
-follow-scroll because their tile is already rendered under the pointer.
-Keyboard navigation and structural current-item changes continue following the
-stable media ID.
-
-The fan-out is bounded: only realized rows and cells subscribe, their bodies
-are a bounds check plus cache-hit lookups, and multiple publishes in one turn
-coalesce into a single update transaction.
+Only realized cells subscribe. Their bodies use bounds checks/cache hits;
+multiple same-turn publications coalesce.
 
 ## Text previews
 
-`TextPreviewLoader` serializes document reads and Markdown parsing off-main.
-Only the current Gallery document requests text after a 40 ms navigation dwell;
-Browser/Grid use a document glyph without loading file contents. Reads are
-bounded to 1 MiB, reject non-regular files, and verify scan identity before and
-after I/O. UTF-8 and BOM-marked UTF-16/32 are decoded explicitly. The reader
-checks cancellation and its view is keyed to content revision, so a late load
-cannot replace a newer selection. No text cache or remote content fetch exists.
-Native text layout retains only the current bounded document.
+`TextPreviewLoader` serializes reads/Markdown parsing off-main. Only the current
+Gallery document loads, after 40 ms dwell; Browser/Grid show a glyph without
+reading. Cap reads at 1 MiB, reject non-regular files, and check scan identity
+before/after I/O. Decode UTF-8 or BOM-marked UTF-16/32 explicitly. Cancellation
+and content revision reject late results. Keep only the current bounded native
+text layout; no text cache or remote fetch.
 
 ## Image cache budgets
 
-- Thumbnails: at most 1,200 objects and 256 MiB decoded cost.
-- Full previews: at most 8 objects and 384 MiB decoded cost.
-- Clipping-warning previews: at most 2 objects and 128 MiB decoded cost.
-- Histograms: at most 256 value-only results; analysis bitmaps are temporary
-  and no larger than 1,024 pixels.
-- RAW histograms: at most 128 value-only results. One temporary extended-linear
-  RGBA-float bitmap is bounded to about 1,024 pixels on its longest side.
-- Actual-size tiles: 128 MiB decoded cost across 1,024 × 1,024 source-pixel
-  tiles, including both normal and clipping-warning variants. The lazy source
-  recipe is not a whole decoded bitmap.
-- Disk thumbnails: 512 MiB maximum and 90-day maximum age. Maintenance runs at
-  most daily on the utility queue after a launch delay, so enumerating a large
-  cache cannot compete with the first Gallery/Grid switch.
+| Cache | Limit |
+|---|---|
+| Thumbnails | 1,200 objects; 256 MiB decoded |
+| Full previews | 8 objects; 384 MiB decoded |
+| Clipping previews | 2 objects; 128 MiB decoded |
+| Histograms | 256 numeric results; temporary 1,024-pixel previews |
+| RAW histograms | 128 numeric results; temporary extended-linear RGBA-float bitmap near 1,024 pixels on longest side |
+| Actual-size tiles | 128 MiB total; 1,024 × 1,024 source-pixel tiles, normal and clipping variants; lazy recipes retain no whole bitmap |
+| Disk thumbnails | 512 MiB; 90-day age; utility maintenance at most daily after launch delay |
 
-Decoded cost is `bytesPerRow × height`. Thumbnail JPEG encoding/writing happens
-after the image is returned to the view. Keep the undersized-embedded-preview
-fallback in `ImagePipeline.decodeImage`; it prevents pixelated JPEG previews.
-An item with scan-time physical identity never reads identity-less v4 or v3
-cache bytes: timestamps alone cannot prove which inode produced them on every
-supported filesystem. The one-time cold v5 migration is intentional, happens
-on the bounded decode queue, and must not block the Grid's first frame. Only an
-older/synthetic item without scanned identity may use the byte-exact v4 cache
-or, for unambiguous ASCII paths, v3; even then its cache timestamp must be at
-least the captured source timestamp. The validated result is atomically
-promoted. A corrupt v5 entry is replaced after a fresh source decode. Keep this
-fail-closed boundary: a same-path replacement must never inherit old pixels,
-even though a cold RAW decode is much slower than a cached JPEG read.
-Neighbour prefetch is debounced by 60 ms, and a new full-image view waits 40 ms
-before enqueuing a decode so key repeat does not flood the bounded queue with
-views that have already disappeared. Fit/phone-size clipping previews share
-that same delay, while secondary Info-panel EXIF and histogram work waits
-80 ms. RAW histogram work has its own 700 ms dwell and single utility lane;
-it never delays that first rendered histogram. Full and clipping-preview
-memory-cache hits are still immediate.
+Decoded cost is `bytesPerRow × height`. Return thumbnails before JPEG
+encoding/writing. Preserve the undersized embedded-preview fallback in
+`ImagePipeline.decodeImage` to avoid pixelation. Production scan identities
+reject identity-less v4/v3 pixels; timestamps cannot prove inode ownership.
+Cold v5 migration runs on bounded decode queues without blocking Grid's first
+frame. Identity-less legacy/synthetic items may read byte-exact v4, or v3 for
+unambiguous ASCII paths, only when cache time is at least the captured source
+time. Atomically promote validated results. Replace corrupt v5 entries after
+fresh source decode; replacements never inherit old pixels, even for slow RAW.
 
-At 100%, document points are source pixels divided by the window's backing
-scale: one image pixel therefore maps to one physical display pixel on both
-standard and Retina screens. `ActualSizeViewport` stores the point under the
-viewport center as normalized image coordinates and is deliberately not
-published; scroll-wheel traffic must not invalidate the rest of the session
-UI. The AppKit scroll view survives item changes, clamps the position for each
-new aspect ratio, and preserves an unscrollable axis for the next larger
-photo. Pressing S or closing/changing folders resets it to center.
+| Deferred work | Dwell |
+|---|---|
+| Neighbour prefetch | 60 ms debounce |
+| Full/clipping view decode | 40 ms; memory hits remain immediate |
+| Secondary Info EXIF/histogram | 80 ms |
+| RAW histogram | 700 ms; separate utility lane; rendered histogram is immediate |
 
-The Gallery zoom slider spans 30–400%; Fit and trackpad pinch retain the
-5–400% geometry range so large photos can still fit completely. Both use native
-`NSScrollView` magnification of that same backing-pixel document. Below 100%,
-the canvas uses the bounded full preview; RAW display mode supplies that
-preview from `RawImageRendering`, using the same Apple RAW defaults as tiles.
-At 100% and above it requests only
-the visible source tiles and their existing one-tile ring. The two-operation
-queue and 128 MiB tile budget are unchanged. Native pinch owns its transform
-until the gesture ends; occasional scale publications update the footer
-without making the rest of the session redraw for every gesture event.
-S returns a custom zoom to centered 100%, then toggles back to Fit. A retains
-the phone-size/Fit toggle.
+At 100%, document points equal source pixels/backing scale, giving one physical
+pixel per source pixel on standard/Retina displays. `ActualSizeViewport` holds
+normalized center position without publishing scroll traffic. The persistent
+AppKit view clamps each aspect ratio and preserves an unscrollable axis for the
+next larger image. S and folder close/change reset to center.
 
-Removing the actual-size viewport retires its source before reporting tile
-loading idle. Late AppKit layout/scroll callbacks must not restart requests on
-the departing view, or its destruction can strand the toolbar's loading count.
-Explicit configuration can start a fresh load, including for the same photo.
+The Gallery slider spans 30–400%; Fit/pinch geometry spans 5–400%. Both use
+native `NSScrollView` magnification. Below 100%, show the bounded full preview;
+RAW uses `RawImageRendering` with tiles' Apple defaults. At 100%+, request
+visible tiles plus their one-tile ring on the two-operation/128 MiB lane.
+Native pinch owns transforms until completion; occasional footer publications
+avoid full-session redraw. S returns custom zoom to centered 100%, then Fit;
+A toggles phone-size/Fit.
 
-The fitted preview uses `NSMagnificationGestureRecognizer` to finish or cancel
-a pinch; the native scroll view uses live-magnification notifications and
-`NSEvent.phase`. Neither depends on the obsolete `beginGesture`/`endGesture`
-responder callbacks. Completion is idempotent: a fitted preview hands off once
-to the native scroll view, and native magnification releases its ownership so
-later slider changes apply.
-Click-and-drag panning uses window-space pointer deltas converted through the
-current magnification, clamps to the document edges, and shares the same
-non-published viewport state as two-finger scrolling.
-The explicit S reset from a custom zoom interpolates scale and normalized
-position together over a short, ten-frame transition. It makes no per-frame
-store publications. Reduce Motion skips the transition; scrolling, dragging,
-pinching, or a new slider value cancels it. Gesture interruption captures the
-visible viewport and reports its scale before SwiftUI can lay out again.
+Retire a departing actual-size source before reporting tiles idle. Late
+layout/scroll callbacks cannot restart it and strand the toolbar load count.
+Explicit configuration may restart, including the same photo.
 
-Fit and phone-size presentations map a double-click through their actual
-letterboxed image rectangle to a normalized source position, request that
-position from `ActualSizeViewport`, and only then enter 100%. The clicked point
-therefore lands under the 100% viewport center (clamped at image edges), while
-double-clicking the 100% image returns to Fit. The surrounding background does
-nothing in either mode, and S retains its centered reset behavior.
+Fitted previews finish/cancel pinch with `NSMagnificationGestureRecognizer`;
+native scroll views use live-magnification notifications and `NSEvent.phase`,
+never obsolete `beginGesture`/`endGesture`. Completion is idempotent: fitted
+preview hands off once, native magnification releases ownership for slider
+changes. Drag panning converts window deltas through magnification, clamps edges,
+and shares non-published viewport state with two-finger scrolling.
+S reset interpolates scale/position over ten frames without store publications.
+Reduce Motion skips it; scroll, drag, pinch, or slider interrupts it. Capture
+visible position/scale on interruption before SwiftUI layout.
 
-The X preview clipping overlay uses the same 8-bit sRGB luminance thresholds
-as the immediate rendered Info-panel histogram: 0–5 for shadows and 250–255
-for highlights. Fit and phone-size modes reuse a bounded 4,096-pixel warning
-preview. Fully transparent pixels are excluded from histogram totals rather
-than counted as black. At 100%, the threshold is applied inside the existing
-two-operation tile lane, keyed by warning mode, so toggling never constructs a
-whole source-resolution bitmap. Changing photos or warning mode advances the
-viewport generation before stale tile results can display.
+Fit/phone double-click maps the letterboxed image point to normalized source
+position before entering 100%. Center that point, clamped at edges. Double-click
+at 100% returns to Fit; background clicks do nothing, and S stays centered.
 
-RAW display mode is an app preference (`review.rawDisplayMode`), shared by
-Settings and the Gallery source menu. It applies immediately and leaves Grid
-and Browser thumbnails on their fast path. Fitted RAW images render on the
-existing two-operation full-image queue, use the 4,096-pixel allocation bound,
-and share its existing memory budget. Presentation mode separates full-image
-and clipping-overlay cache keys; content revision still owns source identity.
-RAW mode never substitutes a camera preview without the user's per-photo
-**Use Preview** action. The Gallery source label follows completed visible
-tiles, not requested zoom: it stays Preview while any camera-preview regions
-remain, and a RAW-fitted stand-in already counts as RAW. Missing offscreen
-margin tiles do not delay the label. Apple RAW rendering can differ from the
-camera JPEG and other editing software. Histogram analysis remains independent.
+X overlay matches rendered Info histogram's 8-bit sRGB thresholds: 0–5 shadows,
+250–255 highlights. Fit/phone use a 4,096-pixel warning preview. Exclude fully
+transparent pixels from totals. At 100%, apply thresholds in the existing tile
+lane with warning-mode keys, never a full source bitmap. Photo/mode changes
+advance generations before old tiles display.
 
-Apple RAW decoder choice (`review.appleRawDecoder`) is shared by Settings and
-the Gallery menu, defaulting to Apple Default. RAW 9 is an explicit macOS 27
-opt-in, checked against each filter’s supported versions before assignment.
-On-demand Core Image resources are prepared on a background worker with a
-15-second timeout and a bounded 16-second wait; failures return unavailable
-without a different decoder. RAW 9 does not retry using the CPU renderer.
-Preview, clipping, lazy-source, and therefore tile caches distinguish decoders;
-Fast previews and non-RAW images retain shared keys. Source switches retire
-viewport tiles and reject previous source generations. Fitted and clipping
-loads also compare decoder, mode, revision, and cancellation before publishing.
+`review.rawDisplayMode` is shared by Settings/Gallery and applies immediately;
+Grid/Browser retain fast thumbnails. Fitted RAW uses the two-operation full
+queue, 4,096-pixel bound, and existing memory budget. Presentation mode separates
+full/clipping keys; revision owns source identity. Camera-preview fallback
+requires per-photo **Use Preview**. Labels reflect completed visible tiles:
+show Preview while preview regions remain; a RAW-fitted stand-in counts as RAW.
+Missing offscreen margin tiles do not delay labels. Apple RAW can differ from
+camera JPEGs/editors; histogram analysis stays independent.
 
-Decoder benchmark, 2026-09-29, macOS 27 / Xcode 27 SDK: three uncompressed
+`review.appleRawDecoder` is shared by Settings/Gallery and defaults to Apple
+Default. RAW 9 is opt-in on macOS 27 and requires each filter's supported
+version. Prepare on-demand Core Image resources off-main with a 15-second timeout
+and bounded 16-second wait. Failure stays unavailable; never substitute another
+decoder or retry RAW 9 on CPU. Preview/clipping/lazy-source/tile caches distinguish
+decoders; Fast and non-RAW keep shared keys. Source changes retire tiles/reject old
+generations. Fitted/clipping publication compares decoder, mode, revision, and
+cancellation.
+
+Decoder benchmark: 2026-09-29, macOS 27/Xcode 27 SDK, three read-only uncompressed
 X-T50 RAFs (XT508475, XT508539, XT508553), separate debug XCTest processes,
-one pass per file and size. All reported versions 7/8/9, default 8. Originals
-were read only. Timings include filter creation and resource preparation.
+one pass per file/size. All supported 7/8/9, default 8. Timings include filter
+creation/resource preparation.
 
 | Render | Apple Default (8) | RAW 9 |
 | --- | --- | --- |
@@ -351,608 +265,411 @@ were read only. Timings include filter creation and resource preparation.
 | Central 1,024-pixel source tile | 0.032–0.122 s | 0.139–0.210 s |
 | Test-process peak RSS | 459 MiB | 469 MiB |
 
-RSS covers the test process only, excluding Core ML/graphics helper services
-and their memory. This single-pass comparison includes concurrent repository
-activity and is not a general device performance guarantee. Repeat with
-`LOUPPE_RAW_BENCHMARK_FOLDER` set to the sample folder and
-`LOUPPE_RAW_BENCHMARK_DECODER=appleDefault` or `raw9`, running
+RSS excludes Core ML/graphics helper memory. This single pass included concurrent
+repository activity; it is not a device-wide guarantee. Repeat with
+`LOUPPE_RAW_BENCHMARK_FOLDER` pointing to samples,
+`LOUPPE_RAW_BENCHMARK_DECODER=appleDefault` or `raw9`, and
 `swift test --disable-keychain --filter AppleRawDecoderTests/testFujiDecoderBenchmark`.
-The API/resource contract is verified against the selected SDK’s CIRAWFilter.h
-and [Apple’s RAW 9 session](https://developer.apple.com/videos/play/wwdc2026/305/).
+The selected SDK's CIRAWFilter.h and [Apple's RAW 9 session](https://developer.apple.com/videos/play/wwdc2026/305/)
+verify the API/resource contract.
 
-For supported RAW primaries, the delayed histogram and clipping Quality cues
-replace that rendered estimate with the scaled Core Image RAW result. The RAW
-processor disables presentation tone curves, renders extended-linear sRGB,
-and uses linear luminance thresholds of 0.002 and 0.995. This is a demosaiced,
-white-balanced RGB decode from RAW sensor data, not a camera-maker proprietary
-per-photosite histogram. It never supplies the X overlay: a RAW-derived mask
-would not register honestly over the differently rendered preview.
+Supported RAW primaries replace the rendered estimate with delayed Core Image
+RAW histogram/clipping Quality cues. Disable presentation tone curves; render
+extended-linear sRGB with luminance thresholds 0.002/0.995. This is demosaiced,
+white-balanced sensor-derived RGB, not a camera-maker per-photosite histogram.
+It cannot supply X overlay because that mask would not align with the rendered
+preview.
 
-Thumbnail cache keys use `PhotoItem.contentRevision`: byte-exact absolute path,
-media kind, size, scan-time physical identity, and captured file timestamps.
-Async thumbnail, full-preview, metadata, histogram, 100% tile, and media playback state
-must also follow that revision rather than presentation ID alone. A same-folder
-rescan deliberately preserves item IDs, so item ID cannot prove that the bytes
-are unchanged. Do not put a filesystem metadata lookup back in
-`ImagePipeline.cacheKey`: lazy grid cells can be recreated during scrolling,
-and synchronous `stat` calls there block the UI thread. Reappearing thumbnail
-cells also seed directly from the memory cache to avoid placeholder churn.
-Movie and audio duration, playability, codec, dimensions, and frame rate are likewise
-captured once by FolderScanner's bounded metadata workers. Filter, sort, and
-Info views must use those values rather than reopening every `AVAsset`.
+`PhotoItem.contentRevision` keys include byte-exact absolute path, media kind,
+size, scanned physical identity, and captured timestamps. Async thumbnail,
+full-preview, metadata, histogram, 100% tile, and playback follow that revision:
+rescans preserve item IDs even when bytes change. Keep filesystem lookups out of
+`ImagePipeline.cacheKey`; lazy-cell recreation must not `stat` on the UI thread.
+Reappearing cells seed from memory to avoid placeholders. FolderScanner captures
+movie/audio duration, playability, codec, dimensions, and frame rate once on
+bounded workers; filters/sorts/Info reuse them instead of reopening `AVAsset`.
 
-The fresh-session default is separate RAW and JPEG review, so the initial scan
-loads both files through the same bounded metadata workers. A 250-pair synthetic
-fixture measured 0.061 seconds in separate mode versus 0.051 seconds grouped on
-the 2026-08-07 verification machine. When grouped mode is selected before a
-scan, `FolderScanner` still keeps a lightweight record for the hidden JPEG using
-filesystem facts already returned by enumeration. The first later switch to
-separate review enriches only those missing JPEG records while the ready session
-remains visible. Pairing projections reuse the enriched physical-file records,
-so subsequent toggles neither walk the folder nor reopen metadata.
+Fresh sessions review RAW/JPEG separately and load both on bounded workers.
+On 2026-08-07, 250 synthetic pairs took 0.061 seconds separate versus 0.051
+seconds grouped. Grouped scans keep hidden JPEG enumeration facts lightweight.
+The first split loads only missing metadata while Ready stays visible; subsequent
+projections reuse enriched records without folder walks or metadata reads.
 
 ## Duplicate + burst grouped review
 
-Duplicate and burst analysis is an explicit, review-only utility task; opening,
-filtering, sorting, and normal navigation must never start it. `SessionStore`
-captures stable displayed-item IDs plus scan-time content revisions, runs one
-cancellable utility task off the main actor, and accepts its result only if the
-same item/revision map is still current. Rescan, RAW+JPEG projection changes,
-Close Folder, and every file operation cancel and invalidate it. Results are
-in-memory for the open session only—there is no disk cache, sidecar field,
-network request, or automatic metadata/file action.
+Analysis starts only on explicit request, never from opening/filtering/sorting/
+navigation. `SessionStore` snapshots displayed IDs/revisions, runs one cancellable
+utility task off-main, and accepts results only for the unchanged map. Rescan,
+pairing, Close Folder, and file operations cancel/invalidate it. Results live
+only in open-session memory; no disk cache, sidecar, network, or automatic
+metadata/file action.
 
-Exact matching buckets physical files by size, then streams same-size
-candidates through SHA-256 using one 1 MiB buffer. Each source is
-identity-checked immediately before and after reading, so a changed or replaced
-file becomes no suggestion rather than a stale result. Visual matching applies
-only to supported photo projections: ImageIO creates at most a 160-pixel
-thumbnail, immediately reduced to a 9 × 8 grayscale signature. It skips a
-pathological bucket with more than 256 distinct signatures and performs at most
-50,000 near-hash comparisons per analysis. The UI must continue to call every
-visual group **Likely Similar**. Burst grouping uses cached still-photo capture
-dates and a configurable consecutive gap (0.5–10 seconds), so changing it is
-O(N) and performs no I/O.
+Exact matching buckets files by size, streams SHA-256 with one 1 MiB buffer,
+and checks identity before/after reads. Changed files yield no suggestion.
+Visual matching handles supported photo projections with ≤160-pixel ImageIO
+thumbnails reduced immediately to 9 × 8 grayscale signatures. Skip buckets over
+256 distinct signatures; cap near-hash comparisons at 50,000. Label all visual
+groups **Likely Similar**. Bursts use cached still-photo dates and consecutive
+0.5–10-second gaps; changing the gap is O(N) without I/O.
 
-Equal visual hashes are joined first, then near-hash matches join only one
-representative from each existing component. Never expand that join into the
-Cartesian product of the matching families: a 4,000-item/two-hash debug fixture
-took 5.95 seconds before this fix and about 0.024 seconds afterward. SessionStore
-retains one group's membership layout keyed by review mode and sensitivity;
-ordinary filter, sort, and rating changes only project that membership. A fresh
-analysis or structural invalidation clears it. Projected headers count visible
-members rather than the original unfiltered group size. Initial grouping and
-sensitivity changes still run synchronously; moving those to cancellable
-background work is a separate improvement for very large sessions.
+Join equal hashes first, then one representative per existing component for
+near matches. Never form Cartesian products: a 4,000-item/two-hash debug fixture
+dropped from 5.95 seconds to about 0.024 seconds. Cache membership by mode and
+sensitivity; filter/sort/rating project it. New analysis or structural change
+clears membership. Headers count visible members. Initial grouping/sensitivity
+changes still run synchronously; cancellable background work for large sessions
+remains an improvement.
 
-Same-name XMP conflict preflight retains typed stable file IDs, scan identities,
-exact metadata snapshots, and exact filesystem paths. Resolution is one small
-main-actor metadata transaction; packet parsing, exact family resolution, and
-publication stay in the existing bounded workers. Every applied batch invalidates
-the old immutable plan and reruns selection and complete preflight.
+Same-name XMP conflict preflight retains typed stable IDs, scan identities,
+metadata snapshots, and exact paths. Apply resolution as one small main-actor
+metadata transaction; parsing/family resolution/publication stay in bounded
+workers. Applied batches invalidate the old plan and rerun selection/full preflight.
 
 ## Grid scrolling
 
-`SessionView` owns the trailing `MetadataPanel` outside the Gallery/Grid mode
-switch. Both modes therefore share one stable panel, and toggling the view does
-not restart its debounced EXIF and histogram tasks. Keep secondary inspection
-work outside the mutually exclusive media canvases.
+`SessionView` owns one trailing `MetadataPanel` outside Gallery/Grid switching,
+so toggles preserve debounced EXIF/histogram tasks. Keep secondary inspection
+outside the media canvases.
 
-`ViewSwitchTests` mounts the real session UI with 106 actual image files,
-multiple day groups, and the current item at the lazy Grid's distant tail. It
-waits for the Grid scroll view and tail thumbnail, then exercises five warm
-Gallery/Grid cycles. Keep those render barriers: timing only a state-enum write
-does not protect the user-visible transition.
+`ViewSwitchTests` mounts the real UI with 106 image files, multiple days, and
+current at Grid's distant tail. Await its scroll view and tail thumbnail, then
+run five warm Gallery/Grid cycles. Preserve render barriers; enum-write timing
+cannot verify visible transitions.
 
-The day-grouped Grid view uses sections inside one `LazyVGrid`. Do not nest a
-separate lazy grid for each day inside a `LazyVStack`: off-screen day heights
-become estimates that SwiftUI corrects during upward scrolling and after tile
-resizing, which makes the viewport jump. `gridColumnCount` is deliberately not
-published because it is navigation-only state; publishing it causes a second
-full grid redraw after each layout change.
+Use day sections in one `LazyVGrid`. Nested day grids in `LazyVStack` estimate
+offscreen heights, then jump on upward scroll or resize. `gridColumnCount` is
+unpublished navigation state; publishing triggers a second full redraw.
 
-Grid photo clicks use `GridImmediateClickSurface`, which commits the first
-mouse-up synchronously and interprets `clickCount == 2` only on the second
-click. Do not restore an exclusive single/double SwiftUI `TapGesture` pair:
-the single recognizer waits for the system double-click interval before it can
-update selection. The native surface also forwards the exact event modifiers,
-rejects drags beyond the Grid's eight-point threshold, and returns keyboard
-navigation ownership to the session.
+`GridImmediateClickSurface` commits first mouse-up synchronously; only the second
+click has `clickCount == 2`. Exclusive single/double SwiftUI `TapGesture` delays
+selection. Forward exact modifiers, reject drags beyond eight points, and return
+keyboard navigation ownership to the session.
 
-The Browser and Grid install the shared `PersistentVerticalScroller` inside
-their SwiftUI scroll content. It forces AppKit's `.legacy` vertical-scroller
-style with autohiding disabled, so the control remains visible and consumes a
-real gutter rather than overlaying thumbnails. Grid column-count calculations
-must subtract `PersistentVerticalScroller.gutterWidth` to match the content
-width AppKit gives the lazy grid. Keep AppKit's native `NSScroller`: the former
-hand-drawn thumb competed with lazy-cell realization during a fast scroll and
-made the indicator visibly step. Once mounted, configuration resolves the
-enclosing scroll view synchronously; only the first unresolved mount lookup is
-queued and duplicate lookups are coalesced. `configure` still early-returns
-once the scroll view is fully configured, otherwise every keystroke and drag
-tick pays a redundant `tile()` layout on both scroll views.
+Browser/Grid share `PersistentVerticalScroller`: native `.legacy`, autohide off,
+with a real gutter. Subtract `PersistentVerticalScroller.gutterWidth` from Grid
+column calculations. Keep native `NSScroller`; the former hand-drawn thumb stepped
+under lazy-cell load. Resolve mounted scroll views synchronously; queue/coalesce
+only the initial unresolved lookup. `configure` returns early once configured,
+avoiding redundant `tile()` on every keystroke/drag.
 
 ## Filtering and derived data
 
-Folder-hierarchy sort computes each distinct relative directory's component
-order once, then sorts photos by cached integer folder ranks and existing
-chronological tie-breaks. It performs no filesystem reads while sorting.
-Byte-exact encoded parent identity keeps Unicode-equivalent displayed paths
-in separate groups. Filter-only changes reuse the prepared hierarchy order.
+Hierarchy sort computes directory component order once, then uses cached integer
+ranks and chronological tie-breaks without I/O. Exact encoded parent bytes keep
+Unicode-equivalent display paths separate. Filter-only changes reuse that order.
 
-Welcome-screen drive discovery uses one serial actor and coalesced refreshes.
-Capacity refresh runs only while Welcome is visible, on topology/activation
-notifications and a 30-second interval; leaving Welcome stops polling. There
-is no per-volume task fan-out or recursive media scan during discovery.
+Welcome drive discovery has one serial actor/coalesced refreshes. While visible,
+refresh on topology/activation and every 30 seconds; stop polling on departure.
+No per-volume tasks or recursive media scans.
 
-`PhotoItem.searchableText` is locale-folded once during scanning. Capture-day,
-aperture, shutter-duration, ISO, video resolution, frame rate, and codec
-values are also cached on `PhotoItem`; do not reopen files when their filters
-or sorts change. Group division compares
-the cached `captureDay` buckets directly — do not reintroduce
-`Calendar.current` calls per adjacent pair in `sameGroup`; a group rebuild
-walks every visible photo. Each filter change creates
-one `PreparedPhotoFilter`, so query normalization, whole-day date bounds, and
-numeric ranges are prepared before walking the photo list. Decision, star, and
-color exclusions are evaluated explicitly from one coherent mutable-metadata
-snapshot; they are never appended to immutable `searchableText`. Metadata sort
-preparation likewise captures one snapshot per item before comparing, avoiding
-lock acquisition during every O(N log N) comparison. Search typing is
-debounced by 150 ms. Camera-setting text edits use the same delay and commit
-all valid drafts in one filter assignment, avoiding repeated full-list walks
-while a value is being typed.
+Cache locale-folded `PhotoItem.searchableText`, capture day, aperture, shutter,
+ISO, video resolution, frame rate, and codec at scan. Filters/sorts never reopen
+files. Compare `captureDay` directly in `sameGroup`; avoid per-pair
+`Calendar.current`. One `PreparedPhotoFilter` prepares query, whole-day bounds,
+and ranges before traversal. Decision/star/color exclusions use one mutable
+snapshot, never immutable `searchableText`. Metadata sort captures snapshots before
+O(N log N) comparisons, avoiding repeated locks. Search/camera-setting drafts
+use 150 ms debounce and one valid filter assignment per commit.
 
-The date and exposure controls are always visible. Their folder-wide
-minimum-to-maximum values are neutral: the corresponding internal filter flag
-is set only after a bound is narrowed, so unknown metadata remains visible in
-the default state. Re-scan keeps narrowed bounds but expands untouched ranges
-to the newly derived folder span. Numeric display formatting is not a filter
-mutation: only explicit endpoint edits parse/commit, preserving all untouched
-stored precision and combining real changes into one filter assignment.
+Date/exposure controls stay visible. Folder-wide full ranges are neutral and
+keep unknowns visible; set internal flags only when narrowed. Rescan retains
+narrowed bounds and expands untouched ranges. Parse only edited endpoints:
+formatting cannot change stored precision, and real edits share one assignment.
 
-The multi-selection Info summary is built only from metadata and byte counts
-already cached on `PhotoItem`. Do not reopen every selected file to assemble
-its camera, lens, date range, size, or type lists.
-Before Clean Up presents or resolves targets, it flushes that debounce so the
-confirmation and filesystem operation use the filter text currently on screen.
-The rating-based Clean Up scope resolves from already-cached folder indices,
-visible indices, or the effective selection; changing it must not rescan files.
+Multi-selection Info uses cached metadata/byte counts for camera, lens, date,
+size, and type summaries. Clean Up flushes filter debounce before confirmation
+and target resolution so both use visible text. Scope uses cached folder/visible/
+effective-selection indices without rescan.
 
-An active folder scan is cooperatively cancellable from the scanning toolbar
-or Escape. Cancellation advances `scanGeneration` before returning to Welcome,
-so late progress, persistence reads, or partial scan results cannot re-enter
-the session after the user has left the scanning view.
+Toolbar/Escape cancels scans. Advance `scanGeneration` before Welcome so late
+progress, reads, or partial results cannot re-enter Ready.
 
 `SessionStore` maintains:
 
-- incremental Yes/No/undecided totals;
-- incremental Unrated/1–5/Mixed star and None/five-color/Mixed totals;
-- cached type/camera/lens counts and labels;
-- cached calendar-day counts and folder-wide aperture/shutter/ISO ranges;
-- a sorted index list reused by filter-only changes;
-- stable Browser id/index entries rebuilt only with the visible generation;
-- cached visible day groups and day-start indices.
-- one visible-location map containing each item index's global position,
-  group, and position inside that group. Navigation, range selection,
-  prefetch, and toolbar status must use this map rather than scanning
-  `visibleIndices` or `visibleGroups` on every key press.
-- one `PhotoItem.id` → current item-index map. Stable selected IDs and rating
-  undo entries resolve through it only after a structural rebuild. A
-  same-folder rescan snapshots current/selected IDs before clearing the old
-  arrays, then remaps surviving visible IDs after the new filter/group
-  generation is ready.
-- one physical-file ID → displayed item-index map. It includes a grouped
-  JPEG's hidden ID, allowing file-level ratings and rating undo to survive
-  pairing projections without choosing the RAW rating or losing the JPEG
-  rating.
+- incremental Yes/No/undecided, Unrated/1–5/Mixed, and None/five-color/Mixed totals;
+- cached type/camera/lens labels/counts, calendar-day counts, and exposure ranges;
+- sort indices reused on filtering; Browser id/index entries per visible generation;
+- visible day groups/day starts and one location map (global/group/local positions)
+  for navigation, ranges, prefetch, and status; never scan `visibleIndices` or
+  `visibleGroups` on every key;
+- one `PhotoItem.id` → current-index map for stable selection/undo after rebuild;
+  same-folder rescans snapshot IDs before clearing, then remap visible survivors;
+- one physical-file ID → displayed-index map, including hidden JPEG IDs, so
+  pairing cannot lose independent metadata/undo.
 
-`FolderScanner.pairFiles` sorts byte-exact paths and group keys before
-projection, so filesystem enumeration and Dictionary order cannot change the
-result between rescans. A pair forms only when exactly one RAW and one JPEG
-share the filename-stem key across the whole opened folder tree; every
-ambiguous group stays separate. This lets a unique RAW in one subfolder pair
-with its unique matching JPEG in another, while repeated camera filenames
-remain independent. Pair stems use exact filesystem bytes. Only ASCII case is
-folded, and only when the volume explicitly reports case-insensitive names;
-unknown behavior fails closed. Accents, composed/decomposed Unicode spellings,
-and non-ASCII case mappings therefore cannot collapse into one pair.
+`FolderScanner.pairFiles` sorts exact paths/group keys, independent of enumeration
+or Dictionary order. Pair only exactly one RAW/JPEG per stem across the entire
+folder tree. Unique matches may cross subfolders; ambiguous/repeated names stay
+separate. Fold ASCII case only on explicitly case-insensitive volumes; unknown
+behavior uses exact bytes. Accents, composed/decomposed Unicode, and non-ASCII
+case cannot collapse pairs.
 
-Physical file IDs are ASCII percent-encoded relative filesystem paths, not
-decoded Swift paths. That lossless identity continues through projection
-maps, selection, rating sidecars, and image-cache keys. Schema 3 requires the
-`percentEncodedFileSystemPath` marker. Both the reader and writer require each
-schema-3 ID to be the canonical ASCII encoding of a valid filesystem path and
-require every primary and hidden paired-file ID to be globally unique.
-Schema-1/2 entries are read only through a raw UTF-8 legacy index, so
-canonically equivalent Unicode byte spellings remain independent during
-migration; the marker prevents legacy alias fallback from colliding with a
-new literal-percent filename.
+Physical IDs are ASCII percent-encoded relative filesystem paths through
+projection, selection, sidecars, and caches. Schema 3 requires
+`percentEncodedFileSystemPath`, canonical ASCII encoding of valid paths, and
+unique primary/hidden IDs in both readers/writers. Schema 1/2 migration uses raw
+UTF-8 indexing to preserve distinct Unicode spellings; the marker prevents legacy
+aliases colliding with literal-percent filenames.
 
-Schema 4 additionally stores one stable identity per physical file: volume
-UUID (with a conservative mount/device fallback), inode, size, birth time, and
-nanosecond modification time. A same-path replacement cannot inherit the old
-rating or trigger an automatic overwrite of the saved session. Verified file
-and folder renames retain ratings, missing originals retain dormant entries
-across later saves, and a returning exact file recovers its decision. ctime is
-excluded only from persistence matching because Louppe-owned rename/rollback
-  changes it without changing the photographed content; live transaction plans
-  refresh and then enforce ctime during each operation. The source directory is
-  captured before the walk and rechecked after metadata extraction, after the
-  session read, and immediately before the scan is applied. Persistence also
-  records the exact `lstat` identity of every ancestor in the opened path, so a
-  replacement directory or dangling symlink cannot be mistaken for an ejected
-  volume and inherit its backup lineage. Device numbers remain strict outside
-  the source volume. A fully captured UUID-owned source may legitimately have a
-  new device number after remount, but an absent/unreadable final folder keeps
-  strict device checks so a different blank card cannot look like an ejected
-  original. Every scanned file is likewise restated after metadata work and
-  once more after persistence I/O.
+Schema 4 adds volume UUID (conservative mount/device fallback), inode, size,
+birth, and nanosecond mtime. Replacements cannot inherit ratings or auto-overwrite
+saved sessions. Verified renames keep ratings; missing files keep dormant entries,
+and returning exact files recover decisions. Persistence matching excludes
+ctime for Louppe-owned rename/rollback; live plans refresh/enforce it. Capture
+source directory before walking; recheck after metadata, session read, and before
+apply. Preserve each ancestor's exact `lstat` identity to reject replacement
+folders/dangling symlinks instead of treating them as ejected volumes. Devices
+stay strict outside the source volume. Recaptured matching UUID sources may
+change device on remount; absent/unreadable final folders retain strict checks.
+Re-stat every physical file after metadata and again after persistence I/O.
 
-Schema 1–3 cannot prove physical identity, but an ordinary legacy session in
-its recorded folder migrates automatically when every saved filename is still
-present. A structurally valid legacy sidecar whose recorded path differs stays
-blocked until the photographer chooses **Open Anyway**. That acknowledgement
-is bound to the SHA-256 revision and recorded path of the exact sidecar just
-shown; a changed file requires a fresh acknowledgement. Louppe then performs a
-new folder scan and read, applies only exact saved-filename matches, and writes
-the first identity-bound snapshot with the current folder path when every
-entry is present. No filename matches still fail closed. If only some legacy
-entries are missing, **Open Folder and Forget Missing Items** explicitly
-excludes only those unmatched ratings from the new identity-bound snapshot;
-Close Folder and Quit leave both legacy copies untouched. Obsolete path-keyed
-backups are considered only when both the sidecar and identity-keyed backup are
-absent; Open Anyway is never offered for them, their legacy entries still use
-the explicit confirmation because that backup is not owned by the folder, and
-schema-4 entries still require a physical identity match.
-Schema 5 adds independent star and color dimensions. Schema 6 stores each
-physical file's byte-exact parent path from before its first Source
-Organization, allowing a later priority change to rebuild from that original
-structure instead of nesting the previous generated layout.
-Folder traversal has no arbitrary depth cutoff; symbolic-link directories and
-package descendants are skipped explicitly, so deep archives remain complete
-without following loops.
+Schema 1–3 sessions in their recorded folder migrate only with all saved names
+present. A valid sidecar with another recorded path requires **Open Anyway**,
+bound to its SHA-256 and recorded path; changes require fresh acknowledgement.
+Rescan/read, match exact filenames, and write current-folder physical identities
+only if all entries exist. Zero matches fails. **Open Folder and Forget Missing
+Items** excludes only unmatched ratings; Close/Quit preserve both legacy copies.
+Read obsolete path backups only when sidecar and identity-keyed backup are absent.
+They have no Open Anyway, require confirmation as unowned legacy data, and
+schema-4 entries still need physical identity matches.
+Schema 5 adds independent stars/colors. Schema 6 stores exact original parent
+bytes before first Source Organization so later priority changes rebuild without
+nesting old layouts. Traversal has no depth cutoff; skip symlink directories and
+package descendants to avoid loops while preserving deep archives.
 
-After any structural replacement of `items`, call `rebuildDerivedData()` and
-then `applyFilter()`. Rating-only changes must update the tally through
-`transitionRatingCount` or replace the tally deliberately for a batch reset.
+Structural `items` changes call `rebuildDerivedData()` then `applyFilter()`.
+Rating changes use `transitionRatingCount` or deliberately replace batch tallies.
 
 ## Clean Up lifecycle
 
-Pair-component scope resolves the target physical member's displayed index;
-Separate mode cannot borrow inclusion from its partner. Together mode naturally
-uses the shared pair index. Enablement/counts use the same snapshot predicate.
-
-Clean Up and its undo have three phases:
+Pair-component scope tests its own displayed index. Separate never borrows
+partner inclusion; Together shares the pair index. Counts/enablement use the
+worker snapshot predicate.
 
 1. Main actor resolves indices and snapshots values.
-2. `CleanUpWorker` performs Trash/restore I/O and throttles progress updates to
-   about 100 ms or 50 files.
-3. Main actor applies one result, rebuilds derived data, and snapshots a save.
+2. `CleanUpWorker` runs Trash/restore, throttling progress to about 100 ms/50 files.
+3. Main actor applies once, rebuilds derived data, and snapshots a save.
 
-Each move/restore operation gets a new generation token. Delayed throttled
-progress from an earlier move can therefore never overwrite a following undo.
+Each move/restore gets a generation token; delayed progress cannot overwrite
+subsequent Undo. During `isCleaningUp`, block ratings, navigation, selection,
+undo, rescan, switching, export, and Quit. Scrolling, Info, panel visibility,
+and mode switching remain available. Use a non-interactive overlay. Refuse Quit until the
+worker finishes so partial RAW+JPEG rollback can finish.
 
-While `isCleaningUp`, rating, navigation, selection mutation, undo, rescan,
-folder switching, and export are blocked. Scrolling, metadata inspection, panel
-visibility, and view switching remain available. The progress UI is a
-non-interactive overlay, not a modal sheet. Quit requests are refused until the
-worker finishes, because terminating during a partial RAW+JPEG move would
-prevent its rollback from completing.
-
-Restoration uses `mergeRestoredItems` rather than repeated array insertion. It
-is O(n+k), retains survivor ordering, and omits only photos whose Trash files
-could not be restored.
+`mergeRestoredItems` restores in O(n+k), preserves survivor order, and omits only
+photos whose Trash files could not be restored.
 
 ## Process-crash file-operation journal
 
-Copy, Move, Source Rename/Organization and their undo, Trash, and Trash undo create an
-immutable plan in
-`~/Library/Application Support/Louppe/Operations/` before their first
-filesystem change. The plan directory is activated with one atomic rename.
-Each file then owns an independent checkpoint under `steps/`; advancing file
-9,000 rewrites only that small record, so journal work remains O(1) per file
-and O(n) for the complete batch.
+`FileOperationJournal` records Copy, Move, Source Rename/Organization/undo, and
+Trash/undo as immutable plans in `~/Library/Application Support/Louppe/Operations/` before mutation. Activate
+by atomic rename. Each file advances its own `steps/` checkpoint: file 9,000
+rewrites one small record, giving O(1) per step and O(n) per batch.
 
-One exclusive advisory lock covers the Operations root for the full lifetime
-of every worker or recovery pass. A second process cannot inspect or start a
-transaction while the owner is alive; the OS releases the lock on process
-exit. The release bundle also prohibits ordinary multiple app instances, but
-the lock—not that UI declaration—is the correctness boundary. Under that same
-lock, transaction start refuses any older active journal; recovery must finish
-before another worker can begin.
+One exclusive Operations-root advisory lock spans worker/recovery lifetime.
+Other processes cannot inspect/start transactions until release or OS process
+exit. The bundle's single-instance declaration is secondary to this lock.
+Under it, refuse new work until older active journals are reconciled.
 
-Plan v3 stores the exact filesystem bytes for every source, destination,
-temporary, and resolved Trash path. Recovery reconstructs those bytes without
-normalizing through a Swift string; malformed, relative, noncanonical, or
-mismatched raw paths keep the journal retryable. Plan v1 and v2 remain readable
-for crash recovery. XMP-aware Copy/Move uses the version-4 extension: each
-record explicitly identifies ordinary media, an unchanged application packet,
-a generated destination packet, or a fully selected family's retired source
-packet. It seals source and prepared-packet SHA-256 digests into the immutable
-plan while retaining the same exact-path and identity authority. Version-1,
-version-2, and version-3 plans remain readable with their original recovery
-semantics. Intentional Trash operations reconcile forward: launch
-recovery accepts the current source state and retires their bookkeeping without
-restoring or searching for media in macOS's privacy-protected Trash. Explicit
-in-session Trash Undo remains the sole restore path. Export preflight resolves
-symlinks through the same raw POSIX boundary and passes that exact selected
-directory unchanged to Copy or
-Move; target construction must not use Foundation path standardization. Plans
-are decoded fail closed: every path must be absolute and canonical;
-source, destination, and temporary paths must be globally disjoint by exact
-bytes and resolved aliases; no destination/temporary inode may alias a source
-or another operation-owned path; no manipulated path may enter journal
-storage; destination/temporary contracts must match the operation kind; and
-temporary names must belong to the recorded operation and step. Distinct
-source names may intentionally refer to one hard-linked file during Copy. Move,
-Clean Up, and Trash undo reject such a batch before mutation because renaming
-one link changes shared inode metadata and would make its sibling's recovery
-checkpoint ambiguous. An operation-owned path may never exploit any inode
-alias. Mutating operations also reject a single source whose link count is
-greater than one, because a pre-checkpoint Trash destination would not identify
-one unique directory entry. Committed journals are accepted only when their record repeats
-the operation ID and a SHA-256 digest of the immutable raw `plan.json` bytes.
-The exact legacy plan-v1 marker, including an authentic empty committed v1
-plan, remains readable after the stricter plan validation. A listing or
-inspection error is reported as unresolved recovery, never mistaken for an
-empty journal root.
+Plan v3 records exact source/destination/temporary/resolved Trash bytes.
+Reconstruct without Swift normalization; malformed, relative, noncanonical, or
+mismatched paths retain retryable journals. v1/v2 stay readable. XMP Copy/Move's
+version-4 extension identifies media, unchanged application packets, generated
+packets, and fully selected families' retired sources, sealing source/prepared
+SHA-256 digests. Preserve v1/v2/v3 recovery semantics.
 
-Every plan captures source/destination paths plus stable volume/device/inode,
-size, birth, modification, and status-change identity. Staged and completed
-checkpoints capture the resulting file's identity too. Recovery validates the
-relevant identity before removing or moving anything, never overwrites an
-existing path, and leaves an unresolved journal retryable when a volume is
-disconnected or a source was replaced or rewritten in place. A stable volume
-UUID supersedes remount-sensitive mount paths and device numbers. Exact source
-checks include status-change time. Operation-created copies deliberately do
-not: macOS may attach provenance or other metadata asynchronously after
-`copyItem` returns, changing only ctime while the volume, inode, birth time,
-size, modification time, and file bytes remain the same.
+Trash recovery commits forward without searching/restoring protected Trash;
+only explicit session Undo restores. Export resolves symlinks through raw POSIX
+and carries that selected directory unchanged into workers. Target construction
+cannot use Foundation standardization. Decode plans only when:
 
-Export files move through operation-owned `.louppe-<operation>-<index>.partial`
-paths before their final rename. This makes both crash positions recoverable:
-before final rename the journal owns the unique temporary path; afterward the
-staged identity still identifies the same inode at the destination. Trash is
-the exceptional path because macOS chooses its destination. Its `.started`
-checkpoint is written before `trashItem`; if termination happens before the
-returned URL can be recorded, recovery preserves the photographer's Trash
-decision and retires the record without searching protected Trash directories.
-If durable steps show that a paired Trash action stopped between RAW and JPEG,
-the record remains nonblocking attention until Retry or the explicit **Keep
-Files As They Are** action; that action retires only journal metadata and never
-touches media.
+- every path is absolute/canonical and globally disjoint by bytes/resolved aliases;
+- destinations/temporaries do not alias sources or other owned inodes;
+- manipulated paths cannot enter journal storage;
+- destination/temporary roles match operation kind; reserved names identify
+  the recorded operation/step.
 
-Generated XMP packets use that same planned temporary instead of an untracked
-atomic-write filename. Their intended digest replaces the ordinary Copy byte
-comparison because the merged destination deliberately differs from its source
-packet. A started complete packet can be published only when every byte matches
-the sealed digest; an incomplete packet is removed only when its exact inode was
-checkpointed. Move recovery removes a checkpointed generated packet when its
-family rolls back, preserves it when the entire family completed, restores an
-incomplete source-packet retirement, and completes a fully checkpointed
-retirement forward. The old canonical packet is not retired until all media,
-generated, and application-packet records in that family are complete.
+Copy may read distinct hard links. Move/Clean Up/Trash undo reject them before
+mutation; even one source with link count >1 is unsafe because rename alters
+shared metadata and pre-checkpoint Trash cannot identify a unique entry.
+Operation-owned inode aliases are always refused. Commit records repeat operation
+ID and SHA-256 of raw immutable `plan.json`. Preserve exact legacy v1 markers,
+including authentic empty committed plans. Inspection/listing errors mean
+unresolved recovery, never an empty root.
 
-Move currently accepts only destinations on the same known storage volume,
-revalidates the planned source immediately before touching it, and performs
-both transitions with `renamex_np(..., RENAME_EXCL)`. That syscall either
-performs an inode-preserving, non-overwriting rename or fails (including
-`EEXIST`/`EXDEV`); it never silently copies and deletes. Copy remains the path
-for another drive or card.
-Do not re-enable cross-volume Move until it is an explicit
-copy/flush/verify/checkpoint/delete transaction with recovery tests.
+Plans/checkpoints capture volume/device/inode, size, birth, mtime, and ctime.
+Verify identity before moving/removing; never overwrite. Disconnected, replaced,
+or rewritten sources leave retryable journals. Volume UUID supersedes changing
+mount/device numbers. Source checks include ctime; created-copy checks exclude it
+because asynchronous provenance may change ctime without changing bytes or
+volume/inode/birth/size/mtime.
 
-`DurableFileIO` enforces the power-loss order: write and sync the immutable
-plan before activation; sync operation-created copies and every affected
-rename/removal directory before advancing a step; then fully sync the
-operation-bound commit record before retiring the journal. A cross-directory
-rename flushes the destination directory before the source directory so a
-power cut prefers two recoverable names over none. The macOS Trash boundary is
-the exception: `FileManager.trashItem` owns that system-managed transition, and
-Louppe never makes direct open/fsync access to `.Trash` or `.Trashes` a success
-condition. A completed journal leaves the active namespace through an
-exclusive `.retired` rename and full root sync
-before bounded housekeeping can recursively remove it. Journal checkpoints
-recapture and compare the exact worker-proven identity before accepting a
-path as operation-owned. Copy/Move duplicate cleanup transfers the candidate
-to the other plan-owned path, repeats byte comparison under fresh ctime-bound
-identities, and only then performs a nonrecursive unlink. Session sidecars
-and backups use the same write -> sync -> atomic replace -> directory-sync
-boundary. If any flush fails after a filesystem side effect, the worker keeps
-the journal and enters conservative recovery instead of claiming success.
+Export stages through `.louppe-<operation>-<index>.partial`: before rename the
+journal owns the temporary; afterward its staged identity owns the destination.
+Trash writes `.started` before `trashItem`; if no returned URL was recorded,
+recovery preserves the Trash decision without inspecting protected directories.
+A paired Trash interruption remains nonblocking attention until Retry or **Keep
+Files As They Are**, which retires metadata only.
 
-`SessionStore` runs recovery off-main. While the pass is actively reconciling
-files, conflicting transitions remain blocked. If a journal remains unresolved,
-it becomes nonmodal attention: only new Copy, Move, Source Rename/Organization, Clean
-Up/Trash, and Trash undo wait. Reviewing, rating, navigation,
-opening/closing/rescanning folders, saving, updating, and Quit remain available,
-and a requested launch folder is
-still opened. Reconnection is suggested only when the report actually
-identifies an unavailable volume. After recovery of an operation that may have
-moved source files, only that exact currently open folder is rescanned. Copy
-recovery never returns to a destructive pre-export state: identity-verified staged and
-completed copies are kept, and a staged temporary is durably published under
-its planned destination name without requiring the source drive to remain
-mounted. Fully completed Move items likewise stay at their chosen destination;
-only an incomplete item or pair uses source-restoring rollback recovery. A
-  permanently ambiguous journal can be cleared with **Keep Files As They Are**
-  without changing any photo path. That escape accepts only a canonical UUID
-  journal name and atomically sets the record aside as `.forgotten`; it never
-  deletes the record's contents or adopts an arbitrary `.operation` file.
-Only the real `LouppeApp` entry point opts into automatic launch recovery.
-Test stores default to no automatic recovery and can inject a disposable
-journal directory, preventing test execution from ever reconciling a live
-photographer operation.
+Generated XMP uses the planned temporary and sealed digest instead of Copy's
+source-byte comparison. Publish a complete started packet only with an exact
+digest; remove incomplete packets only after inode checkpoint. Move recovery
+removes generated packets for rollback and keeps completed families; restore
+incomplete source retirement, finish fully checkpointed retirement forward.
+Retire canonical sources only after all family media/generated/application
+records complete.
 
-Session persistence uses a separate identity-keyed advisory lock that still
-spans the complete sidecar/backup compare-and-swap transaction. Acquisition is
-nonblocking with a short deadline; contention becomes an ordinary retryable save
-failure instead of allowing Close, folder changes, or Quit to wait forever.
+Move accepts the same known volume, checks source before mutation, and uses
+`renamex_np(..., RENAME_EXCL)` for both transitions. It preserves inode or fails,
+including `EEXIST`/`EXDEV`, never implicit copy/delete. Use Copy across drives.
+Cross-volume Move requires an explicit copy/flush/verify/checkpoint/delete
+transaction and recovery tests before enabling.
+
+`DurableFileIO` orders power-loss protection: sync plan before activation;
+sync created copies and affected rename/removal directories before checkpoints;
+fully sync commit before retirement. Cross-directory rename flushes destination
+before source, preferring two recoverable names to none. macOS owns
+`FileManager.trashItem`; `.Trash`/`.Trashes` open/fsync is not required.
+Retire by exclusive `.retired` rename and full root sync before bounded recursive
+cleanup. Checkpoints recapture exact worker-proven identity. Duplicate cleanup
+moves a candidate between the two owned paths, repeats byte comparison with
+fresh ctime checks, then unlinks nonrecursively. Sidecars/backups follow write
+-> sync -> atomic replace -> directory-sync. Post-side-effect flush failure
+retains journals and requires recovery rather than success.
+
+`SessionStore` recovers off-main. Active reconciliation blocks conflicting work;
+unresolved attention blocks only new Copy/Move/Source Rename/Organization,
+Clean Up/Trash, and Trash undo. Review, ratings, navigation, open/close/rescan,
+saves, updates, and Quit continue; requested launch folders still open. Suggest
+reconnect only for reported unavailable volumes. Rescan only the exact current
+source folder affected by recovered moves. Keep staged/completed copies and
+publish verified temporaries durably without the source mounted. Completed Move
+items stay at destination; incomplete items/pairs restore source.
+**Keep Files As They Are** accepts only canonical UUID journals, atomically
+renames to `.forgotten`, and preserves contents/media; refuse arbitrary
+`.operation` files. Only `LouppeApp` enables launch recovery. Test stores default
+to none and inject disposable journals, never live photographer operations.
+
+Persistence has its separate stable-identity lock for the whole sidecar/backup
+CAS. Acquisition is nonblocking with a short deadline; contention is retryable
+and cannot freeze Close, switching, or Quit.
 
 ## Export lifecycle
 
-Export shares Clean Up's three-phase shape: the main actor evaluates one pure
-decision + stars + color AND predicate and snapshots matching items plus exact
-physical-file counts. `ExportWorker` runs the copy or move loop
-off-main (reusing `ThrottledProgress`), and the main actor applies one result.
-`ExportWorker.makePlan` reserves every destination name first and chooses one
-collision suffix per photo or same-stem XMP family, keeping RAW+JPEG, canonical
-XMP, and extension-qualified application-packet basenames matched. Internally
-normalization-equivalent family names fail before collision search. Search is
-cancellable, checks batch reservations before filesystem probes, and caches
-next suffixes by the complete normalized filename family. This avoids quadratic
-repeated-basename planning without splitting families or weakening no-overwrite.
-When XMP is
-enabled, `XMPExportPlanner` resolves the complete live stem family and prepares
-merged destination bytes off-main before `FileOperationJournal` activation.
-The activated version-4 plan covers every media and XMP source, temporary,
-destination, identity, role, and digest before the worker's first filesystem
-change. Copy rolls back
-members of a partially failed or cancelled pair; photos completed before a
-cancel remain at the destination. Once a Copy has been flushed and staged, a
-later source-drive disconnect cannot invalidate it; recovery preserves that
-copy instead of deleting completed work. Move uses the same plan and retains
-its source rollback. A fully selected canonical XMP is transferred only after
-its merged destination is durable; a packet shared with an unselected same-stem
-member is copied and retained at the source.
+Main actor evaluates one pure decision + stars + color AND predicate and snapshots
+items/exact file counts. `ExportWorker` runs Copy/Move off-main with
+`ThrottledProgress`; apply one result. `ExportWorker.makePlan` reserves names
+with one suffix per photo/XMP family, preserving RAW+JPEG/canonical XMP/application
+basenames. Reject normalization-equivalent internal names before searching.
+Cancellable search checks reservations before I/O and caches next suffixes by
+complete normalized family, avoiding quadratic repeated-name planning.
 
-Multi-destination Export remains Copy-only. `MultiDestinationExportPlanner`
-first performs a pure route-membership pass: every item is either in exactly
-one explicit typed route, shown as unmatched, or reported as an overlap that
-blocks confirmation. It validates and freezes each separately chosen folder,
-rejects duplicate resolved destinations and empty routes, aggregates capacity
-for destinations on the same volume, makes one regular `ExportWorker.Plan` for
-each route, then combines those plans before a single `FileOperationJournal`
-activation. No route has an implicit fallback, so unmatched files never enter
-the worker. When XMP is included, a same-stem family may belong to only one
-route; a split is refused rather than generating competing sidecars.
+`XMPExportPlanner` resolves complete live stem families and prepares merged bytes
+before journal activation. Version-4 plans bind every media/XMP source,
+temporary, destination, identity, role, and digest before mutation. Failed/cancelled
+pairs roll back; earlier completed photos remain. Staged/flushed copies survive
+source disconnect. Move retains rollback. Transfer fully selected canonical XMP
+only after durable merged destination; packets shared with unselected members
+stay at source and are copied.
 
-`SessionStore.activeFileOperation` is the only in-flight authority for Clean
-Up, Copy, Move, Source Rename, and Source Organization. It blocks folder switching, rescan,
-rating/selection mutation, undo, Clear All Ratings, conflicting operations, updater
-installation, and Quit. The same state retains one `ProcessInfo` activity with
-`idleSystemSleepDisabled` for the complete transaction (recovery owns it too),
-so automatic system sleep cannot strand removable-media I/O; display sleep is
-still allowed. Explicit MacBook lid-close sleep cannot be overridden. After
-wake, Copy treats transient missing-device/I/O errors as a remount window: it
-waits up to 60 awake seconds for the exact journal-bound source identity and
-retries once only when no temporary artifact exists. If `copyItem` leaves a
-partial artifact, the worker checkpoints its exact physical identity before
-rollback and removes only that inode through the two reserved plan paths. A
-crash after a complete copy but before the staged checkpoint is reconciled by
-rechecking the planned source identity and comparing every byte; it is then
-published instead of discarded. A legacy partial with no recorded identity
-remains untouched. `finishExport` clears the in-flight state for both modes; after Move it
-also drops fully moved photos by id, clears the now-index-stale undo stack,
-rebuilds derived data, re-applies the filter, and snapshots a save. The modal
-sheet keeps rating and navigation keys away while export runs.
+`MultiDestinationExportPlanner` is Copy-only. Pure membership assigns each item
+to one explicit typed route, unmatched, or blocking overlap. Validate/freeze
+folders, reject duplicate resolved destinations/empty routes, and sum capacity
+by volume. Combine per-route `ExportWorker.Plan`s before one journal activation.
+No fallback includes unmatched files. XMP stem families must stay in one route;
+refuse splits that would generate competing sidecars.
 
-Before the worker starts, `ExportDestinationValidator` rejects the source
-folder and its descendants after resolving symlinks, checks destination write
-permission, and checks available capacity for Copy. Same-volume Move is a
-rename and does not need the full media size free. Validation returns the
-resolved directory that the worker actually receives, so retargeting the
-folder-picker symlink cannot redirect a later export. Preflight also captures the resolved folder's device/inode/birth identity.
-Copy carries that identity through ordinary, XMP and multi-route plans, opens
-the matching directory before journal activation, and creates media/generated
-XMP temporaries with `openat`. Apple's `fcopyfile` preserves media metadata
-through file descriptors; publication uses `renameatx_np` within that same
-held directory. A path replacement cannot redirect these writes. A change
-before starting returns a retryable error without a pending journal; a change
-after files exist preserves recovery evidence, with the existing explicit
-Keep Files As They Are escape. Move retains its existing journaled rename
-implementation and gains the same pre-start directory-identity check.
-The important-usage capacity API's transient zero is treated as ambiguous and
-cross-checked with `statfs`, preventing File Provider-managed destinations from
-being falsely reported as full.
+`SessionStore.activeFileOperation` alone owns Clean Up, Copy, Move, Rename, and
+Organization. Block switching, rescan, rating/selection, undo, Clear All Ratings,
+conflicting work, updater installation, and Quit. Keep one `ProcessInfo`
+`idleSystemSleepDisabled` activity through the transaction/recovery. Display
+sleep remains enabled; lid-close sleep cannot be overridden.
+After wake, transient source-device/I/O errors allow up to 60 awake seconds for
+exact journal-bound identity, then one retry only if no temporary exists.
+If `copyItem` leaves a partial, checkpoint identity before rollback; remove only that inode through the
+two reserved paths. A complete pre-staged Copy requires source revalidation and
+byte equality before publication. Unrecorded legacy partials remain untouched.
+`finishExport` clears state; Move removes completed IDs, clears stale undo,
+rebuilds/filter/saves. The modal sheet blocks rating/navigation keys.
+
+`ExportDestinationValidator` resolves symlinks, refuses source/descendants,
+checks write permission and Copy capacity. Same-volume Move needs no full-size
+free space. Preflight and workers probe exclusive-rename capability on bound
+parents: known unsupported Copy/Export Move destinations fail before media or
+journals exist; unknown capability keeps syscall validation. ExFAT-source → APFS
+Copy remains supported; Source Organization/Renaming retain their scoped fallback. Workers receive that resolved path plus device/inode/birth binding,
+so retargeting chooser aliases cannot redirect writes. Copy opens matching
+parents before journal activation for ordinary/XMP/multi-route plans, creates
+media/generated temporaries with `openat`, preserves metadata through Apple's
+`fcopyfile`, and publishes with `renameatx_np` in the same held directory.
+Pre-start replacement returns a retryable error without journal; later change
+retains evidence and **Keep Files As They Are**. Move also checks parent identity
+before starting and retains journaled renames. Cross-check ambiguous zero from
+important-usage capacity with `statfs` to avoid false full-volume reports from
+File Provider.
 
 ## Source Organization lifecycle
 
-Source Organization follows the same snapshot → background I/O → main-actor
-apply boundary as Export. `SourceOrganizationPlanner` receives an immutable
-All, Filtered, or Selected item snapshot plus every in-session sidecar-family
-member. It builds the complete hierarchy preview from the checked level order,
-reserves every exact destination, and blocks the whole operation when a target
-already exists, two source files converge, a shared XMP family would split, or
-a path component is unsafe. It never invents collision suffixes. Preview work
-runs off-main and checks a shared cancellation flag throughout, so changing
-scope or level order in a large folder does not leave stale plans consuming
-CPU or filesystem reads.
+`SourceOrganizationPlanner` takes immutable All/Filtered/Selected snapshots and
+all session sidecar-family members. Build hierarchy from checked level order;
+reserve exact destinations. Existing targets, converging sources, split shared
+XMP, or unsafe components block the entire plan; no collision suffixes.
+Preview runs off-main and polls cancellation throughout, so scope/order changes
+retire stale work.
 
-The Date level uses `AppDateFormat`: Full date is the Mac's effective short
-date, including a custom format, while Year and month and Year derive their
-field order, widths, and separator from that same pattern. Existing folder uses
-the schema-6 byte-exact original parent path at top-level or full depth. When
-it is unchecked, files flatten into the other chosen levels; previous folders
-are deliberately retained, even if they become empty.
+`AppDateFormat` uses the Mac's effective short date for **Full date**, including
+custom formats. **Year and month** and **Year** inherit its field order, widths,
+and separator. Existing
+folder uses schema-6 original parent bytes at top-level/full depth. Unchecking
+flattens into chosen levels; retain old folders even when empty.
 
-`SourceOrganizationWorker` activates an `.organizeSource` journal before it
-creates destination directories or moves a file. It revalidates the stable
-opened-folder identity, creates only normal descendant directories through the
-exact POSIX path boundary, then executes the confirmed `ExportWorker.Plan`
-with exclusive atomic renames. Grouped RAW+JPEG files and their eligible XMP
-packets form one rollback group. `.acr`, unsupported, hidden, and unrelated
-files remain untouched. A successful result rescans the same source folder and
-places one `.restoreOrganization` plan on the ordinary session undo stack;
-⌘Z runs that reverse journal and rescans again. Neither direction removes
-directories. Crash recovery treats completed groups as committed at their
-destination and restores only incomplete groups, matching Export Move.
+`SourceOrganizationWorker` activates `.organizeSource` before directory creation
+or moves. Revalidate opened-folder identity, create only normal descendants via
+exact POSIX paths, then execute confirmed `ExportWorker.Plan` with exclusive
+renames. RAW+JPEG/eligible XMP shares one rollback group. Leave `.acr`, unsupported,
+hidden, and unrelated files untouched. Success rescans that folder and pushes
+`.restoreOrganization` to session undo; ⌘Z journals the reverse move and rescans.
+Neither direction removes directories. Recovery keeps completed groups at
+destination and restores incomplete groups, as Export Move does.
 
-The plan records the source filesystem type. ExFAT uses one deliberately
-scoped reduced-durability policy because macOS may return `EINVAL`, `ENOTSUP`,
-or `ENOTTY` when syncing a directory descriptor and does not implement
-`RENAME_EXCL`. The confirmation sheet warns before enabling that policy. After
-journal activation and before moving media, the worker creates two random
-operation-owned probe files and proves Foundation's documented move contract
-refuses an occupied destination. It then proves a move to a free destination
-preserves the exact inode and bytes before removing the probes. Only ExFAT
-Source Organization or Source Renaming, their rollback, undo, and recovery use
-that Foundation no-overwrite path; source and destination devices are rechecked
-before every move and the existing post-move identity checks remain mandatory.
-Only unsupported directory-sync results are tolerated. APFS retains
-`RENAME_EXCL` and required directory syncing.
+Record source filesystem type. ExFAT lacks `RENAME_EXCL` and may return `EINVAL`,
+`ENOTSUP`, or `ENOTTY` for directory sync. Warn before enabling reduced durability.
+After journaling but before media moves, two random owned probes verify
+Foundation refuses an occupied target, then preserves inode/bytes on a free-target
+move. Remove probes afterward. Only ExFAT Organization/Renaming, rollback, undo,
+and recovery use this Foundation path. Recheck devices before every move and
+identity afterward; tolerate only unsupported directory-sync errors. APFS
+requires exclusive rename and directory sync.
 
 ## Source Renaming lifecycle
 
-Source Renaming deliberately has its own Info-panel and batch UI, but reuses
-the Source Organization snapshot → plan → background move → rescan boundary.
-The pure naming recipe emits fixed `yyyy-MM-dd` and `HH-mm-ss` components,
-sanitized camera/lens/original-name parts, and a deterministic sequence ordered
-by capture time and stable item ID. The default Date + Time + Sequence recipe
-therefore stays sortable and does not depend on the visible session sort.
+Source Renaming has its own Info/batch UI and reuses Organization's
+snapshot → plan → background move → rescan boundary. Recipes use fixed
+`yyyy-MM-dd`/`HH-mm-ss`, sanitized camera/lens/original components, and sequence
+ordered by capture time/stable ID. Default Date + Time + Sequence is sortable
+and independent of visible sort.
 
-The planner keeps each exact source directory and extension, reserves every
-complete filename, and also reserves resulting directory+stem families. That
-second check prevents unrelated RAW and JPEG files from acquiring one stem and
-being falsely paired by the next scan. Existing destinations, duplicate output,
-case-equivalent aliases, ambiguous/shared partial XMP families, and Lightroom
-`.acr` companions block the whole plan. Canonical and extension-qualified XMP
-names follow a complete family without rewriting packet contents.
+Keep source directory/extension and reserve filenames plus directory+stem
+families so unrelated RAW/JPEG cannot become paired on rescan. Existing targets,
+duplicate output, case aliases, ambiguous/shared partial XMP, or Lightroom
+`.acr` companions block the whole plan. Canonical/extension-qualified XMP follows
+complete families without packet rewrites.
 
-The worker records `.renameSource` before its first filesystem mutation and
-uses `.restoreRename` for ⌘Z. A RAW+JPEG/XMP family shares one journal item even
-when RAW and JPEG are currently presented separately, so recovery preserves a
-fully completed family or rolls an incomplete family back as a unit. Successful
-rename and undo both rescan instead of mutating immutable `PhotoFile` paths in
-memory; persistence follows verified physical identities to the new item IDs,
-while current item, selection, ratings, stars, colors, and organization-origin
-metadata are remapped through the ordinary scan path.
+Journal `.renameSource` before mutation and `.restoreRename` for ⌘Z.
+RAW+JPEG/XMP is one journal item even when reviewed separately: retain complete
+families or roll back incomplete ones as a unit. Rename/undo rescan instead of
+mutating immutable `PhotoFile` paths. Physical identity preserves ratings while
+ordinary scan remaps current, selection, stars/colors, and original parent metadata.
 
 ## Prepared session index
 
-`PreparedSessionIndex` owns the pure item-ID, sort, filter, group, header, and
-visible-position maps behind `SessionStore`. `SessionStore` still publishes the
-arrays consumed by SwiftUI, but navigation and indexing behavior can now be
-tested without constructing a window or observable object.
+`PreparedSessionIndex` owns pure item-ID, sort, filter, group, header, and
+visible-position maps. `SessionStore` publishes arrays; logic tests need no
+window/observable object. Instruments signposts are **Rebuild Item Index**,
+**Sort Session**, **Filter Session**, and **Build Visible Groups**; inspect them
+before algorithm changes or another map.
 
-The index emits Instruments points-of-interest intervals named **Rebuild Item
-Index**, **Sort Session**, **Filter Session**, and **Build Visible Groups**.
-Use these signposts before changing its algorithms or adding another derived
-map.
-
-The deterministic check includes synthetic 1k, 10k, and 100k-item metadata
-fixtures. On the 2026-07-26 development build, their conservative unoptimized
-baseline was:
+Synthetic 1k/10k/100k fixtures on 2026-07-26, conservative unoptimized build:
 
 | Items | ID map + camera sort | JPEG filter + 25 groups/locations |
 |---:|---:|---:|
@@ -960,36 +677,28 @@ baseline was:
 | 10,000 | 117 ms | 8 ms |
 | 100,000 | 1,607 ms | 104 ms |
 
-These numbers are a comparison baseline, not hard-coded pass/fail limits;
-hosted CI machines vary. Structural counts and every location mapping are
-asserted. Grid sections use metadata-derived stable IDs, so filtering a
-group's former first member does not make SwiftUI discard and recreate the
-remaining section.
+Comparison baselines, not fixed pass/fail limits; CI varies. Assert structural
+counts/all locations. Grid groups use metadata-derived stable IDs so removing
+first members does not recreate surviving sections.
 
-`FolderScanner.sortItems` uses the exact `PhotoSort()` comparator. The prepared
-index therefore treats the physical item order as the default sorted order and
-does not repeat the same O(N log N) localized-name sort on the main actor after
-opening a folder or when returning to the default sort. Non-default sort keys
-still rebuild their own index order.
+`FolderScanner.sortItems` uses `PhotoSort()`. Prepared indexing reuses physical
+order for default sort, avoiding duplicate O(N log N) localized-name sorting
+on open/default-sort return. Other keys rebuild their own order.
 
 ## Selection state
 
-`SelectionState` is the pure authority for explicit indices and their stable
-item IDs. `SessionStore` publishes its index projection to SwiftUI and remains
-responsible for the current item, playback, and prefetch side effects.
+`SelectionState` owns explicit indices/stable IDs, range, edge, command-toggle,
+rubber-band, filter intersection, and rescan remapping. `SessionStore` publishes
+projection and owns current/playback/prefetch side effects.
 
-The pure state owns range, edge, command-toggle, rubber-band, filter
-intersection, and rescan remapping rules. An empty explicit selection still
-means “the current visible item”; when a filter has zero matches, the effective
-selection is truly empty. Focused logic and app-level XCTest cases protect
-these rules so future controller extraction cannot silently rate hidden media
-or remap a selection by stale numeric position. A surviving explicit selection
-also determines current after filter/restore, in prepared visible order, so
-Gallery, keyboard rating, and the highlighted selection refer to the same item.
+Empty explicit selection means current visible item; zero filter matches means
+empty effective selection. Logic/app XCTest cases prevent rating hidden media
+or remapping stale numeric positions. After filter/restore, surviving explicit
+selection determines current in prepared visible order, keeping Gallery,
+keyboard ratings, and highlighted selection aligned.
 
 ## Verification
 
-Use the build, test, and real-launch checks in [AGENTS.md](../AGENTS.md). For
-performance-sensitive changes, also run `./Tests/run_performance_checks.sh`
-and check the affected behavior on disposable media. Its real Trash/restore
-checks require macOS Trash access. Never test Clean Up on irreplaceable originals.
+Follow [AGENTS.md](../AGENTS.md) for build, test, and real launch. Performance
+changes also run `./Tests/run_performance_checks.sh` on disposable media with
+macOS Trash access for round trips. Never test Clean Up on irreplaceable originals.

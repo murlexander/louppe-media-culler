@@ -1,8 +1,10 @@
 # Louppe audit: session state, scanning, persistence, selection, and review utilities
 
-Date: 2026-09-29. Canonical repository: `/Users/alexander_markin/Documents/code/louppe/app`. Audit of the current working tree, including its uncommitted review-preference, folder-hierarchy, connected-drive, quality-warning and window changes. No canonical source files changed; no commits, pushes, media mutations or Trash tests performed by this agent.
+Pre-fix findings from 29 September. Current work: [BACKLOG.md](../../../BACKLOG.md#audit-follow-ups).
 
-Read app and shared AGENTS.md, DEVELOPMENT_DETAILS.md ownership/persistence/session-state contracts, and PERFORMANCE.md main-actor, filtering, grouped-review, selection, and persistence requirements. Root agent owns the full tests/build/launch results; those results are deliberately not claimed here.
+Date: 2026-09-29. Repository: `/Users/alexander_markin/Documents/code/louppe/app`. Read-only review included uncommitted preferences, hierarchy, drives, quality warnings, and window changes. No commits, pushes, media mutations, or Trash tests.
+
+Read app/shared AGENTS.md, DEVELOPMENT_DETAILS.md ownership/persistence/session contracts, and PERFORMANCE.md main-actor/filter/group/selection/save rules. Full tests/build/launch belong to the coordinator.
 
 ## Confirmed findings
 
@@ -12,9 +14,9 @@ Read app and shared AGENTS.md, DEVELOPMENT_DETAILS.md ownership/persistence/sess
 
 **Trigger:** In the default Separate RAW/JPEG mode, open an unambiguous `SHOT.NEF` + `SHOT.JPG` pair. Hide JPEG using the file-type filter, leave Clean Up scope as Filtered, and choose Move Paired JPEGs to Trash. The same problem occurs with Selected scope when only the RAW is selected. The reverse happens when Paired RAWs is requested from a visible/selected JPEG.
 
-**Cause:** Pair eligibility tests whether *either* member's displayed index occurs in `cleanUpCandidates`. It then constructs the worker snapshot for the chosen member even when that target member's index is hidden/unselected. The comment immediately above says scope membership follows the member being removed, and the confirmation explicitly says only paired JPEG/RAW files shown by the current filter or in the current selection are included.
+**Cause:** Eligibility checks *either* member's index in `cleanUpCandidates`, then snapshots the target even when hidden/unselected. The comment and confirmation promise scope membership for the member being removed.
 
-**Consequence:** Confirming Trash can remove a different, hidden/unselected original from the folder. Trash is undoable, but the target set violates the advertised and chosen scope. A JPEG can contain independent edits or metadata, so companion status does not make crossing the scope harmless.
+**Consequence:** Trash can remove a hidden/unselected original outside the confirmed scope. Undo does not make that correct; the companion may have independent edits/metadata.
 
 **Production-code reproduction, without moving media:** `StateAuditRepro.swift` constructs a Separate-mode store, uses the ordinary derived-index boundary, excludes JPEG, then asks `cleanUpCounts(for: .pairedJPEGs)`; it also repeats with RAW as the effective Selected scope. Output:
 
@@ -23,7 +25,7 @@ HIDDEN PAIR CLEANUP: mode=separate, visible=[0], excluded=JPEG, pairedJPEGTarget
 UNSELECTED PAIR CLEANUP: effectiveSelection=[0], current=SHOT.NEF, pairedJPEGTargets=1
 ```
 
-Both should be zero. The count and execution paths share `pairComponentCleanUpTargets`, so the wrong count is the exact wrong immutable worker target set, not a display-only discrepancy.
+Both should be zero. Counts and execution share `pairComponentCleanUpTargets`, so the snapshot itself is wrong.
 
 **Minimal fix:** Resolve `itemIndexByFileID[target.id]` first, and require that specific target index to belong to `candidateIndices`. Apply the same rule in `hasCleanUpTargets`. Together mode naturally continues to include both physical members when its one displayed pair index is in scope. Add cases for both target directions × both Separate/Together modes × Filtered/Selected scopes; protect independently rated members.
 
@@ -33,9 +35,9 @@ Both should be zero. The count and execution paths share `pairComponentCleanUpTa
 
 **Trigger:** Sidecar bytes have been renamed successfully, but the required following directory sync fails with EIO. The backup location is also unavailable/unwritable. A parallel case occurs during a backup-only save after a source-volume disconnect: the backup rename lands, then its required directory sync fails.
 
-**Cause:** The catch path hashes the currently visible destination bytes. If they equal the intended bytes, it updates CAS/generation lineage and returns `.savedToSidecar`; the fallback is only best-effort, and its failure cannot affect this result. `recordCommittedBackupIfObserved` likewise returns success from byte equality alone. There is no retry of the failed directory sync and no distinction between an observed rename and a completed durability barrier.
+**Cause:** Intended visible bytes advance CAS/generation and return `.savedToSidecar`, regardless of best-effort backup failure. `recordCommittedBackupIfObserved` also treats byte equality as success. Neither retries directory sync nor distinguishes observation from durability.
 
-**What is and is not wrong:** Adopting exactly those observed bytes into CAS lineage is correct and necessary so Retry does not conflict with Louppe's own committed rename. The defect is *also declaring the generation durable/discard-safe*. Readability from the current kernel state does not complete the post-rename flush contract.
+**What is and is not wrong:** Observed bytes must advance CAS so Retry recognizes Louppe's rename. They must not mark the generation durable/discard-safe: kernel readability does not satisfy post-rename flush.
 
 **Deterministic production-code reproduction:** The harness uses `SessionPersistence(afterSidecarReplaceForTesting:)` to throw `DurableFileIO.IOError.system(operation: "fsync", code: EIO)` at the existing fault-injection boundary. `DurableFileIO.atomicWrite` invokes that boundary **before** calling `syncDirectory`; thus this reproduction definitely has no completed post-rename directory flush. It supplies a backup directory path occupied by a regular file, so no backup can be written. Output:
 
@@ -44,11 +46,11 @@ POST-RENAME SYNC FAILURE + BLOCKED BACKUP: result=savedToSidecar, canDiscard=tru
 BACKUP IS REGULAR FILE: true
 ```
 
-**Consequence:** The UI can authorize Close/Quit and forget the only in-memory ratings after neither location completed its required durable publication. Loss after a subsequent power interruption is an inference from the missing flush, not a power-loss event reproduced here. It is a concrete error-handling contradiction with the repository's durable-write guarantee.
+**Consequence:** Close/Quit may discard in-memory ratings although neither destination completed durable publication. Power-loss consequences are inferred, not reproduced. This violates the durable-write contract.
 
-**Existing tests:** `testOfflineBackupAdoptsACommittedRenameAfterTrailingError` explicitly expects success after the backup test hook throws. That test proves CAS continuity, not durability. `testReconnectedSidecarAdoptsTheExactBackupOwnedCommit` correctly covers reconnect lineage when a fallback can succeed. Preserve that behavior while adding a case where post-rename flush and fallback both fail.
+**Existing tests:** `testOfflineBackupAdoptsACommittedRenameAfterTrailingError` expects success after a backup-hook throw, proving CAS continuity rather than durability. `testReconnectedSidecarAdoptsTheExactBackupOwnedCommit` covers valid reconnect lineage. Preserve it; add simultaneous sync/fallback failure.
 
-**Minimal fix:** Adopt the exact observed revision for future CAS, then reattempt the matching parent-directory sync or secure a successfully synced backup before marking the live generation durable. If both fail, retain a retryable failure and in-memory state. Avoid falsely returning `.sidecarChanged` on retry against those same Louppe-owned bytes. Explicitly model observed publication separately from completed durability if needed.
+**Minimal fix:** Adopt observed revision for CAS, then retry parent sync or secure a fully synced backup before marking durability. If both fail, retain state and retryable failure; do not return `.sidecarChanged` for Louppe-owned bytes. Model observation and durability separately.
 
 **External reference:** Apple's [fsync manual](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/fsync.2.html) documents sync as the transition from in-core state to storage, describes buffered-write ordering/power-loss risks, and identifies EIO as an I/O failure. The source's own explicit write → file sync → rename → directory sync sequence establishes which boundary is missing here.
 
@@ -58,9 +60,9 @@ BACKUP IS REGULAR FILE: true
 
 **Trigger:** Items A, B, C are visible in order. Current is A; Command-select C, creating selection A+C. Apply a camera/type/search/other filter that removes A while B+C remain visible.
 
-**Cause:** `retainVisible` correctly removes A from explicit selection, leaving C. The separate current-item fallback then picks the first visible absolute index >= old current, which is B. It does not choose from the surviving explicit selection. Rescan's `restoreSelection` does enforce current membership; this filtering path does not.
+**Cause:** `retainVisible` leaves C selected, but current fallback picks the first visible index >= old current: B. Filtering omits current-in-selection enforcement present in `restoreSelection`.
 
-**Consequence:** Gallery displays B while F/D, stars, colors, Selected-scope operations and selection aggregate controls address C. With advancement disabled, F leaves B on screen while marking C Yes. This is a persistent misleading state, not just a transient publication.
+**Consequence:** Gallery shows B while F/D, stars, colors, Selected actions, and aggregates target C. With advancement off, F marks C Yes while B remains displayed.
 
 **Production-code reproduction:** The harness uses the ordinary state APIs and a non-search filter assignment, so no debounce timing is involved:
 
@@ -77,7 +79,7 @@ RATE AFTER FILTER: displayed=B.jpg, ratings=["undecided", "undecided", "yes"]
 
 **Trigger:** The source folder is readable but not writable, or `DurableFileIO` returns ENOSPC/EROFS/EACCES/ENODEV from its descriptor-level routines.
 
-**Cause:** `DurableFileIO.IOError.system` is handled only for the special lock timeout. Other instances are bridged to NSError, but the Swift error type's domain is `Louppe.DurableFileIO.IOError`, not `NSPOSIXErrorDomain`, and its NSError code is the enum case number rather than the stored errno. The existing POSIX switch is therefore bypassed.
+**Cause:** Only lock timeout is handled directly. Other `DurableFileIO.IOError.system` values bridge as `Louppe.DurableFileIO.IOError` with enum-case code, not errno in `NSPOSIXErrorDomain`, bypassing the POSIX switch.
 
 **Production-code reproduction:** The harness makes a disposable photo directory mode 0500 after capturing access, leaves backup writable, and saves through the real descriptor-level writer. It restores permissions afterward. Output:
 
@@ -86,7 +88,7 @@ READ-ONLY SIDECAR ERROR CLASSIFICATION: savedToBackup(sidecarFailure: ...Failure
 DURABLE ERROR NSError DOMAIN: ...DurableFileIO.IOError, code=0, expected POSIX domain=NSPOSIXErrorDomain
 ```
 
-**Consequence:** Read-only/card-full/unavailable failures produce generic Retry warnings instead of the existing actionable permission/space/reconnect messages. Ratings may still be safe in the backup, but users lack the actual remedy. ENOSPC and ENODEV branches share the same provable type-mapping defect; only EACCES was triggered with real I/O here.
+**Consequence:** Generic Retry replaces permission/space/reconnect remedies, even with a safe backup. ENOSPC/ENODEV share the defect; only EACCES used real I/O.
 
 **Minimal fix:** Extract the stored errno from every `DurableFileIO.IOError.system` first and map it through the same reason function used for NSPOSIXErrorDomain; preserve the special busy operation classification. Cover real read-only I/O plus injected ENOSPC/ENODEV.
 
@@ -132,4 +134,4 @@ DURABLE ERROR NSError DOMAIN: ...DurableFileIO.IOError, code=0, expected POSIX d
 - Compiler output: `/private/tmp/louppe-audit-2026-09-29/state-repro-build.log`
 - JSON-size measurement: `/private/tmp/louppe-audit-2026-09-29/state-json-size-measurement.json`
 
-The compile helper uses the same canonical production Swift sources and existing XMP-only stubs as `Tests/run_performance_checks.sh`, with `DEBUG` for the existing test setup boundary. It emits its executable/module cache exclusively under the audit directory. Compile and run both exited 0. The compiler reported existing macOS 27 AVPlayer notification deprecations, unrelated to these reproductions. Disposable folder permissions were restored after the read-only check.
+The helper compiles canonical Swift with existing XMP-only stubs from `Tests/run_performance_checks.sh` and `DEBUG` for setup injection. Executable/cache stay in the audit directory. Compile/run exited 0. macOS 27 AVPlayer deprecations were preexisting. Read-only fixture permissions were restored.

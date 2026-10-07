@@ -1,35 +1,28 @@
 # Automatic updates
 
-This guide applies only to Louppe’s direct-download product. Never embed or
-enable Sparkle in the Mac App Store build; its separate sandbox, signing, and
-submission procedure is documented in [APP_STORE.md](APP_STORE.md).
+This guide covers direct downloads. The [Store build](APP_STORE.md) has no Sparkle.
 
-Louppe uses Sparkle 2.10.0 for daily update checks, secure background downloads,
-installation on quit, and the manual **Louppe → Check for Updates…** command.
-Photographers can turn automatic checks and downloads on or off in
-**Louppe → Settings…**.
+Sparkle 2.10.0 checks daily, downloads in the background, and installs on quit.
+**Louppe → Check for Updates…** checks manually; **Settings…** controls
+automatic checks and downloads.
 
-## Security model
+## Security
 
-- The appcast is served over HTTPS from `appcast.xml` on `main`.
-- Both the feed and update archive are signed with Sparkle's Ed25519 key.
-- Public builds are signed with Developer ID, use the hardened runtime, and
-  carry a stapled Apple notarization ticket for offline Gatekeeper checks.
-- Louppe requires the signed feed and verifies the archive before extracting
-  it. A changed or forged download is rejected.
-- Only the public key is embedded in `Louppe.app`. The private key remains in
-  the release owner's macOS Keychain under the account
-  `com.alexandermarkin.louppe`.
+- HTTPS serves `appcast.xml` from `main`.
+- Sparkle Ed25519 signs the feed and archive; verification precedes extraction.
+- Public apps use Developer ID, hardened runtime, and a stapled notarization
+  ticket for offline Gatekeeper checks.
+- Only the public key is embedded. The private key stays in the release
+  owner’s Keychain account `com.alexandermarkin.louppe`.
 
-The current public key is:
+Public key:
 
 ```text
 ZT/Kv98/mVd/uo2iUyBb0Gj0ShZqZ+FdfthHBjyH86k=
 ```
 
-Back up the private key somewhere encrypted and outside this repository. After
-building once, locate Sparkle's key tool and export the key (substitute the
-path printed by `find` if SwiftPM uses a different artifact folder):
+Keep an encrypted private-key backup outside the repository. After a build,
+locate and export it (use the path returned by `find`):
 
 ```sh
 find .build/artifacts -path '*/Sparkle/bin/generate_keys' -print
@@ -39,86 +32,59 @@ find .build/artifacts -path '*/Sparkle/bin/generate_keys' -print
   -x /secure/offline/location/louppe-sparkle-private-key
 ```
 
-Losing the private key means existing updater-enabled builds cannot accept a
-normally signed update. Never commit or upload the exported private key.
+Losing the key prevents existing builds from accepting normal signed updates.
+Never commit or upload it. Sparkle’s public binary uses its official SHA-256;
+builds disable optional Keychain credential lookup and need no GitHub login.
 
-Sparkle is fetched as a public binary with its official SHA-256 checksum.
-`build_app.sh` disables SwiftPM's optional Keychain credential lookup, so
-building Louppe neither needs nor requests access to a saved GitHub login.
+## Release
 
-## Release procedure
-
-1. Confirm `VERSION` and the top `CHANGELOG.md` entry are final. The normal
-   one-bump-per-release-cycle rule still applies.
-2. Confirm the Mac has a valid **Developer ID Application** certificate and a
-   `notarytool` Keychain profile. Build the signed app and archive:
+1. Finalize `VERSION` and the current `CHANGELOG.md` entry. Bump once per release.
+2. With a Developer ID Application certificate and `notarytool` profile, build:
 
    ```sh
    ./build_app.sh --developer-id \
      'Developer ID Application: Your Name (TEAMID)'
    ```
 
-3. Submit that archive to Apple, staple the accepted ticket, and recreate the
-   archive from the exact stapled app:
+3. Submit, staple, and recreate the ZIP from that exact app:
 
    ```sh
    ./Scripts/notarize_release.sh --keychain-profile louppe-notary
    ```
 
-   The script saves Apple's result as `dist/notarization.json` and the detailed
-   log as `dist/notarization-log.json`. Preserve both with the release records;
-   they contain the request ID and results, but no credentials.
-
-4. Sign the notarized archive for Sparkle and regenerate the signed feed:
+   Keep `dist/notarization.json` and `dist/notarization-log.json` as release
+   evidence. They record request IDs and results, without credentials.
+4. Sign the archive and feed, then verify:
 
    ```sh
    ./Scripts/prepare_update_feed.sh
    ./Scripts/verify_release.sh --publishing
    ```
 
-5. Create GitHub release `v<MARKETING_VERSION>` and upload the exact generated
-   `dist/Louppe.zip`. Do not recompress or replace it after the feed is made.
-6. Commit and push the generated `appcast.xml`. Verify its enclosure URL
-   downloads the GitHub release asset.
-7. From the previous public Louppe version, choose **Check for Updates…** and
-   complete one real update before announcing the release.
+5. Publish `v<MARKETING_VERSION>` with the exact `dist/Louppe.zip`. Never
+   recompress or replace it after feed generation.
+6. Commit and push `appcast.xml`; check its enclosure downloads the release ZIP.
+7. Complete a real update from the previous public version before announcing.
 
-The archive name stays `Louppe.zip`; its versioned GitHub tag makes the URL
-unique. `prepare_update_feed.sh` embeds only the current changelog entry,
-creates no delta files, signs the archive reference, and signs the complete
-feed. `verify_release.sh --publishing` then refuses the release if its
-version/build, archive length or signature, feed signature, enclosure URL,
-minimum macOS version, embedded framework, Developer ID signature, hardened
-runtime, notarization ticket, Gatekeeper acceptance, or app signature is
-inconsistent.
-
-Homebrew uses this same ZIP. Publishing a stable release automatically updates
-the package definition; see [HOMEBREW.md](HOMEBREW.md).
+The ZIP name stays `Louppe.zip`; the versioned tag makes its URL unique.
+The feed includes only the current changelog and no deltas. Publishing checks
+version/build, ZIP length/signature, feed signature, URL, minimum macOS,
+framework, Developer ID, hardened runtime, notarization, Gatekeeper, and app
+signature. Stable releases also update [Homebrew](HOMEBREW.md).
 
 ## GitHub release notes
 
-Use the published [1.9.0 note](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.9.0)
-as the model for reader-facing notes. Title each release `Louppe vX.Y.Z` and
-write:
+Follow [the 1.9.0 note](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.9.0):
+title `Louppe vX.Y.Z`, one benefit sentence, a few **What’s new** bullets,
+**Download** instructions with minimum macOS, and a changelog link.
+Keep beta limits and safety caveats that affect users; put technical detail in
+the changelog. Check signing claims for each version: before 1.8.0, first
+launch needed right-click; 1.8.0 onward is signed and notarized.
 
-1. One sentence on the main benefit.
-2. `### What’s new` with a few short bullets about changes people will notice.
-   Combine related changes; lead with the biggest benefit. Keep beta limits or
-   file-safety caveats when they affect a user's choice.
-3. `### Download` with the ZIP installation or update path and the minimum
-   macOS requirement.
-4. A link to the complete version history in `CHANGELOG.md`.
+## Local checks
 
-Keep implementation details and exhaustive change lists in the changelog. Check
-installation and signing claims against the specific release: versions before
-1.8.0 needed the first-launch right-click workaround; 1.8.0 and later are
-signed and notarized.
-
-## Local verification
-
-`build_app.sh` preserves Sparkle's versioned framework symlinks, embeds it in
-`Contents/Frameworks`, signs the complete app, and builds the same zip used for
-GitHub. Useful checks:
+`build_app.sh` embeds Sparkle with its versioned symlinks, signs the full app,
+and creates the release ZIP.
 
 ```sh
 codesign --verify --deep --strict dist/Louppe.app
@@ -132,5 +98,5 @@ SPARKLE_TOOLS="$(find .build/artifacts -type d -path '*/Sparkle/bin' -print -qui
   --verify appcast.xml
 ```
 
-The feed URL will not expose an unpublished local build. Automatic checks only
-offer versions present in the committed, signed `appcast.xml`.
+Unpublished local builds are absent from the committed signed feed and are
+never offered by automatic checks.

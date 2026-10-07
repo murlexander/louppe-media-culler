@@ -10,10 +10,10 @@ enum XMPApplicationProfile: String, CaseIterable, Codable, Hashable, Sendable {
 
     var displayName: String {
         switch self {
-        case .universal: return "Universal XMP"
-        case .lightroomClassic: return "Adobe Lightroom Classic"
-        case .bridge: return "Adobe Bridge"
-        case .captureOne: return "Capture One"
+        case .universal: return L10n.text("Universal XMP")
+        case .lightroomClassic: return L10n.text("Adobe Lightroom Classic")
+        case .bridge: return L10n.text("Adobe Bridge")
+        case .captureOne: return L10n.text("Capture One")
         case .darktable: return "darktable"
         }
     }

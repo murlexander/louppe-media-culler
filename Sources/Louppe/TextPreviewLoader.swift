@@ -16,13 +16,13 @@ actor TextPreviewLoader {
         var errorDescription: String? {
             switch self {
             case .tooLarge:
-                return "This file is larger than the 1 MB text preview limit. Open it in another app to read it."
+                return L10n.text("This file is larger than the 1 MB text preview limit. Open it in another app to read it.")
             case .unsupportedEncoding:
-                return "This file couldn’t be read as UTF-8 or Unicode text. Open it in another app to check its encoding."
+                return L10n.text("This file couldn’t be read as UTF-8 or Unicode text. Open it in another app to check its encoding.")
             case .changed:
-                return "This file changed since the folder was scanned. Rescan the folder to see the current text."
+                return L10n.text("This file changed since the folder was scanned. Rescan the folder to see the current text.")
             case .unreadable:
-                return "This file couldn’t be read. Check that it is still available and that Louppe has permission to open it."
+                return L10n.text("This file couldn’t be read. Check that it is still available and that Louppe has permission to open it.")
             }
         }
     }

@@ -1,64 +1,54 @@
 # Mac App Store submission
 
-Louppe has two intentionally separate distribution products:
+Louppe builds two products:
 
-- `./build_app.sh` is the existing direct-download build. It contains the
-  signed Sparkle updater and its release ZIP.
-- `./build_app.sh --app-store` is the Store product. It contains neither
-  Sparkle nor an update feed, is sandboxed, and has a valid privacy manifest.
-  Its ZIP is a local verification artifact only — do not upload it to App
-  Store Connect.
+- `./build_app.sh`: direct download with Sparkle and a release ZIP.
+- `./build_app.sh --app-store`: sandboxed Store app with a privacy manifest,
+  no Sparkle or update feed. Its ZIP is for local checks, not upload.
 
-The separation is deliberate: a Mac App Store app must use Store-delivered
-updates, may not add code or functionality after review, and needs App
-Sandbox. The Store product asks only for read/write access to folders the
-photographer explicitly chooses. It retains those choices as security-scoped
-bookmarks for Recent folders. An export destination receives the same treatment
-only while its durable recovery journal could still need it after an
-interruption; a completed or explicitly retired recovery record immediately
-relinquishes that access. The app does not request broad Pictures, Movies,
-Music, Full Disk Access, network, camera, microphone, contacts, or
-accessibility permissions.
+Store updates come through Apple; the app cannot add code after review.
+The app requests read/write access only to selected folders. Recent folders
+use security-scoped bookmarks. Export destinations retain access while a
+recovery journal needs it; completing or retiring that record releases access.
+It requests no broad Pictures, Movies, Music, Full Disk Access, network,
+camera, microphone, contacts, or accessibility permissions.
 
-## What the build checks
+## Build checks
 
-`./Scripts/verify_release.sh --app-store` independently verifies the loose
-app and the archive. It requires the sandbox, user-selected read/write, and
-bookmark entitlements; a valid bundled `PrivacyInfo.xcprivacy`; no Sparkle
-framework, link, or update-feed key; matching version/build values; and the
-two bundled third-party notices.
+`./Scripts/verify_release.sh --app-store` checks the loose app and archive
+independently: sandbox, selected-folder read/write and bookmark entitlements;
+valid `PrivacyInfo.xcprivacy`; no Sparkle framework, link, or feed key;
+matching version/build, Photography category, and both third-party notices.
 
-The privacy manifest says that Louppe doesn’t track or collect data. It
-declares only the local APIs the app uses: timestamps for media in folders the
-person selected, disk-space checks before a copy or move, and the app’s own
-preferences. Those values stay on the Mac.
+The manifest declares no tracking or collection. Its reasons cover selected
+media and cache timestamps, capacity display/write checks, elapsed timers, and
+app preferences; all stay on the Mac.
 
-## Before creating an upload package
+## Before packaging
 
-1. Test the exact Store build on a physical Mac using a normal selected media
-   folder: initial open, scan, close/reopen Recent, rating save, Copy, Move,
-   Trash/Undo, source organization, video/audio playback, waveform analysis,
-   and recovery after cancelling a Copy. Verify the app reports an actionable
-   error rather than silently changing media when a card is removed or access
-   is revoked.
-2. In App Store Connect, create the Mac app record for
-   `com.alexandermarkin.louppe`, use the version/build in `VERSION`, provide a
-   support URL and a public privacy-policy URL, and answer App Privacy as
-   “does not collect data” only while that remains true for every linked SDK.
-   Set the age rating and category truthfully, and use screenshots containing
-   media you own or have permission to show.
-3. Add review notes explaining that the reviewer can use **Choose Photo
-   Folder…** with a supplied sample folder; all analysis is local; originals
-   change only after the explicit Move, Organize Source Folder, XMP, or Trash
-   confirmations. Mention the optional video/audio features and the Command
-   Palette so they are not mistaken for hidden functionality.
-4. Use the Apple Distribution and 3rd Party Mac Developer Installer
-   certificates from the correct team. Re-run the Store build immediately
-   before signing it.
+1. Test the exact Store build on a physical Mac: select a media folder, scan,
+   reopen Recent, save ratings, Copy, Move, Trash/Undo, Organize, video/audio
+   playback, waveform analysis, and recovery after cancelling Copy. Card
+   removal or revoked access must show an actionable error and preserve media.
+2. Check **Help → Privacy Policy** and About’s privacy link. Create the
+   `com.alexandermarkin.louppe` App Store Connect record with `VERSION`,
+   support URL `https://louppe.eu/`, and privacy URL
+   `https://louppe.eu/privacy/`. Declare “does not collect data” only while
+   true for every linked SDK. Set accurate age/category ratings and use media
+   you own or have permission to show.
+3. Explain **Choose Media Folder…** and supply sample media in review notes.
+   Analysis is local. Only explicit Rename, Move, Organize, or Trash commands
+   change original names or locations; XMP writes affect sidecars. Mention optional
+   video/audio features and the Command Palette.
+4. Install SAMO DANNI EOOD’s (P6F95J4ZPA) Apple Distribution or Mac App
+   Distribution application identity and Mac Installer Distribution identity.
+   Check `security find-identity -v`; its codesigning filter hides installers.
+   Rebuild the Store app immediately before packaging. Current sandbox-only
+   entitlements need no provisioning profile; unexpected profiles are refused.
 
-## Signing and upload artifact
+## Sign and upload
 
-After the Store build and checks pass, create the signed installer package:
+After checks pass:
 
 ```sh
 ./Scripts/package_app_store.sh \
@@ -66,23 +56,37 @@ After the Store build and checks pass, create the signed installer package:
   --installer-identity '3rd Party Mac Developer Installer: Your Name (TEAMID)'
 ```
 
-The script never uploads. It re-signs only `dist/Louppe.app` with the
-least-privilege entitlements, verifies it, then creates and verifies
-`dist/Louppe.pkg`. Upload that signed package using the current App Store
-Connect workflow, then complete Apple’s metadata, export-compliance, and
-review-note forms. Do not sign or upload the direct-download ZIP.
+The script checks certificate classes/team before staging signing in
+`/private/tmp`. It verifies app/package signatures and the complete expanded
+payload, then publishes `dist/Louppe.pkg`. The checked app/ZIP stay intact;
+failures preserve any previous package. It never uploads.
+
+Installer verification requires a successful `pkgutil` signature check, the exact
+selected certificate, and Apple's MacDistributionInstaller trust policy
+(`1.2.840.113635.100.1.105`) with system trust. The human-readable status can
+label a valid submission certificate “Development”; it is diagnostic text,
+not the certificate-type gate. No Keychain trust overrides are needed.
+
+Upload that package through App Store Connect and complete metadata, export
+compliance, and review notes. Never upload the direct-download ZIP. Legacy
+`3rd Party Mac Developer Application:` identities are also accepted; Developer
+ID identities are refused. [Apple signing](https://developer.apple.com/documentation/xcode/creating-distribution-signed-code-for-the-mac)
+and [packaging](https://developer.apple.com/documentation/xcode/packaging-mac-software-for-distribution)
+describe these certificate requirements.
 
 ## Release gate
 
-For a Store submission, the final local gate is:
-
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-keychain
-./Tests/run_performance_checks.sh
-./build_app.sh --app-store
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./Tests/run_performance_checks.sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./build_app.sh --app-store
 ./Scripts/package_app_store.sh --application-identity '…' --installer-identity '…'
 ```
 
-`package_app_store.sh` needs the owner’s Apple certificates, so it cannot be
-completed by an unsigned development build. App Store Connect metadata and
-the final upload/review are also owner-controlled steps.
+Packaging requires the correct team’s Store certificates. App Store Connect
+requires an authorized account and complete listing/review fields.
+
+See [7 October readiness](APP_STORE_READINESS_2026-10-07.md) for fixes,
+validation, review notes, and remaining acceptance gates. Developer ID signing
+can test sandbox permissions locally; upload requires Apple Distribution and
+installer signatures.

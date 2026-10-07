@@ -1,7 +1,9 @@
 # Media and native UI implementation — 2026-09-29
 
 Canonical checkout: `/Users/alexander_markin/Documents/code/louppe/app`.
-Implemented audit findings M1, M2, M3, U1 and U2. All changes are uncommitted on the existing checkout; no branches, pushes, original-media changes, installation, or documentation/changelog edits were performed by this agent. Preserved the existing Help corner fix and every preexisting change. Did not edit SessionStore, Models, DurableFileIO, FileOperationJournal or other agents' owned files.
+Implemented M1, M2, M3, U1, and U2 locally, preserving the Help corner fix and existing
+work. No branches, pushes, original-media changes, install, or docs/changelog edits.
+SessionStore, Models, DurableFileIO, FileOperationJournal, and others' files were untouched.
 
 ## Final source changes
 
@@ -16,7 +18,7 @@ Implemented audit findings M1, M2, M3, U1 and U2. All changes are uncommitted on
 - `Sources/Louppe/VideoPlaybackController.swift:151,354,385`: cold synchronous preparation performs the explicitly approved single bounded `lstat`, preserving immediate prepare/play behavior for matching identities. It publishes actionable rescan copy and creates no AVPlayerItem for a mismatch. Ready-to-play rechecks identity on a detached worker and accepts the result only for the same revision and player generation. Existing already prepared matching-player reuse remains immediate. Decode/read loops stay off-main.
 - TextPreviewLoader already performs before/open/after source identity checks with a file descriptor; no changes were needed there.
 
-Regressions use real disposable files: same-path inode replacement, symlink replacement, in-place edits, replacement during a guarded read, stale RAW/audio decoder entry/result rejection, lazy source created before replacement, cold cache rejection versus fresh rescan success, and matching/replaced/symlink player preparation. A separate test confirms already validated memory caches still return the original images/numeric results after source removal.
+Disposable-file regressions cover inode/symlink/in-place replacement, guarded-read races, stale RAW/audio results, cached lazy-source rendering, cold-cache refusal/fresh-rescan success, and player preparation. Validated memory caches still return original image/numeric data after source removal.
 
 ### M2 — transparent photographs retain correct luminance and valid premultiplied pixels
 
@@ -63,9 +65,17 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 
 Breakdown: AudioCancellation 2; AudioSupport 5; GalleryVideoAccessibility 1; Histogram 12; ImagePipelineCache 8; MediaRevision 6; NumericFilterDraft 4; VideoPlayerView 13. Existing native player generation, seek, resume, rate, audio failure and file-operation stop regressions pass. Cache compatibility migration/coalescing cases pass.
 
-The two audio cancellation tests use controlled synchronous decoders on the actual operation queue. They prove cancellation reaches a running decoder; another request cannot start while its canceled predecessor has not exited; immediate same-revision rerequest receives the renewed 0.9 peak rather than abandoned 0.1 partial data; concurrency never exceeds one; the final result alone is cached; canceling one of two coalesced waiters preserves the remaining reader. No hardware-dependent decode-speed threshold is added to the suite.
+Two actual-queue tests use controlled decoders: cancellation reaches running work;
+B cannot start before canceled A exits; same-revision rerequest receives 0.9 instead
+of abandoned 0.1; concurrency stays at one; only final results cache; one canceled
+coalesced waiter leaves the other alive. No decode-speed threshold.
 
-Optimized standalone original audit probe rebuilt against the final media production sources using selected Xcode Swift compiler, `-O -parse-as-library`, its own module cache and only temporary fixture/output paths. Source: `/private/tmp/louppe-fixes-2026-09-29/media-stage/media-probe.swift`; binary: same directory `media-probe`; build log `/private/tmp/louppe-fixes-2026-09-29/media-probe-build.log`; runtime log `/private/tmp/louppe-fixes-2026-09-29/media-probe-result.log`.
+The optimized audit probe was rebuilt from final production sources with selected
+Xcode Swift, `-O -parse-as-library`, and temporary cache/fixtures. Source:
+`/private/tmp/louppe-fixes-2026-09-29/media-stage/media-probe.swift`; binary:
+`media-probe` in that directory. Build/runtime logs:
+`/private/tmp/louppe-fixes-2026-09-29/media-probe-build.log` and
+`/private/tmp/louppe-fixes-2026-09-29/media-probe-result.log`.
 
 ### Actual-media before/after evidence
 
@@ -78,9 +88,14 @@ Optimized standalone original audit probe rebuilt against the final media produc
 | Re-request abandoned long WAV | 0.0000390 s cache hit, proving abandoned whole clip reached EOF/cache | 4.5741349 s fresh analysis, confirming canceled partial/full work did not populate cache |
 | Canceled waiter's nil result | 0.0000260 s | 0.0034181 s |
 
-Times are observations on this machine, not performance pass thresholds. Short-request improvement includes native asset startup and normal sample decoding; the serial-reader-exit property is independently proved by deterministic tests. Existing AVAssetReader `copyNextSampleBuffer` macOS27 deprecation warning remains from prior code; no new deprecated API was introduced.
+Timings are local observations, not thresholds. Short-request time includes asset
+startup/decoding; deterministic tests separately prove serial-reader exit.
+Preexisting AVAssetReader `copyNextSampleBuffer` macOS27 deprecation remains;
+no new deprecated API was added.
 
-`git diff --check` passed for owned source/existing test diffs. Root handles whole-suite, strict-concurrency/performance, release verification and final app launch/install; no duplicate SwiftPM build uses this scratch directory.
+`git diff --check` passed for owned source/existing tests. The coordinator owns
+full-suite, strict-concurrency/performance, release, launch, and install checks;
+no second SwiftPM build uses this scratch path.
 
 ## Files changed by this agent
 
@@ -99,8 +114,18 @@ New focused tests (4): `Tests/LouppeTests/MediaRevisionTests.swift`, `AudioCance
 
 ## Integration follow-up — native playback synchronization
 
-Root's first complete integration run exposed a test-only synchronization failure in `GalleryVideoAccessibilityTests`: the immediate playing assertion passed, but `isPlaying` was false 100 ms later. Inspection shows the prior `for ... where !isPlaying` wait skipped every iteration because `toggle()` synchronously publishes optimistic playing intent before AVPlayer has reached its native playing status. Native readiness/buffering/KVO startup can therefore invalidate the later arbitrary timing assumption; no view action connected external-button focus to pause.
+`GalleryVideoAccessibilityTests` observed `isPlaying` false 100 ms after its initial assertion.
+`for ... where !isPlaying` skipped the wait because `toggle()` publishes intent
+before native playback. Readiness/buffering/KVO invalidates that timing assumption;
+external-button focus did not pause the player.
 
-Changed only this test, leaving frozen production sources intact. It now puts keyboard focus outside the video first, waits for the real AVPlayerItem to be ready, starts playback and waits until the actual AVPlayer time-control status is `.playing`, the controller observes playing, and the timeline advances beyond 0.05 seconds. It then inspects the hosted transport within that observed active state, with explicit readiness/playback diagnostics and a bounded 5-second fixture timeout if native playback genuinely fails. Thus an unavailable or paused native player still fails the test; the correction does not remove its real playback requirement.
+Only the test changed. With focus outside the video, it awaits AVPlayerItem readiness,
+`.playing`, controller observation, and time beyond 0.05 seconds before inspecting
+transport. A bounded 5-second timeout retains real readiness/playback failures;
+production source stayed frozen.
 
-The relevant integration group (`GalleryVideoAccessibilityTests|AudioSupportTests|AudioCancellationTests|GridControlGestureTests|FolderHierarchyTests|HotkeyTests|VideoPlayerViewTests`) passed **69 tests, zero failures**, 4.940 seconds, including real native playback with external focus. Gallery's native readiness/playing fixture took 0.821 seconds in that run, illustrating why the old fixed 100 ms check was unsuitable. Log: `/private/tmp/louppe-fixes-2026-09-29/gallery-integration-test.log`. Root is rerunning the complete suite against this final test-only correction.
+Integration group (`GalleryVideoAccessibilityTests|AudioSupportTests|AudioCancellationTests|GridControlGestureTests|FolderHierarchyTests|HotkeyTests|VideoPlayerViewTests`):
+**69 tests, zero failures**, 4.940 seconds, with native playback and external focus.
+Gallery startup took 0.821 seconds, exceeding the old 100 ms assumption. Log:
+`/private/tmp/louppe-fixes-2026-09-29/gallery-integration-test.log`.
+The coordinator was rerunning the full suite with this test correction.

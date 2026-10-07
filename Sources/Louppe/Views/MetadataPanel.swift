@@ -398,7 +398,7 @@ struct MetadataPanel: View {
 
         ForEach(otherFields) { field in
             VStack(alignment: .leading, spacing: 1) {
-                Text(field.label)
+                Text(L10n.label(field.label))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text(field.value)
@@ -412,15 +412,15 @@ struct MetadataPanel: View {
         VStack(alignment: .leading, spacing: 4) {
             if isEditingFilename {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    TextField("Filename", text: $filenameDraft)
+                    TextField(L10n.text("Filename"), text: $filenameDraft)
                         .textFieldStyle(.roundedBorder)
                         .font(.title3.weight(.semibold))
                         .focused($filenameIsFocused)
                         .onSubmit { submitFilenameRename() }
                         .onExitCommand { cancelFilenameEditing() }
-                        .accessibilityLabel("Filename without extension")
+                        .accessibilityLabel(L10n.text("Filename without extension"))
                         .accessibilityHint(
-                            "Edit the name without its extension. Matching RAW, JPEG, and XMP files are renamed together."
+                            L10n.text("Edit the name without its extension. Matching RAW, JPEG, and XMP files are renamed together.")
                         )
                     Text(filenameExtension)
                         .font(.title3.weight(.semibold))
@@ -434,13 +434,13 @@ struct MetadataPanel: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
-                    .accessibilityLabel("Cancel filename editing")
+                    .accessibilityLabel(L10n.text("Cancel filename editing"))
                 }
 
                 if isPlanningFilename {
                     HStack(spacing: 6) {
                         ProgressView().controlSize(.small)
-                        Text("Checking filename…")
+                        Text(L10n.text("Checking filename…"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -469,7 +469,7 @@ struct MetadataPanel: View {
                         .controlSize(.small)
                 }
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("Renaming \(item.displayName)")
+                .accessibilityLabel(L10n.text("Renaming \(item.displayName)"))
             } else {
                 Button {
                     beginFilenameEditing()
@@ -482,9 +482,9 @@ struct MetadataPanel: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!store.canRenameSource)
-                .help("Click to edit filename")
+                .help(L10n.text("Click to edit filename"))
                 .accessibilityLabel(item.displayName)
-                .accessibilityHint("Click to edit the filename in place.")
+                .accessibilityHint(L10n.text("Click to edit the filename in place."))
             }
 
             if let operationError = store.organizationError,
@@ -551,7 +551,7 @@ struct MetadataPanel: View {
                 itemID: requestedItemID
             ) else {
                 isPlanningFilename = false
-                filenamePlanningError = "This filename can no longer be edited."
+                filenamePlanningError = L10n.text("This filename can no longer be edited.")
                 return
             }
             let result = await Task.detached(priority: .userInitiated) {
@@ -612,28 +612,28 @@ struct MetadataPanel: View {
 
         MetadataEditingControls(store: store)
 
-        Button("Rename Files…") {
+        Button(L10n.text("Rename Files…")) {
             store.presentMetadataFileRenaming()
         }
         .disabled(!store.canRenameSource)
 
         Divider()
 
-        selectionSummaryField("Cameras", value: summary.cameras.joined(separator: ", "))
-        selectionSummaryField("Lenses", value: summary.lenses.joined(separator: ", "))
-        selectionSummaryField("Captured", value: captureDateText(for: summary))
+        selectionSummaryField(L10n.text("Cameras"), value: summary.cameras.joined(separator: ", "))
+        selectionSummaryField(L10n.text("Lenses"), value: summary.lenses.joined(separator: ", "))
+        selectionSummaryField(L10n.text("Captured"), value: captureDateText(for: summary))
         selectionSummaryField(
-            "Total size",
+            L10n.text("Total size"),
             value: ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file)
         )
-        selectionSummaryField("Types", value: summary.fileTypes.joined(separator: ", "))
+        selectionSummaryField(L10n.text("Types"), value: summary.fileTypes.joined(separator: ", "))
     }
 
     private func selectionTitle(for summary: PhotoSelectionSummary) -> String {
         let itemLabel = summary.photoCount == summary.count
             ? "photos"
-            : "media items"
-        return "\(summary.count) \(itemLabel) selected · \(summary.fileCount) files"
+            : L10n.text("media items")
+        return L10n.text("\(summary.count) \(itemLabel) selected · \(summary.fileCount) files")
     }
 
     private func selectionSummaryField(_ label: String, value: String) -> some View {
@@ -664,14 +664,14 @@ struct MetadataPanel: View {
         }
         if summary.unknownDateCount > 0 {
             let itemLabel = summary.photoCount == summary.count
-                ? "photo"
-                : "media item"
+                ? L10n.text("photo")
+                : L10n.text("media item")
             let label = summary.unknownDateCount == 1
-                ? "1 \(itemLabel) without a capture date"
-                : "\(summary.unknownDateCount) \(itemLabel)s without a capture date"
+                ? L10n.text("1 \(itemLabel) without a capture date")
+                : L10n.text("\(summary.unknownDateCount) \(itemLabel)s without a capture date")
             lines.append(label)
         }
-        return lines.isEmpty ? "Unknown" : lines.joined(separator: "\n")
+        return lines.isEmpty ? L10n.text("Unknown") : lines.joined(separator: "\n")
     }
 
     @ViewBuilder
@@ -742,9 +742,9 @@ struct MetadataPanel: View {
 
     private func displayLabel(for field: MetadataField) -> String {
         switch field.label {
-        case "Exposure comp.": return "Exp. comp."
-        case "White balance": return "WB"
-        default: return field.label
+        case "Exposure comp.": return L10n.text("Exp. comp.")
+        case "White balance": return L10n.text("WB")
+        default: return L10n.label(field.label)
         }
     }
 
@@ -766,10 +766,10 @@ private struct MediaPlaybackSpeedControl: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Playback speed")
+            Text(L10n.text("Playback speed"))
                 .font(.subheadline.weight(.semibold))
             Picker(
-                "Media playback speed",
+                L10n.text("Media playback speed"),
                 selection: Binding(
                     get: { playback.playbackRate },
                     set: { playback.setPlaybackRate($0) }
@@ -783,7 +783,7 @@ private struct MediaPlaybackSpeedControl: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .disabled(!isEnabled)
-            .accessibilityHint("Applies to video and audio playback.")
+            .accessibilityHint(L10n.text("Applies to video and audio playback."))
         }
     }
 

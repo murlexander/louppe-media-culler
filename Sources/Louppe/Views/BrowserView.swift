@@ -146,7 +146,7 @@ private struct BrowserRow: View {
                     item: item,
                     isCurrent: item.id == store.currentItem?.id,
                     isSelected: store.selectedIndices.contains(index),
-                    showActionTitle: "Show in Gallery",
+                    showActionTitle: L10n.text("Show in Gallery"),
                     show: onPlainClick,
                     open: onPlainClick,
                     canRate: store.canRate,

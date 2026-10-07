@@ -21,30 +21,33 @@ enum ExportDestinationValidator {
         case notDirectory
         case notWritable
         case duplicateMultiDestination
+        case collisionSafePublicationUnavailable
         case insufficientSpace(required: Int64, available: Int64)
 
         var errorDescription: String? {
             switch self {
             case .missingSourceFolder:
-                return "The source folder is no longer open."
+                return L10n.text("The source folder is no longer open.")
             case .sourceFolder:
-                return "Choose a destination outside the folder you are reviewing."
+                return L10n.text("Choose a destination outside the folder you are reviewing.")
             case .insideSourceFolder:
-                return "Choose a destination outside the folder you are reviewing. Exporting into one of its subfolders would make the exported media appear in this session again."
+                return L10n.text("Choose a destination outside the reviewed folder. Copies in its subfolders would reappear in this session.")
             case .crossVolumeMove:
-                return "Move is currently limited to folders on the same storage volume. Choose Copy when exporting to another drive or card so Louppe never risks stranding an original during an interrupted transfer."
+                return L10n.text("Move requires the same storage volume. Use Copy for another drive or card to protect originals during interruption.")
             case .notDirectory:
-                return "The selected destination is not a folder."
+                return L10n.text("The selected destination is not a folder.")
             case .notWritable:
-                return "Louppe does not have permission to write to that destination."
+                return L10n.text("Louppe does not have permission to write to that destination.")
             case .duplicateMultiDestination:
-                return "Each routing rule needs its own destination folder. Choose separate folders so Louppe can show one unambiguous copy plan."
+                return L10n.text("Each route needs a separate destination folder.")
+            case .collisionSafePublicationUnavailable:
+                return L10n.text("This destination cannot safely prevent export collisions. Choose an APFS folder on your Mac or another supported drive.")
             case .insufficientSpace(let required, let available):
                 let formatter = ByteCountFormatter()
                 formatter.countStyle = .file
                 let requiredText = formatter.string(fromByteCount: required)
                 let availableText = formatter.string(fromByteCount: available)
-                return "The destination does not have enough free space. \(requiredText) is required, but only \(availableText) is available."
+                return L10n.text("Not enough destination space: \(requiredText) required, \(availableText) available.")
             }
         }
     }
@@ -156,8 +159,61 @@ enum ExportDestinationValidator {
                 available: available
             )
         }
-        try binding.requireCurrentPath()
+        try requireCollisionSafePublication(at: binding)
         return ValidatedDestination(url: validatedDestination, binding: binding)
+    }
+
+    /// Copy and Export Move publish with RENAME_EXCL. Ask the selected
+    /// folder's held volume for that capability before a journal or temporary
+    /// media file exists. ExFAT advertises it as unsupported; unknown capability
+    /// retains the existing syscall check instead of rejecting whole formats.
+    static func requireCollisionSafePublication(
+        at binding: DurableFileIO.DirectoryBinding
+    ) throws {
+        try binding.requireCurrentPath()
+        let descriptor = binding.url.withUnsafeFileSystemRepresentation { path in
+            path.map { Darwin.open($0, O_RDONLY | O_CLOEXEC | O_DIRECTORY | O_NOFOLLOW) } ?? -1
+        }
+        guard descriptor >= 0 else {
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
+        defer { Darwin.close(descriptor) }
+        var status = Darwin.stat()
+        guard Darwin.fstat(descriptor, &status) == 0,
+              status.st_dev == binding.device,
+              status.st_ino == binding.inode,
+              status.st_birthtimespec.tv_sec == binding.birthSeconds,
+              status.st_birthtimespec.tv_nsec == binding.birthNanoseconds else {
+            throw DurableFileIO.DestinationChanged()
+        }
+        var attributes = attrlist()
+        attributes.bitmapcount = UInt16(ATTR_BIT_MAP_COUNT)
+        attributes.volattr = UInt32(ATTR_VOL_INFO) | UInt32(ATTR_VOL_CAPABILITIES)
+        // getattrlist's length word followed by vol_capabilities_attr_t:
+        // four capability words, then four validity-mask words (all UInt32).
+        var words = [UInt32](repeating: 0, count: 9)
+        let result = words.withUnsafeMutableBytes { buffer in
+            Darwin.fgetattrlist(descriptor, &attributes, buffer.baseAddress!, buffer.count, 0)
+        }
+        let interfaceIndex = Int(VOL_CAPABILITIES_INTERFACES)
+        let unsupported = result == 0
+            && words[0] >= UInt32(words.count * MemoryLayout<UInt32>.size)
+            && exclusiveRenameIsUnsupported(
+                capabilities: words[1 + interfaceIndex],
+                valid: words[5 + interfaceIndex]
+            )
+        try binding.requireCurrentPath()
+        if unsupported {
+            throw ValidationError.collisionSafePublicationUnavailable
+        }
+    }
+
+    static func exclusiveRenameIsUnsupported(
+        capabilities: UInt32,
+        valid: UInt32
+    ) -> Bool {
+        let exclusiveRename = UInt32(VOL_CAP_INT_RENAME_EXCL)
+        return valid & exclusiveRename != 0 && capabilities & exclusiveRename == 0
     }
 
     /// Validates every route before a multi-destination journal can be
@@ -307,7 +363,7 @@ enum ExportDestinationValidator {
     }
 
     /// Move currently relies on inode-preserving renames. Unknown or mixed
-    /// volume identity fails closed; Copy remains available everywhere.
+    /// volume identity fails closed; Copy can cross volumes.
     static func moveCanUseAtomicRename(
         items: [PhotoItem],
         destination: URL

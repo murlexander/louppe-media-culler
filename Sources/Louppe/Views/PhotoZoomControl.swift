@@ -15,12 +15,12 @@ struct PhotoZoomControl: View {
         HStack(spacing: 5) {
             if store.currentItem?.isRaw == true {
                 Menu {
-                    Picker("RAW display", selection: $rawDisplayMode) {
+                    Picker(L10n.text("RAW display"), selection: $rawDisplayMode) {
                         ForEach(RawDisplayMode.allCases, id: \.self) { mode in
                             Text(mode.title).tag(mode)
                         }
                     }
-                    Picker("Apple RAW decoder", selection: $rawDecoder) {
+                    Picker(L10n.text("Apple RAW decoder"), selection: $rawDecoder) {
                         ForEach(AppleRawDecoder.allCases, id: \.self) { decoder in
                             Text(decoder.title).tag(decoder)
                                 .disabled(decoder == .raw9 && !AppleRawDecoder.supportsRAW9)
@@ -32,22 +32,22 @@ struct PhotoZoomControl: View {
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
-                .help("RAW display and decoder. RAW 9 uses more time and memory and requires a supported file on macOS 27.")
-                .accessibilityLabel("RAW display")
+                .help(L10n.text("RAW display and decoder. RAW 9 requires a supported macOS 27 file and uses more time and memory."))
+                .accessibilityLabel(L10n.text("RAW display"))
                 .accessibilityValue("\(store.currentPhotoRepresentation?.label ?? "Loading"), \(rawDecoder.title)")
             }
-            Button("Fit") { store.zoomToFit() }
+            Button(L10n.text("Fit")) { store.zoomToFit() }
                 .buttonStyle(.bordered)
                 .fontWeight(store.zoomMode == .fit ? .semibold : .regular)
-                .accessibilityLabel("Fit photo in window")
+                .accessibilityLabel(L10n.text("Fit photo in window"))
                 .accessibilityAddTraits(store.zoomMode == .fit ? .isSelected : [])
 
             Slider(value: sliderValue, in: 0...1)
                 .frame(width: 105)
                 .disabled(displayedScale == nil)
-                .accessibilityLabel("Photo zoom")
+                .accessibilityLabel(L10n.text("Photo zoom"))
                 .accessibilityValue(currentValueLabel)
-                .help("Zoom from 30% to 400%. At 100%, one source pixel fills one display pixel.")
+                .help(L10n.text("Zoom from 30% to 400%. At 100%, one source pixel fills one display pixel."))
 
             Text(currentValueLabel)
                 .font(.caption.monospacedDigit())

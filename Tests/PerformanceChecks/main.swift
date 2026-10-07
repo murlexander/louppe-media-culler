@@ -4,6 +4,15 @@ import Foundation
 @main
 struct PerformanceChecks {
     static func main() async throws {
+        // Reproduce this exact on-disk fixture without unrelated suite work.
+        if let requested = ProcessInfo.processInfo.environment["LOUPPE_PAIRING_FIXTURE_REPEATS"],
+           let repeats = Int(requested), (1...100).contains(repeats) {
+            for _ in 0..<repeats {
+                try await pairingToggleStaysReadyAndPersistsIndividualRatings()
+            }
+            print("Pairing fixture passed (\(repeats) repetitions)")
+            return
+        }
         try preparedFilterMatchesFoldedMetadataTokens()
         try preparedFilterUsesWholeDayBounds()
         try preparedFilterUsesSpecificDateCheckboxes()
@@ -3599,7 +3608,31 @@ struct PerformanceChecks {
     @MainActor
     private static func rescanPreservesCurrentPhotoAndSelectionByID() async throws {
         let folder = try disposableFolder(named: "StableRescanIdentity")
-        defer { try? FileManager.default.removeItem(at: folder) }
+        var completed = false
+        var identityTransitions: [String: [String: FileOperationJournal.FileIdentity]] = [:]
+        defer {
+            if completed {
+                try? FileManager.default.removeItem(at: folder)
+            } else {
+                // A failed fixture is evidence, not disposable cleanup. Keep
+                // exact inode/size/birth/mtime/ctime transitions for diagnosis.
+                identityTransitions["at-failure"] = scanFixtureIdentities(in: folder)
+                let evidence = URL(fileURLWithPath: "/private/tmp", isDirectory: true)
+                    .appendingPathComponent("louppe-scan-fixture-failure-\(UUID()).json")
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+                do {
+                    try encoder.encode(identityTransitions).write(to: evidence)
+                    FileHandle.standardError.write(Data(
+                        "Retained failed scan fixture: \(folder.path); identity transitions: \(evidence.path)\n".utf8
+                    ))
+                } catch {
+                    FileHandle.standardError.write(Data(
+                        "Retained failed scan fixture: \(folder.path); identity capture could not be written: \(error)\n".utf8
+                    ))
+                }
+            }
+        }
         let fixtureURL = URL(fileURLWithPath: "AppIcon/AppIcon.iconset/icon_16x16.png")
         let fixture = try Data(contentsOf: fixtureURL)
         let fm = FileManager.default
@@ -3613,9 +3646,15 @@ struct PerformanceChecks {
             )
         }
 
+        identityTransitions["before-initial-scan"] = scanFixtureIdentities(in: folder)
         let store = SessionStore()
         store.openFolder(folder)
         try await waitForReadySession(store, expectedItems: 3)
+        identityTransitions["initial-scan-records"] = Dictionary(
+            uniqueKeysWithValues: store.items.compactMap { item in
+                item.primaryFile.scannedIdentity.map { (item.id, $0) }
+            }
+        )
         guard let a = store.items.firstIndex(where: { $0.id == "A.png" }),
               let b = store.items.firstIndex(where: { $0.id == "B.png" }) else {
             throw CheckFailure("initial scan should contain A and B")
@@ -3633,6 +3672,7 @@ struct PerformanceChecks {
             ofItemAtPath: newURL.path
         )
 
+        identityTransitions["before-rescan"] = scanFixtureIdentities(in: folder)
         store.rescan()
         try await waitForReadySession(store, expectedItems: 4)
         let rescannedSelection = Set(
@@ -3651,12 +3691,61 @@ struct PerformanceChecks {
             "fixture should actually move the current photo to a new array index"
         )
         _ = await store.saveSessionForTermination()
+        completed = true
+    }
+
+    private static func scanFixtureIdentities(
+        in folder: URL,
+        names: [String] = ["A.png", "B.png", "C.png", "D.png"]
+    ) -> [String: FileOperationJournal.FileIdentity] {
+        Dictionary(uniqueKeysWithValues: names.compactMap { name in
+            guard let identity = try? FileOperationJournal.captureIdentity(
+                at: folder.appendingPathComponent(name)
+            ) else { return nil }
+            return (name, identity)
+        })
     }
 
     @MainActor
     private static func pairingToggleStaysReadyAndPersistsIndividualRatings() async throws {
         let folder = try disposableFolder(named: "PairingRatings")
-        defer { try? FileManager.default.removeItem(at: folder) }
+        var completed = false
+        var checkpoint = "fixture-creation"
+        var diagnosticStore: SessionStore?
+        var identityTransitions: [String: [String: FileOperationJournal.FileIdentity]] = [:]
+        defer {
+            if completed {
+                try? FileManager.default.removeItem(at: folder)
+            } else {
+                identityTransitions["at-failure"] = scanFixtureIdentities(
+                    in: folder, names: ["SHOT.NEF", "SHOT.JPG"]
+                )
+                if let diagnosticStore {
+                    identityTransitions["records-at-failure"] = Dictionary(
+                        uniqueKeysWithValues: diagnosticStore.items.flatMap(\.individualFiles).compactMap { file in
+                            file.scannedIdentity.map { (file.id, $0) }
+                        }
+                    )
+                }
+                let evidence = URL(fileURLWithPath: "/private/tmp", isDirectory: true)
+                    .appendingPathComponent("louppe-pairing-fixture-failure-\(UUID()).json")
+                let state = diagnosticStore.map(pairingFixtureState) ?? "no session"
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+                do {
+                    try encoder.encode(PairingFixtureEvidence(
+                        checkpoint: checkpoint, state: state, identities: identityTransitions
+                    )).write(to: evidence)
+                    FileHandle.standardError.write(Data(
+                        "Retained failed pairing fixture: \(folder.path); evidence: \(evidence.path); checkpoint=\(checkpoint); \(state)\n".utf8
+                    ))
+                } catch {
+                    FileHandle.standardError.write(Data(
+                        "Retained failed pairing fixture: \(folder.path); evidence write failed: \(error); \(state)\n".utf8
+                    ))
+                }
+            }
+        }
         let fixtureURL = URL(fileURLWithPath: "AppIcon/AppIcon.iconset/icon_16x16.png")
         let fixture = try Data(contentsOf: fixtureURL)
         try fixture.write(to: folder.appendingPathComponent("SHOT.NEF"))
@@ -3679,10 +3768,20 @@ struct PerformanceChecks {
             to: folder.appendingPathComponent(SessionConstants.sidecarName)
         )
 
+        identityTransitions["before-initial-scan"] = scanFixtureIdentities(
+            in: folder, names: ["SHOT.NEF", "SHOT.JPG"]
+        )
         let store = SessionStore()
+        diagnosticStore = store
+        checkpoint = "initial-scan"
         store.setRawJPEGPairingMode(.together)
         store.openFolder(folder)
         try await waitForReadySession(store, expectedItems: 1)
+        identityTransitions["initial-scan-records"] = Dictionary(
+            uniqueKeysWithValues: store.items.flatMap(\.individualFiles).compactMap { file in
+                file.scannedIdentity.map { (file.id, $0) }
+            }
+        )
         try expect(
             !store.isLegacySessionMigrationConfirmationPresented,
             "an all-present filename-only session should migrate without an unnecessary prompt"
@@ -3692,6 +3791,10 @@ struct PerformanceChecks {
             "schema 1 paired ratings should survive automatic migration"
         )
 
+        checkpoint = "initial-split"
+        identityTransitions["before-initial-split"] = scanFixtureIdentities(
+            in: folder, names: ["SHOT.NEF", "SHOT.JPG"]
+        )
         store.setRawJPEGPairingMode(.separate)
         if case .ready = store.phase {
             // Expected: the existing session stays visible during enrichment.
@@ -3717,6 +3820,7 @@ struct PerformanceChecks {
             "fixture should create a conflicting JPEG rating"
         )
 
+        checkpoint = "regrouping"
         store.setRawJPEGPairingMode(.together)
         try await waitForPairingModeChange(store, expectedItems: 1)
         try expect(
@@ -3759,13 +3863,24 @@ struct PerformanceChecks {
             "the current schema should persist both conflicting ratings independently"
         )
 
+        checkpoint = "reopen"
         let reopened = SessionStore()
+        diagnosticStore = reopened
         reopened.setRawJPEGPairingMode(.together)
         reopened.openFolder(folder)
         try await waitForReadySession(reopened, expectedItems: 1)
         try expect(
             reopened.items[0].hasMixedRatings,
             "reopening the current schema should restore a Mixed pair without losing either rating"
+        )
+        checkpoint = "reopened-split"
+        identityTransitions["reopened-scan-records"] = Dictionary(
+            uniqueKeysWithValues: reopened.items.flatMap(\.individualFiles).compactMap { file in
+                file.scannedIdentity.map { (file.id, $0) }
+            }
+        )
+        identityTransitions["before-reopened-split"] = scanFixtureIdentities(
+            in: folder, names: ["SHOT.NEF", "SHOT.JPG"]
         )
         reopened.setRawJPEGPairingMode(.separate)
         try await waitForPairingModeChange(reopened, expectedItems: 2)
@@ -3777,6 +3892,30 @@ struct PerformanceChecks {
             "unpairing should restore the exact pre-grouping ratings"
         )
         _ = await reopened.saveSessionForTermination()
+        for name in ["SHOT.NEF", "SHOT.JPG"] {
+            let finalBytes = try Data(contentsOf: folder.appendingPathComponent(name))
+            try expect(
+                finalBytes == fixture,
+                "pairing and persistence must leave each original's bytes unchanged"
+            )
+        }
+        completed = true
+    }
+
+    private struct PairingFixtureEvidence: Encodable {
+        let checkpoint: String
+        let state: String
+        let identities: [String: [String: FileOperationJournal.FileIdentity]]
+    }
+
+    @MainActor
+    private static func pairingFixtureState(_ store: SessionStore) -> String {
+        "phase=\(store.phase), mode=\(store.rawJPEGPairingMode), "
+            + "items=\(store.items.count), changing=\(store.isChangingRawJPEGPairingMode), "
+            + "transitioning=\(store.isSessionTransitioning), saves=\(store.activePersistenceSaveCount), "
+            + "scanError=\(store.scanError ?? "none"), "
+            + "pairingError=\(store.pairingMetadataError ?? "none"), "
+            + "saveWarning=\(store.persistenceWarning ?? "none")"
     }
 
     @MainActor
@@ -3813,7 +3952,8 @@ struct PerformanceChecks {
             try await Task.sleep(nanoseconds: 25_000_000)
         }
         throw CheckFailure(
-            "pairing mode did not finish projecting \(expectedItems) items"
+            "pairing mode did not finish projecting \(expectedItems) items; "
+                + pairingFixtureState(store)
         )
     }
 
@@ -4148,8 +4288,12 @@ struct PerformanceChecks {
     }
 
     private static func disposableFolder(named name: String) throws -> URL {
-        let folder = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-            .appendingPathComponent(".build/performance-checks/disposable", isDirectory: true)
+        // Documents-hosted repositories can have an external provider that
+        // asynchronously sets UF_TRACKED/UF_HIDDEN on newly written fixtures.
+        // That changes ctime and scan visibility despite byte-identical media.
+        // Keep logic fixtures on local temporary storage; real-volume/provider
+        // acceptance uses separately selected mounts and its own fixtures.
+        let folder = URL(fileURLWithPath: "/private/tmp/louppe-performance-checks/disposable", isDirectory: true)
             .appendingPathComponent("Louppe\(name)-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder

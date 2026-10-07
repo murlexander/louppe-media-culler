@@ -11,6 +11,7 @@ swiftc \
     -module-cache-path .build/performance-checks/module-cache \
     -D LOUPPE_TESTING \
     -parse-as-library \
+    Sources/Louppe/Localization.swift \
     Sources/Louppe/Models.swift \
     Sources/Louppe/XMP/XMPExactFileSystemPath.swift \
     Sources/Louppe/PreparedSessionIndex.swift \

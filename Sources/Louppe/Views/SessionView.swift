@@ -52,12 +52,12 @@ struct SessionView: View {
             ) {
                 ActionPaletteView(store: store)
             }
-            .alert("Clear All Decisions?", isPresented: $store.isClearAllRatingsConfirmationPresented) {
-                Button("Clear All Decisions", role: .destructive) {
+            .alert(L10n.text("Clear All Decisions?"), isPresented: $store.isClearAllRatingsConfirmationPresented) {
+                Button(L10n.text("Clear All Decisions"), role: .destructive) {
                     store.clearAllRatings()
                 }
                 .keyboardShortcut(.defaultAction)
-                Button("Cancel", role: .cancel) {}
+                Button(L10n.text("Cancel"), role: .cancel) {}
             } message: {
                 Text(clearAllRatingsMessage)
             }
@@ -71,12 +71,12 @@ struct SessionView: View {
                     }
                     .keyboardShortcut(.defaultAction)
                 } else {
-                    Button("Use Saved Decisions") {
+                    Button(L10n.text("Use Saved Decisions")) {
                         store.confirmLegacySessionMigration()
                     }
                     .keyboardShortcut(.defaultAction)
                 }
-                Button("Close Folder", role: .cancel) {
+                Button(L10n.text("Close Folder"), role: .cancel) {
                     store.closeLegacySessionWithoutMigrating()
                 }
             } message: {
@@ -88,21 +88,30 @@ struct SessionView: View {
                 titleVisibility: .visible,
                 presenting: store.pendingCleanUp
             ) { mode in
-                Button("Move to Trash", role: .destructive) {
+                Button(L10n.text("Move to Trash"), role: .destructive) {
                     store.performCleanUp(mode)
                 }
                 .keyboardShortcut(.defaultAction)
-                Button("Cancel", role: .cancel) {}
+                Button(L10n.text("Cancel"), role: .cancel) {}
             } message: { mode in
                 Text(cleanUpMessage(for: mode))
             }
-            .alert("Clean Up", isPresented: isCleanUpErrorPresented) {
+            .alert("RAW + JPEG", isPresented: isPairingMetadataErrorPresented) {
+                Button(L10n.text("Rescan Folder")) {
+                    store.pairingMetadataError = nil
+                    store.rescan()
+                }
+                Button(L10n.text("Cancel"), role: .cancel) { store.pairingMetadataError = nil }
+            } message: {
+                Text(store.pairingMetadataError ?? "")
+            }
+            .alert(L10n.text("Clean Up"), isPresented: isCleanUpErrorPresented) {
                 if !store.cleanUpStalePhotos.isEmpty {
-                    Button("Rescan Folder") {
+                    Button(L10n.text("Rescan Folder")) {
                         store.rescanAfterCleanUpStaleScan()
                     }
                 }
-                Button("OK") { store.dismissCleanUpError() }
+                Button(L10n.text("OK")) { store.dismissCleanUpError() }
             } message: {
                 Text(store.cleanUpError ?? "")
             }
@@ -112,8 +121,8 @@ struct SessionView: View {
 
     private var clearAllRatingsMessage: String {
         let count = store.ratedCount
-        let items = count == 1 ? "1 item" : "\(count) items"
-        return "This will remove the Yes or No decision from \(items). Stars and color labels will stay unchanged. You can undo it with ⌘Z."
+        let items = count == 1 ? "1 item" : L10n.text("\(count) items")
+        return L10n.text("Clear Yes/No decisions from \(items). Stars and color labels stay unchanged. Undo with ⌘Z.")
     }
 
     private var isCleanUpConfirmPresented: Binding<Bool> {
@@ -136,45 +145,39 @@ struct SessionView: View {
     private var legacyMigrationTitle: String {
         switch store.legacySessionMigrationMissingFileCount {
         case 0:
-            return "Use Saved Decisions?"
+            return L10n.text("Use Saved Decisions?")
         case 1:
-            return "A Saved File Is Missing"
+            return L10n.text("A Saved File Is Missing")
         default:
-            return "Saved Files Are Missing"
+            return L10n.text("Saved Files Are Missing")
         }
     }
 
     private var legacyMissingFilesActionTitle: String {
         store.legacySessionMigrationMissingFileCount == 1
-            ? "Open Folder and Forget Missing Item"
-            : "Open Folder and Forget Missing Items"
+            ? L10n.text("Open Folder and Forget Missing Item")
+            : L10n.text("Open Folder and Forget Missing Items")
     }
 
     private var legacyMigrationMessage: String {
         let count = store.legacySessionMigrationMissingFileCount
         guard count > 0 else {
-            return "This folder contains decisions saved by an older version of Louppe. "
-                + "Every saved filename is present, but the older session cannot prove that the files are the exact originals. "
-                + "Use Saved Decisions upgrades the session and binds each decision to its physical file. "
-                + "Close Folder leaves the existing session untouched."
+            return L10n.text("These older decisions use filenames only. All saved filenames are present, but original files cannot be verified. Use Saved Decisions upgrades the session and binds decisions to current physical files. Close Folder changes nothing.")
         }
-        let files = count == 1
-            ? "1 file that is"
-            : "\(count) files that are"
-        let availability = count == 1
-            ? "it was deleted intentionally or is temporarily unavailable"
-            : "they were deleted intentionally or are temporarily unavailable"
-        let decisions = count == 1
-            ? "that old saved decision"
-            : "those old saved decisions"
-        var message = "This older Louppe session has saved decisions for \(files) no longer in the folder. "
-            + "Louppe cannot tell whether \(availability). "
-            + "Open Folder and Forget Missing \(count == 1 ? "Item" : "Items") removes only \(decisions), keeps the decisions for files still here, and upgrades the session. "
-            + "Close Folder changes nothing."
+        var message = count == 1
+            ? L10n.text("Older decisions refer to 1 file missing from this folder. Louppe cannot tell whether it was deleted intentionally or is temporarily unavailable. Open Folder and Forget Missing Item discards only that old saved decision, keeps present-file decisions, and upgrades the session. Close Folder changes nothing.")
+            : L10n.text("Older decisions refer to \(count) files missing from this folder. Louppe cannot tell whether they were deleted intentionally or are temporarily unavailable. Open Folder and Forget Missing Items discards only those old saved decisions, keeps present-file decisions, and upgrades the session. Close Folder changes nothing.")
         if store.legacySessionMigrationUsesUnownedBackup {
-            message += " These decisions also came from an older local backup that is not tied to this exact folder; opening will bind the surviving same-name decisions to the files currently here."
+            message += L10n.text(" These decisions came from an older local backup not tied to this folder. Opening binds surviving filenames to the files currently here.")
         }
         return message
+    }
+
+    private var isPairingMetadataErrorPresented: Binding<Bool> {
+        Binding(
+            get: { store.pairingMetadataError != nil },
+            set: { if !$0 { store.pairingMetadataError = nil } }
+        )
     }
 
     private var isCleanUpErrorPresented: Binding<Bool> {
@@ -189,52 +192,52 @@ struct SessionView: View {
         let counts = store.cleanUpCounts(for: mode)
         switch mode {
         case .selection:
-            return "Move \(itemsPhrase(counts.photos)) to the Trash?"
+            return L10n.text("Move \(itemsPhrase(counts.photos)) to the Trash?")
         case .trashNo:
-            return "Move \(itemsPhrase(counts.photos)) marked “No” to the Trash?"
+            return L10n.text("Move \(itemsPhrase(counts.photos)) marked “No” to the Trash?")
         case .keepOnlyYes:
-            return "Move \(itemsPhrase(counts.photos)) not marked “Yes” to the Trash?"
+            return L10n.text("Move \(itemsPhrase(counts.photos)) not marked “Yes” to the Trash?")
         case .pairedJPEGs:
-            let noun = counts.photos == 1 ? "JPEG from 1 RAW + JPEG pair" : "JPEGs from \(counts.photos) RAW + JPEG pairs"
-            return "Move the \(noun) to the Trash?"
+            let noun = counts.photos == 1 ? L10n.text("JPEG from 1 RAW + JPEG pair") : L10n.text("JPEGs from \(counts.photos) RAW + JPEG pairs")
+            return L10n.text("Move the \(noun) to the Trash?")
         case .pairedRAWs:
-            let noun = counts.photos == 1 ? "RAW from 1 RAW + JPEG pair" : "RAWs from \(counts.photos) RAW + JPEG pairs"
-            return "Move the \(noun) to the Trash?"
+            let noun = counts.photos == 1 ? L10n.text("RAW from 1 RAW + JPEG pair") : L10n.text("RAWs from \(counts.photos) RAW + JPEG pairs")
+            return L10n.text("Move the \(noun) to the Trash?")
         }
     }
 
     private func cleanUpMessage(for mode: CleanUpMode) -> String {
         let counts = store.cleanUpCounts(for: mode)
-        let files = counts.files == 1 ? "1 file" : "\(counts.files) files"
+        let files = counts.files == 1 ? "1 file" : L10n.text("\(counts.files) files")
         let space = ByteCountFormatter.string(fromByteCount: counts.bytes, countStyle: .file)
         if mode == .pairedJPEGs || mode == .pairedRAWs {
             let removed = mode == .pairedJPEGs ? "JPEG" : "RAW"
             let retained = mode == .pairedJPEGs ? "RAW" : "JPEG"
             var parts = [
-                "\(files) (about \(space)) will be moved to the Trash. The matching \(retained) files will stay in the folder.",
-                "Immediately afterward, you can undo during this open session while the files remain in the Trash. Emptying the Trash permanently deletes them and may reclaim approximately that space."
+                L10n.text("\(files) (about \(space)) will be moved to the Trash. The matching \(retained) files will stay in the folder."),
+                L10n.text("Undo with ⌘Z before closing this session, while files remain in Trash. Emptying Trash permanently deletes them and may free that space.")
             ]
             switch store.cleanUpScope {
             case .all:
                 break
             case .filtered:
-                parts.append("Only paired \(removed) files shown by the current filter are included.")
+                parts.append(L10n.text("Only paired \(removed) files shown by the current filter are included."))
             case .selected:
-                parts.append("Only paired \(removed) files in the current selection are included.")
+                parts.append(L10n.text("Only paired \(removed) files in the current selection are included."))
             }
             return parts.joined(separator: "\n")
         }
         var parts = [
-            "\(files) will be moved to the Trash (a RAW+JPEG pair counts as two), totaling about \(space). Immediately afterward, you can undo during this open session while the files remain in the Trash. Emptying the Trash permanently deletes them and may reclaim approximately that space."
+            L10n.text("\(files) will be moved to the Trash (a RAW+JPEG pair counts as two), totaling about \(space). Undo with ⌘Z before closing this session, while files remain in Trash. Emptying Trash permanently deletes them and may free that space.")
         ]
         switch mode {
         case .selection:
-            parts.append("Only the selected items will leave the folder; everything else stays.")
+            parts.append(L10n.text("Only selected items leave the folder."))
         case .trashNo:
-            parts.append("Among the items being considered, items marked “Yes” and unrated items stay in the folder.")
+            parts.append(L10n.text("Within this scope, Yes and unrated items stay in the folder."))
         case .keepOnlyYes:
             let decisions = store.cleanUpDecisionBreakdown(for: mode)
-            parts.insert("Includes \(decisions.no) No and \(decisions.undecided) Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.", at: 0)
+            parts.insert(L10n.text("Includes \(decisions.no) No and \(decisions.undecided) Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder."), at: 0)
         case .pairedJPEGs, .pairedRAWs:
             break // These modes return through their dedicated message above.
         }
@@ -244,24 +247,24 @@ struct SessionView: View {
             switch store.cleanUpScope {
             case .all:
                 if store.filter.isActive {
-                    parts.append("All \(store.items.count) items in the folder are considered, including the ones the filter currently hides.")
+                    parts.append(L10n.text("All \(store.items.count) folder items are considered, even those hidden by filters."))
                 }
             case .filtered:
                 if store.filter.isActive {
                     let hidden = store.items.count - store.visibleIndices.count
-                    parts.append("Only the \(store.visibleIndices.count) items the filter shows are considered — the \(hidden) hidden ones aren't touched.")
+                    parts.append(L10n.text("Only \(store.visibleIndices.count) visible items are considered; \(hidden) hidden items stay untouched."))
                 }
             case .selected:
                 let count = store.cleanUpScopeCount(for: .selected)
-                let phrase = count == 1 ? "1 selected item is" : "\(count) selected items are"
-                parts.append("Only \(phrase) considered — every unselected item stays in the folder.")
+                let phrase = count == 1 ? L10n.text("1 selected item is") : L10n.text("\(count) selected items are")
+                parts.append(L10n.text("Only \(phrase) considered — every unselected item stays in the folder."))
             }
         }
         return parts.joined(separator: "\n")
     }
 
     private func itemsPhrase(_ count: Int) -> String {
-        count == 1 ? "1 item" : "\(count) items"
+        count == 1 ? "1 item" : L10n.text("\(count) items")
     }
 
     private var subtitle: String {
@@ -269,19 +272,19 @@ struct SessionView: View {
         let position = store.visibleIndices.isEmpty
             ? 0
             : (store.currentVisiblePosition ?? 0) + 1
-        var text = "Item \(position) of \(store.visibleIndices.count)"
+        var text = L10n.text("Item \(position) of \(store.visibleIndices.count)")
         if store.filter.isActive {
-            text += " (of \(store.items.count) total)"
+            text += L10n.text(" (of \(store.items.count) total)")
         }
-        text += "  ·  \(store.yesCount + store.noCount)/\(store.items.count) reviewed"
+        text += L10n.text("  ·  \(store.yesCount + store.noCount)/\(store.items.count) reviewed")
         if store.mixedCount > 0 {
-            text += "  ·  \(store.mixedCount) mixed"
+            text += L10n.text("  ·  \(store.mixedCount) mixed")
         }
         if store.selectedIndices.count > 1 {
-            text += "  ·  \(store.selectedIndices.count) selected"
+            text += L10n.text("  ·  \(store.selectedIndices.count) selected")
         }
         if store.isGroupedReviewActive {
-            text += "  ·  grouped review"
+            text += L10n.text("  ·  grouped review")
         }
         return text
     }
@@ -303,10 +306,10 @@ struct SessionView: View {
                 )
                 .accessibilityLabel(
                     store.isDuplicateBurstAnalysisRunning
-                        ? "Analyzing duplicate and burst groups locally"
+                        ? L10n.text("Analyzing duplicate and burst groups locally")
                         : store.isChangingRawJPEGPairingMode
-                        ? "Preparing separate JPEG metadata"
-                        : "Loading photo preview"
+                        ? L10n.text("Preparing separate JPEG metadata")
+                        : L10n.text("Loading photo preview")
                 )
                 .accessibilityHidden(
                     store.fullImageLoads == 0
@@ -314,7 +317,7 @@ struct SessionView: View {
                         && !store.isDuplicateBurstAnalysisRunning
                 )
         }
-        .help("Review progress and decision totals")
+        .help(L10n.text("Review progress and decision totals"))
     }
 
     private var mainContent: some View {
@@ -359,20 +362,20 @@ struct SessionView: View {
                 Text(store.groupedReviewMode.analysisTitle)
                     .font(.subheadline.weight(.semibold))
                 Text(
-                    "\(store.groupedReviewExplanation) \(store.groupedReviewGroupCount) "
-                        + (store.groupedReviewGroupCount == 1 ? "group is" : "groups are")
-                        + " visible. Review only — nothing is changed automatically."
+                    store.groupedReviewGroupCount == 1
+                        ? L10n.text("\(store.groupedReviewExplanation) 1 group is visible. Review only — nothing is changed automatically.")
+                        : L10n.text("\(store.groupedReviewExplanation) \(store.groupedReviewGroupCount) groups are visible. Review only — nothing is changed automatically.")
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
             }
             Spacer(minLength: 8)
-            Button("Normal Review") {
+            Button(L10n.text("Normal Review")) {
                 store.exitGroupedReview()
             }
             .buttonStyle(.bordered)
-            .accessibilityHint("Return to the normal filtered and sorted media list")
+            .accessibilityHint(L10n.text("Return to the normal filtered and sorted media list"))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -397,9 +400,9 @@ struct SessionView: View {
                     .font(.headline)
                 ProgressView(value: Double(progress.done), total: Double(max(progress.total, 1)))
                     .accessibilityLabel(progress.title)
-                    .accessibilityValue("\(progress.done) of \(progress.total) files")
+                    .accessibilityValue(L10n.text("\(progress.done) of \(progress.total) files"))
                     .frame(width: 280)
-                Text("\(progress.done) of \(progress.total) files")
+                Text(L10n.text("\(progress.done) of \(progress.total) files"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -432,15 +435,15 @@ struct SessionView: View {
             Button {
                 store.closeSession()
             } label: {
-                Label(store.sourceFolder?.lastPathComponent ?? "Folder", systemImage: "folder")
+                Label(store.sourceFolder?.lastPathComponent ?? L10n.text("Folder"), systemImage: "folder")
                     .labelStyle(.titleAndIcon)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: 220)
             }
             .disabled(store.isFileOperationRunning)
-            .accessibilityLabel("Current folder: \(store.sourceFolder?.path ?? "none")")
-            .help(store.sourceFolder?.path ?? "Choose another media folder (⌘O)")
+            .accessibilityLabel(L10n.text("Current folder: \(store.sourceFolder?.path ?? "none")"))
+            .help(store.sourceFolder?.path ?? L10n.text("Choose another media folder (⌘O)"))
         }
 
         if #available(macOS 26.0, *) {
@@ -459,9 +462,9 @@ struct SessionView: View {
             .popover(isPresented: $store.isFilterPresented, arrowEdge: .bottom) {
                 FilterView(store: store)
             }
-            .accessibilityLabel("Filter Media")
-            .accessibilityValue(store.filter.isActive ? "Active" : "Not active")
-            .help("Filter media by date, type, duration, subfolder, camera, or lens")
+            .accessibilityLabel(L10n.text("Filter Media"))
+            .accessibilityValue(store.filter.isActive ? L10n.text("Active") : L10n.text("Not active"))
+            .help(L10n.text("Filter media by date, type, duration, subfolder, camera, or lens"))
 
             Button {
                 store.isSortPresented.toggle()
@@ -471,19 +474,19 @@ struct SessionView: View {
             .popover(isPresented: $store.isSortPresented, arrowEdge: .bottom) {
                 SortView(store: store)
             }
-            .accessibilityLabel("Sort Media")
-            .help("Sort media by date, name, type, duration, or metadata")
+            .accessibilityLabel(L10n.text("Sort Media"))
+            .help(L10n.text("Sort media by date, name, type, duration, or metadata"))
 
-            Picker("View", selection: $store.viewMode) {
+            Picker(L10n.text("View"), selection: $store.viewMode) {
                 Image(systemName: "photo")
-                    .accessibilityLabel("Gallery")
+                    .accessibilityLabel(L10n.text("Gallery"))
                     .tag(ViewMode.gallery)
                 Image(systemName: "square.grid.3x3")
-                    .accessibilityLabel("Grid")
+                    .accessibilityLabel(L10n.text("Grid"))
                     .tag(ViewMode.grid)
             }
             .pickerStyle(.segmented)
-            .help("Switch between Gallery and Grid views (Tab or G)")
+            .help(L10n.text("Switch between Gallery and Grid views (Tab or G)"))
         }
 
         // Session status stays centered and opts out of a glass capsule.
@@ -505,16 +508,16 @@ struct SessionView: View {
                 Image(systemName: "arrow.uturn.backward")
             }
             .disabled(store.isFileOperationRunning || !store.canUndo)
-            .accessibilityLabel("Undo")
-            .help("Undo the last decision, stars, color label, or clean-up (Z or ⌘Z)")
+            .accessibilityLabel(L10n.text("Undo"))
+            .help(L10n.text("Undo the last decision, stars, color label, or clean-up (Z or ⌘Z)"))
             Button {
                 store.requestClearAllRatings()
             } label: {
                 Image(systemName: "eraser")
             }
             .disabled(store.isFileOperationRunning || store.ratedCount == 0)
-            .accessibilityLabel("Clear All Decisions")
-            .help("Clear all Yes/No decisions (R)")
+            .accessibilityLabel(L10n.text("Clear All Decisions"))
+            .help(L10n.text("Clear all Yes/No decisions (R)"))
         }
 
         if #available(macOS 26.0, *) {
@@ -530,8 +533,8 @@ struct SessionView: View {
                 } label: {
                     Image(systemName: store.showBrowser ? "sidebar.squares.left" : "sidebar.left")
                 }
-                .accessibilityLabel(store.showBrowser ? "Hide Browser" : "Show Browser")
-                .help("Show or hide the Browser in the Gallery view (Q)")
+                .accessibilityLabel(store.showBrowser ? L10n.text("Hide Browser") : L10n.text("Show Browser"))
+                .help(L10n.text("Show or hide the Browser in the Gallery view (Q)"))
             }
 
             Button {
@@ -540,9 +543,9 @@ struct SessionView: View {
                 Image(systemName: "info.circle")
             }
             .accessibilityLabel(
-                store.showMetadataPanel ? "Hide Media Information" : "Show Media Information"
+                store.showMetadataPanel ? L10n.text("Hide Media Information") : L10n.text("Show Media Information")
             )
-            .help("Show or hide media information (W)")
+            .help(L10n.text("Show or hide media information (W)"))
         }
 
         if #available(macOS 26.0, *) {
@@ -569,8 +572,8 @@ struct SessionView: View {
             .disabled(!store.canCleanUp)
             .menuIndicator(.hidden)
             .tint(Color.primary)
-            .accessibilityLabel("Clean Up")
-            .help("Choose items to move to the Trash")
+            .accessibilityLabel(L10n.text("Clean Up"))
+            .help(L10n.text("Choose items to move to the Trash"))
         }
 
         if #available(macOS 26.0, *) {
@@ -592,8 +595,8 @@ struct SessionView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.circle)
             .tint(Color.louppeAccent)
-            .accessibilityLabel("Export")
-            .help("Copy or move selected media, or write Metadata (XMP) sidecars (E or ⌘E)")
+            .accessibilityLabel(L10n.text("Export"))
+            .help(L10n.text("Copy or move selected media, or write Metadata (XMP) sidecars (E or ⌘E)"))
         }
     }
 
@@ -1253,31 +1256,31 @@ struct CleanUpMenuItems: View {
         }
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .selection))
         Divider()
-        Picker("Scope for Actions Below", selection: $store.cleanUpScope) {
-            cleanUpScopeLabel("All Media", scope: .all)
+        Picker(L10n.text("Scope for Actions Below"), selection: $store.cleanUpScope) {
+            cleanUpScopeLabel(L10n.text("All Media"), scope: .all)
                 .tag(CleanUpScope.all)
-            cleanUpScopeLabel("Filtered", scope: .filtered)
+            cleanUpScopeLabel(L10n.text("Filtered"), scope: .filtered)
                 .tag(CleanUpScope.filtered)
-            cleanUpScopeLabel("Selected", scope: .selected)
+            cleanUpScopeLabel(L10n.text("Selected"), scope: .selected)
                 .tag(CleanUpScope.selected)
         }
         .pickerStyle(.inline)
         .disabled(store.isNewFileOperationBlocked)
         Divider()
-        Button("Trash No…") {
+        Button(L10n.text("Trash No…")) {
             store.requestCleanUp(.trashNo)
         }
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .trashNo))
-        Button("Trash No + Undecided…") {
+        Button(L10n.text("Trash No + Undecided…")) {
             store.requestCleanUp(.keepOnlyYes)
         }
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .keepOnlyYes))
         Divider()
-        Button("Move Paired JPEGs to Trash…") {
+        Button(L10n.text("Move Paired JPEGs to Trash…")) {
             store.requestCleanUp(.pairedJPEGs)
         }
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .pairedJPEGs))
-        Button("Move Paired RAWs to Trash…") {
+        Button(L10n.text("Move Paired RAWs to Trash…")) {
             store.requestCleanUp(.pairedRAWs)
         }
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .pairedRAWs))

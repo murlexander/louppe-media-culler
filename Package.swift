@@ -8,6 +8,7 @@ let isAppStoreBuild = ProcessInfo.processInfo.environment["LOUPPE_APP_STORE"] ==
 
 let package = Package(
     name: "Louppe",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     targets: [
         // Use Sparkle's checksum-pinned public binary directly. This avoids a
@@ -86,6 +87,7 @@ let package = Package(
             name: "Louppe",
             dependencies: isAppStoreBuild ? ["XMPBridge"] : ["Sparkle", "XMPBridge"],
             path: "Sources/Louppe",
+            resources: [.process("Resources")],
             linkerSettings: [
                 // The release executable lives in Louppe.app/Contents/MacOS
                 // and Sparkle is embedded in Louppe.app/Contents/Frameworks.

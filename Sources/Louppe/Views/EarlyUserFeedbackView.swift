@@ -18,16 +18,16 @@ struct EarlyUserFeedbackView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("You’re one of Louppe’s very first users <3")
+            Text(L10n.text("You’re one of Louppe’s first users <3"))
                 .font(.headline)
-            Text("I don’t collect usage data, so I’d love to hear how you found Louppe, how it fits your workflow, and what you’d improve.")
+            Text(L10n.text("I don’t collect usage data. Tell me how you found Louppe, how you use it, and what to improve."))
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
             HStack {
                 Spacer()
-                Button("Close") { dismiss() }
+                Button(L10n.text("Close")) { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("Email me") {
+                Button(L10n.text("Email me")) {
                     if NSWorkspace.shared.open(EarlyUserFeedback.emailURL) {
                         dismiss()
                     }

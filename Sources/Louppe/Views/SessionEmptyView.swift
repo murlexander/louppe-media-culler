@@ -16,13 +16,13 @@ struct SessionEmptyView: View {
     private var title: String {
         switch reason {
         case .trashedUndoable:
-            return "Everything is in the Trash"
+            return L10n.text("Everything is in the Trash")
         case .movedOut:
-            return "Everything was moved"
+            return L10n.text("Everything was moved")
         case .unavailableAfterFailedRestore:
-            return "No media could be restored"
+            return L10n.text("No media could be restored")
         case nil:
-            return "No media left in this session"
+            return L10n.text("No media left in this session")
         }
     }
 
@@ -42,15 +42,15 @@ struct SessionEmptyView: View {
     private var message: String {
         switch reason {
         case .trashedUndoable where canUndo:
-            return "Immediately after Clean Up, press ⌘Z during this open session to restore the items while they remain in the Trash."
+            return L10n.text("Undo Clean Up with ⌘Z before closing this session, while the files remain in Trash.")
         case .trashedUndoable:
-            return "The items were moved to the Trash."
+            return L10n.text("The items were moved to the Trash.")
         case .movedOut:
-            return "The originals are intact in the export destination. Move exports are not undoable."
+            return L10n.text("Originals are intact at the destination. Move exports cannot be undone.")
         case .unavailableAfterFailedRestore:
-            return "The items may have been removed from the Trash. Check the source folder and Trash before continuing."
+            return L10n.text("Files may have left the Trash. Check the source folder and Trash before continuing.")
         case nil:
-            return "Open or scan the folder again to refresh this session."
+            return L10n.text("Open or scan the folder again to refresh this session.")
         }
     }
 }

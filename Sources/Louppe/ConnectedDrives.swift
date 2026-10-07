@@ -1,5 +1,4 @@
 import AppKit
-import Darwin
 import DiskArbitration
 import Foundation
 
@@ -8,10 +7,43 @@ import Foundation
 struct ConnectedDrive: Identifiable, Equatable, Sendable {
     struct ID: Hashable, Sendable {
         let volumeUUID: String?
-        let device: UInt64
-        let rootInode: UInt64
+        let mediaUUID: String?
         let bsdName: String
         let mountURL: URL
+
+        /// Before folder access, use DA's mounted identity rather than reading
+        /// filesystem metadata. Unknown identity leaves the normal chooser available.
+        static func diskArbitrationIdentity(
+            description: [String: Any],
+            wholeDescription: [String: Any] = [:],
+            bsdName: String,
+            enumeratedURL: URL
+        ) -> Self? {
+            guard !bsdName.isEmpty,
+                  enumeratedURL.isFileURL,
+                  let mountedURL = description[kDADiskDescriptionVolumePathKey as String] as? URL,
+                  mountedURL.isFileURL,
+                  mountedURL.standardizedFileURL == enumeratedURL.standardizedFileURL else {
+                return nil
+            }
+            let volumeUUID = uuidString(description[kDADiskDescriptionVolumeUUIDKey as String])
+            let mediaUUID = uuidString(description[kDADiskDescriptionMediaUUIDKey as String])
+                ?? uuidString(wholeDescription[kDADiskDescriptionMediaUUIDKey as String])
+            guard volumeUUID != nil || mediaUUID != nil else { return nil }
+            return Self(
+                volumeUUID: volumeUUID, mediaUUID: mediaUUID,
+                bsdName: bsdName, mountURL: mountedURL.standardizedFileURL
+            )
+        }
+
+        private static func uuidString(_ value: Any?) -> String? {
+            guard let value,
+                  CFGetTypeID(value as CFTypeRef) == CFUUIDGetTypeID(),
+                  let string = CFUUIDCreateString(kCFAllocatorDefault, (value as! CFUUID)) else {
+                return nil
+            }
+            return string as String
+        }
     }
 
     let id: ID
@@ -27,11 +59,11 @@ struct ConnectedDrive: Identifiable, Equatable, Sendable {
         let total = totalBytes.flatMap { $0 > 0 ? $0 : nil }
         // An inconsistent filesystem answer is unknown, never invented zero.
         if let available, let total, available <= total {
-            return "\(Self.format(available)) available of \(Self.format(total))"
+            return L10n.text("\(Self.format(available)) available of \(Self.format(total))")
         }
-        if let total { return "\(Self.format(total)) total · Available space unknown" }
-        if let available { return "\(Self.format(available)) available · Capacity unknown" }
-        return "Capacity unavailable"
+        if let total { return L10n.text("\(Self.format(total)) total · Available space unknown") }
+        if let available { return L10n.text("\(Self.format(available)) available · Capacity unknown") }
+        return L10n.text("Capacity unavailable")
     }
 
     private static func format(_ bytes: Int64) -> String {
@@ -96,30 +128,32 @@ actor ConnectedDriveReader {
                 deviceModel: value(kDADiskDescriptionDeviceModelKey) as? String
             )
             guard eligibility.isEligible,
-                  let bsdName = DADiskGetBSDName(disk) else { continue }
-            // Read capacity only after excluding remote and virtual filesystems.
-            // A fresh URL avoids carrying cached resource values across refreshes.
-            let freshURL = URL(fileURLWithPath: url.path, isDirectory: true)
-            var info = stat()
-            let exists = freshURL.withUnsafeFileSystemRepresentation { path in
-                path.map { lstat($0, &info) == 0 } ?? false
-            }
-            guard exists, info.st_mode & S_IFMT == S_IFDIR else { continue }
+                  let bsdName = DADiskGetBSDName(disk),
+                  let identity = ConnectedDrive.ID.diskArbitrationIdentity(
+                    description: description, wholeDescription: wholeDescription,
+                    bsdName: String(cString: bsdName), enumeratedURL: url
+                  ) else { continue }
+            // Only capacity is read before the picker, after physical eligibility
+            // and DA identity checks. A fresh URL avoids cached capacity values.
+            let freshURL = URL(fileURLWithPath: identity.mountURL.path, isDirectory: true)
             let values = try? freshURL.resourceValues(forKeys: [
-                .volumeNameKey, .volumeUUIDStringKey,
                 .volumeAvailableCapacityKey, .volumeTotalCapacityKey,
             ])
-            let name = values?.volumeName
-                ?? value(kDADiskDescriptionVolumeNameKey) as? String
+            // Discard a replacement or unmount that occurred during capacity I/O.
+            guard let currentDisk = DADiskCreateFromVolumePath(
+                kCFAllocatorDefault, session, freshURL as CFURL
+            ), let currentDescription = DADiskCopyDescription(currentDisk) as? [String: Any],
+               let currentBSDName = DADiskGetBSDName(currentDisk),
+               ConnectedDrive.ID.diskArbitrationIdentity(
+                description: currentDescription,
+                wholeDescription: DADiskCopyWholeDisk(currentDisk)
+                    .flatMap { DADiskCopyDescription($0) as? [String: Any] } ?? [:],
+                bsdName: String(cString: currentBSDName), enumeratedURL: freshURL
+               ) == identity else { continue }
+            let name = value(kDADiskDescriptionVolumeNameKey) as? String
                 ?? url.lastPathComponent
             result.append(ConnectedDrive(
-                id: .init(
-                    volumeUUID: values?.volumeUUIDString,
-                    device: UInt64(UInt32(bitPattern: info.st_dev)),
-                    rootInode: UInt64(info.st_ino),
-                    bsdName: String(cString: bsdName),
-                    mountURL: freshURL
-                ),
+                id: identity,
                 name: name,
                 availableBytes: values?.volumeAvailableCapacity.map(Int64.init),
                 totalBytes: values?.volumeTotalCapacity.map(Int64.init),
@@ -251,14 +285,14 @@ final class ConnectedDrivesStore: NSObject, ObservableObject {
         let snapshot = await loader()
         guard isActive, openingRequest == request else { return nil }
         guard revision == topologyRevision else {
-            statusMessage = "Drive availability changed. Choose a connected drive again."
+            statusMessage = L10n.text("Drive availability changed. Choose a connected drive again.")
             refresh()
             return nil
         }
         apply(snapshot, sequence: sequence)
         guard let current = snapshot.first(where: { $0.id == drive.id }),
               drives.contains(where: { $0.id == drive.id }) else {
-            statusMessage = "“\(drive.name)” is no longer available. Reconnect it and try again."
+            statusMessage = L10n.text("“\(drive.name)” is no longer available. Reconnect it and try again.")
             return nil
         }
         return current.url

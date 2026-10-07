@@ -80,18 +80,29 @@ final class ExportManager: ObservableObject {
         Task<MultiDestinationPreparationResult, Never>?
     private var multiDestinationPreparationID = UUID()
     private var pendingMultiDestinationExport: PendingMultiDestinationExport?
-    /// An Open panel's sandbox extension must outlive detached preflight and
-    /// copy work. Each token is released on every completion and cancellation
-    /// path so a long editing session cannot exhaust the process limit.
+    /// Normal destination access belongs to its export. Routing access belongs
+    /// to the route drafts until removal or dismissal, including a Back/retry.
+    /// Detached tasks hold independent leases until they actually finish.
     private var destinationFolderAccesses: [SecurityScopedFolderAccess] = []
     private var routingDestinationAccesses: [UUID: SecurityScopedFolderAccess] = [:]
+
+    private let makeFolderAccess: @MainActor (URL) -> SecurityScopedFolderAccess
+    private let prepareRoutingWork: @Sendable (MultiDestinationExportPlanner.PreparationInput) async throws -> MultiDestinationExportPlanner.PreparedWork
+
+    init(
+        makeFolderAccess: @escaping @MainActor (URL) -> SecurityScopedFolderAccess = { SecurityScopedFolderAccess(url: $0) },
+        prepareRoutingWork: @escaping @Sendable (MultiDestinationExportPlanner.PreparationInput) async throws -> MultiDestinationExportPlanner.PreparedWork = { try await MultiDestinationExportPlanner.prepare($0) }
+    ) {
+        self.makeFolderAccess = makeFolderAccess
+        self.prepareRoutingWork = prepareRoutingWork
+    }
 
     private static let copyLogger = Logger(
         subsystem: "com.alexandermarkin.louppe",
         category: "export.copy"
     )
 
-    func reset() {
+    func reset(keepingRoutingDestinations: Bool = false) {
         xmpPreparationTask?.cancel()
         xmpPreparationTask = nil
         xmpPreparationID = UUID()
@@ -106,17 +117,22 @@ final class ExportManager: ObservableObject {
         copyCancelFlag = nil
         copyOperationID = nil
         releaseDestinationFolderAccesses()
-        releaseRoutingDestinationAccesses()
+        if !keepingRoutingDestinations { releaseRoutingDestinationAccesses() }
     }
 
     func retainRoutingDestinationAccess(_ url: URL, for routeID: UUID) {
+        let replacement = makeFolderAccess(url)
         routingDestinationAccesses[routeID]?.stop()
-        routingDestinationAccesses[routeID] = SecurityScopedFolderAccess(url: url)
+        routingDestinationAccesses[routeID] = replacement
+    }
+
+    func removeRoutingDestinationAccess(for routeID: UUID) {
+        routingDestinationAccesses.removeValue(forKey: routeID)?.stop()
     }
 
     private func retainDestinationAccess(_ url: URL) {
         releaseDestinationFolderAccesses()
-        destinationFolderAccesses = [SecurityScopedFolderAccess(url: url)]
+        destinationFolderAccesses = [makeFolderAccess(url)]
     }
 
     private func releaseDestinationFolderAccesses() {
@@ -151,6 +167,9 @@ final class ExportManager: ObservableObject {
             _ interruptionMessage: String?
         ) -> Void
     ) {
+        multiDestinationPreparationTask?.cancel()
+        let preparationAccesses = routes.compactMap(\.destination).map(makeFolderAccess)
+        let prepareRoutingWork = self.prepareRoutingWork
         let preparationID = UUID()
         multiDestinationPreparationID = preparationID
         pendingMultiDestinationExport = nil
@@ -169,7 +188,7 @@ final class ExportManager: ObservableObject {
         let task = Task.detached(priority: .userInitiated) {
             () -> MultiDestinationPreparationResult in
             do {
-                return .prepared(try await MultiDestinationExportPlanner.prepare(input))
+                return .prepared(try await prepareRoutingWork(input))
             } catch is CancellationError {
                 return .cancelled
             } catch {
@@ -179,6 +198,7 @@ final class ExportManager: ObservableObject {
         multiDestinationPreparationTask = task
         Task { @MainActor [weak self] in
             let result = await task.value
+            defer { preparationAccesses.forEach { $0.stop() } }
             guard let self,
                   self.multiDestinationPreparationID == preparationID else {
                 return
@@ -193,11 +213,9 @@ final class ExportManager: ObservableObject {
                 )
                 self.state = .awaitingMultiDestinationConfirmation(work.plan)
             case .cancelled:
-                self.releaseRoutingDestinationAccesses()
                 self.state = .summary
             case .failed(let message):
-                self.releaseRoutingDestinationAccesses()
-                self.state = .failed("The routing copy could not be prepared safely. \(message)")
+                self.state = .failed(L10n.text("The routing copy could not be prepared safely. \(message)"))
             }
         }
     }
@@ -208,14 +226,12 @@ final class ExportManager: ObservableObject {
         multiDestinationPreparationTask = nil
         multiDestinationPreparationID = UUID()
         pendingMultiDestinationExport = nil
-        releaseRoutingDestinationAccesses()
         state = .summary
     }
 
     func backFromMultiDestinationConfirmation() {
         guard case .awaitingMultiDestinationConfirmation = state else { return }
         pendingMultiDestinationExport = nil
-        releaseRoutingDestinationAccesses()
         state = .summary
     }
 
@@ -225,17 +241,24 @@ final class ExportManager: ObservableObject {
         pendingMultiDestinationExport = nil
         let plan = pending.work.plan
         guard let firstDestination = plan.destinations.first else {
-            releaseRoutingDestinationAccesses()
-            state = .failed("The routing copy no longer has a destination. Review the routes again.")
+            state = .failed(L10n.text("The routing copy no longer has a destination. Review the routes again."))
+            return
+        }
+        let retainedAccesses = plan.destinations.compactMap { destination in
+            routingDestinationAccesses.values.first {
+                ExportDestinationValidator.directoriesReferToSameEntry($0.url, destination)
+            }
+        }
+        guard retainedAccesses.count == plan.destinations.count else {
+            state = .failed(ExportDestinationValidator.ValidationError.notWritable.localizedDescription)
             return
         }
         guard plan.totalFiles > 0, pending.onOperationWillStart(.copy) else {
-            releaseRoutingDestinationAccesses()
-            state = .failed("Another file operation is already running. Wait for it to finish, then try again.")
+            state = .failed(L10n.text("Another file operation is already running. Wait for it to finish, then try again."))
             return
         }
-        plan.destinations.forEach {
-            SecurityScopedFolderBookmarks.recordRecoveryDestination($0)
+        for (destination, access) in zip(plan.destinations, retainedAccesses) {
+            access.recordRecoveryDestination(for: destination)
         }
 
         isCancellingCopy = false
@@ -258,6 +281,7 @@ final class ExportManager: ObservableObject {
                 )
             }
         }
+        let operationAccesses = retainedAccesses.map { $0.makeIndependentAccess() }
         let worker = Task.detached(priority: .userInitiated) {
             ExportWorker.copy(
                 pending.work.selectedItems,
@@ -272,6 +296,7 @@ final class ExportManager: ObservableObject {
         }
         Task { @MainActor in
             let copy = await worker.value
+            defer { operationAccesses.forEach { $0.stop() } }
             self.recordCopyResult(copy)
             self.copyCancelFlag = nil
             self.isCancellingCopy = false
@@ -323,11 +348,11 @@ final class ExportManager: ObservableObject {
         ) -> Void
     ) {
         guard mode != .metadataXMP else {
-            state = .failed("Metadata (XMP) writes beside the originals and does not use a destination.")
+            state = .failed(L10n.text("Metadata (XMP) writes beside the originals and does not use a destination."))
             return
         }
         guard !selected.isEmpty else {
-            state = .failed("There are no items matching the selected metadata to export.")
+            state = .failed(L10n.text("There are no items matching the selected metadata to export."))
             return
         }
 
@@ -337,9 +362,9 @@ final class ExportManager: ObservableObject {
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
         panel.message = mode == .copy
-            ? "Choose where to copy the selected media."
-            : "Choose where to move the selected media."
-        panel.prompt = "Export Here"
+            ? L10n.text("Choose where to copy the selected media.")
+            : L10n.text("Choose where to move the selected media.")
+        panel.prompt = L10n.text("Export Here")
         guard panel.runModal() == .OK, let destination = panel.url else { return }
         retainDestinationAccess(destination)
 
@@ -417,10 +442,12 @@ final class ExportManager: ObservableObject {
         } catch {
             releaseDestinationFolderAccesses()
             state = .failed(
-                "The export could not be prepared safely. \(error.localizedDescription)"
+                L10n.text("The export could not be prepared safely. \(error.localizedDescription)")
             )
             return
         }
+        xmpPreparationTask?.cancel()
+        let preparationAccesses = destinationFolderAccesses.map { $0.makeIndependentAccess() }
         let preparationID = UUID()
         xmpPreparationID = preparationID
         state = .preparingXMP(mode)
@@ -447,6 +474,7 @@ final class ExportManager: ObservableObject {
         xmpPreparationTask = worker
         Task { @MainActor [weak self] in
             let result = await worker.value
+            defer { preparationAccesses.forEach { $0.stop() } }
             guard let self, self.xmpPreparationID == preparationID else {
                 return
             }
@@ -480,7 +508,7 @@ final class ExportManager: ObservableObject {
                 self.pendingExport = nil
                 self.releaseDestinationFolderAccesses()
                 self.state = .failed(
-                    "The export could not be prepared safely. \(message)"
+                    L10n.text("The export could not be prepared safely. \(message)")
                 )
             }
         }
@@ -515,7 +543,7 @@ final class ExportManager: ObservableObject {
             self.pendingExport = nil
             releaseDestinationFolderAccesses()
             state = .failed(
-                "After resolving the RAW + JPEG metadata, no items match the selected Export filters."
+                L10n.text("After resolving the RAW + JPEG metadata, no items match the selected Export filters.")
             )
             return
         }
@@ -582,14 +610,21 @@ final class ExportManager: ObservableObject {
             _ interruptionMessage: String?
         ) -> Void
     ) {
+        guard let destinationAccess = destinationFolderAccesses.first(where: {
+            ExportDestinationValidator.directoriesReferToSameEntry($0.url, destination)
+        }) else {
+            releaseDestinationFolderAccesses()
+            state = .failed(ExportDestinationValidator.ValidationError.notWritable.localizedDescription)
+            return
+        }
         let totalFiles = preparedPlan?.totalFiles
             ?? selected.reduce(0) { $0 + $1.allURLs.count }
         guard totalFiles > 0, onOperationWillStart(mode) else {
             releaseDestinationFolderAccesses()
-            state = .failed("Another file operation is already running. Wait for it to finish, then try again.")
+            state = .failed(L10n.text("Another file operation is already running. Wait for it to finish, then try again."))
             return
         }
-        SecurityScopedFolderBookmarks.recordRecoveryDestination(destination)
+        destinationAccess.recordRecoveryDestination(for: destination)
 
         isCancellingCopy = false
         isCopyStopConfirmationPresented = false
@@ -616,6 +651,7 @@ final class ExportManager: ObservableObject {
             }
         }
 
+        let operationAccesses = destinationFolderAccesses.map { $0.makeIndependentAccess() }
         let worker = Task.detached(priority: .userInitiated) {
             () -> WorkerResult in
             if mode == .copy {
@@ -645,6 +681,7 @@ final class ExportManager: ObservableObject {
         Task { @MainActor in
             let result = await worker.value
             defer {
+                operationAccesses.forEach { $0.stop() }
                 self.isCopyStopConfirmationPresented = false
                 self.copyOperationID = nil
             }

@@ -8,7 +8,7 @@ enum RawDisplayMode: String, CaseIterable, Sendable {
     case raw
 
     static let preferenceKey = "review.rawDisplayMode"
-    var title: String { self == .fast ? "Fast" : "RAW" }
+    var title: String { self == .fast ? L10n.text("Fast") : "RAW" }
 
     func rendersRAW(for item: PhotoItem) -> Bool {
         self == .raw && item.isRaw && item.mediaKind == .photo
@@ -23,10 +23,10 @@ enum PhotoRepresentation: Equatable, Sendable {
 
     var label: String {
         switch self {
-        case .preview: return "Preview"
+        case .preview: return L10n.text("Preview")
         case .loadingRAW: return "RAW…"
         case .raw: return "RAW"
-        case .unavailable: return "Unavailable"
+        case .unavailable: return L10n.text("Unavailable")
         }
     }
 
@@ -52,7 +52,7 @@ enum AppleRawDecoder: String, CaseIterable, Sendable {
     case raw9
 
     static let preferenceKey = "review.appleRawDecoder"
-    var title: String { self == .appleDefault ? "Apple Default" : "RAW 9" }
+    var title: String { self == .appleDefault ? L10n.text("Apple Default") : "RAW 9" }
     static var supportsRAW9: Bool {
         if #available(macOS 27, *) { return true }
         return false
@@ -77,8 +77,8 @@ enum AppleRawDecoder: String, CaseIterable, Sendable {
 
     var failureMessage: String {
         self == .raw9
-            ? "RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in the RAW menu."
-            : "This Mac couldn’t render the RAW. Retry or use the camera preview."
+            ? L10n.text("RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in the RAW menu.")
+            : L10n.text("This Mac couldn’t render the RAW. Retry or use the camera preview.")
     }
 }
 

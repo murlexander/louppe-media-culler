@@ -1,7 +1,6 @@
 # Vendored XMPCore source subset
 
-Louppe compiles a narrow, static XMPCore target from reviewed source. It does
-not build XMPFiles or any media-embedding handlers.
+Static XMPCore subset. XMPFiles/media-embedding handlers are excluded.
 
 Pinned inputs:
 
@@ -25,9 +24,8 @@ handwritten XML merging or broaden it to XMPFiles. When updating either input,
 repeat the isolation proof, review the source manifest, update both revision
 records and licenses, and rerun the packet and hostile-filesystem suites.
 
-Complete license texts live in `ThirdPartyLicenses/` and are copied into every
-app bundle. Release verification compares them in both the loose app and the
-independently extracted archive.
+Every app includes `ThirdPartyLicenses/` texts; release verification checks them
+in the loose bundle and extracted archive.
 
 Louppe's only XMPCore source changes are the `ExpatAdapter` resource counters:
 128 nested elements, 250,000 allocated nodes (including attributes and text

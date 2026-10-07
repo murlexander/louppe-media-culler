@@ -1,7 +1,9 @@
 # Session state and persistence fixes — 2026-09-29
 
 Canonical repository: `/Users/alexander_markin/Documents/code/louppe/app`.
-Implemented the four confirmed findings S1–S4 from `Docs/Audits/2026-09-29/session-state.md` in the existing dirty tree. Existing changes were preserved. No Models.swift, DurableFileIO.swift, documentation, changelog, installation, Git branch, commit, or push changes were made by this agent.
+Implemented S1–S4 from `Docs/Audits/2026-09-29/session-state.md`, preserving existing edits.
+This agent changed no Models.swift, DurableFileIO.swift, docs/changelog, installation,
+branches, commits, or pushes.
 
 ## S1 — pair-component Clean Up honors the target member’s scope
 
@@ -17,9 +19,9 @@ Two new tests in `Tests/LouppeTests/PairComponentCleanUpScopeTests.swift:7` and 
 
 `retryDirectorySync` at line 1611 attempts the missing full parent-directory flush under the existing cross-process transaction lock. It validates before and after the flush. Sidecar recovery requires the captured folder identity and exact desired sidecar revision. Backup recovery at line 1626 also rechecks the source-folder authority, allowed sidecar lineage, and exact backup bytes. Changed folders or externally edited destinations fail closed.
 
-Only a successful recovery flush or a fully synced backup reaches `recordSuccessfulSave` and a discard-safe SaveResult. If sidecar flush recovery and backup both fail, the result remains `.failed`; SessionStore’s existing generation accounting consequently keeps the dirty live session open and refuses unsafe Quit. A durable fallback reports `.savedToBackup`, including when the source happens to reconnect before backup validation: visible sidecar bytes alone do not justify claiming sidecar durability.
+Only real sync recovery or a fully synced backup reaches `recordSuccessfulSave` and discard-safe SaveResult. Otherwise `.failed` keeps SessionStore dirty and blocks Quit. Durable fallback reports `.savedToBackup`, even if source reconnects: visible sidecar bytes alone do not prove durability.
 
-An interrupted sidecar’s exact possible revision is retained even when backup publication fails. A later reconnect or an offline retry that reconnects during validation may adopt only that per-access revision. Ordinary older-backup rollback and unmarked external changes remain conflicts. Observed generations advance monotonically; successfully persisted sequence ordering is unchanged.
+The per-access interrupted sidecar revision survives backup failure and may be adopted on reconnect/offline retry. Unmarked external changes and older-backup rollback remain conflicts. Observed generations stay monotonic; successful sequence ordering is unchanged.
 
 Added a dedicated injected `beforeDirectorySyncRetryForTesting` boundary inside SessionPersistence; DurableFileIO’s flush/rename contracts and production implementation are unchanged.
 
@@ -35,7 +37,7 @@ New regression cases in `Tests/LouppeTests/SessionDurabilityTests.swift`:
 - Line 3296: external backup edit at that boundary returns sidecarChanged and preserves the external bytes.
 - Line 3323: a failed request retried offline reconnects during backup validation; only the marked sidecar is adopted, backup success remains truthful, generations are monotonic, and later sidecar repair succeeds.
 
-The existing reconciliation tests `testOfflineBackupAdoptsACommittedRenameAfterTrailingError` and `testReconnectedSidecarAdoptsTheExactBackupOwnedCommit` are included in the focused suite. Their exact-byte adoption remains valid; recovery now adds a real flush before declaring the reconciled destination durable.
+`testOfflineBackupAdoptsACommittedRenameAfterTrailingError` and `testReconnectedSidecarAdoptsTheExactBackupOwnedCommit` remain in the focused suite. Exact-byte adoption now requires a recovered flush before durability success.
 
 ## S3 — filtered explicit selection owns the displayed current photo
 
@@ -51,7 +53,7 @@ The new real-I/O test at `Tests/LouppeTests/SessionDurabilityTests.swift:3223` m
 
 ## Coordinated XMP boundary
 
-At the root agent’s explicit request, the `prepareXMPPublication` input call at `Sources/Louppe/SessionStore.swift:4203` now passes `sourceFolder` and `persistenceAccess?.folderIdentity`, in the coordinated initializer order. Root owns the input type, publication validation, and XMP tests.
+`prepareXMPPublication` at `Sources/Louppe/SessionStore.swift:4203` passes `sourceFolder` and `persistenceAccess?.folderIdentity` in the agreed initializer order. The coordinator owns XMP types, validation, and tests.
 
 ## Verification
 
@@ -68,15 +70,15 @@ swift test --disable-keychain \
 
 Result: **80 tests passed, zero failures**, exit 0. PairComponentCleanUpScopeTests: 2; SelectionStateTests: 18; SessionDurabilityTests: 60. The suite includes all 14 newly added regression methods and the existing reconciliation, CAS/contention, migration, generation-ordering, disconnect/reconnect, autosave/coalescing, folder-transition, and termination coverage. Test execution took 6.9 seconds after compilation. Log: `/private/tmp/louppe-fixes-2026-09-29/session-tests.log`.
 
-`git diff --check` passed for this agent’s six changed files. Initial attempts exposed and coordinated concurrent Audio/XMP compile errors owned by other agents. No full-suite/performance/native/install checks were duplicated; root owns integration and actual launch verification.
+`git diff --check` passed for six changed files. Initial Audio/XMP compile errors were coordinated with their owners. The coordinator owns full-suite/performance/native/install checks.
 
-Fault tests prove unsafe/discard-safe classification, exact lineage, retries, and real flush recovery on this host. They do not simulate an actual power cut or physical removable-volume disconnect. No additional optimization was implemented. The audit’s compact JSON opportunity remains separately documented and is not mixed into the correctness fixes.
+Fault tests verify discard safety, lineage, retry, and real flush recovery, without a power cut or physical disconnect. No optimization was added; compact JSON remains a separate audit opportunity.
 
 
 ## Final integration test observation correction
 
-The integrated run exposed two nondeterministic UI observations in the new dirty Quit regression: `saveSessionForTermination` returns the worker SaveResult and applies durability before its separate MainActor completion observer necessarily decrements `activePersistenceSaveCount`. `sessionSaveStatus` reports Saving while that count is nonzero, and `canRetryPersistence` likewise waits for it to reach zero.
+The dirty Quit test raced the completion observer: `saveSessionForTermination` applies SaveResult before MainActor clears `activePersistenceSaveCount`. Until zero, `sessionSaveStatus` is Saving and `canRetryPersistence` is false.
 
-The regression now uses the existing `waitForPersistenceIdleForTesting` barrier before those UI assertions after both failed and successful final saves. Its exact failed/successful SaveResults, discard safety, retained ready session/rating, and saved sidecar rating assertions remain intact. No production source change was needed.
+The test awaits `waitForPersistenceIdleForTesting` before failed/successful UI assertions. SaveResults, discard safety, retained ready session/rating, and sidecar ratings remain asserted. Production code is unchanged.
 
 Final affected-suite recheck: **60 SessionDurabilityTests passed, zero failures, exit 0**, 5.6 seconds. Log: `/private/tmp/louppe-fixes-2026-09-29/session-durability-final-tests.log`. The formerly timing-sensitive dirty Quit test additionally passed **five consecutive isolated repetitions**, exit 0, in `/private/tmp/louppe-fixes-2026-09-29/quit-observer-repeat-tests.log`.

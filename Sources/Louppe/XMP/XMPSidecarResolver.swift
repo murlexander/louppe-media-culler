@@ -70,9 +70,9 @@ enum XMPSidecarResolver {
         var errorDescription: String? {
             switch self {
             case .mediaFromDifferentDirectories:
-                return "A sidecar family must be resolved within one directory."
+                return L10n.text("A sidecar family must be resolved within one directory.")
             case .unreadableFilename:
-                return "A filename is not valid UTF-8 and cannot be matched safely."
+                return L10n.text("A filename is not valid UTF-8 and cannot be matched safely.")
             }
         }
     }

@@ -13,12 +13,12 @@ enum FileRenamingPartKind: String, CaseIterable, Hashable, Identifiable,
 
     var label: String {
         switch self {
-        case .captureDate: return "Date taken"
-        case .captureTime: return "Time taken"
-        case .camera: return "Camera"
-        case .lens: return "Lens"
-        case .originalName: return "Original name"
-        case .sequence: return "Sequence"
+        case .captureDate: return L10n.text("Date taken")
+        case .captureTime: return L10n.text("Time taken")
+        case .camera: return L10n.text("Camera")
+        case .lens: return L10n.text("Lens")
+        case .originalName: return L10n.text("Original name")
+        case .sequence: return L10n.text("Sequence")
         }
     }
 }
@@ -83,29 +83,29 @@ enum FileRenamingPlanner {
     static func validationMessage(forCustomBaseName value: String) -> String? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return "Enter a filename."
+            return L10n.text("Enter a filename.")
         }
         if trimmed == "." || trimmed == ".." {
-            return "That name is reserved by macOS."
+            return L10n.text("That name is reserved by macOS.")
         }
         if trimmed.hasPrefix(".") {
-            return "A filename cannot begin with a dot because macOS would hide it."
+            return L10n.text("A filename cannot begin with a dot because macOS would hide it.")
         }
         if trimmed.contains("/") || trimmed.contains(":")
             || trimmed.contains("\0") {
-            return "A filename cannot contain /, :, or a null character."
+            return L10n.text("A filename cannot contain /, :, or a null character.")
         }
         if trimmed.unicodeScalars.contains(where: {
             CharacterSet.controlCharacters.contains($0)
         }) {
-            return "A filename cannot contain control characters."
+            return L10n.text("A filename cannot contain control characters.")
         }
         if trimmed.utf8.count > 180 {
-            return "Keep the filename to 180 UTF-8 bytes or fewer."
+            return L10n.text("Keep the filename to 180 UTF-8 bytes or fewer.")
         }
         if trimmed == SessionConstants.sidecarName
             || trimmed.hasPrefix(".louppe-") {
-            return "Choose a name that is not reserved by Louppe."
+            return L10n.text("Choose a name that is not reserved by Louppe.")
         }
         return nil
     }
@@ -167,7 +167,7 @@ enum FileRenamingPlanner {
             let generated = truncateFilenameBase(values.joined(separator: "_"))
             if generated.hasPrefix(".") {
                 throw SourceOrganizationPlanner.PlannerError.invalidFileName(
-                    "The generated filename would begin with a dot and be hidden by macOS. Add another part before it."
+                    L10n.text("The generated filename would begin with a dot and be hidden by macOS. Add another part before it.")
                 )
             }
             return generated

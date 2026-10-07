@@ -30,11 +30,11 @@ struct GalleryView: View {
                     )
                 } else if store.visibleIndices.isEmpty && store.filter.isActive {
                     ContentUnavailableView {
-                        Label("No items match the filter", systemImage: "line.3.horizontal.decrease.circle")
+                        Label(L10n.text("No items match the filter"), systemImage: "line.3.horizontal.decrease.circle")
                     } description: {
-                        Text("Try different choices or clear the filters to see media again.")
+                        Text(L10n.text("Change or clear filters to show media."))
                     } actions: {
-                        Button("Clear Filters") { store.resetFilter() }
+                        Button(L10n.text("Clear Filters")) { store.resetFilter() }
                     }
                 } else if let item = store.currentItem {
                     if item.isText {

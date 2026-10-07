@@ -81,8 +81,8 @@ struct WelcomeView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Color.louppeAccent)
-            .accessibilityLabel("Quick Start and supported formats")
-            .help("Quick Start and supported formats")
+            .accessibilityLabel(L10n.text("Quick Start and supported formats"))
+            .help(L10n.text("Quick Start and supported formats"))
             .padding(24)
         }
         .onAppear { connectedDrives.start() }
@@ -94,16 +94,16 @@ struct WelcomeView: View {
             perform: openDroppedFolder
         )
         .alert(
-            "Open as a New Session?",
+            L10n.text("Open as a New Session?"),
             isPresented: $isNewSessionConfirmationPresented
         ) {
-            Button("Open as New Session", role: .destructive) {
+            Button(L10n.text("Open as New Session"), role: .destructive) {
                 store.openIdentityConflictAsNewSession()
             }
-            Button("Cancel", role: .cancel) {}
+            Button(L10n.text("Cancel"), role: .cancel) {}
         } message: {
             Text(
-                "This replaces the saved Louppe decisions for this folder and opens the current files unrated. Your photos and videos are not changed."
+                L10n.text("This replaces this folder’s saved decisions and opens its files unrated. Photos and videos stay unchanged.")
             )
         }
         .toolbar { LaunchToolbarTitle() }
@@ -116,7 +116,7 @@ struct WelcomeView: View {
                 Button {
                     store.promptForSourceFolder()
                 } label: {
-                    Label("Choose Media Folder…", systemImage: "folder")
+                    Label(L10n.text("Choose Media Folder…"), systemImage: "folder")
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
                 }
@@ -125,8 +125,8 @@ struct WelcomeView: View {
 
                 Label(
                     isFolderDropTarget
-                        ? "Release to open this folder"
-                        : "or drag a media folder in this window",
+                        ? L10n.text("Release to open this folder")
+                        : L10n.text("or drag a media folder in this window"),
                     systemImage: isFolderDropTarget
                         ? "folder.badge.plus"
                         : "arrow.down.doc"
@@ -138,8 +138,8 @@ struct WelcomeView: View {
             }
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Open a media folder")
-            .accessibilityHint("Choose a folder or drag one anywhere in this window to start reviewing it")
+            .accessibilityLabel(L10n.text("Open a media folder"))
+            .accessibilityHint(L10n.text("Choose a folder or drop one anywhere in this window"))
 
             if let folderDropError {
                 Text(folderDropError)
@@ -160,18 +160,18 @@ struct WelcomeView: View {
                         .multilineTextAlignment(.center)
 
                     if store.canOpenMismatchedSessionAnyway {
-                        Button("Open Anyway") {
+                        Button(L10n.text("Open Anyway")) {
                             store.openMismatchedSessionAnyway()
                         }
                         .accessibilityHint(
-                            "Loads saved ratings after checking they match the files in this folder"
+                            L10n.text("Loads saved ratings after checking they match the files in this folder")
                         )
                     } else if store.canOpenIdentityConflictAsNewSession {
-                        Button("Open as New Session") {
+                        Button(L10n.text("Open as New Session")) {
                             isNewSessionConfirmationPresented = true
                         }
                         .accessibilityHint(
-                            "Forgets saved decisions for this folder and opens the current files unrated"
+                            L10n.text("Forgets saved decisions for this folder and opens the current files unrated")
                         )
                     }
                 }
@@ -198,7 +198,7 @@ struct WelcomeView: View {
 
     private var recentFolders: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Recent folders")
+            Text(L10n.text("Recent folders"))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             VStack(spacing: 4) {
@@ -213,7 +213,7 @@ struct WelcomeView: View {
                         )
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Open \(url.path)")
+                    .accessibilityLabel(L10n.text("Open \(url.path)"))
                     .help(url.path)
                 }
             }
@@ -252,7 +252,7 @@ struct WelcomeView: View {
 
             Task { @MainActor in
                 guard let url else {
-                    folderDropError = "Louppe couldn't read the dropped folder. Please try again."
+                    folderDropError = L10n.text("Louppe couldn't read the dropped folder. Please try again.")
                     return
                 }
 
@@ -261,7 +261,7 @@ struct WelcomeView: View {
                     atPath: url.path,
                     isDirectory: &isDirectory
                 ), isDirectory.boolValue else {
-                    folderDropError = "Drop a folder containing photos, videos, audio, or text files, not an individual file."
+                    folderDropError = L10n.text("Drop a folder containing photos, videos, audio, or text files, not an individual file.")
                     return
                 }
 
@@ -287,7 +287,7 @@ struct ConnectedDrivesView: View {
     var body: some View {
         if !drives.drives.isEmpty || drives.statusMessage != nil {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Connected drives")
+                Text(L10n.text("Connected drives"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 HStack(alignment: .top, spacing: 16) {
@@ -327,9 +327,9 @@ struct ConnectedDrivesView: View {
         }
         .buttonStyle(.plain)
         .disabled(drives.openingDriveID != nil)
-        .accessibilityLabel("Choose a media folder on \(drive.name)")
+        .accessibilityLabel(L10n.text("Choose a media folder on \(drive.name)"))
         .accessibilityValue(drive.capacityDescription)
-        .help("Choose a folder on \(drive.name)…\n\(drive.capacityDescription)")
+        .help(L10n.text("Choose a folder on \(drive.name)…\n\(drive.capacityDescription)"))
     }
 }
 
@@ -379,15 +379,15 @@ struct ScanningView: View {
         VStack(spacing: 10) {
             ProgressView()
                 .controlSize(.large)
-                .accessibilityLabel("Scanning media")
+                .accessibilityLabel(L10n.text("Scanning media"))
                 .accessibilityValue(progressText)
 
-            Text("Scanning “\(folderName)”…")
+            Text(L10n.text("Scanning “\(folderName)”…"))
                 .font(.headline)
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .help(folderPath)
-                .accessibilityLabel("Scanning \(folderPath)")
+                .accessibilityLabel(L10n.text("Scanning \(folderPath)"))
 
             Text(progressText)
                 .foregroundStyle(.secondary)
@@ -402,11 +402,11 @@ struct ScanningView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "xmark")
                             .accessibilityHidden(true)
-                        Text("Cancel Scan")
+                        Text(L10n.text("Cancel Scan"))
                     }
                 }
                 .keyboardShortcut(.cancelAction)
-                .help("Cancel scanning and return to the start screen (Esc)")
+                .help(L10n.text("Cancel scanning and return to the start screen (Esc)"))
             }
             LaunchToolbarTitle()
         }
@@ -417,7 +417,7 @@ struct ScanningView: View {
     }
 
     private var folderName: String {
-        guard let folder = store.sourceFolder else { return "Folder" }
+        guard let folder = store.sourceFolder else { return L10n.text("Folder") }
         return folder.lastPathComponent.isEmpty ? folder.path : folder.lastPathComponent
     }
 
@@ -426,8 +426,8 @@ struct ScanningView: View {
     }
 
     private var progressText: String {
-        guard found > 0 else { return "Looking for media…" }
-        return found == 1 ? "1 item found" : "\(found.formatted()) items found"
+        guard found > 0 else { return L10n.text("Looking for media…") }
+        return found == 1 ? L10n.text("1 item found") : L10n.text("\(found.formatted()) items found")
     }
 }
 

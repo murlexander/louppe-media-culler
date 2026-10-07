@@ -48,7 +48,7 @@ struct MediaSourceRevision: Sendable {
     }
 
     static let changedMessage =
-        "This file changed since the folder was scanned. Rescan the folder to use the current file."
+        L10n.text("This file changed since the folder was scanned. Rescan the folder to use the current file.")
 }
 
 
@@ -166,7 +166,7 @@ enum MetadataExtractor {
             )
         }
         if let wb = exif[kCGImagePropertyExifWhiteBalance] as? Int {
-            add("White balance", wb == 0 ? "Auto" : "Manual")
+            add("White balance", wb == 0 ? L10n.text("Auto") : L10n.text("Manual"))
         }
         if let widthValue = finiteNumericValue(
             props[kCGImagePropertyPixelWidth]

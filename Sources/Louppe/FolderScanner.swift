@@ -1,20 +1,29 @@
 import Foundation
+import OSLog
 import UniformTypeIdentifiers
 
 /// Recursively discovers photos in a folder and turns them into `PhotoItem`s:
 /// pairs RAW+JPEG shots, reads capture dates, and sorts chronologically.
 /// Pure file-system work with no UI state — safe to run on any thread.
 enum FolderScanner {
+    private static let logger = Logger(
+        subsystem: "com.alexandermarkin.louppe",
+        category: "Folder scanner"
+    )
+
     enum ScanError: LocalizedError {
         case filesChangedDuringScan
+        case fileChangedDuringMetadataLoad
         case unreadableFolder(URL, Error)
 
         var errorDescription: String? {
             switch self {
             case .filesChangedDuringScan:
-                return "A media file changed while Louppe was scanning. Nothing was saved; scan the folder again."
+                return L10n.text("A media file changed while Louppe was scanning. Nothing was saved; scan the folder again.")
+            case .fileChangedDuringMetadataLoad:
+                return L10n.text("A media file changed after scanning. Use Rescan Folder before reviewing the files separately.")
             case .unreadableFolder(let url, let error):
-                return "Louppe couldn't read \(url.path). Nothing was saved. Check the folder's access and scan again. \(error.localizedDescription)"
+                return L10n.text("Couldn't read \(url.path). Nothing was saved. Check folder access and rescan. \(error.localizedDescription)")
             }
         }
     }
@@ -257,7 +266,7 @@ enum FolderScanner {
                 return false
             }
         ) else {
-            throw NSError(domain: "Louppe", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not read that folder."])
+            throw NSError(domain: "Louppe", code: 1, userInfo: [NSLocalizedDescriptionKey: L10n.text("Could not read that folder.")])
         }
         if isCancelled() { throw CancellationError() }
 
@@ -339,21 +348,24 @@ enum FolderScanner {
     /// identity/rating state with newly substituted bytes.
     static func validateScannedIdentities(
         _ items: [PhotoItem],
-        isCancelled: @Sendable () -> Bool = { false }
+        isCancelled: @Sendable () -> Bool = { false },
+        beforeIdentityProbeForTesting: ((PhotoFile) -> Void)? = nil
     ) throws {
         if isCancelled() { throw CancellationError() }
         for item in items {
             for file in item.individualFiles {
                 if isCancelled() { throw CancellationError() }
-                guard let expected = file.scannedIdentity,
-                      let current = try? FileOperationJournal.captureIdentity(
-                        at: file.url
-                      ),
+                beforeIdentityProbeForTesting?(file)
+                let expected = file.scannedIdentity
+                let current = try? FileOperationJournal.captureIdentity(at: file.url)
+                guard let expected,
+                      let current,
                       FileOperationJournal.identitiesMatch(
                         expected: expected,
                         actual: current,
                         includeStatusChange: true
                       ) else {
+                    logIdentityMismatch(file, expected: expected, actual: current)
                     throw ScanError.filesChangedDuringScan
                 }
             }
@@ -463,11 +475,16 @@ enum FolderScanner {
     /// Reprojects the already-discovered physical files without walking the
     /// source folder again. Separating a paired session opens metadata only
     /// for lightweight JPEG partners; every later toggle reuses those records.
+    /// A completed file operation may preserve prior identity-bound placeholder
+    /// records without reading metadata when a survivor changed; it supplies
+    /// `loadMissingMetadata: false` and presents a Rescan remedy.
     static func projectPairingMode(
         _ pairingMode: RawJPEGPairingMode,
         from items: [PhotoItem],
         root: URL,
-        isCancelled: @Sendable () -> Bool = { false }
+        isCancelled: @Sendable () -> Bool = { false },
+        loadMissingMetadata: Bool = true,
+        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)? = nil
     ) throws -> PairingProjection {
         var fileByPath: [String: PhotoFile] = [:]
         for item in items {
@@ -477,9 +494,13 @@ enum FolderScanner {
         }
         var files = fileByPath.values.sorted { stableURLOrder($0.url, $1.url) }
         let missingMetadataCount: Int
-        if pairingMode == .separate {
+        if pairingMode == .separate && loadMissingMetadata {
             missingMetadataCount = files.count { !$0.metadataIsLoaded }
-            files = try prepareMissingMetadata(in: files, isCancelled: isCancelled)
+            files = try prepareMissingMetadata(
+                in: files,
+                isCancelled: isCancelled,
+                metadataReaderForTesting: metadataReaderForTesting
+            )
         } else {
             missingMetadataCount = 0
         }
@@ -657,7 +678,8 @@ enum FolderScanner {
 
     private static func prepareMissingMetadata(
         in files: [PhotoFile],
-        isCancelled: @Sendable () -> Bool
+        isCancelled: @Sendable () -> Bool,
+        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)? = nil
     ) throws -> [PhotoFile] {
         guard files.contains(where: { !$0.metadataIsLoaded }) else {
             return files
@@ -675,14 +697,22 @@ enum FolderScanner {
             prepared.reserveCapacity(end - start)
             for file in files[start..<end] {
                 if isCancelled() { return }
-                prepared.append(
-                    file.metadataIsLoaded ? file : enrichMetadata(for: file)
-                )
+                do {
+                    prepared.append(
+                        file.metadataIsLoaded ? file : try enrichMetadata(
+                            for: file,
+                            metadataReaderForTesting: metadataReaderForTesting
+                        )
+                    )
+                } catch {
+                    results.record(error)
+                    return
+                }
             }
             results.store(prepared, at: chunkIndex)
         }
         if isCancelled() { throw CancellationError() }
-        return results.flattened()
+        return try results.flattened()
     }
 
     /// Prepares a previously lightweight JPEG partner to become a visible
@@ -694,20 +724,30 @@ enum FolderScanner {
         try prepareMissingMetadata(in: files, isCancelled: { false })
     }
 
-    private static func enrichMetadata(for file: PhotoFile) -> PhotoFile {
+    private static func enrichMetadata(
+        for file: PhotoFile,
+        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)?
+    ) throws -> PhotoFile {
+        try validateMetadataSource(file)
         let metadata = file.metadataSnapshot
         let isVideo = isVideoExtension(file.url.pathExtension)
         let isAudio = isAudioExtension(file.url.pathExtension)
         let isText = isTextExtension(file.url.pathExtension)
-        let info = isVideo || isAudio || isText
-            ? MetadataExtractor.ScanInfo()
-            : MetadataExtractor.scanInfo(for: file.url)
+        let info: MetadataExtractor.ScanInfo
+        if isVideo || isAudio || isText {
+            info = MetadataExtractor.ScanInfo()
+        } else if let metadataReaderForTesting {
+            info = try metadataReaderForTesting(file.url)
+        } else {
+            info = MetadataExtractor.scanInfo(for: file.url)
+        }
         let videoInfo = isVideo
             ? VideoMetadataExtractor.scanInfo(for: file.url)
             : nil
         let audioInfo = isAudio
             ? AudioMetadataExtractor.scanInfo(for: file.url)
             : nil
+        try validateMetadataSource(file)
         return PhotoFile(
             id: file.id,
             url: file.url,
@@ -736,6 +776,35 @@ enum FolderScanner {
             starsChangedAt: metadata.starsChangedAt,
             colorLabel: metadata.colorLabel,
             colorChangedAt: metadata.colorChangedAt
+        )
+    }
+
+    /// A cached physical-file record must never adopt metadata from a
+    /// replacement at the same path. Synthetic/legacy records retain their
+    /// existing identity-less API; production scans always capture identity.
+    private static func validateMetadataSource(_ file: PhotoFile) throws {
+        guard let expected = file.scannedIdentity else { return }
+        let actual = try? FileOperationJournal.captureIdentity(at: file.url)
+        guard let actual,
+              FileOperationJournal.identitiesMatch(
+                expected: expected,
+                actual: actual,
+                includeStatusChange: true
+              ) else {
+            logIdentityMismatch(file, expected: expected, actual: actual)
+            throw ScanError.fileChangedDuringMetadataLoad
+        }
+    }
+
+    /// Log only the failed boundary, never the normal per-file scan loop.
+    /// Paths and exact filesystem metadata remain private in unified logging.
+    private static func logIdentityMismatch(
+        _ file: PhotoFile,
+        expected: FileOperationJournal.FileIdentity?,
+        actual: FileOperationJournal.FileIdentity?
+    ) {
+        logger.error(
+            "Media identity mismatch at \(file.url.path, privacy: .private); expected \(String(reflecting: expected), privacy: .private); actual \(String(reflecting: actual), privacy: .private)"
         )
     }
 
@@ -768,6 +837,7 @@ enum FolderScanner {
     private final class FileChunkResults: @unchecked Sendable {
         private let lock = NSLock()
         private var values: [[PhotoFile]]
+        private var firstError: Error?
 
         init(count: Int) {
             values = [[PhotoFile]](repeating: [], count: count)
@@ -779,9 +849,16 @@ enum FolderScanner {
             lock.unlock()
         }
 
-        func flattened() -> [PhotoFile] {
+        func record(_ error: Error) {
             lock.lock()
             defer { lock.unlock() }
+            if firstError == nil { firstError = error }
+        }
+
+        func flattened() throws -> [PhotoFile] {
+            lock.lock()
+            defer { lock.unlock() }
+            if let firstError { throw firstError }
             return values.flatMap { $0 }
         }
     }

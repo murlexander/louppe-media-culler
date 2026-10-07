@@ -79,7 +79,7 @@ final class ActualSizeScrollView: NSScrollView {
     private var pendingPlacement: (position: NormalizedImagePosition, anchor: CGPoint)?
     private var isNativeMagnifying = false
     private var nativeMagnificationHasEnded = false
-    private var displayedItemName = "photo"
+    private var displayedItemName = L10n.text("photo")
     private var panStart: (windowPoint: CGPoint, contentOrigin: CGPoint)?
     private var zoomAnimationTask: Task<Void, Never>?
     private var animatedViewportPosition: NormalizedImagePosition?
@@ -151,7 +151,7 @@ final class ActualSizeScrollView: NSScrollView {
         displayedItemName = item.displayName
         updateAccessibilityZoomLabel()
         setAccessibilityHelp(
-            "Scroll or pinch to inspect the photo. Double-click to return to Fit. The position follows navigation until S resets it."
+            L10n.text("Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position; S resets it.")
         )
         canvas.onTileActivityChanged = { [weak self] active in
             self?.onLoading(active)
@@ -458,7 +458,7 @@ final class ActualSizeScrollView: NSScrollView {
 
     private func updateAccessibilityZoomLabel() {
         let percent = Int((magnification * 100).rounded())
-        setAccessibilityLabel("\(percent)% view of \(displayedItemName)")
+        setAccessibilityLabel(L10n.text("\(percent)% view of \(displayedItemName)"))
     }
 
     override func setFrameSize(_ newSize: NSSize) {

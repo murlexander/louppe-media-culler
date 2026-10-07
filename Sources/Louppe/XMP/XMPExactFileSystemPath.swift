@@ -12,9 +12,9 @@ struct XMPExactFileSystemPath: Hashable, Sendable {
         var errorDescription: String? {
             switch self {
             case .invalidRepresentation:
-                return "The filesystem path cannot be represented exactly."
+                return L10n.text("The filesystem path cannot be represented exactly.")
             case .invalidChildName:
-                return "The directory entry has an unsafe filename."
+                return L10n.text("The directory entry has an unsafe filename.")
             }
         }
     }

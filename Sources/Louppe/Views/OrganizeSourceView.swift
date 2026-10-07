@@ -57,8 +57,8 @@ struct OrganizeSourceView: View {
     private var setupView: some View {
         VStack(spacing: 0) {
             sheetHeader(
-                title: "Organize Source Folder",
-                subtitle: "Move media into folders built from review and capture metadata."
+                title: L10n.text("Organize Source Folder"),
+                subtitle: L10n.text("Move media into folders built from review and capture metadata.")
             )
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 24)
@@ -69,8 +69,8 @@ struct OrganizeSourceView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    section("Apply to") {
-                        Picker("Apply to", selection: $scope) {
+                    section(L10n.text("Apply to")) {
+                        Picker(L10n.text("Apply to"), selection: $scope) {
                             ForEach(SourceOrganizationScope.allCases, id: \.self) {
                                 value in
                                 Text("\(value.label) (\(store.organizationScopeCount(for: value)))")
@@ -83,8 +83,8 @@ struct OrganizeSourceView: View {
 
                     Divider()
 
-                    section("Folder order") {
-                        Text("Choose the folder levels, then drag enabled rows into priority order. The top row comes first.")
+                    section(L10n.text("Folder order")) {
+                        Text(L10n.text("Choose folder levels and drag enabled rows into order. The top row comes first."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -109,7 +109,7 @@ struct OrganizeSourceView: View {
 
                         if !levelBinding(.existingFolder).wrappedValue {
                             Label(
-                                "Existing folder is off, so files are flattened into the new levels. Previous folders remain in place, even when empty.",
+                                L10n.text("Existing folder is off: files use only the new levels. Previous folders remain, even when empty."),
                                 systemImage: "info.circle"
                             )
                             .font(.caption)
@@ -120,10 +120,10 @@ struct OrganizeSourceView: View {
 
                     Divider()
 
-                    section("Place inside source folder") {
-                        TextField("Folder name", text: $configuration.containerName)
+                    section(L10n.text("Place inside source folder")) {
+                        TextField(L10n.text("Folder name"), text: $configuration.containerName)
                             .textFieldStyle(.roundedBorder)
-                        Text("Louppe leaves previous folders and unrelated files untouched.")
+                        Text(L10n.text("Previous folders and unrelated files stay untouched."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -144,12 +144,12 @@ struct OrganizeSourceView: View {
                 if isPlanning {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Checking paths and sidecars…")
+                    Text(L10n.text("Checking paths and sidecars…"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("Cancel", role: .cancel) {
+                Button(L10n.text("Cancel"), role: .cancel) {
                     store.isOrganizePresented = false
                 }
                 Button(reviewButtonTitle) {
@@ -184,7 +184,7 @@ struct OrganizeSourceView: View {
 
             if level.isEnabled, level.kind == .existingFolder {
                 Picker(
-                    "Existing folder depth",
+                    L10n.text("Existing folder depth"),
                     selection: $configuration.existingFolderDepth
                 ) {
                     ForEach(
@@ -200,7 +200,7 @@ struct OrganizeSourceView: View {
 
             if level.isEnabled, level.kind == .dateTaken {
                 Picker(
-                    "Date grouping",
+                    L10n.text("Date grouping"),
                     selection: $configuration.dateGranularity
                 ) {
                     ForEach(
@@ -222,7 +222,7 @@ struct OrganizeSourceView: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Remove \(level.kind.label)")
+                .accessibilityLabel(L10n.text("Remove \(level.kind.label)"))
             }
         }
         .padding(.horizontal, 12)
@@ -247,13 +247,13 @@ struct OrganizeSourceView: View {
         .accessibilityElement(children: .contain)
         .accessibilityHint(
             level.isEnabled
-                ? "Drag to change folder priority"
-                : "Enable this level before reordering it"
+                ? L10n.text("Drag to change folder priority")
+                : L10n.text("Enable this level before reordering it")
         )
     }
 
     private var additionalMetadataMenu: some View {
-        Menu("Add metadata field…") {
+        Menu(L10n.text("Add metadata field…")) {
             ForEach(
                 SourceOrganizationLevelKind.allCases.filter {
                     $0.isAdditionalMetadata
@@ -277,7 +277,7 @@ struct OrganizeSourceView: View {
 
     @ViewBuilder
     private var previewSection: some View {
-        section("Preview") {
+        section(L10n.text("Preview")) {
             if let planningError {
                 Label(planningError, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.secondary)
@@ -291,11 +291,11 @@ struct OrganizeSourceView: View {
                         .help(example.path)
                 }
                 HStack(spacing: 10) {
-                    summaryValue("\(plan.previewGroups.count) folders")
-                    summaryValue("\(plan.itemCount) items")
-                    summaryValue("\(plan.mediaFileCount) media files")
+                    summaryValue(L10n.text("\(plan.previewGroups.count) folders"))
+                    summaryValue(L10n.text("\(plan.itemCount) items"))
+                    summaryValue(L10n.text("\(plan.mediaFileCount) media files"))
                     if plan.sidecarFileCount > 0 {
-                        summaryValue("\(plan.sidecarFileCount) XMP")
+                        summaryValue(L10n.text("\(plan.sidecarFileCount) XMP"))
                     }
                 }
 
@@ -313,7 +313,7 @@ struct OrganizeSourceView: View {
                             }
                         }
                         if plan.previewGroups.count > 6 {
-                            Text("…and \(plan.previewGroups.count - 6) more")
+                            Text(L10n.text("…and \(plan.previewGroups.count - 6) more"))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -321,7 +321,7 @@ struct OrganizeSourceView: View {
 
                 if !plan.collisions.isEmpty {
                     Label(
-                        "\(plan.collisions.count) filename or sidecar conflict\(plan.collisions.count == 1 ? "" : "s") must be resolved before moving.",
+                        (plan.collisions.count == 1 ? L10n.text("\(plan.collisions.count) filename or sidecar conflict must be resolved before moving.") : L10n.text("\(plan.collisions.count) filename or sidecar conflicts must be resolved before moving.")),
                         systemImage: "exclamationmark.triangle"
                     )
                     .foregroundStyle(.secondary)
@@ -331,33 +331,33 @@ struct OrganizeSourceView: View {
                             .lineLimit(1)
                             .help(conflict.message)
                     }
-                    Text("Keep Existing folder, add another level, narrow the scope, or rename the conflicting source file outside Louppe.")
+                    Text(L10n.text("Keep Existing folder, add a level, narrow the scope, or rename the conflicting file outside Louppe."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else if plan.itemCount == 0 {
-                    Label("No items are included in this scope.", systemImage: "line.3.horizontal.decrease.circle")
+                    Label(L10n.text("No items are included in this scope."), systemImage: "line.3.horizontal.decrease.circle")
                         .foregroundStyle(.secondary)
                 } else if plan.alreadyOrganizedItemCount == plan.itemCount {
-                    Label("Everything in this scope is already organized.", systemImage: "checkmark.circle")
+                    Label(L10n.text("Everything in this scope is already organized."), systemImage: "checkmark.circle")
                         .foregroundStyle(.secondary)
                 } else {
                     let oldFolderCount = Set(
                         plan.sourceItems.compactMap(\.subfolder)
                     ).count
-                    Text("\(plan.movingItemCount) items will move out of \(oldFolderCount) existing folder\(oldFolderCount == 1 ? "" : "s"). Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.")
+                    Text((oldFolderCount == 1 ? L10n.text("\(plan.movingItemCount) items will move out of \(oldFolderCount) existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.") : L10n.text("\(plan.movingItemCount) items will move out of \(oldFolderCount) existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.")))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 if plan.excludedACRCompanionCount > 0 {
-                    Text("\(plan.excludedACRCompanionCount) Lightroom .acr companion\(plan.excludedACRCompanionCount == 1 ? "" : "s") will remain in place.")
+                    Text((plan.excludedACRCompanionCount == 1 ? L10n.text("\(plan.excludedACRCompanionCount) Lightroom .acr companion will remain in place.") : L10n.text("\(plan.excludedACRCompanionCount) Lightroom .acr companions will remain in place.")))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             } else {
-                Text("Choose at least one folder level.")
+                Text(L10n.text("Choose at least one folder level."))
                     .foregroundStyle(.secondary)
             }
         }
@@ -366,13 +366,13 @@ struct OrganizeSourceView: View {
     private func confirmationView(
         _ plan: SourceOrganizationPlan
     ) -> some View {
-        let fileNoun = plan.movingFileCount == 1 ? "file" : "files"
-        let folderNoun = plan.previewGroups.count == 1 ? "folder" : "folders"
 
         return VStack(spacing: 0) {
             sheetHeader(
-                title: "Move \(plan.movingFileCount) \(fileNoun)?",
-                subtitle: "Into \(plan.previewGroups.count) \(folderNoun) inside “\(plan.configuration.containerName)”"
+                title: plan.movingFileCount == 1 ? L10n.text("Move 1 file?") : L10n.text("Move \(plan.movingFileCount) files?"),
+                subtitle: plan.previewGroups.count == 1
+                    ? L10n.text("Into 1 folder inside “\(plan.configuration.containerName)”")
+                    : L10n.text("Into \(plan.previewGroups.count) folders inside “\(plan.configuration.containerName)”")
             )
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 24)
@@ -383,10 +383,10 @@ struct OrganizeSourceView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("Names and contents stay unchanged. Existing files are never overwritten.")
+                    Text(L10n.text("Names and contents stay unchanged. Existing files are never overwritten."))
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text("Other files and folders stay where they are. Undo with ⌘Z before closing this session.")
+                    Text(L10n.text("Other files and folders stay where they are. Undo with ⌘Z before closing this session."))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -396,9 +396,9 @@ struct OrganizeSourceView: View {
                             Image(systemName: "exclamationmark.triangle")
                                 .font(.title3)
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("ExFAT card — keep it connected")
+                                Text(L10n.text("ExFAT card — keep it connected"))
                                     .font(.headline)
-                                Text("If the move is interrupted, the new folder organization may be incomplete. Keep the card connected and your Mac on until Louppe finishes.")
+                                Text(L10n.text("An interruption may leave folders partly organized. Keep the card connected and Mac on until Louppe finishes."))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -412,12 +412,12 @@ struct OrganizeSourceView: View {
             Divider()
 
             HStack {
-                Button("Back") { isReviewingMove = false }
+                Button(L10n.text("Back")) { isReviewingMove = false }
                 Spacer()
-                Button("Cancel", role: .cancel) {
+                Button(L10n.text("Cancel"), role: .cancel) {
                     store.isOrganizePresented = false
                 }
-                Button("Move Files") {
+                Button(L10n.text("Move Files")) {
                     store.startSourceOrganization(plan)
                 }
                 .keyboardShortcut(.defaultAction)
@@ -448,14 +448,14 @@ struct OrganizeSourceView: View {
                 total: Double(max(progress.total, 1))
             )
             .accessibilityLabel(progress.title)
-            .accessibilityValue("\(progress.done) of \(progress.total) files")
+            .accessibilityValue(L10n.text("\(progress.done) of \(progress.total) files"))
             .frame(width: 360)
             Text(progress.title)
                 .font(.headline)
-            Text("\(progress.done) of \(progress.total) files")
+            Text(L10n.text("\(progress.done) of \(progress.total) files"))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
-            Text("Keep Louppe open until the current file operation finishes.")
+            Text(L10n.text("Keep Louppe open until file work finishes."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -482,14 +482,14 @@ struct OrganizeSourceView: View {
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 460)
             } else if !outcome.wasUndo {
-                Text("Use ⌘Z during this open session to restore the previous folder layout.")
+                Text(L10n.text("Restore the previous layout with ⌘Z before closing this session."))
                     .foregroundStyle(.secondary)
             }
             if case .scanning = store.phase {
-                ProgressView("Refreshing the session…")
+                ProgressView(L10n.text("Refreshing the session…"))
                     .padding(.top, 8)
             }
-            Button("Done") {
+            Button(L10n.text("Done")) {
                 store.isOrganizePresented = false
             }
             .keyboardShortcut(.defaultAction)
@@ -561,9 +561,9 @@ struct OrganizeSourceView: View {
 
     private var reviewButtonTitle: String {
         if let plan, plan.alreadyOrganizedItemCount == plan.itemCount {
-            return "Already Organized"
+            return L10n.text("Already Organized")
         }
-        return "Review Move…"
+        return L10n.text("Review Move…")
     }
 
     private func refreshPlan() {

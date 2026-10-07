@@ -1,6 +1,6 @@
 # File safety audit implementation — 2026-09-29
 
-Canonical checkout: `/Users/alexander_markin/Documents/code/louppe/app`. This subtask implements FS-1, FS-2, FS-3, FS-4, FS-5, and FS-PERF-1 from `Docs/Audits/2026-09-29/file-safety.md`. No commits, branches, pushes, installation, or source edits in the compatibility folder. Existing unrelated edits were preserved. Root owns SessionStore, Models, documentation/changelog, standalone XMP changes, packaging, and app integration verification.
+Canonical checkout: `/Users/alexander_markin/Documents/code/louppe/app`. Implemented FS-1, FS-2, FS-3, FS-4, FS-5, and FS-PERF-1 from `Docs/Audits/2026-09-29/file-safety.md`. Existing edits were preserved; no commits, branches, pushes, installation, or compatibility-folder source edits. The coordinator owned SessionStore, Models, docs/changelog, XMP, packaging, and integration.
 
 ## Files changed by this subtask
 
@@ -15,47 +15,47 @@ Canonical checkout: `/Users/alexander_markin/Documents/code/louppe/app`. This su
 
 ### FS-1 — internally conflicting media/XMP family filenames
 
-`ExportWorker.makePlan` builds the complete initial filename family and immediately rejects internally equivalent normalized names. Adding the same numeric suffix cannot separate those names. The original PHOTO.JPG/PHOTO.jpg case-sensitive family is still grouped by XMPSidecarResolver but now returns an actionable localized planning error before any destination entry probe, journal activation, or media I/O. No family is silently split or partially exported.
+`ExportWorker.makePlan` rejects internally equivalent normalized family names before probes, journaling, or media I/O: a shared suffix cannot separate them. XMPSidecarResolver still groups the case-sensitive PHOTO.JPG/PHOTO.jpg family; the planner returns an actionable error without splitting or partially exporting it.
 
-The planner also checks Task cancellation and its explicit cancellation closure during input grouping, family processing, and every suffix retry. Copy passes its CancelFlag closure through planning; planning cancellation returns a cancelled result with its reason, zero failed photos, and no recovery/journal failure. Numeric suffix increments reject overflow rather than trapping.
+Task/closure cancellation is checked while grouping, processing families, and retrying suffixes. Copy passes CancelFlag; canceled planning returns its reason, zero failures, and no journal/recovery failure. Overflow is refused.
 
 Regression methods: `testEquivalentNamesWithinXMPFamilyFailBeforeDestinationProbes`, `testCancellationDuringCollisionSearchStopsCopyBeforeJournalActivation`.
 
 ### FS-PERF-1 — repeated basename planning
 
-The next suffix is cached by the entire sorted normalized unsuffixed family filename set. A JPEG-only family can still use its unsuffixed filename when a prior RAW+JPEG family was suffixed solely because the RAW target was already occupied. Reserved batch names are checked before constructing exact URLs or probing the filesystem. External occupancy remains checked, and every publish continues to use existing exclusive/no-overwrite workers and identity-bound destination checks.
+Suffixes are cached by the complete sorted normalized unsuffixed family set. A JPEG-only family may keep its original name after a RAW-only collision suffixed a RAW+JPEG family. Reservations precede exact URLs/probes; external occupancy, exclusive publication, and bound destination identity checks remain.
 
 Regression methods: `testRepeatedBasenamesNeedOneDestinationProbePerFile` (800 files, exactly 800 entry probes), `testSuffixCachePreservesWholeFamilyAndAlreadySuffixedNames` (RAW-only external collision, differing family composition, existing numeric suffixes, final target uniqueness, existing bytes unchanged).
 
-The cache addresses repeated identical families. Very large numbers of independently existing suffixed files or highly overlapping nonidentical family sets still require collision search. Search is cancellable. This is an intentional limit, not a machine-sensitive timing claim.
+Only repeated identical families benefit. Large existing suffix sets or overlapping nonidentical families still need cancellable search; no timing guarantee is claimed.
 
 ### FS-2 — organized originals excluded by scanner traversal
 
-User container names beginning with `.` or recognized macOS package/bundle extensions are rejected with a visible-folder error. Directory-constrained UTType lookup is required: unrestricted `.app` extension lookup resolves a different regular-file application type on this system. Generated camera/lens/origin/etc folder components retain their metadata text but gain a leading underscore for hidden names or a trailing underscore for package names.
+Containers beginning with `.` or recognized package/bundle extensions are refused. UTType lookup must be directory-constrained: unrestricted `.app` resolves a regular-file type here. Generated camera/lens/origin/etc names retain metadata text with a leading underscore for hidden names or trailing underscore for packages.
 
-Planning rejects existing hidden/package directories. The worker rechecks every component's name and actual resource flags before moving original files, including a directory which appears during mkdir's EEXIST race. This prevents a stale preview from moving files into a Finder-hidden existing container. Source root semantics and exact path construction remain unchanged.
+Planning rejects hidden/package directories; the worker rechecks names and actual flags before moving originals, including mkdir EEXIST races. Source-root and exact-path semantics remain unchanged.
 
 Regression methods: `testOrganizationRejectsHiddenAndPackageContainers` (.Hidden, Photos.app, .bundle, .photoslibrary, .framework), `testGeneratedOrganizationFoldersRemainScannableAndUndoable` (.Camera, Photos.app, Photos.photoslibrary; actual organize, scan count, undo, original bytes), `testOrganizationRefusesFinderHiddenFolderBeforeAndAfterPreview` (UF_HIDDEN flag in a normally named container).
 
 ### FS-3 — owned generated partial blocks Move rollback
 
-Rollback accepts a `.started` generated artifact only when its current stable identity matches the durable checkpointed inode. Such a partial is removed through existing exclusive two-path quarantine cleanup without requiring the digest of the not-yet-complete intended packet. `.staged`/`.completed` still require the sealed complete digest. Missing ownership, replacement inode, multiple candidates, or invalid staged content stays unresolved and preserved.
+Rollback removes a `.started` generated artifact only when stable identity matches its durable inode checkpoint, through two-path quarantine cleanup. The incomplete packet need not match the final digest; `.staged`/`.completed` must. Missing ownership, replacement, multiple candidates, or invalid staged content stay preserved/unresolved.
 
-Recovery restores the original media location before cleaning the generated artifact. Repeated recovery after success discovers no active operation. Crash after cleanup's exclusive transfer to the alternate reserved name is also recoverable using the same checkpointed identity. A crash before any identity checkpoint cannot safely infer ownership and deliberately remains unresolved.
+Recovery restores media before generated cleanup. Successful retries find no active operation; checkpointed quarantine transfers are recoverable. Before any identity checkpoint, ownership cannot be inferred and recovery stays unresolved.
 
 Regression method: `testGeneratedMovePartialRecoveryRemovesOnlyRecordedInode`, with recorded incomplete, recorded complete, cleanup-quarantined, staged complete, malformed staged partial, unrecorded, and replaced inode variants. Original media bytes/location and unrelated replacement bytes are asserted.
 
 ### FS-4 — retired XMP cleanup interrupted at quarantine name
 
-Completed XMP family recovery accepts the single owned retired packet at either the retirement target or its journal-planned quarantine path. It verifies stable recorded identity and the expected original packet digest, then reuses exclusive two-path cleanup. A source and another candidate together, two candidates, or replacement inode remains unresolved. A completed cleanup with neither candidate returns success. Completed media and merged destination XMP stay intact.
+Completed-family recovery verifies the single retired packet's identity and original digest at either reserved location, then resumes two-path cleanup. Source-plus-candidate, dual candidates, or replacement stays unresolved; neither candidate means cleanup completed. Media and merged XMP remain intact.
 
 Regression method: `testCompletedXMPRetirementRecoversEveryCleanupLocation`, with target, quarantine, already unlinked, replacement, and dual-candidate variants; successful recovery retry is idempotent.
 
 ### FS-5 — FIFO journal/read boundary can block indefinitely
 
-Journal creation and identity-bearing checkpoints require regular media files. Existing entries in journal plan validation likewise require S_IFREG, so malformed FIFO, directory, or symlink media cannot enter a recovery read/mutation path. The exact byte-comparison opener and DurableFileIO.syncFile use O_NONBLOCK before fstat's regular-file validation, closing the open-before-type-check FIFO blocking window.
+Journal creation/checkpoints and existing plan entries require S_IFREG. FIFO/directory/symlink media cannot reach recovery mutation. Exact comparison and DurableFileIO.syncFile open with O_NONBLOCK before fstat, preventing FIFO waits.
 
-Public `FileOperationJournal.captureIdentity` and private generic identity capture preserve directory semantics. `SessionPersistence.SourceFolderIdentity.capture` and bound-directory callers continue to work. The regular-file constraint applies to journal media and recovery entries, not global filesystem identity.
+`FileOperationJournal.captureIdentity`, generic capture, `SessionPersistence.SourceFolderIdentity.capture`, and bound-directory callers retain directory support. Only journal media/recovery entries require regular files.
 
 Regression methods: `testJournalRejectsNonregularMediaWithoutChangingFolderIdentityCapture` (directory API remains valid; FIFO/directory/symlink starts rejected; comparison false and sync throws promptly), `testMalformedFIFOJournalReturnsUnresolvedWithoutReadingTheFIFO` (forged durable plan with FIFO source; generated copy preserved, destination unpublished).
 
@@ -95,7 +95,7 @@ Total focused validation: **152 passing tests** plus the original seven probe ex
 
 ## Review entry points
 
-Current one-based lines in the canonical app checkout:
+One-based lines as of 29 September in the canonical app checkout:
 
 | Finding | Source entry point | Focused regression entry |
 | --- | --- | --- |
@@ -108,4 +108,4 @@ Current one-based lines in the canonical app checkout:
 
 ## Remaining verification limits
 
-Root owns source-tree-wide strict concurrency/full-suite checks and packaged app integration/launch. This subtask did not operate the GUI or install the app. Recovery regressions create authentic durable journal states and exact filesystem boundaries rather than killing a live user-media process or forcing a real disk-full condition. Newly created but never identity-checkpointed generated files remain preserved/unresolved by design; filenames and incomplete bytes cannot prove ownership. Tests cover those refusals as well as successful cleanup. Package recognition depends on macOS type registration during preview; actual created/existing directory resource flags are rechecked in the worker before media moves. No source-side identity API or exact filesystem path helper contract was broadened or weakened.
+The coordinator owns strict concurrency, full-suite, package, and launch checks. This subtask used no GUI/install, live-process crash, or real disk-full fault. Recovery tests use authentic durable checkpoints. Uncheckpointed generated files stay preserved/unresolved; names/partial bytes cannot prove ownership, and tests cover refusal. Preview package recognition uses macOS type registration; workers recheck actual flags before moves. Source identity and exact-path contracts are unchanged.

@@ -19,7 +19,7 @@ struct TextPreviewView: View {
                 ProgressView().controlSize(.small)
             case .loaded(let text):
                 if text.characters.isEmpty {
-                    ContentUnavailableView("Empty text file", systemImage: "doc.text")
+                    ContentUnavailableView(L10n.text("Empty text file"), systemImage: "doc.text")
                 } else {
                     NativeTextPreview(text: text, filename: item.displayName)
                         .frame(maxWidth: 820, maxHeight: .infinity)
@@ -27,12 +27,12 @@ struct TextPreviewView: View {
                 }
             case .failed(let message):
                 ContentUnavailableView {
-                    Label("Text preview unavailable", systemImage: "doc.text")
+                    Label(L10n.text("Text preview unavailable"), systemImage: "doc.text")
                 } description: {
                     Text(message)
                 } actions: {
-                    Button("Retry") { retry += 1 }
-                    Button("Show in Finder") {
+                    Button(L10n.text("Retry")) { retry += 1 }
+                    Button(L10n.text("Show in Finder")) {
                         NSWorkspace.shared.activateFileViewerSelecting([item.primaryURL])
                     }
                 }

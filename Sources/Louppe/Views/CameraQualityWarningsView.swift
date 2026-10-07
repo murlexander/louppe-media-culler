@@ -29,7 +29,7 @@ struct CameraQualityCuesRow: View {
                 isPopoverPresented = true
             } label: {
                 HStack(spacing: 4) {
-                    Text("⚠︎ \(warnings.count) quality \(warnings.count == 1 ? "cue" : "cues")")
+                    Text((warnings.count == 1 ? L10n.text("⚠︎ \(warnings.count) quality cue") : L10n.text("⚠︎ \(warnings.count) quality cues")))
                     Image(systemName: "chevron.right")
                         .font(.caption2.weight(.semibold))
                         .accessibilityHidden(true)
@@ -40,9 +40,9 @@ struct CameraQualityCuesRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(
-                "\(warnings.count) quality \(warnings.count == 1 ? "cue" : "cues")"
+                (warnings.count == 1 ? L10n.text("\(warnings.count) quality cue") : L10n.text("\(warnings.count) quality cues"))
             )
-            .accessibilityHint("Show exact values and sources")
+            .accessibilityHint(L10n.text("Show exact values and sources"))
             .popover(isPresented: $isPopoverPresented, arrowEdge: .trailing) {
                 qualityCuesPopover
             }
@@ -51,7 +51,7 @@ struct CameraQualityCuesRow: View {
 
     private var qualityCuesPopover: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Quality cues")
+            Text(L10n.text("Quality cues"))
                 .font(.subheadline.weight(.semibold))
 
             ForEach(warnings) { warning in
@@ -69,7 +69,7 @@ struct CameraQualityCuesRow: View {
                 HStack(spacing: 6) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Checking RAW data…")
+                    Text(L10n.text("Checking RAW data…"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -96,7 +96,7 @@ struct CameraQualityCuesRow: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Source: \(warning.source.label)")
+            Text(L10n.text("Source: \(warning.source.label)"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -127,43 +127,43 @@ struct CameraQualityWarningsSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Show quality cues", isOn: $isEnabled)
+                Toggle(L10n.text("Show quality cues"), isOn: $isEnabled)
             }
 
             Section {
                 HStack(spacing: 10) {
-                    cueToggle("High ISO", isOn: $isHighISOEnabled)
+                    cueToggle(L10n.text("High ISO"), isOn: $isHighISOEnabled)
                     CameraQualityThresholdField(
                         kind: .highISO, value: $highISOThreshold,
                         resetGeneration: $thresholdResetGeneration
                     )
                     .disabled(!isHighISOEnabled)
-                    cueDetail("ISO or above")
+                    cueDetail(L10n.text("ISO or above"))
                 }
                 HStack(spacing: 10) {
-                    cueToggle("Slow shutter", isOn: $isSlowShutterEnabled)
+                    cueToggle(L10n.text("Slow shutter"), isOn: $isSlowShutterEnabled)
                     CameraQualityThresholdField(
                         kind: .slowShutter, value: $slowShutterThreshold,
                         resetGeneration: $thresholdResetGeneration
                     )
                     .disabled(!isSlowShutterEnabled)
-                    cueDetail("s or slower")
+                    cueDetail(L10n.text("s or slower"))
                 }
                 HStack(spacing: 10) {
-                    cueToggle("Clipping", isOn: $isClippingEnabled)
+                    cueToggle(L10n.text("Clipping"), isOn: $isClippingEnabled)
                         .help(CameraQualityWarning.clippingSettingsDescription)
                     CameraQualityThresholdField(
                         kind: .clipping, value: $clippingPercentageThreshold,
                         resetGeneration: $thresholdResetGeneration
                     )
                     .disabled(!isClippingEnabled)
-                    cueDetail("% near black or white")
+                    cueDetail(L10n.text("% near black or white"))
                 }
             }
             .disabled(!isEnabled)
 
             Section {
-                Button("Restore Quality Cue Defaults") {
+                Button(L10n.text("Restore Quality Cue Defaults")) {
                     // Retire focused drafts before changing any values. A
                     // delayed focus-loss callback cannot restore stale text.
                     thresholdResetGeneration &+= 1

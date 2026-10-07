@@ -33,7 +33,7 @@ struct CheckForUpdatesView: View {
     }
 
     var body: some View {
-        Button("Check for Updates…", action: updater.checkForUpdates)
+        Button(L10n.text("Check for Updates…"), action: updater.checkForUpdates)
             .disabled(!viewModel.canCheckForUpdates || isFileOperationRunning)
     }
 }
@@ -56,7 +56,7 @@ struct UpdaterSettingsView: View {
 
     var body: some View {
         Form {
-            Toggle("Automatically check for updates", isOn: $automaticallyChecksForUpdates)
+            Toggle(L10n.text("Automatically check for updates"), isOn: $automaticallyChecksForUpdates)
                 .onChange(of: automaticallyChecksForUpdates) { _, newValue in
                     updater.automaticallyChecksForUpdates = newValue
                     if !newValue {
@@ -65,7 +65,7 @@ struct UpdaterSettingsView: View {
                     }
                 }
 
-            Toggle("Automatically download and install updates",
+            Toggle(L10n.text("Automatically download and install updates"),
                    isOn: $automaticallyDownloadsUpdates)
                 .disabled(!automaticallyChecksForUpdates)
                 .onChange(of: automaticallyDownloadsUpdates) { _, newValue in
@@ -91,19 +91,19 @@ struct LouppeSettingsView: View {
         TabView {
             ReviewPreferencesSettingsView()
                 .tabItem {
-                    Label("Review", systemImage: "photo.on.rectangle")
+                    Label(L10n.text("Review"), systemImage: "photo.on.rectangle")
                 }
 
             CameraQualityWarningsSettingsView()
                 .tabItem {
-                    Label("Quality Cues", systemImage: "waveform.path.ecg")
+                    Label(L10n.text("Quality Cues"), systemImage: "waveform.path.ecg")
                 }
 
             #if !APP_STORE
             if !AppBuildInfo.isReviewBuild {
                 UpdaterSettingsView(updater: updater)
                     .tabItem {
-                        Label("Updates", systemImage: "arrow.down.circle")
+                        Label(L10n.text("Updates"), systemImage: "arrow.down.circle")
                     }
             }
             #endif

@@ -59,7 +59,7 @@ else
 fi
 # Sparkle is a public, checksum-pinned binary. Do not ask macOS Keychain for
 # unrelated github.com credentials while downloading it.
-BUILD_ARGUMENTS=(--disable-keychain -c release)
+BUILD_ARGUMENTS=(--disable-keychain --build-system native -c release)
 if $APP_STORE; then
     BUILD_ARGUMENTS+=(-Xswiftc -DAPP_STORE)
     LOUPPE_APP_STORE=1 swift build "${BUILD_ARGUMENTS[@]}"
@@ -80,6 +80,12 @@ mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources" \
     "$APP_DIR/Contents/Frameworks"
 
 cp .build/release/Louppe "$APP_DIR/Contents/MacOS/Louppe"
+ditto --noextattr --noqtn .build/release/Louppe_Louppe.bundle \
+    "$APP_DIR/Contents/Resources/Louppe_Louppe.bundle"
+# SwiftPM writes localization metadata but no resource-bundle identifier.
+# Stamp it before signing so App Store validation accepts the nested bundle.
+"$PWD/Scripts/resource_bundle_metadata.sh" --prepare \
+    "$APP_DIR/Contents/Resources/Louppe_Louppe.bundle"
 
 # Xcode 27's SwiftPM linker can record the deployment target (14.0) as the
 # linked SDK even though compilation used the current SDK. macOS then presents
@@ -161,6 +167,13 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string><string>es</string><string>zh-Hans</string>
+        <string>hi</string><string>pt</string><string>ar</string>
+    </array>
     <key>CFBundleName</key>
     <string>Louppe</string>
     <key>CFBundleDisplayName</key>
@@ -179,6 +192,8 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
     <string>AppIcon</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.photography</string>
     <key>NSHumanReadableCopyright</key>
     <string>© 2026 Alex Markin</string>
     <key>LSMinimumSystemVersion</key>
@@ -196,6 +211,11 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
             <dict>
                 <key>default</key>
                 <string>Open in Louppe</string>
+                <key>es</key><string>Abrir en Louppe</string>
+                <key>zh-Hans</key><string>在 Louppe 中打开</string>
+                <key>hi</key><string>Louppe में खोलें</string>
+                <key>pt</key><string>Abrir no Louppe</string>
+                <key>ar</key><string>فتح في Louppe</string>
             </dict>
             <key>NSMessage</key>
             <string>openMediaFolder</string>

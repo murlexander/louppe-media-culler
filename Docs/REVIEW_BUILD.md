@@ -1,9 +1,7 @@
 # louppe - to review
 
-Historical review and consolidation record, 29 September 2026. The current
-unreleased cycle is 1.10.0 (12), following published 1.9.0 (11). Earlier sections
-record the separate review builds and their original verification; those copies
-are superseded by the consolidated production app.
+Historical review/consolidation, 29 September 2026. Unreleased: 1.10.0 (12);
+public: 1.9.0 (11). Earlier review copies are superseded by the production app.
 
 ## Scope
 
@@ -23,7 +21,7 @@ are superseded by the consolidated production app.
    when needed. The page does not scroll, and the window cannot shrink below
    the size its content needs. No automatic whole-drive scan.
 
-The existing toolbar structure, neutral background, and purple accent remain.
+Toolbar, neutral background, and purple accent are unchanged.
 
 ## Separate app
 
@@ -32,10 +30,8 @@ Its identifier is `com.alexandermarkin.louppe.review2`; the production identifie
 remains `com.alexandermarkin.louppe`. Preferences, recents, and window state are
 separate. Automatic update startup and the update settings/command are disabled.
 
-Folder sessions retain the normal `.louppe_session.json` format and the existing
-shared persistence/file-operation safety boundaries. Opening the same media in
-both apps therefore shares folder decisions; the review copy is not a separate
-photo library. UI verification uses disposable copies of existing demo photos.
+Both apps share `.louppe_session.json` and file-operation safety. Opening the
+same folder shares decisions. UI tests use disposable demo copies.
 
 ## Verification
 
@@ -66,12 +62,9 @@ off/on, batch-independent undo, and advancement under the Undecided filter
 without skipping the next item. Review defaults were restored after testing.
 Gallery, Grid, and Settings were also inspected in screenshots.
 
-The standalone drive fixture rendered the exact production drive view with
-known and unavailable capacity states. Its native folder chooser opened at the
-selected fixture drive. Automated confirmation in the native folder chooser
-did not complete reliably, so media loading used the documented `-openFolder`
-launch flag. This leaves native chooser confirmation for manual acceptance
-with a physical card.
+The production drive fixture showed known/unavailable capacity and opened the
+chooser at its drive. Chooser confirmation was unreliable; loading used
+`-openFolder`. Physical-card chooser acceptance remains manual.
 
 ## Welcome-layout follow-up — 29 September 2026
 
@@ -105,9 +98,9 @@ with a physical card.
 
 ## Acceptance
 
-The actual external drive listing and capacity have been observed. Physical
-insertion/removal and chooser confirmation remain manual acceptance checks;
-eligibility, stale snapshots, and replacement identities have controlled tests.
+Drive listing/capacity were observed. Physical insertion/removal and chooser
+confirmation remain manual; eligibility, stale snapshots, and replacement
+identities have controlled tests.
 
 ## Minimal UI follow-up — 29 September 2026
 
@@ -137,12 +130,9 @@ regression run again passed 58/58, including all 34 required keyboard tests.
 
 ## Review fixes and local consolidation — 29 September 2026
 
-The review found one actionable layout issue: many connected drives or long
-warning text could push the welcome window beyond the available display
-height. Welcome content now uses native vertical scrolling only when it
-exceeds usable screen height. The minimum and window frame account for the
-title bar and toolbar; ordinary welcome layouts retain their intrinsic size.
-The view's lifecycle remains stable when scrolling becomes necessary.
+Many drives/long warnings could exceed display height. Welcome now scrolls
+when content exceeds usable height; frame/minimum include title bar and toolbar.
+Ordinary layouts retain intrinsic size and view lifecycle stays stable.
 
 Verification passed:
 
@@ -160,13 +150,10 @@ Verification passed:
 - Developer ID signing, loose app and extracted ZIP verification, and full
   app/archive content comparison passed for Louppe 1.9.1 (12).
 
-The current source, including the review features, is installed as
-`/Applications/Louppe.app` with the production bundle identifier. It opened
-three disposable items and saved a three-entry session; the test originals
-remained byte-identical. It was then closed normally, its merged preferences
-restored, and reopened normally. The final check confirmed one running
-production instance and preserved review/cue settings plus seven recent
-folders. No user media was opened for this installation check.
+The consolidated production app in `/Applications/Louppe.app` saved three
+disposable items without changing bytes. After normal Close, preference restore,
+and relaunch, one instance ran with review/cue settings and seven recents intact.
+No user media was opened.
 
 Thirteen prior app bundles and both preference domains were archived under
 `dist/local-backups/2026-09-29-consolidation`; every app file and symlink was
@@ -183,10 +170,8 @@ manual acceptance checks. No commit, push, or public release was performed.
 
 ## Promotion to 1.10 — 29 September 2026
 
-At the owner's request, the existing unreleased update was promoted from
-1.9.1 to 1.10.0. Build 12 remains the same release-cycle build; the latest
-published release is still 1.9.0 (11). `VERSION` and the current changelog
-heading now agree on 1.10.0 (12).
+At Alex’s request, unreleased 1.9.1 became 1.10.0. Build 12 stayed unchanged;
+`VERSION`/changelog agree. Public release remains 1.9.0 (11).
 
 All 34 HotkeyTests and 75 performance/file-safety checks passed again before
 installation. The Developer ID build, loose bundle, independently extracted
@@ -201,11 +186,9 @@ backup folder. No source behavior changed, and no public release was made.
 
 ## Session wrap-up — 29 September 2026
 
-Reviewed every remaining Louppe development chat: RAW representation, Fuji
-research, selectable RAW 9, feedback copy, and settings explanations. Their
-requested changes are complete in the shared source. Fuji metadata, broader RAW 9
-hardware/resource/compression acceptance, and the intermittent disposable scan
-fixture remain in `BACKLOG.md`; the existing audit acceptance tasks remain open.
+Integrated RAW representation, Fuji research, RAW 9 selection, feedback, and
+settings copy from the remaining development chats. Fuji metadata, broader RAW 9
+acceptance, the intermittent fixture, and audit acceptance remained in `BACKLOG.md`.
 
 Verification of the integrated source passed:
 
@@ -247,12 +230,9 @@ GitHub Pages deployment succeeded, and the live script matched source. Two-tab
 browser acceptance remains in the website backlog. The app update remains
 unreleased; no public 1.10 release or updater-feed promotion was performed.
 
-The first remote quality run selected Xcode 26.6 and could not compile the
-macOS 27 RAW-resource API. The quality workflow now uses GitHub’s `xcode-27`
-runner, matching the local SDK requirement; application source is unchanged.
+Remote Xcode 26.6 could not compile the macOS 27 RAW-resource API. CI now uses
+GitHub’s `xcode-27` runner; app source is unchanged.
 
-The Xcode 27 hosted runner exposes 608 points of usable window height. Three
-layout tests assumed 650–690 points and produced six assertion failures despite
-the correct welcome overflow cap. Their assertions now check intrinsic height
-when it fits and the actual display limit otherwise. Existing overflow scrolling
-and full-size toolbar checks remain; production window behavior is unchanged.
+The hosted runner has 608 points usable height; three tests assumed 650–690,
+causing six failures. Assertions now use intrinsic height or the actual display
+limit. Overflow/toolbar checks and production window behavior are unchanged.

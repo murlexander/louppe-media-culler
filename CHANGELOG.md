@@ -1,11 +1,25 @@
 # Version History
 
-Every public Louppe update is recorded here. The version and build number used
-by the app are defined in `VERSION`; `build_app.sh` verifies that the marketing
-version and build number have a matching entry below before it creates a
-release bundle.
+## 1.10.0 (12) — 2026-10-07
 
-## 1.10.0 (12) — 2026-10-06
+- Added Spanish, Simplified Chinese, Hindi, Portuguese, and Arabic across the
+  app, including menus, Help, VoiceOver actions, and file-safety messages.
+  macOS language preferences select the interface, with English fallback;
+  Arabic uses right-to-left layout while shortcuts and filenames stay stable.
+
+- Prevented oversized session saves from replacing readable ratings files, and
+  kept Retry, Close, and Quit safe when saving fails.
+- Checked lazy JPEG metadata against the original scanned file before and after
+  reading; changed files now offer Rescan without mixing identities or decisions.
+- Made scan cancellation stop the final identity pass after saved-session loading.
+- Kept selected-folder access when reopening Recent folders, routing Back or
+  Retry, and handing exports to background workers. Refreshed stale bookmarks
+  without losing saved access.
+- Refused unsupported export destinations before creating media or recovery
+  records, with an APFS remedy; ExFAT source cards can still copy onto the Mac.
+- Added Privacy Policy links in Help and About.
+- Declared the Store category and existing local privacy API uses; verified
+  Store signing identities and package payloads before replacing upload artifacts.
 
 - Kept zoomed photos inside the Gallery pane so pinching no longer covers the Browser.
 
@@ -17,33 +31,24 @@ release bundle.
 - Added a compact RAW display choice for Apple RAW rendering at every zoom
   level, with Preview/RAW source labels and explicit preview fallback.
   The zoom slider now spans 30–400% while Fit still shows the whole photo.
-- Added a persisted Apple RAW decoder choice, with RAW 9 opt-in on supported
-  macOS 27 files, bounded model-resource preparation, visible retry/default
-  remedies, and decoder-specific preview and 100% caches.
+- Added opt-in RAW 9 on supported macOS 27 files, bounded model preparation, explicit Retry/Apple Default remedies, and decoder-specific preview/100% caches.
 
 - Fixed all 17 confirmed findings from the full audit: exact RAW/JPEG Clean Up
   scope, save durability and Retry, filtered selection, source-bound XMP and
   media reads, interrupted file recovery, transparent-image analysis, precise
   filters, persistent video controls, and actionable save errors.
-- Made repeated-basename export planning scale with the batch size and stopped
-  abandoned audio analysis before it delays the next recording.
+- Made repeated-basename export planning scale with batch size; cancelled abandoned audio analysis before it delays the next recording.
 
 - Clarified how to load saved ratings after moving or renaming a folder.
 - Anchored the start-page Help button to the window's bottom-right corner.
 - Added **Open in Louppe** to Finder's Services menu for a selected media folder.
-- Simplified the start page by removing the large branding block and reducing
-  its top spacing. Quality cue thresholds are directly editable, and each cue
-  can be switched off independently without losing its threshold.
+- Simplified the start page. Quality thresholds are directly editable; disabling a cue retains its threshold.
 - Added folder-hierarchy review in Sort, with parent folders before their
   descendants and full relative folder names in Browser and Grid.
 - Added Review settings for advancement after a decision and the starting
   view, sort, and group dividers for new folders. Rating under a decision
   filter now advances without skipping the next undecided item.
-- Added connected external drives and memory cards to the start screen, with
-  available capacity and a folder chooser that starts on the selected drive.
-  Five recent folders and all connected drives share a compact, aligned start
-  page whose window minimum follows the space its content needs. On smaller
-  displays, overflow can scroll so every drive and long message stays reachable.
+- Added connected drives and cards to the compact start screen with available capacity, drive-specific folder selection, and scrollable overflow.
 - Isolated the local “louppe - to review” app from the stable app's identity,
   preferences, recents, and window restoration; automatic updates stay off.
 
@@ -64,14 +69,12 @@ to Louppe and its approach to reviewing media.
 
 - Fixed the standalone video check's missing exact-path dependency so the
   complete GitHub quality workflow can run after the Copy safety changes.
-- Pinned CI checkout, disabled saved checkout credentials, added redacted
-  credential checks and weekly action updates, and ignored local signing secrets.
+- Pinned CI checkout, disabled saved credentials, added redacted credential checks and weekly action updates, and ignored local signing secrets.
 
 - Shortened the bottom-panel save status to “Saved” or “Saving…” so it stays
   compact while ratings are written.
 
-- Made the start screen a compact window and let folders be dropped anywhere
-  in it to open them.
+- Made the start window compact and accepted folder drops anywhere in it.
 
 - Removed the explanatory text below the Info panel's star rating.
 
@@ -86,32 +89,21 @@ to Louppe and its approach to reviewing media.
 
 - Updated the About description to say “for creators.”
 - Added a working Help window, searchable shortcuts, and dismissible review tips.
-- Combined filter information, save feedback, and review completion into one
-  compact bottom panel without repeating the toolbar's actions.
-- Kept the bottom panel height consistent across photos, video, and audio,
-  centered photo zoom, and removed clipped QuickTime artwork from audio controls.
+- Combined filters, save status, and review completion in one bottom panel.
+- Kept the bottom panel height consistent, centered photo zoom, and removed clipped QuickTime artwork from audio controls.
 - Added a continuous photo zoom slider and pinch-to-zoom while retaining the
   S (100%) and A (Phone size) shortcuts.
-- Prevented the zoom slider from briefly jumping to its minimum and flickering
-  when A or S switches back to Phone size or Fit.
-- Fixed a stuck loading spinner caused by late layout updates restarting
-  high-resolution loading after leaving the zoomed photo view.
-- Fixed pinch completion so the enlarged photo remains pannable and the
-  slider keeps responding. Added click-and-drag panning and a smooth return
-  from custom zoom to centered 100% with S.
+- Fixed zoom-slider jumps and flicker when A or S returns to Phone size or Fit.
+- Fixed late layout updates restarting high-resolution loading after leaving zoom.
+- Fixed panning and slider response after pinching. Added drag panning and S to reset custom zoom to centered 100%.
 - Replaced separate RAW + JPEG palette commands with one searchable toggle
   that explains the current mode and any temporary availability restriction.
-- Made explicit selections the default export scope, added keeper and star
-  quick picks, clarified independent review metadata and same-drive Move,
-  and simplified editing-app options.
+- Made selection the default Export scope; added keeper/star quick picks, independent-rating explanations, same-drive Move guidance, and simpler editing-app options.
 - Added quick decision filters, visible active filters, direct filter reset,
   a RAW + JPEG pairing choice, and preview retry and Finder actions.
-- Clarified Trash No + Undecided with separate counts, refreshed first-run
-  instructions, and added separately named local review packaging.
+- Clarified Trash No + Undecided counts, shortened first-run guidance, and added separately named local review packaging.
 
-- Reorganized the Command Palette into predictable sections, improved search
-  ranking and aliases, displayed all applicable keyboard shortcuts, and added
-  missing folder, search, selection, and zoom actions.
+- Reorganized the Command Palette, improved search/aliases, showed all matching shortcuts, and added folder, search, selection, and zoom actions.
 - Kept the native macOS toolbar appearance in local release builds by recording
   the current SDK version in the packaged app.
 
@@ -119,203 +111,71 @@ to Louppe and its approach to reviewing media.
 
 - Added ⌘F to open the Filter menu with its Search field ready for typing.
 
-- Matched the RAW + JPEG pairing wording in Filter and the command palette,
-  while retaining the previous wording as a search term.
+- Matched RAW + JPEG wording in Filter and the palette; kept old wording searchable.
 
-- Simplified the source-organization confirmation to show only where files
-  will move, what stays unchanged, and how to safely move from an ExFAT card.
+- Simplified Organize confirmation: destinations, unchanged files, and ExFAT safety guidance.
 
 - Added Developer ID signing, hardened-runtime, Apple notarization, stapling,
   Gatekeeper, and release-provenance checks for trusted direct downloads.
 
-- Removed the explanatory paragraph from the welcome screen so the folder
-  action is the clear starting point.
+- Removed the welcome paragraph to emphasize folder selection.
 
-- Updated the welcome screen and folder-related messages to use **media folder**
-  terminology, reflecting support for photos, videos, and audio.
+- Used media folder wording for photo, video, and audio support.
 
-- Renamed the public project and GitHub repository to **Louppe Media Culler**
-  for clearer discovery while keeping the installed app, executable, bundle
-  identifier, preferences, sessions, and XMP namespace named **Louppe**.
+- Renamed the public project/repository to Louppe Media Culler; kept Louppe app identity, preferences, sessions, and XMP namespace.
 
-- Reused cards and folders no longer become impossible to open when their new
-  files reuse names from an identity-bound saved session. Louppe still refuses
-  to apply the old ratings automatically, but now offers **Open as New Session**
-  with an explicit confirmation that replaces only the stale decisions and
-  leaves every photo and video untouched.
+- Added Open as New Session for reused filenames with incompatible saved identities. Confirmation replaces stale decisions only; photos and videos remain untouched.
 
-- Large multi-selections reuse their Info summary across redraws. Decision,
-  star, and color controls avoid repeated selection sorting and stop checking
-  once a mixed value is found. Inline filename editing always targets the
-  displayed photo family, cancels when that content changes, and waits until
-  typing pauses before preparing its snapshot. Return during a filename check
-  now completes the rename when that check succeeds instead of being ignored.
-  Rename and Organize now report partial Undo failures accurately and use
-  singular file counts for single-file results.
+- Cached multi-selection summaries and mixed values. Inline rename follows the displayed family, cancels on content change, debounces checks, and honors Return after a successful check. Rename/Organize report partial Undo failures and singular counts correctly.
 
-- Folder scans now report unreadable subfolders instead of opening incomplete
-  sessions, and honor Cancel during final file-identity validation. Similar-photo
-  grouping avoids repeated comparisons within already-matched families and
-  reuses membership across filter, sort, and rating changes. Group headers count
-  only visible members, and rerunning analysis refreshes the active review.
+- Reported unreadable subfolders and honored cancellation during final identity checks. Similarity grouping reuses membership, counts visible members, and refreshes after reanalysis.
 
-- Standardized Filter and Sort popovers and Export/XMP dialogs with consistent
-  spacing, purple primary actions, and scrollable setup and review content.
-  Export keeps its header and actions visible as options grow, and single-file
-  Rename now scrolls long previews and conflicts instead of crowding its buttons.
+- Standardized popover/sheet spacing and purple primary actions. Export keeps controls visible; Rename and Organize scroll long previews and conflicts.
 
-- Single-file renaming now works inline from the filename in the Info panel,
-  following Finder's direct-edit pattern. The separate File-menu and single-file
-  Command Palette entry are removed; batch metadata renaming remains available from
-  the multi-selection Info panel and Command Palette.
+- Moved single-file rename into the Info filename, replacing its File-menu/palette entry. Batch rename remains in multi-selection Info and the palette.
 
-- Added safe source-file renaming. The Info panel now renames one filename stem
-  while preserving its extension, and File → Rename Files offers a minimal
-  All/Filtered/Selected batch builder for date, time, camera, lens, original
-  name, and deterministic sequence parts. Both actions are searchable through
-  **⌘K**, show exact previews, keep RAW+JPEG and recognized XMP names together,
-  refuse collisions, misleading new pair stems, ambiguous sidecars, and `.acr`
-  companions, and restore every previous name with one **⌘Z**. Rename and undo
-  use dedicated crash-recovery journals and preserve ratings and current-item
-  continuity through the required same-folder rescan.
+- Added stem-only Rename with metadata/sequence batch parts and exact previews. RAW+JPEG/XMP families follow; extensions and contents stay unchanged. Collisions, false pair stems, ambiguous sidecars, and .acr companions block Rename. One ⌘Z restores names during the open session; journals support interrupted recovery and preserve ratings/current item through rescan.
 
-- Polished Organize Source Folder with a stable header and action bar, one
-  scrollable setup area, clearer folder-level guidance, and wrapping or
-  middle-truncated previews so long paths and explanations stay inside the
-  sheet. The move-confirmation step now scrolls independently as well.
+- Made Organize setup and confirmation scrollable, with stable controls and wrapping/truncated paths.
 
-- Added archival RAW+JPEG cleanup. From the shared Clean Up menu or the **⌘K**
-  Command Palette, photographers can move only the JPEG or only the RAW member
-  of unambiguous pairs to the macOS Trash within the current All Media,
-  Filtered, or Selected scope. Standalone files and XMP sidecars stay untouched,
-  the retained member remains in the session, and one **⌘Z** restores the batch.
+- Added RAW-only/JPEG-only Trash for unambiguous pairs via Clean Up or ⌘K, within All Media/Filtered/Selected. Standalones and XMP stay untouched; the retained file stays in the session. One ⌘Z restores the batch.
 
-- Added All Media, Filtered, and Selected scopes to Export. The chosen scope
-  now bounds regular Copy, Move, Metadata (XMP), and routed Copy operations,
-  while decision, star, and color choices narrow that scope further. Clean Up
-  now also calls its complete-folder choice All Media.
+- Added All Media, Filtered, and Selected Export scopes for Copy, Move, XMP, and routed Copy; decisions/stars/colors narrow them. Clean Up also uses All Media wording.
 
-- Improved video review with in-session resume positions, precise half-second
-  Gallery seeks on **←/→**, and five-second seeks on **⇧←/⇧→**. **J/L** always
-  select the adjacent item, including after the native player has focus.
-  **⌘←/⌘→** choose a slower or faster media speed, and the Info indicator now
-  follows native-player speed changes instead of remaining at 1×. Video and
-  audio can play at 1×, 1.5×, 2×, or 2.5×; **K** joins Space as a play/pause
-  key for video and audio. Gallery video now stays at its original brightness
-  when controls appear, with the same gray surround used for photos instead of
-  black letterboxing. The Command Palette includes every matching navigation,
-  transport, and speed action.
+- Added in-session resume, Gallery seeks of 0.5 seconds (←/→) or 5 seconds (⇧←/⇧→), J/L navigation, K playback, and ⌘←/⌘→ speed changes. Video/audio support 1×, 1.5×, 2×, and 2.5×; Info follows native speed. Video keeps its brightness and gray surround when controls appear. The palette includes matching transport actions.
 
-- Added independent live playback loudness meters to the Info panel for videos
-  and audio recordings. Each channel gets green, orange, and red dBFS zones,
-  while standalone audio uses its whole-file waveform and moving playhead in
-  the main Gallery area. Video folders can now also filter and sort by
-  resolution, frame rate, and codec.
+- Added per-channel dBFS meters with green/orange/red zones, audio waveform/playhead, and video resolution/frame-rate/codec filtering and sorting.
 
-- Added a separate Mac App Store product: it omits the standalone updater,
-  uses least-privilege sandboxed access only to folders the photographer
-  chooses, remembers those folders with balanced security-scoped bookmarks,
-  and includes a no-tracking privacy manifest. The Store release check rejects
-  a missing entitlement, malformed privacy declaration, or accidental Sparkle
-  framework/link/feed. A new signed-package helper and submission checklist
-  cover the remaining Apple certificate and App Store Connect steps.
+- Added a sandboxed Store product with selected-folder bookmarks, no standalone updater, and no-tracking manifest. Release checks reject missing entitlements, malformed privacy data, or Sparkle. Packaging/checklist cover Apple signing and submission.
 
-- Added native audio review and playback. Common audio recordings and every
-  macOS-advertised audio type now scan as an independent **Audio** media type,
-  with duration, codec details, waveform tiles, Gallery and Grid playback,
-  media filters/sorting, and the same safe rating and export workflow as photos
-  and videos.
+- Added native audio review: macOS audio formats, duration/codec metadata, tiled waveforms, Gallery/Grid playback, filters/sorting, ratings, and export.
 
-- Export Copy and Move progress now measures the amount of media transferred,
-  rather than treating every file equally. The in-progress screen shows the
-  data moved and total size, so a handful of large videos no longer make the
-  progress bar misleading.
+- Changed Copy/Move progress to transferred bytes, with moved/total sizes for large media.
 
-- Copy cancellation is now a deliberate two-step action. Louppe records and
-  displays whether the photographer confirmed **Stop Copying**; any
-  unexplained cancellation is logged and reported as an app issue rather than
-  being mistaken for a card failure.
+- Added confirmed Stop Copying; unexplained cancellation is logged/reported as an app issue.
 
-- Fixed Clean Up's stale-scan warning: if a photo file changed after scanning,
-  Louppe reports only the affected review items, moves nothing, and offers a
-  save-first folder rescan before the photographer deliberately confirms Clean
-  Up again.
+- Fixed stale-scan Clean Up warnings: report affected items, move nothing, save before rescan, and require a new confirmation.
 
 - Fixed the Clean Up confirmation so Return activates **Move to Trash**, while
   Escape still cancels.
 
-- Added **Duplicate + Burst Groups**: an optional, local review layout for
-  verified exact duplicates, conservatively labelled likely-similar photos, and
-  nearby capture times. It respects the current filter and never changes a
-  rating, export, original, or Clean Up target automatically.
+- Added local Duplicate + Burst Groups for verified duplicates, likely similar photos, and capture times. Filters apply; grouping never changes ratings, exports, originals, or Clean Up targets.
 
-- Added **Route copies to multiple folders** in Export. This Copy-only
-  workflow previews explicit decision, stars, color, file-type, or media-type
-  routes; unmatched items remain in the source folder. Overlapping/empty
-  routes, duplicate or unsafe folders, split XMP families, and insufficient
-  combined space on a shared destination drive are blocked before Copy starts.
+- Added Copy-only routing by decisions, stars, colors, file types, or media types. Unmatched media stays at source. Preflight blocks overlapping/empty routes, duplicate/unsafe folders, split XMP families, and insufficient combined space.
 
-- Added optional **Quality cues** for high ISO, slow shutter, and substantial
-  clipping. One quiet shooting-metadata row opens exact cue values and sources;
-  supported RAW files replace the immediate rendered histogram and clipping
-  estimate after a delayed, bounded Core Image RAW decode. The X overlay stays
-  explicitly preview-based. Adjust the three thresholds in **Louppe → Settings
-  → Quality Cues**; cues never affect ratings, filters, sidecars, exports, or
-  files.
+- Added optional ISO, shutter, and clipping cues with editable thresholds and exact values/sources. Supported RAW replaces rendered estimates after bounded Core Image analysis; X remains preview-based. Cues never affect ratings, filters, sidecars, export, or files.
 
-- Added a drag-and-drop target on the start screen: drop a photo or video
-  source folder there to open it for review, alongside **Choose Photo
-  Folder…**. Individual files are politely rejected so the source always
-  remains a folder.
+- Added start-screen folder drops beside Choose Photo Folder; individual files are rejected.
 
-- Replaced the opaque different-folder session warning for older sessions
-  with a neutral explanation and an explicit **Open Anyway** button. Louppe
-  binds that choice to the exact session file shown, rescans, verifies saved
-  filenames, and then quietly migrates a recognized session to the current
-  folder path; unrelated or changed data remains blocked.
+- Added Open Anyway for relocated legacy sessions: bind authorization to the shown sidecar, rescan, verify filenames, and migrate recognized sessions. Changed/unrelated data stays blocked.
 
-- Added a searchable **Command Palette** (⌘K). It provides a quick, keyboard-
-  driven route to export, source-folder organization, Clean Up, XMP metadata,
-  filters and sorting, RAW+JPEG pairing, stars, color labels, and view tools.
-  Existing confirmation and preview screens still guard actions that can alter
-  files. **Organize by Date Taken Only…** opens the organizer with Full date as
-  its sole enabled folder level for a faster chronological workflow, while
-  retaining the normal scope, preview, and move confirmation.
+- Added ⌘K Command Palette for export, Organize, Clean Up, XMP, filters/sort, pairing, stars/colors, and view tools. File-changing actions retain previews/confirmations. Organize by Date Taken Only uses Full date with normal scope and confirmation.
 
-- Added **Organize Source Folder…** to the File menu. It previews and moves
-  All, Filtered, or Selected items into nested, draggable-priority folder
-  levels built from the existing folder, decision, date, stars, color, camera,
-  lens, file type, or media type. Date folders follow the Mac's regional and
-  custom short-date formatting at full-date, year-and-month, or year
-  granularity. Existing structure can be flattened, kept at top-level depth,
-  or preserved in full; old and unrelated folders/files are never deleted.
-  Grouped RAW+JPEG and recognized XMP files move atomically while `.acr`
-  companions stay put. Exact preflight blocks filename and sidecar-family
-  conflicts without overwriting or inventing suffixes. The operation uses the
-  durable file journal, survives interruption conservatively, remembers the
-  files' original relative folders across future reorganizations, and supports
-  ⌘Z restoration during the open session. ExFAT camera cards remain supported
-  behind an explicit reduced-crash-protection warning: Louppe first proves a
-  disposable Foundation move refuses an occupied destination and preserves the
-  same physical file identity, then uses that no-overwrite fallback for the
-  journaled move, undo, and recovery. It also tolerates only the directory-sync
-  operation ExFAT does not implement. Other storage and other errors remain on
-  the stricter POSIX boundary.
+- Added Organize Source Folder for All/Filtered/Selected media. Drag folder levels for existing folder, decision, date, stars/color, camera/lens, file/media type. Dates follow regional formats; existing hierarchy can be flattened, kept at top level, or preserved. Old/unrelated folders and files remain untouched. RAW+JPEG/XMP families move together; .acr stays put. Preflight refuses filename/sidecar conflicts without overwrite or suffixes. Journals retain original folders, recover interruptions, and support ⌘Z during the open session. ExFAT uses a tested no-overwrite Foundation fallback after a reduced-crash-protection warning; only unsupported directory sync is tolerated. Other storage/errors keep the stricter POSIX boundary.
 
-- Fixed session hotkeys stopping after app activation, an organizer sheet, or
-  a source-folder refresh when SwiftUI focused the whole window-hosting root.
-  Louppe no longer mistakes selectable metadata nested somewhere inside that
-  root for actively focused text. It also tolerates macOS briefly omitting the
-  key-window and event-window objects when the event's nonzero window number
-  still exactly identifies Louppe's live photo window. That fallback applies
-  only while Louppe is active; genuinely focused text, other windows, and
-  modal UI remain excluded.
+- Fixed hotkey loss after activation, sheets, or refresh. Root-window focus no longer counts as active text editing; missing macOS window objects can fall back to the exact live window number while Louppe is active. Text, other windows, and modal UI retain input.
 
-- Fixed the release-quality gate so routine builds validate their own app and
-  archive without comparing a freshly created ZIP to the immutable signed
-  v1.7.0 download. The publishing preflight still requires the exact archive,
-  version, URL, length, and EdDSA signature to match before an update can ship.
-  No app behavior changed.
+- Routine release checks validate the new app/ZIP without comparing it to immutable v1.7.0. Publishing still requires exact archive, version, URL, length, and signature.
 
 - Fixed the standalone native-video Quality check so it compiles the shared
   source-organization storage-safety helper used by the file-operation journal.
@@ -326,536 +186,132 @@ to Louppe and its approach to reviewing media.
   histograms now exclude fully transparent pixels instead of treating them as
   black.
 
-- Added XMP interoperability as a beta feature on top of an audited parser
-  foundation. Its supported mappings and round trips are extensively tested,
-  but photographers should verify a small batch in their own editing workflow
-  before relying on it for a large job.
-  A pinned Adobe XMPCore Objective-C++/Swift bridge now round-trips synthetic
-  Lightroom Classic, Bridge, Capture One, darktable, and universal packets
-  without losing unrelated edits, keywords, or custom namespaces. The proof
-  rejects malformed packets and explicitly disables XML entity use. Louppe now
-  also keeps independent Yes/No decisions, 0–5 stars, and five color labels per
-  physical file in schema-5 sessions, including mixed RAW+JPEG states, batch
-  editing, dimension-specific undo, Info-panel controls, thumbnail indicators,
-  VoiceOver actions, and 0–5 shortcuts. Decision, star, and color facets now
-  filter the normal session independently; each dimension can also sort and
-  form stable Browser/Grid groups. Export applies decision + star + color as
-  one prepared AND selection with exact item and physical-file counts. Star
-  and color Export menus are true multi-selects with Unrated/None, every
-  concrete value, and Mixed checked by default instead of a synthetic Any
-  choice. The pinned parser now also ships as an audited source target with
-  complete license resources. Typed Universal, Lightroom, Bridge, Capture One,
-  and darktable mappings preserve foreign edits and keywords; exact-path sidecar
-  planning detects shared-stem, casing, and Unicode conflicts; and the bounded
-  actor store rejects unsafe files and external edits before a flushed,
-  atomic, verified replacement. Export now includes the explicit
-  **Metadata (XMP)** mode with Universal, Lightroom Classic, Bridge, Capture
-  One, and darktable presets. It preflights immutable same-stem plans, warns
-  about changed values and best-effort non-RAW formats, reports each conflict,
-  requires explicit confirmation before replacing or removing external color
-  labels, writes through three bounded background lanes, and shows separate
-  Created, Updated, Already current, Skipped, Conflict, and Failed results. Stop,
-  Open/Close Folder, Rescan, and Quit all await a safe atomic boundary, and a
-  late external packet change is never overwritten. Ordinary session saving
-  still never writes XMP sidecars. Copy and Move now conditionally include XMP:
-  the option defaults from exact associated packets in the selected scope and
-  respects a manual choice for the sheet lifetime. Destination stem packets are
-  merged without changing Copy sources, application-private packets transfer
-  byte-for-byte, shared same-stem packets stay behind when one member remains,
-  and a complete-family Move transfers its packet. Media and XMP use one
-  versioned crash-recovery plan with common collision naming, exact identities,
-  packet digests, and interruption-tested rollback/forward recovery.
-  Copy/Move now confirms that immutable plan with separate create, update,
-  already-current, unchanged-application-packet, unsupported, conflict, and
-  failure counts before touching files, and reports media and sidecar outcomes
-  separately afterward. Conflicted shared packets are skipped without blocking
-  the media export or safe application-private packets. Video sidecars remain
-  outside this first XMP release and do not turn the option on automatically.
-  Preflight also detects exact associated Lightroom Classic `.acr` heavy-edit
-  companions and warns that Louppe will leave them untouched at the source.
+- Added beta XMP interoperability; verify a small batch in your editor before a large job. Pinned Adobe XMPCore round-trips Universal, Lightroom Classic, Bridge, Capture One, and darktable packets, preserves foreign edits/keywords/namespaces, and disables XML entities. Independent per-file decisions/stars/colors support Mixed pairs, batch editing, Undo, filters/sort/groups, Info, thumbnails, VoiceOver, and 0–5 keys. Export combines rating criteria with exact counts; star/color choices are multi-select. Exact sidecar plans detect casing, Unicode, and shared-stem conflicts. XMP mode previews changed values and non-RAW limits, confirms external color-label replacement, writes atomically through bounded background lanes, rejects late edits, and reports separate Created/Updated/Current/Skipped/Conflict/Failed counts. Saving ratings never writes XMP. Copy/Move optionally include sidecars: shared packets stay when a member remains, complete-family Move transfers them, application packets copy unchanged, and destination merges leave Copy sources unchanged. Media/XMP share collision names and recovery journals; conflicts can skip sidecars while media exports. Video sidecars are excluded; .acr heavy-edit companions stay at source.
 
-- Changed matching RAW+JPEG captures to appear as separate photos on every
-  fresh launch. The optional **Treat matching RAW + JPEG as one photo** setting
-  remains under Filter → File types for pair-wide rating, selection, Export,
-  Move, and Clean Up, and never synchronizes divergent metadata merely by
-  being enabled. Eligible shared-XMP conflicts now expose an explicit resolver
-  that can use the RAW or JPEG decision, stars, and color for both files. The
-  batch is one undoable Louppe action, rejects stale choices, performs no file
-  work itself, and discards and fully rebuilds the Export/XMP plan before a new
-  confirmation. The resolver also rejects duplicate or overlapping internal
-  requests before any metadata changes, verifies the displayed exact paths at
-  apply time, and presents labeled decision, star, and color indicators with
-  full filenames available on hover.
+- Fresh launches show RAW+JPEG separately. Optional pairing applies review/actions to both without synchronizing divergent ratings. The explicit shared-XMP resolver chooses RAW or JPEG values for both as one Undo action, rejects stale/overlapping/unsafe requests, verifies exact paths, and requires a rebuilt plan and confirmation before file work.
 
-- Made the Export sheet respond immediately in folders that already contain one
-  XMP sidecar per photo. Louppe now reads the folder listing once instead of
-  rescanning it for every photo, which took 14 seconds for 2,000 photos and
-  grew four times worse each time the folder doubled; the same folder is now
-  checked in under a tenth of a second. Changing the decision, star, or color
-  selection also stops the previous check instead of leaving several full scans
-  running at once. Alongside that: a Move whose photos all transferred is now
-  reported as moved even when the old sidecar beside the originals could not be
-  cleared afterwards, so those photos leave the session immediately even while
-  recovery remains available; a RAW+JPEG pair matched across two subfolders
-  reports both skipped shared sidecars before confirmation instead of changing
-  the plan after Start; Copy/Move executes the exact destination and XMP plan
-  that was confirmed and fails safely if another process claims a destination
-  name meanwhile; Move recovery now explains that complete groups remain at the
-  destination while incomplete groups return to the source; the sidecar
-  preflight no longer counts a packet it failed to create as one that already
-  exists; and its progress total no longer jumps on the first update.
+- Reduced 2,000-photo XMP preflight from 14 seconds to under 0.1 seconds by indexing once; selection changes cancel stale checks. Completed Move media leaves the session even if source-sidecar cleanup needs recovery. Cross-folder pairs report both skipped shared sidecars before confirmation. Copy/Move execute the exact confirmed plan and refuse late collisions. Recovery keeps completed Move groups at destination and returns incomplete groups. Failed packet creation no longer inflates existing counts; progress totals stay stable.
 
-- Restored full-size Grid tiles after the native immediate-click surface made
-  cells adopt the preview image's intrinsic size, and made pairing group an
-  unambiguous RAW+JPEG match even when its files live in different subfolders.
-  Fast Grid scrolling now keeps AppKit's native scrolling indicator instead of
-  redrawing a custom thumb and coalesces its one-time setup, so the indicator
-  tracks a quick scroll smoothly without changing the always-visible gutter.
-  Session hotkeys now stay attached to the actual photo-review window across
-  folder, scan, and view lifecycle changes instead of relying on SwiftUI
-  appearance state that could silently leave the shortcuts disconnected. The
-  clipping-warning control is now a compact half-circle icon in the
-  histogram's top-right corner and turns purple while active.
+- Restored full-size Grid tiles and unambiguous cross-folder RAW+JPEG pairing. Native scroll indicators track fast scrolling. Hotkeys follow the live session window across lifecycle changes. The histogram clipping control is a compact purple-on-active icon.
 
-- Removed the false save failure shown when quitting after ejecting a photo
-  card. New ratings now save to that exact folder's identity-bound local backup
-  while its volume is offline, without recreating the missing path or touching
-  a different card mounted under the same name. A just-opened, unchanged
-  session no longer starts another save on Quit. If optional sidecar
-  maintenance is already running, Quit waits for that checkpoint, but its
-  failure is nonblocking because the opened session is already a discard-safe
-  baseline. New ratings still require a successful sidecar or backup save, with
-  the specific remaining failure shown instead of a generic
-  permissions/space/volume list. Exact ancestor identities also prevent a
-  replacement directory or symlink from impersonating an ejected card path.
+- Fixed Quit after card ejection: new ratings save to the identity-bound local backup without recreating paths or touching replacement cards. Unchanged sessions need no extra save. Optional repair waits but cannot block Quit; new ratings require a successful folder or backup save and show the actual failure. Ancestor identities reject replacement directories/symlinks.
 
-- Simplified the Copy/Move progress dialog by removing the persistent display
-  and MacBook-lid instruction.
+- Removed persistent display/lid instructions from Copy/Move progress.
 
-- Removed the recovery deadlock that could appear after a successful Clean Up.
-  Louppe no longer tries to directly sync or search macOS's privacy-protected
-  Trash, and interrupted intentional Trash actions stay deleted instead of
-  being silently restored. Unresolved bookkeeping now pauses only new Copy,
-  Move, Clean Up, and Trash undo actions; reviewing, rating, folder changes,
-  saving, updating, and Quit keep working. Recovery messages mention reconnecting
-  a drive only when a drive is actually unavailable, and **Keep Files As They
-  Are** sets aside only the canonical recovery record without deleting any of
-  its contents, so file workflows can never be locked forever. Completed Move
-  items stay at their chosen destination,
-  interrupted paired Trash actions retain a visible decision instead of losing
-  evidence, and a partial Trash Undo keeps every successfully restored original
-  rather than risking it in an unsyncable move back into protected Trash.
-  Cross-process rating-save locks now have a finite wait, so another stale
-  process cannot freeze Close or Quit indefinitely.
+- Fixed Clean Up recovery deadlock by avoiding direct sync/search of protected Trash. Intentional Trash stays trashed; incomplete paired work keeps visible evidence. Recovery pauses new file mutations while review, ratings, saving, folder changes, updates, and Quit remain available. Reconnect appears only for unavailable drives. Keep Files As They Are retires the recovery record without deleting media. Completed Move stays at destination; partial Trash Undo preserves restored originals. Rating-save locks have finite waits.
 
-- Older filename-only sessions now upgrade quietly when every saved filename
-  is still present in its original folder. Louppe asks for a decision only
-  when an old item is genuinely missing or the ratings came from an unowned
-  legacy backup.
+- Legacy filename-only sessions upgrade automatically when all names remain in the original folder. Missing items or unowned backups require a decision.
 
-- Fixed Copy exports from removable HDDs. A drive disconnect after a file had
-  already copied, flushed, and passed source verification no longer turns that
-  success into a batch-wide rollback. Interrupted Copy recovery now preserves
-  identity-verified staged and completed files—even while the source drive is
-  offline—and durably publishes verified temporary copies at their planned
-  destination. Destination preflight also cross-checks macOS's ambiguous
-  “Zero KB available” result against the underlying filesystem, eliminating
-  false disk-full failures for File Provider-managed folders. Test stores are
-  now isolated from the live Application Support recovery journal by default.
-  Active filesystem transactions prevent automatic system sleep (while still
-  allowing the display to turn off). If a closed MacBook lid forces sleep,
-  Copy now gives the exact same source drive/file up to one minute to remount
-  after wake and retries one untouched file instead of immediately abandoning
-  the batch. Normal macOS metadata such as provenance no longer makes Louppe
-  reject a completed copy after the bytes have arrived. If the completed-copy
-  checkpoint itself was interrupted, recovery verifies the temporary copy
-  byte-for-byte and keeps it; if the copy call genuinely leaves a partial,
-  Louppe records that exact file identity and removes only its own artifact
-  without trapping the app in repeated recovery. Export and recovery notices
-  retain the concrete first I/O failure instead of reducing it to a generic
-  interruption.
+- Fixed interrupted Copy from removable HDDs: verified completed/staged copies survive source loss and publish during recovery. Capacity checks cross-check false Zero KB reports. Test journals are isolated. Transactions prevent automatic sleep; after forced sleep, Copy allows one minute for the same source to remount and retries an untouched file. Provenance metadata no longer rejects completed copies. Recovery verifies interrupted staged copies byte-for-byte or removes only its identified partial artifact. Notices retain the first I/O error.
 
-- Closed the audit's stop-ship recovery bug. Incomplete Move recovery now
-  verifies the original at its source path before removing any staged file,
-  while a fully completed item stays at its chosen destination;
-  Copy preserves every verified copy when its source is missing, replaced, or
-  rewritten in place; and Trash rejects same-named replacements. Recovery
-  also uses checkpointed destination identities plus size and nanosecond file
-  timestamps, validates exact operation-owned temporary paths, fails closed
-  on ambiguous duplicates and journal-inspection errors, validates complete
-  plan semantics, rejects every unsafe source/destination/temporary pathname,
-  resolved alias, inode alias, and path inside journal storage, and binds every
-  new committed marker to the exact operation and a SHA-256 digest of the
-  immutable raw plan bytes. Copy safely supports distinct hard-linked source
-  names; Move, Clean Up, and Trash undo reject such batches before mutation
-  because changing one shared inode would make sibling recovery ambiguous.
-  Authentic legacy markers—including empty committed v1 plans—remain
-  recoverable. Deterministic regressions now execute pair rollback, cover the
-  crash before a rollback checkpoint, and detect altered plans and commit
-  records without touching the original.
+- Fixed incomplete Move recovery: verify source before removing staged files; retain complete items at destination. Copy preserves verified copies when sources disappear/change; Trash rejects replacements. Recovery checks destination identities, size/timestamps, owned temporary paths, duplicates, journal/plan semantics, aliases, and protected storage paths. Commit markers bind operation IDs and raw-plan SHA-256. Copy supports distinct hard-linked names; mutations reject ambiguous hard links. Authentic legacy journals/markers remain recoverable; regressions cover rollback crashes and altered records.
 
-- Added one exclusive process lock around every Copy, Move, Trash, restore, and
-  launch-recovery transaction, plus a single-instance app declaration. A
-  second Louppe process now leaves the live operation untouched, and a stale
-  journal blocks every new file-changing transaction until recovery completes
-  or the photographer explicitly keeps the files where they are. Move is
-  limited to the same storage volume, revalidates the source immediately, and
-  uses the OS's exclusive rename primitive so it can neither fall back to
-  copy-then-delete nor overwrite a late collision; Copy remains available for
-  exports to another drive or card.
+- Added a cross-process file-operation/recovery lock and single-instance declaration. Active journals block new mutations until recovery or explicit retirement. Move requires the same volume, verifies sources, and uses exclusive rename without copy-delete fallback or overwrite. Cross-volume export uses Copy.
 
-- Upgraded new file-operation journals to plan v3, storing the exact raw
-  filesystem bytes for source, destination, temporary, and resolved Trash
-  paths. Recovery no longer normalizes composed/decomposed Unicode names;
-  malformed raw paths fail closed, while existing v1/v2 journals remain
-  readable. Export validation and Copy/Move also preserve the exact selected
-  destination spelling instead of normalizing it to a different Unicode
-  sibling.
+- Journal v3 preserves raw source/destination/temporary/Trash paths and exact Unicode spelling; malformed paths fail closed. Legacy v1/v2 remains readable.
 
-- Bound every mutable file operation to the physical identity captured during
-  scanning. Copy, Move, Trash, restore, and pair rollback now recheck each
-  source immediately before touching it, reconcile thrown-after-effect paths
-  by identity, preserve same-path replacements, stop the remaining batch on
-  ambiguity, and retain a retryable journal. Destination preflight returns the
-  exact symlink-resolved directory used by the worker. Successful app-owned
-  rollbacks refresh the live identity so the next operation works without a
-  rescan, and stable volume UUIDs keep recovery valid across remounts. Journal
-  checkpoints independently verify the exact identity a worker just proved,
-  duplicate cleanup repeats its byte comparison after an exclusive quarantine
-  rename, and mutating operations reject even a single externally hard-linked
-  source whose pre-checkpoint recovery would be ambiguous.
+- File operations verify scan-time physical identities immediately before mutation, reconcile thrown-after-effect paths, preserve replacements, stop ambiguous batches, and retain retryable journals. Plans use resolved destinations; rollbacks refresh identities, volume UUIDs survive remounts, checkpoints verify worker results, and duplicate cleanup rechecks bytes after quarantine. Mutations reject external hard links.
 
-- Added schema-4 physical identities to rating entries. Ratings now follow a
-  verified file or folder rename, dormant entries survive while an original
-  is temporarily missing, and a returning file recovers its decision. A
-  same-named replacement cannot inherit or overwrite the old rating; copied
-  or unrelated relocated sidecars remain blocked unless at least one exact
-  original proves the move. The opened directory is itself bound to stable
-  volume, inode, and birth identity before scanning, after metadata work, and
-  again before applying ratings, so swapping a card or folder at the same path
-  cannot redirect a read or save.
+- Schema-4 ratings follow verified file/folder renames and retain missing originals’ decisions until return. Replacements cannot inherit ratings; relocated sessions require an exact original. Folder identity is checked before/after scanning and before applying ratings.
 
-- Added exact session-file conflict detection and monotonic snapshot
-  generations. Louppe compares the raw sidecar bytes it actually read again at
-  the final replacement boundary, leaves external edits untouched, keys
-  backups by physical folder identity, and chooses the newest valid copy by
-  generation instead of wall-clock time. Older path-keyed backups remain
-  available only when no authoritative current copy exists. Filename-only
-  schema 1–3 ratings upgrade automatically when every saved filename is still
-  present in the original folder. Missing entries or an unowned legacy backup
-  require an explicit decision: **Open Folder and Forget Missing Items** drops
-  only those obsolete ratings and upgrades the remaining session, while Close
-  Folder and Quit preserve the legacy files byte-for-byte.
+- Added raw-byte session conflict checks, monotonic generations, and identity-keyed backups; newest valid generation wins. External edits remain untouched. Legacy path backups are fallback only. Schema 1–3 upgrades when all names remain; missing/unowned data needs an explicit choice. Forget Missing drops obsolete decisions only; Close/Quit preserve legacy bytes.
 
-- Serialized session persistence across Louppe processes with one advisory
-  lock keyed by stable folder identity. The lock covers exact sidecar and
-  identity-keyed backup revision checks, replacement or fallback, and lineage
-  update; backup-only saves use the same compare-and-swap boundary. Exact
-  Unicode folder spelling is retained, and an unreadable backup is preserved
-  without preventing an otherwise safe sidecar save. If that unknown backup
-  becomes readable or disappears while a writer waits, the stale save now
-  fails closed instead of tying and outranking a newer backup-only snapshot.
+- Serialized sidecar and backup saves across processes under stable-folder locks and revision checks. Exact Unicode paths and unreadable backups remain intact. A backup becoming readable or disappearing while a writer waits rejects the stale save.
 
-- Added a shared power-loss durability boundary for session snapshots and
-  filesystem transactions. Plans and checkpoints are written and synced
-  before activation, copied media and affected directories are flushed before
-  step advancement, commit records receive a full sync, and sidecars/backups
-  use write-sync-rename-directory-sync ordering. Commit-marker failure now
-  retains the active journal instead of deleting the only recovery evidence.
-  Cross-directory renames flush the new name before the old name, active
-  journals retire through an atomic root-synced rename before recursive
-  housekeeping, and journal/session reads are bounded regular-file reads that
-  refuse leaf symlinks.
+- Added synced plans/checkpoints, media/directory flushes, full-sync commit records, and write-sync-rename-directory-sync snapshots. Failed commit markers retain journals. Cross-directory renames sync new names first; journals retire atomically before cleanup. Bounded regular-file reads reject leaf symlinks.
 
-- Bounded rating-save latency during continuous culling, coalesced checkpoints
-  behind slow storage, and made same-folder reopen wait for the newest
-  snapshot. Quit now freezes mutating commands before its final snapshot and
-  releases that barrier only when Quit is cancelled. The persistence boundary
-  now rejects a malformed current-schema snapshot before replacing either valid
-  copy, preserves both copies byte-for-byte, and reports that internal
-  inconsistency separately instead of offering a futile save retry. A gated
-  regression proves slow storage automatically flushes the newest deferred
-  rating.
+- Bounded/coalesced save latency and awaited newest ratings on reopen. Quit freezes mutations until cancelled. Invalid snapshots preserve both copies and show an internal-error remedy instead of futile Retry; slow-storage tests verify deferred ratings flush.
 
-- Made RAW+JPEG pairing fail closed on uncertain filename equality. Pairing
-  now keys exact filesystem bytes per directory, applies only ASCII case
-  folding when a volume explicitly reports case-insensitive names, preserves
-  accents and normalization spellings, treats unknown volume behavior as
-  case-sensitive, and refuses ambiguous one-to-many groups. Byte-exact,
-  percent-encoded file identity now continues through pairing reprojection,
-  selection, ratings, sidecar reload, and image caches. Schema 3 makes that
-  encoding explicit and requires canonical IDs with no primary/paired
-  identity overlap, while legacy sidecars preserve byte-distinct Unicode
-  ratings during migration.
+- Pairing uses exact directory/name bytes and ASCII folding only on known case-insensitive volumes. It preserves accents/Unicode spelling, treats unknown volumes as case-sensitive, and rejects ambiguous groups. Byte-exact IDs persist through selection, ratings, migration, pairing, and caches; schema 3 rejects overlapping identities.
 
-- Scoped every session hotkey and menu action to the focused Louppe session
-  window while keeping the culling workflow independent of button focus.
-  Sheets, popovers, other windows, text editors, selectable metadata,
-  VoiceOver chords, Fn/Globe, Help, and undocumented modifier combinations
-  retain their input. Clicking Rating, View, toolbar, or video controls no
-  longer disables F/D/G or the other review letters, while Space, Tab, Escape,
-  and arrows remain native when a control has keyboard focus. The session
-  monitor is the single owner of session Command shortcuts, so duplicate menu
-  equivalents cannot bypass focus rules; unknown keys are no longer swallowed
-  during file operations.
+- Scoped hotkeys/menu actions to the live session window. Text, modal UI, other windows, VoiceOver/Fn/Help chords, and unsupported modifiers retain input. Review letters survive button focus; native controls keep Space/Tab/Escape/arrows. One monitor owns Command shortcuts; unknown keys pass through during file work.
 
-- Fixed the Grid rating status control so every native activation advances
-  exactly once. Rapid second and third clicks are no longer discarded as
-  accidental double-clicks, dragging from a Rating or Play control no longer
-  starts rubber-band selection, and both Grid and Info rating controls now
-  show a real disabled state whenever the session cannot accept a rating.
-  VoiceOver exposes rating actions only while rating is available.
+- Grid rating clicks advance once, including rapid repeated clicks. Rating/Play dragging cannot start selection; disabled controls and VoiceOver reflect rating availability.
 
-- Removed the Grid's single-click delay. Clicking a photo now updates the
-  selection immediately on mouse-up instead of waiting for the double-click
-  interval to expire; a second click still opens Gallery. Shift/Command-click,
-  rubber-band selection, Rating/Play controls, and keyboard focus retain their
-  existing behavior.
+- Removed Grid selection delay; second clicks still open Gallery. Shift/Command-click, rubber-band, rating/play controls, and focus retain behavior.
 
-- Restored instant Gallery/Grid switching after the cache-identity upgrade.
-  The v5 thumbnail namespace binds pixels to scan-time physical identity;
-  production scans deliberately rebuild older identity-less thumbnails once
-  rather than risk showing a same-path replacement. Only legacy items without
-  a scanned identity may promote timestamp-proven v4 or unambiguous ASCII-path
-  v3 entries, and a corrupt v5 entry self-heals from a fresh source decode.
-  Disk pruning runs as delayed daily maintenance rather than competing with
-  launch, per-control Grid geometry probes were removed, and the shared Info
-  panel survives view changes.
-  Thumbnail, preview, EXIF, histogram, 100% tile, and video state now follows a
-  content revision, so replacing a same-named file cannot retain stale media
-  even when its item ID and modification date are unchanged.
+- Restored instant view switching. v5 thumbnails bind to scan identity; legacy entries migrate only with proof, corruption self-heals, and pruning is delayed. Removed extra Grid probes and retained shared Info. Thumbnails, previews, EXIF, histograms, tiles, and video follow content revisions to reject stale same-path media.
 
-- Generation-guarded video end/failure/status callbacks so an old A→B→A
-  playback task cannot poison the replacement item. Starting Copy, Move,
-  Clean Up, or restore now stops playback before any file can move.
+- Guarded video callbacks against stale playback generations. Starting file operations stops playback before files move.
 
-- Strengthened release preflight so the loose and archived apps each repeat
-  signature, identity, Sparkle, version, and linkage checks, then compare the
-  complete `Contents/` trees before the archive is accepted.
+- Release checks independently verify loose/archived signatures, identity, Sparkle, versions, and links, then compare full Contents trees.
 
-- Sanitized untrusted photo and video numbers before converting or formatting
-  them. Nonfinite or unrepresentable durations, dimensions, frame rates, EXIF
-  values, shutter reciprocals, and physically nonsensical finite metadata are
-  now omitted safely instead of risking a trap or misleading display.
+- Omitted nonfinite, unrepresentable, or physically invalid media/EXIF numbers instead of crashing or misleading users.
 
-- Added one shared, truthful empty-session state to Gallery and Grid. Moving
-  every item now points to the intact export destination and never claims the
-  files are in Trash or undoable; Clean Up states limit their undo promise to
-  the current open session. Export and Clean Up actions are disabled when the
-  session has no eligible targets.
+- Gallery/Grid empty states distinguish intact Move destinations from Trash. Trash Undo is limited to the open session; file actions disable without targets.
 
-- Added a fresh, evidence-backed codebase audit with the verified build,
-  test, performance, and launch baseline plus a prioritized safety,
-  architecture, accessibility, testing, and release-quality improvement plan.
+- Recorded build/test/performance/launch evidence and a prioritized safety, architecture, accessibility, testing, and release audit.
 
-- Split Grid selection from rating: clicking a photo now selects it without
-  changing its decision, while a larger clickable status circle cycles
-  Undecided, Yes, and No. Grid cells now observe rating changes directly, so
-  their status circles refresh immediately after pointer, keyboard, Clear All,
-  and undo actions. Selecting or rating a visible tile no longer re-centers the
-  Grid under the pointer.
+- Grid clicks select; status controls cycle Undecided/Yes/No. Ratings refresh immediately after mouse, keyboard, Clear All, and Undo without recentering.
 
-- Added location-aware Gallery zoom: double-clicking the displayed photo now
-  enters true 100% zoom at the clicked detail; double-clicking it again returns
-  to Fit. The letterboxed background does nothing and S keeps its centered
-  behavior.
+- Double-click a photo detail for true 100%; double-click again for Fit. Background clicks do nothing; S stays centered.
 
-- Smoothed fast culling and large-folder opening. Transient key-repeat photos
-  no longer immediately start EXIF, histogram, or clipping-warning work;
-  Browser row identities are reused between structural changes; known photo
-  formats avoid repeated system type detection; and the prepared session index
-  reuses the scanner's exact default order instead of sorting the full folder
-  a second time on the main UI thread. Rating one photo now updates only its
-  tiny per-file decision record instead of copying every photo's scan metadata;
-  the 100,000-item performance check dropped from 20.5 ms to about 0.2 ms.
+- Delayed analysis for transient selections, reused Browser identities/type detection/default ordering, and updated only per-file ratings. The 100,000-item rating check fell from 20.5 ms to about 0.2 ms.
 
-- Added a photo-only luminance histogram to the Info panel, including
-  near-black and near-white percentages with red warnings when either exceeds
-  10%. Gallery clipping inspection can now be toggled with **X** or the Info
-  panel button, painting the matching pixels red in Fit, phone-size, and true
-  100% tiled views without allocating a whole full-resolution bitmap. Videos,
-  unsupported files, and multi-selections omit the complete histogram section.
+- Added photo luminance histograms, near-black/white percentages, and warnings above 10%. X overlays clipped pixels in Fit/Phone/100% without whole-image allocation; video, unsupported media, and selections omit histograms.
 
-- Made the RAW+JPEG switch reproject the current session instead of rescanning
-  the source folder. The first split reads metadata only from hidden JPEG
-  partners, and subsequent toggles reuse it instantly. Ratings now persist per
-  physical file; conflicting RAW/JPEG decisions appear as Mixed, can be
-  restored by splitting again, and are protected from rating-based Clean Up
-  until the pair is resolved.
+- Pairing reprojects without rescan and caches hidden JPEG metadata after first split. Ratings remain per physical file; Mixed decisions survive splitting and block rating-based Clean Up until resolved.
 
-- Simplified the File types filter by removing the explanatory line beneath
-  **Keep RAW + JPEG together**.
+- Removed the explanation below Keep RAW + JPEG together.
 
-- Made the main review workflow usable without color or pointer-only
-  gestures. Browser and Grid items now announce their filename, media type,
-  rating, current/selected state, and offer VoiceOver actions to open, rate,
-  or select them. Icon-only toolbar controls also announce their purpose and
-  changing state explicitly.
+- Added VoiceOver filenames, media types, ratings, selection/current state, and open/rate/select actions. Toolbar icons announce purpose and state.
 
-- Made **100%** a true source-pixel view on both standard and Retina displays.
-  Louppe now keeps its fast preview visible while rendering only the visible
-  full-resolution tiles, with a strict 128 MiB tile-cache limit instead of
-  decoding an entire very large photo. Panning also follows the same relative
-  image position while arrows, rating, Space, or the Browser move between
-  files; pressing S again resets the next 100% view to the center.
+- Added true source-pixel 100% on standard/Retina screens with visible tiles and a 128 MiB cache. Navigation retains relative pan; S resets the next view to center.
 
-- Added secure automatic updates. Louppe checks daily, downloads verified
-  releases in the background, installs them safely on quit, and offers a
-  manual **Check for Updates…** command plus Settings toggles for automatic
-  checks and downloads. Both the update feed and archive are cryptographically
-  signed, and archives are verified before extraction.
+- Added daily signed updates, background downloads, installation on quit, manual checks, and settings. Feed/archive signatures verify before extraction.
 
-- Made Export safer for RAW+JPEG pairs. Copy and Move now reserve one matching
-  collision suffix for both files, partial Copy failures roll back the first
-  file, and Copy can be stopped without leaving half a pair. Active copies also
-  block Quit, folder changes, and update installation until they finish or
-  stop safely. Export now rejects destinations inside the reviewed folder and
-  checks write permission and available space before starting.
+- Copy/Move pairs share collision suffixes; incomplete Copy rolls back and Stop preserves whole pairs. Active work blocks Quit, folder changes, and update installation. Destinations inside source, unwritable folders, and insufficient space are rejected.
 
-- Added process-crash recovery for Copy, Move, Clean Up, and Clean Up undo.
-  Each file change now has an atomic persistent checkpoint tied to the exact
-  volume and file identity. On the next launch Louppe safely removes incomplete
-  copies or restores originals before opening a folder, never overwrites an
-  existing file, and offers Retry Recovery when a drive is unavailable.
+- Added identity-bound atomic journals for Copy/Move/Trash/Undo. Launch recovery removes owned partial copies or restores originals without overwrite; unavailable drives offer Retry Recovery.
 
-- Adopted Swift 6 language mode with complete concurrency checking. Scanner
-  chunk collection, export callbacks, video metadata reads, and playback
-  observer cleanup now have explicit thread-safe ownership.
+- Adopted Swift 6 concurrency checks with explicit scanner/export/video ownership.
 
-- Made RAW+JPEG pairing deterministic across rescans and preserved distinct
-  case-only basenames on case-sensitive volumes.
+- Made pairing deterministic across rescans and preserved case-only names on case-sensitive volumes.
 
-- Removed the silent five-level scan cutoff. Legitimately deep photo folders
-  are now scanned while symbolic-link directories are explicitly skipped to
-  prevent loops.
+- Removed the five-level scan cutoff; skipped symlink directories to prevent loops.
 
-- Corrected Info-panel counts and sizes for RAW+JPEG pairs. Multi-selection
-  now distinguishes selected photos/media items from the underlying file
-  count, and paired metadata shows both component sizes plus the total.
+- Separated selected-item and physical-file counts; paired metadata shows component and total sizes.
 
-- Made rating persistence observable and recoverable. Louppe now keeps a
-  current Application Support backup, loads whichever valid snapshot is
-  newest, warns when a folder is read-only or neither save destination works,
-  and offers an inline Retry Saving action. Corrupt, mismatched, unsafe, and
-  unsupported-version session files are left untouched instead of silently
-  replaced.
+- Added local backups, newest-valid-snapshot loading, visible save warnings, and Retry. Corrupt, mismatched, unsafe, or unsupported sessions remain untouched.
 
-- Folder switching, rescanning, pairing-mode changes, Close Session, and Quit
-  now wait asynchronously for the newest ratings to reach the folder or
-  backup. Quit offers retry/cancel/explicit quit-without-saving choices on a
-  total save failure instead of blocking the main thread.
+- Folder changes, rescan, pairing, Close, and Quit await the newest ratings asynchronously. Total failure offers Retry/Cancel/explicit Quit Without Saving.
 
-- Added an automatic release-package preflight. Every release build now
-  verifies the app and archive signatures, versions, Sparkle framework and
-  security keys, feed structure, and archive extraction; publishing mode also
-  verifies the feed/archive cryptographically and checks all enclosure data.
-- Added a least-privilege macOS 26 GitHub Actions gate for strict Swift 6
-  compilation, unit/logic/scrollbar/video checks, and release packaging. It
-  requires no private updater key; real Trash round trips remain a local
-  release check.
+- Release builds verify app/ZIP signatures, versions, Sparkle keys/framework, feed, and extraction. Publishing also checks cryptographic signatures and enclosure data.
+- Added macOS 26 CI for strict Swift 6, unit/logic/scrollbar/video checks, and packaging without private updater keys. Trash round trips remain local release checks.
 
-- Added first-class video review using native macOS playback. Videos now use
-  their first frame as the thumbnail, always show their duration in the
-  Gallery Browser and Grid, open with the full native player in Gallery, and
-  play inline in Grid with a single play/pause control.
-- Video support follows the movie types and codecs available to AVFoundation
-  on the Mac. Recognised movies that macOS cannot decode remain visible,
-  rateable, filterable, and exportable with a clear unsupported message.
-- Filtering and sorting now understand mixed media: filter Photos/Videos and
-  video duration, or sort/group by media type and duration. Video metadata,
-  RAW+JPEG pairing, first-frame caching, and one-player-at-a-time behavior are
-  covered by focused regression checks.
-- Fixed video-player focus intercepting Louppe's review hotkeys. Arrow keys
-  always move the current item (including Grid rows), and the Grid play/pause
-  control no longer also triggers the tile's rating gesture.
-- Space now plays or pauses the current video in Gallery or Grid. It retains
-  its previous next-item behavior when the current item is a photo.
-- Stabilized Gallery playback controls when moving rapidly between videos.
-  Louppe now preserves the native player view and uses AVKit's anchored inline
-  control pane instead of rebuilding a floating pane for every selection.
-- Fixed the Browser's purple current-item indicator disappearing after the
-  selected video was moved to Trash or moved during export. Browser rows now
-  follow stable media IDs rather than reusing a removed item's numeric index.
+- Added native video thumbnails/playback, dimensions/duration, current-item playback ownership, visible loading/failure, and Grid play/pause.
+- Video uses local AVFoundation formats/codecs. Undecodable movies remain visible, rateable, filterable, and exportable with a clear message.
+- Added Photos/Videos, duration, and media-type filters/sort/groups, with focused metadata, pairing, cache, and playback tests.
+- Fixed player focus intercepting review keys and Grid play also rating. Arrows navigate items/rows.
+- Space plays/pauses video in either view; photos retain next-item behavior.
+- Kept the native video view and anchored controls stable during rapid navigation.
+- Fixed Browser current-item highlights after Trash/Move by following stable IDs.
 
-- Clearing all ratings in a large folder is now instant. Previously every
-  photo triggered its own full refresh, which could freeze the app for
-  seconds and leave stale ✓/✗ badges in the Browser column. The same fix
-  speeds up rating a large selection (⌘A then F/D) and undoing such a batch
-  with ⌘Z.
-- Keyboard navigation, range selection, prefetch, and the toolbar position no
-  longer scan the full visible photo list on every step. One cached location
-  map is rebuilt with filtering/grouping, keeping those interactions constant
-  time in very large folders.
-- Moved session sorting, filtering, grouping, and item/location lookup into a
-  pure tested index behind the existing app state. Grid groups now retain
-  stable identities without allocating an enumerated copy on each render, and
-  1k/10k/100k baselines plus Instruments signposts make future performance
-  work measurable.
-- Moved range, edge, command-click, rubber-band, filter, and rescan selection
-  rules into a pure stable-ID state behind the session controller. Expanded
-  app-level tests verify selection filtering, anchor movement, batch
-  rating/undo, and the zero-match safety boundary.
-- Rescanning or rebuilding RAW+JPEG pairing now preserves the exact current
-  photo and multi-selection by stable file ID even when array positions
-  change. Rating undo also follows the intended photo by ID rather than an old
-  numeric position.
-- Fixed the Browser column freezing its contents in long sessions: thumbnails
-  could keep old ✓/✗ badges (most visibly after Clear All Ratings) and the
-  purple current-photo frame could sit on the wrong thumbnail until the view
-  was switched to Grid and back. Each strip row now tracks the session
-  directly, so badges and the frame always match what's on screen.
-- Clicking a thumbnail in the Browser no longer scrolls the strip to center
-  that thumbnail — the list stays put under the cursor. Keyboard navigation
-  (F/D, arrows, Space) still follows the current photo as before.
-- After a long jump (for example F/D advancing to a far-away undecided
-  photo), the Browser now lands centered on the current photo reliably
-  instead of stopping slightly off-target in big folders.
-- The Export dialog now offers two modes: **Copy to…** (the previous
-  behavior) and **Move to…**, which transfers the files and removes those
-  photos from the session. Moved files stay safe at the chosen destination,
-  but a move isn't undoable with ⌘Z — the dialog warns before it happens.
-- Export is no longer keepers-only: the Yes / No / Undecided counts in the
-  dialog are clickable tiles, so any mix of ratings can be exported. Copy
-  with only Yes selected stays the default, and RAW+JPEG pairs still travel
-  together.
+- Made Clear All, batch rating, and Undo immediate in large folders; removed per-photo full refreshes and stale badges.
+- Cached visible locations for constant-time navigation, range selection, prefetch, and position display.
+- Moved sort/filter/group/location logic into a tested index with stable group IDs, 1k/10k/100k baselines, and signposts.
+- Moved selection rules into stable-ID state; tested filtering, anchors, batch rating/Undo, and zero-match safety.
+- Rescan/pairing preserve current item and selection by file ID; Undo follows the intended item.
+- Fixed stale Browser badges and current-item frames by observing session changes directly.
+- Browser clicks keep scroll position; keyboard review follows the current item.
+- Long Browser jumps reliably center the current item.
+- Added Move alongside default Copy. Move removes items from the session, keeps files at destination, and warns that ⌘Z cannot undo it.
+- Export supports any Yes/No/Undecided mix. Yes-only Copy remains default; paired files travel together.
 
 ## 1.6.0 (8) — 2026-07-17
 
-- The toolbar sort menu is now a full popover matching the filter's look, with
-  **Sort by**, **Order**, and a new **Groups** section.
-- Group division now follows the active sort option: sorting by camera divides
-  the photos into camera groups, by subfolder into subfolder groups, and so on
-  (Name sorting shows one continuous list). A **Divide into groups** checkbox
-  turns the division off entirely.
-- Group dividers now carry the group's name: the Grid and the Browser column
-  show the date, camera, lens, or other group label at the start of the line,
-  with the divider continuing after it.
-- All dates and times shown in the app (info panel, selection summary, filter
-  day list, group dividers) now follow the Mac's Language & Region settings,
-  including the custom **Date format** picker and the 12/24-hour clock.
-- Added subfolder support to filtering and sorting: the filter popover lists
-  every subfolder of the opened folder (plus **None** for files lying directly
-  in it) as checkboxes with photo counts, and the sort menu gains a
-  **Subfolder** option between Name and File type.
-- The Browser toggle now appears in the toolbar only while the Gallery view is
-  showing, and the Q shortcut is ignored in the Grid view — the Browser column
-  exists only in the Gallery.
-- In the Gallery view, ↓ now steps to the next photo and ↑ to the previous
-  one, mirroring the top-to-bottom order of the Browser column. The Grid view
-  keeps its row-by-row ↑/↓ movement.
-- In the filter popover, **Subfolders** now sits below **File types** and
-  starts collapsed.
-- Opening a folder is much faster: photo details (EXIF) are now read on
-  several CPU cores at once instead of one file at a time — nearly 3× quicker
-  in benchmarks, with more expected on large cards.
-- The Grid view fills its thumbnails about twice as fast (thumbnails got their
-  own decoding lane), and the big Gallery photo no longer waits in line behind
-  thumbnail work.
-- Removed hidden per-keystroke layout work in the always-visible scrollbars
-  and a small group-divider slowdown introduced by the sort update, keeping
-  rating and navigation snappy in large sessions.
-- Repaired the logic-check script, which had stopped compiling after the sort
-  update.
+- Expanded Sort to a popover with Sort by, Order, and Groups.
+- Groups follow the sort facet; Name stays continuous. Divide into groups disables them.
+- Added named group dividers to Grid and Browser.
+- Dates/times follow Mac region settings, including custom dates and 12/24-hour clocks.
+- Added subfolder filters with counts, None for root files, and Subfolder sorting.
+- Showed Browser toggle only in Gallery; Q does nothing in Grid.
+- Gallery ↑/↓ moves between items; Grid retains row navigation.
+- Placed collapsed Subfolders below File types.
+- Parallel EXIF reads made benchmark scans nearly 3× faster.
+- Separate thumbnail decoding roughly doubled Grid loading speed without delaying Gallery.
+- Removed per-key scrollbar layout and group-divider overhead.
+- Repaired logic-check compilation after Sort changes.
 
 ## 1.5.0 (7) — 2026-07-15
 
@@ -863,21 +319,15 @@ to Louppe and its approach to reviewing media.
   dates, aperture, shutter speed, and ISO controls.
 - Added sorting by every available filter facet, with capture date as the
   default.
-- Made Specific Dates reveal its checklist immediately, without a redundant
-  nested disclosure.
+- Made Specific Dates open its checklist directly.
 - Added All Photos, Filtered, and Selected scopes for rating-based Clean Up.
 - Added a complete multi-selection summary to the Info panel.
-- Refined disclosure behavior, toolbar organization, thumbnail rounding, and
-  persistent Browser and Grid scrollbars.
+- Refined disclosures, toolbar, thumbnails, and persistent scrollbars.
 - Improved Grid scrolling performance and added confirmation before clearing
   many ratings.
-- Added a Cancel Scan toolbar control and Escape shortcut that stop the active
-  folder scan, discard partial results, and return to the start screen.
-- Added the scanned folder's name, full path, and localized running photo count
-  to the scanning window.
-- Hardened zero-result filtering so hidden photos cannot receive ratings or be
-  passed to selection-based Clean Up, and reduced redundant filter work while
-  typing camera-setting ranges or rebuilding folder metadata.
+- Added Cancel Scan/Escape to discard partial scans and return to start.
+- Showed folder name, path, and localized running count during scanning.
+- Prevented rating/selection-based Clean Up of hidden items when filters match nothing; reduced repeated filter work.
 
 ## 1.4.0 (6) — 2026-07-15
 

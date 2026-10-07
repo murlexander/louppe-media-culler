@@ -56,7 +56,7 @@ enum DurableFileIO {
 
     struct DestinationChanged: LocalizedError {
         var errorDescription: String? {
-            "The destination folder changed or disconnected. Choose the folder again and retry. Your originals are unchanged."
+            L10n.text("The destination folder changed or disconnected. Choose the folder again and retry. Your originals are unchanged.")
         }
     }
 
@@ -283,7 +283,7 @@ enum DurableFileIO {
             switch self {
             case .system(let operation, let path, let code):
                 let message = String(cString: strerror(code))
-                return "\(operation) failed for \(path) (\(code): \(message))."
+                return L10n.text("\(operation) failed for \(path) (\(code): \(message)).")
             }
         }
     }

@@ -59,7 +59,7 @@ struct HistogramSection: View {
             HStack(spacing: 6) {
                 Image(systemName: "exclamationmark.triangle")
                     .foregroundStyle(.secondary)
-                Text("Histogram unavailable")
+                Text(L10n.text("Histogram unavailable"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -69,18 +69,18 @@ struct HistogramSection: View {
             ProgressView()
                 .controlSize(.small)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .accessibilityLabel("Calculating histogram")
+                .accessibilityLabel(L10n.text("Calculating histogram"))
         }
     }
 
     private var percentageRow: some View {
         HStack(spacing: 8) {
             percentage(
-                "Shadows",
+                L10n.text("Shadows"),
                 value: analysis?.shadowPercentage
             )
             percentage(
-                "Highlights",
+                L10n.text("Highlights"),
                 value: analysis?.highlightPercentage
             )
         }
@@ -117,13 +117,13 @@ struct HistogramSection: View {
         .buttonStyle(.plain)
         .accessibilityLabel(
             store.showClippingWarnings
-                ? "Hide Preview Clipping Overlay"
-                : "Show Preview Clipping Overlay"
+                ? L10n.text("Hide Preview Clipping Overlay")
+                : L10n.text("Show Preview Clipping Overlay")
         )
         .accessibilityValue(
-            store.showClippingWarnings ? "On" : "Off"
+            store.showClippingWarnings ? L10n.text("On") : L10n.text("Off")
         )
-        .help("Show or hide the red preview clipping overlay (X)")
+        .help(L10n.text("Show or hide the red preview clipping overlay (X)"))
     }
 
     private func percentageColor(_ value: Double?) -> Color {
@@ -140,7 +140,7 @@ struct HistogramSection: View {
     private func accessibilityDescription(
         for analysis: HistogramAnalysis
     ) -> String {
-        "\(source.detailLabel) luminance histogram. Shadows \(Self.formatPercentage(analysis.shadowPercentage)). Highlights \(Self.formatPercentage(analysis.highlightPercentage))."
+        L10n.text("\(source.detailLabel) luminance histogram. Shadows \(Self.formatPercentage(analysis.shadowPercentage)). Highlights \(Self.formatPercentage(analysis.highlightPercentage)).")
     }
 }
 

@@ -1,12 +1,14 @@
 # Louppe media and native UI audit — 2026-09-29
 
-Canonical source: `/Users/alexander_markin/Documents/code/louppe/app`. Read-only audit of the current working tree, including existing uncommitted changes. No application source, tracked tests, Git state, originals, user preferences, installation, or releases were changed by this audit worker. All additional artifacts are under `/private/tmp/louppe-audit-2026-09-29/media-repro/`.
+Pre-fix findings from 29 September. Current work: [BACKLOG.md](../../../BACKLOG.md#audit-follow-ups).
+
+Canonical source: `/Users/alexander_markin/Documents/code/louppe/app`. Read-only working-tree audit, including uncommitted changes. No source/tests, Git state, originals, preferences, installation, or releases changed. Artifacts: `/private/tmp/louppe-audit-2026-09-29/media-repro/`.
 
 Read `app/AGENTS.md`, shared `../AGENTS.md`, the Media and Native UI references in `Docs/DEVELOPMENT_DETAILS.md`, and the relevant ownership/resource/caching/concurrency rules in `Docs/PERFORMANCE.md`.
 
 ## Findings
 
-Five concrete issues: four reproduced through executable production logic and one established by the SwiftUI visibility condition. All are P2 (normal-priority corrections); no destructive-file-operation defect was identified within this worker's media/UI scope.
+Five P2 issues: four reproduced with executable production logic; one established by SwiftUI visibility. No destructive-file defect found in this scope.
 
 | ID | Finding | Evidence |
 | --- | --- | --- |
@@ -22,7 +24,7 @@ Five concrete issues: four reproduced through executable production logic and on
 
 **Trigger:** Scan a photo, retain the resulting `PhotoItem`, and replace the source at the same pathname before its first thumbnail/full/histogram decode. Navigation keeps using the scan snapshot until a rescan.
 
-**Observed behavior:** The v5 key correctly includes the scanned physical identity, but the decode accepts the current URL without comparing the current file to that identity. It then publishes replacement pixels under the old scanned identity. The thumbnail is also persisted under that old identity's disk key. A before/after scan revision task guard cannot detect this because the caller's `PhotoItem` itself has not changed.
+**Observed behavior:** The v5 cache key includes scan identity, but decode reads the current URL without verification and publishes replacement pixels into old-identity memory/disk caches. Task guards miss it because the retained `PhotoItem` did not change.
 
 **Executable evidence** (`media-repro/main.swift`, actual production source files; `media-repro/result-unsandboxed.txt`):
 
@@ -34,13 +36,13 @@ OLD_REVISION_HIST_HIGHLIGHTS=1, SHADOWS=0
 OLD_REVISION_CACHED_AFTER_BLACK_REWRITE=[255, 255, 255, 255]
 ```
 
-The scanned photo was a black PNG. A separate white PNG replaced it via remove/move, so the inode differed. The retained black item's thumbnail, full preview, and histogram all used white replacement pixels. Rewriting the pathname black afterward still returned the contaminated white thumbnail from the old item's cache. The identity mismatch was checked using `FileOperationJournal.captureIdentity`, and the item used actual production `PhotoItem` identity capture rather than a fake cache key.
+A white PNG replaced the scanned black PNG with a different inode. The retained item's thumbnail/full/histogram used white; rewriting black still returned the contaminated thumbnail. `FileOperationJournal.captureIdentity` proved the mismatch; the key used production `PhotoItem` identity.
 
-**Consequence:** Louppe can display a different file's pixels beside the original scan metadata and identity. Reviewers can make a decision while seeing unrelated replacement content. The physical-identity guards in file operations remain a separate safeguard; this finding does not claim that a replacement is deleted or overwritten.
+**Consequence:** Replacement pixels appear beside old metadata/identity, misleading review. Separate file-operation identity guards remain; no replacement deletion/overwrite is claimed.
 
-**Related source traces:** `HighResolutionImagePipeline.swift:135–158,275–303` creates a lazy source from `item.primaryURL` without live identity comparison. `AudioLevelPipeline.swift:270–301,337–346`, `VideoPlaybackController.swift:169–172`, and `MetadataExtractor.swift:76–83` likewise read source URLs without revalidating scan identity. These additional lanes were not independently subjected to replacement reproduction; they are instances of the same missing source-read boundary rather than five additional confirmed pixel-cache defects. `TextPreviewLoader` already performs before/open/after identity checks and is a useful nearby model.
+**Related source traces:** `HighResolutionImagePipeline.swift:135–158,275–303` builds lazy sources from `item.primaryURL` without verification. `AudioLevelPipeline.swift:270–301,337–346`, `VideoPlaybackController.swift:169–172`, and `MetadataExtractor.swift:76–83` likewise omit the read boundary. These lanes were not separately reproduced and are not five extra findings. `TextPreviewLoader` already checks before/open/after.
 
-**Minimal correction:** Keep body-time cache lookups independent of filesystem I/O. At actual uncached source I/O, pass the scanned identity alongside the URL, verify it before/after the read, and refuse to cache/publish a mismatching source. For lazy Core Image sources, ensure the verified source owns the bytes/file handle it will actually render, or revalidate at tile render before returning a tile; checking only when constructing a URL-based recipe is insufficient if a later render rereads the path. Surface an actionable changed-file/rescan outcome instead of relabeling new pixels as old content. Tests should replace a file *after* item construction, including a same-path/same-mtime replacement and replacement during a delayed read. Existing cache tests mainly prove different keys after reconstructing/rescanning the item and do not exercise this boundary.
+**Minimal correction:** Keep body-time cache lookup filesystem-free. Pass scan identity into uncached I/O; verify before/after and reject mismatched publication/cache with a changed-file/rescan result. Lazy Core Image must hold verified bytes/handle or recheck tile rendering; URL-recipe validation alone is insufficient. Test replacement after item creation, including same-path/same-mtime and delayed reads. Existing reconstructed-item key tests miss this boundary.
 
 ### M2 — P2: Preserve the premultiplied-alpha contract in clipping work
 
@@ -57,7 +59,7 @@ TRANSLUCENT_WHITE_HIST_SHADOW=1, HIGHLIGHT=0, BIN3=1
 TRANSLUCENT_WHITE_OVERLAY_PREMULTIPLIED_PIXEL=[184, 1, 1, 3]
 ```
 
-The histogram reports translucent white as a black/shadow pixel. The overlay output's red 184 exceeds alpha 3 in a bitmap explicitly labeled premultiplied, so it violates that format's invariant and can produce bright colored halos on translucent/transparent edges. Normal opaque-photo tests pass because alpha is always 255; the existing transparent test covers only fully transparent histogram exclusion.
+White is reported as shadow. Red 184 exceeds alpha 3, violating premultiplied output and risking bright halos. Opaque tests pass at alpha 255; the existing transparency test covers only alpha-zero histogram exclusion.
 
 **Minimal correction:** Define whether clipping measures straight source RGB or the visible composited color, and implement it consistently. For straight source RGB, ignore alpha zero, unpremultiply nonzero-alpha RGB before calculating luminance, then blend in straight color and re-premultiply the result by the original alpha. If clipping is intended to represent composited appearance, composite onto the actual backdrop first; still never write RGB greater than alpha into a premultiplied output. Add alpha 0, 3, 128, 255 tests for white, black, and midtone colors, ensuring overlays preserve valid alpha representation.
 
@@ -77,11 +79,11 @@ NEXT_ONE_SECOND_AUDIO_ANALYSIS=true WAIT=4.01311194896698s TOTAL=4.1199229955673
 ABANDONED_LONG_ANALYSIS_CACHE_HIT=3.898143768310547e-05s
 ```
 
-Cancellation returned promptly to its caller, while the whole hour still decoded and entered the cache. The selected one-second clip waited approximately four seconds. Real compressed/high-channel-count/slow-storage recordings can increase this delay; those additional formats were not timed and no extrapolated delay is asserted.
+Caller cancellation returned promptly, but the hour decoded into cache and delayed the one-second clip about four seconds. Compressed/high-channel/slow-storage formats were not timed; no delay extrapolation is claimed.
 
-The initial sandboxed execution could not read WAVs through native AVFoundation services and returned nil. It is preserved in `result.txt` as an environment limitation. The successful timing reproduction is `result-unsandboxed.txt`, run with explicitly escalated native-media-service access. No production user files or preferences were touched.
+The sandboxed WAV read returned nil through AVFoundation services; `result.txt` preserves that limit. Timing uses `result-unsandboxed.txt` with escalated native-media access. No user files/preferences changed.
 
-**Minimal correction:** When the final waiter disappears, request cancellation of an executing decode as well. Keep the queue slot occupied until the detached AVAssetReader task has actually reached its cancellation boundary and signaled completion; simply adding `operation.cancel()` to the current bridge is not enough because the bridge currently returns immediately after `task.cancel()`, which could let the next queue operation overlap a still-terminating reader. Keep same-content coalescing valid when a new waiter arrives during shutdown, and use operation identity/generation when reconciling completion. Add a deterministic slow-reader test proving no overlapping readers and proving B can start soon after A's cancellation without reading A to EOF.
+**Minimal correction:** Cancel executing decode when its last waiter leaves. Hold the serial slot until AVAssetReader exits; `operation.cancel()` alone is insufficient because the bridge returns immediately after `task.cancel()`. Preserve coalescing during shutdown and reconcile by operation identity/generation. A deterministic slow-reader test must prove no overlap and B starts after A cancels without EOF.
 
 ### U1 — P2: Preserve exact numeric filter values unless a user edits them
 
@@ -89,7 +91,7 @@ The initial sandboxed execution could not read WAVs through native AVFoundation 
 
 **Trigger:** Apply a precise interior numeric range, reopen Filter, then close it without editing. For example, folder durations span 5…30 seconds and the active cutoff is 10.2…20.8 seconds.
 
-**Observed behavior:** On appearance, draft strings are generated through display formatters (whole seconds for duration, two decimals for aperture, three decimals for frame rate, rounded decimal/reciprocal shutter presentation). On disappearance, every numeric draft is committed regardless of whether its text was edited. Snap logic protects only the folder-wide minimum/maximum, not an existing interior cutoff. The formatted strings therefore become new authoritative numeric values on a no-edit close. Committing a different field also commits every other numeric draft.
+**Observed behavior:** Appearance formats drafts to whole-second duration, two-decimal aperture, three-decimal fps, or rounded decimal/reciprocal shutter. Disappearance commits all drafts, edited or not. Snapping protects folder extrema only, so interior display rounding becomes authoritative. Editing one field also commits the others.
 
 **Executable evidence:** `media-repro/filter.swift` contains exact extracted FilterView range/commit/parse/format/snap methods, executed unchanged against a minimal store stub and production `PhotoFilter`/formatters. This reproduces the pure operations invoked by appearance/disappearance; it is not a hosted popover interaction test.
 
@@ -101,7 +103,7 @@ AFTER_NO_EDIT_CLOSE: 10.0...21.0
 
 **Consequence:** Merely inspecting Filter can change visible media, widening or narrowing a cutoff. The same concern applies to non-extreme aperture/shutter/fps cutoffs. Neutral full-folder edges already have protection and should retain it.
 
-**Minimal correction:** Track which draft pair the user edited, or retain each original exact numeric value and display string so an unchanged display round trip retains the original value. Only commit modified fields; do not interpret initializing or reformatting drafts as user edits. Add a hosted open/close regression and exact-value tests for each numeric filter, including changing one range while preserving all the others.
+**Minimal correction:** Track edits or original exact values/display strings. Commit only modified fields; initialization/reformatting is not editing. Add hosted open/close and per-range exact-value regressions, including changing one range without altering others.
 
 ### U2 — P2: Keep playback controls reachable when focus is keyboard/accessibility-owned
 
@@ -111,7 +113,7 @@ AFTER_NO_EDIT_CLOSE: 10.0...21.0
 
 **Source-proven behavior:** All transport, timeline, volume, PiP, and fullscreen controls are conditional children of `if showsControls`. That condition is only `isHovering || !playback.isPlaying || isScrubbing`. Once the video is playing without hover or scrub, the entire subtree is removed, regardless of keyboard focus, VoiceOver state, or accessibility focus. The fitted `AVPlayerLayer` surface contributes no native transport alternative.
 
-**Consequence:** The focused Play button can disappear on activation and playback controls become unavailable in the accessibility hierarchy. Review-letter K may remain a play/pause fallback where the session monitor accepts it, but there is no accessible timeline/volume/PiP control while the subtree is absent. A manual native VoiceOver run was not executed, so focus relocation behavior is unverified; subtree removal itself follows directly from the code.
+**Consequence:** Activating Play can remove its focused control and AX subtree. K may still pause through the session monitor, but timeline/volume/PiP controls vanish. Native VoiceOver focus relocation is untested; subtree removal is source-proven.
 
 **Minimal correction:** Keep controls visible while keyboard or accessibility focus is within them, and while VoiceOver requires a transport surface. Alternatively keep a stable accessible transport surface while fading pointer-only decoration. Avoid removing the active focused element. Verify actual keyboard tab traversal and VoiceOver start/pause/seek/volume/fullscreen interaction with the pointer outside the pane.
 
@@ -158,4 +160,4 @@ AFTER_NO_EDIT_CLOSE: 10.0...21.0
 
 ## Verification limits
 
-Root owns full SwiftPM/test/build/native launch checks; this worker did not contend those outputs or install an app. The runtime reproductions above used actual canonical source, no source patches, Xcode selected via `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`, and an independent temporary module cache. Native AVFoundation runtime required sandbox escalation and succeeded. No screen capture, manual VoiceOver session, removable-drive benchmark, large-route hosted-layout benchmark, raw-camera corpus/color-profile comparison, or RSS/GPU-memory trace was performed. Those remain targeted follow-up checks, not implicit passes.
+The coordinator owns full test/build/launch checks; this worker did not install. Reproductions used unchanged canonical source, `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`, and a temporary module cache. Escalated native AVFoundation succeeded. No screen capture, VoiceOver, removable-drive/large-route benchmark, RAW/color corpus, or RSS/GPU trace was run; none is counted as passed.

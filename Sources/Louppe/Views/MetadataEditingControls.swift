@@ -24,7 +24,7 @@ struct MetadataEditingControls: View {
         VStack(alignment: .leading, spacing: 9) {
             if showsDecision {
                 HStack {
-                    Text("Decision")
+                    Text(L10n.text("Decision"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -33,7 +33,7 @@ struct MetadataEditingControls: View {
             }
 
             HStack(spacing: 3) {
-                Text("Stars")
+                Text(L10n.text("Stars"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 4)
@@ -46,7 +46,7 @@ struct MetadataEditingControls: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
                 .disabled(!store.canRate)
-                .accessibilityLabel("Clear stars")
+                .accessibilityLabel(L10n.text("Clear stars"))
 
                 ForEach(StarRating.allCases, id: \.self) { rating in
                     Button {
@@ -58,20 +58,20 @@ struct MetadataEditingControls: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(starColor(for: rating, state: stars))
                     .disabled(!store.canRate)
-                    .accessibilityLabel("Set \(rating.count) stars")
+                    .accessibilityLabel(L10n.text("Set \(rating.count) stars"))
                 }
             }
 
             HStack {
-                Text("Color label")
+                Text(L10n.text("Color label"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Menu {
-                    Button("None") { store.setColorLabel(nil) }
+                    Button(L10n.text("None")) { store.setColorLabel(nil) }
                     Divider()
                     ForEach(PhotoColorLabel.allCases, id: \.self) { label in
-                        Button(label.displayName) {
+                        Button(label.localizedDisplayName) {
                             store.setColorLabel(label)
                         }
                     }
@@ -84,7 +84,7 @@ struct MetadataEditingControls: View {
                 .tint(colorLabelTint(for: color))
                 .fixedSize()
                 .disabled(!store.canRate)
-                .accessibilityLabel("Color label")
+                .accessibilityLabel(L10n.text("Color label"))
                 .accessibilityValue(colorLabelText(for: color))
             }
         }
@@ -112,9 +112,9 @@ struct MetadataEditingControls: View {
 
     private func colorLabelText(for state: PhotoItemColorLabelState) -> String {
         switch state {
-        case .none: return "None"
-        case .label(let label): return label.displayName
-        case .mixed: return "Mixed"
+        case .none: return L10n.text("None")
+        case .label(let label): return label.localizedDisplayName
+        case .mixed: return L10n.text("Mixed")
         }
     }
 
@@ -146,13 +146,13 @@ struct MetadataDecisionButton: View {
         }
         .buttonStyle(.plain)
         .disabled(!store.canRate)
-        .accessibilityLabel("Change decision")
+        .accessibilityLabel(L10n.text("Change decision"))
         .accessibilityValue(
             MediaTileAccessibility.decisionDescription(
                 for: decision
             )
         )
-        .help("Change Yes/No decision")
+        .help(L10n.text("Change Yes/No decision"))
     }
 }
 

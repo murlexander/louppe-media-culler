@@ -2,11 +2,10 @@
 
 **Status: retired as an active work list — 29 September 2026.** All 17 confirmed
 findings were implemented locally; see [implementation and final verification](implementation.md).
-Additional app work is owned by [the live backlog](../../../BACKLOG.md#audit-follow-ups),
-with existing acceptance/hardening entries expanded rather than duplicated.
-Implemented website consent work awaits publication under WEB-AUD-01 in the
-[website backlog](../../../../website/BACKLOG.md#implemented-locally-awaiting-publication).
-Reports and evidence below remain a historical record of the behavior before fixes.
+App follow-ups are in [the live backlog](../../../BACKLOG.md#audit-follow-ups).
+Website consent was unpublished at closeout; it is now published. Remaining
+WEB-AUD-01 acceptance is in the [website backlog](../../../../website/BACKLOG.md#browser-acceptance).
+The reports preserve pre-fix behavior and 29 September verification.
 
 ### Follow-up transfer coverage
 
@@ -24,17 +23,16 @@ Reports and evidence below remain a historical record of the behavior before fix
 | VoiceOver/keyboard/display/provider/drive acceptance | AUD-23, AUD-24 |
 | Website consent publication and real-tab smoke check | WEB-AUD-01 (website) |
 
-Source replacement coverage added during implementation is already recorded in
-M1 regressions; it is not reopened as another task. Future changes must use the
-current code and the backlog's acceptance checks, not historical source line numbers.
+M1 regressions cover source replacement. Use current code and backlog acceptance
+checks for further work; historical line numbers are review records.
 
 ## Result
 
-The audit found **17 actionable issues: four P1, twelve P2, and one P3**, including one measured performance defect. Fifteen were exercised against actual production code, compiled app modules, or the website script; the numeric-filter issue was reproduced using exact extracted private view methods; the playback accessibility issue is established by source inspection and still needs a native VoiceOver check.
+The audit found **17 actionable issues: four P1, twelve P2, and one P3**, including one measured performance defect. Fifteen used production code, compiled modules, or the website script. Numeric filtering used exact extracted private methods. Playback accessibility was source-proven and still needs native VoiceOver acceptance.
 
-The most urgent problems are Clean Up crossing the chosen physical-file scope, a failed save durability barrier being treated as safe for Quit, a nonterminating export planner, and standalone XMP publication attaching old review metadata to replacement media or a replacement folder. No audit experiment demonstrated permanent loss of an original. The save finding demonstrates an unsafe success result under injected I/O failure; loss after power interruption remains a consequence to guard against, not an observed power-cut experiment.
+The P1 issues cross Clean Up scope, treat failed durability as safe for Quit, loop indefinitely during export planning, or publish old XMP metadata beside replacement media/folders. No experiment demonstrated permanent original loss. Save durability returned unsafe success under injected I/O failure; power-cut loss was not tested.
 
-Existing checks all passed after isolating SwiftPM products from File Provider metadata. Passing checks do not cover the newly reproduced conditions. Each finding below has a trigger, consequence, minimal correction, evidence, and proposed regression coverage in the linked component report.
+Existing checks passed after isolating SwiftPM products from File Provider metadata, but missed these conditions. Each finding records its trigger, effect, correction, evidence, and regression coverage.
 
 ## Scope and provenance
 
@@ -45,7 +43,7 @@ Existing checks all passed after isolating SwiftPM products from File Provider m
 - A final SHA-256 manifest covers 123 app/test/build/version files, including all 74 application Swift files. These hashes remained unchanged during the final full-suite verification.
 - This audit adds documentation and reproduction evidence only. It does not fix application code, modify original media, change version history, create a branch, commit, or push. Disposable files, bounded subprocesses, native-media probes, and build products used `/private/tmp/louppe-audit-2026-09-29`.
 
-P1 means a high-priority correction affecting safety, trustworthy metadata, or bounded completion. P2 means a concrete normal-priority functional, recovery, accessibility, or performance correction. P3 means a lower-priority diagnostic correction. The malformed-journal FIFO issue has lower ordinary-user exposure than the other P2 findings.
+P1 covers safety, metadata trust, or bounded completion; P2 covers functional, recovery, accessibility, or performance defects; P3 covers diagnostics. The malformed-journal FIFO defect has lower ordinary-user exposure than the other P2 findings.
 
 ## Prioritized findings
 
@@ -75,9 +73,9 @@ P1 means a high-priority correction affecting safety, trustworthy metadata, or b
 
 **Locations:** [XMPPublication.swift:229](/Users/alexander_markin/Documents/code/louppe/app/Sources/Louppe/XMP/XMPPublication.swift:229), plan-entry definition; [XMPPublication.swift:568](/Users/alexander_markin/Documents/code/louppe/app/Sources/Louppe/XMP/XMPPublication.swift:568), preflight; [XMPPublication.swift:738](/Users/alexander_markin/Documents/code/louppe/app/Sources/Louppe/XMP/XMPPublication.swift:738), publication; [XMPMetadataStore.swift:203](/Users/alexander_markin/Documents/code/louppe/app/Sources/Louppe/XMP/XMPMetadataStore.swift:203), final create validation. Session tokens at [SessionStore.swift:4326](/Users/alexander_markin/Documents/code/louppe/app/Sources/Louppe/SessionStore.swift:4326) check in-memory generation/path, not live physical identity.
 
-**Trigger:** Scan and rate `PHOTO.NEF`, prepare Metadata (XMP), then another program replaces that media path before confirmation. A second variant renames the whole opened source directory aside and creates a different directory/media at its old path while the confirmation remains open.
+**Trigger:** Scan and rate `PHOTO.NEF`, prepare Metadata (XMP), then replace the media before confirmation. Alternatively, rename the opened folder aside and create replacement media at its old path while confirmation stays open.
 
-**Cause:** `XMPStemFamilyMember` captures scanned identity, but ordinary publishable plan entries retain sidecar path, metadata, and packet fingerprint without the member identities. Preflight and publication validate only the packet. Create validates that the pathname is absent and the current parent is a directory; it does not require the original scanned media or original folder. In-memory session generation cannot detect an external filesystem change.
+**Cause:** `XMPStemFamilyMember` captures scanned identity, but publication entries retain only sidecar path, metadata, and packet fingerprint. Preflight/publication validate the packet; create checks absence and a directory parent, without original media/folder authority. Session generation cannot detect external filesystem replacement.
 
 **Actual-module evidence:** `xmp-identity-repro.swift` captures real media identity in `PhotoFile`, calls the real planner, replaces the media or folder, proves identity changed, then calls the real publication worker:
 
@@ -86,9 +84,9 @@ scenario=file-replacement mediaIdentityChanged=true created=1 failed=0 conflicts
 scenario=folder-replacement mediaIdentityChanged=true created=1 failed=0 conflicts=0 sidecarDecision=yes
 ```
 
-Both scenarios write five-star/red/Yes metadata from the old scan into `PHOTO.xmp` beside unrelated replacement media. No original media is modified. The replacement-folder case proves the operation can write into a directory outside the original folder identity authority. Existing sidecar CAS remains valuable: an externally edited XMP packet is correctly protected, but a newly absent packet gives that guard no media identity to compare.
+Both scenarios write old five-star/red/Yes metadata to `PHOTO.xmp` beside unrelated replacement media; originals are unchanged. Folder replacement also redirects publication outside the opened folder's identity. Packet CAS protects edited sidecars but cannot identify media when the packet is absent.
 
-**Correction:** Carry exact family-member identities and stable parent/source-folder identity through the immutable publication plan. Validate the relevant family before preflight and again at the final atomic publication boundary. A failed identity check must report an external-modification conflict with a Rescan remedy. Check unselected family siblings too, since the shared packet describes the whole stem family. Keep ratings frozen at confirmation, bounded three-worker publication, and existing packet CAS.
+**Correction:** Carry exact family-member and stable parent/source-folder identities in the immutable plan. Validate before preflight and final atomic publication, including unselected siblings described by the shared packet. Fail as external modification with **Rescan**. Preserve frozen ratings, three-worker bounds, and packet CAS.
 
 **Regression coverage:** Replace a media inode after scan and before preflight; after preflight and before commit; replace a whole source directory; remove one unselected sibling; introduce a symlink/nonregular media leaf; replace a member during a delayed packet write. Assert no packet creation/update in the replacement directory and no false success. Exercise unchanged metadata and intentional rating changes separately.
 
@@ -106,9 +104,9 @@ Both scenarios write five-star/red/Yes metadata from the old scan into `PHOTO.xm
 {"savedChoice":"rejected","tabBDisabled":true,"tabADisabled":false,"tabAQueuedDownloadAfterWithdrawal":true,"storageListener":false,"visibilityListener":false}
 ```
 
-This establishes the local behavior; it does not claim to have intercepted Google's server traffic or provide a legal compliance opinion.
+The probe proves local state behavior; it neither intercepts Google traffic nor establishes legal compliance.
 
-**Correction:** Add one shared-choice reconciliation function. Listen for the consent storage key and recheck on return to a tab; disable collection immediately when choice is rejected, expired, or missing. Do not turn a revoked tab's storage change into an opt-in prompt that itself requests analytics. Preserve the production-host guard and existing opt-in-only script loading. A lightweight current-choice check before custom events adds defense against missed state changes.
+**Correction:** Reconcile the shared choice on consent-key storage events, tab return, and custom events. Disable immediately for rejected, expired, or missing consent. Preserve the host gate and opt-in-only loading; reconciliation itself must not request analytics.
 
 **Regression coverage:** Two tabs accepting then one withdrawing; storage removal/expiry while another tab remains active; blocked storage; withdrawal while the Google script is still loading; reacceptance. Assert no new script request before opt-in and no download event after revocation.
 
@@ -132,15 +130,15 @@ This establishes the local behavior; it does not claim to have intercepted Googl
 | Repository redacted credential scanner | Checksum-pinned Gitleaks history/staged/unstaged scans passed, no leaks reported; untracked files are outside this script's explicit coverage |
 | Finding-specific probes | Evidence saved per component; no production source changes |
 
-The first default SwiftPM run failed at XCTest codesigning because Finder/resource metadata was attached under the File Provider-managed workspace. A fresh `--scratch-path /private/tmp/louppe-audit-2026-09-29/swift-build` resolved that environmental failure. It was not treated as an application source failure.
+Finder/resource metadata broke XCTest signing in the File Provider workspace. A fresh `--scratch-path /private/tmp/louppe-audit-2026-09-29/swift-build` resolved the environment failure.
 
-The skipped test is `ConnectedDrivesTests.testHostedDriveRowsExposeCapacityAndNativeChooseAction`: the XCTest host had no in-process SwiftUI accessibility children. Native computer-use inspection also failed with ScreenCaptureKit capture error -3811, consistent with the repository's stated capture-permission limitation. Process and sidecar evidence verify launch/scan, **not** the appearance/focus of the window or a complete native VoiceOver flow.
+`ConnectedDrivesTests.testHostedDriveRowsExposeCapacityAndNativeChooseAction` was skipped because the XCTest host exposed no SwiftUI AX children. Computer-use inspection failed with ScreenCaptureKit -3811. Process/sidecar evidence proves launch/scan, not window appearance/focus or native VoiceOver behavior.
 
-The release preflight checks the current locally packaged build. It does not notarize, publish, cryptographically re-sign the feed, validate a new Apple distribution certificate, or establish that this unpublished working version is the current public download. The credential scan is a local redacted check and does not upload repository content.
+Preflight verifies the local package, not notarization, publication, feed re-signing, Apple distribution credentials, or the current public download. The redacted credential scan stays local.
 
 ## Measured performance and recommended optimization order
 
-The repository benchmarks are useful baselines. They passed their existing contracts but still reveal noticeable main-thread costs at very large sizes. These are local Debug/standalone measurements, not promised production-release latency, and native compilation/probes also ran during this audit.
+Benchmarks passed their contracts but expose large-session main-thread costs. These local Debug/standalone timings are not release-latency promises; native builds/probes also ran during measurement.
 
 | Workload | Observed time |
 | --- | ---: |
@@ -175,7 +173,7 @@ The repository benchmarks are useful baselines. They passed their existing contr
 
 ## Evidence and rerun
 
-The `evidence/` directory preserves the human-readable reproduction logs, source probes, source manifest, and compilation helpers. Full baseline build/test logs and binaries remain in the temporary audit directory; their summaries above contain the relevant outcomes without unrelated macOS service diagnostics.
+`evidence/` retains reproduction logs, probes, the source manifest, and compile helpers. Full baseline logs/binaries stay in the temporary audit directory; summaries omit unrelated macOS diagnostics.
 
 Baseline commands run from the canonical app working directory with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`:
 
@@ -189,10 +187,8 @@ swift build --disable-keychain --scratch-path /private/tmp/louppe-audit-2026-09-
 ./Scripts/check_credentials.sh
 ```
 
-Website: `npm run test:blog`. Consent probe: `node evidence/website-consent-repro.mjs` from the saved audit directory. Actual-module probe helpers need fresh testable objects at the scratch paths they name; component reports explain each construction and the exact fault boundary. Infinite/FIFO probes must remain bounded subprocesses, not direct calls inside the ordinary suite.
+Website: `npm run test:blog`. Consent: `node evidence/website-consent-repro.mjs` from the saved audit directory. Actual-module helpers need fresh testable objects at their named scratch paths. Component reports record construction and fault boundaries. Keep infinite/FIFO probes in bounded subprocesses.
 
 The three component reports follow: [file mutations/recovery](file-safety.md), [session state/durability](session-state.md), and [media/native UI](media-ui.md).
 
-Source manifests retain their original SHA-256 digests in explicit `sha256`
-objects. This prevents filenames containing Access/API from resembling credential
-assignments in the redacted credential scan.
+Manifest digests remain in explicit `sha256` objects so Access/API filenames do not resemble credential assignments during redacted scanning.

@@ -27,7 +27,7 @@ protocol SessionPersistenceClient: Sendable {
 /// fire-and-forget saves safe: if task scheduling delivers an older snapshot
 /// late, it cannot overwrite a newer snapshot for the same folder.
 actor SessionPersistence: SessionPersistenceClient {
-    private static let maximumSnapshotBytes = 512 * 1_024 * 1_024
+    private static let defaultMaximumSnapshotBytes = 512 * 1_024 * 1_024
     struct SourceFolderIdentity: Hashable, Sendable {
         let volumeRootPath: String
         let volumeUUIDString: String?
@@ -311,6 +311,7 @@ actor SessionPersistence: SessionPersistenceClient {
         case volumeUnavailable
         case busy
         case encoding
+        case snapshotTooLarge
         case other
     }
 
@@ -394,45 +395,38 @@ actor SessionPersistence: SessionPersistenceClient {
         /// be silently replaced by a fresh, empty session.
         var blockingMessage: String? {
             if problems.contains(.sourceFolderChanged) {
-                return "The selected folder changed while Louppe was reading it. "
-                    + "Nothing was saved; reconnect the original folder and try again."
+                return L10n.text("The selected folder changed while Louppe was reading it. Nothing was saved; reconnect the original folder and try again.")
             }
             if problems.contains(.sidecarChanged) {
-                return "This folder's session file changed while Louppe was reading it. "
-                    + "Nothing was saved; open the folder again."
+                return L10n.text("This folder's session file changed while Louppe was reading it. Nothing was saved; open the folder again.")
             }
             if problems.contains(where: {
                 if case .unsupportedVersion(.sidecar, _) = $0 { return true }
                 return false
             }) {
-                return "This folder has session data from a different Louppe version. "
-                    + "It was left untouched so no saved ratings are lost."
+                return L10n.text("This folder has session data from a different Louppe version. It was left untouched so no saved ratings are lost.")
             }
             if problems.contains(where: {
                 if case .differentSourceFolder(.sidecar) = $0 { return true }
                 return false
             }) {
-                return "This folder has saved ratings from a different location. "
-                    + "If you moved or renamed the folder, choose Open Anyway to load them."
+                return L10n.text("This folder has saved ratings from a different location. If you moved or renamed the folder, choose Open Anyway to load them.")
             }
             if problems.contains(where: {
                 if case .invalidEntry(.sidecar) = $0 { return true }
                 return false
             }) {
-                return "This folder's session data does not satisfy Louppe's safety checks. "
-                    + "It was left untouched so no saved ratings are replaced by an older backup."
+                return L10n.text("This folder's session data does not satisfy Louppe's safety checks. It was left untouched so no saved ratings are replaced by an older backup.")
             }
             guard session == nil, !problems.isEmpty else { return nil }
-            return "Louppe found session data for this folder but couldn't read it safely. "
-                + "The file was left untouched; fix its permissions or restore a valid backup, then try again."
+            return L10n.text("Louppe found session data for this folder but couldn't read it safely. The file was left untouched; fix its permissions or restore a valid backup, then try again.")
         }
 
         /// Loading the backup is safe, but the photographer should know why
         /// the folder's own sidecar was not authoritative.
         var recoveryMessage: String? {
             guard session != nil, origin == .backup else { return nil }
-            return "Louppe recovered the newest saved ratings from its backup. "
-                + "It will repair the folder's session file when it can."
+            return L10n.text("Louppe recovered the newest saved ratings from its backup. It will repair the folder's session file when it can.")
         }
     }
 
@@ -482,6 +476,7 @@ actor SessionPersistence: SessionPersistenceClient {
     /// Louppe-owned revision after reconnect without weakening ordinary CAS.
     private var possibleCommittedSidecarRevisionByAccessID:
         [UUID: SidecarRevision] = [:]
+    private let maximumSnapshotBytes: Int
     private let backupDirectory: URL
     private let lockDirectory: URL
     private let afterSidecarReadForTesting: (@Sendable () -> Void)?
@@ -496,6 +491,7 @@ actor SessionPersistence: SessionPersistenceClient {
 
     init(
         backupDirectory: URL? = nil,
+        maximumSnapshotBytesForTesting: Int? = nil,
         afterSidecarReadForTesting: (@Sendable () -> Void)? = nil,
         beforeSaveLockForTesting: (@Sendable () -> Void)? = nil,
         afterSaveLockAcquiredForTesting: (@Sendable () -> Void)? = nil,
@@ -506,6 +502,8 @@ actor SessionPersistence: SessionPersistenceClient {
         beforeDirectorySyncRetryForTesting:
             (@Sendable (URL) throws -> Void)? = nil
     ) {
+        self.maximumSnapshotBytes = maximumSnapshotBytesForTesting
+            ?? Self.defaultMaximumSnapshotBytes
         self.afterSidecarReadForTesting = afterSidecarReadForTesting
         self.beforeSaveLockForTesting = beforeSaveLockForTesting
         self.afterSaveLockAcquiredForTesting =
@@ -585,6 +583,16 @@ actor SessionPersistence: SessionPersistenceClient {
             return .failed(SaveFailure(sidecar: .encoding, backup: .encoding))
         }
 
+        // Never publish bytes that this same persistence boundary cannot
+        // reopen. Reject before taking the transaction lock or touching either
+        // saved copy; sequence and generation remain available for Retry.
+        guard data.count <= maximumSnapshotBytes else {
+            return .failed(SaveFailure(
+                sidecar: .snapshotTooLarge,
+                backup: .snapshotTooLarge
+            ))
+        }
+
         let sidecar = Self.sidecarURL(for: sourceFolder)
         let backup = backupSessionURL(for: access.folderIdentity)
         let expectedRevision = revisionByAccessID[access.id]
@@ -657,8 +665,8 @@ actor SessionPersistence: SessionPersistenceClient {
         case .changed:
             return .sourceFolderChanged
         }
-        let observedSidecarRevision = Self.sidecarRevision(at: sidecar)
-        let observedBackupRevision = Self.sidecarRevision(at: backup)
+        let observedSidecarRevision = self.sidecarRevision(at: sidecar)
+        let observedBackupRevision = self.sidecarRevision(at: backup)
         if Self.revisionsMatch(
             expected: effectiveSidecarRevision,
             current: observedSidecarRevision
@@ -715,10 +723,10 @@ actor SessionPersistence: SessionPersistenceClient {
                     }
                     guard Self.revisionsMatch(
                         expected: effectiveSidecarRevision,
-                        current: Self.sidecarRevision(at: sidecar)
+                        current: self.sidecarRevision(at: sidecar)
                     ), Self.backupLineageAllowsSidecarSave(
                         expected: expectedBackupRevision,
-                        current: Self.sidecarRevision(at: backup)
+                        current: self.sidecarRevision(at: backup)
                     ) else {
                         throw SaveGuardError.sidecarChanged
                     }
@@ -785,7 +793,7 @@ actor SessionPersistence: SessionPersistenceClient {
             case .changed:
                 return .sourceFolderChanged
             }
-            let observedRevision = Self.sidecarRevision(at: sidecar)
+            let observedRevision = self.sidecarRevision(at: sidecar)
             if observedRevision == desiredRevision {
                 // Visible bytes advance our CAS/generation lineage, but do
                 // not prove durability. Retry the missing directory flush;
@@ -812,7 +820,7 @@ actor SessionPersistence: SessionPersistenceClient {
                         case .changed:
                             throw SaveGuardError.sourceFolderChanged
                         }
-                        guard Self.sidecarRevision(at: sidecar)
+                        guard self.sidecarRevision(at: sidecar)
                                 == desiredRevision else {
                             throw SaveGuardError.sidecarChanged
                         }
@@ -870,10 +878,10 @@ actor SessionPersistence: SessionPersistenceClient {
             }
             guard Self.revisionsMatch(
                 expected: effectiveSidecarRevision,
-                current: Self.sidecarRevision(at: sidecar)
+                current: self.sidecarRevision(at: sidecar)
             ), Self.backupLineageAllowsSidecarSave(
                 expected: expectedBackupRevision,
-                current: Self.sidecarRevision(at: backup)
+                current: self.sidecarRevision(at: backup)
             ) else {
                 return .sidecarChanged
             }
@@ -980,7 +988,7 @@ actor SessionPersistence: SessionPersistenceClient {
                     case .changed:
                         throw SaveGuardError.sourceFolderChanged
                     case .matching:
-                        let current = Self.sidecarRevision(
+                        let current = self.sidecarRevision(
                             at: Self.sidecarURL(for: sourceFolder)
                         )
                         guard Self.revisionsMatch(
@@ -1069,8 +1077,8 @@ actor SessionPersistence: SessionPersistenceClient {
         let access = AccessContext(
             id: UUID(),
             folderIdentity: identity,
-            sidecarRevision: Self.sidecarRevision(at: sidecar),
-            backupRevision: Self.sidecarRevision(at: backup),
+            sidecarRevision: self.sidecarRevision(at: sidecar),
+            backupRevision: self.sidecarRevision(at: backup),
             initialSnapshotGeneration: maximumPersistedGeneration(
                 for: identity,
                 folder: folder
@@ -1150,10 +1158,10 @@ actor SessionPersistence: SessionPersistenceClient {
         }
         guard Self.revisionsMatch(
             expected: sidecarRead.revision,
-            current: Self.sidecarRevision(at: sidecar)
+            current: self.sidecarRevision(at: sidecar)
         ), Self.backupLineageAllowsSidecarSave(
             expected: backupRead.revision,
-            current: Self.sidecarRevision(at: backup)
+            current: self.sidecarRevision(at: backup)
         ) else {
             return ReadResult(
                 session: nil,
@@ -1232,7 +1240,7 @@ actor SessionPersistence: SessionPersistenceClient {
         do {
             data = try DurableFileIO.readRegularFile(
                 at: url,
-                maximumBytes: Self.maximumSnapshotBytes
+                maximumBytes: maximumSnapshotBytes
             )
         } catch {
             if Self.errorMeansFileIsAbsent(error) {
@@ -1635,7 +1643,7 @@ actor SessionPersistence: SessionPersistenceClient {
         possibleSidecarRevision: SidecarRevision? = nil
     ) throws -> Bool {
         let backup = backupSessionURL(for: folderIdentity)
-        guard Self.sidecarRevision(at: backup) == desiredRevision else {
+        guard self.sidecarRevision(at: backup) == desiredRevision else {
             return false
         }
         recordObservedSave(
@@ -1653,12 +1661,12 @@ actor SessionPersistence: SessionPersistenceClient {
             case .unavailable: break
             case .changed: throw SaveGuardError.sourceFolderChanged
             case .matching:
-                let observed = Self.sidecarRevision(at: Self.sidecarURL(for: sourceFolder))
+                let observed = self.sidecarRevision(at: Self.sidecarURL(for: sourceFolder))
                 guard Self.revisionsMatch(expected: sidecarRevision, current: observed)
                         || observed == possibleCommittedSidecarRevisionByAccessID[accessID]
                 else { throw SaveGuardError.sidecarChanged }
             }
-            guard Self.sidecarRevision(at: backup) == desiredRevision else {
+            guard self.sidecarRevision(at: backup) == desiredRevision else {
                 throw SaveGuardError.sidecarChanged
             }
         }
@@ -1694,7 +1702,7 @@ actor SessionPersistence: SessionPersistenceClient {
             )
             return desiredRevision
         } catch {
-            let observed = Self.sidecarRevision(at: backup)
+            let observed = self.sidecarRevision(at: backup)
             if observed == desiredRevision || observed == expectedRevision {
                 return observed
             }
@@ -1726,7 +1734,7 @@ actor SessionPersistence: SessionPersistenceClient {
                 try validateBeforeReplace()
                 guard Self.revisionsMatch(
                     expected: expectedRevision,
-                    current: Self.sidecarRevision(at: backup)
+                    current: self.sidecarRevision(at: backup)
                 ) else {
                     throw SaveGuardError.sidecarChanged
                 }
@@ -1802,15 +1810,15 @@ actor SessionPersistence: SessionPersistenceClient {
         )
     }
 
-    private static func sidecarRevision(at url: URL) -> SidecarRevision {
+    private func sidecarRevision(at url: URL) -> SidecarRevision {
         do {
             let data = try DurableFileIO.readRegularFile(
                 at: url,
                 maximumBytes: maximumSnapshotBytes
             )
-            return .content(digest(data))
+            return .content(Self.digest(data))
         } catch {
-            if errorMeansFileIsAbsent(error) { return .absent }
+            if Self.errorMeansFileIsAbsent(error) { return .absent }
             return .unavailable
         }
     }

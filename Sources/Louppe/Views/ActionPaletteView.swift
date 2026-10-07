@@ -38,7 +38,7 @@ struct ActionPaletteView: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            TextField("Search actions", text: $query)
+            TextField(L10n.text("Search actions"), text: $query)
                 .textFieldStyle(.plain)
                 .font(.title3)
                 .focused($isSearchFocused)
@@ -56,13 +56,13 @@ struct ActionPaletteView: View {
                     return .handled
                 }
             if !query.isEmpty {
-                Button("Clear", systemImage: "xmark.circle.fill") {
+                Button(L10n.text("Clear"), systemImage: "xmark.circle.fill") {
                     query = ""
                 }
                 .labelStyle(.iconOnly)
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("Clear action search")
+                .accessibilityLabel(L10n.text("Clear action search"))
             }
         }
         .padding(.horizontal, 18)
@@ -89,9 +89,9 @@ struct ActionPaletteView: View {
                     }
                     if visibleActions.isEmpty {
                         ContentUnavailableView(
-                            "No matching actions",
+                            L10n.text("No matching actions"),
                             systemImage: "magnifyingglass",
-                            description: Text("Try a different search term.")
+                            description: Text(L10n.text("Try a different search term."))
                         )
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 64)
@@ -99,7 +99,7 @@ struct ActionPaletteView: View {
                 }
                 .padding(.bottom, 10)
             }
-            .accessibilityLabel("Command Palette actions")
+            .accessibilityLabel(L10n.text("Command Palette actions"))
             .onChange(of: selectionRevealGeneration) {
                 guard let selectedActionID else { return }
                 proxy.scrollTo(selectedActionID, anchor: .center)
@@ -156,31 +156,31 @@ struct ActionPaletteView: View {
     func unavailableReason(for action: ActionPaletteAction) -> String {
         if action.id == "toggle-raw-jpeg-pairing",
            store.isChangingRawJPEGPairingMode {
-            return "Updating RAW + JPEG review"
+            return L10n.text("Updating RAW + JPEG review")
         }
-        if store.isFileOperationRunning { return "Wait for the current file operation to finish" }
+        if store.isFileOperationRunning { return L10n.text("Wait for the current file operation to finish") }
         switch action.id {
         case "toggle-raw-jpeg-pairing":
             if store.isXMPPublicationRunning {
-                return "Wait for XMP sidecar work to finish"
+                return L10n.text("Wait for XMP sidecar work to finish")
             }
-            return "No matching RAW + JPEG pairs in this folder"
-        case "gallery", "grid": return "This view is already selected"
-        case "grid-zoom-in", "grid-zoom-out": return "Switch to Grid first"
-        case "actual-size", "phone-size": return "Select a photo in Gallery first"
-        case "browser": return "Switch to Gallery first"
+            return L10n.text("No matching RAW + JPEG pairs in this folder")
+        case "gallery", "grid": return L10n.text("This view is already selected")
+        case "grid-zoom-in", "grid-zoom-out": return L10n.text("Switch to Grid first")
+        case "actual-size", "phone-size": return L10n.text("Select a photo in Gallery first")
+        case "browser": return L10n.text("Switch to Gallery first")
         case "seek-video-backward", "seek-video-forward",
              "seek-video-backward-large", "seek-video-forward-large":
-            return "Select a playable video in Gallery first"
+            return L10n.text("Select a playable video in Gallery first")
         case "toggle-current-media", "decrease-playback-rate", "increase-playback-rate",
              "set-playback-rate-1x", "set-playback-rate-1-5x",
              "set-playback-rate-2x", "set-playback-rate-2-5x":
-            return "Select a playable video or audio recording first"
-        case "reset-filter": return "No filters are active"
-        case "clear-selection": return "No multi-selection is active"
-        case "return-normal-review": return "No review group is active"
-        case "undo": return "Nothing to undo"
-        default: return "Not available for the current media or selection"
+            return L10n.text("Select a playable video or audio recording first")
+        case "reset-filter": return L10n.text("No filters are active")
+        case "clear-selection": return L10n.text("No multi-selection is active")
+        case "return-normal-review": return L10n.text("No review group is active")
+        case "undo": return L10n.text("Nothing to undo")
+        default: return L10n.text("Not available for the current media or selection")
         }
     }
 
@@ -188,7 +188,7 @@ struct ActionPaletteView: View {
         HStack(spacing: 14) {
             Text("⌘K")
                 .font(.caption.monospaced())
-            Text("to open")
+            Text(L10n.text("to open"))
             Spacer()
             Text("↑↓")
                 .font(.caption.monospaced())
@@ -214,47 +214,47 @@ struct ActionPaletteView: View {
         [
             ActionPaletteAction(
                 id: "export",
-                category: "Files",
-                title: "Export…",
-                detail: "Copy, move, or write Metadata (XMP)",
+                category: L10n.text("Files"),
+                title: L10n.text("Export…"),
+                detail: L10n.text("Copy, move, or write Metadata (XMP)"),
                 symbol: "square.and.arrow.up",
                 shortcut: "E / ⌘E",
-                keywords: ["copy", "move", "xmp", "metadata", "sidecar", "export media"],
+                keywords: ["copy", "move", "xmp", "metadata", "sidecar", L10n.text("export media")],
                 isEnabled: store.canExport,
                 perform: { store.presentExport() }
             ),
             ActionPaletteAction(
                 id: "rename-files-from-metadata",
-                category: "Files",
-                title: "Rename Files from Metadata…",
-                detail: "Preview names built from date, time, camera, lens, and sequence",
+                category: L10n.text("Files"),
+                title: L10n.text("Rename Files from Metadata…"),
+                detail: L10n.text("Preview names built from date, time, camera, lens, and sequence"),
                 symbol: "textformat",
                 keywords: [
-                    "rename files", "filename", "batch rename", "bulk rename",
-                    "metadata rename", "date", "time", "camera", "lens", "sequence",
+                    L10n.text("rename files"), "filename", L10n.text("batch rename"), L10n.text("bulk rename"),
+                    L10n.text("metadata rename"), "date", "time", "camera", "lens", "sequence",
                 ],
                 isEnabled: store.canRenameSource,
                 perform: { store.presentMetadataFileRenaming() }
             ),
             ActionPaletteAction(
                 id: "organize",
-                category: "Files",
-                title: "Organize Source Folder…",
-                detail: "Preview a metadata-based folder layout",
+                category: L10n.text("Files"),
+                title: L10n.text("Organize Source Folder…"),
+                detail: L10n.text("Preview a metadata-based folder layout"),
                 symbol: "folder.badge.gearshape",
-                keywords: ["organize folder", "move into folders", "source hierarchy", "date folder", "camera folder"],
+                keywords: [L10n.text("organize folder"), L10n.text("move into folders"), L10n.text("source hierarchy"), L10n.text("date folder"), L10n.text("camera folder")],
                 isEnabled: store.canOrganizeSource,
                 perform: { store.presentSourceOrganization() }
             ),
             ActionPaletteAction(
                 id: "organize-date-taken-only",
-                category: "Files",
-                title: "Organize by Date Taken Only…",
-                detail: "Open the organizer with Full date as the only folder level",
+                category: L10n.text("Files"),
+                title: L10n.text("Organize by Date Taken Only…"),
+                detail: L10n.text("Organize with Full date only"),
                 symbol: "calendar.badge.clock",
                 keywords: [
-                    "organize by date", "date taken", "capture date",
-                    "chronological folders",
+                    L10n.text("organize by date"), L10n.text("date taken"), L10n.text("capture date"),
+                    L10n.text("chronological folders"),
                 ],
                 isEnabled: store.canOrganizeSource,
                 perform: {
@@ -265,33 +265,33 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "open-folder",
-                category: "Files",
-                title: "Open Different Folder…",
-                detail: "Save this session, then choose another media folder",
+                category: L10n.text("Files"),
+                title: L10n.text("Open Different Folder…"),
+                detail: L10n.text("Save, then choose another media folder"),
                 symbol: "folder",
                 shortcut: "⌘O",
-                keywords: ["change folder", "open folder", "choose folder"],
+                keywords: [L10n.text("change folder"), L10n.text("open folder"), L10n.text("choose folder")],
                 isEnabled: !store.isFileOperationRunning,
                 perform: { store.promptForSourceFolder() }
             ),
             ActionPaletteAction(
                 id: "rescan",
-                category: "Files",
-                title: "Rescan Folder",
-                detail: "Find new or changed media in this folder",
+                category: L10n.text("Files"),
+                title: L10n.text("Rescan Folder"),
+                detail: L10n.text("Find new or changed media in this folder"),
                 symbol: "arrow.triangle.2.circlepath",
                 shortcut: "⌘R",
-                keywords: ["refresh folder", "scan folder", "find new media"],
+                keywords: [L10n.text("refresh folder"), L10n.text("scan folder"), L10n.text("find new media")],
                 isEnabled: !store.isFileOperationRunning,
                 perform: { store.rescan() }
             ),
             ActionPaletteAction(
                 id: "close-session",
-                category: "Files",
-                title: "Close Session",
-                detail: "Save this session and return to the folder chooser",
+                category: L10n.text("Files"),
+                title: L10n.text("Close Session"),
+                detail: L10n.text("Save and return to the folder chooser"),
                 symbol: "folder.badge.minus",
-                keywords: ["close folder", "leave folder", "save session"],
+                keywords: [L10n.text("close folder"), L10n.text("leave folder"), L10n.text("save session")],
                 isEnabled: !store.isFileOperationRunning,
                 perform: { store.closeSession() }
             ),
@@ -300,103 +300,103 @@ struct ActionPaletteView: View {
         + [
             ActionPaletteAction(
                 id: "filter",
-                category: "Find and arrange",
-                title: "Filter Media…",
-                detail: "Filter by metadata, date, type, camera, lens, or video details",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Filter Media…"),
+                detail: L10n.text("Filter by metadata, date, type, camera, lens, or video details"),
                 symbol: "line.3.horizontal.decrease.circle",
-                keywords: ["filter media", "find by date", "filter camera", "filter lens", "filter color", "filter stars", "filter video", "filter codec", "filter resolution", "filter frame rate"],
+                keywords: [L10n.text("filter media"), L10n.text("find by date"), L10n.text("filter camera"), L10n.text("filter lens"), L10n.text("filter color"), L10n.text("filter stars"), L10n.text("filter video"), L10n.text("filter codec"), L10n.text("filter resolution"), L10n.text("filter frame rate")],
                 isEnabled: !store.isFileOperationRunning,
                 perform: { store.isFilterPresented = true }
             ),
             ActionPaletteAction(
                 id: "filter-search",
-                category: "Find and arrange",
-                title: "Search Media…",
-                detail: "Open Filter with its search field ready for typing",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Search Media…"),
+                detail: L10n.text("Open Filter and focus Search"),
                 symbol: "magnifyingglass",
                 shortcut: "⌘F",
-                keywords: ["find media", "filter search", "filename", "metadata search"],
+                keywords: [L10n.text("find media"), L10n.text("filter search"), "filename", L10n.text("metadata search")],
                 isEnabled: !store.isFileOperationRunning,
                 perform: { store.presentFilterSearch() }
             ),
             ActionPaletteAction(
                 id: "show-videos-only",
-                category: "Find and arrange",
-                title: "Show Videos Only",
-                detail: "Keep the current criteria and limit the folder to videos",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Show Videos Only"),
+                detail: L10n.text("Show videos matching current criteria"),
                 symbol: "film",
-                keywords: ["video filter", "filter videos", "movies only", "clips only"],
+                keywords: [L10n.text("video filter"), L10n.text("filter videos"), L10n.text("movies only"), L10n.text("clips only")],
                 isEnabled: store.availableMediaKinds.contains(.video)
                     && !store.isFileOperationRunning,
                 perform: { store.showVideosOnly() }
             ),
             ActionPaletteAction(
                 id: "reset-filter",
-                category: "Find and arrange",
-                title: "Reset Filters",
-                detail: "Show the full folder again",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Reset Filters"),
+                detail: L10n.text("Show the full folder again"),
                 symbol: "line.3.horizontal.decrease.circle.fill",
-                keywords: ["clear filters", "show all media", "remove filters"],
+                keywords: [L10n.text("clear filters"), L10n.text("show all media"), L10n.text("remove filters")],
                 isEnabled: store.filterCanReset && !store.isFileOperationRunning,
                 perform: { store.resetFilter() }
             ),
             ActionPaletteAction(
                 id: "sort",
-                category: "Find and arrange",
-                title: "Sort Media…",
-                detail: "Choose date, stars, color, camera, video details, and more",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Sort Media…"),
+                detail: L10n.text("Choose date, stars, color, camera, video details, and more"),
                 symbol: "arrow.up.arrow.down",
                 keywords: [
-                    "order media", "sort by date", "sort by name", "sort by decision",
-                    "sort by stars", "sort by color", "sort by subfolder",
-                    "sort by file type", "sort by media type", "sort by camera",
-                    "sort by lens", "sort by aperture", "sort by shutter speed",
-                    "sort by ISO", "sort by duration", "sort by video",
-                    "ascending", "descending", "group media", "review group settings",
+                    L10n.text("order media"), L10n.text("sort by date"), L10n.text("sort by name"), L10n.text("sort by decision"),
+                    L10n.text("sort by stars"), L10n.text("sort by color"), L10n.text("sort by subfolder"),
+                    L10n.text("sort by file type"), L10n.text("sort by media type"), L10n.text("sort by camera"),
+                    L10n.text("sort by lens"), L10n.text("sort by aperture"), L10n.text("sort by shutter speed"),
+                    L10n.text("sort by ISO"), L10n.text("sort by duration"), L10n.text("sort by video"),
+                    "ascending", "descending", L10n.text("group media"), L10n.text("review group settings"),
                 ],
                 isEnabled: !store.isFileOperationRunning,
                 perform: { store.isSortPresented = true }
             ),
             ActionPaletteAction(
                 id: "sort-by-video-resolution",
-                category: "Find and arrange",
-                title: "Sort by Video Resolution",
-                detail: "Order videos by their scan-cached pixel dimensions",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Sort by Video Resolution"),
+                detail: L10n.text("Order videos by pixel dimensions"),
                 symbol: "rectangle.on.rectangle",
-                keywords: ["sort video resolution", "video dimensions", "4k", "hd"],
+                keywords: [L10n.text("sort video resolution"), L10n.text("video dimensions"), "4k", "hd"],
                 isEnabled: store.availableVideoResolutions.count > 1
                     && !store.isFileOperationRunning,
                 perform: { store.sort.key = .videoResolution }
             ),
             ActionPaletteAction(
                 id: "sort-by-video-frame-rate",
-                category: "Find and arrange",
-                title: "Sort by Video Frame Rate",
-                detail: "Order videos by their scan-cached frames per second",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Sort by Video Frame Rate"),
+                detail: L10n.text("Order videos by frame rate"),
                 symbol: "speedometer",
-                keywords: ["sort video frame rate", "video fps", "slow motion"],
+                keywords: [L10n.text("sort video frame rate"), L10n.text("video fps"), L10n.text("slow motion")],
                 isEnabled: store.videoFrameRateRange != nil
                     && !store.isFileOperationRunning,
                 perform: { store.sort.key = .videoFrameRate }
             ),
             ActionPaletteAction(
                 id: "sort-by-video-codec",
-                category: "Find and arrange",
-                title: "Sort by Video Codec",
-                detail: "Order videos by their scan-cached codec",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Sort by Video Codec"),
+                detail: L10n.text("Order videos by codec"),
                 symbol: "film.stack",
-                keywords: ["sort video codec", "h.264", "hevc", "prores"],
+                keywords: [L10n.text("sort video codec"), "h.264", "hevc", "prores"],
                 isEnabled: store.availableVideoCodecs.count > 1
                     && !store.isFileOperationRunning,
                 perform: { store.sort.key = .videoCodec }
             ),
             ActionPaletteAction(
                 id: "analyze-duplicate-burst-groups",
-                category: "Find and arrange",
-                title: "Analyze Duplicate + Burst Groups",
-                detail: "Read this folder locally; it never changes files or ratings",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Analyze Duplicate + Burst Groups"),
+                detail: L10n.text("Analyze locally; files and ratings stay unchanged"),
                 symbol: "rectangle.3.group",
-                keywords: ["analyze groups", "find duplicates", "find similar photos", "find bursts", "local analysis"],
+                keywords: [L10n.text("analyze groups"), L10n.text("find duplicates"), L10n.text("find similar photos"), L10n.text("find bursts"), L10n.text("local analysis")],
                 isEnabled: !store.items.isEmpty
                     && !store.isFileOperationRunning
                     && !store.isXMPPublicationRunning,
@@ -404,11 +404,11 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "review-exact-duplicates",
-                category: "Find and arrange",
-                title: "Review Exact Duplicates",
-                detail: "Show verified byte-identical files as groups",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Review Exact Duplicates"),
+                detail: L10n.text("Show verified byte-identical files as groups"),
                 symbol: "doc.on.doc",
-                keywords: ["review duplicates", "identical files", "same bytes"],
+                keywords: [L10n.text("review duplicates"), L10n.text("identical files"), L10n.text("same bytes")],
                 isEnabled: !store.items.isEmpty
                     && !store.isFileOperationRunning
                     && !store.isXMPPublicationRunning,
@@ -416,11 +416,11 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "review-likely-similar-photos",
-                category: "Find and arrange",
-                title: "Review Likely Similar Photos",
-                detail: "Group local preview matches; inspect before deciding",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Review Likely Similar Photos"),
+                detail: L10n.text("Group local preview matches; inspect before deciding"),
                 symbol: "photo.on.rectangle.angled",
-                keywords: ["review similar", "near duplicates", "similarity groups"],
+                keywords: [L10n.text("review similar"), L10n.text("near duplicates"), L10n.text("similarity groups")],
                 isEnabled: !store.items.isEmpty
                     && !store.isFileOperationRunning
                     && !store.isXMPPublicationRunning,
@@ -428,11 +428,11 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "review-capture-bursts",
-                category: "Find and arrange",
-                title: "Review Capture Bursts",
-                detail: "Group photos taken close together in time",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Review Capture Bursts"),
+                detail: L10n.text("Group photos taken close together in time"),
                 symbol: "rectangle.stack",
-                keywords: ["review bursts", "capture sequence", "time groups"],
+                keywords: [L10n.text("review bursts"), L10n.text("capture sequence"), L10n.text("time groups")],
                 isEnabled: !store.items.isEmpty
                     && !store.isFileOperationRunning
                     && !store.isXMPPublicationRunning,
@@ -440,28 +440,28 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "return-normal-review",
-                category: "Find and arrange",
-                title: "Return to Normal Review",
-                detail: "Leave grouped review and restore the normal filtered order",
+                category: L10n.text("Find and arrange"),
+                title: L10n.text("Return to Normal Review"),
+                detail: L10n.text("Restore normal filtered order"),
                 symbol: "arrow.uturn.backward.circle",
-                keywords: ["normal review", "leave groups", "exit grouped review"],
+                keywords: [L10n.text("normal review"), L10n.text("leave groups"), L10n.text("exit grouped review")],
                 isEnabled: store.isGroupedReviewActive && !store.isFileOperationRunning,
                 perform: { store.exitGroupedReview() }
             ),
             ActionPaletteAction(
                 id: "toggle-raw-jpeg-pairing",
-                category: "Find and arrange",
+                category: L10n.text("Find and arrange"),
                 title: store.rawJPEGPairingMode == .together
-                    ? "Review RAW + JPEG Separately"
+                    ? L10n.text("Review RAW + JPEG Separately")
                     : RawJPEGPairingMode.togetherControlTitle,
                 detail: store.rawJPEGPairingMode == .together
-                    ? "Currently together. Show each file separately."
-                    : "Currently separate. Review matching files as one photo.",
+                    ? L10n.text("Currently together. Show each file separately.")
+                    : L10n.text("Currently separate. Review matching files as one photo."),
                 symbol: store.rawJPEGPairingMode == .together ? "link.badge.plus" : "link",
                 keywords: [
-                    "treat raw jpeg as one", "pair raw jpeg", "raw jpeg together",
-                    "separate raw jpeg", "raw jpeg separately", "split raw jpeg",
-                    "independent files", "pairing", "review together", "review separately",
+                    L10n.text("treat raw jpeg as one"), L10n.text("pair raw jpeg"), L10n.text("raw jpeg together"),
+                    L10n.text("separate raw jpeg"), L10n.text("raw jpeg separately"), L10n.text("split raw jpeg"),
+                    L10n.text("independent files"), "pairing", L10n.text("review together"), L10n.text("review separately"),
                 ],
                 isEnabled: store.rawJPEGPairCount > 0
                     && !store.isFileOperationRunning
@@ -475,34 +475,34 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "mark-yes",
-                category: "Review metadata",
-                title: "Mark Yes",
-                detail: "Apply Yes; advance if enabled in Review settings",
+                category: L10n.text("Review metadata"),
+                title: L10n.text("Mark Yes"),
+                detail: L10n.text("Apply Yes; advance if enabled in Review settings"),
                 symbol: "checkmark.circle",
                 shortcut: "F",
-                keywords: ["keep photo", "accept photo", "yes decision"],
+                keywords: [L10n.text("keep photo"), L10n.text("accept photo"), L10n.text("yes decision")],
                 isEnabled: store.canRate,
                 perform: { store.rate(.yes) }
             ),
             ActionPaletteAction(
                 id: "mark-no",
-                category: "Review metadata",
-                title: "Mark No",
-                detail: "Apply No; advance if enabled in Review settings",
+                category: L10n.text("Review metadata"),
+                title: L10n.text("Mark No"),
+                detail: L10n.text("Apply No; advance if enabled in Review settings"),
                 symbol: "xmark.circle",
                 shortcut: "D",
-                keywords: ["reject photo", "no decision"],
+                keywords: [L10n.text("reject photo"), L10n.text("no decision")],
                 isEnabled: store.canRate,
                 perform: { store.rate(.no) }
             ),
             ActionPaletteAction(
                 id: "clear-stars",
-                category: "Review metadata",
-                title: "Clear Stars",
-                detail: "Remove the star rating from the current photo or selection",
+                category: L10n.text("Review metadata"),
+                title: L10n.text("Clear Stars"),
+                detail: L10n.text("Remove the star rating from the current photo or selection"),
                 symbol: "star.slash",
                 shortcut: "0",
-                keywords: ["zero stars", "unrated", "remove star rating"],
+                keywords: [L10n.text("zero stars"), "unrated", L10n.text("remove star rating")],
                 isEnabled: store.canRate,
                 perform: { store.setStarRating(nil) }
             ),
@@ -511,11 +511,11 @@ struct ActionPaletteView: View {
         + [
             ActionPaletteAction(
                 id: "clear-color-label",
-                category: "Review metadata",
-                title: "Clear Color Label",
-                detail: "Remove the color label from the current photo or selection",
+                category: L10n.text("Review metadata"),
+                title: L10n.text("Clear Color Label"),
+                detail: L10n.text("Remove the color label from the current photo or selection"),
                 symbol: "tag.slash",
-                keywords: ["remove color label", "no color", "unlabel"],
+                keywords: [L10n.text("remove color label"), L10n.text("no color"), "unlabel"],
                 isEnabled: store.canRate,
                 perform: { store.setColorLabel(nil) }
             ),
@@ -524,9 +524,9 @@ struct ActionPaletteView: View {
         + [
             ActionPaletteAction(
                 id: "select-previous-item",
-                category: "Navigate and play",
-                title: "Select Previous Item",
-                detail: "Choose the previous visible item, including when reviewing a video",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Select Previous Item"),
+                detail: L10n.text("Choose the previous visible item, including when reviewing a video"),
                 symbol: "chevron.left",
                 shortcut: store.viewMode == .gallery
                     ? (store.canSeekCurrentVideo ? "J / ↑"
@@ -534,15 +534,15 @@ struct ActionPaletteView: View {
                             ? "J / ↑ / ←" : "J / ↑ / ← / ⌘←"))
                     : (store.currentItem?.isPlayableMedia == true
                         ? "J / ←" : "J / ← / ⌘←"),
-                keywords: ["previous", "back", "left", "navigate", "video", "clip"],
+                keywords: ["previous", "back", "left", "navigate", L10n.text("video"), "clip"],
                 isEnabled: !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.goPrevious() }
             ),
             ActionPaletteAction(
                 id: "select-next-item",
-                category: "Navigate and play",
-                title: "Select Next Item",
-                detail: "Choose the next visible item, including when reviewing a video",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Select Next Item"),
+                detail: L10n.text("Choose the next visible item, including when reviewing a video"),
                 symbol: "chevron.right",
                 shortcut: store.viewMode == .gallery
                     ? (store.canSeekCurrentVideo ? "L / ↓"
@@ -550,42 +550,42 @@ struct ActionPaletteView: View {
                             ? "L / ↓ / →" : "L / ↓ / → / ⌘→ / Space"))
                     : (store.currentItem?.isPlayableMedia == true
                         ? "L / →" : "L / → / ⌘→ / Space"),
-                keywords: ["next", "forward", "right", "navigate", "video", "clip"],
+                keywords: ["next", "forward", "right", "navigate", L10n.text("video"), "clip"],
                 isEnabled: !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.goNext() }
             ),
             ActionPaletteAction(
                 id: "grid-item-above",
-                category: "Navigate and play",
-                title: "Select Grid Item Above",
-                detail: "Move to the item in the row above",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Select Grid Item Above"),
+                detail: L10n.text("Move to the item in the row above"),
                 symbol: "chevron.up",
                 shortcut: "↑",
-                keywords: ["grid up", "previous row", "navigate grid"],
+                keywords: [L10n.text("grid up"), L10n.text("previous row"), L10n.text("navigate grid")],
                 isEnabled: store.viewMode == .grid
                     && !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.goVertical(-1) }
             ),
             ActionPaletteAction(
                 id: "grid-item-below",
-                category: "Navigate and play",
-                title: "Select Grid Item Below",
-                detail: "Move to the item in the row below",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Select Grid Item Below"),
+                detail: L10n.text("Move to the item in the row below"),
                 symbol: "chevron.down",
                 shortcut: "↓",
-                keywords: ["grid down", "next row", "navigate grid"],
+                keywords: [L10n.text("grid down"), L10n.text("next row"), L10n.text("navigate grid")],
                 isEnabled: store.viewMode == .grid
                     && !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.goVertical(1) }
             ),
             ActionPaletteAction(
                 id: "decrease-playback-rate",
-                category: "Navigate and play",
-                title: "Choose Slower Playback Speed",
-                detail: "Step down through the available video or audio playback speeds",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Choose Slower Playback Speed"),
+                detail: L10n.text("Step down through the available video or audio playback speeds"),
                 symbol: "backward.end",
                 shortcut: "⌘←",
-                keywords: ["video", "audio", "playback", "speed", "slower"],
+                keywords: [L10n.text("video"), L10n.text("audio"), "playback", "speed", "slower"],
                 isEnabled: store.canSetCurrentPlayableMediaPlaybackRate,
                 perform: {
                     _ = store.adjustCurrentPlayableMediaPlaybackRate(
@@ -595,12 +595,12 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "increase-playback-rate",
-                category: "Navigate and play",
-                title: "Choose Faster Playback Speed",
-                detail: "Step up through the available video or audio playback speeds",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Choose Faster Playback Speed"),
+                detail: L10n.text("Step up through the available video or audio playback speeds"),
                 symbol: "forward.end",
                 shortcut: "⌘→",
-                keywords: ["video", "audio", "playback", "speed", "faster"],
+                keywords: [L10n.text("video"), L10n.text("audio"), "playback", "speed", "faster"],
                 isEnabled: store.canSetCurrentPlayableMediaPlaybackRate,
                 perform: {
                     _ = store.adjustCurrentPlayableMediaPlaybackRate(
@@ -610,108 +610,108 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "seek-video-backward",
-                category: "Navigate and play",
-                title: "Seek Video Backward 0.5 Seconds",
-                detail: "Inspect the current Gallery video half a second earlier",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Seek Video Backward 0.5 Seconds"),
+                detail: L10n.text("Inspect the current Gallery video half a second earlier"),
                 symbol: "gobackward",
                 shortcut: "←",
-                keywords: ["video", "clip", "scrub", "rewind", "back", "left"],
+                keywords: [L10n.text("video"), "clip", "scrub", "rewind", "back", "left"],
                 isEnabled: store.canSeekCurrentVideo,
                 perform: { store.seekCurrentVideo(by: -0.5) }
             ),
             ActionPaletteAction(
                 id: "seek-video-forward",
-                category: "Navigate and play",
-                title: "Seek Video Forward 0.5 Seconds",
-                detail: "Inspect the current Gallery video half a second later",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Seek Video Forward 0.5 Seconds"),
+                detail: L10n.text("Inspect the current Gallery video half a second later"),
                 symbol: "goforward",
                 shortcut: "→",
-                keywords: ["video", "clip", "scrub", "forward", "right"],
+                keywords: [L10n.text("video"), "clip", "scrub", "forward", "right"],
                 isEnabled: store.canSeekCurrentVideo,
                 perform: { store.seekCurrentVideo(by: 0.5) }
             ),
             ActionPaletteAction(
                 id: "seek-video-backward-large",
-                category: "Navigate and play",
-                title: "Seek Video Backward 5 Seconds",
-                detail: "Jump five seconds earlier in the current Gallery video",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Seek Video Backward 5 Seconds"),
+                detail: L10n.text("Jump five seconds earlier in the current Gallery video"),
                 symbol: "gobackward.5",
                 shortcut: "⇧←",
-                keywords: ["video", "clip", "scrub", "rewind", "back", "left", "jump"],
+                keywords: [L10n.text("video"), "clip", "scrub", "rewind", "back", "left", "jump"],
                 isEnabled: store.canSeekCurrentVideo,
                 perform: { store.seekCurrentVideo(by: -5) }
             ),
             ActionPaletteAction(
                 id: "seek-video-forward-large",
-                category: "Navigate and play",
-                title: "Seek Video Forward 5 Seconds",
-                detail: "Jump five seconds later in the current Gallery video",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Seek Video Forward 5 Seconds"),
+                detail: L10n.text("Jump five seconds later in the current Gallery video"),
                 symbol: "goforward.5",
                 shortcut: "⇧→",
-                keywords: ["video", "clip", "scrub", "forward", "right", "jump"],
+                keywords: [L10n.text("video"), "clip", "scrub", "forward", "right", "jump"],
                 isEnabled: store.canSeekCurrentVideo,
                 perform: { store.seekCurrentVideo(by: 5) }
             ),
             ActionPaletteAction(
                 id: "toggle-current-media",
-                category: "Navigate and play",
-                title: "Play or Pause Current Media",
-                detail: "Play or pause the current video or audio recording",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Play or Pause Current Media"),
+                detail: L10n.text("Play or pause the current video or audio recording"),
                 symbol: "playpause",
                 shortcut: "Space / K",
-                keywords: ["video", "audio", "clip", "recording", "play", "pause", "transport", "k"],
+                keywords: [L10n.text("video"), L10n.text("audio"), "clip", "recording", "play", "pause", "transport", "k"],
                 isEnabled: store.canToggleCurrentPlayableMedia,
                 perform: { _ = store.toggleCurrentPlayableMedia() }
             ),
             ActionPaletteAction(
                 id: "set-playback-rate-1x",
-                category: "Navigate and play",
-                title: "Set Playback Speed to 1×",
-                detail: "Review the current video or audio recording at normal speed",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Set Playback Speed to 1×"),
+                detail: L10n.text("Review the current video or audio recording at normal speed"),
                 symbol: "1.circle",
                 shortcut: nil,
-                keywords: ["video", "audio", "clip", "recording", "playback", "speed", "normal", "1x"],
+                keywords: [L10n.text("video"), L10n.text("audio"), "clip", "recording", "playback", "speed", "normal", "1x"],
                 isEnabled: store.canSetCurrentPlayableMediaPlaybackRate,
                 perform: { store.setCurrentPlayableMediaPlaybackRate(1) }
             ),
             ActionPaletteAction(
                 id: "set-playback-rate-1-5x",
-                category: "Navigate and play",
-                title: "Set Playback Speed to 1.5×",
-                detail: "Review the current video or audio recording at one and a half speed",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Set Playback Speed to 1.5×"),
+                detail: L10n.text("Review the current video or audio recording at one and a half speed"),
                 symbol: "1.circle",
                 shortcut: nil,
-                keywords: ["video", "audio", "clip", "recording", "playback", "speed", "1.5x"],
+                keywords: [L10n.text("video"), L10n.text("audio"), "clip", "recording", "playback", "speed", "1.5x"],
                 isEnabled: store.canSetCurrentPlayableMediaPlaybackRate,
                 perform: { store.setCurrentPlayableMediaPlaybackRate(1.5) }
             ),
             ActionPaletteAction(
                 id: "set-playback-rate-2x",
-                category: "Navigate and play",
-                title: "Set Playback Speed to 2×",
-                detail: "Review the current video or audio recording at double speed",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Set Playback Speed to 2×"),
+                detail: L10n.text("Review the current video or audio recording at double speed"),
                 symbol: "2.circle",
                 shortcut: nil,
-                keywords: ["video", "audio", "clip", "recording", "playback", "speed", "double", "2x"],
+                keywords: [L10n.text("video"), L10n.text("audio"), "clip", "recording", "playback", "speed", "double", "2x"],
                 isEnabled: store.canSetCurrentPlayableMediaPlaybackRate,
                 perform: { store.setCurrentPlayableMediaPlaybackRate(2) }
             ),
             ActionPaletteAction(
                 id: "set-playback-rate-2-5x",
-                category: "Navigate and play",
-                title: "Set Playback Speed to 2.5×",
-                detail: "Review the current video or audio recording at two and a half speed",
+                category: L10n.text("Navigate and play"),
+                title: L10n.text("Set Playback Speed to 2.5×"),
+                detail: L10n.text("Review the current video or audio recording at two and a half speed"),
                 symbol: "2.circle",
                 shortcut: nil,
-                keywords: ["video", "audio", "clip", "recording", "playback", "speed", "2.5x"],
+                keywords: [L10n.text("video"), L10n.text("audio"), "clip", "recording", "playback", "speed", "2.5x"],
                 isEnabled: store.canSetCurrentPlayableMediaPlaybackRate,
                 perform: { store.setCurrentPlayableMediaPlaybackRate(2.5) }
             ),
             ActionPaletteAction(
                 id: "select-all",
-                category: "Selection and clean up",
-                title: "Select All Visible Media",
-                detail: "Select every item that passes the current filter",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Select All Visible Media"),
+                detail: L10n.text("Select every item that passes the current filter"),
                 symbol: "checklist",
                 shortcut: "⌘A",
                 keywords: ["selection", "filter"],
@@ -720,31 +720,31 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "select-to-first",
-                category: "Selection and clean up",
-                title: "Select to First Item",
-                detail: "Extend the selection from the current item to the first visible item",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Select to First Item"),
+                detail: L10n.text("Extend the selection from the current item to the first visible item"),
                 symbol: "arrow.up.to.line",
                 shortcut: "⌘⇧←",
-                keywords: ["extend selection", "selection edge", "select previous"],
+                keywords: [L10n.text("extend selection"), L10n.text("selection edge"), L10n.text("select previous")],
                 isEnabled: !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.selectToEdge(forward: false) }
             ),
             ActionPaletteAction(
                 id: "select-to-last",
-                category: "Selection and clean up",
-                title: "Select to Last Item",
-                detail: "Extend the selection from the current item to the last visible item",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Select to Last Item"),
+                detail: L10n.text("Extend the selection from the current item to the last visible item"),
                 symbol: "arrow.down.to.line",
                 shortcut: "⌘⇧→",
-                keywords: ["extend selection", "selection edge", "select next"],
+                keywords: [L10n.text("extend selection"), L10n.text("selection edge"), L10n.text("select next")],
                 isEnabled: !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.selectToEdge(forward: true) }
             ),
             ActionPaletteAction(
                 id: "clear-selection",
-                category: "Selection and clean up",
-                title: "Clear Selection",
-                detail: "Return to reviewing the current photo",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Clear Selection"),
+                detail: L10n.text("Return to reviewing the current photo"),
                 symbol: "xmark.rectangle",
                 shortcut: "Esc",
                 keywords: ["deselect", "selection"],
@@ -753,82 +753,82 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "trash-selection",
-                category: "Selection and clean up",
+                category: L10n.text("Selection and clean up"),
                 title: store.selectionCleanUpTitle,
-                detail: "Palette confirms; ⌘⌫ skips confirmation",
+                detail: L10n.text("Palette confirms; ⌘⌫ skips confirmation"),
                 symbol: "trash",
                 shortcut: "⌘⌫",
-                keywords: ["trash selection", "delete selected", "remove selected", "clean up selection"],
+                keywords: [L10n.text("trash selection"), L10n.text("delete selected"), L10n.text("remove selected"), L10n.text("clean up selection")],
                 isEnabled: store.canCleanUp && store.hasCleanUpTargets(for: .selection),
                 perform: { store.requestCleanUp(.selection) }
             ),
             ActionPaletteAction(
                 id: "trash-no",
-                category: "Selection and clean up",
-                title: "Move “No” to Trash…",
-                detail: "Use the current Clean Up scope and ask for confirmation",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Move “No” to Trash…"),
+                detail: L10n.text("Use the current Clean Up scope and ask for confirmation"),
                 symbol: "trash",
-                keywords: ["clean up", "reject", "delete"],
+                keywords: [L10n.text("clean up"), "reject", "delete"],
                 isEnabled: store.canCleanUp && store.hasCleanUpTargets(for: .trashNo),
                 perform: { store.requestCleanUp(.trashNo) }
             ),
             ActionPaletteAction(
                 id: "keep-only-yes",
-                category: "Selection and clean up",
-                title: "Trash No + Undecided…",
-                detail: "Use the current Clean Up scope and ask for confirmation",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Trash No + Undecided…"),
+                detail: L10n.text("Use the current Clean Up scope and ask for confirmation"),
                 symbol: "trash",
-                keywords: ["clean up", "delete", "reject", "keep only yes"],
+                keywords: [L10n.text("clean up"), "delete", "reject", L10n.text("keep only yes")],
                 isEnabled: store.canCleanUp && store.hasCleanUpTargets(for: .keepOnlyYes),
                 perform: { store.requestCleanUp(.keepOnlyYes) }
             ),
             ActionPaletteAction(
                 id: "trash-paired-jpegs",
-                category: "Selection and clean up",
-                title: "Move Paired JPEGs to Trash…",
-                detail: "Keep the RAW file from each matching RAW + JPEG pair",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Move Paired JPEGs to Trash…"),
+                detail: L10n.text("Keep the RAW file from each matching RAW + JPEG pair"),
                 symbol: "photo.badge.minus",
-                keywords: ["clean up", "archive", "pair", "raw", "jpeg", "jpg", "keep raw", "delete", "remove"],
+                keywords: [L10n.text("clean up"), "archive", "pair", "raw", "jpeg", "jpg", L10n.text("keep raw"), "delete", "remove"],
                 isEnabled: store.canCleanUp && store.hasCleanUpTargets(for: .pairedJPEGs),
                 perform: { store.requestCleanUp(.pairedJPEGs) }
             ),
             ActionPaletteAction(
                 id: "trash-paired-raws",
-                category: "Selection and clean up",
-                title: "Move Paired RAWs to Trash…",
-                detail: "Keep the JPEG file from each matching RAW + JPEG pair",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Move Paired RAWs to Trash…"),
+                detail: L10n.text("Keep the JPEG file from each matching RAW + JPEG pair"),
                 symbol: "photo.badge.minus",
-                keywords: ["clean up", "archive", "pair", "raw", "jpeg", "jpg", "keep jpeg", "delete", "remove"],
+                keywords: [L10n.text("clean up"), "archive", "pair", "raw", "jpeg", "jpg", L10n.text("keep jpeg"), "delete", "remove"],
                 isEnabled: store.canCleanUp && store.hasCleanUpTargets(for: .pairedRAWs),
                 perform: { store.requestCleanUp(.pairedRAWs) }
             ),
             ActionPaletteAction(
                 id: "undo",
-                category: "Selection and clean up",
-                title: "Undo Louppe Action",
-                detail: "Restore the latest review, metadata, Trash, or organization action",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Undo Louppe Action"),
+                detail: L10n.text("Restore the latest review, metadata, Trash, or organization action"),
                 symbol: "arrow.uturn.backward",
                 shortcut: "Z / ⌘Z",
-                keywords: ["restore", "revert", "undo action"],
+                keywords: ["restore", "revert", L10n.text("undo action")],
                 isEnabled: store.canUndo,
                 perform: { store.undo() }
             ),
             ActionPaletteAction(
                 id: "clear-decisions",
-                category: "Selection and clean up",
-                title: "Clear All Decisions",
-                detail: "Remove Yes and No decisions while keeping stars and color labels",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Clear All Decisions"),
+                detail: L10n.text("Remove Yes and No decisions while keeping stars and color labels"),
                 symbol: "eraser",
                 shortcut: "R",
-                keywords: ["reset yes no", "clear yes no", "remove decisions"],
+                keywords: [L10n.text("reset yes no"), L10n.text("clear yes no"), L10n.text("remove decisions")],
                 isEnabled: store.ratedCount > 0 && !store.isFileOperationRunning,
                 perform: { store.requestClearAllRatings() }
             ),
             ActionPaletteAction(
                 id: "gallery",
-                category: "View",
-                title: "Switch to Gallery",
-                detail: "Review one photo, video, or audio file at a time",
+                category: L10n.text("View"),
+                title: L10n.text("Switch to Gallery"),
+                detail: L10n.text("Review one photo, video, or audio file at a time"),
                 symbol: "photo",
                 shortcut: "Tab / G",
                 keywords: ["view", "single"],
@@ -837,9 +837,9 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "grid",
-                category: "View",
-                title: "Switch to Grid",
-                detail: "Review a visual overview of the folder",
+                category: L10n.text("View"),
+                title: L10n.text("Switch to Grid"),
+                detail: L10n.text("Review a visual overview of the folder"),
                 symbol: "square.grid.3x3",
                 shortcut: "Tab / G",
                 keywords: ["view", "thumbnails"],
@@ -848,55 +848,55 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "grid-zoom-in",
-                category: "View",
-                title: "Larger Grid Thumbnails",
-                detail: "Increase thumbnail size in Grid",
+                category: L10n.text("View"),
+                title: L10n.text("Larger Grid Thumbnails"),
+                detail: L10n.text("Increase thumbnail size in Grid"),
                 symbol: "plus.magnifyingglass",
                 shortcut: "⌘+",
-                keywords: ["zoom grid in", "bigger thumbnails", "increase grid size"],
+                keywords: [L10n.text("zoom grid in"), L10n.text("bigger thumbnails"), L10n.text("increase grid size")],
                 isEnabled: store.viewMode == .grid,
                 perform: { store.zoomGrid(larger: true) }
             ),
             ActionPaletteAction(
                 id: "grid-zoom-out",
-                category: "View",
-                title: "Smaller Grid Thumbnails",
-                detail: "Decrease thumbnail size in Grid",
+                category: L10n.text("View"),
+                title: L10n.text("Smaller Grid Thumbnails"),
+                detail: L10n.text("Decrease thumbnail size in Grid"),
                 symbol: "minus.magnifyingglass",
                 shortcut: "⌘−",
-                keywords: ["zoom grid out", "smaller thumbnails", "decrease grid size"],
+                keywords: [L10n.text("zoom grid out"), L10n.text("smaller thumbnails"), L10n.text("decrease grid size")],
                 isEnabled: store.viewMode == .grid,
                 perform: { store.zoomGrid(larger: false) }
             ),
             ActionPaletteAction(
                 id: "actual-size",
-                category: "View",
-                title: store.isAtActualSize ? "Return to Fit from 100%" : "View at 100%",
-                detail: "Toggle source-pixel inspection in Gallery",
+                category: L10n.text("View"),
+                title: store.isAtActualSize ? L10n.text("Return to Fit from 100%") : L10n.text("View at 100%"),
+                detail: L10n.text("Toggle source-pixel inspection in Gallery"),
                 symbol: "1.magnifyingglass",
                 shortcut: "S",
-                keywords: ["actual size", "100 percent", "zoom photo", "source pixels"],
+                keywords: [L10n.text("actual size"), "100 percent", L10n.text("zoom photo"), L10n.text("source pixels")],
                 isEnabled: store.viewMode == .gallery
                     && store.currentItem?.mediaKind == .photo,
                 perform: { store.toggleZoom(.actual) }
             ),
             ActionPaletteAction(
                 id: "phone-size",
-                category: "View",
-                title: store.zoomMode == .small ? "Return to Fit from Phone Size" : "View Phone-Sized Preview",
-                detail: "Toggle a smaller preview in Gallery",
+                category: L10n.text("View"),
+                title: store.zoomMode == .small ? L10n.text("Return to Fit from Phone Size") : L10n.text("View Phone-Sized Preview"),
+                detail: L10n.text("Toggle a smaller preview in Gallery"),
                 symbol: "iphone",
                 shortcut: "A",
-                keywords: ["phone size", "small preview", "zoom photo", "fit"],
+                keywords: [L10n.text("phone size"), L10n.text("small preview"), L10n.text("zoom photo"), "fit"],
                 isEnabled: store.viewMode == .gallery
                     && store.currentItem?.mediaKind == .photo,
                 perform: { store.toggleZoom(.small) }
             ),
             ActionPaletteAction(
                 id: "browser",
-                category: "View",
-                title: store.showBrowser ? "Hide Browser" : "Show Browser",
-                detail: "Toggle the thumbnail browser in Gallery",
+                category: L10n.text("View"),
+                title: store.showBrowser ? L10n.text("Hide Browser") : L10n.text("Show Browser"),
+                detail: L10n.text("Toggle the thumbnail browser in Gallery"),
                 symbol: "sidebar.left",
                 shortcut: "Q",
                 keywords: ["thumbnails", "sidebar"],
@@ -905,9 +905,9 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "info",
-                category: "View",
-                title: store.showMetadataPanel ? "Hide Media Information" : "Show Media Information",
-                detail: "Toggle the camera, histogram, and metadata panel",
+                category: L10n.text("View"),
+                title: store.showMetadataPanel ? L10n.text("Hide Media Information") : L10n.text("Show Media Information"),
+                detail: L10n.text("Toggle the camera, histogram, and metadata panel"),
                 symbol: "info.circle",
                 shortcut: "W",
                 keywords: ["metadata", "histogram", "camera"],
@@ -916,9 +916,9 @@ struct ActionPaletteView: View {
             ),
             ActionPaletteAction(
                 id: "clipping",
-                category: "View",
-                title: store.showClippingWarnings ? "Hide Preview Clipping Overlay" : "Show Preview Clipping Overlay",
-                detail: "Mark clipping estimated from the displayed preview",
+                category: L10n.text("View"),
+                title: store.showClippingWarnings ? L10n.text("Hide Preview Clipping Overlay") : L10n.text("Show Preview Clipping Overlay"),
+                detail: L10n.text("Mark clipping estimated from the displayed preview"),
                 symbol: "exclamationmark.triangle",
                 shortcut: "X",
                 keywords: ["preview", "histogram", "exposure", "highlights", "shadows"],
@@ -967,13 +967,13 @@ struct ActionPaletteView: View {
     private func starActions() -> [ActionPaletteAction] {
         StarRating.allCases.map { rating in
             let title = rating == .one
-                ? "Set 1 Star"
-                : "Set \(rating.count) Stars"
+                ? L10n.text("Set 1 Star")
+                : L10n.text("Set \(rating.count) Stars")
             return ActionPaletteAction(
                 id: "stars-\(rating.count)",
-                category: "Review metadata",
+                category: L10n.text("Review metadata"),
                 title: title,
-                detail: "Apply a portable star rating to the current photo or selection",
+                detail: L10n.text("Apply a portable star rating to the current photo or selection"),
                 symbol: "star",
                 shortcut: "\(rating.count)",
                 keywords: ["rating", "metadata", "xmp"],
@@ -985,12 +985,12 @@ struct ActionPaletteView: View {
 
     private func colorLabelActions() -> [ActionPaletteAction] {
         PhotoColorLabel.allCases.map { label in
-            let title = "Set " + label.displayName + " Color Label"
+            let title = L10n.text("Set \(label.localizedDisplayName) Color Label")
             return ActionPaletteAction(
                 id: "color-label-\(label.rawValue)",
-                category: "Review metadata",
+                category: L10n.text("Review metadata"),
                 title: title,
-                detail: "Apply a portable color label to the current photo or selection",
+                detail: L10n.text("Apply a portable color label to the current photo or selection"),
                 symbol: "tag",
                 keywords: ["color", "label", "metadata", "xmp", label.rawValue],
                 isEnabled: store.canRate,
@@ -1006,8 +1006,8 @@ struct ActionPaletteView: View {
                 : folder.lastPathComponent
             return ActionPaletteAction(
                 id: "recent-folder-\(folder.path)",
-                category: "Files",
-                title: "Open Recent Folder “\(name)”",
+                category: L10n.text("Files"),
+                title: L10n.text("Open Recent Folder “\(name)”"),
                 detail: folder.path,
                 symbol: "clock.arrow.circlepath",
                 keywords: ["recent", "open", "folder"],
@@ -1042,12 +1042,12 @@ struct ActionPaletteAction: Identifiable {
     ) {
         self.id = id
         switch category {
-        case "Files": self.category = "Files & folders"
-        case "Find and arrange": self.category = "Find & arrange"
-        case "Review metadata": self.category = "Rate & label"
-        case "Navigate and play": self.category = "Navigate & play"
-        case "Selection and clean up": self.category = "Select & clean up"
-        case "View": self.category = "View & inspect"
+        case L10n.text("Files"): self.category = L10n.text("Files & folders")
+        case L10n.text("Find and arrange"): self.category = L10n.text("Find & arrange")
+        case L10n.text("Review metadata"): self.category = L10n.text("Rate & label")
+        case L10n.text("Navigate and play"): self.category = L10n.text("Navigate & play")
+        case L10n.text("Selection and clean up"): self.category = L10n.text("Select & clean up")
+        case L10n.text("View"): self.category = L10n.text("View & inspect")
         default: self.category = category
         }
         self.title = title

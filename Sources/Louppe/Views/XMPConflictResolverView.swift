@@ -25,8 +25,8 @@ struct XMPConflictResolverView: View {
     }
 
     var body: some View {
-        SheetForm(title: "Resolve RAW + JPEG Metadata") {
-            Text("These same-name files have different Louppe metadata. Capture One and other sidecar workflows can store only one set in their shared XMP.")
+        SheetForm(title: L10n.text("Resolve RAW + JPEG Metadata")) {
+            Text(L10n.text("These same-name files have different review metadata. Capture One and other sidecar workflows share one XMP metadata set."))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
@@ -42,18 +42,18 @@ struct XMPConflictResolverView: View {
             }
 
             HStack {
-                Text("Apply the same choice to all conflicts")
+                Text(L10n.text("Apply the same choice to all conflicts"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Menu("Apply to All…") {
-                    Button("Skip XMP for all") { applyToAll(.skip) }
-                    Button("Use RAW metadata for all") { applyToAll(.useRAW) }
-                    Button("Use JPEG metadata for all") { applyToAll(.useJPEG) }
+                Menu(L10n.text("Apply to All…")) {
+                    Button(L10n.text("Skip XMP for all")) { applyToAll(.skip) }
+                    Button(L10n.text("Use RAW metadata for all")) { applyToAll(.useRAW) }
+                    Button(L10n.text("Use JPEG metadata for all")) { applyToAll(.useJPEG) }
                 }
             }
 
-            Text("Choosing RAW or JPEG changes the other file’s Louppe decision, stars, and color. The change is one undoable Louppe action; XMP is written only after a new plan is reviewed and confirmed.")
+            Text(L10n.text("RAW or JPEG sets both files’ decision, stars, and color in one undoable action. XMP is written only after you review and confirm a new plan."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
@@ -61,9 +61,9 @@ struct XMPConflictResolverView: View {
         } actions: {
             HStack {
                 Spacer()
-                Button("Cancel") { onCancel() }
+                Button(L10n.text("Cancel")) { onCancel() }
                     .keyboardShortcut(.cancelAction)
-                Button("Apply Resolutions") {
+                Button(L10n.text("Apply Resolutions")) {
                     onApply(conflicts.map {
                         XMPConflictResolutionRequest(
                             conflict: $0,
@@ -100,20 +100,20 @@ struct XMPConflictResolverView: View {
             }
 
             Picker(
-                "Resolution for \(conflictTitle(conflict))",
+                L10n.text("Resolution for \(conflictTitle(conflict))"),
                 selection: choiceBinding(for: conflict.id)
             ) {
-                Text("Keep separate and skip this XMP")
+                Text(L10n.text("Keep separate and skip this XMP"))
                     .tag(XMPConflictResolutionChoice.skip)
-                Text("Use RAW metadata for both")
+                Text(L10n.text("Use RAW metadata for both"))
                     .tag(XMPConflictResolutionChoice.useRAW)
                     .accessibilityLabel(
-                        "Use RAW metadata for both. Change \(jpeg?.filename ?? "the JPEG") to match \(raw?.filename ?? "the RAW")."
+                        L10n.text("Use RAW metadata for both. Change \(jpeg?.filename ?? "the JPEG") to match \(raw?.filename ?? "the RAW").")
                     )
-                Text("Use JPEG metadata for both")
+                Text(L10n.text("Use JPEG metadata for both"))
                     .tag(XMPConflictResolutionChoice.useJPEG)
                     .accessibilityLabel(
-                        "Use JPEG metadata for both. Change \(raw?.filename ?? "the RAW") to match \(jpeg?.filename ?? "the JPEG")."
+                        L10n.text("Use JPEG metadata for both. Change \(raw?.filename ?? "the RAW") to match \(jpeg?.filename ?? "the JPEG").")
                     )
             }
             .pickerStyle(.radioGroup)
@@ -123,15 +123,15 @@ struct XMPConflictResolverView: View {
 
     private var metadataHeader: some View {
         HStack(spacing: 10) {
-            Text("Type")
+            Text(L10n.text("Type"))
                 .frame(width: 38, alignment: .leading)
-            Text("File")
+            Text(L10n.text("File"))
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text("Decision")
+            Text(L10n.text("Decision"))
                 .frame(width: 92, alignment: .leading)
-            Text("Stars")
+            Text(L10n.text("Stars"))
                 .frame(width: 86, alignment: .leading)
-            Text("Color")
+            Text(L10n.text("Color"))
                 .frame(minWidth: 86, alignment: .leading)
         }
         .font(.caption2.weight(.semibold))
@@ -168,7 +168,7 @@ struct XMPConflictResolverView: View {
         .font(.callout)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
-            "\(member.role == .raw ? "RAW" : "JPEG"), \(member.filename), decision \(decisionLabel(member.metadata.rating)), \(starsLabel(member.metadata.starRating)), color \(colorLabel(member.metadata.colorLabel))"
+            L10n.text("\(member.role == .raw ? "RAW" : "JPEG"), \(member.filename), decision \(decisionLabel(member.metadata.rating)), \(starsLabel(member.metadata.starRating)), color \(colorLabel(member.metadata.colorLabel))")
         )
     }
 
@@ -242,18 +242,18 @@ struct XMPConflictResolverView: View {
 
     private func decisionLabel(_ rating: Rating) -> String {
         switch rating {
-        case .yes: return "Yes"
-        case .no: return "No"
-        case .undecided: return "Undecided"
+        case .yes: return L10n.text("Yes")
+        case .no: return L10n.text("No")
+        case .undecided: return L10n.text("Undecided")
         }
     }
 
     private func starsLabel(_ rating: StarRating?) -> String {
-        guard let rating else { return "Unrated" }
-        return rating == .one ? "1 star" : "\(rating.count) stars"
+        guard let rating else { return L10n.text("Unrated") }
+        return rating == .one ? L10n.text("1 star") : "\(rating.count) stars"
     }
 
     private func colorLabel(_ label: PhotoColorLabel?) -> String {
-        label?.displayName ?? "None"
+        label?.displayName ?? L10n.text("None")
     }
 }

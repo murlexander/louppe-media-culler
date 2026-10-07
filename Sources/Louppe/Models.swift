@@ -34,6 +34,7 @@ enum PhotoColorLabel: String, Codable, CaseIterable, Hashable, Sendable {
     case purple
 
     var displayName: String { rawValue.capitalized }
+    var localizedDisplayName: String { L10n.label(displayName) }
 }
 
 enum MediaKind: String, Hashable, Sendable {
@@ -50,6 +51,8 @@ enum MediaKind: String, Hashable, Sendable {
         case .text: return "Text"
         }
     }
+
+    var localizedLabel: String { L10n.label(label) }
 
     var singularLabel: String {
         switch self {
@@ -74,7 +77,7 @@ enum RawJPEGPairingMode: String, Hashable, Sendable {
     case together
     case separate
 
-    static let togetherControlTitle = "Treat matching RAW + JPEG as one photo"
+    static let togetherControlTitle = L10n.text("Treat matching RAW + JPEG as one photo")
 }
 
 struct PhotoFileMetadataSnapshot: Equatable, Sendable {
@@ -907,7 +910,7 @@ struct PhotoItem: Identifiable, Sendable {
     ) -> String {
         guard let pairedFile else { return primaryFile.searchableText }
         return normalizeForSearch(
-            "\(primaryFile.searchableText) \(pairedFile.searchableText) RAW + JPEG"
+            L10n.text("\(primaryFile.searchableText) \(pairedFile.searchableText) RAW + JPEG")
         )
     }
 
@@ -970,7 +973,7 @@ struct PhotoSelectionSummary: Equatable {
             }
         }
         var result = known.sorted(by: localizedOrder)
-        if hasUnknown { result.append("Unknown") }
+        if hasUnknown { result.append(L10n.text("Unknown")) }
         return result
     }
 
@@ -1160,37 +1163,37 @@ struct PhotoSort: Equatable, Sendable {
 
         var ascendingLabel: String {
             switch self {
-            case .captureDate: return "Oldest first"
+            case .captureDate: return L10n.text("Oldest first")
             case .name, .subfolder, .fileType, .camera, .lens, .videoCodec: return "A–Z"
-            case .folderHierarchy: return "Folders A–Z"
-            case .mediaKind: return "Photos first"
-            case .aperture: return "Widest first"
-            case .shutterSpeed: return "Fastest first"
-            case .iso: return "Lowest first"
-            case .duration: return "Shortest first"
-            case .videoResolution: return "Smallest first"
-            case .videoFrameRate: return "Lowest first"
-            case .decision: return "Yes first"
-            case .starRating: return "Lowest first"
-            case .colorLabel: return "Red to Purple"
+            case .folderHierarchy: return L10n.text("Folders A–Z")
+            case .mediaKind: return L10n.text("Photos first")
+            case .aperture: return L10n.text("Widest first")
+            case .shutterSpeed: return L10n.text("Fastest first")
+            case .iso: return L10n.text("Lowest first")
+            case .duration: return L10n.text("Shortest first")
+            case .videoResolution: return L10n.text("Smallest first")
+            case .videoFrameRate: return L10n.text("Lowest first")
+            case .decision: return L10n.text("Yes first")
+            case .starRating: return L10n.text("Lowest first")
+            case .colorLabel: return L10n.text("Red to Purple")
             }
         }
 
         var descendingLabel: String {
             switch self {
-            case .captureDate: return "Newest first"
+            case .captureDate: return L10n.text("Newest first")
             case .name, .subfolder, .fileType, .camera, .lens, .videoCodec: return "Z–A"
-            case .folderHierarchy: return "Folders Z–A"
-            case .mediaKind: return "Text first"
-            case .aperture: return "Narrowest first"
-            case .shutterSpeed: return "Slowest first"
-            case .iso: return "Highest first"
-            case .duration: return "Longest first"
-            case .videoResolution: return "Largest first"
-            case .videoFrameRate: return "Highest first"
-            case .decision: return "No first"
-            case .starRating: return "Highest first"
-            case .colorLabel: return "Purple to Red"
+            case .folderHierarchy: return L10n.text("Folders Z–A")
+            case .mediaKind: return L10n.text("Text first")
+            case .aperture: return L10n.text("Narrowest first")
+            case .shutterSpeed: return L10n.text("Slowest first")
+            case .iso: return L10n.text("Highest first")
+            case .duration: return L10n.text("Longest first")
+            case .videoResolution: return L10n.text("Largest first")
+            case .videoFrameRate: return L10n.text("Highest first")
+            case .decision: return L10n.text("No first")
+            case .starRating: return L10n.text("Highest first")
+            case .colorLabel: return L10n.text("Purple to Red")
             }
         }
 
@@ -1248,61 +1251,61 @@ struct PhotoSort: Equatable, Sendable {
         func groupTitle(for item: PhotoItem) -> String {
             switch self {
             case .captureDate:
-                guard let date = item.captureDate else { return "Unknown date" }
+                guard let date = item.captureDate else { return L10n.text("Unknown date") }
                 return AppDateFormat.day(date)
             case .name:
                 return ""
             case .subfolder:
-                return item.subfolderLabel
+                return item.subfolder ?? L10n.text("None")
             case .folderHierarchy:
-                return item.subfolder ?? "Source folder"
+                return item.subfolder ?? L10n.text("Source folder")
             case .fileType:
                 return item.fileTypeLabel
             case .mediaKind:
-                return item.mediaKind.label
+                return item.mediaKind.localizedLabel
             case .camera:
-                return item.cameraLabel
+                return item.cameraModel ?? L10n.text("Unknown")
             case .lens:
-                return item.lensLabel
+                return item.lensModel ?? L10n.text("Unknown")
             case .aperture:
-                guard let aperture = item.aperture else { return "Unknown aperture" }
+                guard let aperture = item.aperture else { return L10n.text("Unknown aperture") }
                 return "f/\(MetadataFormat.decimal(aperture))"
             case .shutterSpeed:
-                guard let shutter = item.shutterSpeed else { return "Unknown shutter speed" }
+                guard let shutter = item.shutterSpeed else { return L10n.text("Unknown shutter speed") }
                 return MetadataFormat.shutter(shutter)
             case .iso:
-                guard let iso = item.iso else { return "Unknown ISO" }
+                guard let iso = item.iso else { return L10n.text("Unknown ISO") }
                 return "ISO \(MetadataFormat.iso(iso))"
             case .duration:
-                return item.duration.map { MediaDurationFormat.display($0) } ?? "Unknown duration"
+                return item.duration.map { MediaDurationFormat.display($0) } ?? L10n.text("Unknown duration")
             case .videoResolution:
-                return item.videoResolutionLabel ?? "Unknown resolution"
+                return item.videoResolutionLabel ?? L10n.text("Unknown resolution")
             case .videoFrameRate:
                 guard let frameRate = item.videoFrameRate else {
-                    return "Unknown frame rate"
+                    return L10n.text("Unknown frame rate")
                 }
                 return VideoMetadataFormat.frameRate(frameRate)
             case .videoCodec:
-                return item.videoCodec ?? "Unknown video codec"
+                return item.videoCodec ?? L10n.text("Unknown video codec")
             case .decision:
                 switch item.ratingState {
-                case .yes: return "Yes"
-                case .undecided: return "Undecided"
-                case .mixed: return "Mixed"
-                case .no: return "No"
+                case .yes: return L10n.text("Yes")
+                case .undecided: return L10n.text("Undecided")
+                case .mixed: return L10n.text("Mixed")
+                case .no: return L10n.text("No")
                 }
             case .starRating:
                 switch item.starRatingState {
-                case .unrated: return "Unrated"
+                case .unrated: return L10n.text("Unrated")
                 case .stars(let rating):
-                    return rating == .one ? "1 star" : "\(rating.count) stars"
-                case .mixed: return "Mixed"
+                    return rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count) stars")
+                case .mixed: return L10n.text("Mixed")
                 }
             case .colorLabel:
                 switch item.colorLabelState {
-                case .none: return "None"
-                case .label(let label): return label.displayName
-                case .mixed: return "Mixed"
+                case .none: return L10n.text("None")
+                case .label(let label): return label.localizedDisplayName
+                case .mixed: return L10n.text("Mixed")
                 }
             }
         }
@@ -1782,11 +1785,11 @@ struct VideoResolution: Hashable, Sendable, Comparable {
 enum VideoMetadataFormat {
     static func frameRate(_ value: Double) -> String {
         guard let frameRate = MediaNumeric.frameRate(value) else {
-            return "Unknown frame rate"
+            return L10n.text("Unknown frame rate")
         }
         let text = String(format: "%.3f", frameRate)
             .replacingOccurrences(of: #"\.?0+$"#, with: "", options: .regularExpression)
-        return "\(text) fps"
+        return L10n.text("\(text) fps")
     }
 }
 
@@ -2349,8 +2352,8 @@ struct CleanUpProgress: Sendable {
 
     var title: String {
         switch action {
-        case .movingToTrash: return "Moving files to the Trash…"
-        case .restoring: return "Restoring files from the Trash…"
+        case .movingToTrash: return L10n.text("Moving files to the Trash…")
+        case .restoring: return L10n.text("Restoring files from the Trash…")
         }
     }
 }

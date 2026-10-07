@@ -69,11 +69,11 @@ struct GridView: View {
                     } else if store.visibleIndices.isEmpty
                                 && store.filter.isActive {
                         ContentUnavailableView {
-                            Label("No items match the filter", systemImage: "line.3.horizontal.decrease.circle")
+                            Label(L10n.text("No items match the filter"), systemImage: "line.3.horizontal.decrease.circle")
                         } description: {
-                            Text("Try different choices or clear the filters to see media again.")
+                            Text(L10n.text("Change or clear filters to show media."))
                         } actions: {
-                            Button("Clear Filters") { store.resetFilter() }
+                            Button(L10n.text("Clear Filters")) { store.resetFilter() }
                         }
                         .padding(.top, 80)
                     }
@@ -316,7 +316,7 @@ private struct GridCell: View {
                                 item: item,
                                 isCurrent: index == store.currentIndex,
                                 isSelected: store.selectedIndices.contains(index),
-                                showActionTitle: "Make Current",
+                                showActionTitle: L10n.text("Make Current"),
                                 show: {
                                     actions.makeCurrent()
                                 },
@@ -355,11 +355,11 @@ private struct GridCell: View {
                         .foregroundStyle(.white)
                         .controlSize(.large)
                         .help(store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
-                            ? "Pause \(item.mediaKind.singularLabel)"
-                            : "Play \(item.mediaKind.singularLabel)")
+                            ? L10n.text("Pause \(L10n.label(item.mediaKind.singularLabel))")
+                            : L10n.text("Play \(L10n.label(item.mediaKind.singularLabel))"))
                         .accessibilityLabel(store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
-                            ? "Pause \(item.mediaKind.singularLabel)"
-                            : "Play \(item.mediaKind.singularLabel)")
+                            ? L10n.text("Pause \(L10n.label(item.mediaKind.singularLabel))")
+                            : L10n.text("Play \(L10n.label(item.mediaKind.singularLabel))"))
                     }
                 }
                 // Keep the rating control above the photo's selection gesture
@@ -382,8 +382,8 @@ private struct GridCell: View {
                     .buttonStyle(.plain)
                     .disabled(!store.canRate)
                     .padding(2)
-                    .help("Change Yes/No decision")
-                    .accessibilityLabel("Change decision for \(item.displayName)")
+                    .help(L10n.text("Change Yes/No decision"))
+                    .accessibilityLabel(L10n.text("Change decision for \(item.displayName)"))
                     .accessibilityValue(
                         MediaTileAccessibility.ratingDescription(
                             for: item.ratingState

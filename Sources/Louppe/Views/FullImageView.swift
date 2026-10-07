@@ -133,12 +133,12 @@ struct FullImageView: View {
         Group {
             if !item.isSupported {
                 ContentUnavailableView {
-                    Label("File isn't supported", systemImage: "doc.questionmark")
+                    Label(L10n.text("File isn't supported"), systemImage: "doc.questionmark")
                 } description: {
-                    Text("Louppe can't preview \(item.fileTypeLabel) files yet. You can still rate it — \(item.displayName)")
+                    Text(L10n.text("No preview for \(item.fileTypeLabel). You can still rate it — \(item.displayName)"))
                 } actions: {
-                    Button("Show in Finder") { showInFinder() }
-                    Button("Supported Formats") {
+                    Button(L10n.text("Show in Finder")) { showInFinder() }
+                    Button(L10n.text("Supported Formats")) {
                         openWindow(id: LouppeHelpWindow.id)
                     }
                 }
@@ -212,24 +212,24 @@ struct FullImageView: View {
                 case .fit, .small:
                     if currentLoad, failedToLoad {
                         ContentUnavailableView {
-                            Label(rendersRAW ? "RAW unavailable" : "Can't preview this photo", systemImage: "exclamationmark.triangle")
+                            Label(rendersRAW ? L10n.text("RAW unavailable") : L10n.text("Can't preview this photo"), systemImage: "exclamationmark.triangle")
                         } description: {
                             if rendersRAW {
                                 Text(rawDecoder.failureMessage)
                             } else {
-                                Text("Louppe couldn't read \(item.displayName). The file may be unavailable or in a format this Mac can't decode. You can still rate it.")
+                                Text(L10n.text("Can’t read \(item.displayName). It may be unavailable or unsupported by this Mac. You can still rate it."))
                             }
                         } actions: {
-                            Button(rendersRAW ? "Retry RAW" : "Retry Preview") {
+                            Button(rendersRAW ? L10n.text("Retry RAW") : L10n.text("Retry Preview")) {
                                 previewRetryGeneration &+= 1
                             }
                             if rendersRAW {
                                 if rawDecoder == .raw9 {
-                                    Button("Use Apple Default") { rawDecoder = .appleDefault }
+                                    Button(L10n.text("Use Apple Default")) { rawDecoder = .appleDefault }
                                 }
-                                Button("Use Preview") { fallbackRevision = contentRevision }
+                                Button(L10n.text("Use Preview")) { fallbackRevision = contentRevision }
                             }
-                            Button("Show in Finder") { showInFinder() }
+                            Button(L10n.text("Show in Finder")) { showInFinder() }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if let presentationPreview {
@@ -268,13 +268,13 @@ struct FullImageView: View {
         .overlay {
             if zoomMode == .actual, item.isRaw, actualRenderingFailed {
                 VStack(spacing: 8) {
-                    Text("RAW unavailable").font(.callout)
+                    Text(L10n.text("RAW unavailable")).font(.callout)
                     Text(rawDecoder.failureMessage).font(.caption).frame(maxWidth: 320)
-                    Button("Retry RAW") { previewRetryGeneration &+= 1 }
+                    Button(L10n.text("Retry RAW")) { previewRetryGeneration &+= 1 }
                     if rawDecoder == .raw9 {
-                        Button("Use Apple Default") { rawDecoder = .appleDefault }
+                        Button(L10n.text("Use Apple Default")) { rawDecoder = .appleDefault }
                     }
-                    Button("Use Preview") {
+                    Button(L10n.text("Use Preview")) {
                         fallbackRevision = contentRevision
                         onZoomToFit()
                     }
@@ -513,7 +513,7 @@ private struct ZoomableFittedImage: View {
                         y: imageFrame.midY
                     )
                     .accessibilityHint(
-                        "Double-click to inspect this point at 100 percent."
+                        L10n.text("Double-click to inspect this point at 100 percent.")
                     )
             }
             Color.clear.frame(width: 0, height: 0)

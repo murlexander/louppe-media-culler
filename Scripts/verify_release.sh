@@ -71,10 +71,37 @@ verify_app_bundle() {
     cmp -s ThirdPartyLicenses/Expat-MIT.txt \
         "$bundle/Contents/Resources/Expat License.txt" \
         || fail "$label does not contain the reviewed Expat license."
+    "$PWD/Scripts/resource_bundle_metadata.sh" --verify \
+        "$bundle/Contents/Resources/Louppe_Louppe.bundle" \
+        || fail "$label resource bundle metadata is invalid."
+    local locale
+    for locale in en es zh-Hans hi pt ar; do
+        local source_strings="Sources/Louppe/Resources/$locale.lproj/Localizable.strings"
+        local locale_directory="${locale:l}"
+        local bundled_strings="$bundle/Contents/Resources/Louppe_Louppe.bundle/$locale_directory.lproj/Localizable.strings"
+        [[ -f "$bundled_strings" ]] || fail "$label $locale localization is missing."
+        plutil -lint "$bundled_strings" >/dev/null || fail "$label $locale localization is malformed."
+        cmp -s "$source_strings" "$bundled_strings" || fail "$label $locale localization differs from source."
+    done
     cmp -s PrivacyInfo.xcprivacy "$bundle/Contents/Resources/PrivacyInfo.xcprivacy" \
         || fail "$label does not contain the reviewed privacy manifest."
     plutil -lint "$bundle/Contents/Resources/PrivacyInfo.xcprivacy" >/dev/null \
         || fail "$label privacy manifest is invalid."
+
+    local declaration category reason
+    for declaration in \
+        'NSPrivacyAccessedAPICategoryFileTimestamp|3B52.1' \
+        'NSPrivacyAccessedAPICategoryFileTimestamp|C617.1' \
+        'NSPrivacyAccessedAPICategoryDiskSpace|E174.1' \
+        'NSPrivacyAccessedAPICategoryDiskSpace|85F4.1' \
+        'NSPrivacyAccessedAPICategorySystemBootTime|35F9.1' \
+        'NSPrivacyAccessedAPICategoryUserDefaults|CA92.1'; do
+        category="${declaration%%|*}"
+        reason="${declaration##*|}"
+        [[ "$(xmllint --xpath "count(/plist/dict/array/dict[string=\"$category\"]/array/string[.=\"$reason\"])" \
+            "$bundle/Contents/Resources/PrivacyInfo.xcprivacy")" == "1" ]] \
+            || fail "$label privacy manifest lacks $category reason $reason."
+    done
 
     if $DEVELOPER_ID || $PUBLISHING; then
         local signing_details
@@ -128,6 +155,8 @@ verify_app_bundle() {
     fi
 
     if $APP_STORE; then
+        [[ "$(plist_value "$bundle" LSApplicationCategoryType)" == "public.app-category.photography" ]] \
+            || fail "$label App Store category must be Photography."
         local entitlements
         entitlements="$(mktemp "$CHECK_DIR/Louppe-entitlements.XXXXXX")"
         codesign -d --entitlements :- "$bundle" 2>/dev/null > "$entitlements"

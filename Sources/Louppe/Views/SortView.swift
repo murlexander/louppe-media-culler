@@ -8,40 +8,40 @@ struct SortView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Sort")
+            Text(L10n.text("Sort"))
                 .font(.headline)
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    section("Sort by", spacing: 2) {
-                        keyRow("Date taken", .captureDate)
-                        keyRow("Name", .name)
-                        keyRow("Decision", .decision)
-                        keyRow("Star rating", .starRating)
-                        keyRow("Color label", .colorLabel)
-                        keyRow("Subfolder", .subfolder, disabled: store.availableSubfolders.count <= 1)
-                        keyRow("Folder hierarchy", .folderHierarchy)
-                            .help("Review each source folder before its subfolders. Files within each folder stay chronological.")
-                        keyRow("File type", .fileType)
-                        keyRow("Media type", .mediaKind, disabled: store.availableMediaKinds.count <= 1)
-                        keyRow("Camera", .camera)
-                        keyRow("Lens", .lens)
-                        keyRow("Aperture", .aperture, disabled: store.apertureRange == nil)
-                        keyRow("Shutter speed", .shutterSpeed, disabled: store.shutterRange == nil)
+                    section(L10n.text("Sort by"), spacing: 2) {
+                        keyRow(L10n.text("Date taken"), .captureDate)
+                        keyRow(L10n.text("Name"), .name)
+                        keyRow(L10n.text("Decision"), .decision)
+                        keyRow(L10n.text("Star rating"), .starRating)
+                        keyRow(L10n.text("Color label"), .colorLabel)
+                        keyRow(L10n.text("Subfolder"), .subfolder, disabled: store.availableSubfolders.count <= 1)
+                        keyRow(L10n.text("Folder hierarchy"), .folderHierarchy)
+                            .help(L10n.text("Review folders before their subfolders; files stay chronological."))
+                        keyRow(L10n.text("File type"), .fileType)
+                        keyRow(L10n.text("Media type"), .mediaKind, disabled: store.availableMediaKinds.count <= 1)
+                        keyRow(L10n.text("Camera"), .camera)
+                        keyRow(L10n.text("Lens"), .lens)
+                        keyRow(L10n.text("Aperture"), .aperture, disabled: store.apertureRange == nil)
+                        keyRow(L10n.text("Shutter speed"), .shutterSpeed, disabled: store.shutterRange == nil)
                         keyRow("ISO", .iso, disabled: store.isoRange == nil)
-                        keyRow("Media duration", .duration, disabled: store.durationRange == nil)
+                        keyRow(L10n.text("Media duration"), .duration, disabled: store.durationRange == nil)
                         keyRow(
-                            "Video resolution",
+                            L10n.text("Video resolution"),
                             .videoResolution,
                             disabled: store.availableVideoResolutions.count <= 1
                         )
                         keyRow(
-                            "Video frame rate",
+                            L10n.text("Video frame rate"),
                             .videoFrameRate,
                             disabled: store.videoFrameRateRange == nil
                         )
                         keyRow(
-                            "Video codec",
+                            L10n.text("Video codec"),
                             .videoCodec,
                             disabled: store.availableVideoCodecs.count <= 1
                         )
@@ -49,15 +49,15 @@ struct SortView: View {
 
                     Divider()
 
-                    section("Order") {
+                    section(L10n.text("Order")) {
                         orderRow(store.sort.key.ascendingLabel, ascending: true)
                         orderRow(store.sort.key.descendingLabel, ascending: false)
                     }
 
                     Divider()
 
-                    section("Groups") {
-                        Toggle("Divide into groups", isOn: $store.isGroupingEnabled)
+                    section(L10n.text("Groups")) {
+                        Toggle(L10n.text("Divide into groups"), isOn: $store.isGroupingEnabled)
                             .toggleStyle(.checkbox)
                             // Name sorting never divides: every file name is unique.
                             .disabled(store.sort.key == .name)
@@ -65,15 +65,15 @@ struct SortView: View {
 
                     Divider()
 
-                    section("Review groups") {
+                    section(L10n.text("Review groups")) {
                         if store.isDuplicateBurstAnalysisRunning {
                             HStack(spacing: 8) {
                                 ProgressView()
                                     .controlSize(.small)
-                                Text("Analyzing locally…")
+                                Text(L10n.text("Analyzing locally…"))
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Button("Cancel") {
+                                Button(L10n.text("Cancel")) {
                                     store.cancelDuplicateBurstAnalysis()
                                 }
                                 .buttonStyle(.borderless)
@@ -81,8 +81,8 @@ struct SortView: View {
                         } else {
                             Button(
                                 store.duplicateBurstAnalysisState == .ready
-                                    ? "Refresh Local Analysis"
-                                    : "Analyze Folder Locally"
+                                    ? L10n.text("Refresh Local Analysis")
+                                    : L10n.text("Analyze Folder Locally")
                             ) {
                                 store.analyzeDuplicateAndBurstGroups()
                             }
@@ -94,7 +94,7 @@ struct SortView: View {
                         reviewModeRow(.captureBursts)
 
                         if store.isGroupedReviewActive {
-                            Button("Return to Normal Review") {
+                            Button(L10n.text("Return to Normal Review")) {
                                 store.exitGroupedReview()
                             }
                             .buttonStyle(.borderless)
@@ -111,7 +111,7 @@ struct SortView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("Review-only: ratings, Clean Up, Export, and originals stay under your control.")
+                        Text(L10n.text("Grouping never changes ratings, originals, Clean Up, or Export."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -122,7 +122,7 @@ struct SortView: View {
             Divider()
             HStack {
                 Spacer()
-                Button("Done") { store.isSortPresented = false }
+                Button(L10n.text("Done")) { store.isSortPresented = false }
                     .keyboardShortcut(.cancelAction)
             }
         }
@@ -165,7 +165,7 @@ struct SortView: View {
     private var similarityControl: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("Similarity")
+                Text(L10n.text("Similarity"))
                 Spacer()
                 Text(similarityLabel)
                     .foregroundStyle(.secondary)
@@ -178,9 +178,9 @@ struct SortView: View {
                 in: 3...16,
                 step: 1
             )
-            .accessibilityLabel("Likely-similar photo sensitivity")
+            .accessibilityLabel(L10n.text("Likely-similar photo sensitivity"))
             .accessibilityValue(similarityLabel)
-            Text("Lower is stricter. Similarity is a local preview cue, not a certainty.")
+            Text(L10n.text("Lower is stricter. Local preview similarity is an estimate."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -190,9 +190,9 @@ struct SortView: View {
     private var burstControl: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("Burst interval")
+                Text(L10n.text("Burst interval"))
                 Spacer()
-                Text(String(format: "%.1f s", store.burstGroupingInterval))
+                Text(L10n.text("\(String(format: "%.1f", store.burstGroupingInterval)) s"))
                     .foregroundStyle(.secondary)
             }
             Slider(
@@ -203,9 +203,9 @@ struct SortView: View {
                 in: 0.5...10,
                 step: 0.5
             )
-            .accessibilityLabel("Capture burst interval")
-            .accessibilityValue(String(format: "%.1f seconds", store.burstGroupingInterval))
-            Text("Photos are grouped when consecutive capture times are within this gap.")
+            .accessibilityLabel(L10n.text("Capture burst interval"))
+            .accessibilityValue(L10n.text("\(String(format: "%.1f", store.burstGroupingInterval)) seconds"))
+            Text(L10n.text("Group consecutive shots within this interval."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -214,9 +214,9 @@ struct SortView: View {
 
     private var similarityLabel: String {
         switch store.visualSimilarityDistance {
-        case ...5: return "Strict"
-        case 6...10: return "Balanced"
-        default: return "Broad"
+        case ...5: return L10n.text("Strict")
+        case 6...10: return L10n.text("Balanced")
+        default: return L10n.text("Broad")
         }
     }
 
@@ -244,7 +244,7 @@ struct SortView: View {
         .buttonStyle(.plain)
         .disabled(disabled)
         .opacity(disabled ? 0.4 : 1)
-        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityValue(isSelected ? L10n.text("Selected") : L10n.text("Not selected"))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

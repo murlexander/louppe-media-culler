@@ -16,34 +16,27 @@ There is no separate support team. The sole contact is Alex Markin at
 
 ## Engineering approach
 
-- Prefer a minimal, simple UI: direct editing and compact native controls;
-  avoid redundant branding, extra steps, and unnecessary visible explanation.
-- Reuse nearby implementations and existing state owners. Keep changes scoped;
-  add abstractions only for concrete needs. Prefer native SwiftUI/AppKit controls
-  and Apple APIs; preserve the documented bridges that solve native limitations.
-- Use Swift enums for exclusive states and existing typed identities/plans
-  across boundaries. Keep domain decisions pure, UI state in its owner, and I/O
-  in workers or actors. Alternate command entry points share domain logic.
-  Prefer labeled arguments; group related values when they must travel together.
-- Give immediate native feedback while work runs. Report durable success only
-  after worker confirmation; partial results must match the actual files.
-- Diagnose from a reproduction and relevant errors, sidecars, journals, or
-  measurements. Extend existing `Logger` / `OSSignposter` patterns as needed;
-  keep personal paths/metadata private. Give actionable errors and preserve
-  intentional backup/preview fallbacks without disguising failures as defaults.
-- Test meaningful contracts: disposable folders and real I/O for file operations,
-  targeted fault injection for failures, focused logic tests for edge cases,
-  and affected flows in the app. Follow the mandatory checks below.
-- Verify uncertain APIs against the selected SDK, pinned sources, and matching
-  official documentation. Keep instructions in one place, update affected docs,
-  and report what changed, what was verified, and any verification gap.
+- Use compact native controls, direct editing, and minimal UI. Add abstractions
+  only for concrete needs; reuse existing state owners and documented bridges.
+- Write short, direct UI, website, and documentation text. Remove filler and
+  repetition; retain safety conditions, limits, and remedies.
+- Use enums for exclusive states and existing typed identities/plans at
+  boundaries. Keep domain logic pure, UI state in its owner, and I/O in workers
+  or actors. Share logic across commands; prefer labeled arguments.
+- Show progress immediately and report success only after worker confirmation.
+  Partial results must match the files on disk.
+- Reproduce failures and inspect errors, sidecars, journals, or measurements.
+  Use existing `Logger`/`OSSignposter` patterns; keep personal metadata private.
+  Preserve intentional fallbacks and show actionable errors.
+- Test contracts with disposable files, real I/O, and focused fault injection.
+  Follow the mandatory checks below.
+- Check uncertain APIs against the selected SDK, pinned sources, and official
+  documentation. Update affected docs and report results and verification gaps.
 
 ## Read when relevant
 
-Read the matching sections **before changing the affected behavior**; consult
-all matching sections for changes spanning several areas. These are required
-project rules, moved out of this file for readability. Documentation-only edits
-need only their relevant references.
+Read all matching sections **before changing behavior**. These are required
+project rules. Documentation edits need only the relevant references.
 
 | Work area | Reference |
 | --- | --- |
@@ -149,18 +142,12 @@ Staging outside the File Provider-managed workspace is required:
 Finder metadata may otherwise reappear between signing and verification. Still
 run `xattr -cr` after copying into `/Applications`.
 
-`VERSION` is the source of truth for the About-panel marketing version and
-build number. **Bump the version/build pair exactly once per GitHub release
-cycle**: the first change after the latest published GitHub release bumps
-`VERSION` and opens one new `CHANGELOG.md` entry, and every further change
-folds into that same entry (update its bullets and date — do not bump again)
-until that version ships as the next GitHub release. Check the latest release
-(`gh release list`) before deciding whether a bump is due; local installs of
-work-in-progress builds are not releases and never justify a bump.
-`build_app.sh` deliberately refuses to package a pair missing from the
-history. History headings use
-`## <MARKETING_VERSION> (<BUILD_NUMBER>) — <DATE>`. Keep release tags in the
-form `v<MARKETING_VERSION>`.
+`VERSION` supplies the About-panel version/build. **Bump both exactly once per
+GitHub release cycle.** Check `gh release list` first. The first change after a
+published release bumps `VERSION` and opens a `CHANGELOG.md` entry. Fold later
+changes into that entry, updating its bullets/date until release. Local installs
+never justify a bump. Packaging requires a matching history heading:
+`## <MARKETING_VERSION> (<BUILD_NUMBER>) — <DATE>`. Tags use `v<MARKETING_VERSION>`.
 
 Always build against the current macOS SDK. Do not work around toolchain errors
 with an older SDK: doing so compiles out current SwiftUI features such as macOS
@@ -177,11 +164,9 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   ./Tests/run_performance_checks.sh
 ```
 
-The complete `HotkeyTests` run is mandatory before **every** local app install,
-even when the change seems unrelated to keyboard handling. It exercises the
-installed-monitor path with real AppKit window events, including detaching and
-reattaching the session view; direct `handleKey` unit tests alone are not an
-adequate regression check.
+Run complete `HotkeyTests` before **every** local install. They cover real
+AppKit events and session-monitor detach/reattach; direct `handleKey` tests
+alone are insufficient.
 
 The last two checks use disposable files for a real Trash/restore round trip.
 In a restricted agent sandbox, rerun the script with permission to access the
@@ -191,19 +176,15 @@ macOS Trash if those checks report that the paired photo could not move.
 open /Applications/Louppe.app --args -openFolder /path/to/photos
 ```
 
-**Never pass a bare path argument** (`--args /path`): macOS treats it as a
-document-open request, and because the app declares no document types the
-system suppresses the app's default window — the app runs headless and
-appears broken. The `-openFolder` flag form avoids this entirely.
+**Always use `-openFolder`.** A bare `--args /path` becomes a document-open
+request; Louppe declares no document types, so macOS suppresses its window.
 
 The app writes `.louppe_session.json` into the opened folder within a few
-seconds; inspect it from the CLI to confirm scanning/pairing/rating logic
-without seeing the screen. Screen capture is NOT available for verification
-(no Screen Recording permission) — ask the user to look, or check the sidecar.
+seconds. Use disposable media, inspect saved ratings, and verify native UI
+when Computer Use is available.
 
-- If the app ever launches with no window visible, suspect corrupted window
-  restoration state: `defaults delete com.alexandermarkin.louppe` and
-  `rm -rf ~/Library/Saved\ Application\ State/com.alexandermarkin.louppe.savedState`.
+- If the main window is missing, check Settings and the Window menu first.
+  Do not reset user preferences or window state without approval.
 - Release verification must validate the loose and archived app independently
   and compare their complete `Contents/` trees; checking only the executable
   and Info.plist can miss a stale or altered embedded framework/resource.

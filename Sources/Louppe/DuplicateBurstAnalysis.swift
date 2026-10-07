@@ -18,32 +18,32 @@ enum DuplicateBurstAnalysis {
 
         var displayName: String {
             switch self {
-            case .off: return "Normal review"
-            case .exactDuplicates: return "Exact duplicates"
-            case .likelySimilarPhotos: return "Likely similar photos"
-            case .captureBursts: return "Capture bursts"
+            case .off: return L10n.text("Normal review")
+            case .exactDuplicates: return L10n.text("Exact duplicates")
+            case .likelySimilarPhotos: return L10n.text("Likely similar photos")
+            case .captureBursts: return L10n.text("Capture bursts")
             }
         }
 
         var shortDescription: String {
             switch self {
             case .off:
-                return "Show the folder in its normal filtered and sorted order."
+                return L10n.text("Show the folder in its normal filtered and sorted order.")
             case .exactDuplicates:
-                return "Groups only files with the same verified bytes."
+                return L10n.text("Groups only files with the same verified bytes.")
             case .likelySimilarPhotos:
-                return "Groups similar small local previews; review every match yourself."
+                return L10n.text("Groups similar small local previews; review every match yourself.")
             case .captureBursts:
-                return "Groups photos whose capture times are close together."
+                return L10n.text("Groups photos whose capture times are close together.")
             }
         }
 
         var analysisTitle: String {
             switch self {
-            case .off: return "Normal review"
-            case .exactDuplicates: return "Exact duplicates"
-            case .likelySimilarPhotos: return "Likely similar photos"
-            case .captureBursts: return "Capture bursts"
+            case .off: return L10n.text("Normal review")
+            case .exactDuplicates: return L10n.text("Exact duplicates")
+            case .likelySimilarPhotos: return L10n.text("Likely similar photos")
+            case .captureBursts: return L10n.text("Capture bursts")
             }
         }
     }
@@ -125,14 +125,14 @@ enum DuplicateBurstAnalysis {
         }
 
         func title(itemCount count: Int) -> String {
-            let itemText = count == 1 ? "item" : "items"
+            let itemText = count == 1 ? L10n.text("item") : L10n.text("items")
             switch mode {
             case .exactDuplicates:
-                return "Exact duplicates · \(count) \(itemText) · matching file fingerprints"
+                return L10n.text("Exact duplicates · \(count) \(itemText) · matching file fingerprints")
             case .likelySimilarPhotos:
-                return "Likely similar · \(count) \(itemText) · local preview comparison"
+                return L10n.text("Likely similar · \(count) \(itemText) · local preview comparison")
             case .captureBursts:
-                return "Capture burst · \(count) \(itemText) · close capture times"
+                return L10n.text("Capture burst · \(count) \(itemText) · close capture times")
             case .off:
                 return ""
             }

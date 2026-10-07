@@ -34,17 +34,17 @@ enum SourceOrganizationWorker {
         var errorDescription: String? {
             switch self {
             case .sourceFolderChanged:
-                return "The source folder changed after the preview. Review a fresh plan."
+                return L10n.text("The source folder changed after the preview. Review a fresh plan.")
             case .unsafeDestination(let url):
-                return "Louppe refused an unsafe destination path near \(url.lastPathComponent)."
+                return L10n.text("Louppe refused an unsafe destination path near \(url.lastPathComponent).")
             case .destinationIsNotDirectory(let url):
-                return "A destination component is not a normal folder: \(url.lastPathComponent)."
+                return L10n.text("A destination component is not a normal folder: \(url.lastPathComponent).")
             case .couldNotCreateDirectory(let url, let code):
-                return "Louppe could not create \(url.lastPathComponent) (system error \(code))."
+                return L10n.text("Louppe could not create \(url.lastPathComponent) (system error \(code)).")
             case .collisionSafeRenameUnavailable:
-                return "This ExFAT card does not support the collision-safe rename Louppe requires."
+                return L10n.text("This ExFAT card does not support the collision-safe rename Louppe requires.")
             case .compatibilityProbeFailed(let detail):
-                return "Louppe could not complete its ExFAT safety check: \(detail)"
+                return L10n.text("Louppe could not complete its ExFAT safety check: \(detail)")
             }
         }
     }

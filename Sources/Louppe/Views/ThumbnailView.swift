@@ -174,7 +174,7 @@ struct MediaDurationBadge: View {
             .padding(.vertical, 3)
             .background(.black.opacity(0.68), in: Capsule())
             .shadow(radius: 1)
-            .accessibilityLabel("\(mediaKind.singularLabel.capitalized) duration: \(MediaDurationFormat.accessibility(duration))")
+            .accessibilityLabel(L10n.text("\(L10n.label(mediaKind.singularLabel)) duration: \(MediaDurationFormat.accessibility(duration))"))
     }
 }
 
@@ -192,7 +192,7 @@ private struct AudioThumbnail: View {
                     Image(systemName: "waveform")
                         .font(.system(size: 25, weight: .medium))
                         .foregroundStyle(Color.louppeAccent)
-                    Text("Audio")
+                    Text(L10n.text("Audio"))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Text(item.fileTypeLabel)
@@ -217,7 +217,7 @@ struct UnsupportedThumbnail: View {
                     Image(systemName: "doc.questionmark")
                         .font(.system(size: 22))
                         .foregroundStyle(.secondary)
-                    Text("File isn't supported")
+                    Text(L10n.text("File isn't supported"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     Text(item.fileTypeLabel)

@@ -196,6 +196,7 @@ final class SessionStore: ObservableObject {
     /// photo item. A fresh store starts with the safer per-file projection;
     /// the photographer can opt into pair-wide actions for this app lifetime.
     @Published private(set) var rawJPEGPairingMode: RawJPEGPairingMode = .separate
+    @Published var pairingMetadataError: String?
     /// The first transition to separate review may read metadata from hidden
     /// JPEG partners. The current session remains visible while this is true.
     @Published private(set) var isChangingRawJPEGPairingMode = false
@@ -393,7 +394,7 @@ final class SessionStore: ObservableObject {
               let report = operationRecoveryReport else { return nil }
 
         if report.operationLockUnavailable {
-            return "Another Louppe window is still handling an interrupted file operation. Close it, then retry recovery. You can keep reviewing this folder meanwhile."
+            return L10n.text("Another Louppe window is recovering files. Close it, then retry recovery. Reviewing remains available.")
         }
 
         let interruptionPrefix = operationRecoveryCause.map {
@@ -403,7 +404,7 @@ final class SessionStore: ObservableObject {
                 || report.preservedMoves > 0
                 || report.restoredFiles > 0
                 || report.removedPartialCopies > 0
-            ? "Other files from the operation were already handled safely. "
+            ? L10n.text("Other files were handled safely. ")
             : ""
         if !report.unavailableVolumes.isEmpty {
             let driveNames = report.unavailableVolumes.map { path in
@@ -414,16 +415,18 @@ final class SessionStore: ObservableObject {
                 ? "“\(driveNames[0])”"
                 : driveNames.map { "“\($0)”" }.joined(separator: ", ")
             return interruptionPrefix + completedNotice
-                + "Some interrupted files are still untouched because "
-                + (driveNames.count == 1 ? "a drive is unavailable. " : "drives are unavailable. ")
-                + "Reconnect \(drives), then retry recovery. You can keep reviewing this folder meanwhile."
+                + (driveNames.count == 1
+                    ? L10n.text("Some interrupted files are still untouched because a drive is unavailable. ")
+                    : L10n.text("Some interrupted files are still untouched because drives are unavailable. "))
+                + L10n.text("Reconnect \(drives), then retry recovery. Reviewing remains available.")
         }
 
         let count = max(report.unresolvedFiles, 1)
         let message = interruptionPrefix + completedNotice
-            + "Louppe couldn't finish checking \(count) interrupted file"
-            + (count == 1 ? ". " : "s. ")
-            + "It left anything uncertain untouched. You can keep reviewing; Copy, Move, Rename, Organize, and Clean Up are paused until recovery finishes."
+            + (count == 1
+                ? L10n.text("Louppe couldn't finish checking 1 interrupted file. ")
+                : L10n.text("Louppe couldn't finish checking \(count) interrupted files. "))
+            + L10n.text("Uncertain files remain untouched. Reviewing stays available; Copy, Move, Rename, Organize, and Clean Up are paused until recovery finishes.")
         return message
     }
     /// A sheet, popover, confirmation, or recovery alert owns keyboard/menu
@@ -441,6 +444,7 @@ final class SessionStore: ObservableObject {
             || isLegacySessionMigrationConfirmationPresented
             || pendingCleanUp != nil
             || cleanUpError != nil
+            || pairingMetadataError != nil
             || isRecoveringInterruptedOperations
             || operationRecoveryReportRequiresAcknowledgement
     }
@@ -522,7 +526,7 @@ final class SessionStore: ObservableObject {
         if shouldPreventSleep, fileOperationPowerActivity == nil {
             fileOperationPowerActivity = ProcessInfo.processInfo.beginActivity(
                 options: [.userInitiated, .idleSystemSleepDisabled],
-                reason: "Louppe is safely transferring files or writing metadata"
+                reason: L10n.text("Louppe is safely transferring files or writing metadata")
             )
         } else if !shouldPreventSleep,
                   let activity = fileOperationPowerActivity {
@@ -936,6 +940,26 @@ final class SessionStore: ObservableObject {
         applyFilter()
     }
 
+    /// Apply an already-completed disposable worker outcome without touching
+    /// the user's Trash or journal during model-focused regression tests.
+    func finishCleanUpForTesting(
+        _ result: TrashBatchResult,
+        mode: CleanUpMode,
+        preparedSurvivors: [PhotoItem],
+        survivorMetadataError: String? = nil
+    ) {
+        activeFileOperation = .cleanUp
+        finishCleanUp(
+            result,
+            mode: mode,
+            preparedSurvivors: preparedSurvivors,
+            survivorMetadataError: survivorMetadataError,
+            previousItemID: currentItemID,
+            previousIndex: currentIndex,
+            generation: cleanUpGeneration
+        )
+    }
+
     /// Deterministic recovery-state setup for command-gating tests. Production
     /// reaches the same state only through the journal worker above.
     func presentOperationRecoveryReportForTesting(
@@ -1030,11 +1054,11 @@ final class SessionStore: ObservableObject {
     var groupedReviewEmptyTitle: String {
         switch groupedReviewMode {
         case .exactDuplicates:
-            return "No exact duplicates in this view"
+            return L10n.text("No exact duplicates in this view")
         case .likelySimilarPhotos:
-            return "No likely similar photos in this view"
+            return L10n.text("No likely similar photos in this view")
         case .captureBursts:
-            return "No capture bursts in this view"
+            return L10n.text("No capture bursts in this view")
         case .off:
             return ""
         }
@@ -1042,17 +1066,17 @@ final class SessionStore: ObservableObject {
 
     var groupedReviewEmptyDescription: String {
         let filterNote = filter.isActive
-            ? " Try adjusting the normal filter to include more media."
+            ? L10n.text(" Try adjusting the normal filter to include more media.")
             : ""
         switch groupedReviewMode {
         case .exactDuplicates:
-            return "Louppe found no verified byte-identical files to group."
+            return L10n.text("Louppe found no verified byte-identical files to group.")
                 + filterNote
         case .likelySimilarPhotos:
-            return "Louppe found no conservative preview matches to group. Similarity is only a review aid, never a certainty."
+            return L10n.text("No likely preview matches found. Similarity is a review aid, not proof.")
                 + filterNote
         case .captureBursts:
-            return "No still-photo capture times were within the selected burst interval."
+            return L10n.text("No still-photo capture times were within the selected burst interval.")
                 + filterNote
         case .off:
             return ""
@@ -1061,15 +1085,15 @@ final class SessionStore: ObservableObject {
 
     var duplicateBurstAnalysisSummary: String {
         guard let result = duplicateBurstAnalysisResult else {
-            return "Analyze this folder locally to find exact duplicates, likely similar photos, and capture bursts."
+            return L10n.text("Analyze this folder locally to find exact duplicates, likely similar photos, and capture bursts.")
         }
         let exact = result.analyzedExactFileCount == 1
-            ? "1 possible duplicate file checked"
-            : "\(result.analyzedExactFileCount) possible duplicate files checked"
+            ? L10n.text("1 possible duplicate file checked")
+            : L10n.text("\(result.analyzedExactFileCount) possible duplicate files checked")
         let visual = result.analyzedVisualPhotoCount == 1
-            ? "1 photo preview compared"
-            : "\(result.analyzedVisualPhotoCount) photo previews compared"
-        return "Local analysis complete: \(exact); \(visual)."
+            ? L10n.text("1 photo preview compared")
+            : L10n.text("\(result.analyzedVisualPhotoCount) photo previews compared")
+        return L10n.text("Local analysis complete: \(exact); \(visual).")
     }
 
     /// Stable Browser row identities are rebuilt with the prepared visibility
@@ -1827,8 +1851,8 @@ final class SessionStore: ObservableObject {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.directoryURL = initialDirectory
-        panel.message = "Choose a media folder or external drive to review."
-        panel.prompt = "Open Folder"
+        panel.message = L10n.text("Choose a media folder or external drive to review.")
+        panel.prompt = L10n.text("Open Folder")
         if panel.runModal() == .OK, let url = panel.url {
             openFolder(url)
         }
@@ -1883,7 +1907,7 @@ final class SessionStore: ObservableObject {
     ) {
         let standardizedURL = url.standardizedFileURL
         if sourceFolderAccess?.url != standardizedURL {
-            let nextAccess = SecurityScopedFolderAccess(url: standardizedURL)
+            let nextAccess = SecurityScopedFolderAccess(url: url)
             sourceFolderAccess?.stop()
             sourceFolderAccess = nextAccess
         }
@@ -1896,7 +1920,7 @@ final class SessionStore: ObservableObject {
            FileOperationJournal.hasPendingOperations(
             directory: operationJournalDirectory
            ) {
-            deferredFolderOpen = standardizedURL
+            deferredFolderOpen = url
             beginInterruptedOperationRecovery()
             return
         }
@@ -1957,6 +1981,7 @@ final class SessionStore: ObservableObject {
         cleanUpGeneration &+= 1
         sourceFolder = standardizedURL
         scanError = nil
+        pairingMetadataError = nil
         phase = .scanning(found: 0)
         // visibleIndices must be cleared in the same turn items is emptied —
         // stale indices into a shrunk array crash any view that renders first.
@@ -1976,7 +2001,7 @@ final class SessionStore: ObservableObject {
         undoStack = []
         isClearAllRatingsConfirmationPresented = false
         pendingCleanUp = nil
-        addToRecents(standardizedURL)
+        addToRecents(url)
         let pairingMode = rawJPEGPairingMode
 
         scanTask = Task.detached(priority: .userInitiated) { [weak self] in
@@ -1989,8 +2014,8 @@ final class SessionStore: ObservableObject {
                 // and silently reads false. Bridge this task's cancellation
                 // into a flag that is valid on any thread.
                 let cancelFlag = FolderScanner.CancelFlag()
-                let scanned = try await withTaskCancellationHandler {
-                    try FolderScanner.scan(
+                let (scanned, savedSession) = try await withTaskCancellationHandler {
+                    let scanned = try FolderScanner.scan(
                         standardizedURL,
                         pairingMode: pairingMode,
                         isCancelled: { cancelFlag.isSet }
@@ -2004,24 +2029,29 @@ final class SessionStore: ObservableObject {
                             }
                         }
                     }
+                    try Task.checkCancellation()
+                    guard folderIdentity.matches(folder: standardizedURL) else {
+                        throw FolderScanner.ScanError.filesChangedDuringScan
+                    }
+                    let savedSession = await self.persistence.read(
+                        for: standardizedURL,
+                        folderIdentity: folderIdentity,
+                        legacySidecarRelocationAuthorization:
+                            legacySidecarRelocationAuthorization
+                    )
+                    try Task.checkCancellation()
+                    try FolderScanner.validateScannedIdentities(
+                        scanned,
+                        isCancelled: { cancelFlag.isSet }
+                    )
+                    guard folderIdentity.matches(folder: standardizedURL) else {
+                        throw FolderScanner.ScanError.filesChangedDuringScan
+                    }
+                    try Task.checkCancellation()
+                    return (scanned, savedSession)
                 } onCancel: {
                     cancelFlag.set()
                 }
-                try Task.checkCancellation()
-                guard folderIdentity.matches(folder: standardizedURL) else {
-                    throw FolderScanner.ScanError.filesChangedDuringScan
-                }
-                let savedSession = await self.persistence.read(
-                    for: standardizedURL,
-                    folderIdentity: folderIdentity,
-                    legacySidecarRelocationAuthorization:
-                        legacySidecarRelocationAuthorization
-                )
-                try FolderScanner.validateScannedIdentities(scanned)
-                guard folderIdentity.matches(folder: standardizedURL) else {
-                    throw FolderScanner.ScanError.filesChangedDuringScan
-                }
-                try Task.checkCancellation()
                 await MainActor.run {
                     guard self.scanGeneration == generation else { return }
                     self.scanTask = nil
@@ -2054,15 +2084,10 @@ final class SessionStore: ObservableObject {
               !isXMPPublicationRunning else { return }
         invalidateDuplicateBurstAnalysis(rebuildLayout: false)
         let previousMode = rawJPEGPairingMode
+        pairingMetadataError = nil
         rawJPEGPairingMode = mode
         guard let folder = sourceFolder, case .ready = phase, !items.isEmpty else { return }
 
-        // The available type labels change between "RAW + JPEG" and separate
-        // "RAW"/"JPEG" entries. Clear only that facet so an old label cannot
-        // silently produce a surprising result after the rebuild.
-        var updatedFilter = filter
-        updatedFilter.excludedTypes = []
-        filter = updatedFilter
         flushPendingFilter()
 
         let sourceItems = items
@@ -2095,10 +2120,16 @@ final class SessionStore: ObservableObject {
                 )
             } catch {
                 await MainActor.run { [weak self] in
-                    guard let self else { return }
+                    guard let self,
+                          self.rawJPEGPairingMode == requestedMode,
+                          self.sourceFolder == folder,
+                          case .ready = self.phase else { return }
                     self.rawJPEGPairingMode = previousMode
                     self.isChangingRawJPEGPairingMode = false
                     self.isSessionTransitioning = false
+                    if !(error is CancellationError) {
+                        self.pairingMetadataError = error.localizedDescription
+                    }
                 }
             }
         }
@@ -2119,6 +2150,11 @@ final class SessionStore: ObservableObject {
             return
         }
 
+        // Change the type facet only after enrichment succeeds, so a failed
+        // split leaves the existing review layout and filter untouched.
+        var updatedFilter = filter
+        updatedFilter.excludedTypes = []
+        filter = updatedFilter
         setSelectionIndices([])
         items = projection.items
         emptySessionReason = nil
@@ -2218,7 +2254,7 @@ final class SessionStore: ObservableObject {
             resetDerivedData()
             visibleIndices = []
             phase = .welcome
-            scanError = "Louppe couldn't establish a safe session-writing context for this folder. Nothing was saved; open it again."
+            scanError = L10n.text("Couldn't prepare safe saving for this folder. Nothing was saved; open it again.")
             return
         }
         persistenceAccess = access
@@ -2324,12 +2360,9 @@ final class SessionStore: ObservableObject {
             let count = identityConflicts.count
             let examples = identityConflicts.prefix(3).joined(separator: ", ")
             let exampleText = examples.isEmpty ? "" : " (\(examples))"
-            scanError = "Louppe found \(count) photo"
-                + (count == 1 ? " or video" : "s or videos")
-                + " with the same name as saved session entries, but not the same physical file"
-                + exampleText + ". To protect the old ratings, Louppe did not apply them to these files. Restore the original "
-                + (count == 1 ? "file, or choose" : "files, or choose")
-                + " Open as New Session to forget the saved decisions for this folder and review the current files."
+            scanError = count == 1
+                ? L10n.text("Louppe found 1 photo or video with the same name as a saved session entry, but not the same physical file\(exampleText). To protect the old ratings, Louppe did not apply them to this file. Restore the original file, or choose Open as New Session to forget the saved decisions for this folder and review the current files.")
+                : L10n.text("Louppe found \(count) photos or videos with the same names as saved session entries, but not the same physical files\(exampleText). To protect the old ratings, Louppe did not apply them to these files. Restore the original files, or choose Open as New Session to forget the saved decisions for this folder and review the current files.")
             return
         }
         if relocatedSessionNeedsIdentityProof {
@@ -2341,9 +2374,9 @@ final class SessionStore: ObservableObject {
                 legacySidecarRelocationAuthorization
             canOpenIdentityConflictAsNewSession = true
             if relocatedLegacySessionHasNoFilenameMatch {
-                scanError = "Louppe couldn't match any saved filenames from that session to this folder. The saved decisions were left untouched. Choose Open as New Session to replace them and review the current files unrated."
+                scanError = L10n.text("No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated.")
             } else {
-                scanError = "This folder contains a session from another location, but Louppe couldn't verify any of its exact original files here. The saved decisions were left untouched. Choose Open as New Session to replace them and review the current files unrated."
+                scanError = L10n.text("This session came from another location; no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated.")
             }
             return
         }
@@ -2382,7 +2415,7 @@ final class SessionStore: ObservableObject {
             pushUndo(.organization(organizationUndo))
         }
         if loaded.isEmpty {
-            scanError = "No recognised media was found in “\(url.lastPathComponent)”. Choose another folder or check Supported Formats."
+            scanError = L10n.text("No recognised media was found in “\(url.lastPathComponent)”. Choose another folder or check Supported Formats.")
         } else if replaceSavedSession {
             // Replacing the old snapshot is an explicit user change, not
             // optional maintenance of the just-opened baseline.
@@ -3159,7 +3192,7 @@ final class SessionStore: ObservableObject {
     /// store so the toolbar menu and the File menu share one source of truth.
     var selectionCleanUpTitle: String {
         let count = effectiveSelection.count
-        return count > 1 ? "Move \(count) Selected to Trash…" : "Move Selected to Trash…"
+        return count > 1 ? L10n.text("Move \(count) Selected to Trash…") : L10n.text("Move Selected to Trash…")
     }
 
     func presentExport(keepersOnly: Bool = false) {
@@ -3171,14 +3204,14 @@ final class SessionStore: ObservableObject {
     /// Computed from the same generation authority used by Close and Quit.
     /// A completed older write must never make a newer decision look saved.
     var sessionSaveStatus: String {
-        if isLegacySessionMigrationConfirmationPresented { return "Not saved" }
+        if isLegacySessionMigrationConfirmationPresented { return L10n.text("Not saved") }
         if persistenceWarning != nil {
-            if sessionChangeGeneration == 0 { return "Check saving" }
-            return currentSessionIsDurable ? "Saved · see notice" : "Not saved"
+            if sessionChangeGeneration == 0 { return L10n.text("Check saving") }
+            return currentSessionIsDurable ? L10n.text("Saved · see notice") : L10n.text("Not saved")
         }
-        if activePersistenceSaveCount > 0 { return "Saving…" }
-        if sessionChangeGeneration == 0 { return "Saved" }
-        return currentSessionIsDurable ? "Saved" : "Saving…"
+        if activePersistenceSaveCount > 0 { return L10n.text("Saving…") }
+        if sessionChangeGeneration == 0 { return L10n.text("Saved") }
+        return currentSessionIsDurable ? L10n.text("Saved") : L10n.text("Saving…")
     }
 
     var isReviewComplete: Bool { !items.isEmpty && undecidedCount == 0 }
@@ -3268,6 +3301,7 @@ final class SessionStore: ObservableObject {
         Task.detached(priority: .userInitiated) { [weak self] in
             let result = CleanUpWorker.moveToTrash(snapshots, progress: progressReporter)
             var preparedSurvivors: [PhotoItem] = []
+            var survivorMetadataError: String?
             if mode == .pairedRAWs {
                 let removedRAWIDs = Set(
                     result.succeeded.flatMap {
@@ -3277,18 +3311,22 @@ final class SessionStore: ObservableObject {
                 let jpegFiles = removedRAWIDs.compactMap {
                     jpegSurvivorByRawID[$0]
                 }
-                if let prepared = try? FolderScanner.prepareStandaloneFiles(
-                    jpegFiles
-                ) {
-                    preparedSurvivors = prepared.map {
-                        PhotoItem(primaryFile: $0)
-                    }
+                do {
+                    let prepared = try FolderScanner.prepareStandaloneFiles(jpegFiles)
+                    preparedSurvivors = prepared.map { PhotoItem(primaryFile: $0) }
+                } catch {
+                    // Keep the old physical-file records as identity-bound
+                    // placeholders. Never adopt replacement metadata, and do
+                    // not undo or hide RAW moves that already completed.
+                    preparedSurvivors = jpegFiles.map { PhotoItem(primaryFile: $0) }
+                    survivorMetadataError = error.localizedDescription
                 }
             }
             await self?.finishCleanUp(
                 result,
                 mode: mode,
                 preparedSurvivors: preparedSurvivors,
+                survivorMetadataError: survivorMetadataError,
                 previousItemID: previousItemID,
                 previousIndex: previousIndex,
                 generation: generation
@@ -3300,6 +3338,7 @@ final class SessionStore: ObservableObject {
         _ result: TrashBatchResult,
         mode: CleanUpMode,
         preparedSurvivors: [PhotoItem],
+        survivorMetadataError: String?,
         previousItemID: String?,
         previousIndex: Int,
         generation: UInt64
@@ -3334,7 +3373,8 @@ final class SessionStore: ObservableObject {
                 )
                 if let projection = reprojectItems(
                     adding: preparedSurvivors,
-                    removingFileIDs: removedFileIDs
+                    removingFileIDs: removedFileIDs,
+                    loadMissingMetadata: survivorMetadataError == nil
                 ) {
                     items = projection.items
                 }
@@ -3365,18 +3405,22 @@ final class SessionStore: ObservableObject {
         activeFileOperation = nil
         cleanUpProgress = nil
         cleanUpStalePhotos = []
+        if let survivorMetadataError {
+            pairingMetadataError = L10n.text("The completed moves to Trash were preserved. ")
+                + survivorMetadataError
+        }
         if result.failedPhotos > 0 {
             var message: String
             if result.inconsistentPhotos > 0 {
-                message = "\(result.failedPhotos) item\(result.failedPhotos == 1 ? "" : "s") couldn't be moved completely. "
-                    + "For \(result.inconsistentPhotos), rollback also failed; check both the source folder and Trash."
+                message = (result.failedPhotos == 1 ? L10n.text("\(result.failedPhotos) item couldn't be moved completely. ") : L10n.text("\(result.failedPhotos) items couldn't be moved completely. "))
+                    + L10n.text("For \(result.inconsistentPhotos), rollback also failed; check both the source folder and Trash.")
             } else {
                 message = result.failedPhotos == 1
-                    ? "1 item couldn't be moved to the Trash and stayed in the folder."
-                    : "\(result.failedPhotos) items couldn't be moved to the Trash and stayed in the folder."
+                    ? L10n.text("1 item couldn't be moved to the Trash and stayed in the folder.")
+                    : L10n.text("\(result.failedPhotos) items couldn't be moved to the Trash and stayed in the folder.")
             }
             if result.journalFailure {
-                message += " Louppe's file-safety checks stopped the operation before another file was touched."
+                message += L10n.text(" Louppe's file-safety checks stopped the operation before another file was touched.")
             }
             cleanUpError = message
         }
@@ -3388,7 +3432,8 @@ final class SessionStore: ObservableObject {
     /// case handling.
     private func reprojectItems(
         adding addedItems: [PhotoItem],
-        removingFileIDs: Set<String> = []
+        removingFileIDs: Set<String> = [],
+        loadMissingMetadata: Bool = true
     ) -> FolderScanner.PairingProjection? {
         guard let sourceFolder else { return nil }
         let physicalItems = (items + addedItems).flatMap { item in
@@ -3401,7 +3446,8 @@ final class SessionStore: ObservableObject {
         return try? FolderScanner.projectPairingMode(
             rawJPEGPairingMode,
             from: physicalItems,
-            root: sourceFolder
+            root: sourceFolder,
+            loadMissingMetadata: loadMissingMetadata
         )
     }
 
@@ -3410,7 +3456,7 @@ final class SessionStore: ObservableObject {
         mode: CleanUpMode = .keepOnlyYes
     ) -> String {
         let count = stalePhotos.count
-        let items = count == 1 ? "1 item has" : "\(count) items have"
+        let items = count == 1 ? L10n.text("1 item has") : L10n.text("\(count) items have")
         let examples = stalePhotos.prefix(3).map { "“\($0.displayName)”" }
         let names: String
         switch examples.count {
@@ -3419,20 +3465,20 @@ final class SessionStore: ObservableObject {
         case 1:
             names = " (\(examples[0]))"
         case 2:
-            names = " (\(examples[0]) and \(examples[1]))"
+            names = L10n.text(" (\(examples[0]) and \(examples[1]))")
         default:
-            names = " (including \(examples.joined(separator: ", ")))"
+            names = L10n.text(" (including \(examples.joined(separator: ", ")))")
         }
         let action: String
         switch mode {
-        case .selection: action = "Move Selected to Trash"
-        case .trashNo: action = "Move “No” to Trash"
-        case .keepOnlyYes: action = "Trash No + Undecided"
-        case .pairedJPEGs: action = "Move Paired JPEGs to Trash"
-        case .pairedRAWs: action = "Move Paired RAWs to Trash"
+        case .selection: action = L10n.text("Move Selected to Trash")
+        case .trashNo: action = L10n.text("Move “No” to Trash")
+        case .keepOnlyYes: action = L10n.text("Trash No + Undecided")
+        case .pairedJPEGs: action = L10n.text("Move Paired JPEGs to Trash")
+        case .pairedRAWs: action = L10n.text("Move Paired RAWs to Trash")
         }
-        return "\(items) changed after this folder was scanned\(names). "
-            + "No files were moved. Rescan Folder to refresh Louppe’s safe file checks, then choose \(action) again and confirm the new count."
+        return L10n.text("\(items) changed after this folder was scanned\(names). ")
+            + L10n.text("No files were moved. Use Rescan Folder, then choose \(action) and confirm the updated count.")
     }
 
     /// Dismisses the stale-scan notice and uses the existing save-first
@@ -3529,13 +3575,13 @@ final class SessionStore: ObservableObject {
             // risk restoring a rating onto the wrong photo.
             undoStack.removeAll()
             cleanUpError = result.lostPhotos == 1
-                ? "1 item couldn't be restored from the Trash — it may have been deleted there."
-                : "\(result.lostPhotos) items couldn't be restored from the Trash — they may have been deleted there."
+                ? L10n.text("1 item couldn't be restored from the Trash — it may have been deleted there.")
+                : L10n.text("\(result.lostPhotos) items couldn't be restored from the Trash — they may have been deleted there.")
             if result.inconsistentPhotos > 0 {
-                cleanUpError? += " For \(result.inconsistentPhotos), rollback also failed; check both the source folder and Trash."
+                cleanUpError? += L10n.text(" For \(result.inconsistentPhotos), rollback also failed; check both the source folder and Trash.")
             }
             if result.journalFailure {
-                cleanUpError? += " Louppe's file-safety checks stopped the operation before another file was touched."
+                cleanUpError? += L10n.text(" Louppe's file-safety checks stopped the operation before another file was touched.")
             }
         }
         rebuildDerivedData()
@@ -3787,8 +3833,8 @@ final class SessionStore: ObservableObject {
                 self.activeFileOperation = nil
                 self.organizationProgress = nil
                 self.organizationError = plan.changeKind == .rename
-                    ? "Louppe could not save the current ratings safely. Retry Saving before renaming files."
-                    : "Louppe could not save the current ratings safely. Retry Saving before organizing the source folder."
+                    ? L10n.text("Louppe could not save the current ratings safely. Retry Saving before renaming files.")
+                    : L10n.text("Louppe could not save the current ratings safely. Retry Saving before organizing the source folder.")
                 return
             }
             let reporter: SourceOrganizationWorker.Progress = {
@@ -3839,8 +3885,8 @@ final class SessionStore: ObservableObject {
         if result.requiresRecovery {
             organizationError = result.failureMessage
                 ?? (plan.changeKind == .rename
-                    ? "The interrupted rename needs recovery before another file operation."
-                    : "The interrupted organization needs recovery before another file operation.")
+                    ? L10n.text("The interrupted rename needs recovery before another file operation.")
+                    : L10n.text("The interrupted organization needs recovery before another file operation."))
             operationRecoveryCause = organizationError
             beginInterruptedOperationRecovery(rescanOnSuccess: true)
             return
@@ -3850,8 +3896,8 @@ final class SessionStore: ObservableObject {
             if result.failedItems > 0 {
                 organizationError = result.failureMessage
                     ?? (plan.changeKind == .rename
-                        ? "Some items could not be renamed and kept their previous names."
-                        : "Some items could not be organized and stayed in their original folders.")
+                        ? L10n.text("Some items could not be renamed and kept their previous names.")
+                        : L10n.text("Some items could not be organized and stayed in their original folders."))
             }
             return
         }
@@ -3959,7 +4005,7 @@ final class SessionStore: ObservableObject {
         )
         if result.requiresRecovery {
             organizationError = result.failureMessage
-                ?? "The interrupted restore needs recovery before another file operation."
+                ?? L10n.text("The interrupted restore needs recovery before another file operation.")
             operationRecoveryCause = organizationError
             beginInterruptedOperationRecovery(rescanOnSuccess: true)
             return
@@ -3967,8 +4013,8 @@ final class SessionStore: ObservableObject {
         guard result.movedFiles > 0, let folder = sourceFolder else {
             organizationError = result.failureMessage
                 ?? (record.changeKind == .rename
-                    ? "The previous filenames could not be restored."
-                    : "The previous folder layout could not be restored.")
+                    ? L10n.text("The previous filenames could not be restored.")
+                    : L10n.text("The previous folder layout could not be restored."))
             return
         }
         // Session persistence follows each physical file back to its previous
@@ -5068,19 +5114,15 @@ final class SessionStore: ObservableObject {
             }
             switch sidecarFailure {
             case .permissionDenied:
-                persistenceWarning = "This folder is read-only. Your ratings are safe in Louppe's backup, "
-                    + "but not beside the photos. Restore write access, then retry."
+                persistenceWarning = L10n.text("This folder is read-only. Your ratings are safe in Louppe's backup, but not beside the photos. Restore write access, then retry.")
             case .outOfSpace:
-                persistenceWarning = "The media volume is out of space. Your ratings are safe in Louppe's backup, "
-                    + "but not beside the photos. Free some space, then retry."
+                persistenceWarning = L10n.text("The media volume is out of space. Your ratings are safe in Louppe's backup, but not beside the photos. Free some space, then retry.")
             case .volumeUnavailable:
-                persistenceWarning = "The media volume is unavailable. Your ratings are safe in Louppe's backup. "
-                    + "Reconnect it, then retry."
+                persistenceWarning = L10n.text("The media volume is unavailable. Your ratings are safe in Louppe's backup. Reconnect it, then retry.")
             case .busy:
-                persistenceWarning = "Another Louppe window is saving this folder. Your ratings are safe in Louppe's backup. Retry in a moment."
-            case .encoding, .other:
-                persistenceWarning = "Your ratings are safe in Louppe's backup, but the folder session file "
-                    + "couldn't be updated. Retry when the folder is available."
+                persistenceWarning = L10n.text("Another Louppe window is saving this folder. Your ratings are safe in Louppe's backup. Retry in a moment.")
+            case .encoding, .snapshotTooLarge, .other:
+                persistenceWarning = L10n.text("Your ratings are safe in Louppe's backup, but the folder session file couldn't be updated. Retry when the folder is available.")
             }
         case .failed(let failure):
             retrySaveRequest = request
@@ -5092,28 +5134,27 @@ final class SessionStore: ObservableObject {
                 persistenceWarning = optionalSidecarRepairWarning(
                     sidecarFailure: failure.sidecar
                 )
+            } else if failure.sidecar == .snapshotTooLarge
+                        || failure.backup == .snapshotTooLarge {
+                persistenceWarning = L10n.text("Your latest ratings are not saved: the session is too large to reopen. Both saved copies remain untouched. Keep this session open and contact Alex.")
             } else if failure.sidecar == .busy || failure.backup == .busy {
-                persistenceWarning = "Another Louppe window is saving this folder. Your latest ratings are not saved yet. Retry in a moment."
+                persistenceWarning = L10n.text("Another Louppe window is saving this folder. Your latest ratings are not saved yet. Retry in a moment.")
             } else if failure.sidecar == .outOfSpace || failure.backup == .outOfSpace {
-                persistenceWarning = "Your latest ratings are not saved because the disk is full. "
-                    + "Free some space and retry before closing Louppe."
+                persistenceWarning = L10n.text("Your latest ratings are not saved because the disk is full. Free some space and retry before closing Louppe.")
             } else if failure.sidecar == .permissionDenied
                         && failure.backup == .permissionDenied {
-                persistenceWarning = "Your latest ratings are not saved because Louppe cannot write to "
-                    + "the folder or its backup location. Fix the permissions and retry."
+                persistenceWarning = L10n.text("Your latest ratings are not saved because Louppe cannot write to the folder or its backup location. Fix the permissions and retry.")
             } else if failure.sidecar == .volumeUnavailable
                         && failure.backup == .volumeUnavailable {
-                persistenceWarning = "Your latest ratings are not saved because the storage volume is unavailable. "
-                    + "Reconnect it and retry before closing Louppe."
+                persistenceWarning = L10n.text("Your latest ratings are not saved because the storage volume is unavailable. Reconnect it and retry before closing Louppe.")
             } else {
-                persistenceWarning = "Your latest ratings are not saved. Retry before closing Louppe."
+                persistenceWarning = L10n.text("Your latest ratings are not saved. Retry before closing Louppe.")
             }
         case .rejectedInvalidSnapshot:
             retrySaveRequest = nil
             retrySaveIsOptionalSidecarRepair = false
             persistenceRejectedInvalidSnapshot = true
-            persistenceWarning = "Louppe stopped an internally inconsistent session snapshot before it could "
-                + "replace either saved copy. Keep this session open and report the problem."
+            persistenceWarning = L10n.text("Louppe rejected an inconsistent snapshot before it could replace either saved copy. Keep this session open and report the problem.")
         case .sourceFolderChanged:
             retrySaveRequest = request
             retrySaveIsOptionalSidecarRepair = requestWasAlreadyDurable
@@ -5121,9 +5162,9 @@ final class SessionStore: ObservableObject {
             if requestWasAlreadyDurable {
                 persistenceWarning = liveSessionHasNewerChanges
                     ? nil
-                    : "No new ratings are waiting to be saved. The folder or card at this path changed, so its session file was left untouched. Reconnect the original folder to repair it."
+                    : L10n.text("No new ratings are waiting to be saved. The folder or card changed; its session file remains untouched. Reconnect the original to repair it.")
             } else {
-                persistenceWarning = "The opened folder or card changed before Louppe could save. Neither session copy was touched. Reconnect the original folder, then retry saving."
+                persistenceWarning = L10n.text("The folder or card changed before saving. Both saved copies remain untouched. Reconnect the original, then retry saving.")
             }
         case .sidecarChanged:
             retrySaveRequest = request
@@ -5132,9 +5173,9 @@ final class SessionStore: ObservableObject {
             if requestWasAlreadyDurable {
                 persistenceWarning = liveSessionHasNewerChanges
                     ? nil
-                    : "No new ratings are waiting to be saved. This folder's session file changed outside Louppe, so it was left untouched. Restore the version you want before repairing it."
+                    : L10n.text("No new ratings are waiting to be saved. The session file changed outside Louppe and remains untouched. Restore the version you want before repair.")
             } else {
-                persistenceWarning = "This folder's session file changed outside Louppe after it was opened. Louppe left both versions untouched. Restore the version you want to keep, then retry saving."
+                persistenceWarning = L10n.text("The session file changed outside Louppe. Both versions remain untouched. Restore the version you want, then retry saving.")
             }
         case .superseded:
             break
@@ -5146,15 +5187,15 @@ final class SessionStore: ObservableObject {
     ) -> String {
         switch sidecarFailure {
         case .permissionDenied:
-            return "No new ratings are waiting to be saved. The folder session file is still read-only; restore write access to repair it."
+            return L10n.text("No new ratings are waiting to be saved. The folder session file is still read-only; restore write access to repair it.")
         case .outOfSpace:
-            return "No new ratings are waiting to be saved. The folder session file couldn't be repaired because the media volume is full."
+            return L10n.text("No new ratings are waiting to be saved. The folder session file couldn't be repaired because the media volume is full.")
         case .volumeUnavailable:
-            return "No new ratings are waiting to be saved. Reconnect the media volume to repair its folder session file."
+            return L10n.text("No new ratings are waiting to be saved. Reconnect the media volume to repair its folder session file.")
         case .busy:
-            return "No new ratings are waiting to be saved. Another Louppe window is using this folder; retry the sidecar repair in a moment."
-        case .encoding, .other:
-            return "No new ratings are waiting to be saved. The folder session file still couldn't be repaired."
+            return L10n.text("No new ratings are waiting to be saved. Another Louppe window is using this folder; retry the sidecar repair in a moment.")
+        case .encoding, .snapshotTooLarge, .other:
+            return L10n.text("No new ratings are waiting to be saved. The folder session file still couldn't be repaired.")
         }
     }
 
@@ -5222,7 +5263,7 @@ final class SessionStore: ObservableObject {
     private func addToRecents(_ url: URL) {
         var folders = recentFolders
         folders.removeAll { $0.standardizedFileURL == url.standardizedFileURL }
-        folders.insert(url.standardizedFileURL, at: 0)
+        folders.insert(url, at: 0)
         if folders.count > 8 { folders = Array(folders.prefix(8)) }
         SecurityScopedFolderBookmarks.save(folders)
         recentFolders = folders
@@ -5305,6 +5346,7 @@ final class SessionStore: ObservableObject {
         isClearAllRatingsConfirmationPresented = false
         pendingCleanUp = nil
         dismissCleanUpError()
+        pairingMetadataError = nil
         currentIndex = 0
         filter = PhotoFilter()
         applyReviewDefaults()

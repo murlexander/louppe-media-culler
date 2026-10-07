@@ -14,8 +14,8 @@ struct SourceOrganizationProgress: Equatable, Sendable {
 
     var title: String {
         action == .organizing
-            ? "Organizing source folder…"
-            : "Restoring previous folders…"
+            ? L10n.text("Organizing source folder…")
+            : L10n.text("Restoring previous folders…")
     }
 }
 
@@ -29,14 +29,14 @@ struct SourceOrganizationOutcome: Equatable, Sendable {
 
     func title(for kind: SourceFileChangeKind) -> String {
         if wasUndo {
-            guard succeeded else { return "Restore finished with problems" }
+            guard succeeded else { return L10n.text("Restore finished with problems") }
             return kind == .rename
-                ? "Previous filenames restored" : "Previous folders restored"
+                ? L10n.text("Previous filenames restored") : L10n.text("Previous folders restored")
         }
         if kind == .rename {
-            return succeeded ? "Files renamed" : "Rename finished with problems"
+            return succeeded ? L10n.text("Files renamed") : L10n.text("Rename finished with problems")
         }
-        return succeeded ? "Source folder organized" : "Organization finished with problems"
+        return succeeded ? L10n.text("Source folder organized") : L10n.text("Organization finished with problems")
     }
 
     func fileCountDescription(for kind: SourceFileChangeKind) -> String {
@@ -98,9 +98,9 @@ enum SourceOrganizationScope: String, CaseIterable, Hashable, Sendable {
 
     var label: String {
         switch self {
-        case .all: return "All Media"
-        case .filtered: return "Filtered"
-        case .selected: return "Selected"
+        case .all: return L10n.text("All Media")
+        case .filtered: return L10n.text("Filtered")
+        case .selected: return L10n.text("Selected")
         }
     }
 }
@@ -121,15 +121,15 @@ enum SourceOrganizationLevelKind: String, CaseIterable, Codable, Hashable,
 
     var label: String {
         switch self {
-        case .existingFolder: return "Existing folder"
-        case .decision: return "Decision"
-        case .dateTaken: return "Date taken"
-        case .starRating: return "Star rating"
-        case .colorLabel: return "Color label"
-        case .camera: return "Camera"
-        case .lens: return "Lens"
-        case .fileType: return "File type"
-        case .mediaType: return "Media type"
+        case .existingFolder: return L10n.text("Existing folder")
+        case .decision: return L10n.text("Decision")
+        case .dateTaken: return L10n.text("Date taken")
+        case .starRating: return L10n.text("Star rating")
+        case .colorLabel: return L10n.text("Color label")
+        case .camera: return L10n.text("Camera")
+        case .lens: return L10n.text("Lens")
+        case .fileType: return L10n.text("File type")
+        case .mediaType: return L10n.text("Media type")
         }
     }
 
@@ -156,9 +156,9 @@ enum SourceOrganizationDateGranularity: String, CaseIterable, Codable,
 
     var label: String {
         switch self {
-        case .day: return "Full date"
-        case .month: return "Year and month"
-        case .year: return "Year"
+        case .day: return L10n.text("Full date")
+        case .month: return L10n.text("Year and month")
+        case .year: return L10n.text("Year")
         }
     }
 }
@@ -170,8 +170,8 @@ enum SourceOrganizationExistingFolderDepth: String, CaseIterable, Codable,
 
     var label: String {
         switch self {
-        case .topLevel: return "Top level"
-        case .fullPath: return "Full path"
+        case .topLevel: return L10n.text("Top level")
+        case .fullPath: return L10n.text("Full path")
         }
     }
 }
@@ -202,7 +202,7 @@ struct SourceOrganizationConfiguration: Equatable, Sendable {
             ],
             dateGranularity: .day,
             existingFolderDepth: .topLevel,
-            containerName: "Organized"
+            containerName: L10n.text("Organized")
         )
     }
 
@@ -226,7 +226,7 @@ struct SourceOrganizationConfiguration: Equatable, Sendable {
             ],
             dateGranularity: .day,
             existingFolderDepth: .topLevel,
-            containerName: "Organized"
+            containerName: L10n.text("Organized")
         )
     }
 
@@ -297,15 +297,15 @@ enum SourceOrganizationPlanner {
         var errorDescription: String? {
             switch self {
             case .invalidContainerName:
-                return "Choose a single, visible folder name for the organized files. Names beginning with a dot and macOS package names such as .app cannot be scanned."
+                return L10n.text("Choose one visible folder name. Dot-prefixed names and macOS packages such as .app cannot be scanned.")
             case .invalidFileName(let reason):
                 return reason
             case .noFilenameParts:
-                return "Choose at least one filename part."
+                return L10n.text("Choose at least one filename part.")
             case .unsafeSourcePath(let url):
-                return "Louppe could not preserve the exact source path for \(url.lastPathComponent)."
+                return L10n.text("Louppe could not preserve the exact source path for \(url.lastPathComponent).")
             case .invalidExistingFolder:
-                return "An existing source-folder path could not be represented safely."
+                return L10n.text("An existing source-folder path could not be represented safely.")
             }
         }
     }
@@ -489,7 +489,7 @@ enum SourceOrganizationPlanner {
                     id: "unsafe:\(target.path)",
                     destination: target,
                     sources: [source],
-                    message: "The exact source or destination path could not be preserved."
+                    message: L10n.text("The exact source or destination path could not be preserved.")
                 ))
                 return false
             }
@@ -505,7 +505,7 @@ enum SourceOrganizationPlanner {
                     id: "equivalent-name:\(targetExact.bytes.base64EncodedString())",
                     destination: target,
                     sources: [source],
-                    message: "This drive treats the new spelling as the same filename. Choose a more distinct name."
+                    message: L10n.text("This drive treats the new spelling as the same filename. Choose a more distinct name.")
                 ))
                 return false
             }
@@ -518,7 +518,7 @@ enum SourceOrganizationPlanner {
                     id: "planned:\(key)",
                     destination: target,
                     sources: [existing.source, source],
-                    message: "Two source files would have the same destination."
+                    message: L10n.text("Two source files would have the same destination.")
                 ))
                 return false
             }
@@ -528,7 +528,7 @@ enum SourceOrganizationPlanner {
                     id: "existing:\(key)",
                     destination: target,
                     sources: [source, target],
-                    message: "A different file or folder already exists at the destination."
+                    message: L10n.text("A different file or folder already exists at the destination.")
                 ))
                 return false
             }
@@ -592,7 +592,7 @@ enum SourceOrganizationPlanner {
                             id: "unsafe-directory:\(unsafe.bytes.base64EncodedString())",
                             destination: unsafe.url,
                             sources: item.allURLs,
-                            message: "A destination component is not a visible folder that Louppe can scan."
+                            message: L10n.text("A destination component is not a visible folder that Louppe can scan.")
                         ))
                     }
                 }
@@ -696,7 +696,7 @@ enum SourceOrganizationPlanner {
                         id: "new-media-family:\(rawID):\(jpegID)",
                         destination: destination,
                         sources: [raw.url, jpegFile.url],
-                        message: "These files would acquire the same stem and could be mistaken for a RAW + JPEG pair. Add Sequence or choose another name."
+                        message: L10n.text("These files would share the same stem, creating a false RAW + JPEG pair. Add Sequence or choose another name.")
                     ))
                 }
             }
@@ -714,7 +714,7 @@ enum SourceOrganizationPlanner {
                     id: "broken-media-family:\(pair.rawFileID):\(pair.jpegFileID)",
                     destination: members.first?.url ?? sourceFolder,
                     sources: members.map(\.url),
-                    message: "These names would make an existing RAW + JPEG pair ambiguous. Add Sequence or choose another name."
+                    message: L10n.text("These names would make an existing RAW + JPEG pair ambiguous. Add Sequence or choose another name.")
                 ))
             }
         }
@@ -758,7 +758,7 @@ enum SourceOrganizationPlanner {
                         id: "xmp-filename:\(selectedMembers[0].mediaPath.bytes.base64EncodedString())",
                         destination: selectedMembers[0].mediaPath.parent.url,
                         sources: selectedMembers.map(\.mediaPath.url),
-                        message: "This media family has ambiguous XMP filenames."
+                        message: L10n.text("This media family has ambiguous XMP filenames.")
                     ))
                     continue
                 }
@@ -778,7 +778,7 @@ enum SourceOrganizationPlanner {
                             id: "acr-rename:\(acr.bytes.base64EncodedString())",
                             destination: acr.url,
                             sources: selectedMembers.map(\.mediaPath.url),
-                            message: "This media family has a Lightroom .acr companion. Louppe leaves .acr files untouched, so rename this family outside Louppe."
+                            message: L10n.text("This family has a Lightroom .acr companion, which Louppe leaves untouched. Rename it outside Louppe.")
                         ))
                     }
                 }
@@ -805,7 +805,7 @@ enum SourceOrganizationPlanner {
                             id: "shared-xmp:\(canonical.bytes.base64EncodedString())",
                             destination: canonical.url,
                             sources: selectedMembers.map(\.mediaPath.url),
-                            message: "A shared XMP sidecar would be separated from part of its media family or its files would receive different names."
+                            message: L10n.text("A shared XMP sidecar would leave part of its media family or receive mismatched names.")
                         ))
                         continue
                     }
@@ -864,7 +864,7 @@ enum SourceOrganizationPlanner {
                             id: "ambiguous-xmp:\(packet.bytes.base64EncodedString())",
                             destination: packet.url,
                             sources: owners.map(\.mediaPath.url),
-                            message: "An application XMP sidecar could not be associated with exactly one media file."
+                            message: L10n.text("An application XMP sidecar could not be associated with exactly one media file.")
                         ))
                         continue
                     }

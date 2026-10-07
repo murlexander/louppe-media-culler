@@ -1,217 +1,162 @@
 # Louppe Media Culler backlog
 
-This is the live backlog for the macOS app. Product and technical work belong
-here because they change with the app and should be visible to everyone working
-in this repository. The Obsidian `louppe` note remains the home for research,
-positioning, publicity planning, and the CAS record.
+App product and engineering work lives here. Research, publicity, and CAS notes
+stay in Obsidian. Latest public release: [1.9.0 (11)](Docs/RELEASE_1.9.0.md).
 
-The latest published app is 1.9.0 (11). Its delivery and verification are in
-[the release record](Docs/RELEASE_1.9.0.md).
+## Completed readiness work — 7 October 2026
+
+- [x] **AUD-01:** a shared 512 MiB read/CAS/write limit rejects oversized saves
+  before either saved copy changes. Retry, dirty Close, and Quit remain safe.
+- [x] **AUD-02:** check lazy JPEG identity before/after metadata reads. Replacement
+  offers Rescan; completed RAW Trash and Undo remain accurate on enrichment failure.
+- [x] **AUD-04:** cancellation covers saved-session reads and final scan validation.
+- [x] Published the privacy policy and added Help/About links.
+- [x] Reproduced external status/hidden-flag changes in Documents test fixtures
+  without Louppe running. Temporary-storage fixtures pass all 75 checks and 20
+  pairing repeats; byte assertions, identity guards, and five-second waits remain.
+  The external writer is unidentified.
+- [x] Unsupported ExFAT export destinations fail before media/journal creation.
+  ExFAT-source → APFS Copy works.
+
+Signed Store picker, cold Recent, routed Copy/Back, Move, Rename/Trash/Organize
+with Undo, media previews and safe Copy Stop passed. AUD-03 retains untested
+grant/failure cases. Case-sensitive APFS/ExFAT and image detach/remount passed;
+physical/provider/power tests remain under AUD-05/AUD-18.
+[Readiness and submission evidence](Docs/APP_STORE_READINESS_2026-10-07.md).
 
 ## Waiting on Alex or collaborators
 
-- [ ] **AUD-23 — Accept native accessibility on the current 1.10.0 build.**
-  Check spoken VoiceOver feedback, Full Keyboard Access, increased contrast,
-  and Reduce Motion across review, recovery, persistent Gallery controls, and
-  connected-drive actions. Record the settings and outcomes; automated hotkey
-  and hosted-control checks do not replace spoken/control-by-control acceptance.
-- [ ] **AUD-24 — Accept display and provider edge cases.** Exercise
-  Welcome/Scanning/Ready on a small display, after resizing/display changes,
-  with long warnings, many mounted drives, and delayed File Provider folder
-  drops. Every action and message must remain reachable with visible feedback.
-- [ ] Back up and restore-test the private automatic-updater signing key.
+- [ ] **AUD-23 — Native accessibility.** Check spoken VoiceOver, Full Keyboard
+  Access, increased contrast, and Reduce Motion in review, recovery, Gallery,
+  and drive actions. Record settings/results; hotkey tests cover only part of this.
+- [ ] **AUD-24 — Display/provider cases.** Check Welcome/Scanning/Ready on a small
+  display, after resize/display changes, with long warnings, many drives, and
+  delayed File Provider drops. Keep every message/action reachable with feedback.
+- [ ] Back up and restore-test the private updater signing key.
 - [ ] Test a clean install and real culling workflow with Katerina.
-- [ ] Ask Andrey for a code review; decide separately whether co-authorship is
-  appropriate.
-- [ ] Obtain a final shared brand asset from Masha for the app icon and website.
-- [ ] Check XMP handoff in real Bridge, Lightroom Classic, and darktable;
-   rerun the separate RAW/JPEG conflict and reload workflow in Capture One.
-   Automated packet and resolver tests have passed, but these app workflows
-   have not been accepted end to end.
+- [ ] Ask Andrey for code review; decide co-authorship separately.
+- [ ] Obtain Masha’s final shared app/site brand asset.
+- [ ] Check XMP in Bridge, Lightroom Classic, and darktable; repeat separate
+  RAW/JPEG conflict/reload in Capture One. Packet/resolver tests passed; editor
+  acceptance remains open.
 
-## Implemented in the consolidated 1.10.0 build, awaiting acceptance
+## Implemented in 1.10.0
 
-- [x] Source-folder hierarchy in Sort, with full relative folder headers.
-- [x] Review preferences: advancement after a decision, default sort and group
-  dividers, and default Gallery/Grid view.
-- [x] Connected external drives and SD cards with capacity information and a
-  folder chooser starting on the selected drive.
+- [x] Source-folder hierarchy in Sort, with full relative-path headers.
+- [x] Review preferences: decision advancement, default sort/group dividers,
+  and Gallery/Grid view.
+- [x] External drive/card capacity and a folder chooser at the selected drive.
 
-These changes are included in `/Applications/Louppe.app`, alongside RAW display,
-Apple Default / RAW 9 selection, and the early-user feedback prompt. The update
-remains unreleased. See [the review record](Docs/REVIEW_BUILD.md) for verification
-and remaining hardware acceptance. Configurable shortcuts remain deferred to
-preserve the established keyboard-safety rules.
+Installed in `/Applications/Louppe.app` with RAW display, Apple Default / RAW 9,
+and early-user feedback. Unreleased; see [review evidence](Docs/REVIEW_BUILD.md).
+Configurable shortcuts remain deferred to preserve keyboard safety.
 
 ## Product improvements
-- [ ] Show the Fuji film simulation preset in photo metadata. Fuji camera previews
-  have the simulation baked into their pixels; the implemented RAW display mode
-  bypasses it through Apple rendering. Do not add a redundant simulation-removal
-  control or modify originals.
-- [ ] Extend media-format support where macOS capabilities allow it.
+
+- [ ] Show Fuji film simulation in metadata. Camera previews include it; Apple
+  RAW rendering bypasses it. Keep originals intact and avoid a redundant toggle.
+- [ ] Extend format support where macOS allows.
 
 ## Technical hardening
 
-- [ ] **Diagnose intermittent disposable scan-fixture failures.** The required
-  performance suite has occasionally raised `filesChangedDuringScan` or timed
-  out on a four-item rescan; unchanged reruns pass all 75 checks. Capture the
-  fixture and per-file identity transitions at failure before changing tests.
-  Keep production replacement checks and existing timeouts intact.
+- [ ] **RAW 9 compatibility.** Check older/unsupported Macs, missing resources,
+  failed downloads, and compressed/lossless-compressed Fuji RAFs. Verify retry/
+  default remedies, fresh pixels after decoder changes, and intact originals.
+  macOS 27 X-T50 uncompressed decoding/regressions passed.
+- [ ] **AUD-05 — ExFAT path replacement.** Reproduce path-based Move fallback and
+  launch recovery on disposable ExFAT. Standard Move/Rename/Organize/undo bind
+  parent descriptors; retain ExFAT’s no-overwrite probe and durability warning.
+- [ ] **AUD-21 — Media/AV APIs.** Replace semaphore probing with structured async
+  work and review macOS 27 reader/player-notification deprecations. Preserve
+  macOS 14, decoder limits, cancellation/reader exit, and playback tests.
+- [ ] **AUD-18 — Volume/interruption tests.** Extend fault injection on case-sensitive
+  APFS, ExFAT, removable/network volumes, disconnect/remount, lid-close, and simulated
+  power loss. Verify no overwrite, accurate durability, retained recovery, and safe
+  undo/retry. Record actual coverage. UI: AUD-23/24; Release baselines: AUD-06/19.
 
-- [ ] **RAW 9 compatibility acceptance.** Exercise real older/unsupported Macs,
-  unavailable model resources and failed downloads, and Fuji compressed/lossless
-  compressed RAFs. Confirm retry/default remedies, no stale pixels after decoder
-  changes, and intact originals. Current macOS 27 X-T50 uncompressed decoding and
-  regression checks passed; broader hardware/compression acceptance remains open.
-
-- [ ] **AUD-05 — Reproduce the remaining ExFAT path-replacement boundary.**
-  Investigate path-based Move fallback and launch recovery on disposable ExFAT
-  media before changing compatibility or journal behavior. Standard macOS-volume
-  Move, Rename, Organize, and undo already bind parent descriptors; preserve the
-  ExFAT no-overwrite probe and its documented durability warning.
-- [ ] **AUD-21 — Modernize media probing and AV APIs.** Replace semaphore-based
-  probing with structured async work, and assess deprecated macOS 27 reader and
-  player-notification APIs. Preserve macOS 14 support, bounded decoder lanes,
-  real cancellation/reader-exit behavior, and existing playback regressions.
-- [ ] **AUD-18 — Expand real-volume and interruption verification.** Extend
-  filesystem fault injection and run disposable cases on case-sensitive APFS,
-  ExFAT, removable/network volumes, disconnect/remount, and lid-close or simulated
-  power-loss boundaries. Verify no overwrite, truthful durability, retained
-  recovery evidence, and safe undo/retry. Record which actual volume/interruption
-  cases were run; keep native UI acceptance under AUD-23/AUD-24 and release-mode
-  performance baselines under AUD-06/AUD-19.
-
-This backlog is the current source of truth for future work. Check each
-proposal against the current code and reproduce the issue before starting.
+Check current code and reproduce suspected bugs before changing behavior.
 
 ## Audit follow-ups
 
-Transferred from the [retired 29 September audit](Docs/Audits/2026-09-29/README.md).
-All 17 confirmed findings are implemented; [the implementation record](Docs/Audits/2026-09-29/implementation.md)
-retains tests and evidence. These are additional investigations, optimizations,
-and verification tasks, not reopened confirmed bugs. IDs remain stable when a
-completed item moves. Reproduce suspected failures and measure performance
-before choosing an implementation; preserve originals, identity, CAS, and journal
-contracts. Website publication belongs to its own `BACKLOG.md` (WEB-AUD-01).
+All 17 confirmed [29 September findings](Docs/Audits/2026-09-29/README.md) are
+implemented; [tests/evidence](Docs/Audits/2026-09-29/implementation.md) are retained.
+The tasks below are investigations, measurements, and acceptance. Keep IDs stable,
+preserve originals/identity/CAS/journals, and measure before optimizing. Website
+work lives in its `BACKLOG.md` (WEB-AUD-01).
 
 ### Correctness investigations — start here
 
-- [ ] **AUD-01 — Match session write/read size limits.** The reader caps snapshots
-  at 512 MiB, while encoding currently has no matching guard. Reproduce with an
-  injectable small limit, then refuse an oversized write before either destination
-  changes. Prior sidecar/backup bytes must survive; report a retryable failure
-  and keep dirty Close/Quit unsafe. No huge allocation is needed for the test.
-- [ ] **AUD-02 — Verify lazy JPEG enrichment after replacement.** Replace a
-  lightweight JPEG partner before Separate/Split and during EXIF loading. Confirm
-  whether new metadata can attach to the old scanned identity/ratings; if so,
-  add before/after identity validation and a Rescan remedy. Preserve file metadata
-  and prove unrelated replacement bytes are untouched.
-- [ ] **AUD-03 — Verify sandboxed recents and routing retry access.** Use a signed,
-  actually sandboxed App Store build: cold-launch bookmarks outside the container,
-  refresh stale bookmarks, reconnect a card, and repeat routing Review → Back →
-  Review → Copy after cancellation/failure. Reproduce before changing balanced
-  access-token ownership. Valid recents and chosen destinations must remain usable
-  for their intended lifetime; compile-only checks cannot close this task.
-- [ ] **AUD-04 — Cancel the final scan identity pass.** Bridge the existing cancel
-  flag into the second `validateScannedIdentities` pass after persistence read,
-  and check cancellation before entering it. A controlled cancellation must stop
-  further identity probes and prevent late scan results without weakening checks.
+- [ ] **AUD-03 — Sandbox recents/routing.** Signed Store picker, cold Recent and
+  routed Copy/Back passed. Still test stale/revoked grants, card reconnect, and
+  Review → Back → Review → Copy after cancellation/failure. Keep recents and
+  destinations authorized for their intended lifetime; hardware gaps remain open.
 
 ### Performance — measure before changing
 
-- [ ] **AUD-06 — Reduce large-session structural and save-capture work.** Record
-  Release main-actor time and memory at 1k/10k/100k physical files for index rebuild,
-  metadata sort, filter/group, and save capture. Reuse unchanged ID/file maps for
-  sort-only changes; optimize other capture/rebuild costs where profiling justifies
-  it. Preserve prepared ordering, exact selection, shared metadata, and O(1) rating.
-- [ ] **AUD-07 — Make Capture Bursts metadata-only.** Present date groups without
-  waiting for duplicate hashes or visual decoding. Prove a burst-only request
-  performs no content hashing/decode; exact/similar review must still request its
-  own evidence, with the existing generation and cancellation guards.
-- [ ] **AUD-08 — Move expensive group construction off-main.** Measure initial
-  and sensitivity-change grouping at large counts, then background costly hash
-  bucket/union-find/date work. Only the current mode/sensitivity/generation may
-  publish; rapid changes must cancel or supersede obsolete work and retain caches.
-- [ ] **AUD-09 — Maintain the disk thumbnail budget during a long visit.** Add
-  coalesced utility-queue accounting/maintenance after enough writes or elapsed
-  time. Exercise a small injected size/age budget, including same-day launch;
-  pruning must reach its target without a directory walk on every thumbnail,
-  blocking scrolling, or compromising trustworthy cached pixels.
-- [ ] **AUD-10 — Bound abandoned Info metadata reads.** Measure cold removable
-  or network reads after the current dwell. If material, share a bounded/coalesced
-  worker keyed by content revision and cancel requests that lose interest.
-  Rapid navigation must not accumulate readers or publish/cache stale metadata;
-  retain the implemented source-identity checks.
-- [ ] **AUD-11 — Avoid unnecessary RAW fit-source work.** Measure cold RAW rapid
-  navigation and scale measurement. Use scan-cached oriented dimensions or a dwell
-  for uncached recipes when useful, and cancel uninterested source waiters.
-  Preserve persistent 100% inspection, the two-operation tile lane, and 128 MiB
-  decoded-tile limit; do not replace lazy/tiled work with whole-image bitmaps.
-- [ ] **AUD-12 — Make routing confirmation lazy per file.** Flatten route and
-  unmatched file rows into individually lazy elements. Verify a tens-of-thousands
-  fixture creates only the needed viewport rows while every exact filename/path
-  remains available; never truncate the safety-critical preview.
-- [ ] **AUD-13 — Measure and remove redundant Copy flushes.** Profile small-file
-  batches on local/removable destinations. Consolidate only flushes demonstrably
-  duplicated by the held-descriptor copier/publisher and worker. Preserve
-  write → sync → stage → publish → directory-sync/checkpoint order, injected copier
-  behavior, and post-side-effect recovery before accepting a speedup.
-- [ ] **AUD-14 — Move export destination preflight off-main.** Measure per-source
-  volume queries on large/remote selections, then freeze inputs and validate on a
-  worker. Keep chosen-folder access alive, expose progress/cancellation, and pass
-  the exact validated binding into the worker; no early journal/media mutation.
-- [ ] **AUD-15 — Improve feedback/cancellation inside large copies.** Investigate
-  `fcopyfile` callbacks or bounded chunks for a single large video. Show actual
-  byte progress and reach a safe cancel boundary without waiting for the whole
-  file. Retain only identity-proven owned partials and existing rollback/remount
-  rules; demonstrate the behavior on disposable files before changing the copier.
-- [ ] **AUD-16 — Measure compact session JSON.** Compare actual Foundation encoder
-  bytes and save/CAS costs at 1k/10k/100k entries. Confirm whether human-editable
-  formatting is needed before dropping pretty printing. Preserve sorted-key
-  reproducibility, schema/lineage compatibility, and exact byte-CAS semantics.
-- [ ] **AUD-17 — Budget bulk undo by retained bytes.** Measure repeated Select All
-  decisions/Clear All at large counts. If the 500-step cap retains excessive
-  snapshots, add a byte-based limit with clear eviction. Normal per-photo undo,
-  independent ratings, and journaled file-operation undo must remain correct.
+- [ ] **AUD-06 — Index/save capture.** Measure Release main-actor time/memory at
+  1k/10k/100k files for rebuild, metadata sort, filter/group, and capture. Reuse
+  unchanged ID/file maps on sort-only changes where useful. Preserve ordering,
+  exact selection, shared metadata, and O(1) rating.
+- [ ] **AUD-07 — Metadata-only bursts.** Prove burst requests perform no hashing/
+  decoding. Exact/similar modes still request their evidence; preserve generation
+  and cancellation guards.
+- [ ] **AUD-08 — Background groups.** Measure initial/sensitivity-change grouping;
+  move costly hash/union-find/date work off-main where justified. Publish only
+  the current mode/sensitivity/generation; cancel old work and retain caches.
+- [ ] **AUD-09 — Live thumbnail budget.** Coalesce utility-queue pruning by writes/
+  time. Test a small size/age budget and same-day launch. Reach the target without
+  per-thumbnail walks, blocking scroll, or discarding trustworthy pixels.
+- [ ] **AUD-10 — Abandoned Info reads.** Measure cold removable/network reads after
+  dwell. If material, bound/coalesce by content revision and cancel lost interest.
+  Rapid navigation must neither accumulate readers nor publish stale metadata.
+- [ ] **AUD-11 — RAW fit sources.** Measure cold navigation/scale work. Use cached
+  oriented dimensions or dwell where useful; cancel uninterested waiters. Preserve
+  100% inspection, two tile operations, and 128 MiB limit; avoid full-image bitmaps.
+- [ ] **AUD-12 — Lazy routing rows.** Flatten route/unmatched rows into lazy elements.
+  Test tens of thousands of files: construct viewport rows and retain every exact
+  name/path in the safety preview without truncation.
+- [ ] **AUD-13 — Copy flushes.** Measure small-file batches on local/removable storage.
+  Remove proven duplicates only; preserve write → sync → stage → publish → directory
+  sync/checkpoint, copier injection, and recovery after side effects.
+- [ ] **AUD-14 — Export preflight.** Measure per-source volume queries on large/remote
+  selections; freeze inputs and validate off-main. Retain chosen-folder access,
+  progress/cancellation, and the exact binding. No early media/journal changes.
+- [ ] **AUD-15 — Large-copy progress/cancel.** Test `fcopyfile` callbacks or chunks on
+  disposable large videos. Show byte progress and allow safe cancellation before
+  whole-file completion. Retain only identity-proven partials and rollback/remount.
+- [ ] **AUD-16 — Compact JSON.** Compare bytes/save/CAS costs at 1k/10k/100k entries.
+  Check the need for editable formatting before removing it. Preserve sorted keys,
+  schema/lineage compatibility, and exact byte CAS.
+- [ ] **AUD-17 — Undo bytes.** Measure repeated Select All/Clear All at large counts.
+  If the 500-step cap retains too much, add a byte limit and clear eviction. Preserve
+  per-photo undo, independent ratings, and journaled operation undo.
 
 ### Further verification
 
-- [ ] **AUD-19 — Establish a camera/color and GPU-memory baseline.** Build a small,
-  licensed real RAW/JPEG/color-profile corpus with orientation/transparency cases.
-  Compare previews, RAW/histogram/clipping, and 100% tiles against known reference
-  renders; measure Release GPU/RSS during rapid navigation and zoom. Record actual
-  coverage and verify memory/decoder bounds. Synthetic replacement tests already
-  pass; they do not substitute for real camera-decoder/color acceptance.
-- [ ] **AUD-20 — Inventory dependency/security coverage.** Record exact pinned
-  Sparkle, Expat, Adobe XMP, and relevant website dependency versions, vendor patches,
-  licenses, and current official advisories. Investigate applicable exposures and
-  extend bounded hostile-XMP tests as needed. Keep the original vendor-review scope
-  limits explicit; inventory/parser tests do not prove every vendored line safe.
-
-ExFAT/interruption testing, AV migration, native accessibility, and display/provider
-acceptance are carried by AUD-05/AUD-18, AUD-21, and AUD-23/AUD-24 above.
+- [ ] **AUD-19 — RAW/color/GPU baseline.** Build a licensed RAW/JPEG/profile corpus
+  with orientation/transparency cases. Compare preview, RAW/histogram/clipping,
+  and 100% tiles to reference renders; measure Release GPU/RSS under navigation/
+  zoom. Record coverage and decoder bounds. Real-camera acceptance remains open.
+- [ ] **AUD-20 — Dependencies/security.** Record exact Sparkle/Expat/Adobe XMP/site
+  pins, patches, licenses, and official advisories. The 7 October review found no
+  published affected-range match; sources and confidential/vendor limits are in
+  the submission packet. Investigate exposures and extend hostile-XMP tests as
+  needed. Parser tests cover only the reviewed subset.
 
 ## Later / research
 
-- [ ] SD-card ingest with naming templates and review while copying.
-- [ ] Preview-first EXIF rule routing or auto-culling. It must never silently
-  move originals.
-- [ ] Focus peaking and detail/edge inspection modes.
+- [ ] SD-card ingest, naming templates, and review during copy.
+- [ ] Preview-first EXIF routing/auto-culling; never silently move originals.
+- [ ] Focus peaking and detail/edge inspection.
 - [ ] Side-by-side comparison with synchronized zoom.
 - [ ] Scenes / chronological-story review.
 - [ ] iPad Grid companion.
-- [ ] Optional embedded metadata in exported JPEG copies only, with a separate
-  safety design; never alter originals.
-
-- [ ] **AUD-22 — Define capture-date provenance for bursts.** Decide whether
-  filesystem creation/import dates should count as capture evidence when EXIF is
-  missing. Test mixed EXIF/fallback fixtures and retain provenance or adjust copy
-  if needed; do not describe inferred groups as certain capture sequences.
+- [ ] Embedded metadata in exported JPEG copies only, with a separate safety design.
+- [ ] **AUD-22 — Burst dates.** Decide whether filesystem creation/import dates count
+  as capture evidence without EXIF. Test mixed sources and retain provenance;
+  describe inferred groups as inferred.
 
 ## Decisions already made
 
-- Custom photo backgrounds are not planned: they conflict with Louppe's
-  single neutral review background.
-- Capture One is not a standalone task. Current XMP export already supports
-  Capture One interoperability; further integration needs a separately scoped
-  proposal.
+- Keep one neutral photo background; custom backgrounds are not planned.
+- XMP export supports Capture One. Further integration needs a separate proposal.

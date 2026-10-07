@@ -253,14 +253,14 @@ enum MediaDurationFormat {
 
     static func accessibility(_ seconds: TimeInterval?) -> String {
         guard let rounded = MediaNumeric.roundedNonnegativeInt(seconds)
-        else { return "Unknown duration" }
+        else { return L10n.text("Unknown duration") }
         let hours = rounded / 3600
         let minutes = (rounded % 3600) / 60
         let remaining = rounded % 60
         var parts: [String] = []
-        if hours > 0 { parts.append("\(hours) hour\(hours == 1 ? "" : "s")") }
-        if minutes > 0 { parts.append("\(minutes) minute\(minutes == 1 ? "" : "s")") }
-        if remaining > 0 || parts.isEmpty { parts.append("\(remaining) second\(remaining == 1 ? "" : "s")") }
+        if hours > 0 { parts.append(hours == 1 ? L10n.text("\(hours) hour") : L10n.text("\(hours) hours")) }
+        if minutes > 0 { parts.append(minutes == 1 ? L10n.text("\(minutes) minute") : L10n.text("\(minutes) minutes")) }
+        if remaining > 0 || parts.isEmpty { parts.append(remaining == 1 ? L10n.text("\(remaining) second") : L10n.text("\(remaining) seconds")) }
         return parts.joined(separator: ", ")
     }
 }

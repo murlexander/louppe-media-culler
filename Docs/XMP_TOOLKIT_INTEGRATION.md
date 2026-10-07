@@ -1,7 +1,6 @@
 # XMPCore integration record
 
-This record identifies the pinned parser sources and the shipping bridge. The
-original isolation proof remains under `Prototypes/XMPBridgeProof`.
+Parser pins and shipping bridge. Isolation proof: `Prototypes/XMPBridgeProof`.
 
 ## Reviewed dependencies
 
@@ -10,25 +9,19 @@ original isolation proof remains under `Prototypes/XMPBridgeProof`.
 | Adobe XMP Toolkit SDK / XMPCore | `https://github.com/adobe/XMP-Toolkit-SDK` | `7093513bd3caaad29da01db0f275d88a39d6bcc2` | BSD 3-Clause |
 | Expat 2.8.5 | `https://github.com/libexpat/libexpat` | `4b3f0b06f39fb5529cead381694f8929901bc273` | MIT |
 
-The Adobe revision was the `main` tip reviewed on 2026-08-05. Its last commit
-was dated 2025-11-03. Adobe's unchanged checkout declares Expat 2.5.0, but Louppe updates that
-parser independently to the security-patched `R_2_8_5` release. Its checksum
-and Louppe's bounded-tree adapter changes are recorded in the vendor README.
+Adobe’s reviewed `main` pin (2026-08-05) was last committed 2025-11-03.
+It declares Expat 2.5.0; Louppe uses patched `R_2_8_5`. Checksums and bounded-tree
+adapter changes are in the vendor README.
 
-The complete license texts are retained in
-`ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt` and
-`ThirdPartyLicenses/Expat-MIT.txt`. Any future source or binary distribution
-must continue to reproduce them.
+Every source/binary distribution must include complete
+`ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt` and `ThirdPartyLicenses/Expat-MIT.txt`.
 
 ## Production distribution decision
 
-Louppe uses the minimal audited source approach rather than an opaque binary
-artifact. `Sources/XMPBridge/Vendor/` contains the legacy XMPCore and Expat
-header/source subset supporting the exact source manifest in `Package.swift`.
-Only the files enumerated by that manifest are compiled; `XMPFiles` and all
-media-embedding handlers are excluded from the build. The target therefore
-builds for the same architecture and current macOS SDK as the Louppe
-executable, with no separately downloaded runtime library.
+`Sources/XMPBridge/Vendor/` contains the reviewed XMPCore/Expat subset.
+Only `Package.swift`’s listed files compile. XMPFiles/media-embedding handlers
+are excluded. The bridge uses Louppe’s architecture/current SDK and needs no
+separate runtime download.
 
 `Sources/XMPBridge/Vendor/README.md` records the subset layout and update
 procedure. `build_app.sh` copies both complete license texts into the app, and
@@ -58,10 +51,9 @@ they exercise:
 - a writable packet wrapper with padding;
 - malformed XML rejection.
 
-For every valid fixture, the proof parses and serializes without losing the
-sentinel foreign values, applies a typed Louppe rating/color/decision update,
-reparses the result, verifies the four owned properties, and then repeats the
-merge against its own output. The malformed fixture must fail.
+Each valid fixture preserves foreign sentinels through parse/serialize,
+updates rating/color/decision, reparses, verifies four owned properties, and
+repeats the merge on its output. The malformed fixture must fail.
 
 Run `./Scripts/run_xmp_bridge_proof.sh` to check the production vendored sources.
 Alternatively, run it with exact local checkouts:
@@ -72,10 +64,8 @@ Alternatively, run it with exact local checkouts:
   /path/to/libexpat
 ```
 
-When explicit checkouts are supplied, the script refuses different revisions. It uses the selected current Apple
-toolchain directly, preferring the current full-Xcode SDK when it is installed,
-and retains its temporary build folder so the resulting objects and executable
-can be inspected.
+Explicit checkouts must match the pins. The script prefers installed full Xcode’s
+current SDK and retains its temporary objects/executable for inspection.
 
 ## Findings carried into production
 

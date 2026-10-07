@@ -1,6 +1,8 @@
 # Louppe audit: file mutations, export planning, durability and crash recovery
 
-Audited current canonical working tree on 2026-09-29. Sources were not changed. All experiments used disposable files below `/private/tmp/louppe-audit-2026-09-29`. Tests described here link the actual freshly built testable Louppe module and actual XMPBridge objects; they are not simplified reimplementations. Root owns full-suite, performance-script and packaged-app checks.
+Pre-fix findings from 29 September. Current work: [BACKLOG.md](../../../BACKLOG.md#audit-follow-ups).
+
+Read-only audit of the canonical working tree on 2026-09-29. Disposable experiments used `/private/tmp/louppe-audit-2026-09-29` and linked freshly built testable Louppe/XMPBridge code. The coordinator owns full-suite, performance-script, and package checks.
 
 ## Confirmed findings
 
@@ -12,11 +14,11 @@ Trigger: Open media on a case-sensitive filesystem containing the same exact ste
 
 Bug: `makePlan` applies one common numeric suffix to every family member, but folds every resulting filename case-insensitively and diacritic-insensitively before testing distinctness. Both keys remain identical for *every* suffix. `targetsAreDistinct` is always false; incrementing the shared suffix cannot repair an internal collision. There is no cancellation check in this loop.
 
-Consequence: The preparation never completes and continuously consumes CPU. Cancel closes/reset the preparation UI and cancels its Task, but this synchronous loop does not observe that cancellation; the abandoned task continues until process termination. No media mutation has begun. This affects a valid, although uncommon, photographer folder; it does not require a corrupt journal.
+Consequence: Preparation spins forever, consuming CPU. Cancel resets the UI and cancels its Task, but the synchronous loop ignores cancellation until process exit. No mutation has begun; valid uncommon folders trigger it without journal corruption.
 
 Evidence: `file-safety-harness collision` first calls the actual `XMPSidecarResolver.resolve(...caseSensitiveNames:true)` and prints `resolver families=1 members=2 disposition=publish`, then calls the actual `ExportWorker.makePlan`. The subprocess failed to return and was killed after 3 seconds. Mathematical termination proof: `PHOTO (k).JPG` and `PHOTO (k).jpg` have equal reservation keys for every k. Fixture URLs model a case-sensitive source; no case-sensitive disk was mounted on this host. See `file-safety-collision.log` and harness source.
 
-Minimal fix: Detect within-group duplicate reservation keys separately from occupied/reserved destination collisions and fail with an actionable typed planning error, or choose a valid per-volume naming policy that can represent every family member. Do not keep increasing a shared suffix when the group itself remains ambiguous. Add cooperative cancellation between groups and during collision search.
+Minimal fix: Separate internal duplicate reservation keys from occupied destination collisions. Refuse with a typed actionable error or a per-volume policy representing every member; shared suffixes cannot fix ambiguity. Check cancellation between groups and suffix attempts.
 
 Regression tests: A pure resolver + planner test for same-stem case-variant extensions; a case-sensitive filesystem integration when available; a bounded test showing a canceled preparation actually terminates. Test a case-insensitive destination refusal and a case-sensitive destination policy explicitly.
 
@@ -28,11 +30,11 @@ Trigger: In Organize Source Folder, enter `.Hidden` or `Photos.app` as the conta
 
 Bug: Container validation excludes only empty/dot/dot-dot, too-long names, slash, colon and null. It accepts hidden names and macOS package names. Metadata sanitization likewise leaves a leading dot/package suffix intact. The mandatory post-operation scan uses both `.skipsHiddenFiles` and `.skipsPackageDescendants`.
 
-Consequence: A successfully organized file becomes invisible to Louppe immediately after rescan. The actual file remains intact. In an all-media scope, an empty loaded array returns the app to welcome, and `SessionStore.swift:2358-2363` only pushes the deferred organization undo when `loaded` is nonempty; the documented in-session undo therefore is not exposed in this all-hidden result. This undo consequence follows directly from the inspected coordinator code; the end-to-end UI was not driven. No claim of rating loss is made.
+Consequence: Rescan hides the organized file, although it remains intact. An all-hidden result returns to welcome; `SessionStore.swift:2358-2363` adds deferred undo only when `loaded` is nonempty, so in-session undo is unavailable. This follows from source; the UI was not driven, and no rating loss is claimed.
 
 Evidence: Actual `SourceOrganizationPlanner.makePlan` returns `canExecute=true`; actual `SourceOrganizationWorker.organize` moves 1 file and reports `requiresRecovery=false`; actual `FolderScanner.scan` then returns zero items, while the destination file still exists. Reproduced independently for `.Hidden` and `Photos.app`. See `file-safety-hidden.log` and `file-safety-package.log`.
 
-Minimal fix: Validate both the user container and all generated hierarchy components against the scanner traversal contract. Reject or safely rewrite hidden/package components before preview/confirmation. Also preserve an undo path when a completed organization leaves zero visible media.
+Minimal fix: Validate user and generated components against scanner traversal. Reject or rewrite hidden/package names before confirmation, and retain undo when organization leaves no visible media.
 
 Regression tests: Real-I/O organize + rescan for hidden container, `.app` package container, and metadata-generated hidden/package folder; assert every moved media file remains scannable and the coordinator retains undo.
 
@@ -44,11 +46,11 @@ Trigger: Move with XMP reaches a generated-packet write failure, captures the ex
 
 Bug: `rollbackPreparedMoveCopy` demands a matching complete-packet digest and `.staged`/`.completed` state. It never accepts an exact recorded `.started` partial, although the worker explicitly checkpoints that state. `recoverPreparedCopy` already has the corresponding identity-verified partial removal branch at `FileOperationJournal.swift:1149-1164`.
 
-Consequence: Recovery safely preserves the partial, but repeatedly reports it unresolved. The original media is preserved/restored; this is not original loss. The remaining journal blocks every later Copy, Move, Rename, Organize and Trash until the photographer chooses Keep Files As They Are, leaving a hidden partial at the destination.
+Consequence: Recovery preserves the partial and original media but stays unresolved. The journal blocks Copy, Move, Rename, Organize, and Trash until Keep Files As They Are, leaving the hidden partial. No original loss occurs.
 
 Evidence: Actual journal `.exportMove` family with media and prepared packet, durable `.started` packet identity, then writer destruction to simulate lock release/process death. Recovery returned `unresolvedOperations=1`, `unresolvedFiles=1`, `removedPartialCopies=0`, `partialExists=true`. See `file-safety-recovery.log`.
 
-Minimal fix: Handle `.started` with a matching `resolvedIdentity` as an operation-owned partial and remove it through the same two reserved paths. Do not require a partial to match the complete intended digest. Continue preserving unrecorded or identity-ambiguous artifacts.
+Minimal fix: Remove `.started` partials only when `resolvedIdentity` matches, using the two reserved paths. Do not require the complete digest; preserve unrecorded or ambiguous artifacts.
 
 Regression tests: Crash after checkpointing a generated partial and before rollback; repeat recovery; verify no original mutation, exact partial removed, replacement inode preserved, journal retired only after consistency.
 
@@ -76,11 +78,11 @@ Trigger: A malformed/tampered Copy journal identifies a FIFO as the source and h
 
 Bug: `fileIdentity` accepts the FIFO and validation does not reject its type. Recovery revalidates its inode successfully and reaches `contentsEqual`. Its private open uses blocking `O_RDONLY` before it can `fstat` and reject the FIFO, so it waits forever for a writer. The newer `DurableFileIO.readRegularFile` already uses `O_NONBLOCK` correctly.
 
-Consequence: Recovery retains the global operation lock and never returns an unresolved result. The actively-recovering app cannot finish launch recovery or permit conflicting work/Quit through its normal gate. No media is changed. This defect is lower exposure than FS-1 through FS-4.
+Consequence: Recovery holds the global lock indefinitely, blocking launch recovery, conflicting work, and gated Quit. No media changes; exposure is lower than FS-1 through FS-4.
 
 Evidence: Actual `.exportCopy` journal with `mkfifo` source, `.started` checkpoint, and regular temporary. Harness printed `journal accepted FIFO source; beginning recovery` and hung until subprocess kill after 3 seconds. See `file-safety-fifo.log`.
 
-Minimal fix: Reject nonregular media/packet identities in plan activation and plan recovery wherever source/candidate entries currently exist. Add `O_NONBLOCK` to open-before-fstat regular-file readers/sync opens so malformed entries and a replacement race cannot block type validation. Return ordinary unresolved recovery instead.
+Minimal fix: Reject nonregular media/packet identities at activation and recovery. Use `O_NONBLOCK` before fstat in readers/sync opens so malformed entries or replacement races cannot block type checks; return unresolved recovery.
 
 Regression tests: FIFO source/candidate, socket, directory and leaf symlink; assert bounded recovery and no file mutation. Ordinary scans should continue skipping these entries.
 
@@ -103,9 +105,9 @@ Measured with actual freshly built Debug testable module and empty destination:
 | 400 | 2.131 |
 | 800 | 8.725 |
 
-About 4x for each doubling corroborates the code-level O(n²) result. Release absolute constants were not measured; these are Debug measurements, not a claimed production benchmark. See `file-safety-scaling.log`.
+Each doubling took about 4x longer, consistent with O(n²). Release constants were not measured. See `file-safety-scaling.log`.
 
-Fix direction: Keep the next possible suffix per original collision family/filename set and check reservations before URL construction and filesystem probing. Keep shared RAW+JPEG/XMP suffix contracts and account for collisions between already-suffixed original names; do not simply skip externally occupied names. Add cooperative cancellation. Regression benchmark should assert scaling/attempt counts rather than a fragile absolute timeout.
+Fix direction: Cache the next suffix per original family/filename set and test reservations before URLs or filesystem probes. Preserve shared RAW+JPEG/XMP suffixes, collisions with pre-suffixed originals, and external occupancy checks. Add cancellation; assert scaling/probe counts instead of absolute time.
 
 ## Other optimization opportunities, not defects proved by measurement
 
@@ -115,11 +117,11 @@ Fix direction: Keep the next possible suffix per original collision family/filen
 
 ## Additional suspicion / follow-up requiring a sandboxed GUI test
 
-`ExportManager.backFromMultiDestinationConfirmation` and cancel/failure preparation paths release all routing security-scope tokens while `ExportView` retains selected route destination URLs. The next Review Copy Plan reuses those URLs without reacquiring scopes; only choosing a destination calls `retainRoutingDestinationAccess`. This looks like a sandboxed retry regression, but no signed sandboxed NSOpenPanel session was driven. Keep it separate from confirmed findings. Suggested reproduction: choose destinations outside the app container, review, Back, review again, then Start Copy; repeat after canceled/failed preparation. Preserve scoped access until the route itself is removed or reestablish it for the preparation/worker lifetime.
+`ExportManager.backFromMultiDestinationConfirmation` and canceled/failed preparation release route scopes while `ExportView` retains destination URLs. Retry reuses URLs; only a new chooser calls `retainRoutingDestinationAccess`. This was unconfirmed on 29 September: no signed sandboxed NSOpenPanel test. Reproduce external destinations → Review → Back → Review → Start Copy, and canceled/failed preparation. Retain scopes until route removal or reacquire for preparation/work. Current acceptance is tracked in [AUD-03](../../../BACKLOG.md#audit-follow-ups).
 
 ## Covered files and contracts
 
-Read the canonical and shared AGENTS, relevant File Operations section of DEVELOPMENT_DETAILS, and Clean Up/Journal/Export/Organization/Renaming lifecycle sections of PERFORMANCE.
+Read canonical/shared AGENTS, DEVELOPMENT_DETAILS File Operations, and PERFORMANCE Clean Up/Journal/Export/Organization/Renaming contracts.
 
 Detailed review covered:
 
@@ -144,7 +146,7 @@ Detailed review covered:
 - Multi-destination plans are Copy-only, explicit routes have no implicit fallback, overlaps/empty routes/duplicate resolved folders block, and capacity sum uses saturating arithmetic.
 - Active journal namespace retirement and Keep Files As They Are restrict canonical operation names; Keep renames bookkeeping aside without deleting media.
 
-These statements describe inspected contracts and existing checks; they are not a proof against all concurrency/power-failure interleavings.
+These are inspected contracts and existing checks, not exhaustive concurrency/power-failure proof.
 
 ## Verification limitations and artifacts
 

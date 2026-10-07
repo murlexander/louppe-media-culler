@@ -8,15 +8,15 @@ enum HistogramAnalysisSource: Equatable, Sendable {
 
     var shortLabel: String {
         switch self {
-        case .renderedPreview: return "Preview"
+        case .renderedPreview: return L10n.text("Preview")
         case .rawDecode: return "RAW"
         }
     }
 
     var detailLabel: String {
         switch self {
-        case .renderedPreview: return "Rendered image estimate"
-        case .rawDecode: return "RAW decode"
+        case .renderedPreview: return L10n.text("Rendered image estimate")
+        case .rawDecode: return L10n.text("RAW decode")
         }
     }
 

@@ -42,24 +42,24 @@ struct ReviewPreferences: Equatable, Sendable {
 extension PhotoSort.Key {
     var preferenceTitle: String {
         switch self {
-        case .captureDate: return "Date taken"
-        case .name: return "Name"
-        case .subfolder: return "Subfolder"
-        case .folderHierarchy: return "Folder hierarchy"
-        case .fileType: return "File type"
-        case .mediaKind: return "Media type"
-        case .camera: return "Camera"
-        case .lens: return "Lens"
-        case .aperture: return "Aperture"
-        case .shutterSpeed: return "Shutter speed"
+        case .captureDate: return L10n.text("Date taken")
+        case .name: return L10n.text("Name")
+        case .subfolder: return L10n.text("Subfolder")
+        case .folderHierarchy: return L10n.text("Folder hierarchy")
+        case .fileType: return L10n.text("File type")
+        case .mediaKind: return L10n.text("Media type")
+        case .camera: return L10n.text("Camera")
+        case .lens: return L10n.text("Lens")
+        case .aperture: return L10n.text("Aperture")
+        case .shutterSpeed: return L10n.text("Shutter speed")
         case .iso: return "ISO"
-        case .duration: return "Media duration"
-        case .videoResolution: return "Video resolution"
-        case .videoFrameRate: return "Video frame rate"
-        case .videoCodec: return "Video codec"
-        case .decision: return "Decision"
-        case .starRating: return "Star rating"
-        case .colorLabel: return "Color label"
+        case .duration: return L10n.text("Media duration")
+        case .videoResolution: return L10n.text("Video resolution")
+        case .videoFrameRate: return L10n.text("Video frame rate")
+        case .videoCodec: return L10n.text("Video codec")
+        case .decision: return L10n.text("Decision")
+        case .starRating: return L10n.text("Star rating")
+        case .colorLabel: return L10n.text("Color label")
         }
     }
 }

@@ -174,7 +174,7 @@ enum XMPExportPlanner {
         var errorDescription: String? {
             switch self {
             case .ambiguousApplicationPacket(let name):
-                return "Louppe could not associate \(name) with exactly one media file. Nothing was changed."
+                return L10n.text("Louppe could not associate \(name) with exactly one media file. Nothing was changed.")
             }
         }
     }
@@ -358,7 +358,7 @@ enum XMPExportPlanner {
             case .metadataConflict:
                 preparedFamilies.append(base.family(
                     category: .sameStemMetadataConflict,
-                    message: "Files sharing this stem have different Louppe metadata. Their shared XMP will be skipped.",
+                    message: L10n.text("Files sharing this stem have different Louppe metadata. Their shared XMP will be skipped."),
                     applicationPackets: applicationPackets,
                     sameStemConflict: .make(
                         id: base.id,
@@ -370,20 +370,20 @@ enum XMPExportPlanner {
             case .filenameCollision:
                 preparedFamilies.append(base.family(
                     category: .destinationCollision,
-                    message: "More than one filesystem name resolves to this sidecar. Its shared XMP will be skipped.",
+                    message: L10n.text("More than one filesystem name resolves to this sidecar. Its shared XMP will be skipped."),
                     applicationPackets: applicationPackets
                 ))
             case .unsupportedMedia:
                 preparedFamilies.append(base.family(
                     category: .unsupportedMedia,
-                    message: "Video and audio media export without XMP."
+                    message: L10n.text("Video and audio media export without XMP.")
                 ))
             case .publish:
                 guard let canonical = family.canonicalSidecar,
                       let metadata = family.metadata else {
                     preparedFamilies.append(base.family(
                         category: .destinationCollision,
-                        message: "Louppe could not determine one safe sidecar path. Its shared XMP will be skipped.",
+                        message: L10n.text("Louppe could not determine one safe sidecar path. Its shared XMP will be skipped."),
                         applicationPackets: applicationPackets
                     ))
                     continue
@@ -409,8 +409,8 @@ enum XMPExportPlanner {
                     preparedFamilies.append(base.family(
                         category: category,
                         message: category == .alreadyCurrent
-                            ? "The destination packet will carry current Louppe metadata."
-                            : "The destination packet is ready to \(category == .create ? "create" : "update").",
+                            ? L10n.text("The destination packet will carry current Louppe metadata.")
+                            : (category == .create ? L10n.text("The destination packet is ready to create.") : L10n.text("The destination packet is ready to update.")),
                         changeCounts: XMPPublicationChangeCounts(
                             stars: changes.stars ? 1 : 0,
                             colors: changes.color ? 1 : 0,
@@ -658,7 +658,7 @@ private extension XMPExportPreparedFamily {
             selectedMediaPaths: selectedMediaPaths,
             allMediaPaths: allMediaPaths,
             category: .crossFolderPair,
-            message: "This paired photo spans separate source folders. Its sidecar will stay at the source because both packets cannot safely share one destination name.",
+            message: L10n.text("This pair spans source folders. Both sidecars stay at the source because they cannot safely share one destination name."),
             changeCounts: .init(),
             bestEffortFilenames: bestEffortFilenames,
             excludedACRCompanionCount: excludedACRCompanionCount,

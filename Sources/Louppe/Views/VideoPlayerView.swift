@@ -38,7 +38,7 @@ struct GalleryVideoPlayerView: View {
             } else if let error = playback.errorMessage,
                       playback.represents(item) {
                 ContentUnavailableView(
-                    "Can't play this video",
+                    L10n.text("Can't play this video"),
                     systemImage: "exclamationmark.triangle",
                     description: Text(error)
                 )
@@ -59,15 +59,15 @@ struct GalleryVideoPlayerView: View {
                                 systemName: presentation.isPictureInPictureActive
                                     ? "pip.exit" : "pip.enter",
                                 help: presentation.isPictureInPictureActive
-                                    ? "Close Picture in Picture"
-                                    : "Picture in Picture"
+                                    ? L10n.text("Close Picture in Picture")
+                                    : L10n.text("Picture in Picture")
                             ) {
                                 presentation.togglePictureInPicture()
                             }
                             .disabled(!presentation.pictureInPictureSupported)
                             controlButton(
                                 systemName: "arrow.up.left.and.arrow.down.right",
-                                help: "Toggle full screen"
+                                help: L10n.text("Toggle full screen")
                             ) {
                                 presentation.toggleFullScreen()
                             }
@@ -132,9 +132,9 @@ struct GalleryVideoPlayerView: View {
 
     private var unsupportedView: some View {
         ContentUnavailableView(
-            "Video isn't supported",
+            L10n.text("Video isn't supported"),
             systemImage: "film",
-            description: Text("macOS can't play this video's container or codec. You can still rate and export it — \(item.displayName)")
+            description: Text(L10n.text("macOS can’t play this video format. You can still rate and export it — \(item.displayName)"))
         )
     }
 }
@@ -220,19 +220,20 @@ private struct GalleryMediaTransportView: View {
 
     private var playbackControls: some View {
         HStack(spacing: 12) {
-            controlButton(systemName: "gobackward.15", help: "Skip back 15 seconds") {
+            controlButton(systemName: "gobackward.15", help: L10n.text("Skip back 15 seconds")) {
                 playback.seek(item, by: -15)
             }
             controlButton(
                 systemName: playback.isPlaying ? "pause.fill" : "play.fill",
-                help: playback.isPlaying ? "Pause" : "Play"
+                help: playback.isPlaying ? L10n.text("Pause") : L10n.text("Play")
             ) {
                 playback.toggle(item)
             }
-            controlButton(systemName: "goforward.15", help: "Skip forward 15 seconds") {
+            controlButton(systemName: "goforward.15", help: L10n.text("Skip forward 15 seconds")) {
                 playback.seek(item, by: 15)
             }
         }
+        .environment(\.layoutDirection, .leftToRight)
     }
 
     private var timelineControls: some View {
@@ -256,13 +257,14 @@ private struct GalleryMediaTransportView: View {
                 }
             )
             .disabled(duration <= 0)
-            .accessibilityLabel("Timeline")
+            .accessibilityLabel(L10n.text("Timeline"))
             Text(MediaDurationFormat.display(item.duration))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 42, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
+        .environment(\.layoutDirection, .leftToRight)
     }
 
     private var volumeControls: some View {
@@ -270,14 +272,14 @@ private struct GalleryMediaTransportView: View {
             controlButton(
                 systemName: isMuted || volume == 0
                     ? "speaker.slash.fill" : "speaker.wave.2.fill",
-                help: isMuted ? "Unmute" : "Mute"
+                help: isMuted ? L10n.text("Unmute") : L10n.text("Mute")
             ) {
                 playback.player.isMuted.toggle()
                 isMuted = playback.player.isMuted
             }
             Slider(value: $volume, in: 0...1)
                 .frame(width: compact ? 74 : 82)
-                .accessibilityLabel("Volume")
+                .accessibilityLabel(L10n.text("Volume"))
                 .onChange(of: volume) {
                     playback.player.volume = Float(volume)
                     if volume > 0, playback.player.isMuted {
@@ -323,7 +325,7 @@ struct GalleryAudioPlayerView: View {
             } else if let error = playback.errorMessage,
                       playback.represents(item) {
                 ContentUnavailableView(
-                    "Can't play this audio",
+                    L10n.text("Can't play this audio"),
                     systemImage: "waveform.badge.exclamationmark",
                     description: Text(error)
                 )
@@ -344,7 +346,7 @@ struct GalleryAudioPlayerView: View {
                                 Image(systemName: "waveform.badge.exclamationmark")
                                     .font(.title)
                                     .foregroundStyle(.secondary)
-                                Text("Waveform unavailable")
+                                Text(L10n.text("Waveform unavailable"))
                                     .font(.callout)
                                     .foregroundStyle(.secondary)
                             }
@@ -352,7 +354,7 @@ struct GalleryAudioPlayerView: View {
                             VStack(spacing: 8) {
                                 ProgressView()
                                     .controlSize(.small)
-                                Text("Preparing waveform…")
+                                Text(L10n.text("Preparing waveform…"))
                                     .font(.callout)
                                     .foregroundStyle(.secondary)
                             }
@@ -406,9 +408,9 @@ struct GalleryAudioPlayerView: View {
 
     private var unsupportedView: some View {
         ContentUnavailableView(
-            "Audio isn't supported",
+            L10n.text("Audio isn't supported"),
             systemImage: "waveform.badge.exclamationmark",
-            description: Text("macOS can't play this audio format or codec. You can still rate and export it — \(item.displayName)")
+            description: Text(L10n.text("macOS can’t play this audio format. You can still rate and export it — \(item.displayName)"))
         )
     }
 }

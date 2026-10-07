@@ -7,17 +7,23 @@ Reviewed the final canonical implementations in:
 - `Sources/Louppe/DurableFileIO.swift`
 - `Tests/LouppeTests/XMPPublicationIdentityTests.swift`
 
-Read-only XMP review; no edits to the reviewed canonical source/test files by this reviewer. Relevant app/shared AGENTS, session identity, file-operation, and performance rules were applied. Root owns the final integration suite and application launch.
+Read-only review under app/shared AGENTS and identity/file-operation/performance
+rules. No reviewed source/test edits; the coordinator owned integration and launch.
 
 ## Outcome
 
-**No confirmed remaining X1 correctness issues after the final temporary-ownership guard.** One concrete publication gap was independently reproduced during review, communicated to root, repaired by root, and reverified against the final production helper.
+**No confirmed remaining X1 correctness issues after the final temporary-ownership guard.** Independent review reproduced a publication gap; the coordinator fixed it and the reviewer reverified the final helper.
 
 ## Confirmed gap found and resolved
 
-The first descriptor-bound `atomicWrite` implementation checked owned temporary identity only for cleanup. It could still rename a different file that another writer placed at the generated temporary name during final validation. Packet target CAS could remain valid throughout: the original target was unchanged, but the unowned temporary replaced it. Later XMP readback could detect wrong bytes only after the old target had already been lost.
+`atomicWrite` originally checked temporary ownership only during cleanup. Another
+writer could substitute its temporary during final validation; target CAS stayed
+valid, yet rename destroyed the original packet before readback detected wrong bytes.
 
-The standalone reproduction compiles the actual canonical `DurableFileIO.swift` and `XMPExactFileSystemPath.swift`. Its only stub provides the existing exact-path byte helper; publication, descriptor opening, writing, flushing, renaming, and cleanup use production code. It checks the old target bytes, atomically substitutes the temporary during `validateBeforePublish`, and inspects the target afterward.
+The repro compiles canonical `DurableFileIO.swift` and `XMPExactFileSystemPath.swift`,
+with only an exact-path byte-helper stub. Production code opens, writes, flushes,
+renames, and cleans. The probe checks old target bytes, substitutes the temporary
+inside `validateBeforePublish`, then checks the target.
 
 Before the guard (`temp-ownership-repro.log`, compile/run exit 0):
 
@@ -28,7 +34,10 @@ target intended bytes: false
 target substituted bytes: true
 ```
 
-The final helper captures immutable temporary stat after its real file flush, then uses descriptor-relative `fstatat(..., AT_SYMLINK_NOFOLLOW)` immediately before rename. Regular type, device, inode, birth time, size, mtime, and ctime must still match. This covers both different-inode atomic substitution and same-inode content edits without comparing against an obsolete pre-write size/timestamp.
+After file flush, immutable temporary stat is compared with descriptor-relative
+`fstatat(..., AT_SYMLINK_NOFOLLOW)` before rename: regular type, device, inode,
+birth time, size, mtime, and ctime must match. This rejects inode substitution and
+in-place edits without using obsolete pre-write size/timestamps.
 
 After recompiling against the final helper (`temp-ownership-repro-final.log`, compile/run exit 0):
 
@@ -40,7 +49,9 @@ target intended bytes: false
 target substituted bytes: false
 ```
 
-Root also added `testTemporarySubstitutionAndInPlaceEditCannotReplaceOriginalPacket`: it covers both edit forms through the real XMP store and final-validation hook, preserves the old packet, preserves a foreign replacement temporary, and cleans up only the owned inode after an in-place edit.
+`testTemporarySubstitutionAndInPlaceEditCannotReplaceOriginalPacket` exercises both
+forms through the XMP store/final-validation hook. It preserves the packet and
+foreign temporary, cleaning only the owned in-place-edited inode.
 
 ## Reviewed contracts
 
@@ -60,4 +71,7 @@ Root also added `testTemporarySubstitutionAndInPlaceEditCannotReplaceOriginalPac
 - Final compiler log: `/private/tmp/louppe-fixes-2026-09-29/temp-ownership-build-final.log`
 - `git diff --check` passed for the reviewed files.
 
-This independent run specifically verifies the concrete temporary-substitution correction. Root is running the full XMP/integration tests, including the new same-inode case. No power-cut, physical removable-volume, or alternate filesystem test was performed by this reviewer. Path validation still has the ordinary narrow interval between a check and its syscall; descriptor-relative mutation keeps that interval from redirecting writes into a replacement parent.
+This run verifies temporary substitution. The coordinator was running full XMP/integration
+coverage, including same-inode edits. No power-cut, removable-volume, or alternate
+filesystem test. The check/syscall interval remains; descriptor-relative mutation
+prevents redirecting writes into a replacement parent.

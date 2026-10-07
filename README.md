@@ -1,136 +1,110 @@
 # Louppe Media Culler
 
-Website: [louppe.eu](https://louppe.eu)
+[Louppe](https://louppe.eu) is a fast, keyboard-first, open-source media culler
+for macOS. Review photos, video, audio, and text; organize files; clean up
+unwanted media; and export keepers.
 
-Louppe is a fast, keyboard-first, open-source media culler for macOS. Review
-photos, video, audio, and text; sort and organize your media; clean up unwanted
-files; and export what you want to keep.
-
-macOS 14 or newer on an Apple silicon Mac. The current download does not support Intel Macs.
+Requires Apple silicon and macOS 14 or newer. Intel Macs are unsupported.
 
 ![Louppe Gallery with an apple-tree photograph, RAW+JPEG pairing, camera settings and histogram](Docs/Media/2026-09-26/gallery-info.png)
 
-*Gallery keeps the photo and its information together in Louppe 1.9.*
-
-[Watch the captioned 25-second walkthrough](https://louppe.eu/#review-demo).
+*Gallery in Louppe 1.9.* [Watch the 25-second walkthrough](https://louppe.eu/#review-demo).
 
 ## Download
 
-Download **[Louppe.zip from the latest release](https://github.com/murlexander/louppe-media-culler/releases/latest)**,
-unzip it, and drag `Louppe.app` into Applications.
-
-The public download is signed and notarized by Apple. Open it normally;
-macOS may ask you to confirm its first launch.
+Download **[Louppe.zip](https://github.com/murlexander/louppe-media-culler/releases/latest)**,
+unzip it, and drag `Louppe.app` into Applications. The public download is
+signed with Developer ID and notarized by Apple; macOS may ask you to confirm
+its first launch.
 
 ## Quick start
 
 1. Open a folder or memory card.
 2. Review media in Gallery or Grid.
-3. Press **F** to mark an item Yes or **D** to mark it No.
-4. Filter, sort, select, clean up, organize, or export your media.
+3. Press **F** for Yes or **D** for No.
+4. Filter, sort, select, clean up, organize, or export.
 
-From Finder, select one media folder, right-click, and choose **Services → Open
-in Louppe**. Install this build in Applications first so macOS can add the
-service. Louppe opens that folder in its existing window.
+In Finder, select a media folder and choose **Services → Open in Louppe**.
+Install Louppe in Applications first to register the service. It opens the
+folder in the existing window.
 
 ![Louppe Grid comparing street scenes, architecture, reflections and still life, with a photo selected in purple](Docs/Media/2026-09-26/grid-overview.png)
 
-*Grid lets you compare nearby frames and select media for the next step.*
+*Grid for comparing and selecting frames.*
 
-The compact bottom panel shows active filters, review status, and saving.
-Use its 30–400% zoom slider or pinch on a photo to adjust magnification, then pan with
-two-finger scrolling or click and drag. **S** returns custom zoom to centered
-100%, then toggles Fit; **A** still toggles Phone size. **Help → Louppe Help** contains
-a quick-start guide and searchable shortcuts. Review tips can be dismissed
-and shown again from Help.
+The bottom panel shows filters, review progress, and save status. Zoom
+30–400% with the slider or a pinch; pan with two-finger scrolling or dragging.
+**S** returns custom zoom to centered 100%, then toggles Fit; **A** toggles
+Phone size. **Help → Louppe Help** has searchable shortcuts. Dismissed review
+tips can be restored from Help.
 
-For RAW photos, **Fast** uses a preview below 100% and Apple RAW rendering at
-100% and above. Choose **RAW** beside zoom or in **Settings → Review** to use RAW
-at every zoom level. Apple’s rendering may differ from your photo editor and
-the camera’s JPEG. The source label shows **Preview** or **RAW**; **RAW…** means
-rendering is in progress. RAW mode offers **Use Preview** if rendering fails.
-The same menu and Review settings offer **Apple Default** (unchanged default) or
-**RAW 9** for rendered RAW previews and 100% viewing. RAW 9 requires macOS 27,
-a supported file, and Apple’s model resources, and uses more time and memory.
-Unavailable RAW 9 offers Retry or **Use Apple Default**; it never silently switches decoders.
-Grid and Browser thumbnails keep their fast previews.
+Yes/No, stars, and color labels are independent. **No never trashes files.**
+Ratings save automatically; reopen the folder to continue. The bottom panel
+confirms when every item has a decision.
 
-The histogram changes from **Preview** to **RAW** when background RAW analysis
-finishes. RAW analysis uses a scaled linear decode, independently of the photo
-rendering. The X clipping overlay measures the displayed rendering.
+Export starts with **All selected** when you select items, otherwise with
+filtered **Keepers (Yes)**. **4–5 stars** includes either decision. Check the
+matching count before choosing a destination. Export copies by default;
+Move transfers originals, and Metadata (XMP) writes ratings to sidecars for
+other apps. **Clean Up** sends files to macOS Trash. **Organize Source Folder**
+builds folders from decisions, dates, ratings, and other metadata.
 
-Yes/No decisions, stars, and color labels are independent. Marking **No** does
-not trash a file. Decisions save automatically; reopen the same folder to
-continue. When everything has a decision, the bottom panel confirms the review
-is complete. Use the toolbar's Export action and **Keepers (Yes)** to copy them.
+## Review and file handling
 
-With an explicit selection, Export starts with **All selected**. Otherwise,
-it starts with **Keepers (Yes)** from the filtered view. Quick picks also
-include **4–5 stars**, regardless of Yes/No decision. The inclusion summary
-shows how many items match before you choose a destination.
+- Filter and sort by decisions, stars, colors, dates, folders, camera details,
+  file types, and media properties.
+- **Sort → Folder hierarchy** shows root files, then each folder before its
+  descendants. Reversing changes sibling order; headers show relative paths.
+- **Sort → Review groups → Analyze Folder Locally** finds exact duplicates,
+  likely similar photos, and bursts. Analysis stays on your Mac and never
+  changes ratings or files automatically.
+- **Filter** can group matching RAW+JPEG files as one item while retaining
+  separate decisions, stars, and colors.
+- **Clean Up** supports All Media, Filtered, and Selected scopes, plus
+  RAW-only or JPEG-only Trash for unambiguous pairs. **⌘Z** restores the batch
+  before closing the session, while files remain in Trash.
+- **Organize Source Folder** previews nested folders before moving files.
+  **Rename Files…** supports single names and metadata-based batches;
+  extensions stay unchanged and recognized RAW+JPEG/XMP families follow.
+- Export Copy and Move support All Media, Filtered, and Selected scopes.
+  **Route copies to multiple folders** previews decision, stars, color,
+  file-type, or media-type rules before copying.
 
-Export copies by default and can also move selected media or write your
-decisions, star ratings, and color labels as XMP sidecars—small metadata files
-saved beside your media for use in other apps. **Clean Up** sends unwanted
-files to the macOS Trash.
-**Organize Source Folder** sorts files into folders using decisions, dates,
-ratings, camera details, and other metadata.
+**Settings → Review** sets defaults for advancement,
+Gallery/Grid, sort, and dividers in new folders. Rescan keeps the current
+layout. Connected drives and cards appear on the start screen with capacity
+and a folder chooser.
 
-## Sort, review, and clean up
-
-In the current development build, **Settings → Review** controls advancement
-on Yes/No commands and the starting Gallery/Grid view, sort, and group dividers
-for new folders. Rescanning keeps the current layout. Connected external drives
-and memory cards appear on the start screen with capacity information; select
-one to choose a media folder on it.
-
-- Filter and sort by decisions, stars, color labels, dates, folders, camera
-  details, file types, and media properties.
-- Choose **Sort → Folder hierarchy** to review each folder before its nested
-  folders. Root files come first; reversing changes the order of sibling
-  folders. Group headers show their full relative paths.
-- Choose **Sort → Review groups → Analyze Folder Locally** to review exact
-  duplicates, likely similar photos, and capture bursts. The analysis stays on
-  your Mac and does not change ratings or files automatically.
-- In **Filter**, matching RAW+JPEG files can be grouped as one
-  review item while keeping separate decisions, stars, and color labels.
-- **Clean Up** supports All Media, Filtered, or Selected items, including
-  options to move only the JPEG or only the RAW from an unambiguous pair to the
-  macOS Trash. **⌘Z** can restore a cleanup while the files remain in the
-  Trash.
-- **Organize Source Folder** previews nested folders such as Decision → Date
-  before moving items. **Rename Files…** supports single files and metadata-
-  based batches; extensions stay unchanged and recognized RAW+JPEG/XMP
-  families follow together.
-
-## Export and file handling
-
-Export can copy or move All Media, Filtered, or Selected items. **Route copies
-to multiple folders** lets you send media to different destinations using
-explicit decision, rating, color, file-type, or media-type rules; Louppe
-previews the complete plan before copying.
-
-Ratings save automatically in `.louppe_session.json` inside the opened folder.
-When a folder or card is unavailable, Louppe can use an identity-bound local
-backup to protect the session.
+Ratings save to `.louppe_session.json` in the opened folder. An identity-bound
+local backup can protect the session when that folder or card is unavailable.
 
 ## Media and inspection
 
-Louppe supports common camera RAW, JPEG, TIFF, PNG, HEIC, WebP, AVIF, photo,
-video, audio, and text formats. Unsupported files still appear in the review so they
-can be rated and exported.
+Louppe supports common camera RAW, JPEG, TIFF, PNG, HEIC, WebP, AVIF, video,
+audio, and text formats. Unsupported files remain available to rate and export.
+Gallery has Fit, Phone size, true 100% zoom, playback, metadata, histogram,
+clipping information, and optional quality cues. VoiceOver and keyboard review
+are supported.
 
-Gallery includes a zoom slider and pinch-to-zoom, Fit, phone-sized preview,
-true 100% zoom, video and audio
-playback, metadata, a histogram, clipping information, and optional quality
-cues. VoiceOver is supported, and the main review workflow can be completed
-with the keyboard.
+For RAW photos, **Fast** uses previews below 100% and Apple RAW rendering at
+100% and above. **RAW** beside zoom or in **Settings → Review** uses RAW at
+all zoom levels. **Preview**, **RAW**, and **RAW…** identify the source and
+loading state; **Use Preview** is an explicit fallback after failure.
+Apple rendering may differ from your editor or the camera JPEG.
 
-Text previews are read-only, selectable, and set in a serif font. TXT, TEXT,
-Markdown (MD/MARKDOWN), XML, JSON, CSV, TSV, LOG, YAML, and YML files appear
-alongside other media. Markdown displays headings, lists, bold, italic, and
-clickable web/email links; other formats display their original text. Previews
-support UTF-8 and BOM-marked UTF-16/32, up to 1 MiB per file.
+The RAW menu and Review settings offer **Apple Default** or opt-in **RAW 9**.
+RAW 9 requires macOS 27, a supported file, and Apple’s model resources; it
+uses more time and memory. Failure offers Retry or **Use Apple Default**;
+Louppe never silently switches decoders. Grid and Browser retain fast previews.
+
+The histogram switches from **Preview** to **RAW** after a scaled linear RAW
+analysis, independent of photo rendering. The **X** overlay measures the
+displayed rendering.
+
+Text previews are read-only and selectable. TXT, TEXT, MD/MARKDOWN, XML,
+JSON, CSV, TSV, LOG, YAML, and YML appear alongside media. Markdown supports
+headings, lists, bold, italic, and web/email links; other formats show source
+text. UTF-8 and BOM-marked UTF-16/32 are supported up to 1 MiB per file.
 
 ## Keyboard shortcuts
 
@@ -170,19 +144,22 @@ controls keep their normal shortcuts.
 ## Local review build
 
 Run `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./Scripts/build_review.sh`
-to package `dist/louppe - to review.app` and its ZIP. Install this separately from
-`Louppe.app`. Its app identity and preferences are separate, and automatic
-updates are disabled. The name is a review label; the release version remains
-in `VERSION`. Folder ratings still use the compatible `.louppe_session.json`
-sidecar, so use copies of media when experimenting. See
-[the review record](Docs/REVIEW_BUILD.md) for scope and verification.
+to create `dist/louppe - to review.app` and its ZIP. Its identity, preferences,
+and window state are separate from `Louppe.app`; automatic updates are off.
+`VERSION` still supplies its version. Ratings use the compatible
+`.louppe_session.json`, so experiment with copies of media. See
+[the review record](Docs/REVIEW_BUILD.md).
 
-For planned work, see [BACKLOG.md](BACKLOG.md). For development and release
-guidance, see [AGENTS.md](AGENTS.md),
-[Docs/PERFORMANCE.md](Docs/PERFORMANCE.md),
-[Docs/UPDATES.md](Docs/UPDATES.md), and
-[Docs/APP_STORE.md](Docs/APP_STORE.md).
+See [BACKLOG.md](BACKLOG.md) for planned work; [AGENTS.md](AGENTS.md),
+[PERFORMANCE.md](Docs/PERFORMANCE.md), [UPDATES.md](Docs/UPDATES.md), and
+[APP_STORE.md](Docs/APP_STORE.md) for development and release guidance.
 
-Louppe is free and open source under the [MIT License](LICENSE).
+Free and open source under the [MIT License](LICENSE).
+Created by [Alex Markin](https://alex-markin.com). Contact: a@alex-markin.com
 
-Created by [Alex Markin](https://alex-markin.com); contact: a@alex-markin.com
+### Interface languages
+
+Louppe follows macOS language preferences and per-app language settings, with
+English fallback. Spanish, Simplified Chinese, Hindi, Portuguese, and Arabic
+are bundled; Arabic uses right-to-left layout. Restart Louppe after changing
+its language. Keyboard shortcuts, filenames, and portable XMP values stay the same.

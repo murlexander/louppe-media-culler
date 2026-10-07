@@ -252,8 +252,8 @@ final class MainWindowLayoutTests: XCTestCase {
         _ = NSApplication.shared
         let fixtures = (0..<13).map { index in
             ConnectedDrive(
-                id: .init(volumeUUID: "layout-\(index)", device: UInt64(index + 1),
-                          rootInode: 2, bsdName: "fixture\(index)",
+                id: .init(volumeUUID: "layout-\(index)", mediaUUID: "layout-media-\(index)",
+                          bsdName: "fixture\(index)",
                           mountURL: URL(fileURLWithPath: "/tmp/LayoutDrive-\(index)")),
                 name: "Layout drive \(index)", availableBytes: 1_000_000,
                 totalBytes: 2_000_000, isRemovable: true

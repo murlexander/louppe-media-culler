@@ -31,8 +31,8 @@ enum MediaTileAccessibility {
             starDescription(for: item.starRatingState),
             colorDescription(for: item.colorLabelState),
         ]
-        if isCurrent { parts.append("Current item") }
-        if isSelected { parts.append("Selected") }
+        if isCurrent { parts.append(L10n.text("Current item")) }
+        if isSelected { parts.append(L10n.text("Selected")) }
         return parts.joined(separator: ", ")
     }
 
@@ -40,10 +40,10 @@ enum MediaTileAccessibility {
         for state: PhotoItemRatingState
     ) -> String {
         switch state {
-        case .yes: return "Decision Yes"
-        case .no: return "Decision No"
-        case .undecided: return "Undecided"
-        case .mixed: return "Mixed decision"
+        case .yes: return L10n.text("Decision Yes")
+        case .no: return L10n.text("Decision No")
+        case .undecided: return L10n.text("Undecided")
+        case .mixed: return L10n.text("Mixed decision")
         }
     }
 
@@ -53,17 +53,17 @@ enum MediaTileAccessibility {
 
     static func starDescription(for state: PhotoItemStarRatingState) -> String {
         switch state {
-        case .unrated: return "No stars"
-        case .stars(let rating): return "\(rating.count) stars"
-        case .mixed: return "Mixed stars"
+        case .unrated: return L10n.text("No stars")
+        case .stars(let rating): return L10n.text("\(rating.count) stars")
+        case .mixed: return L10n.text("Mixed stars")
         }
     }
 
     static func colorDescription(for state: PhotoItemColorLabelState) -> String {
         switch state {
-        case .none: return "No color label"
-        case .label(let label): return "\(label.displayName) color label"
-        case .mixed: return "Mixed color labels"
+        case .none: return L10n.text("No color label")
+        case .label(let label): return L10n.text("\(label.localizedDisplayName) color label")
+        case .mixed: return L10n.text("Mixed color labels")
         }
     }
 
@@ -73,15 +73,15 @@ enum MediaTileAccessibility {
 
     static func actionHint(canRate: Bool) -> String {
         canRate
-            ? "Use actions to show, open, change decision, stars, or color label, or select this item."
-            : "Use actions to show, open, or select this item."
+            ? L10n.text("Use actions to show, open, change decision, stars, or color label, or select this item.")
+            : L10n.text("Use actions to show, open, or select this item.")
     }
 
     private static func mediaDescription(for item: PhotoItem) -> String {
         if item.fileTypeLabel == "RAW + JPEG" {
-            return "RAW and JPEG photo"
+            return L10n.text("RAW and JPEG photo")
         }
-        return "\(item.fileTypeLabel) \(item.mediaKind.singularLabel)"
+        return "\(item.fileTypeLabel) \(L10n.label(item.mediaKind.singularLabel))"
     }
 }
 
@@ -120,7 +120,7 @@ private struct MediaTileAccessibilityModifier: ViewModifier {
             )
             .accessibilityAction(.default, show)
             .accessibilityAction(named: Text(showActionTitle), show)
-            .accessibilityAction(named: Text("Open in Gallery"), open)
+            .accessibilityAction(named: Text(L10n.text("Open in Gallery")), open)
             .modifier(
                 MediaTileRatingActionsModifier(
                     actions: MediaTileAccessibility.ratingActions(
@@ -138,7 +138,7 @@ private struct MediaTileAccessibilityModifier: ViewModifier {
             )
             .accessibilityAction(
                 named: Text(
-                    isSelected ? "Remove from Selection" : "Add to Selection"
+                    isSelected ? L10n.text("Remove from Selection") : L10n.text("Add to Selection")
                 ),
                 toggleSelection
             )
@@ -154,18 +154,18 @@ private struct MediaTileMetadataActionsModifier: ViewModifier {
     func body(content: Content) -> some View {
         if isEnabled {
             content
-                .accessibilityAction(named: Text("Clear Stars")) { setStars(nil) }
-                .accessibilityAction(named: Text("Set 1 Star")) { setStars(.one) }
-                .accessibilityAction(named: Text("Set 2 Stars")) { setStars(.two) }
-                .accessibilityAction(named: Text("Set 3 Stars")) { setStars(.three) }
-                .accessibilityAction(named: Text("Set 4 Stars")) { setStars(.four) }
-                .accessibilityAction(named: Text("Set 5 Stars")) { setStars(.five) }
-                .accessibilityAction(named: Text("Clear Color Label")) { setColor(nil) }
-                .accessibilityAction(named: Text("Set Red Label")) { setColor(.red) }
-                .accessibilityAction(named: Text("Set Yellow Label")) { setColor(.yellow) }
-                .accessibilityAction(named: Text("Set Green Label")) { setColor(.green) }
-                .accessibilityAction(named: Text("Set Blue Label")) { setColor(.blue) }
-                .accessibilityAction(named: Text("Set Purple Label")) { setColor(.purple) }
+                .accessibilityAction(named: Text(L10n.text("Clear Stars"))) { setStars(nil) }
+                .accessibilityAction(named: Text(L10n.text("Set 1 Star"))) { setStars(.one) }
+                .accessibilityAction(named: Text(L10n.text("Set 2 Stars"))) { setStars(.two) }
+                .accessibilityAction(named: Text(L10n.text("Set 3 Stars"))) { setStars(.three) }
+                .accessibilityAction(named: Text(L10n.text("Set 4 Stars"))) { setStars(.four) }
+                .accessibilityAction(named: Text(L10n.text("Set 5 Stars"))) { setStars(.five) }
+                .accessibilityAction(named: Text(L10n.text("Clear Color Label"))) { setColor(nil) }
+                .accessibilityAction(named: Text(L10n.text("Set Red Label"))) { setColor(.red) }
+                .accessibilityAction(named: Text(L10n.text("Set Yellow Label"))) { setColor(.yellow) }
+                .accessibilityAction(named: Text(L10n.text("Set Green Label"))) { setColor(.green) }
+                .accessibilityAction(named: Text(L10n.text("Set Blue Label"))) { setColor(.blue) }
+                .accessibilityAction(named: Text(L10n.text("Set Purple Label"))) { setColor(.purple) }
         } else {
             content
         }
@@ -187,21 +187,21 @@ private struct MediaTileRatingActionsModifier: ViewModifier {
             content
                 .accessibilityAction(
                     named: Text(
-                        MediaTileAccessibility.RatingAction.yes.rawValue
+                        L10n.label(MediaTileAccessibility.RatingAction.yes.rawValue)
                     )
                 ) {
                     rate(MediaTileAccessibility.RatingAction.yes.rating)
                 }
                 .accessibilityAction(
                     named: Text(
-                        MediaTileAccessibility.RatingAction.no.rawValue
+                        L10n.label(MediaTileAccessibility.RatingAction.no.rawValue)
                     )
                 ) {
                     rate(MediaTileAccessibility.RatingAction.no.rating)
                 }
                 .accessibilityAction(
                     named: Text(
-                        MediaTileAccessibility.RatingAction.clear.rawValue
+                        L10n.label(MediaTileAccessibility.RatingAction.clear.rawValue)
                     )
                 ) {
                     rate(MediaTileAccessibility.RatingAction.clear.rating)
@@ -215,7 +215,7 @@ extension View {
         item: PhotoItem,
         isCurrent: Bool,
         isSelected: Bool,
-        showActionTitle: String = "Show Item",
+        showActionTitle: String = L10n.text("Show Item"),
         show: @escaping () -> Void,
         open: @escaping () -> Void,
         canRate: Bool,

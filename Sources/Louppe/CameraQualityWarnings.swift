@@ -143,17 +143,17 @@ enum CameraQualityThresholdInput: Sendable {
 
     var accessibilityLabel: String {
         switch self {
-        case .highISO: return "High ISO threshold"
-        case .slowShutter: return "Slow shutter threshold in seconds"
-        case .clipping: return "Clipping threshold in percent"
+        case .highISO: return L10n.text("High ISO threshold")
+        case .slowShutter: return L10n.text("Slow shutter threshold in seconds")
+        case .clipping: return L10n.text("Clipping threshold in percent")
         }
     }
 
     var inputHelp: String {
         switch self {
-        case .highISO: return "ISO 100–1,000,000. Press Return to apply."
-        case .slowShutter: return "1/8000–60 seconds. Enter a fraction such as 1/30 or seconds such as 2.5. Press Return to apply."
-        case .clipping: return "0.1–100%. Press Return to apply."
+        case .highISO: return L10n.text("ISO 100–1,000,000. Press Return to apply.")
+        case .slowShutter: return L10n.text("1/8000–60 seconds. Enter a fraction such as 1/30 or seconds such as 2.5. Press Return to apply.")
+        case .clipping: return L10n.text("0.1–100%. Press Return to apply.")
         }
     }
 
@@ -250,11 +250,11 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
     }
 
     static let renderedClippingSourceDescription =
-        "Rendered image estimate — measured from the displayed preview."
+        L10n.text("Rendered image estimate — measured from the displayed preview.")
     static let rawClippingSourceDescription =
-        "RAW decode — measured from a scaled Core Image decode of RAW sensor data, not a camera-maker per-photosite histogram."
+        L10n.text("RAW decode — scaled Core Image decode of sensor data, not a camera-maker per-photosite histogram.")
     static let clippingSettingsDescription =
-        "Clipping cues use a scaled Core Image RAW decode when supported, with a rendered image estimate as the fallback. The RAW result is not a camera-maker per-photosite histogram."
+        L10n.text("Clipping cues use a scaled Core Image RAW decode when supported, otherwise a rendered-image estimate. RAW results are not camera-maker per-photosite histograms.")
 
     let kind: Kind
     let measuredValue: Double
@@ -267,7 +267,7 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
 
         var label: String {
             switch self {
-            case .cameraMetadata: return "Camera metadata"
+            case .cameraMetadata: return L10n.text("Camera metadata")
             case .histogram(let source): return source.detailLabel
             }
         }
@@ -275,7 +275,7 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
         var description: String {
             switch self {
             case .cameraMetadata:
-                return "Camera metadata"
+                return L10n.text("Camera metadata")
             case .histogram(.renderedPreview):
                 return CameraQualityWarning.renderedClippingSourceDescription
             case .histogram(.rawDecode):
@@ -288,28 +288,28 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
 
     var title: String {
         switch kind {
-        case .highISO: return "High ISO"
-        case .slowShutter: return "Slow shutter"
-        case .highlightClipping: return "Highlight clipping"
-        case .shadowClipping: return "Shadow clipping"
+        case .highISO: return L10n.text("High ISO")
+        case .slowShutter: return L10n.text("Slow shutter")
+        case .highlightClipping: return L10n.text("Highlight clipping")
+        case .shadowClipping: return L10n.text("Shadow clipping")
         }
     }
 
     var detail: String {
         switch kind {
         case .highISO:
-            return "ISO \(Self.iso(measuredValue)) (warning at ISO \(CameraQualityThresholdInput.highISO.format(threshold)) or above)"
+            return L10n.text("ISO \(Self.iso(measuredValue)) (warning at ISO \(CameraQualityThresholdInput.highISO.format(threshold)) or above)")
         case .slowShutter:
-            return "\(Self.shutter(measuredValue)) (warning at \(CameraQualityThresholdInput.slowShutter.format(threshold))s or slower)"
+            return L10n.text("\(Self.shutter(measuredValue)) (warning at \(CameraQualityThresholdInput.slowShutter.format(threshold))s or slower)")
         case .highlightClipping:
-            return "\(Self.percentage(measuredValue)) near white (warning at \(CameraQualityThresholdInput.clipping.format(threshold))% or more)"
+            return L10n.text("\(Self.percentage(measuredValue)) near white (warning at \(CameraQualityThresholdInput.clipping.format(threshold))% or more)")
         case .shadowClipping:
-            return "\(Self.percentage(measuredValue)) near black (warning at \(CameraQualityThresholdInput.clipping.format(threshold))% or more)"
+            return L10n.text("\(Self.percentage(measuredValue)) near black (warning at \(CameraQualityThresholdInput.clipping.format(threshold))% or more)")
         }
     }
 
     var accessibilityLabel: String {
-        "\(title). \(detail). Source: \(source.description). Review cue only."
+        L10n.text("\(title). \(detail). Source: \(source.description). Review cue only.")
     }
 
     static func warnings(

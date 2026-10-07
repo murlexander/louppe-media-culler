@@ -101,21 +101,21 @@ actor XMPMetadataStore {
         var errorDescription: String? {
             switch self {
             case .missingParent:
-                return "The sidecar's parent folder is missing or unsafe."
+                return L10n.text("The sidecar's parent folder is missing or unsafe.")
             case .unsafeFileType:
-                return "The XMP path is not a regular file."
+                return L10n.text("The XMP path is not a regular file.")
             case .packetTooLarge:
-                return "The XMP packet exceeds Louppe's 64 MiB safety limit."
+                return L10n.text("The XMP packet exceeds Louppe's 64 MiB safety limit.")
             case .fileChanged:
-                return "The XMP packet changed after preflight. Retry to merge the newer file."
+                return L10n.text("The XMP packet changed after preflight. Retry to merge the newer file.")
             case .couldNotOpen(let code):
-                return "The XMP packet could not be opened (\(code))."
+                return L10n.text("The XMP packet could not be opened (\(code)).")
             case .couldNotInspect(let code):
-                return "The XMP path could not be inspected (\(code))."
+                return L10n.text("The XMP path could not be inspected (\(code)).")
             case .couldNotRead(let code):
-                return "The XMP packet could not be read (\(code))."
+                return L10n.text("The XMP packet could not be read (\(code)).")
             case .permissionDenied(let code):
-                return "The XMP packet or its folder is read-only (\(code))."
+                return L10n.text("The XMP packet or its folder is read-only (\(code)).")
             }
         }
     }

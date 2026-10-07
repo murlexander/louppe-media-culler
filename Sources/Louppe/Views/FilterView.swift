@@ -75,23 +75,23 @@ struct FilterView: View {
 
         var accessibilityLabel: String {
             switch self {
-            case .apertureFrom: return "Minimum aperture"
-            case .apertureTo: return "Maximum aperture"
-            case .shutterFrom: return "Minimum shutter speed"
-            case .shutterTo: return "Maximum shutter speed"
-            case .isoFrom: return "Minimum ISO"
-            case .isoTo: return "Maximum ISO"
-            case .durationFrom: return "Minimum media duration"
-            case .durationTo: return "Maximum media duration"
-            case .videoFrameRateFrom: return "Minimum video frame rate"
-            case .videoFrameRateTo: return "Maximum video frame rate"
+            case .apertureFrom: return L10n.text("Minimum aperture")
+            case .apertureTo: return L10n.text("Maximum aperture")
+            case .shutterFrom: return L10n.text("Minimum shutter speed")
+            case .shutterTo: return L10n.text("Maximum shutter speed")
+            case .isoFrom: return L10n.text("Minimum ISO")
+            case .isoTo: return L10n.text("Maximum ISO")
+            case .durationFrom: return L10n.text("Minimum media duration")
+            case .durationTo: return L10n.text("Maximum media duration")
+            case .videoFrameRateFrom: return L10n.text("Minimum video frame rate")
+            case .videoFrameRateTo: return L10n.text("Maximum video frame rate")
             }
         }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Filter")
+            Text(L10n.text("Filter"))
                 .font(.headline)
             searchField
             quickDecisionFilter
@@ -185,15 +185,15 @@ struct FilterView: View {
     /// search, or other choice stays in place until the full filter is reset.
     private var quickDecisionFilter: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Decision")
+            Text(L10n.text("Decision"))
                 .font(.subheadline.weight(.semibold))
             HStack(spacing: 5) {
-                quickDecisionButton("All", included: nil)
-                quickDecisionButton("Undecided", included: .undecided)
-                quickDecisionButton("Yes", included: .yes)
-                quickDecisionButton("No", included: .no)
+                quickDecisionButton(L10n.text("All"), included: nil)
+                quickDecisionButton(L10n.text("Undecided"), included: .undecided)
+                quickDecisionButton(L10n.text("Yes"), included: .yes)
+                quickDecisionButton(L10n.text("No"), included: .no)
             }
-            Text("All shows every decision; other filters still apply.")
+            Text(L10n.text("All shows every decision; other filters still apply."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -221,33 +221,33 @@ struct FilterView: View {
         .tint(store.filter.excludedDecisionStates == exclusions
             ? Color.louppeAccent : Color.primary)
         .controlSize(.small)
-        .accessibilityLabel(included == nil ? "All decisions" : "\(title) decisions")
+        .accessibilityLabel(included == nil ? L10n.text("All decisions") : "\(title) decisions")
         .accessibilityAddTraits(store.filter.excludedDecisionStates == exclusions ? .isSelected : [])
     }
 
     private var decisionSection: some View {
-        FilterDisclosureSection(title: "Decision details", isExpanded: $decisionExpanded) {
+        FilterDisclosureSection(title: L10n.text("Decision details"), isExpanded: $decisionExpanded) {
             VStack(alignment: .leading, spacing: 7) {
                 metadataToggle(
-                    "Yes",
+                    L10n.text("Yes"),
                     count: store.yesCount,
                     value: PhotoItemRatingState.yes,
                     set: \.excludedDecisionStates
                 )
                 metadataToggle(
-                    "No",
+                    L10n.text("No"),
                     count: store.noCount,
                     value: PhotoItemRatingState.no,
                     set: \.excludedDecisionStates
                 )
                 metadataToggle(
-                    "Undecided",
+                    L10n.text("Undecided"),
                     count: store.plainUndecidedCount,
                     value: PhotoItemRatingState.undecided,
                     set: \.excludedDecisionStates
                 )
                 metadataToggle(
-                    "Mixed",
+                    L10n.text("Mixed"),
                     count: store.mixedCount,
                     value: PhotoItemRatingState.mixed,
                     set: \.excludedDecisionStates
@@ -257,24 +257,24 @@ struct FilterView: View {
     }
 
     private var starsSection: some View {
-        FilterDisclosureSection(title: "Star rating", isExpanded: $starsExpanded) {
+        FilterDisclosureSection(title: L10n.text("Star rating"), isExpanded: $starsExpanded) {
             VStack(alignment: .leading, spacing: 7) {
                 metadataToggle(
-                    "Unrated",
+                    L10n.text("Unrated"),
                     count: store.unratedStarCount,
                     value: PhotoItemStarRatingState.unrated,
                     set: \.excludedStarStates
                 )
                 ForEach(StarRating.allCases, id: \.self) { rating in
                     metadataToggle(
-                        rating == .one ? "1 star" : "\(rating.count) stars",
+                        rating == .one ? L10n.text("1 star") : "\(rating.count) stars",
                         count: store.starCount(rating),
                         value: PhotoItemStarRatingState.stars(rating),
                         set: \.excludedStarStates
                     )
                 }
                 metadataToggle(
-                    "Mixed",
+                    L10n.text("Mixed"),
                     count: store.mixedStarCount,
                     value: PhotoItemStarRatingState.mixed,
                     set: \.excludedStarStates
@@ -284,10 +284,10 @@ struct FilterView: View {
     }
 
     private var colorSection: some View {
-        FilterDisclosureSection(title: "Color label", isExpanded: $colorExpanded) {
+        FilterDisclosureSection(title: L10n.text("Color label"), isExpanded: $colorExpanded) {
             VStack(alignment: .leading, spacing: 7) {
                 metadataToggle(
-                    "None",
+                    L10n.text("None"),
                     count: store.noColorCount,
                     value: PhotoItemColorLabelState.none,
                     set: \.excludedColorStates
@@ -303,12 +303,12 @@ struct FilterView: View {
                             Circle()
                                 .fill(label.swatchColor)
                                 .frame(width: 10, height: 10)
-                            labeledCount(label.displayName, store.colorCount(label))
+                            labeledCount(label.localizedDisplayName, store.colorCount(label))
                         }
                     }
                 }
                 metadataToggle(
-                    "Mixed",
+                    L10n.text("Mixed"),
                     count: store.mixedColorCount,
                     value: PhotoItemColorLabelState.mixed,
                     set: \.excludedColorStates
@@ -332,10 +332,10 @@ struct FilterView: View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            TextField("Search name, type, camera, lens…", text: $store.filter.searchText)
+            TextField(L10n.text("Search name, type, camera, lens…"), text: $store.filter.searchText)
                 .textFieldStyle(.plain)
                 .focused($isSearchFocused)
-                .accessibilityLabel("Search media")
+                .accessibilityLabel(L10n.text("Search media"))
             if !store.filter.searchText.isEmpty {
                 Button {
                     store.filter.searchText = ""
@@ -344,7 +344,7 @@ struct FilterView: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Clear Search")
+                .accessibilityLabel(L10n.text("Clear Search"))
             }
         }
         .padding(6)
@@ -358,11 +358,11 @@ struct FilterView: View {
     // MARK: - Date
 
     private var dateSection: some View {
-        FilterDisclosureSection(title: "Date taken", isExpanded: $dateExpanded) {
+        FilterDisclosureSection(title: L10n.text("Date taken"), isExpanded: $dateExpanded) {
             VStack(alignment: .leading, spacing: 9) {
-                Picker("Date filter", selection: dateModeBinding) {
-                    Text("Range").tag(DateFilterMode.range)
-                    Text("Specific dates").tag(DateFilterMode.specificDates)
+                Picker(L10n.text("Date filter"), selection: dateModeBinding) {
+                    Text(L10n.text("Range")).tag(DateFilterMode.range)
+                    Text(L10n.text("Specific dates")).tag(DateFilterMode.specificDates)
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -370,29 +370,29 @@ struct FilterView: View {
                 if store.filter.dateMode == .range {
                     if store.captureDateRange != nil {
                         DatePicker(
-                            "From",
+                            L10n.text("From"),
                             selection: dateFromBinding,
                             in: dateFromLimits,
                             displayedComponents: .date
                         )
-                        .accessibilityLabel("Date taken from")
+                        .accessibilityLabel(L10n.text("Date taken from"))
                         DatePicker(
-                            "To",
+                            L10n.text("To"),
                             selection: dateToBinding,
                             in: dateToLimits,
                             displayedComponents: .date
                         )
-                        .accessibilityLabel("Date taken to")
+                        .accessibilityLabel(L10n.text("Date taken to"))
                     } else {
-                        Text("This folder contains no dated items.")
+                        Text(L10n.text("This folder contains no dated items."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 7) {
                         HStack {
-                            Button("Select all", action: selectAllDates)
-                            Button("Clear", action: clearAllDates)
+                            Button(L10n.text("Select all"), action: selectAllDates)
+                            Button(L10n.text("Clear"), action: clearAllDates)
                             Spacer()
                         }
                         .buttonStyle(.link)
@@ -410,7 +410,7 @@ struct FilterView: View {
 
                             if store.unknownDateCount > 0 {
                                 Toggle(isOn: unknownDateBinding) {
-                                    labeledCount("Unknown date", store.unknownDateCount)
+                                    labeledCount(L10n.text("Unknown date"), store.unknownDateCount)
                                 }
                             }
                         }
@@ -423,11 +423,11 @@ struct FilterView: View {
     // MARK: - Media
 
     private var mediaSection: some View {
-        FilterDisclosureSection(title: "Media", isExpanded: $mediaExpanded) {
+        FilterDisclosureSection(title: L10n.text("Media"), isExpanded: $mediaExpanded) {
             VStack(alignment: .leading, spacing: 7) {
                 ForEach(store.availableMediaKinds, id: \.self) { kind in
                     Toggle(isOn: mediaKindBinding(kind)) {
-                        labeledCount(kind.label, store.mediaKindCounts[kind, default: 0])
+                        labeledCount(kind.localizedLabel, store.mediaKindCounts[kind, default: 0])
                     }
                 }
             }
@@ -435,10 +435,10 @@ struct FilterView: View {
     }
 
     private var durationSection: some View {
-        FilterDisclosureSection(title: "Media duration", isExpanded: $durationExpanded) {
+        FilterDisclosureSection(title: L10n.text("Media duration"), isExpanded: $durationExpanded) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 5) {
-                    Text("From")
+                    Text(L10n.text("From"))
                     validatedTextField(
                         $durationFromText,
                         field: .durationFrom,
@@ -454,7 +454,7 @@ struct FilterView: View {
                     )
                 }
                 .padding(.leading, 20)
-                Text("Use m:ss or h:mm:ss")
+                Text(L10n.text("Use m:ss or h:mm:ss"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.leading, 20)
@@ -466,11 +466,11 @@ struct FilterView: View {
     }
 
     private var videoDetailsSection: some View {
-        FilterDisclosureSection(title: "Video details", isExpanded: $videoDetailsExpanded) {
+        FilterDisclosureSection(title: L10n.text("Video details"), isExpanded: $videoDetailsExpanded) {
             VStack(alignment: .leading, spacing: 10) {
                 if !store.availableVideoResolutions.isEmpty {
                     videoFacet(
-                        title: "Resolution",
+                        title: L10n.text("Resolution"),
                         values: store.availableVideoResolutions,
                         counts: store.videoResolutionCounts,
                         set: \.excludedVideoResolutions
@@ -478,7 +478,7 @@ struct FilterView: View {
                 }
                 if !store.availableVideoCodecs.isEmpty {
                     videoFacet(
-                        title: "Codec",
+                        title: L10n.text("Codec"),
                         values: store.availableVideoCodecs,
                         counts: store.videoCodecCounts,
                         set: \.excludedVideoCodecs
@@ -502,7 +502,7 @@ struct FilterView: View {
                 .font(.callout)
             ForEach(values, id: \.self) { value in
                 Toggle(isOn: exclusionBinding(value, set)) {
-                    labeledCount(value, counts[value, default: 0])
+                    labeledCount(value == "Unknown resolution" || value == "Unknown video codec" ? L10n.label(value) : value, counts[value, default: 0])
                 }
             }
         }
@@ -510,10 +510,10 @@ struct FilterView: View {
 
     private var videoFrameRateSetting: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Frame rate")
+            Text(L10n.text("Frame rate"))
                 .font(.callout)
             HStack(spacing: 5) {
-                Text("From")
+                Text(L10n.text("From"))
                 validatedTextField(
                     $videoFrameRateFromText,
                     field: .videoFrameRateFrom,
@@ -537,7 +537,7 @@ struct FilterView: View {
     }
 
     private var cameraSettingsSection: some View {
-        FilterDisclosureSection(title: "Camera settings", isExpanded: $cameraSettingsExpanded) {
+        FilterDisclosureSection(title: L10n.text("Camera settings"), isExpanded: $cameraSettingsExpanded) {
             VStack(alignment: .leading, spacing: 10) {
                 if store.apertureRange != nil { apertureSetting }
                 if store.shutterRange != nil { shutterSetting }
@@ -548,9 +548,9 @@ struct FilterView: View {
 
     private var apertureSetting: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Aperture")
+            Text(L10n.text("Aperture"))
             HStack(spacing: 5) {
-                Text("From")
+                Text(L10n.text("From"))
                 Text("f/").foregroundStyle(.secondary)
                 validatedTextField($apertureFromText, field: .apertureFrom, width: 52, invalid: !apertureDraftIsValid)
                 Text("to").foregroundStyle(.secondary)
@@ -566,9 +566,9 @@ struct FilterView: View {
 
     private var shutterSetting: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Shutter speed")
+            Text(L10n.text("Shutter speed"))
             HStack(spacing: 5) {
-                Text("From")
+                Text(L10n.text("From"))
                 validatedTextField($shutterFromText, field: .shutterFrom, width: 72, invalid: !shutterDraftIsValid)
                 Text("to").foregroundStyle(.secondary)
                 validatedTextField($shutterToText, field: .shutterTo, width: 72, invalid: !shutterDraftIsValid)
@@ -584,7 +584,7 @@ struct FilterView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("ISO")
             HStack(spacing: 5) {
-                Text("From")
+                Text(L10n.text("From"))
                 validatedTextField($isoFromText, field: .isoFrom, width: 68, invalid: !isoDraftIsValid)
                 Text("to").foregroundStyle(.secondary)
                 validatedTextField($isoToText, field: .isoTo, width: 68, invalid: !isoDraftIsValid)
@@ -597,7 +597,7 @@ struct FilterView: View {
     }
 
     private var invalidRangeMessage: some View {
-        Label("Enter a valid range", systemImage: "exclamationmark.circle.fill")
+        Label(L10n.text("Enter a valid range"), systemImage: "exclamationmark.circle.fill")
             .font(.caption)
             .foregroundStyle(.red)
             .padding(.leading, 20)
@@ -620,7 +620,7 @@ struct FilterView: View {
             .monospacedDigit()
             .focused($focusedSettingField, equals: field)
             .accessibilityLabel(field.accessibilityLabel)
-            .accessibilityHint(invalid ? "Invalid range" : "")
+            .accessibilityHint(invalid ? L10n.text("Invalid range") : "")
             .frame(width: width)
             .overlay {
                 RoundedRectangle(cornerRadius: 5)
@@ -631,11 +631,11 @@ struct FilterView: View {
     // MARK: - Facet sections
 
     private var subfoldersSection: some View {
-        FilterDisclosureSection(title: "Subfolders", isExpanded: $subfoldersExpanded) {
+        FilterDisclosureSection(title: L10n.text("Subfolders"), isExpanded: $subfoldersExpanded) {
             VStack(alignment: .leading, spacing: 7) {
                 ForEach(store.availableSubfolders, id: \.self) { subfolder in
                     Toggle(isOn: exclusionBinding(subfolder, \.excludedSubfolders)) {
-                        labeledCount(subfolder, store.subfolderCounts[subfolder, default: 0])
+                        labeledCount(subfolder == "None" ? L10n.text("None") : subfolder, store.subfolderCounts[subfolder, default: 0])
                     }
                 }
             }
@@ -643,7 +643,7 @@ struct FilterView: View {
     }
 
     private var fileTypesSection: some View {
-        FilterDisclosureSection(title: "File types", isExpanded: $fileTypesExpanded) {
+        FilterDisclosureSection(title: L10n.text("File types"), isExpanded: $fileTypesExpanded) {
             VStack(alignment: .leading, spacing: 7) {
                 ForEach(store.availableTypes, id: \.self) { type in
                     Toggle(isOn: exclusionBinding(type, \.excludedTypes)) {
@@ -663,7 +663,7 @@ struct FilterView: View {
                     if store.isChangingRawJPEGPairingMode {
                         ProgressView()
                             .controlSize(.small)
-                            .accessibilityLabel("Preparing JPEG metadata")
+                            .accessibilityLabel(L10n.text("Preparing JPEG metadata"))
                     }
                 }
             }
@@ -672,10 +672,10 @@ struct FilterView: View {
                     || store.isFileOperationRunning
                     || store.isXMPPublicationRunning
             )
-            .accessibilityLabel("Treat matching RAW and JPEG as one photo")
+            .accessibilityLabel(L10n.text("Treat matching RAW and JPEG as one photo"))
             .accessibilityHint(rawJPEGPairingStatus)
             .help(
-                "When enabled, ratings and ordinary item actions apply to both files. The separate paired-file Trash actions are exceptions."
+                L10n.text("Ratings and item actions apply to both files, except RAW-only and JPEG-only Trash.")
             )
 
             Text(rawJPEGPairingStatus)
@@ -686,17 +686,19 @@ struct FilterView: View {
 
     private var rawJPEGPairingStatus: String {
         if store.isChangingRawJPEGPairingMode {
-            return "Updating RAW + JPEG review…"
+            return L10n.text("Updating RAW + JPEG review…")
         }
         if store.isFileOperationRunning {
-            return "Available after the current file operation finishes."
+            return L10n.text("Available when file work finishes.")
         }
         if store.isXMPPublicationRunning {
-            return "Available after XMP sidecar work finishes."
+            return L10n.text("Available when XMP work finishes.")
         }
         let count = store.rawJPEGPairCount
-        return "\(count) matching \(count == 1 ? "pair" : "pairs") currently reviewed "
-            + (store.rawJPEGPairingMode == .together ? "together." : "separately.")
+        if store.rawJPEGPairingMode == .together {
+            return count == 1 ? L10n.text("1 matching pair reviewed together.") : L10n.text("\(count) matching pairs reviewed together.")
+        }
+        return count == 1 ? L10n.text("1 matching pair reviewed separately.") : L10n.text("\(count) matching pairs reviewed separately.")
     }
 
     private var rawJPEGPairingBinding: Binding<Bool> {
@@ -707,11 +709,11 @@ struct FilterView: View {
     }
 
     private var camerasSection: some View {
-        FilterDisclosureSection(title: "Camera", isExpanded: $camerasExpanded) {
+        FilterDisclosureSection(title: L10n.text("Camera"), isExpanded: $camerasExpanded) {
             VStack(alignment: .leading, spacing: 7) {
                 ForEach(store.availableCameras, id: \.self) { camera in
                     Toggle(isOn: exclusionBinding(camera, \.excludedCameras)) {
-                        labeledCount(camera, store.cameraCounts[camera, default: 0])
+                        labeledCount(camera == "Unknown" ? L10n.text("Unknown") : camera, store.cameraCounts[camera, default: 0])
                     }
                 }
             }
@@ -719,11 +721,11 @@ struct FilterView: View {
     }
 
     private var lensesSection: some View {
-        FilterDisclosureSection(title: "Lens", isExpanded: $lensesExpanded) {
+        FilterDisclosureSection(title: L10n.text("Lens"), isExpanded: $lensesExpanded) {
             VStack(alignment: .leading, spacing: 7) {
                 ForEach(store.availableLenses, id: \.self) { lens in
                     Toggle(isOn: exclusionBinding(lens, \.excludedLenses)) {
-                        labeledCount(lens, store.lensCounts[lens, default: 0])
+                        labeledCount(lens == "Unknown" ? L10n.text("Unknown") : lens, store.lensCounts[lens, default: 0])
                     }
                 }
             }
@@ -732,18 +734,18 @@ struct FilterView: View {
 
     private var footer: some View {
         HStack {
-            Text("Showing \(store.visibleIndices.count) of \(store.items.count)")
+            Text(L10n.text("Showing \(store.visibleIndices.count) of \(store.items.count)"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
             Spacer()
-            Button("Reset") {
+            Button(L10n.text("Reset")) {
                 focusedSettingField = nil
                 store.resetFilter()
                 syncAllSettingDrafts()
             }
             .disabled(!store.filterCanReset)
-            Button("Done") { store.isFilterPresented = false }
+            Button(L10n.text("Done")) { store.isFilterPresented = false }
                 .keyboardShortcut(.cancelAction)
         }
     }
@@ -1348,7 +1350,7 @@ private struct FilterDisclosureSection<Content: View>: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+            .accessibilityValue(isExpanded ? L10n.text("Expanded") : L10n.text("Collapsed"))
 
             if isExpanded {
                 content
