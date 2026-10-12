@@ -1615,3 +1615,28 @@
 "Time zone" = "المنطقة الزمنية";
 
 "{0} · estimated" = "{0} · تقديري";
+
+/* Optional StoreKit tips. */
+"Support Louppe" = "ادعم Louppe";
+"Support Louppe…" = "ادعم Louppe…";
+"Help Alex keep developing Louppe. Tips are optional, one-time purchases and do not unlock features." = "ساعد Alex على مواصلة تطوير Louppe. الإكراميات مشتريات اختيارية تُدفع مرة واحدة ولا تفتح ميزات.";
+"Loading tips…" = "جارٍ تحميل الإكراميات…";
+"Couldn’t load tips." = "تعذّر تحميل الإكراميات.";
+"Tips are unavailable right now. Try again later." = "الإكراميات غير متاحة الآن. حاول مرة أخرى لاحقًا.";
+"Apple could not verify the tip. Contact Alex if you were charged." = "تعذّر على Apple التحقق من الإكرامية. تواصل مع Alex إذا تم خصم المبلغ.";
+"Waiting for Apple…" = "في انتظار Apple…";
+"Your tip is awaiting approval. Apple will complete it after approval." = "إكراميتك في انتظار الموافقة. ستُكمل Apple العملية بعد الموافقة.";
+"Thank you for supporting Louppe!" = "شكرًا لدعمك Louppe!";
+"Couldn’t complete the tip. {0}" = "تعذّر إكمال الإكرامية. {0}";
+
+"Version" = "الإصدار";
+
+"Open App Store" = "فتح App Store";
+
+"Updates are managed by the App Store." = "تُدار التحديثات عبر App Store.";
+
+"Updates are disabled in this review build." = "التحديثات معطّلة في نسخة المراجعة هذه.";
+
+"Louppe is always free and open source. Tips are optional." = "Louppe مجاني ومفتوح المصدر دائمًا. الإكراميات اختيارية.";
+
+"Source code" = "الشيفرة المصدرية";

@@ -2,6 +2,12 @@
 
 ## 1.11.0 (13) — 2026-10-12
 
+- Combined Settings into one scrolling page with consistent sections, the
+  getting-started guide, version and update controls, and optional support.
+  Clarified that Louppe is always free and open source.
+
+- Added optional tips: Apple in-app purchases in the App Store build and the author’s Revolut page for direct downloads.
+
 - Added Quality cues and Capture bursts to Filter, with consistent Browser/Grid
   badges and compact values in Info. Near-white and near-black rules have
   independent thresholds and reset controls; changing rules reuses measurements.

@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 #if !APP_STORE
 import Combine
@@ -55,7 +56,7 @@ struct UpdaterSettingsView: View {
     }
 
     var body: some View {
-        Form {
+        Group {
             Toggle(L10n.text("Automatically check for updates"), isOn: $automaticallyChecksForUpdates)
                 .onChange(of: automaticallyChecksForUpdates) { _, newValue in
                     updater.automaticallyChecksForUpdates = newValue
@@ -72,43 +73,85 @@ struct UpdaterSettingsView: View {
                     updater.automaticallyDownloadsUpdates = newValue
                 }
         }
-        .formStyle(.grouped)
-        .padding()
-        .frame(width: 440)
-        .fixedSize(horizontal: false, vertical: true)
         .tint(Color.louppeAccent)
     }
 }
 #endif
 
-/// Focused native pages keep review choices out of the working toolbar.
+/// One scrolling home for preferences, onboarding, updates, and support.
 struct LouppeSettingsView: View {
+    @ObservedObject var store: SessionStore
+    @Environment(\.openWindow) private var openWindow
     #if !APP_STORE
     let updater: SPUUpdater
     #endif
 
     var body: some View {
-        TabView {
+        LouppeSettingsForm {
             ReviewPreferencesSettingsView()
-                .tabItem {
-                    Label(L10n.text("Review"), systemImage: "photo.on.rectangle")
-                }
-
             CameraQualityWarningsSettingsView()
-                .tabItem {
-                    Label(L10n.text("Quality Cues"), systemImage: "waveform.path.ecg")
-                }
 
-            #if !APP_STORE
-            if !AppBuildInfo.isReviewBuild {
-                UpdaterSettingsView(updater: updater)
-                    .tabItem {
-                        Label(L10n.text("Updates"), systemImage: "arrow.down.circle")
-                    }
+            Section {
+                DisclosureGroup(L10n.text("Get started")) {
+                    LouppeQuickStartContent()
+                }
+                Button(L10n.text("Keyboard shortcuts")) {
+                    openWindow(id: LouppeHelpWindow.id)
+                }
             }
-            #endif
+
+            Section {
+                LabeledContent(L10n.text("Version"), value: AppBuildInfo.versionDescription)
+                #if APP_STORE
+                Button(L10n.text("Open App Store")) {
+                    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.AppStore") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                Text(L10n.text("Updates are managed by the App Store."))
+                    .foregroundStyle(.secondary)
+                #else
+                if AppBuildInfo.isReviewBuild {
+                    Text(L10n.text("Updates are disabled in this review build."))
+                        .foregroundStyle(.secondary)
+                } else {
+                    CheckForUpdatesView(updater: updater, isFileOperationRunning: store.isFileOperationRunning)
+                    UpdaterSettingsView(updater: updater)
+                }
+                #endif
+                Link(L10n.text("Version History"), destination: AppBuildInfo.releaseHistoryURL)
+                    .foregroundStyle(Color.louppeAccent)
+            } header: {
+                Text(L10n.text("Updates"))
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    #if APP_STORE
+                    Button(L10n.text("Support Louppe…")) {
+                        openWindow(id: TipView.windowID)
+                    }
+                    #else
+                    Link(L10n.text("Support Louppe…"), destination: AppBuildInfo.directTipURL)
+                        .foregroundStyle(Color.louppeAccent)
+                    #endif
+                    Text(L10n.text("Louppe is always free and open source. Tips are optional."))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                HStack(spacing: 16) {
+                    Link(L10n.text("Source code"), destination: AppBuildInfo.sourceCodeURL)
+                    Link(L10n.text("Contact Alex"), destination: URL(string: "mailto:a@alex-markin.com")!)
+                    Link(L10n.text("Privacy Policy"), destination: AppBuildInfo.privacyPolicyURL)
+                }
+                .font(.callout)
+                .foregroundStyle(Color.louppeAccent)
+            } header: {
+                Text(L10n.text("Support Louppe"))
+            }
         }
-        .frame(width: 480, height: 420)
+        .frame(width: 520, height: 600)
         .tint(Color.louppeAccent)
     }
 }

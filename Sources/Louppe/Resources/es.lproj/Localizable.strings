@@ -1615,3 +1615,28 @@
 "Time zone" = "Zona horaria";
 
 "{0} · estimated" = "{0} · estimada";
+
+/* Optional StoreKit tips. */
+"Support Louppe" = "Apoya a Louppe";
+"Support Louppe…" = "Apoya a Louppe…";
+"Help Alex keep developing Louppe. Tips are optional, one-time purchases and do not unlock features." = "Ayuda a Alex a seguir desarrollando Louppe. Las propinas son compras únicas opcionales y no desbloquean funciones.";
+"Loading tips…" = "Cargando propinas…";
+"Couldn’t load tips." = "No se pudieron cargar las propinas.";
+"Tips are unavailable right now. Try again later." = "Las propinas no están disponibles ahora. Inténtalo más tarde.";
+"Apple could not verify the tip. Contact Alex if you were charged." = "Apple no pudo verificar la propina. Contacta con Alex si se te cobró.";
+"Waiting for Apple…" = "Esperando a Apple…";
+"Your tip is awaiting approval. Apple will complete it after approval." = "Tu propina está pendiente de aprobación. Apple la completará cuando se apruebe.";
+"Thank you for supporting Louppe!" = "¡Gracias por apoyar a Louppe!";
+"Couldn’t complete the tip. {0}" = "No se pudo completar la propina. {0}";
+
+"Version" = "Versión";
+
+"Open App Store" = "Abrir App Store";
+
+"Updates are managed by the App Store." = "La App Store gestiona las actualizaciones.";
+
+"Updates are disabled in this review build." = "Las actualizaciones están desactivadas en esta versión de revisión.";
+
+"Louppe is always free and open source. Tips are optional." = "Louppe siempre es gratis y de código abierto. Las propinas son opcionales.";
+
+"Source code" = "Código fuente";

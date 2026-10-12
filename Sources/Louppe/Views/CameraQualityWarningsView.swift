@@ -104,9 +104,11 @@ struct CameraQualityWarningsSettingsView: View {
     @State private var shadowResetGeneration = 0
 
     var body: some View {
-        Form {
+        Group {
             Section {
                 Toggle(L10n.text("Show quality cues"), isOn: $isEnabled)
+            } header: {
+                Text(L10n.text("Quality Cues"))
             }
 
             Section {
@@ -172,9 +174,6 @@ struct CameraQualityWarningsSettingsView: View {
             .disabled(!isEnabled)
 
         }
-        .formStyle(.grouped)
-        .padding()
-        .frame(width: 460)
         .tint(Color.louppeAccent)
     }
 
@@ -199,7 +198,8 @@ struct CameraQualityWarningsSettingsView: View {
     private func cueToggle(_ title: String, isOn: Binding<Bool>) -> some View {
         Toggle(title, isOn: isOn)
             .toggleStyle(.checkbox)
-            .frame(width: 118, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(width: 148, alignment: .leading)
     }
 }
 

@@ -17,6 +17,9 @@ struct LouppeApp: App {
         automaticallyRecoversInterruptedOperations: true
     )
     #endif
+    #if APP_STORE
+    @StateObject private var tipStore = TipStore()
+    #endif
     #if !APP_STORE
     private let updaterController: SPUStandardUpdaterController
     #endif
@@ -39,6 +42,10 @@ struct LouppeApp: App {
             RootView(store: store)
                 .localizedInterface()
                 .onAppear {
+                    #if APP_STORE
+                    // Initialize the listener even when the tip window stays closed.
+                    _ = tipStore
+                    #endif
                     appDelegate.store = store
                     appDelegate.showMainWindow = { openWindow(id: "main") }
                     appDelegate.openPendingFolderIfNeeded()
@@ -69,6 +76,15 @@ struct LouppeApp: App {
                     NSApp.orderFrontStandardAboutPanel(options: [.credits: Self.aboutCredits])
                 }
             }
+            CommandGroup(after: .appInfo) {
+                #if APP_STORE
+                Button(L10n.text("Support Louppe…")) {
+                    openWindow(id: TipView.windowID)
+                }
+                #else
+                Link(L10n.text("Support Louppe…"), destination: AppBuildInfo.directTipURL)
+                #endif
+            }
             #if !APP_STORE
             CommandGroup(after: .appInfo) {
                 if !AppBuildInfo.isReviewBuild {
@@ -94,7 +110,7 @@ struct LouppeApp: App {
                 Button(L10n.text("Louppe Help")) {
                     openWindow(id: LouppeHelpWindow.id)
                 }
-                Link(L10n.text("Privacy Policy"), destination: Self.privacyPolicyURL)
+                Link(L10n.text("Privacy Policy"), destination: AppBuildInfo.privacyPolicyURL)
             }
         }
 
@@ -104,19 +120,26 @@ struct LouppeApp: App {
         }
         .defaultSize(width: 630, height: 620)
 
+        #if APP_STORE
+        Window(L10n.text("Support Louppe"), id: TipView.windowID) {
+            TipView(store: tipStore)
+                .localizedInterface()
+        }
+        .windowResizability(.contentSize)
+        #endif
+
         Settings {
             Group {
             #if !APP_STORE
-            LouppeSettingsView(updater: updaterController.updater)
+            LouppeSettingsView(store: store, updater: updaterController.updater)
             #else
-            LouppeSettingsView()
+            LouppeSettingsView(store: store)
             #endif
             }
             .localizedInterface()
         }
+        .windowResizability(.contentSize)
     }
-
-    private static let privacyPolicyURL = URL(string: "https://louppe.eu/privacy/")!
 
     /// Credits block for the About panel. Links are clickable.
     private static var aboutCredits: NSAttributedString {
@@ -138,7 +161,7 @@ struct LouppeApp: App {
         credits.append(NSAttributedString(string: "louppe.eu", attributes: link))
         credits.append(NSAttributedString(string: "\n", attributes: base))
 
-        link[.link] = Self.privacyPolicyURL
+        link[.link] = AppBuildInfo.privacyPolicyURL
         credits.append(NSAttributedString(string: L10n.text("Privacy Policy"), attributes: link))
         credits.append(NSAttributedString(string: "\n", attributes: base))
 

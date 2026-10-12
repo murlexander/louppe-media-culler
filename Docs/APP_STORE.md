@@ -13,6 +13,46 @@ recovery journal needs it; completing or retiring that record releases access.
 It requests no broad Pictures, Movies, Music, Full Disk Access, network,
 camera, microphone, contacts, or accessibility permissions.
 
+## Optional tips
+
+The Store build adds **Louppe → Support Louppe…**. Tips use StoreKit 2
+consumables; they are repeatable, grant no features, and never renew. The same
+menu in the direct download opens `https://revolut.me/murlexander`, matching
+the website's support link. Routing is fixed at compile time with `APP_STORE`;
+the Store executable includes no Revolut route, and the direct executable
+includes no StoreKit payment flow. Existing GitHub installations receive the
+button when updated. Apple supplies localized prices and product names.
+
+Before live testing or submission, create these **Consumable** products in
+the existing App Store Connect record (prices are configured there):
+
+| Product ID | Reference/display name | Base price (EUR) |
+| --- | --- | --- |
+| `com.alexandermarkin.louppe.tip.small` | Small Tip | €3 |
+| `com.alexandermarkin.louppe.tip.medium` | Medium Tip | €7 |
+| `com.alexandermarkin.louppe.tip.large` | Large Tip | €18 |
+
+Add localized names/descriptions, pricing, availability, and review screenshots.
+Describe each as an optional one-time tip with no feature unlock. Complete the
+Paid Apps agreement, tax, and banking requirements. Submit the first in-app
+purchases with the app version. Enrollment in Apple's Small Business Program
+is separate from implementing payments; it determines the applicable reduced
+commission. Do not upload or alter the version already under review as part of
+local implementation.
+
+The transaction listener starts at app launch and finishes only verified,
+non-revoked tip transactions, including unfinished purchases and later
+approvals. Consumables have no restorable entitlement, so no Restore button is
+needed. Empty catalogs and StoreKit errors offer retry without initiating a
+payment; cancellation shows no success, and pending approval blocks another
+tip in the current process until approval arrives.
+
+Test a signed Store build with Apple's sandbox: localized prices, success,
+cancel, failed/unverified payment, pending approval (including closing the tip
+window and relaunching), repeat tips, and unavailable products. Local mock
+tests cover presentation states and duplicate-click gating; they do not prove
+Apple checkout, sandbox networking, receipt verification, or settlement.
+
 ## Build checks
 
 `./Scripts/verify_release.sh --app-store` checks the loose app and archive

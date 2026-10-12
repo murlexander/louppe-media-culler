@@ -7,7 +7,6 @@ enum LouppeHelpWindow {
 /// A small, searchable reference that can open independently of a photo session.
 struct LouppeHelpView: View {
     @State private var shortcutSearch = ""
-    @AppStorage("louppe.showQuickStart") private var showQuickStart = true
 
     private struct Shortcut: Identifiable {
         let keys: String
@@ -60,11 +59,7 @@ struct LouppeHelpView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L10n.text("Get started"))
                         .font(.title2.bold())
-                    Text(L10n.text("Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid."))
-                    Text(L10n.text("F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Stars (0–5) and color labels are independent."))
-                    Text(L10n.text("Export copies chosen media. Clean Up asks before moving rejects to the macOS Trash."))
-                    Text(L10n.text("Decisions, stars, and colors save automatically. Reopen the folder to continue. No never trashes files. Export → Metadata (XMP) shares ratings with compatible editing apps."))
-                    Toggle(L10n.text("Show quick-start tips while reviewing"), isOn: $showQuickStart)
+                    LouppeQuickStartContent()
                 }
 
                 Divider()
@@ -120,5 +115,21 @@ struct LouppeHelpView: View {
             .padding(24)
         }
         .background(Color.appBackground)
+    }
+}
+
+/// Shared with Settings so the onboarding guide and its preference stay in sync.
+struct LouppeQuickStartContent: View {
+    @AppStorage("louppe.showQuickStart") private var showQuickStart = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L10n.text("Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid."))
+            Text(L10n.text("F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Stars (0–5) and color labels are independent."))
+            Text(L10n.text("Export copies chosen media. Clean Up asks before moving rejects to the macOS Trash."))
+            Text(L10n.text("Decisions, stars, and colors save automatically. Reopen the folder to continue. No never trashes files. Export → Metadata (XMP) shares ratings with compatible editing apps."))
+            Toggle(L10n.text("Show quick-start tips while reviewing"), isOn: $showQuickStart)
+        }
+        .fixedSize(horizontal: false, vertical: true)
     }
 }

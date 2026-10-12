@@ -1615,3 +1615,28 @@
 "Time zone" = "Time zone";
 
 "{0} · estimated" = "{0} · estimated";
+
+/* Optional StoreKit tips. */
+"Support Louppe" = "Support Louppe";
+"Support Louppe…" = "Support Louppe…";
+"Help Alex keep developing Louppe. Tips are optional, one-time purchases and do not unlock features." = "Help Alex keep developing Louppe. Tips are optional, one-time purchases and do not unlock features.";
+"Loading tips…" = "Loading tips…";
+"Couldn’t load tips." = "Couldn’t load tips.";
+"Tips are unavailable right now. Try again later." = "Tips are unavailable right now. Try again later.";
+"Apple could not verify the tip. Contact Alex if you were charged." = "Apple could not verify the tip. Contact Alex if you were charged.";
+"Waiting for Apple…" = "Waiting for Apple…";
+"Your tip is awaiting approval. Apple will complete it after approval." = "Your tip is awaiting approval. Apple will complete it after approval.";
+"Thank you for supporting Louppe!" = "Thank you for supporting Louppe!";
+"Couldn’t complete the tip. {0}" = "Couldn’t complete the tip. {0}";
+
+"Version" = "Version";
+
+"Open App Store" = "Open App Store";
+
+"Updates are managed by the App Store." = "Updates are managed by the App Store.";
+
+"Updates are disabled in this review build." = "Updates are disabled in this review build.";
+
+"Louppe is always free and open source. Tips are optional." = "Louppe is always free and open source. Tips are optional.";
+
+"Source code" = "Source code";

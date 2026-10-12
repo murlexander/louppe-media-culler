@@ -287,6 +287,19 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 
 ## Native UI
 
+- Settings uses one grouped, scrolling form in a 520 × 600-point content area.
+  Review, new-folder defaults, RAW display, Quality Cues, Get started, Updates,
+  and Support share margins and regular native control sizing. Never embed
+  separate forms or scroll views inside its section views. Get started shares
+  `LouppeQuickStartContent` with Help and the existing quick-start preference;
+  its disclosure keeps the page concise until the guide is needed. Support links
+  share a compact row.
+  Updates shows the running bundle's version/build; direct builds use Sparkle's
+  existing file-operation gate and automatic-update preferences, Store builds
+  open the App Store, and review builds keep updates disabled. Support reuses
+  the Store tip window or direct tip URL and states that Louppe stays free and
+  open source. Settings does not start purchases.
+
 - Saved-decision recovery uses a nonblocking review banner and native preview
   sheet, joined to the existing keyboard/menu presentation gate. Selection plus
   an explicit same-photo acknowledgment enables manual restoration. Keep Current

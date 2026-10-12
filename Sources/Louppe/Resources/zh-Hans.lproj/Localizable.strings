@@ -1615,3 +1615,28 @@
 "Time zone" = "时区";
 
 "{0} · estimated" = "{0} · 估算";
+
+/* Optional StoreKit tips. */
+"Support Louppe" = "支持 Louppe";
+"Support Louppe…" = "支持 Louppe…";
+"Help Alex keep developing Louppe. Tips are optional, one-time purchases and do not unlock features." = "帮助 Alex 继续开发 Louppe。打赏是自愿的一次性购买，不会解锁任何功能。";
+"Loading tips…" = "正在加载打赏选项…";
+"Couldn’t load tips." = "无法加载打赏选项。";
+"Tips are unavailable right now. Try again later." = "暂时无法打赏。请稍后重试。";
+"Apple could not verify the tip. Contact Alex if you were charged." = "Apple 无法验证打赏。如果已扣款，请联系 Alex。";
+"Waiting for Apple…" = "正在等待 Apple…";
+"Your tip is awaiting approval. Apple will complete it after approval." = "你的打赏正在等待批准。批准后 Apple 将完成交易。";
+"Thank you for supporting Louppe!" = "感谢你支持 Louppe！";
+"Couldn’t complete the tip. {0}" = "无法完成打赏。{0}";
+
+"Version" = "版本";
+
+"Open App Store" = "打开 App Store";
+
+"Updates are managed by the App Store." = "更新由 App Store 管理。";
+
+"Updates are disabled in this review build." = "此评审版本已停用更新。";
+
+"Louppe is always free and open source. Tips are optional." = "Louppe 永远免费且开源。打赏完全自愿。";
+
+"Source code" = "源代码";

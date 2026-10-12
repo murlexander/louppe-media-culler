@@ -70,7 +70,9 @@ builds folders from decisions, dates, ratings, and other metadata.
   **Route copies to multiple folders** previews decision, stars, color,
   file-type, or media-type rules before copying.
 
-**Settings → Review** sets defaults for advancement,
+**Settings** is one scrolling page for review defaults, RAW display, quality
+cues, the getting-started guide, updates, and optional support. Review and
+New folders set defaults for advancement,
 Gallery/Grid, sort, and dividers in new folders. Rescan keeps the current
 layout. Connected drives and cards appear on the start screen with capacity
 and a folder chooser.
@@ -91,12 +93,12 @@ clipping information, and optional quality cues. VoiceOver and keyboard review
 are supported.
 
 For RAW photos, **Fast** uses previews below 100% and Apple RAW rendering at
-100% and above. **RAW** beside zoom or in **Settings → Review** uses RAW at
+100% and above. **RAW** beside zoom or in **Settings → RAW display** uses RAW at
 all zoom levels. **Preview**, **RAW**, and **RAW…** identify the source and
 loading state; **Use Preview** is an explicit fallback after failure.
 Apple rendering may differ from your editor or the camera JPEG.
 
-The RAW menu and Review settings offer **Apple Default** or opt-in **RAW 9**.
+The RAW menu and RAW display settings offer **Apple Default** or opt-in **RAW 9**.
 RAW 9 requires macOS 27, a supported file, and Apple’s model resources; it
 uses more time and memory. Failure offers Retry or **Use Apple Default**;
 Louppe never silently switches decoders. Grid and Browser retain fast previews.
