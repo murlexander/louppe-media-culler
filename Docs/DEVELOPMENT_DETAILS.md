@@ -17,6 +17,7 @@ it to every view.
 | `Sources/Louppe/ConnectedDrives.swift` | Read-only physical-drive discovery, capacity snapshots, mounted-device identity, and welcome-screen refresh lifecycle |
 | `Sources/Louppe/PreparedSessionIndex.swift` | Pure item-ID/sort/filter/group/header/location maps projected by `SessionStore`; owns stable Grid group identity and performance signposts |
 | `Sources/Louppe/SelectionState.swift` | Pure stable-ID/index selection authority: range, edge, toggle, rubber-band, filter intersection, and generation remapping; projected by `SessionStore` |
+| `Sources/Louppe/SessionRatingRecovery.swift` | Bounded full-content fingerprints, fresh descriptor/identity validation, and saved-decision recovery policy |
 | `Sources/Louppe/SessionPersistence.swift` | Folder identity, typed sidecar/backup outcomes, process locks, raw-byte CAS, generations, schema validation, durable actor writes |
 | `Sources/Louppe/DurableFileIO.swift` | POSIX write/sync/rename/directory-sync boundary shared by sessions and file-operation journals |
 | `Sources/Louppe/FileOperationJournal.swift` | Per-file durable Copy/Move/Rename/Organize/Trash/undo checkpoints, stable file identity, and launch recovery |
@@ -24,7 +25,8 @@ it to every view.
 | `Sources/Louppe/FolderScanner.swift` | Recursive scans, deterministic volume-aware RAW+JPEG pairing, lazy JPEG metadata, pairing projection, chronological sort |
 | `Sources/Louppe/ImagePipeline.swift` | ImageIO decoding, AVFoundation first frames, thumbnail memory/disk caches, prefetch |
 | `Sources/Louppe/HistogramPipeline.swift` | Bounded photo-only luminance analysis plus cached Fit/phone-size clipping-warning previews |
-| `Sources/Louppe/CameraQualityWarnings.swift` | Pure app-wide warning preferences and non-blocking photo warning state |
+| `Sources/Louppe/CameraQualityWarnings.swift` | Pure independent ISO/shutter/near-white/near-black rules and exact evidence text |
+| `Sources/Louppe/QualityCueAnalysis.swift` | Small revision-bound numeric cue summaries and honest coverage states; reuses histogram workers |
 | `Sources/Louppe/DuplicateBurstAnalysis.swift` | Local, bounded exact-duplicate, likely-similar-preview, and capture-burst analysis for review-only groups |
 | `Sources/Louppe/HighResolutionImagePipeline.swift` | Lazy Core Image regions and bounded 100% tiles |
 | `Sources/Louppe/ZoomViewport.swift` | Pure backing-scale/normalized-position geometry and persistent non-published 100% viewport state |
@@ -48,8 +50,8 @@ it to every view.
 | `Sources/Louppe/Views/BrowserView.swift` | Optional vertical thumbnail Browser with day separators |
 | `Sources/Louppe/Views/GridView.swift` | Grid view, day-grouped rows, click-to-rate, rubber-band selection |
 | `Sources/Louppe/Views/MetadataPanel.swift` | Info panel (filename header, photo histogram, camera, exposure row, fields) |
-| `Sources/Louppe/Views/HistogramView.swift` | Photo-only histogram, shadow/highlight percentages, and Gallery clipping toggle |
-| `Sources/Louppe/Views/CameraQualityWarningsView.swift` | Text-first Info-panel review warnings and the focused Warnings settings page |
+| `Sources/Louppe/Views/HistogramView.swift` | Photo-only histogram, RAW source tag, and Gallery clipping toggle |
+| `Sources/Louppe/Views/CameraQualityWarningsView.swift` | Shared cue evidence in Info/tile popovers, accessible tile glyphs, and independent settings |
 | `Sources/Louppe/Views/ThumbnailView.swift` | Async thumbnail tile + rating badge |
 | `Sources/Louppe/Views/MediaTileAccessibility.swift` | Shared VoiceOver descriptions and open/rate/select actions for Browser/Grid tiles |
 | `Sources/Louppe/Views/FullImageView.swift` | Large photo with fit / 100% / phone-size zoom |
@@ -128,6 +130,31 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 
 ## Session persistence
 
+- Schema 7 adds optional full-byte SHA-256 fingerprints and separately validated
+  recovery records. Same-name replacements open unrated; verified decisions
+  still restore. Archive meaningful conflicts only after rename matching has
+  consumed all exact originals. Empty old decisions require no attention.
+- Recovery records survive autosave/reopen and explicit resolution as history,
+  separately from the current file at the same path. Older app versions refuse
+  schema 7 rather than silently dropping that history. Use disposable copies
+  for the combined local review build.
+- An unambiguous same-relative-path full-content match can restore an untouched
+  current file. Older entries without fingerprints require explicit selected-file
+  confirmation and a fresh regular-file/scan-identity check. Current decisions,
+  stars, colors and change timestamps prevent either route from overwriting
+  newer review work. Copies do not inherit old organization-origin paths.
+- Recovery targets and record lists use the physical-file index, rebuilt on
+  structural changes. A unique returning physical original can recover history
+  under a new name; copied-and-renamed discovery remains separate work. Queue
+  only touched files for later fingerprints. Clear All records its explicit
+  clear timestamp on affected physical files so recovery cannot undo it. Undo
+  to empty current metadata keeps pending older decisions as resolved history;
+  the original undo snapshot and its timestamps remain unchanged.
+- Fingerprints are included only against the snapshot's exact physical identity.
+  New fingerprints are optional checkpoints, not new rating generations; they
+  must not make a durable decision look unsaved or add a clean Quit dependency.
+  Actual restored decisions advance the existing dirty/save authority.
+
 - Decoding, CAS revision reads, and encoding share a 512 MiB ceiling.
   `snapshotTooLarge` fails before locking or changing either copy. Retry keeps
   its sequence/generation; dirty Close/Quit remains unsafe.
@@ -193,8 +220,11 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   and protected from rating-based Clean Up. Rating a pair updates both files.
   Schema 1 combined entries remain readable; schema 2 adds per-file entries,
   schema 4 physical identity, schema 5 stars/color, and schema 6 original parent
-  paths to prevent nested organization layouts.
-- Empty `selectedIndices` means the current photo through `effectiveSelection`.
+  paths to prevent nested organization layouts. Schema 7 adds content proof and
+  recovery history.
+- Empty `selectedIndices` means the visible current photo through `effectiveSelection`.
+  Asynchronous cue/group completion preserves current identity; if it is hidden,
+  Gallery asks for an explicit matching item and rating commands have no target.
   `SelectionState.itemIDs` owns stable selection; `selectedIndices` projects the
   current generation. Structural changes clear both with `setSelectionIndices`
   or snapshot/remap IDs as same-folder rescan does. `applyFilter` removes hidden
@@ -257,6 +287,18 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 
 ## Native UI
 
+- Saved-decision recovery uses a nonblocking review banner and native preview
+  sheet, joined to the existing keyboard/menu presentation gate. Selection plus
+  an explicit same-photo acknowledgment enables manual restoration. Keep Current
+  Decisions dismisses attention while retaining history. Recovery completion
+  updates physical metadata/tallies and any affected sort/filter without jumping
+  the current photo. RAW+JPEG decisions remain independent and can stay Mixed.
+  The banner's × hides attention for the current opening without changing records
+  or content checks. File → Check Saved Decisions… reopens the sheet/history;
+  the next folder opening/rescan resets the temporary dismissal.
+  Its full-width row has an opaque Color.appBackground fill so pane backgrounds
+  cannot show through the safe-area inset.
+
 - Localization uses `L10n.text` with complete English messages and numbered
   interpolation slots, plus UTF-8 `Localizable.strings` in `Resources/*.lproj`.
   Catalogs cover en/es/zh-Hans/hi/pt/ar. `L10n.label` is only for explicit
@@ -300,9 +342,37 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 - Welcome uses a short top inset and top alignment, without a large branding
   block. Help stays 24 points from bottom/trailing edges outside measured columns;
   overflow scrolling reserves its footer.
-- Quality cues use inline editable thresholds and per-cue checkboxes. Fixed-width
-  fields align; hidden labels reserve no space, and units follow fields. App-local
-  preferences apply live without changing ratings/files; disabling preserves cutoffs.
+- Filter owns Quality cues and Capture bursts; Sort retains ordering and exact/
+  similar groups. Any chosen cue intersects the ordinary facets. Browser/Grid
+  glyphs open shared cue names/values without selecting; Inspect in Info is explicit.
+  Analysis statuses remain internal/filter state; tiles and Info show only matching
+  cues, with no checked badge or empty quality-cues section.
+  Browser/Grid cues sit inside each square at bottom left, with stars/color at
+  top left and Yes/No at top right. All visible badges share a 20-point height
+  and 6-point corner inset. Cues and color labels use individual dark circles;
+  stars and duration use capsules. Grid retains a 40-point decision hit target
+  aligned to the visible circle, and its canvas drag gate defers to controls. High ISO uses
+  the dotted `aqi.medium` glyph; it remains a metadata clue, not measured noise.
+  Info shows matching cue names/values immediately below the histogram, replacing
+  the shadow/highlight percentage row. No status, source, technical disclosure or
+  inspection action appears in that block. Cue icons, names and values use the
+  primary text color. Tile popovers share the compact rows.
+  Settings contains only cue controls. Each row has a trailing reset icon that
+  restores that cue's default threshold and enabled state. Each field owns its
+  reset generation so resetting one cue cannot discard another cue's draft.
+  There is no explanatory note or global reset button.
+  The Quality cues title uses the same regular caption/secondary style as Stars
+  and Color label. Histogram RAW/Preview labels appear only for RAW primaries
+  after analysis completes; JPEG, TIFF and other rendered formats have no source
+  label. TIFF has no separate RAW histogram path in the current implementation.
+  Photo Info keeps Captured and Time zone; fallback dates (digitized, TIFF,
+  filesystem or unverified) append “estimated” to the formatted date. Date source,
+  Recorded date/time and Date precision are not displayed. Source, fractional
+  seconds and offsets remain in capture evidence for date and burst logic.
+- Cue preferences have independent ISO/shutter/near-white/near-black switches and
+  thresholds. Legacy combined clipping values seed both missing new fields once.
+  Fixed-width numeric fields commit valid edits; disabling preserves cutoffs.
+  App-local changes reclassify retained counts live without ratings or file writes.
 - Welcome lists mounted physical external/removable drives read-only. Discovery
   and capacity reads run off-main. Before the picker, identity comes from Disk
   Arbitration volume/media UUIDs and BSD/mount paths; missing identity is omitted.

@@ -77,6 +77,10 @@ and a folder chooser.
 
 Ratings save to `.louppe_session.json` in the opened folder. An identity-bound
 local backup can protect the session when that folder or card is unavailable.
+Changed-file decisions remain in recovery history while you keep reviewing.
+**File → Check Saved Decisions…** offers restoration; verified identical copies
+and returning originals recover automatically. Older sessions need confirmation.
+Sessions saved by 1.11 use a newer format that 1.10 cannot read.
 
 ## Media and inspection
 
@@ -97,9 +101,15 @@ RAW 9 requires macOS 27, a supported file, and Apple’s model resources; it
 uses more time and memory. Failure offers Retry or **Use Apple Default**;
 Louppe never silently switches decoders. Grid and Browser retain fast previews.
 
-The histogram switches from **Preview** to **RAW** after a scaled linear RAW
-analysis, independent of photo rendering. The **X** overlay measures the
-displayed rendering.
+For RAW files, the histogram switches from **Preview** to **RAW** after a scaled
+linear analysis, independent of photo rendering. Other photo formats have no
+source tag. The **X** overlay measures the displayed rendering.
+
+**Filter → Quality cues** finds High ISO, Slow shutter, Near-white and Near-black
+areas. Rules have independent switches and thresholds; cues appear inside
+Browser/Grid tiles and below the Info histogram. Cues never set decisions.
+**Filter → Capture bursts** groups consecutive photo times within the chosen gap;
+it can merge separate shutter presses or cameras. Inferred dates are labeled.
 
 Text previews are read-only and selectable. TXT, TEXT, MD/MARKDOWN, XML,
 JSON, CSV, TSV, LOG, YAML, and YML appear alongside media. Markdown supports

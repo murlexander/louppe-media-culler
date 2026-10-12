@@ -276,9 +276,6 @@ struct GridView: View {
 /// shared per-file rating storage changes. Keeping the observation here makes
 /// the badge, selection frame, and accessibility value update immediately.
 private struct GridCell: View {
-    private static let ratingBadgeSize: CGFloat = 21
-    private static let ratingButtonSize: CGFloat = 40
-
     @ObservedObject var store: SessionStore
     let index: Int
     let onPointerCurrentChange: () -> Void
@@ -371,17 +368,18 @@ private struct GridCell: View {
                         RatingBadge(
                             rating: item.rating,
                             isMixed: item.hasMixedRatings,
-                            size: Self.ratingBadgeSize
+                            size: TileBadgeLayout.height
                         )
                         .frame(
-                            width: Self.ratingButtonSize,
-                            height: Self.ratingButtonSize
+                            width: TileBadgeLayout.decisionTargetSize,
+                            height: TileBadgeLayout.decisionTargetSize,
+                            alignment: .topTrailing
                         )
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .disabled(!store.canRate)
-                    .padding(2)
+                    .padding(TileBadgeLayout.inset)
                     .help(L10n.text("Change Yes/No decision"))
                     .accessibilityLabel(L10n.text("Change decision for \(item.displayName)"))
                     .accessibilityValue(
@@ -392,6 +390,10 @@ private struct GridCell: View {
                 }
                 .frame(maxWidth: .infinity)
                 .aspectRatio(1, contentMode: .fit)
+                .overlay(alignment: .bottomLeading) {
+                    QualityCueTileIcons(store: store, item: item)
+                        .padding(TileBadgeLayout.inset)
+                }
 
                 Text(item.displayName)
                     .font(.caption2)
@@ -572,8 +574,8 @@ private final class TileFrameStore {
 /// per rendered control while keeping native Button drags out of rubber-band
 /// selection.
 enum GridRubberBandHitTest {
-    /// The 40-point rating target plus its two-point outer padding on each side.
-    private static let ratingControlRegionSize: CGFloat = 44
+    /// Include the decision target and its shared corner inset.
+    private static let ratingControlRegionSize = TileBadgeLayout.decisionTargetSize + TileBadgeLayout.inset
     /// Conservatively covers the native large circular Play button without
     /// making the surrounding photo difficult to use as a drag origin.
     private static let playbackControlRegionSize: CGFloat = 48
@@ -607,6 +609,16 @@ enum GridRubberBandHitTest {
             height: ratingControlRegionSize
         )
         if ratingFrame.contains(point) { return false }
+        if !playableVideoIndices.contains(index) {
+            let cueRegionHeight = TileBadgeLayout.height + TileBadgeLayout.inset
+            let cueFrame = CGRect(
+                x: mediaFrame.minX,
+                y: mediaFrame.maxY - cueRegionHeight,
+                width: min(TileBadgeLayout.maximumCueRowWidth + TileBadgeLayout.inset, mediaFrame.width),
+                height: cueRegionHeight
+            )
+            if cueFrame.contains(point) { return false }
+        }
 
         if playableVideoIndices.contains(index) {
             let halfPlaybackSize = playbackControlRegionSize / 2

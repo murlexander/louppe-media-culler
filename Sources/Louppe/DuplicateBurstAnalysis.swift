@@ -34,7 +34,7 @@ enum DuplicateBurstAnalysis {
             case .likelySimilarPhotos:
                 return L10n.text("Groups similar small local previews; review every match yourself.")
             case .captureBursts:
-                return L10n.text("Groups photos whose capture times are close together.")
+                return L10n.text("Groups consecutive photo dates within the chosen gap. File creation dates are inferred; separate shutter presses and cameras can mix.")
             }
         }
 
@@ -46,6 +46,23 @@ enum DuplicateBurstAnalysis {
             case .captureBursts: return L10n.text("Capture bursts")
             }
         }
+    }
+
+    enum AnalysisMode: Equatable, Sendable {
+        case all
+        case captureBursts
+    }
+
+    /// Per-call injection verifies the metadata-only contract without global
+    /// probes, real decoding, or hanging sentinel files.
+    struct FileAccess: Sendable {
+        let exactDigest: @Sendable (ExactFile) throws -> String?
+        let visualHash: @Sendable ([VisualFile]) -> UInt64?
+
+        static let live = FileAccess(
+            exactDigest: { try DuplicateBurstAnalysis.exactDigestIfUnchanged($0) },
+            visualHash: { DuplicateBurstAnalysis.perceptualHash(from: $0) }
+        )
     }
 
     struct ExactFile: Sendable {
@@ -87,6 +104,7 @@ enum DuplicateBurstAnalysis {
         let id: String
         let mediaKind: MediaKind
         let captureDate: Date?
+        let captureDateEvidence: CaptureDateEvidence?
         let exactFiles: [ExactFile]
         let visualFiles: [VisualFile]
 
@@ -94,12 +112,14 @@ enum DuplicateBurstAnalysis {
             id: String,
             mediaKind: MediaKind,
             captureDate: Date?,
+            captureDateEvidence: CaptureDateEvidence? = nil,
             exactFiles: [ExactFile],
             visualFiles: [VisualFile]
         ) {
             self.id = id
             self.mediaKind = mediaKind
             self.captureDate = captureDate
+            self.captureDateEvidence = captureDateEvidence
             self.exactFiles = exactFiles
             self.visualFiles = visualFiles
         }
@@ -113,12 +133,36 @@ enum DuplicateBurstAnalysis {
     struct BurstCandidate: Equatable, Sendable {
         let itemID: String
         let captureDate: Date
+        let captureDateEvidence: CaptureDateEvidence?
+
+        init(
+            itemID: String,
+            captureDate: Date,
+            captureDateEvidence: CaptureDateEvidence? = nil
+        ) {
+            self.itemID = itemID
+            self.captureDate = captureDate
+            self.captureDateEvidence = captureDateEvidence
+        }
     }
 
     struct Group: Equatable, Identifiable, Sendable {
         let id: String
         let mode: ReviewMode
         let itemIDs: [String]
+        let captureDateNote: String?
+
+        init(
+            id: String,
+            mode: ReviewMode,
+            itemIDs: [String],
+            captureDateNote: String? = nil
+        ) {
+            self.id = id
+            self.mode = mode
+            self.itemIDs = itemIDs
+            self.captureDateNote = captureDateNote
+        }
 
         var title: String {
             title(itemCount: itemIDs.count)
@@ -132,7 +176,8 @@ enum DuplicateBurstAnalysis {
             case .likelySimilarPhotos:
                 return L10n.text("Likely similar · \(count) \(itemText) · local preview comparison")
             case .captureBursts:
-                return L10n.text("Capture burst · \(count) \(itemText) · close capture times")
+                let title = L10n.text("Capture burst · \(count) \(itemText) · close photo dates")
+                return captureDateNote.map { "\(title) · \($0)" } ?? title
             case .off:
                 return ""
             }
@@ -148,19 +193,26 @@ enum DuplicateBurstAnalysis {
         let burstCandidates: [BurstCandidate]
         let analyzedExactFileCount: Int
         let analyzedVisualPhotoCount: Int
+        let analysisMode: AnalysisMode
 
         init(
             exactDuplicateItemSets: [[String]],
             visualFingerprints: [VisualFingerprint],
             burstCandidates: [BurstCandidate],
             analyzedExactFileCount: Int,
-            analyzedVisualPhotoCount: Int
+            analyzedVisualPhotoCount: Int,
+            analysisMode: AnalysisMode = .all
         ) {
             self.exactDuplicateItemSets = exactDuplicateItemSets
             self.visualFingerprints = visualFingerprints
             self.burstCandidates = burstCandidates
             self.analyzedExactFileCount = analyzedExactFileCount
             self.analyzedVisualPhotoCount = analyzedVisualPhotoCount
+            self.analysisMode = analysisMode
+        }
+
+        func supports(_ mode: ReviewMode) -> Bool {
+            mode == .off || mode == .captureBursts || analysisMode == .all
         }
 
         func groups(
@@ -168,6 +220,7 @@ enum DuplicateBurstAnalysis {
             visualDistance: Int,
             burstInterval: TimeInterval
         ) -> [Group] {
+            guard supports(mode) else { return [] }
             switch mode {
             case .off:
                 return []
@@ -193,13 +246,23 @@ enum DuplicateBurstAnalysis {
             from itemSets: [[String]],
             mode: ReviewMode
         ) -> [Group] {
-            itemSets.enumerated().compactMap { index, itemIDs in
-                let unique = Array(Set(itemIDs)).sorted()
+            let inferredDateIDs = mode == .captureBursts ? Set(
+                burstCandidates.filter {
+                    $0.captureDateEvidence?.isInferred ?? true
+                }.map(\.itemID)
+            ) : []
+            return itemSets.enumerated().compactMap { index, itemIDs in
+                var seen = Set<String>()
+                let unique = mode == .captureBursts
+                    ? itemIDs.filter { seen.insert($0).inserted }
+                    : Array(Set(itemIDs)).sorted()
                 guard unique.count >= 2 else { return nil }
                 return Group(
                     id: "\(mode.rawValue)-\(index)-\(unique[0])",
                     mode: mode,
-                    itemIDs: unique
+                    itemIDs: unique,
+                    captureDateNote: unique.contains(where: inferredDateIDs.contains)
+                        ? L10n.text("inferred dates") : nil
                 )
             }
         }
@@ -297,11 +360,35 @@ enum DuplicateBurstAnalysis {
         case cancelled
     }
 
-    /// Runs on the caller's detached utility task. It streams duplicate bytes
-    /// with one 1 MiB buffer and decodes only a 9×8 grayscale image signature
-    /// for visual candidates; no full-resolution image is retained.
-    static func analyze(_ inputs: [Input]) throws -> Result {
+    /// Runs on the caller's detached utility task. Capture bursts use only
+    /// scanned dates. Full analysis streams bytes with one 1 MiB buffer and
+    /// decodes a 9×8 grayscale signature; no full-resolution image is retained.
+    static func analyze(
+        _ inputs: [Input],
+        mode: AnalysisMode = .all,
+        fileAccess: FileAccess = .live
+    ) throws -> Result {
         try checkCancellation()
+        var burstCandidates: [BurstCandidate] = []
+        burstCandidates.reserveCapacity(inputs.count)
+        for input in inputs {
+            try checkCancellation()
+            guard input.mediaKind == .photo, let captureDate = input.captureDate else { continue }
+            burstCandidates.append(BurstCandidate(
+                itemID: input.id,
+                captureDate: captureDate,
+                captureDateEvidence: input.captureDateEvidence
+            ))
+        }
+        // A burst request ends here: no file identities, bytes or previews are
+        // read. Result capability prevents later exact/similar cache reuse.
+        if mode == .captureBursts {
+            return Result(
+                exactDuplicateItemSets: [], visualFingerprints: [],
+                burstCandidates: burstCandidates, analyzedExactFileCount: 0,
+                analyzedVisualPhotoCount: 0, analysisMode: mode
+            )
+        }
         let order = Dictionary(
             uniqueKeysWithValues: inputs.enumerated().map { ($0.element.id, $0.offset) }
         )
@@ -320,7 +407,7 @@ enum DuplicateBurstAnalysis {
             var itemIDsByDigest: [String: Set<String>] = [:]
             for file in files {
                 try checkCancellation()
-                guard let digest = try exactDigestIfUnchanged(file) else { continue }
+                guard let digest = try fileAccess.exactDigest(file) else { continue }
                 exactFileCount += 1
                 itemIDsByDigest[digest, default: []].insert(file.reviewItemID)
             }
@@ -330,17 +417,10 @@ enum DuplicateBurstAnalysis {
         }
 
         var visualFingerprints: [VisualFingerprint] = []
-        var burstCandidates: [BurstCandidate] = []
         for input in inputs {
             try checkCancellation()
             guard input.mediaKind == .photo else { continue }
-            if let captureDate = input.captureDate {
-                burstCandidates.append(BurstCandidate(
-                    itemID: input.id,
-                    captureDate: captureDate
-                ))
-            }
-            guard let hash = perceptualHash(from: input.visualFiles) else { continue }
+            guard let hash = fileAccess.visualHash(input.visualFiles) else { continue }
             visualFingerprints.append(VisualFingerprint(itemID: input.id, hash: hash))
         }
 

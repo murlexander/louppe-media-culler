@@ -38,6 +38,10 @@ struct FilterView: View {
     @ObservedObject var store: SessionStore
     @Environment(\.colorSchemeContrast) private var contrast
 
+    @State private var qualityExpanded = false
+    @State private var burstsExpanded = false
+    @State private var qualityRulesExpanded = false
+    @State private var qualityThresholdReset = 0
     @State private var decisionExpanded = false
     @State private var starsExpanded = false
     @State private var colorExpanded = false
@@ -102,6 +106,10 @@ struct FilterView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
+                    qualitySection
+                    Divider()
+                    captureBurstsSection
+                    Divider()
                     dateSection
                     Divider()
                     decisionSection
@@ -177,6 +185,116 @@ struct FilterView: View {
                 restoreInvalidDraft(for: previous)
             }
         }
+    }
+
+    private var qualitySection: some View {
+        DisclosureGroup(L10n.text("Quality cues"), isExpanded: $qualityExpanded) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L10n.text("Match any selected cue; other filters still apply."))
+                    .font(.caption).foregroundStyle(.secondary)
+                ForEach(CameraQualityWarning.Kind.allCases, id: \.self) { kind in
+                    Toggle(isOn: Binding(
+                        get: { store.filter.selectedQualityCues.contains(kind) },
+                        set: { enabled in
+                            if enabled { store.filter.selectedQualityCues.insert(kind) }
+                            else { store.filter.selectedQualityCues.remove(kind) }
+                        }
+                    )) {
+                        Label(kind.title, systemImage: kind.symbol)
+                    }
+                }
+                Text(store.qualityCueCoverageSummary)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if store.qualityCuePreferences.needsHistogram {
+                    Button(store.isQualityCueAnalysisPaused ? L10n.text("Resume checks") : L10n.text("Pause checks")) {
+                        if store.isQualityCueAnalysisPaused { store.startQualityCueAnalysis() }
+                        else { store.pauseQualityCueAnalysis() }
+                    }
+                    .buttonStyle(.borderless)
+                }
+                DisclosureGroup(L10n.text("Rules"), isExpanded: $qualityRulesExpanded) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Toggle(L10n.text("Show quality cues"), isOn: qualityBinding(\.isEnabled))
+                        ruleRow(.highISO, enabled: \.isHighISOEnabled,
+                                threshold: \.highISOThreshold, input: .highISO, units: L10n.text("ISO or above"))
+                        ruleRow(.slowShutter, enabled: \.isSlowShutterEnabled,
+                                threshold: \.slowShutterThreshold, input: .slowShutter, units: L10n.text("s or slower"))
+                        ruleRow(.highlightClipping, enabled: \.isHighlightClippingEnabled,
+                                threshold: \.highlightPercentageThreshold, input: .clipping, units: L10n.text("% or above"))
+                        ruleRow(.shadowClipping, enabled: \.isShadowClippingEnabled,
+                                threshold: \.shadowPercentageThreshold, input: .clipping, units: L10n.text("% or above"))
+                    }
+                }
+            }
+            .padding(.top, 6)
+        }
+        .font(.subheadline)
+    }
+
+    private func qualityBinding<Value>(_ keyPath: WritableKeyPath<CameraQualityWarningPreferences, Value>) -> Binding<Value> {
+        Binding(get: { store.qualityCuePreferences[keyPath: keyPath] }, set: { value in
+            var preferences = store.qualityCuePreferences
+            preferences[keyPath: keyPath] = value
+            store.updateQualityCuePreferences(preferences)
+        })
+    }
+
+    private func ruleRow(_ kind: CameraQualityWarning.Kind,
+                         enabled: WritableKeyPath<CameraQualityWarningPreferences, Bool>,
+                         threshold: WritableKeyPath<CameraQualityWarningPreferences, Double>,
+                         input: CameraQualityThresholdInput, units: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle(kind.title, isOn: qualityBinding(enabled))
+            HStack(spacing: 6) {
+                CameraQualityThresholdField(kind: input, value: qualityBinding(threshold),
+                                            resetGeneration: $qualityThresholdReset,
+                                            accessibilityName: kind.title + ": " + input.accessibilityLabel)
+                Text(units).font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.leading, 20)
+        }
+        .disabled(!store.qualityCuePreferences.isEnabled)
+    }
+
+    private var captureBurstsSection: some View {
+        DisclosureGroup(L10n.text("Capture bursts"), isExpanded: $burstsExpanded) {
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle(L10n.text("Show capture bursts"), isOn: Binding(
+                    get: { store.groupedReviewMode == .captureBursts },
+                    set: { enabled in
+                        if enabled { store.enterGroupedReview(.captureBursts) }
+                        else { store.cancelDuplicateBurstAnalysis(); store.exitGroupedReview() }
+                    }
+                ))
+                .disabled(store.isFileOperationRunning || store.items.isEmpty)
+                HStack {
+                    Text(L10n.text("Burst interval"))
+                    Spacer()
+                    Text(L10n.text("\(String(format: "%.1f", store.burstGroupingInterval)) s"))
+                        .foregroundStyle(.secondary)
+                }
+                Slider(value: Binding(get: { store.burstGroupingInterval },
+                                      set: { store.setBurstGroupingInterval($0) }),
+                       in: 0.5...10, step: 0.5)
+                    .accessibilityLabel(L10n.text("Capture burst interval"))
+                if store.isDuplicateBurstAnalysisRunning {
+                    HStack {
+                        ProgressView().controlSize(.small)
+                        Text(L10n.text("Checking photo dates…"))
+                        Button(L10n.text("Cancel")) { store.cancelDuplicateBurstAnalysis() }
+                    }
+                }
+                Text(store.captureBurstCoverageSummary)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(L10n.text("Consecutive photo date gaps ≤ this interval. Separate shutter presses and cameras can merge. Inferred dates are labeled; no shutter-press identifier is read."))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 6)
+        }
+        .font(.subheadline)
     }
 
     // MARK: - Review metadata
@@ -741,10 +859,12 @@ struct FilterView: View {
             Spacer()
             Button(L10n.text("Reset")) {
                 focusedSettingField = nil
+                qualityThresholdReset &+= 1
+                store.exitGroupedReview()
                 store.resetFilter()
                 syncAllSettingDrafts()
             }
-            .disabled(!store.filterCanReset)
+            .disabled(!store.filterCanReset && !store.isGroupedReviewActive && !store.isDuplicateBurstAnalysisRunning)
             Button(L10n.text("Done")) { store.isFilterPresented = false }
                 .keyboardShortcut(.cancelAction)
         }

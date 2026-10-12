@@ -147,10 +147,10 @@
 "Capture Bursts" = "बर्स्ट पर कब्जा";
 "Capture One" = "एक पर कब्जा";
 "Capture One may need XMP Auto Sync or a manual metadata reload." = "Capture One में XMP Auto Sync या मेटाडेटा फिर से लोड करना ज़रूरी हो सकता है।";
-"Capture burst interval" = "बर्स्ट अंतराल पर कब्जा";
+"Capture burst interval" = "फ़ोटो बर्स्ट अंतराल";
 "Capture burst · {0} {1} · close capture times" = "बर्स्ट · {0} {1} · पास-पास के कैप्चर समय";
-"Capture bursts" = "कैप्चर फटने";
-"Captured" = "कब्जा करना";
+"Capture bursts" = "फ़ोटो बर्स्ट";
+"Captured" = "कैप्चर समय";
 "Change Yes/No decision" = "हाँ / कोई निर्णय नहीं";
 "Change decision" = "निर्णय बदलें";
 "Change decision for {0}" = "{0} के लिए निर्णय बदलें";
@@ -726,8 +726,8 @@
 "Privacy Policy" = "गोपनीयता नीति";
 "Purple" = "बैंगनी";
 "Purple to Red" = "लाल करने के लिए बैंगनी";
-"Quality Cues" = "गुणवत्ता के संकेत";
-"Quality cues" = "गुणवत्ता cues";
+"Quality Cues" = "गुणवत्ता संकेत";
+"Quality cues" = "गुणवत्ता संकेत";
 "Quick Start and supported formats" = "त्वरित प्रारंभ और समर्थित प्रारूप";
 "Quick picks" = "क्विक पिक्स";
 "Quit Without Saving" = "बिना सहेजे बाहर निकलें";
@@ -929,7 +929,7 @@
 "Show or hide media information (W)" = "मीडिया की जानकारी दिखाएं या छुपाएं (W)";
 "Show or hide the Browser in the Gallery view (Q)" = "गैलरी दृश्य (Q) में ब्राउज़र को दिखाएं या छुपाएं";
 "Show or hide the red preview clipping overlay (X)" = "लाल पूर्वावलोकन क्लिपिंग ओवरले (X) को दिखाएं या छुपाएं";
-"Show quality cues" = "गुणवत्ता cues दिखाएँ";
+"Show quality cues" = "गुणवत्ता संकेत दिखाएँ";
 "Show quick-start tips while reviewing" = "समीक्षा करते समय त्वरित-स्टार्ट टिप्स दिखाएं";
 "Show the folder in its normal filtered and sorted order." = "फ़ोल्डर सामान्य फ़िल्टर और क्रम में दिखाएँ।";
 "Show the full folder again" = "पूरा फ़ोल्डर फिर दिखाएँ";
@@ -950,7 +950,7 @@
 "Skip back 15 seconds" = "वापस जाएं 15 सेकंड";
 "Skip forward 15 seconds" = "आगे बढ़ें 15 सेकंड";
 "Skipped" = "छोड़े गए";
-"Slow shutter" = "स्लो शटर";
+"Slow shutter" = "धीमा शटर";
 "Slow shutter threshold in seconds" = "सेकंड में धीमी शटर थ्रेसहोल्ड";
 "Slowest first" = "सबसे पहले";
 "Smaller Grid Thumbnails" = "छोटे ग्रिड थंबनेल";
@@ -1491,3 +1491,127 @@
 "{0} dBFS" = "{0} dBFS";
 "{0} seconds" = "{0} सेकंड";
 "{0} s" = "{0} से";
+
+/* Quality cues, capture bursts, and date evidence. */
+" ({0} of {1} shown)" = " ({1} में से {0} दिखाए गए)";
+"% or above" = "% या उससे अधिक";
+"Capture burst · {0} {1} · close photo dates" = "बर्स्ट · {0} {1} · फ़ोटो के समय पास-पास हैं";
+"Checked" = "जाँच पूरी";
+"Checking photo dates…" = "फ़ोटो के समय की जाँच हो रही है…";
+"Checking…" = "जाँच हो रही है…";
+"Consecutive photo date gaps ≤ this interval. Separate shutter presses and cameras can merge. Inferred dates are labeled; no shutter-press identifier is read." = "लगातार फ़ोटो के समय का अंतर ≤ इस अंतराल होने पर उन्हें समूह में रखा जाता है। अलग शटर दबावों और कैमरों की फ़ोटो एक साथ आ सकती हैं। अनुमानित समय चिह्नित हैं; शटर दबाव का कोई पहचानकर्ता नहीं पढ़ा जाता।";
+"Date precision" = "समय की सटीकता";
+"Date source" = "समय का स्रोत";
+"Date source unverified" = "समय के स्रोत की पुष्टि नहीं हुई";
+"Date timezone" = "समय का समय क्षेत्र";
+"EXIF digitized time" = "EXIF डिजिटलीकरण का समय";
+"EXIF original capture time" = "EXIF मूल कैप्चर समय";
+"File creation date · inferred capture time" = "फ़ाइल बनने का समय · अनुमानित कैप्चर समय";
+"Groups consecutive photo dates within the chosen gap. File creation dates are inferred; separate shutter presses and cameras can mix." = "चुने हुए अंतराल के भीतर लगातार फ़ोटो के समय के आधार पर समूह बनाता है। फ़ाइल बनने के समय को अनुमानित माना जाता है; अलग शटर दबावों और कैमरों की फ़ोटो मिल सकती हैं।";
+"ISO and shutter are camera clues, not measured noise or blur. Missing fields are not a clean result." = "ISO और शटर कैमरे के संकेत हैं, शोर या धुंधलेपन की माप नहीं। फ़ील्ड गायब होने का मतलब समस्या-मुक्त परिणाम नहीं है।";
+"Image measurement unavailable. Try Rescan Folder if the file changed." = "इमेज की माप उपलब्ध नहीं है। फ़ाइल बदली हो तो फ़ोल्डर फिर से स्कैन करें।";
+"Image measurements: {0} of {1} photos. Missing metadata or RAW fallback gives partial coverage." = "इमेज की माप: {1} फ़ोटो में से {0}। मेटाडाटा न मिलने या RAW के विकल्प का उपयोग होने पर कवरेज आंशिक है।";
+"Inspect clipping in Gallery" = "गैलरी में क्लिपिंग जाँचें";
+"Inspect in Info" = "जानकारी में जाँचें";
+"Linear luminance ≤ 0.002 / ≥ 0.995; Apple Default RAW decode." = "रैखिक चमक ≤ 0.002 / ≥ 0.995; Apple Default RAW डिकोड।";
+"Match any selected cue; other filters still apply." = "चुने हुए किसी भी संकेत से मेल खाता है; अन्य फ़िल्टर भी लागू रहते हैं।";
+"Measured ISO {0}; threshold ≥ ISO {1}." = "मापा गया ISO {0}; सीमा ≥ ISO {1}।";
+"Measured {0} s; threshold ≥ {1} s." = "मापा गया {0} s; सीमा ≥ {1} s।";
+"Measured {0}%; threshold ≥ {1}%." = "मापा गया {0}%; सीमा ≥ {1}%।";
+"Near-black area" = "लगभग काला क्षेत्र";
+"Near-black area threshold in percent" = "लगभग काले क्षेत्र की सीमा प्रतिशत में";
+"Near-white area" = "लगभग सफ़ेद क्षेत्र";
+"Near-white area threshold in percent" = "लगभग सफ़ेद क्षेत्र की सीमा प्रतिशत में";
+"No UTC offset; assumed {0}" = "UTC ऑफ़सेट नहीं है; {0} माना गया है";
+"No enabled cue matches. This is not a quality verdict." = "कोई सक्षम संकेत मेल नहीं खाता। यह गुणवत्ता का निर्णय नहीं है।";
+"Partial coverage" = "आंशिक कवरेज";
+"Pause checks" = "जाँच रोकें";
+"Photo cues only. This media type has not been analyzed." = "केवल फ़ोटो के संकेत। इस मीडिया प्रकार का विश्लेषण नहीं हुआ है।";
+"Photo dates: {0} of {1}; {2} inferred. Missing dates are excluded." = "फ़ोटो के समय: {1} में से {0}; {2} अनुमानित। समय न मिलने वाली फ़ोटो शामिल नहीं हैं।";
+"Quality cues disabled" = "गुणवत्ता संकेत बंद हैं";
+"Quality cues for {0}. {1}. {2}" = "{0} के गुणवत्ता संकेत। {1}। {2}";
+"RAW measurement unavailable; preview evidence only." = "RAW की माप उपलब्ध नहीं है; केवल पूर्वावलोकन का साक्ष्य है।";
+"Recorded date/time" = "दर्ज तारीख और समय";
+"Rendered image estimate — measured from a scaled rendered preview." = "रेंडर की गई इमेज का अनुमान — स्केल किए गए रेंडर पूर्वावलोकन से मापा गया।";
+"Resume checks" = "जाँच फिर शुरू करें";
+"Rules" = "नियम";
+"Show capture bursts" = "फ़ोटो बर्स्ट दिखाएँ";
+"Subseconds: 0.{0} s" = "सेकंड का अंश: 0.{0} s";
+"TIFF date/time" = "TIFF तारीख और समय";
+"Unchecked" = "जाँच नहीं हुई";
+"Whole image, scaled to {0}. Near-black / near-white samples: {1}. {2}" = "पूरी इमेज, {0} तक स्केल की गई। लगभग काले / लगभग सफ़ेद नमूने: {1}। {2}";
+"Whole seconds only; equal-time order uses filename identity" = "सिर्फ पूरे सेकंड; समान समय पर फ़ाइलनाम की पहचान से क्रम तय होता है";
+"inferred dates" = "अनुमानित समय";
+"sRGB luminance 0–5 / 250–255; rendered preview." = "sRGB चमक 0–5 / 250–255; रेंडर किया गया पूर्वावलोकन।";
+
+/* Quality cues, capture bursts, and date evidence. */
+"Checks found matching photos. Select one to continue reviewing." = "जाँच में मेल खाने वाली फ़ोटो मिलीं। समीक्षा जारी रखने के लिए एक चुनें।";
+"Choose a matching item" = "मेल खाने वाला आइटम चुनें";
+
+"Saved decisions for {0} files need checking. You can keep reviewing; previous decisions are preserved." = "{0} फ़ाइलों के सहेजे गए निर्णयों की जाँच आवश्यक है। आप समीक्षा जारी रख सकते हैं; पुराने निर्णय सुरक्षित हैं।";
+
+"Restored saved decisions for {0} identical files." = "{0} समान फ़ाइलों के सहेजे गए निर्णय बहाल किए गए।";
+
+"File unavailable" = "फ़ाइल उपलब्ध नहीं है";
+
+"Current decisions kept" = "वर्तमान निर्णय सुरक्षित रखे गए";
+
+"Could not check file" = "फ़ाइल की जाँच नहीं हो सकी";
+
+"Older session: confirmation needed" = "पुराना सत्र: पुष्टि आवश्यक";
+
+"Waiting for content check" = "सामग्री की जाँच की प्रतीक्षा है";
+
+"Identical contents" = "सामग्री समान है";
+
+"File contents changed" = "फ़ाइल की सामग्री बदल गई है";
+
+"Checking file contents: {0} of {1}" = "फ़ाइल सामग्री की जाँच: {1} में से {0}";
+
+"Check and Restore…" = "जाँचें और बहाल करें…";
+
+"Check Saved Decisions" = "सहेजे गए निर्णय जाँचें";
+
+"Identical copies restore automatically. Older sessions need your confirmation. Current decisions are kept, and previous decisions remain in recovery history." = "समान प्रतियों के निर्णय अपने आप बहाल होते हैं। पुराने सत्रों के लिए आपकी पुष्टि आवश्यक है। वर्तमान निर्णय सुरक्षित रहते हैं और पुराने निर्णय पुनर्प्राप्ति इतिहास में रहते हैं।";
+
+"Previous decisions" = "पुराने निर्णय";
+
+"No saved decisions need attention." = "किसी सहेजे गए निर्णय पर ध्यान देने की आवश्यकता नहीं है।";
+
+"I confirm the selected files are the same photos or videos." = "मैं पुष्टि करता/करती हूँ कि चुनी गई फ़ाइलें वही फ़ोटो या वीडियो हैं।";
+
+"Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files." = "बहाली केवल उन फ़ाइलों पर चुने गए पुराने निर्णय लागू करती है जिनकी आपने समीक्षा नहीं की है। इससे मीडिया फ़ाइलें नहीं बदलतीं।";
+
+"Keep Current Decisions" = "वर्तमान निर्णय रखें";
+
+"Restore Selected Decisions" = "चुने गए निर्णय बहाल करें";
+
+"Content checks paused" = "सामग्री की जाँच रुकी हुई है";
+
+"Resume Checks" = "जाँच फिर शुरू करें";
+
+"Previous decisions are preserved." = "पुराने निर्णय सुरक्षित हैं।";
+
+"Recovery History" = "पुनर्प्राप्ति इतिहास";
+
+"Restored or kept in history" = "बहाल किया गया या इतिहास में रखा गया";
+
+"Dismiss notification" = "सूचना बंद करें";
+
+"Check Saved Decisions…" = "सहेजे गए निर्णय जाँचें…";
+
+"No enabled cues." = "कोई सक्षम संकेत नहीं।";
+
+"Measurement details" = "मापन विवरण";
+
+"ISO and shutter use camera settings, not measured noise or blur. Near-white and near-black cues estimate image areas from a scaled RAW decode or preview." = "ISO और शटर संकेत कैमरा सेटिंग पर आधारित हैं, मापे गए शोर या धुंधलेपन पर नहीं। लगभग सफेद और लगभग काले क्षेत्र के संकेत छोटे RAW डिकोड या पूर्वावलोकन से क्षेत्र का अनुमान लगाते हैं।";
+
+"Luminance histogram" = "चमक हिस्टोग्राम";
+
+"Quality cues for {0}" = "{0} के गुणवत्ता संकेत";
+
+"Restore defaults for {0}" = "{0} के डिफ़ॉल्ट पुनर्स्थापित करें";
+
+"Time zone" = "समय क्षेत्र";
+
+"{0} · estimated" = "{0} · अनुमानित";

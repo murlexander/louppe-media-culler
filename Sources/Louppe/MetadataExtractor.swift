@@ -57,6 +57,7 @@ enum MetadataExtractor {
     /// The metadata read once per file during the folder scan.
     struct ScanInfo {
         var captureDate: Date? = nil
+        var captureDateEvidence: CaptureDateEvidence? = nil
         var cameraModel: String? = nil
         var lensModel: String? = nil
         var aperture: Double? = nil
@@ -73,9 +74,7 @@ enum MetadataExtractor {
         }
         let exif = props[kCGImagePropertyExifDictionary] as? [CFString: Any]
         let tiff = props[kCGImagePropertyTIFFDictionary] as? [CFString: Any]
-        let dateString = (exif?[kCGImagePropertyExifDateTimeOriginal] as? String)
-            ?? (exif?[kCGImagePropertyExifDateTimeDigitized] as? String)
-            ?? (tiff?[kCGImagePropertyTIFFDateTime] as? String)
+        let dateEvidence = captureDateEvidence(exif: exif ?? [:], tiff: tiff ?? [:])
         let aperture = MediaNumeric.aperture(
             finiteNumericValue(exif?[kCGImagePropertyExifFNumber])
         )
@@ -86,7 +85,8 @@ enum MetadataExtractor {
             firstNumericValue(exif?[kCGImagePropertyExifISOSpeedRatings])
         )
         return ScanInfo(
-            captureDate: dateString.flatMap { exifDateFormatter.date(from: $0) },
+            captureDate: dateEvidence?.date,
+            captureDateEvidence: dateEvidence,
             cameraModel: tiff?[kCGImagePropertyTIFFModel] as? String,
             lensModel: exif?[kCGImagePropertyExifLensModel] as? String,
             aperture: aperture,
@@ -132,7 +132,12 @@ enum MetadataExtractor {
         let gps = props[kCGImagePropertyGPSDictionary] as? [CFString: Any] ?? [:]
 
         if let date = item.captureDate {
-            add("Captured", AppDateFormat.dayAndTime(date))
+            let formattedDate = AppDateFormat.dayAndTime(date)
+            let isEstimated = item.captureDateEvidence?.source != .exifOriginal
+            add("Captured", isEstimated ? L10n.text("\(formattedDate) · estimated") : formattedDate)
+        }
+        if let evidence = item.captureDateEvidence {
+            add("Time zone", evidence.timeZoneDescription)
         }
         add("Camera", tiff[kCGImagePropertyTIFFModel] as? String)
         add("Lens", exif[kCGImagePropertyExifLensModel] as? String)
@@ -298,13 +303,90 @@ enum MetadataExtractor {
         return finiteNumericValue(value)
     }
 
-    private static let exifDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone.current
-        return formatter
-    }()
+    /// ImageIO exposes each date's companion subsecond and offset separately.
+    /// Parse only matching companions; a digitized offset cannot qualify an
+    /// original capture date. Invalid originals may fall back to another tag.
+    static func captureDateEvidence(
+        exif: [CFString: Any],
+        tiff: [CFString: Any],
+        assumedTimeZone: TimeZone = .current
+    ) -> CaptureDateEvidence? {
+        let candidates: [(Any?, Any?, Any?, CaptureDateEvidence.Source)] = [
+            (exif[kCGImagePropertyExifDateTimeOriginal],
+             exif[kCGImagePropertyExifSubsecTimeOriginal],
+             exif[kCGImagePropertyExifOffsetTimeOriginal], .exifOriginal),
+            (exif[kCGImagePropertyExifDateTimeDigitized],
+             exif[kCGImagePropertyExifSubsecTimeDigitized],
+             exif[kCGImagePropertyExifOffsetTimeDigitized], .exifDigitized),
+            (tiff[kCGImagePropertyTIFFDateTime],
+             exif[kCGImagePropertyExifSubsecTime],
+             exif[kCGImagePropertyExifOffsetTime], .tiff),
+        ]
+        for (rawDate, rawSubsecond, rawOffset, source) in candidates {
+            guard let rawDate = rawDate as? String else { continue }
+            let dateString = rawDate.trimmingCharacters(in: .whitespacesAndNewlines)
+            let bytes = Array(dateString.utf8)
+            guard bytes.count == 19,
+                  bytes[4] == 58, bytes[7] == 58, bytes[10] == 32,
+                  bytes[13] == 58, bytes[16] == 58 else { continue }
+            func number(_ range: Range<Int>) -> Int? {
+                let digits = bytes[range]
+                guard digits.allSatisfy({ (48...57).contains($0) }) else { return nil }
+                return digits.reduce(0) { $0 * 10 + Int($1 - 48) }
+            }
+            guard let year = number(0..<4), let month = number(5..<7),
+                  let day = number(8..<10), let hour = number(11..<13),
+                  let minute = number(14..<16), let second = number(17..<19),
+                  year > 0, (1...12).contains(month), (1...31).contains(day),
+                  (0...23).contains(hour), (0...59).contains(minute),
+                  (0...59).contains(second) else { continue }
+            let offset = parsedUTCOffset(rawOffset)
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = offset?.zone ?? assumedTimeZone
+            let components = DateComponents(
+                year: year, month: month, day: day,
+                hour: hour, minute: minute, second: second
+            )
+            guard let wholeDate = calendar.date(from: components),
+                  calendar.dateComponents(
+                    [.year, .month, .day, .hour, .minute, .second], from: wholeDate
+                  ) == components else { continue }
+            let subseconds = (rawSubsecond as? String)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let digits = subseconds.flatMap { value -> String? in
+                guard !value.isEmpty, value.utf8.allSatisfy({ (48...57).contains($0) })
+                else { return nil }
+                return value
+            }
+            // Double retains finite precision; keep the original digits for
+            // evidence even if the final Date cannot represent every digit.
+            let fraction = digits.flatMap { Double("0." + String($0.prefix(9))) } ?? 0
+            return CaptureDateEvidence(
+                date: wholeDate.addingTimeInterval(fraction), source: source,
+                rawDateTime: dateString, subsecondDigits: digits,
+                utcOffset: offset?.text,
+                assumedTimeZoneIdentifier: offset == nil ? assumedTimeZone.identifier : nil
+            )
+        }
+        return nil
+    }
+
+    private static func parsedUTCOffset(_ raw: Any?) -> (zone: TimeZone, text: String)? {
+        guard let raw = raw as? String else { return nil }
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let bytes = Array(text.utf8)
+        guard bytes.count == 6, bytes[0] == 43 || bytes[0] == 45,
+              bytes[3] == 58,
+              [bytes[1], bytes[2], bytes[4], bytes[5]].allSatisfy({ (48...57).contains($0) })
+        else { return nil }
+        let hours = Int(bytes[1] - 48) * 10 + Int(bytes[2] - 48)
+        let minutes = Int(bytes[4] - 48) * 10 + Int(bytes[5] - 48)
+        guard hours <= 14, minutes < 60, hours < 14 || minutes == 0 else { return nil }
+        let seconds = (hours * 3_600 + minutes * 60) * (bytes[0] == 45 ? -1 : 1)
+        guard let zone = TimeZone(secondsFromGMT: seconds) else { return nil }
+        return (zone, text)
+    }
+
 }
 
 #if DEBUG

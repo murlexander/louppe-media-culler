@@ -251,6 +251,30 @@ final class SelectionStateTests: XCTestCase {
         )
         XCTAssertFalse(
             GridRubberBandHitTest.shouldTrackCanvasDrag(
+                startingAt: CGPoint(x: 135, y: 65),
+                tileFrames: frames,
+                playableVideoIndices: []
+            ),
+            "the inner edge of the inset decision target must retain control ownership"
+        )
+        XCTAssertFalse(
+            GridRubberBandHitTest.shouldTrackCanvasDrag(
+                startingAt: CGPoint(x: 102, y: 180),
+                tileFrames: frames,
+                playableVideoIndices: []
+            ),
+            "the fourth circular cue must remain outside rubber-band selection"
+        )
+        XCTAssertFalse(
+            GridRubberBandHitTest.shouldTrackCanvasDrag(
+                startingAt: CGPoint(x: 30, y: 175),
+                tileFrames: frames,
+                playableVideoIndices: []
+            ),
+            "the in-tile quality cue control must own its drag"
+        )
+        XCTAssertFalse(
+            GridRubberBandHitTest.shouldTrackCanvasDrag(
                 startingAt: CGPoint(x: 95, y: 105),
                 tileFrames: frames,
                 playableVideoIndices: [3]

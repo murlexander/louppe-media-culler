@@ -235,6 +235,12 @@ private struct FocusedLouppeSessionCommands: Commands {
         }
 
         CommandGroup(after: .saveItem) {
+            Button(L10n.text("Check Saved Decisions…")) {
+                actionableStore?.isSessionRecoveryPresented = true
+            }
+            .disabled(actionableStore?.sessionRecoveryEntries.isEmpty != false)
+
+            Divider()
             Button(L10n.text("Organize Source Folder…")) {
                 actionableStore?.presentSourceOrganization()
             }

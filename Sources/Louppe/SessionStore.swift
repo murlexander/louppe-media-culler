@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import Combine
 
 enum ViewMode: String, CaseIterable, Sendable {
     case gallery
@@ -68,12 +69,16 @@ struct SessionSnapshotCapture: Sendable {
     let files: [File]
     let retainedEntries: [SessionEntry]
     let originPaths: [String: Data]
+    let contentProofs: [String: SessionContentProof]
+    let recoveryEntries: [SessionRecoveryEntry]
 
     @MainActor init(
         sourcePath: String,
         items: [PhotoItem],
         retainedEntries: [SessionEntry],
-        originPaths: [String: Data]
+        originPaths: [String: Data],
+        contentProofs: [String: SessionContentProof] = [:],
+        recoveryEntries: [SessionRecoveryEntry] = []
     ) {
         var files = [File]()
         files.reserveCapacity(items.count)
@@ -93,6 +98,8 @@ struct SessionSnapshotCapture: Sendable {
         self.files = files
         self.retainedEntries = retainedEntries
         self.originPaths = originPaths
+        self.contentProofs = contentProofs
+        self.recoveryEntries = recoveryEntries
     }
 
     func makeSession() -> SessionFile {
@@ -113,6 +120,9 @@ struct SessionSnapshotCapture: Sendable {
                 colorLabel: metadata.colorLabel,
                 colorChangedAt: metadata.colorChangedAt,
                 fileIdentity: file.identity,
+                contentSHA256: contentProofs[metadata.fileID].flatMap {
+                    $0.identity == file.identity ? $0.sha256 : nil
+                },
                 organizationOriginFolderPathBytes: originPaths[metadata.fileID]
             ))
         }
@@ -124,7 +134,8 @@ struct SessionSnapshotCapture: Sendable {
             sourcePath: sourcePath,
             scannedAt: Date(),
             entries: entries,
-            fileIDEncoding: .percentEncodedFileSystemPath
+            fileIDEncoding: .percentEncodedFileSystemPath,
+            recoveryEntries: recoveryEntries.isEmpty ? nil : recoveryEntries
         )
     }
 }
@@ -150,9 +161,14 @@ struct XMPConflictResolutionOutcome: Equatable, Sendable {
 /// navigation, undo, view state, and persistence to the sidecar file.
 @MainActor
 final class SessionStore: ObservableObject {
-    @Published var phase: AppPhase = .welcome
+    @Published var phase: AppPhase = .welcome {
+        didSet { if sourceFolder != nil { startQualityCueAnalysis() } }
+    }
     @Published var items: [PhotoItem] = [] {
-        didSet { cachedSelectionSummary = nil }
+        didSet {
+            cachedSelectionSummary = nil
+            invalidateQualityCueAnalysis()
+        }
     }
     @Published var currentIndex: Int = 0 {
         didSet {
@@ -219,6 +235,17 @@ final class SessionStore: ObservableObject {
     /// burst. Videos can still be found as exact byte duplicates, but are not
     /// inferred as still-photo bursts.
     @Published private(set) var burstGroupingInterval: TimeInterval = 2
+    @Published private(set) var qualityCuePreferences = CameraQualityWarningPreferences()
+    @Published private(set) var qualityCueEvidence: [String: QualityCueEvidence] = [:]
+    @Published private(set) var qualityCueCheckingIDs: Set<String> = []
+    @Published private(set) var isQualityCueAnalysisPaused = false
+    private let qualityCueMeasurement: @Sendable (PhotoItem) async -> QualityCueEvidence
+    private var qualityCueTask: Task<Void, Never>?
+    private var qualityCueGeneration: UInt64 = 0
+    private var qualityCueCursor = 0
+    private var qualityCueInterestIDs: [String] = []
+    private var qualityCuePreferencesObserver: AnyCancellable?
+
     /// In-flight big-photo decodes (a count, so overlapping loads during fast
     /// arrow-key navigation can't blank the spinner early). The toolbar shows
     /// a small spinner while it's above zero.
@@ -264,6 +291,23 @@ final class SessionStore: ObservableObject {
     /// This prevents a temporarily disconnected/moved original from losing
     /// its decision merely because another photo triggered an automatic save.
     private var retainedMissingSessionEntries: [SessionEntry] = []
+    @Published private(set) var sessionRecoveryEntries: [SessionRecoveryEntry] = []
+    @Published var isSessionRecoveryPresented = false
+    @Published private(set) var isSessionRecoveryNoticeDismissed = false
+    @Published private(set) var sessionContentCheck: SessionContentCheckState = .idle
+    @Published private(set) var automaticallyRestoredSessionFiles = 0
+    private var sessionContentProofs: [String: SessionContentProof] = [:]
+    private var sessionContentCapturedProofs: [String: SessionContentProof] = [:]
+    private var sessionContentFailures = Set<String>()
+    private var sessionRecoveryConfirmations = Set<UUID>()
+    private var sessionRecoveryAttemptedIDs = Set<UUID>()
+    private var sessionRecoveryFileIDs: [UUID: String] = [:]
+    private var sessionRecoveryRecordIndicesByFileID: [String: [Int]] = [:]
+    private var sessionContentPendingFileIDs = Set<String>()
+    private let sessionContentVerification: @Sendable (PhotoFile, SessionContentProof?) async throws -> SessionContentProof
+    private var sessionContentTask: Task<Void, Never>?
+    private var sessionContentGeneration: UInt64 = 0
+    private var sessionContentChecksPaused = false
     var canRetryPersistence: Bool {
         let hasLiveSession: Bool
         if sourceFolder != nil,
@@ -341,7 +385,12 @@ final class SessionStore: ObservableObject {
         didSet {
             updateFileOperationPowerActivity()
             if activeFileOperation != nil {
+                pauseQualityCueAnalysis()
+                pauseSessionContentChecks()
                 invalidateDuplicateBurstAnalysis(rebuildLayout: true)
+            } else {
+                startQualityCueAnalysis()
+                startSessionContentChecks()
             }
         }
     }
@@ -349,10 +398,29 @@ final class SessionStore: ObservableObject {
         XMPPublicationLifecycleState = .idle {
         didSet { updateFileOperationPowerActivity() }
     }
-    @Published private(set) var isSessionTransitioning = false
+    @Published private(set) var isSessionTransitioning = false {
+        didSet {
+            if isSessionTransitioning {
+                pauseQualityCueAnalysis()
+                pauseSessionContentChecks()
+            } else if sourceFolder != nil {
+                startQualityCueAnalysis()
+                startSessionContentChecks()
+            }
+        }
+    }
     @Published private(set) var isPreparingForTermination = false
     @Published private(set) var isRecoveringInterruptedOperations = false {
-        didSet { updateFileOperationPowerActivity() }
+        didSet {
+            updateFileOperationPowerActivity()
+            if isRecoveringInterruptedOperations {
+                pauseQualityCueAnalysis()
+                pauseSessionContentChecks()
+            } else {
+                startQualityCueAnalysis()
+                startSessionContentChecks()
+            }
+        }
     }
     @Published private(set) var operationRecoveryReport:
         FileOperationJournal.RecoveryReport?
@@ -442,6 +510,7 @@ final class SessionStore: ObservableObject {
             || isSortPresented
             || isClearAllRatingsConfirmationPresented
             || isLegacySessionMigrationConfirmationPresented
+            || isSessionRecoveryPresented
             || pendingCleanUp != nil
             || cleanUpError != nil
             || pairingMetadataError != nil
@@ -615,6 +684,8 @@ final class SessionStore: ObservableObject {
     private var scanTask: Task<Void, Never>?
     private var duplicateBurstAnalysisTask: Task<Void, Never>?
     private var duplicateBurstAnalysisGeneration: UInt64 = 0
+    private var duplicateBurstRequestedCurrentID: String?
+    private var duplicateBurstRequestedSelectionIDs: Set<String> = []
     private var duplicateBurstAnalysisResult: DuplicateBurstAnalysis.Result?
     /// Membership depends on analysis and sensitivity, never ratings, sorting,
     /// or the ordinary filter. Keep one layout so those changes only project
@@ -744,10 +815,19 @@ final class SessionStore: ObservableObject {
         saveMaximumDelay: TimeInterval = 5,
         operationJournalDirectory: URL? = nil,
         automaticallyRecoversInterruptedOperations: Bool = false,
-        reviewDefaults: UserDefaults = .standard
+        reviewDefaults: UserDefaults = .standard,
+        sessionContentVerification: @escaping @Sendable (PhotoFile, SessionContentProof?) async throws -> SessionContentProof = {
+            try await SessionContentVerificationLane.shared.verify($0, knownProof: $1)
+        },
+        qualityCueMeasurement: @escaping @Sendable (PhotoItem) async -> QualityCueEvidence = {
+            await QualityCueEvidence.measure($0)
+        }
     ) {
         self.persistence = persistence
+        self.sessionContentVerification = sessionContentVerification
+        self.qualityCueMeasurement = qualityCueMeasurement
         self.reviewDefaults = reviewDefaults
+        qualityCuePreferences = CameraQualityWarningPreferences.load(from: reviewDefaults)
         let preferences = ReviewPreferences.load(from: reviewDefaults)
         viewMode = preferences.defaultView
         sort = preferences.defaultSort
@@ -758,6 +838,13 @@ final class SessionStore: ObservableObject {
         // first to prove it is not just the trailing debounce firing.
         self.saveMaximumDelay = max(0, saveMaximumDelay)
         self.operationJournalDirectory = operationJournalDirectory
+        // ImageIO's RAW reader can register defaults on a metadata worker.
+        // Combine does not move notification delivery to the owner's actor.
+        qualityCuePreferencesObserver = NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in self?.reloadQualityCuePreferences() }
+            }
         loadRecents()
         if automaticallyRecoversInterruptedOperations,
            FileOperationJournal.hasPendingOperations(
@@ -1015,7 +1102,8 @@ final class SessionStore: ObservableObject {
         // When a filter matches nothing there is deliberately no current
         // photo; returning the previously current hidden item would expose it
         // in the Info panel and make keyboard actions target it invisibly.
-        guard !visibleIndices.isEmpty, items.indices.contains(currentIndex) else { return nil }
+        guard !visibleIndices.isEmpty, items.indices.contains(currentIndex),
+              preparedIndex.location(forItemIndex: currentIndex) != nil else { return nil }
         return items[currentIndex]
     }
 
@@ -1033,6 +1121,10 @@ final class SessionStore: ObservableObject {
 
     var currentVisiblePosition: Int? {
         preparedIndex.location(forItemIndex: currentIndex)?.position
+    }
+
+    var isFilterActive: Bool {
+        filter.isActive || groupedReviewMode == .captureBursts
     }
 
     var isGroupedReviewActive: Bool {
@@ -1083,10 +1175,18 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    var captureBurstCoverageSummary: String {
+        let photos = items.filter { $0.mediaKind == .photo }
+        let dated = photos.filter { $0.captureDate != nil }
+        let inferred = dated.filter { $0.captureDateEvidence?.isInferred ?? true }.count
+        return L10n.text("Photo dates: \(dated.count) of \(photos.count); \(inferred) inferred. Missing dates are excluded.")
+    }
+
     var duplicateBurstAnalysisSummary: String {
         guard let result = duplicateBurstAnalysisResult else {
             return L10n.text("Analyze this folder locally to find exact duplicates, likely similar photos, and capture bursts.")
         }
+        if result.analysisMode == .captureBursts { return captureBurstCoverageSummary }
         let exact = result.analyzedExactFileCount == 1
             ? L10n.text("1 possible duplicate file checked")
             : L10n.text("\(result.analyzedExactFileCount) possible duplicate files checked")
@@ -1159,14 +1259,186 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    // MARK: - Quality cues
+
+    func qualityEvidence(for item: PhotoItem) -> QualityCueEvidence? {
+        guard let evidence = qualityCueEvidence[item.id],
+              evidence.revision == item.contentRevision else { return nil }
+        return evidence
+    }
+
+    func qualityCues(for item: PhotoItem) -> [CameraQualityWarning] {
+        let evidence = qualityEvidence(for: item)
+        return CameraQualityWarning.warnings(
+            for: item, analysis: evidence?.analysis,
+            analysisSource: evidence?.source ?? .renderedPreview,
+            preferences: qualityCuePreferences
+        )
+    }
+
+    func qualityCueStatus(for item: PhotoItem) -> QualityCueStatus {
+        let preferences = qualityCuePreferences
+        guard preferences.hasEnabledRules else { return .disabled }
+        guard item.mediaKind == .photo, item.isSupported else { return .unavailable }
+        if preferences.needsHistogram {
+            guard let evidence = qualityEvidence(for: item) else {
+                return qualityCueCheckingIDs.contains(item.id) ? .checking : .unchecked
+            }
+            if evidence.sampleCount == 0 {
+                return (MediaNumeric.iso(item.iso) != nil || MediaNumeric.shutterSpeed(item.shutterSpeed) != nil)
+                    ? .partial : .unavailable
+            }
+            if evidence.rawFallback { return .partial }
+        }
+        if (preferences.isHighISOEnabled && MediaNumeric.iso(item.iso) == nil)
+            || (preferences.isSlowShutterEnabled && MediaNumeric.shutterSpeed(item.shutterSpeed) == nil) {
+            return .partial
+        }
+        return .checked
+    }
+
+    var qualityCueCoverageSummary: String {
+        let photos = items.filter { $0.mediaKind == .photo }
+        let measured = photos.reduce(0) { $0 + (qualityEvidence(for: $1)?.sampleCount ?? 0 > 0 ? 1 : 0) }
+        return L10n.text("Image measurements: \(measured) of \(photos.count) photos. Missing metadata or RAW fallback gives partial coverage.")
+    }
+
+    func updateQualityCuePreferences(_ value: CameraQualityWarningPreferences) {
+        guard value != qualityCuePreferences else { return }
+        qualityCuePreferences = value
+        value.save(to: reviewDefaults)
+        if !filter.selectedQualityCues.isEmpty { applyFilter() }
+        if value.needsHistogram { startQualityCueAnalysis() }
+        else { pauseQualityCueAnalysis() }
+    }
+
+    private func reloadQualityCuePreferences() {
+        let value = CameraQualityWarningPreferences.load(from: reviewDefaults)
+        guard value != qualityCuePreferences else { return }
+        qualityCuePreferences = value
+        if !filter.selectedQualityCues.isEmpty { applyFilter() }
+        if value.needsHistogram { startQualityCueAnalysis() }
+        else { pauseQualityCueAnalysis() }
+    }
+
+    /// Tile appearance only changes priority. It never creates a task per tile.
+    func prioritizeQualityCues(for item: PhotoItem) {
+        qualityCueInterestIDs.removeAll { $0 == item.id }
+        qualityCueInterestIDs.insert(item.id, at: 0)
+        if qualityCueInterestIDs.count > 64 { qualityCueInterestIDs.removeLast() }
+    }
+
+    func pauseQualityCueAnalysis() {
+        qualityCueGeneration &+= 1
+        qualityCueTask?.cancel()
+        qualityCueTask = nil
+        qualityCueCheckingIDs = []
+        qualityCueCursor = 0
+        isQualityCueAnalysisPaused = true
+    }
+
+    private func invalidateQualityCueAnalysis() {
+        pauseQualityCueAnalysis()
+        qualityCueEvidence = [:]
+        qualityCueCursor = 0
+        qualityCueInterestIDs = []
+        isQualityCueAnalysisPaused = false
+    }
+
+    /// Two interested items at a time; each reuses existing bounded histogram
+    /// lanes. Recompute priority after every pair rather than enqueuing a folder.
+    func startQualityCueAnalysis() {
+        guard case .ready = phase, !isFileOperationRunning,
+              qualityCuePreferences.needsHistogram, qualityCueTask == nil else { return }
+        isQualityCueAnalysisPaused = false
+        let generation = qualityCueGeneration
+        let measure = qualityCueMeasurement
+        let lease = sourceFolderAccess?.makeIndependentAccess()
+        qualityCueTask = Task { @MainActor [weak self] in
+            defer { lease?.stop() }
+            var filterNeedsRefresh = false
+            var lastFilterRefresh = ContinuousClock.now
+            while !Task.isCancelled {
+                guard let batch = self?.nextQualityCueBatch(generation: generation), !batch.isEmpty else { break }
+                let results = await withTaskGroup(of: (String, QualityCueEvidence).self) { group in
+                    for item in batch {
+                        group.addTask(priority: .utility) { (item.id, await measure(item)) }
+                    }
+                    var results: [(String, QualityCueEvidence)] = []
+                    for await result in group { results.append(result) }
+                    return results
+                }
+                guard !Task.isCancelled, let self,
+                      self.qualityCueGeneration == generation else { return }
+                for (id, evidence) in results {
+                    guard let index = self.preparedIndex.itemIndex(forID: id),
+                          self.items[index].contentRevision == evidence.revision else { continue }
+                    let previousMatches = Set(self.qualityCues(for: self.items[index]).map(\.kind))
+                        .intersection(self.filter.selectedQualityCues)
+                    self.qualityCueEvidence[id] = evidence
+                    self.qualityCueCheckingIDs.remove(id)
+                    let currentMatches = Set(self.qualityCues(for: self.items[index]).map(\.kind))
+                        .intersection(self.filter.selectedQualityCues)
+                    if previousMatches != currentMatches { filterNeedsRefresh = true }
+                }
+                // Completion only adds matches. Never retarget the current
+                // item or explicit selection as new measurements arrive.
+                if filterNeedsRefresh, lastFilterRefresh.duration(to: .now) >= .milliseconds(100) {
+                    self.applyFilter(preservingCurrent: true)
+                    filterNeedsRefresh = false
+                    lastFilterRefresh = .now
+                }
+                try? await Task.sleep(for: .milliseconds(20))
+            }
+            guard let self, self.qualityCueGeneration == generation else { return }
+            if filterNeedsRefresh { self.applyFilter(preservingCurrent: true) }
+            self.qualityCueTask = nil
+        }
+    }
+
+    private func nextQualityCueBatch(generation: UInt64) -> [PhotoItem] {
+        guard qualityCueGeneration == generation else { return [] }
+        var batch: [PhotoItem] = []
+        func append(_ index: Int) {
+            guard batch.count < 2, items.indices.contains(index) else { return }
+            let item = items[index]
+            guard item.mediaKind == .photo, item.isSupported,
+                  qualityEvidence(for: item) == nil,
+                  !qualityCueCheckingIDs.contains(item.id) else { return }
+            batch.append(item)
+            qualityCueCheckingIDs.insert(item.id)
+        }
+        append(currentIndex)
+        for index in selectedIndices {
+            append(index)
+            if batch.count == 2 { return batch }
+        }
+        for id in qualityCueInterestIDs {
+            if let index = preparedIndex.itemIndex(forID: id) { append(index) }
+            if batch.count == 2 { return batch }
+        }
+        for offset in [1, -1, 2, -2, 3] { append(currentIndex + offset) }
+        while batch.count < 2, qualityCueCursor < items.count {
+            append(qualityCueCursor)
+            qualityCueCursor += 1
+        }
+        return batch
+    }
+
     // MARK: - Filtering
 
-    private func applyFilter() {
+    private func applyFilter(preservingCurrent: Bool = false) {
+        let matchingCueIDs: Set<String>? = filter.selectedQualityCues.isEmpty ? nil : Set(
+            items.lazy.filter { item in
+                self.qualityCues(for: item).contains { self.filter.selectedQualityCues.contains($0.kind) }
+            }.map(\.id)
+        )
         preparedIndex.applyFilter(
             filter,
             to: items,
             sort: sort,
-            isGroupingEnabled: isGroupingEnabled
+            isGroupingEnabled: isGroupingEnabled,
+            matchingItemIDs: matchingCueIDs
         )
         applyGroupedReviewLayoutIfNeeded()
         publishPreparedVisibility()
@@ -1181,7 +1453,7 @@ final class SessionStore: ObservableObject {
                 selectedIndices = selectionState.indices
             }
         }
-        if let replacementCurrent = selectionState.replacementCurrentIndex(
+        if !preservingCurrent, let replacementCurrent = selectionState.replacementCurrentIndex(
             currentIndex: currentIndex,
             preparedIndex: preparedIndex
         ) {
@@ -1189,7 +1461,7 @@ final class SessionStore: ObservableObject {
         }
         // Keep the current photo visible: snap to the nearest photo that
         // passes the filter (forward first, else the last visible one).
-        if !visibleIndices.isEmpty,
+        if !preservingCurrent, !visibleIndices.isEmpty,
            preparedIndex.location(forItemIndex: currentIndex) == nil {
             currentIndex = visibleIndices.first(where: { $0 >= currentIndex }) ?? visibleIndices.last!
         }
@@ -1232,13 +1504,55 @@ final class SessionStore: ObservableObject {
             }
         }
         itemIndexByFileID = indexByFileID
+        rebuildSessionRecoveryIndex()
+    }
+
+    /// Resolve history once per structural generation. Prefer a unique exact
+    /// physical original; content-only recovery remains at the recorded path.
+    private func rebuildSessionRecoveryIndex() {
+        var filesByIdentity: [SessionRatingIndex.PersistedIdentityKey: [String]] = [:]
+        if !sessionRecoveryEntries.isEmpty {
+            for item in items {
+                for file in item.individualFiles {
+                    if let identity = file.scannedIdentity {
+                        filesByIdentity[.init(identity), default: []].append(file.id)
+                    }
+                }
+            }
+        }
+        sessionRecoveryFileIDs = [:]
+        sessionRecoveryRecordIndicesByFileID = [:]
+        for (index, record) in sessionRecoveryEntries.enumerated() {
+            let physicalIDs = record.entry.fileIdentity.flatMap { filesByIdentity[.init($0)] } ?? []
+            let fileID = physicalIDs.count == 1 ? physicalIDs[0] : record.entry.filename
+            guard itemIndexByFileID[fileID] != nil else { continue }
+            sessionRecoveryFileIDs[record.id] = fileID
+            sessionRecoveryRecordIndicesByFileID[fileID, default: []].append(index)
+            if record.resolvedFileID == nil { sessionContentPendingFileIDs.insert(fileID) }
+        }
+        for item in items {
+            for file in item.individualFiles where !SessionRecoveryPolicy.isUntouched(file.metadataSnapshot)
+                && sessionContentProofs[file.id]?.identity != file.scannedIdentity {
+                sessionContentPendingFileIDs.insert(file.id)
+            }
+        }
+    }
+
+    private func sessionFile(forID id: String) -> PhotoFile? {
+        guard let index = itemIndexByFileID[id], items.indices.contains(index) else { return nil }
+        return items[index].individualFiles.first { $0.id == id }
     }
 
     private func applyGroupedReviewLayoutIfNeeded() {
         guard groupedReviewMode != .off,
               let result = duplicateBurstAnalysisResult else { return }
         let groups: [DuplicateBurstAnalysis.Group]
-        if let cached = duplicateBurstGroupCache,
+        if groupedReviewMode == .captureBursts {
+            // Keep the last completed membership while a new interval is
+            // pending. Date grouping itself never runs in a filter/UI turn.
+            guard let cached = duplicateBurstGroupCache, cached.mode == .captureBursts else { return }
+            groups = cached.groups
+        } else if let cached = duplicateBurstGroupCache,
            cached.mode == groupedReviewMode,
            cached.distance == visualSimilarityDistance,
            cached.interval == burstGroupingInterval {
@@ -1267,7 +1581,7 @@ final class SessionStore: ObservableObject {
               !items.isEmpty,
               !isFileOperationRunning,
               !isXMPPublicationRunning else { return }
-        beginDuplicateBurstAnalysis(entering: nil)
+        beginDuplicateBurstAnalysis(entering: groupedReviewMode == .captureBursts ? .captureBursts : nil)
     }
 
     /// Enters a specific, separately explained grouped layout. Exact-file,
@@ -1282,8 +1596,13 @@ final class SessionStore: ObservableObject {
         guard case .ready = phase,
               !isFileOperationRunning,
               !isXMPPublicationRunning else { return }
-        if duplicateBurstAnalysisResult != nil,
+        if let result = duplicateBurstAnalysisResult, result.supports(mode),
            duplicateBurstAnalysisMatchesCurrentItems() {
+            if mode == .captureBursts,
+               (duplicateBurstGroupCache?.mode != mode || duplicateBurstGroupCache?.interval != burstGroupingInterval) {
+                beginCaptureBurstGrouping(result)
+                return
+            }
             groupedReviewMode = mode
             applyFilter()
         } else {
@@ -1292,6 +1611,7 @@ final class SessionStore: ObservableObject {
     }
 
     func exitGroupedReview() {
+        cancelDuplicateBurstAnalysis()
         guard groupedReviewMode != .off else { return }
         groupedReviewMode = .off
         applyFilter()
@@ -1302,6 +1622,9 @@ final class SessionStore: ObservableObject {
         duplicateBurstAnalysisGeneration &+= 1
         duplicateBurstAnalysisTask?.cancel()
         duplicateBurstAnalysisTask = nil
+        if groupedReviewMode == .captureBursts, let cached = duplicateBurstGroupCache {
+            burstGroupingInterval = cached.interval
+        }
         duplicateBurstAnalysisState = duplicateBurstAnalysisResult == nil
             ? .idle
             : .ready
@@ -1319,8 +1642,31 @@ final class SessionStore: ObservableObject {
         let clamped = min(max(interval, 0.5), 10)
         guard burstGroupingInterval != clamped else { return }
         burstGroupingInterval = clamped
-        guard groupedReviewMode == .captureBursts else { return }
-        applyFilter()
+        guard groupedReviewMode == .captureBursts,
+              let result = duplicateBurstAnalysisResult else { return }
+        beginCaptureBurstGrouping(result)
+    }
+
+    private func beginCaptureBurstGrouping(_ result: DuplicateBurstAnalysis.Result) {
+        duplicateBurstAnalysisTask?.cancel()
+        duplicateBurstAnalysisGeneration &+= 1
+        let generation = duplicateBurstAnalysisGeneration
+        let interval = burstGroupingInterval
+        let distance = visualSimilarityDistance
+        let revisions = duplicateBurstAnalysisRevisions
+        duplicateBurstRequestedCurrentID = currentItemID
+        duplicateBurstRequestedSelectionIDs = selectionState.itemIDs
+        duplicateBurstAnalysisState = .analyzing
+        duplicateBurstAnalysisTask = Task.detached(priority: .utility) { [weak self] in
+            guard !Task.isCancelled else { return }
+            let groups = result.groups(for: .captureBursts, visualDistance: distance, burstInterval: interval)
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
+                self?.finishDuplicateBurstAnalysis(result, generation: generation,
+                    requestedMode: .captureBursts, revisions: revisions,
+                    burstGroups: groups, burstInterval: interval)
+            }
+        }
     }
 
     private func beginDuplicateBurstAnalysis(
@@ -1335,17 +1681,27 @@ final class SessionStore: ObservableObject {
             uniqueKeysWithValues: items.map { ($0.id, $0.contentRevision) }
         )
         duplicateBurstAnalysisRevisions = revisions
+        duplicateBurstRequestedCurrentID = currentItemID
+        duplicateBurstRequestedSelectionIDs = selectionState.itemIDs
         duplicateBurstAnalysisState = .analyzing
+        let interval = burstGroupingInterval
+        let distance = visualSimilarityDistance
         duplicateBurstAnalysisTask = Task.detached(priority: .utility) { [weak self] in
             do {
-                let result = try DuplicateBurstAnalysis.analyze(inputs)
+                let result = try DuplicateBurstAnalysis.analyze(
+                    inputs, mode: requestedMode == .captureBursts ? .captureBursts : .all
+                )
+                guard !Task.isCancelled else { return }
+                let groups = requestedMode == .captureBursts
+                    ? result.groups(for: .captureBursts, visualDistance: distance, burstInterval: interval) : nil
                 guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
                     self?.finishDuplicateBurstAnalysis(
                         result,
                         generation: generation,
                         requestedMode: requestedMode,
-                        revisions: revisions
+                        revisions: revisions,
+                        burstGroups: groups, burstInterval: interval
                     )
                 }
             } catch {
@@ -1365,6 +1721,7 @@ final class SessionStore: ObservableObject {
                 id: item.id,
                 mediaKind: item.mediaKind,
                 captureDate: item.captureDate,
+                captureDateEvidence: item.captureDateEvidence,
                 exactFiles: physicalFiles.map { file in
                     DuplicateBurstAnalysis.ExactFile(
                         reviewItemID: item.id,
@@ -1389,20 +1746,40 @@ final class SessionStore: ObservableObject {
         _ result: DuplicateBurstAnalysis.Result,
         generation: UInt64,
         requestedMode: DuplicateBurstAnalysis.ReviewMode?,
-        revisions: [String: PhotoContentRevision]
+        revisions: [String: PhotoContentRevision],
+        burstGroups: [DuplicateBurstAnalysis.Group]? = nil,
+        burstInterval: TimeInterval? = nil
     ) {
         guard generation == duplicateBurstAnalysisGeneration,
               duplicateBurstAnalysisMatchesCurrentItems(revisions) else { return }
         duplicateBurstAnalysisTask = nil
         duplicateBurstAnalysisResult = result
-        duplicateBurstGroupCache = nil
         duplicateBurstAnalysisRevisions = revisions
+        let selectionUnchanged = duplicateBurstRequestedCurrentID == currentItemID
+            && duplicateBurstRequestedSelectionIDs == selectionState.itemIDs
+        if let burstGroups, let burstInterval {
+            if burstInterval != burstGroupingInterval {
+                if selectionUnchanged || groupedReviewMode == .captureBursts {
+                    beginCaptureBurstGrouping(result)
+                } else {
+                    duplicateBurstAnalysisState = .ready
+                }
+                return
+            }
+            if selectionUnchanged || groupedReviewMode == .off || groupedReviewMode == .captureBursts {
+                duplicateBurstGroupCache = (.captureBursts, visualSimilarityDistance, burstInterval, burstGroups)
+            }
+        } else {
+            duplicateBurstGroupCache = nil
+        }
         duplicateBurstAnalysisState = .ready
-        if let requestedMode {
+        if let requestedMode,
+           duplicateBurstRequestedCurrentID == currentItemID,
+           duplicateBurstRequestedSelectionIDs == selectionState.itemIDs {
             groupedReviewMode = requestedMode
         }
         if groupedReviewMode != .off {
-            applyFilter()
+            applyFilter(preservingCurrent: true)
         }
     }
 
@@ -1443,7 +1820,12 @@ final class SessionStore: ObservableObject {
     /// Review metadata is lock-backed and therefore does not replace the
     /// `PhotoItem` value. Refresh only a prepared sort/filter that depends on
     /// the changed dimension, then publish the new scalar snapshot to tiles.
-    private func publishMetadataMutation(_ dimension: MetadataDimension) {
+    private func publishMetadataMutation(
+        _ dimension: MetadataDimension,
+        affectedFileIDs: [String],
+        preservingCurrent: Bool = false
+    ) {
+        sessionContentPendingFileIDs.formUnion(affectedFileIDs)
         let changesSort: Bool
         let changesFilter: Bool
         switch dimension {
@@ -1468,7 +1850,7 @@ final class SessionStore: ObservableObject {
             preparedIndex.rebuildSort(items, sort: sort)
         }
         if changesSort || changesFilter {
-            applyFilter()
+            applyFilter(preservingCurrent: preservingCurrent)
         }
         objectWillChange.send()
     }
@@ -1630,6 +2012,7 @@ final class SessionStore: ObservableObject {
             videoPlayback.stop()
         }
         rebuildSortedIndices()
+        if sourceFolder != nil { startQualityCueAnalysis() }
         if let sourceFolder {
             rawJPEGPairs = FolderScanner.rawJPEGPairs(
                 from: items,
@@ -1925,6 +2308,7 @@ final class SessionStore: ObservableObject {
             return
         }
         #endif
+        resetSessionRecovery()
         cancelScheduledSave()
         persistenceGenerationAccessID = nil
         durableSessionChangeGeneration = nil
@@ -2265,11 +2649,10 @@ final class SessionStore: ObservableObject {
         durableSessionChangeGeneration = 0
         sessionChangeGeneration = 0
         let loaded = scanned
+        sessionRecoveryEntries = replaceSavedSession ? []
+            : persistenceResult.session?.recoveryEntries ?? []
         // Restore prior ratings from the sidecar file, if present.
-        var pendingIdentityConflicts: [(
-            persistedFileIDBytes: Data,
-            displayName: String
-        )] = []
+        var pendingConflictEntries: [SessionEntry] = []
         var consumedPersistedFileIDs = Set<Data>()
         var restoredOrganizationOrigins: [String: Data] = [:]
         var relocatedSessionNeedsIdentityProof = false
@@ -2278,10 +2661,19 @@ final class SessionStore: ObservableObject {
         var legacySessionNeedsConfirmation = false
         if !replaceSavedSession, let session = persistenceResult.session {
             let ratingIndex = SessionRatingIndex(session: session)
+            let savedEntries = Dictionary(uniqueKeysWithValues: session.entries.map {
+                (Data($0.filename.utf8), $0)
+            })
             for i in loaded.indices {
                 for file in loaded[i].individualFiles {
                     switch ratingIndex.lookup(for: file) {
                     case .match(let match):
+                        if let digest = savedEntries[match.persistedFileIDBytes]?.contentSHA256,
+                           let identity = file.scannedIdentity {
+                            sessionContentProofs[file.id] = SessionContentProof(
+                                identity: identity, sha256: digest
+                            )
+                        }
                         consumedPersistedFileIDs.insert(
                             match.persistedFileIDBytes
                         )
@@ -2301,14 +2693,18 @@ final class SessionStore: ObservableObject {
                             restoredOrganizationOrigins[file.id] = origin
                         }
                     case .identityConflict(let conflict):
-                        pendingIdentityConflicts.append((
-                            persistedFileIDBytes:
-                                conflict.persistedFileIDBytes,
-                            displayName: file.displayName
-                        ))
+                        if let old = savedEntries[conflict.persistedFileIDBytes] {
+                            pendingConflictEntries.append(old)
+                        }
                     case .absent:
                         break
                     }
+                }
+            }
+            for old in pendingConflictEntries where !consumedPersistedFileIDs.contains(Data(old.filename.utf8)) {
+                consumedPersistedFileIDs.insert(Data(old.filename.utf8))
+                if SessionRecoveryPolicy.hasSavedMetadata(old) {
+                    sessionRecoveryEntries.append(SessionRecoveryEntry(entry: old))
                 }
             }
             if session.version >= 4,
@@ -2346,26 +2742,15 @@ final class SessionStore: ObservableObject {
         } else {
             retainedMissingSessionEntries = []
         }
-        let identityConflicts = pendingIdentityConflicts.compactMap {
-            consumedPersistedFileIDs.contains($0.persistedFileIDBytes)
-                ? nil
-                : $0.displayName
+        if relocatedSessionNeedsIdentityProof, let session = persistenceResult.session,
+           session.version >= 4 {
+            sessionRecoveryEntries += retainedMissingSessionEntries
+                .filter(SessionRecoveryPolicy.hasSavedMetadata)
+                .map { SessionRecoveryEntry(entry: $0) }
+            retainedMissingSessionEntries = []
+            relocatedSessionNeedsIdentityProof = false
         }
-        if !identityConflicts.isEmpty {
-            items = []
-            resetDerivedData()
-            visibleIndices = []
-            phase = .welcome
-            canOpenIdentityConflictAsNewSession = true
-            let count = identityConflicts.count
-            let examples = identityConflicts.prefix(3).joined(separator: ", ")
-            let exampleText = examples.isEmpty ? "" : " (\(examples))"
-            scanError = count == 1
-                ? L10n.text("Louppe found 1 photo or video with the same name as a saved session entry, but not the same physical file\(exampleText). To protect the old ratings, Louppe did not apply them to this file. Restore the original file, or choose Open as New Session to forget the saved decisions for this folder and review the current files.")
-                : L10n.text("Louppe found \(count) photos or videos with the same names as saved session entries, but not the same physical files\(exampleText). To protect the old ratings, Louppe did not apply them to these files. Restore the original files, or choose Open as New Session to forget the saved decisions for this folder and review the current files.")
-            return
-        }
-        if relocatedSessionNeedsIdentityProof {
+        if relocatedSessionNeedsIdentityProof && sessionRecoveryEntries.isEmpty {
             items = []
             resetDerivedData()
             visibleIndices = []
@@ -2410,6 +2795,7 @@ final class SessionStore: ObservableObject {
             prefetchAroundCurrent()
         }
         phase = loaded.isEmpty ? .welcome : .ready
+        startSessionContentChecks()
         if !loaded.isEmpty, let organizationUndo = deferredOrganizationUndo {
             deferredOrganizationUndo = nil
             pushUndo(.organization(organizationUndo))
@@ -2504,7 +2890,8 @@ final class SessionStore: ObservableObject {
     /// What a rating (F/D) applies to: the multi-selection when one is
     /// active, otherwise just the current photo.
     var effectiveSelection: Set<Int> {
-        selectionState.effectiveSelection(
+        if selectedIndices.isEmpty, preparedIndex.location(forItemIndex: currentIndex) == nil { return [] }
+        return selectionState.effectiveSelection(
             currentIndex: currentIndex,
             visibleIndices: visibleIndices,
             itemCount: items.count
@@ -2753,7 +3140,7 @@ final class SessionStore: ObservableObject {
                 to: items[index].ratingState
             )
         }
-        publishMetadataMutation(.decision)
+        publishMetadataMutation(.decision, affectedFileIDs: changes.map { $0.previous.fileID })
         scheduleSave()
     }
 
@@ -2771,7 +3158,7 @@ final class SessionStore: ObservableObject {
             from: previousState,
             to: items[index].ratingState
         )
-        publishMetadataMutation(.decision)
+        publishMetadataMutation(.decision, affectedFileIDs: items[index].individualFiles.map(\.id))
         scheduleSave()
     }
 
@@ -2803,7 +3190,7 @@ final class SessionStore: ObservableObject {
             items[index].setStars(rating, changedAt: now)
             transitionStarCount(from: previousState, to: items[index].starRatingState)
         }
-        publishMetadataMutation(.stars)
+        publishMetadataMutation(.stars, affectedFileIDs: changes.map { $0.previous.fileID })
         scheduleSave()
     }
 
@@ -2834,7 +3221,7 @@ final class SessionStore: ObservableObject {
             items[index].setColor(label, changedAt: now)
             transitionColorCount(from: previousState, to: items[index].colorLabelState)
         }
-        publishMetadataMutation(.color)
+        publishMetadataMutation(.color, affectedFileIDs: changes.map { $0.previous.fileID })
         scheduleSave()
     }
 
@@ -2866,12 +3253,17 @@ final class SessionStore: ObservableObject {
         }
         guard !changes.isEmpty else { return }
         pushUndo(.metadata(.decision, changes, previousFileID: currentItemID))
+        let now = Date()
+        // A deliberate clear is newer review work, including after reopen.
+        // Leave already-undecided RAW/JPEG components and their dates alone.
         for item in items {
-            item.setRating(.undecided, ratedAt: nil)
+            for file in item.individualFiles where file.rating != .undecided {
+                file.setRating(.undecided, ratedAt: now)
+            }
         }
         ratingTally = (0, 0, items.count)
         mixedRatingCount = 0
-        publishMetadataMutation(.decision)
+        publishMetadataMutation(.decision, affectedFileIDs: changes.map { $0.previous.fileID })
         scheduleSave()
     }
 
@@ -3023,7 +3415,20 @@ final class SessionStore: ObservableObject {
                 fallbackIndex: currentIndex
             )
             if !indexedChanges.isEmpty {
-                publishMetadataMutation(dimension)
+                let changedIDs = indexedChanges.map { $0.change.previous.fileID }
+                for id in changedIDs {
+                    guard let file = sessionFile(forID: id),
+                          SessionRecoveryPolicy.isUntouched(file.metadataSnapshot) else { continue }
+                    // Undo intentionally returned this file to an empty current
+                    // decision. Retain older decisions as history, rather than
+                    // letting a pending check reverse the user's Undo.
+                    for index in sessionRecoveryRecordIndicesByFileID[id] ?? []
+                        where sessionRecoveryEntries[index].resolvedFileID == nil {
+                        sessionRecoveryEntries[index].resolvedFileID = id
+                        sessionRecoveryConfirmations.remove(sessionRecoveryEntries[index].id)
+                    }
+                }
+                publishMetadataMutation(dimension, affectedFileIDs: changedIDs)
             }
             scheduleSave()
         case .cleanUp(
@@ -4226,7 +4631,7 @@ final class SessionStore: ObservableObject {
                 )
             }
         }
-        publishMetadataMutation(.all)
+        publishMetadataMutation(.all, affectedFileIDs: pending.map { $0.destination.id })
         scheduleSave()
 
         // A resolution changes the authoritative session. The immutable plan
@@ -4812,6 +5217,273 @@ final class SessionStore: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.06, execute: work)
     }
 
+    // MARK: - Saved decision recovery
+
+    var pendingSessionRecoveryEntries: [SessionRecoveryEntry] {
+        sessionRecoveryEntries.filter { $0.resolvedFileID == nil }
+    }
+
+    var showsSessionRecoveryNotice: Bool {
+        !isSessionRecoveryNoticeDismissed
+            && (!pendingSessionRecoveryEntries.isEmpty || automaticallyRestoredSessionFiles > 0)
+    }
+
+    func dismissSessionRecoveryNotice() {
+        isSessionRecoveryNoticeDismissed = true
+    }
+
+    var sessionRecoveryNotice: String {
+        let count = pendingSessionRecoveryEntries.count
+        if count > 0 {
+            return L10n.text("Saved decisions for \(count) files need checking. You can keep reviewing; previous decisions are preserved.")
+        }
+        return L10n.text("Restored saved decisions for \(automaticallyRestoredSessionFiles) identical files.")
+    }
+
+    func recoveryFile(for record: SessionRecoveryEntry) -> PhotoFile? {
+        sessionRecoveryFileIDs[record.id].flatMap { sessionFile(forID: $0) }
+    }
+
+    func canRestoreSessionRecoveryEntry(_ record: SessionRecoveryEntry) -> Bool {
+        guard record.resolvedFileID == nil,
+              let file = recoveryFile(for: record),
+              file.scannedIdentity != nil else { return false }
+        return SessionRecoveryPolicy.isUntouched(file.metadataSnapshot)
+    }
+
+    func sessionRecoveryStatus(_ record: SessionRecoveryEntry) -> String {
+        guard let file = recoveryFile(for: record) else { return L10n.text("File unavailable") }
+        guard SessionRecoveryPolicy.isUntouched(file.metadataSnapshot) else {
+            return L10n.text("Current decisions kept")
+        }
+        if sessionContentFailures.contains(file.id) { return L10n.text("Could not check file") }
+        guard let oldDigest = record.entry.contentSHA256 else {
+            return L10n.text("Older session: confirmation needed")
+        }
+        guard let proof = sessionContentProofs[file.id] else { return L10n.text("Waiting for content check") }
+        return proof.sha256 == oldDigest
+            ? L10n.text("Identical contents") : L10n.text("File contents changed")
+    }
+
+    /// Confirmation belongs only to the current scanned files and selected
+    /// records. A fresh descriptor/identity check still precedes restoration.
+    func restoreSessionRecoveryEntries(_ ids: Set<UUID>) {
+        guard !isFileOperationRunning, !isPreparingForTermination else { return }
+        let eligible = pendingSessionRecoveryEntries.filter {
+            ids.contains($0.id) && canRestoreSessionRecoveryEntry($0)
+        }
+        guard !eligible.isEmpty else { return }
+        pauseSessionContentChecks()
+        sessionRecoveryConfirmations.formUnion(eligible.map(\.id))
+        for record in eligible {
+            if let id = sessionRecoveryFileIDs[record.id] {
+                sessionContentFailures.remove(id)
+                sessionContentPendingFileIDs.insert(id)
+            }
+        }
+        sessionContentChecksPaused = false
+        startSessionContentChecks()
+    }
+
+    func keepCurrentSessionDecisions(_ ids: Set<UUID>) {
+        guard !isFileOperationRunning, !isPreparingForTermination else { return }
+        for index in sessionRecoveryEntries.indices where ids.contains(sessionRecoveryEntries[index].id) {
+            sessionRecoveryEntries[index].resolvedFileID = sessionRecoveryEntries[index].entry.filename
+            sessionRecoveryConfirmations.remove(sessionRecoveryEntries[index].id)
+        }
+        // History remains in the sidecar. This only dismisses pending attention.
+        scheduleSave()
+    }
+
+    func toggleSessionContentChecks() {
+        sessionContentChecksPaused.toggle()
+        if sessionContentChecksPaused { pauseSessionContentChecks() }
+        else { startSessionContentChecks() }
+    }
+
+    private func pauseSessionContentChecks() {
+        sessionContentGeneration &+= 1
+        sessionContentTask?.cancel()
+        sessionContentTask = nil
+        if case .checking = sessionContentCheck { sessionContentCheck = .paused }
+    }
+
+    private func resetSessionRecovery() {
+        pauseSessionContentChecks()
+        sessionRecoveryEntries = []
+        isSessionRecoveryPresented = false
+        isSessionRecoveryNoticeDismissed = false
+        sessionContentProofs = [:]
+        sessionContentCapturedProofs = [:]
+        sessionContentFailures = []
+        sessionRecoveryConfirmations = []
+        sessionRecoveryAttemptedIDs = []
+        sessionRecoveryFileIDs = [:]
+        sessionRecoveryRecordIndicesByFileID = [:]
+        sessionContentPendingFileIDs = []
+        sessionContentCheck = .idle
+        sessionContentChecksPaused = false
+        automaticallyRestoredSessionFiles = 0
+    }
+
+    func startSessionContentChecks() {
+        guard case .ready = phase, !isFileOperationRunning,
+              !isPreparingForTermination, !sessionContentChecksPaused,
+              !isLegacySessionMigrationConfirmationPresented,
+              sessionContentTask == nil else { return }
+        var todo: [PhotoFile] = []
+        for id in sessionContentPendingFileIDs {
+            guard let file = sessionFile(forID: id), file.scannedIdentity != nil,
+                  !sessionContentFailures.contains(id) else {
+                sessionContentPendingFileIDs.remove(id)
+                continue
+            }
+            let records = (sessionRecoveryRecordIndicesByFileID[id] ?? []).filter {
+                sessionRecoveryEntries[$0].resolvedFileID == nil
+            }
+            let needsRecovery = records.contains { index in
+                let record = sessionRecoveryEntries[index]
+                if sessionRecoveryConfirmations.contains(record.id) { return true }
+                guard !sessionRecoveryAttemptedIDs.contains(record.id) else { return false }
+                return record.entry.contentSHA256 != nil || record.entry.fileIdentity.map {
+                    SessionRatingIndex.persistedIdentityMatches(expected: $0, actual: file.scannedIdentity!)
+                } == true
+            }
+            if needsRecovery || (!SessionRecoveryPolicy.isUntouched(file.metadataSnapshot)
+                && sessionContentProofs[id]?.identity != file.scannedIdentity) {
+                todo.append(file)
+            } else {
+                sessionContentPendingFileIDs.remove(id)
+            }
+        }
+        todo.sort {
+            let left = sessionRecoveryRecordIndicesByFileID[$0.id] != nil
+            let right = sessionRecoveryRecordIndicesByFileID[$1.id] != nil
+            return left == right ? $0.id < $1.id : left
+        }
+        guard !todo.isEmpty else { sessionContentCheck = .finished; return }
+        let generation = sessionContentGeneration
+        let scan = scanGeneration
+        let lease = sourceFolderAccess?.makeIndependentAccess()
+        sessionContentCheck = .checking(done: 0, total: todo.count)
+        sessionContentTask = Task { @MainActor [weak self] in
+            defer { lease?.stop() }
+            var needsCheckpoint = false
+            for (offset, file) in todo.enumerated() {
+                guard let self, !Task.isCancelled,
+                      self.scanGeneration == scan,
+                      self.sessionContentGeneration == generation else { return }
+                let cached = self.sessionContentProofs[file.id]
+                let verify = self.sessionContentVerification
+                let recordIndices = self.sessionRecoveryRecordIndicesByFileID[file.id] ?? []
+                let isConfirmed = recordIndices.contains {
+                    let record = self.sessionRecoveryEntries[$0]
+                    return record.resolvedFileID == nil && self.sessionRecoveryConfirmations.contains(record.id)
+                }
+                let isPhysicalOriginal = recordIndices.contains {
+                    let record = self.sessionRecoveryEntries[$0]
+                    return record.resolvedFileID == nil && record.entry.fileIdentity.map {
+                        SessionRatingIndex.persistedIdentityMatches(expected: $0, actual: file.scannedIdentity!)
+                    } == true
+                }
+                let worker = Task.detached(priority: .utility) {
+                    if isConfirmed || isPhysicalOriginal {
+                        return SessionVerifiedFile.identity(try SessionContentVerifier.validateIdentity(file))
+                    }
+                    return SessionVerifiedFile.content(try await verify(file, cached))
+                }
+                let result = await withTaskCancellationHandler {
+                    await worker.result
+                } onCancel: { worker.cancel() }
+                guard !Task.isCancelled,
+                      self.scanGeneration == scan,
+                      self.sessionContentGeneration == generation,
+                      !self.isFileOperationRunning,
+                      !self.isPreparingForTermination,
+                      case .ready = self.phase else { return }
+                switch result {
+                case .success(let verified):
+                    if let proof = verified.proof { self.sessionContentProofs[file.id] = proof }
+                    self.sessionRecoveryAttemptedIDs.formUnion(recordIndices.map { self.sessionRecoveryEntries[$0].id })
+                    self.applySessionRecovery(to: file, verified: verified, recordIndices: recordIndices)
+                    self.sessionRecoveryConfirmations.subtract(recordIndices.map { self.sessionRecoveryEntries[$0].id })
+                    if let proof = verified.proof,
+                       let current = self.sessionFile(forID: file.id),
+                       !SessionRecoveryPolicy.isUntouched(current.metadataSnapshot),
+                       self.sessionContentCapturedProofs[file.id]?.identity != proof.identity {
+                        needsCheckpoint = true
+                    }
+                case .failure:
+                    self.sessionContentFailures.insert(file.id)
+                }
+                self.sessionContentPendingFileIDs.remove(file.id)
+                // Identity-only restoration queues its portable proof afterward.
+                if case .success(.identity) = result,
+                   let current = self.sessionFile(forID: file.id),
+                   !SessionRecoveryPolicy.isUntouched(current.metadataSnapshot),
+                   self.sessionContentProofs[file.id]?.identity != current.scannedIdentity {
+                    self.sessionContentPendingFileIDs.insert(file.id)
+                }
+                self.sessionContentCheck = .checking(done: offset + 1, total: todo.count)
+            }
+            guard let self, self.sessionContentGeneration == generation else { return }
+            self.sessionContentTask = nil
+            self.sessionContentCheck = .finished
+            // Unrated fingerprints ride the next real save. Only newly proven
+            // reviewed files need a checkpoint; never duplicate an optional
+            // initial save or replace the existing coalescing authority.
+            if needsCheckpoint { self.scheduleSave(markChanged: false) }
+            // An explicit restoration is immediate; prepare its portable
+            // fingerprint afterward, while normal reviewing remains available.
+            self.startSessionContentChecks()
+        }
+    }
+
+    private func applySessionRecovery(
+        to scannedFile: PhotoFile, verified: SessionVerifiedFile, recordIndices: [Int]
+    ) {
+        guard !sessionRecoveryEntries.isEmpty,
+              let itemIndex = itemIndexByFileID[scannedFile.id],
+              items.indices.contains(itemIndex),
+              let file = items[itemIndex].individualFiles.first(where: { $0.id == scannedFile.id }),
+              file.scannedIdentity == verified.identity,
+              SessionRecoveryPolicy.isUntouched(file.metadataSnapshot) else { return }
+        let candidates = recordIndices.filter { sessionRecoveryEntries[$0].resolvedFileID == nil }
+        // Multiple generations at one path require selecting the intended one.
+        let confirmed = candidates.filter { sessionRecoveryConfirmations.contains(sessionRecoveryEntries[$0].id) }
+        let physical = candidates.filter { index in
+            sessionRecoveryEntries[index].entry.fileIdentity.map {
+                SessionRatingIndex.persistedIdentityMatches(expected: $0, actual: verified.identity)
+            } == true
+        }
+        let automatic = candidates.filter {
+            guard let digest = sessionRecoveryEntries[$0].entry.contentSHA256 else { return false }
+            return digest == verified.proof?.sha256
+        }
+        let choices = !confirmed.isEmpty ? confirmed : (!physical.isEmpty ? physical : automatic)
+        guard choices.count == 1, let index = choices.first else { return }
+        let entry = sessionRecoveryEntries[index].entry
+        let oldDecision = items[itemIndex].ratingState
+        let oldStars = items[itemIndex].starRatingState
+        let oldColor = items[itemIndex].colorLabelState
+        file.restoreMetadata(PhotoFileMetadataSnapshot(
+            fileID: file.id, rating: Rating(rawValue: entry.rating) ?? .undecided,
+            ratedAt: entry.ratedAt, starRating: entry.stars,
+            starsChangedAt: entry.starsChangedAt, colorLabel: entry.colorLabel,
+            colorChangedAt: entry.colorChangedAt
+        ))
+        // Organization origins describe the old physical file's location and
+        // are deliberately not inherited by a copied/restored file.
+        sessionRecoveryConfirmations.remove(sessionRecoveryEntries[index].id)
+        sessionRecoveryEntries[index].resolvedFileID = file.id
+        if confirmed.isEmpty { automaticallyRestoredSessionFiles += 1 }
+        transitionRatingCount(from: oldDecision, to: items[itemIndex].ratingState)
+        transitionStarCount(from: oldStars, to: items[itemIndex].starRatingState)
+        transitionColorCount(from: oldColor, to: items[itemIndex].colorLabelState)
+        publishMetadataMutation(.all, affectedFileIDs: [file.id], preservingCurrent: true)
+        scheduleSave()
+    }
+
     // MARK: - Session persistence
 
     private func markSessionChanged() {
@@ -4827,8 +5499,9 @@ final class SessionStore: ObservableObject {
         }
     }
 
-    private func scheduleSave() {
-        markSessionChanged()
+    private func scheduleSave(markChanged: Bool = true) {
+        if markChanged { markSessionChanged() }
+        startSessionContentChecks()
         saveDebounce?.cancel()
         saveTrailingGeneration &+= 1
         let trailingGeneration = saveTrailingGeneration
@@ -4971,12 +5644,16 @@ final class SessionStore: ObservableObject {
     /// Hold this barrier before the final snapshot so no rating can arrive
     /// after the snapshot that authorizes Quit.
     func beginTerminationPreparation() {
+        pauseQualityCueAnalysis()
+        pauseSessionContentChecks()
         isPreparingForTermination = true
     }
 
     /// Called only when the photographer cancels Quit after a failed save.
     func cancelTerminationPreparation() {
         isPreparingForTermination = false
+        startQualityCueAnalysis()
+        startSessionContentChecks()
     }
 
     /// Retry the newest live snapshot, or the exact snapshot retained after a
@@ -5242,8 +5919,11 @@ final class SessionStore: ObservableObject {
             sourcePath: folder.path,
             items: items,
             retainedEntries: retainedMissingSessionEntries,
-            originPaths: organizationOriginFolderPathBytesByFileID
+            originPaths: organizationOriginFolderPathBytesByFileID,
+            contentProofs: sessionContentProofs,
+            recoveryEntries: sessionRecoveryEntries
         )
+        sessionContentCapturedProofs = sessionContentProofs
         saveSequence &+= 1
         return SaveRequest(
             folder: folder,
@@ -5303,6 +5983,7 @@ final class SessionStore: ObservableObject {
     }
 
     private func finishClosingSession() {
+        resetSessionRecovery()
         finishXMPPublicationLifecycle()
         invalidateDuplicateBurstAnalysis(rebuildLayout: false)
         cancelScheduledSave()

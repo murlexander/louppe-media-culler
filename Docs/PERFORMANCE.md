@@ -83,14 +83,23 @@ persistence reads and final identity checks.
 - `HistogramPipeline` runs two 1,024-pixel photo decodes, coalesces requests,
   and retains 256 numeric results. Cancellation removes its waiter and cancels
   queued work when no waiter remains; finishing decodes cannot publish to removed
-  requests. Videos, audio, unsupported files, and multi-selection skip analysis.
-  `RawHistogramPipeline` handles RAW primaries after 700 ms: one utility
+  requests. Videos, audio and unsupported files skip photo analysis.
+  `RawHistogramPipeline` handles RAW primaries (Info waits 700 ms): one utility
   `CIRAWFilter` decode, native scaling, and a final lazy bound keeping each
   extended-linear RGBA-float dimension near 1,024 pixels. Its 128-entry LRU
   retains numbers, never pixels. Same revisions coalesce; cancellation removes
   stale waiters/queued work. Unsupported/unknown decoders leave rendered analysis
   in place. `ClippingPreviewPipeline` shares the coalesced full preview and runs
   two transforms.
+- Quality cues work with Info closed. One session scheduler prioritizes current/
+  selected/rendered/nearby photos, requests at most two items per batch, then
+  walks the remaining session. It retains only revision/source/dimensions/sample
+  and clipping counts per item; bins/bitmaps stay in the bounded workers above.
+  Tile interest is capped at 64 IDs. Pause, file work, pairing, replacement and
+  Close cancel pending work; revision/generation guards reject stale completion.
+  RAW measurement uses Apple Default independently of presentation decoder, with
+  explicit preview fallback. Analyzer/color/resolution configuration is included
+  in cache keys. Threshold edits reuse counts without decoding.
 - `AudioLevelPipeline` runs only for the selected playable video/audio after
   Info dwell or a Gallery waveform request. One utility `AVAssetReader` PCM
   task runs at a time; same revisions coalesce. Last-waiter cancellation stops
@@ -119,6 +128,36 @@ Unreadable subfolders fail visibly; incomplete traversal cannot become a saved
 session. Final identity checks iterate physical files without a flattened copy,
 poll cancellation between files and before an empty pass, and check again after
 sorting. Keep filesystem loops and JSON encoding off `SessionStore`.
+
+## Portable saved decisions
+
+One serial utility actor hashes full file contents in 1 MiB chunks. Only reviewed
+files lacking a proof or unresolved entries with a comparable old proof need
+content reads. Unrated folders and older conflicts without fingerprints perform
+zero extra content reads. Explicit confirmation first validates the regular file
+and exact scanned identity; restoration becomes available before its subsequent
+fingerprint pass. Same-name conflicts are prioritized and progress can be paused
+in the recovery sheet. No sampled or visual hash authorizes automatic restoration.
+
+A held descriptor, regular-file type, device/inode, byte count, before/after stat,
+and final path identity reject replacements and symlinks. Cancellation is checked
+per chunk. Each task holds an independent folder-access lease until worker exit;
+scan/generation and live-state checks reject late results. File operations,
+folder transitions and Quit preparation pause checking. The serial actor prevents
+canceled/restarted hash reads from overlapping. Snapshot construction remains
+off-main and carries old decisions separately from current files at reused paths.
+
+Use the existing physical-file index and incremental rating/star/color tallies
+on restoration; do not rebuild all derived metadata per recovered file. History
+targets and candidate records are indexed once per structural generation. Unique
+physical originals follow renames without a preliminary full-content read;
+copies still require same-path content proof or explicit confirmation. Subsequent
+fingerprint scheduling queues only touched physical IDs rather than flattening,
+sorting and walking the whole folder on every decision. The Ready-session 100k
+single-decision check measured 0.3 ms on 12 October 2026. Refresh
+only affected sort/filter projections, preserving the current photo. Reuse the
+existing save debounce/deadline. Fingerprint-only checkpoints do not advance the
+user-change generation, so already saved decisions continue to read Saved.
 
 ## Shared review-metadata storage
 
@@ -309,16 +348,28 @@ and checks identity before/after reads. Changed files yield no suggestion.
 Visual matching handles supported photo projections with ≤160-pixel ImageIO
 thumbnails reduced immediately to 9 × 8 grayscale signatures. Skip buckets over
 256 distinct signatures; cap near-hash comparisons at 50,000. Label all visual
-groups **Likely Similar**. Bursts use cached still-photo dates and consecutive
-0.5–10-second gaps; changing the gap is O(N) without I/O.
+groups **Likely Similar**. Capture requests return before identity/hash/preview access and use cached
+still-photo dates only. Consecutive gaps are inclusive at 0.5–10 seconds; the
+interval is not a maximum group duration or a shutter-press/camera boundary.
+EXIF original/digitized/TIFF, subseconds, UTC offset or assumed local timezone
+are retained; filesystem creation dates are explicitly inferred. Missing dates
+are excluded. Equal timestamps use a stable ID tie-break.
 
 Join equal hashes first, then one representative per existing component for
 near matches. Never form Cartesian products: a 4,000-item/two-hash debug fixture
 dropped from 5.95 seconds to about 0.024 seconds. Cache membership by mode and
 sensitivity; filter/sort/rating project it. New analysis or structural change
-clears membership. Headers count visible members. Initial grouping/sensitivity
-changes still run synchronously; cancellable background work for large sessions
-remains an improvement.
+clears membership. Capture headers show visible/total members, retaining one
+survivor after filtering; normal sort determines group and member order.
+
+Capture membership and interval changes reuse the single cancellable background
+analysis owner, guarded by generation/revisions/interval. Late completion never
+enters capture mode after navigation or Reset. The previous completed projection
+remains during interval work; Cancel retains its interval. Optimized local
+1k/10k/100k measurements on 12 October 2026: initial grouping 11.2/18.1/141.4 ms;
+interval regrouping 2.4/15.9/141.8 ms. The first includes cold localization. This
+justified moving date grouping off-main. Exact/similar synchronous membership
+work remains AUD-08 followup. See the dated Quality Cues review record.
 
 Same-name XMP conflict preflight retains typed stable IDs, scan identities,
 metadata snapshots, and exact paths. Apply resolution as one small main-actor
@@ -702,3 +753,12 @@ keyboard ratings, and highlighted selection aligned.
 Follow [AGENTS.md](../AGENTS.md) for build, test, and real launch. Performance
 changes also run `./Tests/run_performance_checks.sh` on disposable media with
 macOS Trash access for round trips. Never test Clean Up on irreplaceable originals.
+
+## Cue refresh lifecycle — 12 October 2026 review
+
+Each quality-check generation retains its own folder-access lease through worker
+exit. Folder transitions, file operations, recovery and Quit retire that generation;
+late evidence cannot publish across the boundary. Canceling Quit resumes checks.
+Tile evidence publishes promptly; active filter projection skips unchanged cue
+matches and coalesces changed matches to 100 ms, with a final completion flush.
+Large-folder filter/coverage measurements remain AUD-06 work.

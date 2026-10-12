@@ -65,6 +65,9 @@ struct RootView: View {
                         keepFilesAsTheyAre: store.keepInterruptedFilesAsTheyAre
                     )
                 }
+                if case .ready = store.phase, store.showsSessionRecoveryNotice {
+                    SessionRecoveryBanner(store: store)
+                }
                 if let warning = store.persistenceWarning {
                     PersistenceWarningBanner(
                         message: warning,

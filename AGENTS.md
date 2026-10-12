@@ -132,7 +132,7 @@ codesign --verify --deep --strict /Applications/Louppe.app
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   swift build --disable-keychain        # quick debug check; no dependency login
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
-  swift test --disable-keychain         # XCTest is supplied by full Xcode
+  swift test --disable-keychain --build-system native  # XCTest is supplied by full Xcode
 ```
 
 `build_app.sh` bundles the binary + icon + Info.plist in `/private/tmp`, strips
@@ -159,7 +159,7 @@ Run the focused logic tests first, then verify by launching with a folder:
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
-  swift test --disable-keychain --filter HotkeyTests
+  swift test --disable-keychain --build-system native --filter HotkeyTests
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   ./Tests/run_performance_checks.sh
 ```

@@ -3303,6 +3303,10 @@ struct PerformanceChecks {
             makeItem(id: String(format: "RATING_%06d.JPG", $0))
         }
 
+        // Exercise the Ready-session fingerprint scheduler as well as the
+        // metadata mutation. Welcome would skip background scheduling entirely.
+        store.sort.ascending = false
+        store.phase = .ready
         let clock = ContinuousClock()
         var publishes = 0
         let subscription = store.objectWillChange.sink { _ in publishes += 1 }
@@ -3998,8 +4002,8 @@ struct PerformanceChecks {
 
         try expect(publishes <= 3, "clear-all should publish the batch once, not per element (got \(publishes))")
         try expect(
-            store.items.allSatisfy { $0.rating == .undecided && $0.ratedAt == nil },
-            "clear-all should reset every rating"
+            store.items.allSatisfy { $0.rating == .undecided && $0.ratedAt != nil },
+            "clear-all should retain explicit clear timestamps against stale recovery"
         )
         try expect(store.ratedCount == 0 && store.undecidedCount == 3000, "clear-all should reset the tally")
         try expect(elapsed < 2, "clearing 3000 ratings should be near-instant (took \(elapsed)s)")

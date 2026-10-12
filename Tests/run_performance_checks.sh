@@ -23,6 +23,8 @@ swiftc \
     Sources/Louppe/RawDisplay.swift \
     Sources/Louppe/ImagePipeline.swift \
     Sources/Louppe/HistogramPipeline.swift \
+    Sources/Louppe/CameraQualityWarnings.swift \
+    Sources/Louppe/QualityCueAnalysis.swift \
     Sources/Louppe/HighResolutionImagePipeline.swift \
     Sources/Louppe/ZoomViewport.swift \
     Sources/Louppe/VideoPlaybackController.swift \
@@ -38,6 +40,7 @@ swiftc \
     Sources/Louppe/SourceOrganizationWorker.swift \
     Sources/Louppe/SecurityScopedAccess.swift \
     Sources/Louppe/SessionPersistence.swift \
+    Sources/Louppe/SessionRatingRecovery.swift \
     Tests/PerformanceChecks/XMPPublicationStubs.swift \
     Sources/Louppe/XMP/XMPSidecarResolver.swift \
     Sources/Louppe/ReviewPreferences.swift \

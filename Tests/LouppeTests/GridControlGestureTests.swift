@@ -106,6 +106,17 @@ final class GridControlGestureTests: XCTestCase {
 
         XCTAssertEqual(state.buttonActivations, 3)
         XCTAssertEqual(store.items[0].rating, .undecided)
+
+        // The compact visible circle keeps its larger native target, including
+        // the inner corner outside the 20-point glyph.
+        try sendClick(
+            in: window,
+            at: CGPoint(x: 125, y: 125),
+            firstEventNumber: 16,
+            clickCount: 1
+        )
+        XCTAssertEqual(state.buttonActivations, 4)
+        XCTAssertEqual(store.items[0].rating, .yes)
         XCTAssertEqual(store.currentIndex, 0)
         XCTAssertEqual(state.rubberBandChanges, 0)
         window.orderOut(nil)
@@ -364,12 +375,22 @@ private struct HostedGridControlDragFixture: View {
                 state.buttonActivations += 1
                 onActivation()
             } label: {
-                Color.green
-                    .frame(width: 40, height: 40)
-                    .contentShape(Rectangle())
+                Group {
+                    if controlPlacement == .rating {
+                        RatingBadge(rating: .yes, size: TileBadgeLayout.height)
+                            .frame(
+                                width: TileBadgeLayout.decisionTargetSize,
+                                height: TileBadgeLayout.decisionTargetSize,
+                                alignment: .topTrailing
+                            )
+                    } else {
+                        Color.green.frame(width: 40, height: 40)
+                    }
+                }
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(controlPlacement == .rating ? 2 : 0)
+            .padding(controlPlacement == .rating ? TileBadgeLayout.inset : 0)
         }
         .frame(width: 170, height: 170)
         .contentShape(Rectangle())

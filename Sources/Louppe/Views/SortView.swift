@@ -91,7 +91,6 @@ struct SortView: View {
 
                         reviewModeRow(.exactDuplicates)
                         reviewModeRow(.likelySimilarPhotos)
-                        reviewModeRow(.captureBursts)
 
                         if store.isGroupedReviewActive {
                             Button(L10n.text("Return to Normal Review")) {
@@ -102,9 +101,6 @@ struct SortView: View {
 
                         if store.groupedReviewMode == .likelySimilarPhotos {
                             similarityControl
-                        }
-                        if store.groupedReviewMode == .captureBursts {
-                            burstControl
                         }
 
                         Text(store.duplicateBurstAnalysisSummary)
@@ -181,31 +177,6 @@ struct SortView: View {
             .accessibilityLabel(L10n.text("Likely-similar photo sensitivity"))
             .accessibilityValue(similarityLabel)
             Text(L10n.text("Lower is stricter. Local preview similarity is an estimate."))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.top, 2)
-    }
-
-    private var burstControl: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(L10n.text("Burst interval"))
-                Spacer()
-                Text(L10n.text("\(String(format: "%.1f", store.burstGroupingInterval)) s"))
-                    .foregroundStyle(.secondary)
-            }
-            Slider(
-                value: Binding(
-                    get: { store.burstGroupingInterval },
-                    set: { store.setBurstGroupingInterval($0) }
-                ),
-                in: 0.5...10,
-                step: 0.5
-            )
-            .accessibilityLabel(L10n.text("Capture burst interval"))
-            .accessibilityValue(L10n.text("\(String(format: "%.1f", store.burstGroupingInterval)) seconds"))
-            Text(L10n.text("Group consecutive shots within this interval."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

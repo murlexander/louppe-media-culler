@@ -85,6 +85,16 @@ struct GalleryView: View {
                             store.fullImageLoads += loading ? 1 : -1
                         }
                     }
+                } else if !store.visibleIndices.isEmpty {
+                    ContentUnavailableView {
+                        Label(L10n.text("Choose a matching item"), systemImage: "photo")
+                    } description: {
+                        Text(L10n.text("Checks found matching photos. Select one to continue reviewing."))
+                    } actions: {
+                        Button(L10n.text("Make Current")) {
+                            if let first = store.visibleIndices.first { store.setIndex(first) }
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

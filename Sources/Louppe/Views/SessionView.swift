@@ -24,6 +24,7 @@ struct SessionView: View {
 
     var body: some View {
         mainContent
+            .onAppear { store.startQualityCueAnalysis() }
             .overlay { cleanUpProgressOverlay }
             .toolbar { toolbarContent }
             .navigationTitle("")
@@ -36,6 +37,9 @@ struct SessionView: View {
                     )
                     return handleKey(event, context: context)
                 }
+            }
+            .sheet(isPresented: $store.isSessionRecoveryPresented) {
+                SessionRecoveryView(store: store)
             }
             .sheet(isPresented: $store.isExportPresented) {
                 ExportView(store: store)
@@ -246,11 +250,11 @@ struct SessionView: View {
         if mode != .selection {
             switch store.cleanUpScope {
             case .all:
-                if store.filter.isActive {
+                if store.isFilterActive {
                     parts.append(L10n.text("All \(store.items.count) folder items are considered, even those hidden by filters."))
                 }
             case .filtered:
-                if store.filter.isActive {
+                if store.isFilterActive {
                     let hidden = store.items.count - store.visibleIndices.count
                     parts.append(L10n.text("Only \(store.visibleIndices.count) visible items are considered; \(hidden) hidden items stay untouched."))
                 }
@@ -269,11 +273,9 @@ struct SessionView: View {
 
     private var subtitle: String {
         guard !store.items.isEmpty else { return "" }
-        let position = store.visibleIndices.isEmpty
-            ? 0
-            : (store.currentVisiblePosition ?? 0) + 1
+        let position = store.currentVisiblePosition.map { $0 + 1 } ?? 0
         var text = L10n.text("Item \(position) of \(store.visibleIndices.count)")
-        if store.filter.isActive {
+        if store.isFilterActive {
             text += L10n.text(" (of \(store.items.count) total)")
         }
         text += L10n.text("  ·  \(store.yesCount + store.noCount)/\(store.items.count) reviewed")
@@ -454,16 +456,16 @@ struct SessionView: View {
             Button {
                 store.isFilterPresented.toggle()
             } label: {
-                Image(systemName: store.filter.isActive
+                Image(systemName: store.isFilterActive
                     ? "line.3.horizontal.decrease.circle.fill"
                     : "line.3.horizontal.decrease.circle")
-                    .foregroundStyle(store.filter.isActive ? Color.louppeAccent : Color.primary)
+                    .foregroundStyle(store.isFilterActive ? Color.louppeAccent : Color.primary)
             }
             .popover(isPresented: $store.isFilterPresented, arrowEdge: .bottom) {
                 FilterView(store: store)
             }
             .accessibilityLabel(L10n.text("Filter Media"))
-            .accessibilityValue(store.filter.isActive ? L10n.text("Active") : L10n.text("Not active"))
+            .accessibilityValue(store.isFilterActive ? L10n.text("Active") : L10n.text("Not active"))
             .help(L10n.text("Filter media by date, type, duration, subfolder, camera, or lens"))
 
             Button {

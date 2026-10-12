@@ -2,7 +2,7 @@ import Foundation
 
 enum SessionConstants {
     static let sidecarName = ".louppe_session.json"
-    static let currentSchemaVersion = 6
+    static let currentSchemaVersion = 7
     static let supportedSchemaVersions = 1...currentSchemaVersion
 }
 
@@ -233,6 +233,76 @@ private final class PhotoFileIdentityStorage: @unchecked Sendable {
     }
 }
 
+/// Evidence retained from the scan. A file creation date can be useful for
+/// ordering, but never proves when a photograph was captured.
+struct CaptureDateEvidence: Equatable, Sendable {
+    enum Source: Equatable, Sendable {
+        case exifOriginal
+        case exifDigitized
+        case tiff
+        case fileCreation
+        case unspecified
+    }
+
+    let date: Date
+    let source: Source
+    let rawDateTime: String?
+    let subsecondDigits: String?
+    let utcOffset: String?
+    let assumedTimeZoneIdentifier: String?
+
+    init(
+        date: Date,
+        source: Source,
+        rawDateTime: String? = nil,
+        subsecondDigits: String? = nil,
+        utcOffset: String? = nil,
+        assumedTimeZoneIdentifier: String? = nil
+    ) {
+        self.date = date
+        self.source = source
+        self.rawDateTime = rawDateTime
+        self.subsecondDigits = subsecondDigits
+        self.utcOffset = utcOffset
+        self.assumedTimeZoneIdentifier = assumedTimeZoneIdentifier
+    }
+
+    var sourceDescription: String {
+        switch source {
+        case .exifOriginal: return L10n.text("EXIF original capture time")
+        case .exifDigitized: return L10n.text("EXIF digitized time")
+        case .tiff: return L10n.text("TIFF date/time")
+        case .fileCreation: return L10n.text("File creation date · inferred capture time")
+        case .unspecified: return L10n.text("Date source unverified")
+        }
+    }
+
+    var isInferred: Bool {
+        source == .fileCreation || source == .unspecified
+    }
+
+    var precisionDescription: String? {
+        guard !isInferred else { return nil }
+        return subsecondDigits.map { L10n.text("Subseconds: 0.\($0) s") }
+            ?? L10n.text("Whole seconds only; equal-time order uses filename identity")
+    }
+
+    var timeZoneDescription: String? {
+        if let utcOffset { return "UTC\(utcOffset)" }
+        if let assumedTimeZoneIdentifier {
+            return L10n.text("No UTC offset; assumed \(assumedTimeZoneIdentifier)")
+        }
+        return nil
+    }
+
+    var recordedDateTime: String? {
+        guard let rawDateTime else { return nil }
+        return rawDateTime
+            + (subsecondDigits.map { ".\($0)" } ?? "")
+            + (utcOffset.map { " \($0)" } ?? "")
+    }
+}
+
 /// One physical media file and everything Louppe learned about it.
 ///
 /// RAW+JPEG pairing is a presentation choice, so the individual files retain
@@ -256,6 +326,7 @@ struct PhotoFile: Identifiable, Sendable {
     let audioCodec: String?
     let audioIsPlayable: Bool
     let captureDate: Date?
+    let captureDateEvidence: CaptureDateEvidence?
     let captureDay: Date?
     let cameraModel: String?
     let lensModel: String?
@@ -305,6 +376,7 @@ struct PhotoFile: Identifiable, Sendable {
         url: URL,
         displayRelativePath: String? = nil,
         captureDate: Date?,
+        captureDateEvidence: CaptureDateEvidence? = nil,
         cameraModel: String?,
         lensModel: String?,
         aperture: Double? = nil,
@@ -349,8 +421,10 @@ struct PhotoFile: Identifiable, Sendable {
         self.videoIsPlayable = videoIsPlayable
         self.audioCodec = audioCodec
         self.audioIsPlayable = audioIsPlayable
-        self.captureDate = captureDate
-        self.captureDay = captureDate.map { Calendar.current.startOfDay(for: $0) }
+        self.captureDate = captureDateEvidence?.date ?? captureDate
+        self.captureDateEvidence = captureDateEvidence
+            ?? captureDate.map { CaptureDateEvidence(date: $0, source: .unspecified) }
+        self.captureDay = self.captureDate.map { Calendar.current.startOfDay(for: $0) }
         self.cameraModel = cameraModel
         self.lensModel = lensModel
         self.subfolder = subfolder
@@ -634,6 +708,7 @@ struct PhotoItem: Identifiable, Sendable {
     var audioCodec: String? { primaryFile.audioCodec }
     var audioIsPlayable: Bool { primaryFile.audioIsPlayable }
     var captureDate: Date? { primaryFile.captureDate }
+    var captureDateEvidence: CaptureDateEvidence? { primaryFile.captureDateEvidence }
     var captureDay: Date? { primaryFile.captureDay }
     var cameraModel: String? { primaryFile.cameraModel }
     var lensModel: String? { primaryFile.lensModel }
@@ -1829,9 +1904,37 @@ enum DateFilterMode: Hashable {
     case specificDates
 }
 
+enum QualityCueKind: String, CaseIterable, Hashable, Sendable {
+    case highISO
+    case slowShutter
+    case highlightClipping
+    case shadowClipping
+
+    var title: String {
+        switch self {
+        case .highISO: return L10n.text("High ISO")
+        case .slowShutter: return L10n.text("Slow shutter")
+        case .highlightClipping: return L10n.text("Near-white area")
+        case .shadowClipping: return L10n.text("Near-black area")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .highISO: return "aqi.medium"
+        case .slowShutter: return "timer"
+        case .highlightClipping: return "sun.max"
+        case .shadowClipping: return "moon"
+        }
+    }
+}
+
+
 /// What the toolbar filter menu narrows the session down to.
 /// An inactive filter shows everything.
 struct PhotoFilter: Equatable {
+    /// Any selected cue matches; the result intersects every ordinary facet.
+    var selectedQualityCues: Set<QualityCueKind> = []
     var searchText = ""
     /// These `Enabled` flags are internal effect flags, not UI toggles. The
     /// controls are always present; a flag becomes true only when the user
@@ -1880,7 +1983,7 @@ struct PhotoFilter: Equatable {
     var excludedColorStates: Set<PhotoItemColorLabelState> = []
 
     var isActive: Bool {
-        !searchText.trimmingCharacters(in: .whitespaces).isEmpty
+        !selectedQualityCues.isEmpty || !searchText.trimmingCharacters(in: .whitespaces).isEmpty
             || dateEnabled
             || apertureEnabled
             || shutterEnabled
@@ -2065,9 +2168,19 @@ struct SessionEntry: Codable, Sendable {
     /// migration, but current ratings are restored only onto this exact
     /// scanned physical file rather than whichever file now owns the path.
     var fileIdentity: FileOperationJournal.FileIdentity? = nil
+    /// Schema 7: SHA-256 of all bytes, captured against this exact identity.
+    var contentSHA256: String? = nil
     /// Added in schema 6. Exact relative parent-directory bytes captured
     /// before Louppe first organizes this physical file.
     var organizationOriginFolderPathBytes: Data? = nil
+}
+
+/// Retain the old decision even after an explicit or verified restoration.
+/// Separate storage permits a new file to own the same path without erasing it.
+struct SessionRecoveryEntry: Codable, Sendable, Identifiable {
+    var id: UUID = UUID()
+    var entry: SessionEntry
+    var resolvedFileID: String? = nil
 }
 
 struct SessionFile: Codable, Sendable {
@@ -2087,6 +2200,8 @@ struct SessionFile: Codable, Sendable {
     /// omit it and remain readable; once present, this counter is authoritative
     /// over wall-clock timestamps when choosing between sidecar and backup.
     var snapshotGeneration: UInt64? = nil
+    /// Schema 7: unresolved decisions and resolved history survive every save.
+    var recoveryEntries: [SessionRecoveryEntry]? = nil
 }
 
 /// Resolves sidecar ratings by byte-exact file ID, with a read-only fallback
@@ -2124,7 +2239,7 @@ struct SessionRatingIndex {
         case identityConflict(Match)
     }
 
-    private struct PersistedIdentityKey: Hashable {
+    struct PersistedIdentityKey: Hashable {
         enum Volume: Hashable {
             case uuid(String)
             case legacy(root: String, systemNumber: UInt64)

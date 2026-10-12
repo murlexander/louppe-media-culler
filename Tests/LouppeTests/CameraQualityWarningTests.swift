@@ -1,4 +1,5 @@
 import XCTest
+import AppKit
 @testable import Louppe
 
 final class CameraQualityWarningTests: XCTestCase {
@@ -17,6 +18,15 @@ final class CameraQualityWarningTests: XCTestCase {
         defaults = nil
         defaultsSuiteName = nil
         super.tearDown()
+    }
+
+    func testNoiseCueSymbolAndCompactValues() {
+        XCTAssertNotNil(NSImage(systemSymbolName: QualityCueKind.highISO.symbol, accessibilityDescription: nil))
+        XCTAssertNotEqual(QualityCueKind.highISO.symbol, "camera.aperture")
+        XCTAssertEqual(CameraQualityWarning(kind: .highISO, measuredValue: 6400, threshold: 3200,
+                                          source: .cameraMetadata).compactValue, "ISO 6400")
+        XCTAssertEqual(CameraQualityWarning(kind: .shadowClipping, measuredValue: 25, threshold: 10,
+                                          source: .histogram(.renderedPreview)).compactValue, "25%")
     }
 
     func testDefaultPreferencesAreSensibleAndEnabled() {

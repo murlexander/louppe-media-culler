@@ -3,6 +3,16 @@ import AppKit
 
 private let thumbnailCornerRadius: CGFloat = 6
 
+/// Shared visible geometry for badges in Browser and Grid tiles.
+enum TileBadgeLayout {
+    static let height: CGFloat = 20
+    static let inset: CGFloat = 6
+    static let spacing: CGFloat = 3
+    static let iconSize: CGFloat = 11
+    static let decisionTargetSize: CGFloat = 40
+    static let maximumCueRowWidth: CGFloat = 4 * height + 3 * spacing
+}
+
 /// Async-loading thumbnail tile with a yes/no/undecided badge overlay.
 /// The whole photo fits inside the tile (letterboxed, never cropped).
 struct ThumbnailView: View {
@@ -102,9 +112,10 @@ struct ThumbnailView: View {
             if showsRatingBadge {
                 RatingBadge(
                     rating: ratingState.effectiveRating,
-                    isMixed: ratingState == .mixed
+                    isMixed: ratingState == .mixed,
+                    size: TileBadgeLayout.height
                 )
-                .padding(4)
+                .padding(TileBadgeLayout.inset)
             }
         }
         .overlay(alignment: .bottomTrailing) {
@@ -113,15 +124,15 @@ struct ThumbnailView: View {
                     duration: item.duration,
                     mediaKind: item.mediaKind
                 )
-                    .padding(4)
+                    .padding(TileBadgeLayout.inset)
             }
         }
-        .overlay(alignment: .bottomLeading) {
+        .overlay(alignment: .topLeading) {
             MetadataBadgeStrip(
                 starRatingState: starRatingState,
                 colorLabelState: colorLabelState
             )
-                .padding(4)
+                .padding(TileBadgeLayout.inset)
         }
         .task(id: revision) {
             let requestedItem = item
@@ -171,7 +182,7 @@ struct MediaDurationBadge: View {
             .monospacedDigit()
             .foregroundStyle(.white)
             .padding(.horizontal, 5)
-            .padding(.vertical, 3)
+            .frame(height: TileBadgeLayout.height)
             .background(.black.opacity(0.68), in: Capsule())
             .shadow(radius: 1)
             .accessibilityLabel(L10n.text("\(L10n.label(mediaKind.singularLabel)) duration: \(MediaDurationFormat.accessibility(duration))"))
@@ -240,23 +251,28 @@ struct RatingBadge: View {
         Group {
             if isMixed {
                 Image(systemName: "circle.lefthalf.filled")
+                    .resizable().scaledToFit()
                     .foregroundStyle(Color.louppeAccent)
             } else {
                 switch rating {
                 case .yes:
                     Image(systemName: "checkmark.circle.fill")
+                        .resizable().scaledToFit()
                         .foregroundStyle(.white, .green)
                 case .no:
                     Image(systemName: "xmark.circle.fill")
+                        .resizable().scaledToFit()
                         .foregroundStyle(.white, .red)
                 case .undecided:
                     Image(systemName: "circle.fill")
+                        .resizable().scaledToFit()
                         .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
                         .opacity(0.85)
                 }
             }
         }
         .font(.system(size: size, weight: .bold))
+        .frame(width: size, height: size)
         .shadow(radius: 1.5)
         .accessibilityLabel(
             MediaTileAccessibility.ratingDescription(

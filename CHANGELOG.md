@@ -1,5 +1,22 @@
 # Version History
 
+## 1.11.0 (13) — 2026-10-12
+
+- Added Quality cues and Capture bursts to Filter, with consistent Browser/Grid
+  badges and compact values in Info. Near-white and near-black rules have
+  independent thresholds and reset controls; changing rules reuses measurements.
+- Made burst detection use scanned dates without hashing photos or decoding
+  previews. Preserved fractional capture times, time zones, and estimated dates.
+- Opened changed-file sessions without discarding earlier decisions. Identical
+  copies and returning originals recover verified decisions; older sessions offer
+  explicit restoration and retain recovery history. Clear All Decisions and Undo stay
+  cleared when background checks finish and after reopening.
+- Kept background checks bounded, paused them during file work and Quit, and
+  indexed recovery lookups so ordinary decisions avoid folder-wide scans.
+- Updated saved sessions to format 7 to preserve recovery history; version 1.10
+  cannot open sessions saved by 1.11.
+
+
 ## 1.10.0 (12) — 2026-10-07
 
 - Added Spanish, Simplified Chinese, Hindi, Portuguese, and Arabic across the

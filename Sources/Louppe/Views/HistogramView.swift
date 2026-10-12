@@ -2,12 +2,18 @@ import SwiftUI
 
 /// Compact photo-only luminance inspection for the Info panel.
 struct HistogramSection: View {
+    let item: PhotoItem
     let analysis: HistogramAnalysis?
     let source: HistogramAnalysisSource
     let loadFailed: Bool
     @ObservedObject var store: SessionStore
 
     private static let chartHeight: CGFloat = 88
+
+    // Only RAW photos have two distinct histogram sources to identify.
+    var sourceLabel: String? {
+        item.isRaw && analysis != nil ? source.shortLabel : nil
+    }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -21,8 +27,8 @@ struct HistogramSection: View {
                         .padding(.trailing, 2)
                 }
 
-                if analysis != nil {
-                    Text(source.shortLabel)
+                if let sourceLabel {
+                    Text(sourceLabel)
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                         .padding(.top, 3)
@@ -35,10 +41,6 @@ struct HistogramSection: View {
                         .accessibilityHidden(true)
                         .allowsHitTesting(false)
                 }
-            }
-
-            if !loadFailed {
-                percentageRow
             }
         }
         .frame(maxWidth: .infinity)
@@ -53,7 +55,7 @@ struct HistogramSection: View {
             )
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(
-                    accessibilityDescription(for: analysis)
+                    L10n.text("Luminance histogram")
                 )
         } else if loadFailed {
             HStack(spacing: 6) {
@@ -71,33 +73,6 @@ struct HistogramSection: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .accessibilityLabel(L10n.text("Calculating histogram"))
         }
-    }
-
-    private var percentageRow: some View {
-        HStack(spacing: 8) {
-            percentage(
-                L10n.text("Shadows"),
-                value: analysis?.shadowPercentage
-            )
-            percentage(
-                L10n.text("Highlights"),
-                value: analysis?.highlightPercentage
-            )
-        }
-    }
-
-    private func percentage(_ label: String, value: Double?) -> some View {
-        VStack(spacing: 1) {
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            Text(value.map(Self.formatPercentage) ?? "—")
-                .font(.callout.weight(.medium))
-                .foregroundStyle(percentageColor(value))
-                .monospacedDigit()
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
     }
 
     private var clippingButton: some View {
@@ -126,22 +101,7 @@ struct HistogramSection: View {
         .help(L10n.text("Show or hide the red preview clipping overlay (X)"))
     }
 
-    private func percentageColor(_ value: Double?) -> Color {
-        value == nil ? .secondary : .primary
-    }
 
-    private static func formatPercentage(_ value: Double) -> String {
-        if value == 0 { return "0%" }
-        if value < 0.1 { return "<0.1%" }
-        if value < 10 { return String(format: "%.1f%%", value) }
-        return String(format: "%.0f%%", value)
-    }
-
-    private func accessibilityDescription(
-        for analysis: HistogramAnalysis
-    ) -> String {
-        L10n.text("\(source.detailLabel) luminance histogram. Shadows \(Self.formatPercentage(analysis.shadowPercentage)). Highlights \(Self.formatPercentage(analysis.highlightPercentage)).")
-    }
 }
 
 private struct LuminanceHistogramView: View {

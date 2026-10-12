@@ -187,30 +187,41 @@ struct MetadataBadgeStrip: View {
 
     var body: some View {
         if starRatingState != .unrated || colorLabelState != .none {
-            HStack(spacing: 4) {
-                switch starRatingState {
-                case .unrated:
-                    EmptyView()
-                case .stars(let rating):
-                    HStack(spacing: 1) {
-                        Image(systemName: "star.fill")
-                        Text("\(rating.count)")
-                    }
-                case .mixed:
-                    Text("★–")
+            HStack(spacing: TileBadgeLayout.spacing) {
+                if starRatingState != .unrated {
+                    starBadge
                 }
                 if colorLabelState != .none {
                     ColorLabelMark(state: colorLabelState)
+                        .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
+                        .background(.black.opacity(0.68), in: Circle())
                 }
             }
-            .font(.caption2.weight(.semibold))
+            .frame(height: TileBadgeLayout.height)
             .foregroundStyle(.white)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 3)
-            .background(.black.opacity(0.68), in: Capsule())
             .shadow(radius: 1)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
         }
+    }
+
+    private var starBadge: some View {
+        Group {
+            switch starRatingState {
+            case .unrated:
+                EmptyView()
+            case .stars(let rating):
+                HStack(spacing: 1) {
+                    Image(systemName: "star.fill")
+                    Text("\(rating.count)")
+                }
+            case .mixed:
+                Text("★–")
+            }
+        }
+        .font(.system(size: TileBadgeLayout.iconSize, weight: .semibold))
+        .padding(.horizontal, 5)
+        .frame(height: TileBadgeLayout.height)
+        .background(.black.opacity(0.68), in: Capsule())
     }
 }

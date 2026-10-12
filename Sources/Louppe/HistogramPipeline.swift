@@ -50,6 +50,18 @@ struct HistogramAnalysis: Equatable, Sendable {
     let sampleCount: Int
     let shadowCount: Int
     let highlightCount: Int
+    let width: Int
+    let height: Int
+
+    init(bins: [Int], sampleCount: Int, shadowCount: Int, highlightCount: Int,
+         width: Int = 0, height: Int = 0) {
+        self.bins = bins
+        self.sampleCount = sampleCount
+        self.shadowCount = shadowCount
+        self.highlightCount = highlightCount
+        self.width = width
+        self.height = height
+    }
 
     var shadowPercentage: Double {
         percentage(for: shadowCount)
@@ -126,7 +138,8 @@ enum ClippingWarningProcessor {
             bins: bins,
             sampleCount: sampleCount,
             shadowCount: shadowCount,
-            highlightCount: highlightCount
+            highlightCount: highlightCount,
+            width: buffer.width, height: buffer.height
         )
     }
 
@@ -275,7 +288,7 @@ final class HistogramPipeline: @unchecked Sendable {
 
     func analysis(for item: PhotoItem) async -> HistogramAnalysis? {
         guard item.mediaKind == .photo, item.isSupported else { return nil }
-        let key = ImagePipeline.cacheKey(for: item)
+        let key = ImagePipeline.cacheKey(for: item) + "|histogram-v1-srgb-1024"
         let revision = MediaSourceRevision(item)
         let requestID = UUID()
         return await withTaskCancellationHandler {
@@ -439,7 +452,8 @@ enum RawHistogramProcessor {
             bins: bins,
             sampleCount: sampleCount,
             shadowCount: shadowCount,
-            highlightCount: highlightCount
+            highlightCount: highlightCount,
+            width: width, height: height
         )
     }
 
@@ -576,7 +590,7 @@ final class RawHistogramPipeline: @unchecked Sendable {
 
     func cachedAnalysis(for item: PhotoItem) -> HistogramAnalysis? {
         guard Self.supportsAnalysis(for: item) else { return nil }
-        let key = ImagePipeline.cacheKey(for: item)
+        let key = ImagePipeline.cacheKey(for: item) + "|raw-histogram-v1-appleDefault-linear-1024"
         lock.lock()
         let result = cache[key]
         if result != nil { touch(key) }
@@ -598,7 +612,7 @@ final class RawHistogramPipeline: @unchecked Sendable {
         guard !Task.isCancelled else { return nil }
         if let cached = cachedAnalysis(for: item) { return cached }
 
-        let key = ImagePipeline.cacheKey(for: item)
+        let key = ImagePipeline.cacheKey(for: item) + "|raw-histogram-v1-appleDefault-linear-1024"
         let revision = MediaSourceRevision(item)
         let requestID = UUID()
         return await withTaskCancellationHandler {

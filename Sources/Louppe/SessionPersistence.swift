@@ -1395,12 +1395,32 @@ actor SessionPersistence: SessionPersistenceClient {
         let usesExactIDs =
             session.fileIDEncoding == .percentEncodedFileSystemPath
         var physicalFileIDs = Set<Data>()
+        guard session.version >= 7 || session.recoveryEntries == nil else { return false }
+        var recoveryIDs = Set<UUID>()
+        for record in session.recoveryEntries ?? [] {
+            guard recoveryIDs.insert(record.id).inserted,
+                  record.resolvedFileID.map({ relativeFileIDIsValid(
+                    $0, requiresCanonicalPercentEncoding: usesExactIDs
+                  ) }) ?? true else { return false }
+            // Validate each historical entry independently: several generations
+            // may legitimately share the same filename.
+            var historical = session
+            historical.entries = [record.entry]
+            historical.recoveryEntries = nil
+            guard entriesAreValid(in: historical) else { return false }
+        }
         for entry in session.entries {
             guard relativeFileIDIsValid(
                     entry.filename,
                     requiresCanonicalPercentEncoding: usesExactIDs
                   ),
                   Rating(rawValue: entry.rating) != nil,
+                  session.version >= 7 || entry.contentSHA256 == nil,
+                  entry.contentSHA256.map({ digest in
+                    digest.utf8.count == 64 && digest.utf8.allSatisfy {
+                        (48...57).contains($0) || (97...102).contains($0)
+                    }
+                  }) ?? true,
                   session.version >= 5
                     || (entry.stars == nil
                         && entry.starsChangedAt == nil

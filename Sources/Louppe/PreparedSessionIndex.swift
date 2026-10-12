@@ -123,14 +123,17 @@ struct PreparedSessionIndex {
         _ filter: PhotoFilter,
         to items: [PhotoItem],
         sort: PhotoSort,
-        isGroupingEnabled: Bool
+        isGroupingEnabled: Bool,
+        matchingItemIDs: Set<String>? = nil
     ) {
         let interval = Self.signposter.beginInterval("Filter Session")
         defer {
             Self.signposter.endInterval("Filter Session", interval)
         }
         let prepared = PreparedPhotoFilter(filter)
-        visibleIndices = sortedIndices.filter { prepared.matches(items[$0]) }
+        visibleIndices = sortedIndices.filter {
+            (matchingItemIDs?.contains(items[$0].id) ?? true) && prepared.matches(items[$0])
+        }
         rebuildGroups(
             for: items,
             sort: sort,
@@ -157,8 +160,9 @@ struct PreparedSessionIndex {
 
     /// Projects one already-filtered session into a review-only group layout.
     /// The analyzer owns stable item IDs; this index maps them back into the
-    /// current item generation and deliberately omits any group that has fewer
-    /// than two members after the normal filter is applied. The original sorted
+    /// current item generation. Capture bursts retain partially filtered
+    /// membership (even one remaining member) with full/visible counts; exact
+    /// and similar groups still require two visible members. The original sorted
     /// list remains untouched, so leaving grouped review is a cheap rebuild.
     mutating func applyGroupedReview(
         _ reviewGroups: [DuplicateBurstAnalysis.Group],
@@ -185,7 +189,8 @@ struct PreparedSessionIndex {
                 .sorted {
                     (normalPosition[$0] ?? .max) < (normalPosition[$1] ?? .max)
                 }
-            guard indices.count >= 2 else { continue }
+            guard !indices.isEmpty,
+                  reviewGroup.mode == .captureBursts || indices.count >= 2 else { continue }
             seenIndices.formUnion(indices)
             projectedGroups.append(
                 PhotoGroup(
@@ -193,10 +198,16 @@ struct PreparedSessionIndex {
                         key: nil,
                         value: .text("review-\(reviewGroup.id)")
                     ),
-                    title: reviewGroup.title(itemCount: indices.count),
+                    title: reviewGroup.mode != .captureBursts || indices.count == reviewGroup.itemIDs.count
+                        ? reviewGroup.title(itemCount: indices.count)
+                        : reviewGroup.title(itemCount: indices.count)
+                            + L10n.text(" (\(indices.count) of \(reviewGroup.itemIDs.count) shown)"),
                     indices: indices
                 )
             )
+        }
+        projectedGroups.sort {
+            (normalPosition[$0.indices[0]] ?? .max) < (normalPosition[$1.indices[0]] ?? .max)
         }
         visibleGroups = projectedGroups
         visibleIndices = projectedGroups.flatMap(\.indices)

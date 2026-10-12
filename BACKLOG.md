@@ -53,6 +53,26 @@ Configurable shortcuts remain deferred to preserve keyboard safety.
 
 ## Product improvements
 
+- [x] **Quality Cues local prototype — 12 October 2026.** Filter sections,
+  Browser/Grid glyphs, compact measured values in Info, independent area rules, and
+  bounded checks with Info closed are implemented. Metadata-only capture bursts
+  retain date provenance and run membership work off-main. Local review only;
+  release acceptance gaps remain in the [review record](Docs/QUALITY_CUES_REVIEW_2026-10-12.md).
+  [Prototype scope](Docs/QUALITY_CUES_PROTOTYPE_2026-10-12.md).
+- [x] **Saved-decision recovery local prototype — 12 October 2026.** Folders
+  open without discarding changed-file decisions. Verified copies and returning
+  originals restore automatically; older entries offer explicit restoration,
+  preserved history and a dismissible notice. Clear All and Undo remain cleared after
+  background checks and reopen. [Review and precommit evidence](Docs/SESSION_RECOVERY_REVIEW_2026-10-12.md).
+- [ ] **Burst-photo acceptance.** Filter discovery, fractional timestamps,
+  date provenance, partial groups and independent RAW+JPEG decisions are
+  implemented and tested. Verify real high-speed Fuji sequences and separate
+  shutter presses; nearby cameras/presses can still merge by time. Related:
+  AUD-07/AUD-08/AUD-22; inline comparison remains a followup.
+- [ ] **Automatic blur detection.** After the first cue prototype, experiment
+  with measured relative softness within bursts and verified detail crops.
+  Flag uncertain photos for human review; retain low-texture/intentional-blur
+  uncertainty. Early-user feedback recorded 11 October 2026.
 - [ ] Show Fuji film simulation in metadata. Camera previews include it; Apple
   RAW rendering bypasses it. Keep originals intact and avoid a redundant toggle.
 - [ ] Extend format support where macOS allows.
@@ -66,6 +86,10 @@ Configurable shortcuts remain deferred to preserve keyboard safety.
 - [ ] **AUD-05 — ExFAT path replacement.** Reproduce path-based Move fallback and
   launch recovery on disposable ExFAT. Standard Move/Rename/Organize/undo bind
   parent descriptors; retain ExFAT’s no-overwrite probe and durability warning.
+- [ ] **Toolchain test backend.** Xcode 27's default SwiftPM backend failed
+  signing an XCTest bundle with Finder metadata in Documents; native passed
+  627 tests but is deprecated upstream. Verify a supported replacement without
+  downgrading the SDK; retain current native checks until then.
 - [ ] **AUD-21 — Media/AV APIs.** Replace semaphore probing with structured async
   work and review macOS 27 reader/player-notification deprecations. Preserve
   macOS 14, decoder limits, cancellation/reader exit, and playback tests.
@@ -96,13 +120,17 @@ work lives in its `BACKLOG.md` (WEB-AUD-01).
 - [ ] **AUD-06 — Index/save capture.** Measure Release main-actor time/memory at
   1k/10k/100k files for rebuild, metadata sort, filter/group, and capture. Reuse
   unchanged ID/file maps on sort-only changes where useful. Preserve ordering,
-  exact selection, shared metadata, and O(1) rating.
-- [ ] **AUD-07 — Metadata-only bursts.** Prove burst requests perform no hashing/
-  decoding. Exact/similar modes still request their evidence; preserve generation
-  and cancellation guards.
-- [ ] **AUD-08 — Background groups.** Measure initial/sensitivity-change grouping;
-  move costly hash/union-find/date work off-main where justified. Publish only
-  the current mode/sensitivity/generation; cancel old work and retain caches.
+  exact selection, shared metadata, and O(1) rating. Ready-session recovery
+  scheduling now uses touched-file queues; the 12 October 100k rating check is
+  0.3 ms. Also measure active cue-filter projection/coverage on large folders;
+  refreshes now skip unchanged cue matches and coalesce to 100 ms.
+- [x] **AUD-07 — Metadata-only bursts.** Capture requests return before identity,
+  hashing or preview access; instrumented tests prove zero reads while all-mode
+  analysis still invokes its workers. Generation/cancellation guards remain.
+- [ ] **AUD-08 — Background groups.** Capture date grouping moved off-main after
+  optimized 1k/10k/100k measurements (100k: 141/142 ms initial/interval change).
+  Latest-interval, cancellation and navigation guards tested; exact/similar
+  membership work remains. See the Quality Cues review record.
 - [ ] **AUD-09 — Live thumbnail budget.** Coalesce utility-queue pruning by writes/
   time. Test a small size/age budget and same-day launch. Reach the target without
   per-thumbnail walks, blocking scroll, or discarding trustworthy pixels.
@@ -145,16 +173,32 @@ work lives in its `BACKLOG.md` (WEB-AUD-01).
 
 ## Later / research
 
+- [ ] Portable recovery beyond the same relative filename: copied-and-renamed
+  or reorganized copies need explicit remapping/verified content discovery.
+  Physical originals already follow unique disk identity. Design recovery-history
+  retention limits without losing unresolved decisions or the saved generation.
 - [ ] SD-card ingest, naming templates, and review during copy.
 - [ ] Preview-first EXIF routing/auto-culling; never silently move originals.
 - [ ] Focus peaking and detail/edge inspection.
-- [ ] Side-by-side comparison with synchronized zoom.
+- [ ] Inline burst comparison with matched crops/synchronized zoom in the existing
+  Gallery/Info surfaces; avoid new screens or user-facing modes by default.
+- [ ] Scrollable subject/detail inspection in Info: user-selected region first,
+  then investigate local face/subject crops. Preserve revision and pixel mapping.
+- [ ] Video/audio Quality Cues with timestamped evidence and seek-to-interval in
+  existing Gallery. Report sampling/track/channel coverage; reuse bounded frame
+  and PCM work. Collect audio overload evidence before waveform sanitization.
+- [ ] ML/AI Quality Cues research — 12 October 2026. Evaluate local pairwise
+  preferences, Vision feature/face/aesthetics evidence, and optional OpenAI
+  finalist comparison. Recheck models/pricing/privacy and validate usefulness;
+  no models, cloud/API calls, uploads or automatic ratings in the first prototype.
 - [ ] Scenes / chronological-story review.
 - [ ] iPad Grid companion.
 - [ ] Embedded metadata in exported JPEG copies only, with a separate safety design.
-- [ ] **AUD-22 — Burst dates.** Decide whether filesystem creation/import dates count
-  as capture evidence without EXIF. Test mixed sources and retain provenance;
-  describe inferred groups as inferred.
+- [ ] **AUD-22 — Burst dates.** EXIF original/digitized/TIFF, subseconds, offsets
+  and inferred creation dates are retained; Info shows Captured/Time zone
+  and marks fallback dates estimated. Synthetic same-second,
+  mixed-camera and import-date cases pass. Real high-speed Fuji/shutter-press
+  acceptance remains; date gaps can merge separate presses or cameras.
 
 ## Decisions already made
 

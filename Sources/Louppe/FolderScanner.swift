@@ -635,6 +635,10 @@ enum FolderScanner {
             url: url,
             displayRelativePath: relativeDisplayPath(of: url, under: root),
             captureDate: info.captureDate ?? facts?.creationDate,
+            captureDateEvidence: info.captureDateEvidence
+                ?? (info.captureDate == nil ? facts?.creationDate.map {
+                    CaptureDateEvidence(date: $0, source: .fileCreation)
+                } : nil),
             cameraModel: info.cameraModel,
             lensModel: info.lensModel,
             aperture: info.aperture,
@@ -667,6 +671,9 @@ enum FolderScanner {
             url: url,
             displayRelativePath: relativeDisplayPath(of: url, under: root),
             captureDate: facts?.creationDate,
+            captureDateEvidence: facts?.creationDate.map {
+                CaptureDateEvidence(date: $0, source: .fileCreation)
+            },
             cameraModel: nil,
             lensModel: nil,
             modificationDate: facts?.modificationDate,
@@ -753,6 +760,8 @@ enum FolderScanner {
             url: file.url,
             displayRelativePath: file.legacyPersistenceID,
             captureDate: info.captureDate ?? file.captureDate,
+            captureDateEvidence: info.captureDateEvidence
+                ?? (info.captureDate == nil ? file.captureDateEvidence : nil),
             cameraModel: info.cameraModel,
             lensModel: info.lensModel,
             aperture: info.aperture,

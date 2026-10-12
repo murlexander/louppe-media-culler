@@ -127,7 +127,7 @@
 "Bridge reads sidecar stars, colors, and Louppe decision keywords." = "Bridge 读取附属文件中的星级、颜色和 Louppe 决定关键词。";
 "Broad" = "宽";
 "Build sortable filenames from capture metadata." = "从抓取元数据构建可排序文件名 。";
-"Burst interval" = "断层间隔";
+"Burst interval" = "连拍间隔";
 "Calculating histogram" = "计算直方图";
 "Camera" = "摄像头";
 "Camera metadata" = "相机元数据";
@@ -147,10 +147,10 @@
 "Capture Bursts" = "捕获掩体";
 "Capture One" = "抓一个";
 "Capture One may need XMP Auto Sync or a manual metadata reload." = "Capture One 可能需要启用 XMP Auto Sync 或手动重新载入元数据。";
-"Capture burst interval" = "抓取断裂间隔";
+"Capture burst interval" = "连拍间隔";
 "Capture burst · {0} {1} · close capture times" = "连拍 · {0} {1} · 拍摄时间接近";
-"Capture bursts" = "抓捕暴动";
-"Captured" = "已抓获";
+"Capture bursts" = "连拍组";
+"Captured" = "拍摄时间";
 "Change Yes/No decision" = "是/无决定";
 "Change decision" = "更改决定";
 "Change decision for {0}" = "更改{0} 的决定";
@@ -415,7 +415,7 @@
 "Hide Media Information" = "隐藏媒体信息";
 "Hide Preview Clipping Overlay" = "隐藏预览抓取重叠";
 "Hide this tip. See Help > Louppe Help for shortcuts." = "隐藏此提示。 快捷键请参见 Help > Louppe Help 。";
-"High ISO" = "高 ISO 标准";
+"High ISO" = "高 ISO";
 "High ISO threshold" = "高ISO阈值";
 "Highest first" = "最高一级";
 "Highlight clipping" = "突出显示剪辑";
@@ -727,7 +727,7 @@
 "Purple" = "紫色";
 "Purple to Red" = "紫色变红";
 "Quality Cues" = "画质提示";
-"Quality cues" = "质量提示";
+"Quality cues" = "画质提示";
 "Quick Start and supported formats" = "快速启动及支持的格式";
 "Quick picks" = "快速选择";
 "Quit Without Saving" = "不保存并退出";
@@ -929,7 +929,7 @@
 "Show or hide media information (W)" = "显示或隐藏媒体信息( W)";
 "Show or hide the Browser in the Gallery view (Q)" = "在图片库视图( Q) 中显示或隐藏浏览器";
 "Show or hide the red preview clipping overlay (X)" = "显示或隐藏红色预览剪贴板( X)";
-"Show quality cues" = "显示质量提示";
+"Show quality cues" = "显示画质提示";
 "Show quick-start tips while reviewing" = "审查时显示快速启动提示";
 "Show the folder in its normal filtered and sorted order." = "按正常的筛选和排序顺序显示文件夹。";
 "Show the full folder again" = "重新显示整个文件夹";
@@ -1491,3 +1491,127 @@
 "{0} dBFS" = "{0} dBFS";
 "{0} seconds" = "{0} 秒";
 "{0} s" = "{0} 秒";
+
+/* Quality cues, capture bursts, and date evidence. */
+" ({0} of {1} shown)" = "（显示 {0}/{1}）";
+"% or above" = "% 或以上";
+"Capture burst · {0} {1} · close photo dates" = "连拍组 · {0} {1} · 照片时间相近";
+"Checked" = "已检查";
+"Checking photo dates…" = "正在检查照片时间…";
+"Checking…" = "检查中…";
+"Consecutive photo date gaps ≤ this interval. Separate shutter presses and cameras can merge. Inferred dates are labeled; no shutter-press identifier is read." = "将连续照片中时间差 ≤ 此间隔的照片分组。不同快门按压和相机拍摄的照片可能合并。推断的时间会标明；不读取快门按压标识。";
+"Date precision" = "时间精度";
+"Date source" = "时间来源";
+"Date source unverified" = "时间来源未经验证";
+"Date timezone" = "时间的时区";
+"EXIF digitized time" = "EXIF 数字化时间";
+"EXIF original capture time" = "EXIF 原始拍摄时间";
+"File creation date · inferred capture time" = "文件创建时间 · 推断的拍摄时间";
+"Groups consecutive photo dates within the chosen gap. File creation dates are inferred; separate shutter presses and cameras can mix." = "按所选时间间隔对连续照片分组。文件创建时间视为推断时间；不同快门按压和相机拍摄的照片可能混在一起。";
+"ISO and shutter are camera clues, not measured noise or blur. Missing fields are not a clean result." = "ISO 和快门是相机参数线索，并非测得的噪点或模糊。字段缺失不代表没有问题。";
+"Image measurement unavailable. Try Rescan Folder if the file changed." = "图像测量不可用。如果文件已更改，请尝试重新扫描文件夹。";
+"Image measurements: {0} of {1} photos. Missing metadata or RAW fallback gives partial coverage." = "图像测量：{1} 张照片中已测量 {0} 张。元数据缺失或 RAW 回退会导致覆盖不完整。";
+"Inspect clipping in Gallery" = "在图库中检查明暗溢出";
+"Inspect in Info" = "在信息中检查";
+"Linear luminance ≤ 0.002 / ≥ 0.995; Apple Default RAW decode." = "线性亮度 ≤ 0.002 / ≥ 0.995；Apple Default RAW 解码。";
+"Match any selected cue; other filters still apply." = "匹配任意所选提示；其他筛选条件仍然适用。";
+"Measured ISO {0}; threshold ≥ ISO {1}." = "测得 ISO {0}；阈值 ≥ ISO {1}。";
+"Measured {0} s; threshold ≥ {1} s." = "测得 {0} s；阈值 ≥ {1} s。";
+"Measured {0}%; threshold ≥ {1}%." = "测得 {0}%；阈值 ≥ {1}%。";
+"Near-black area" = "近黑区域";
+"Near-black area threshold in percent" = "近黑区域阈值（百分比）";
+"Near-white area" = "近白区域";
+"Near-white area threshold in percent" = "近白区域阈值（百分比）";
+"No UTC offset; assumed {0}" = "无 UTC 偏移量；假定为 {0}";
+"No enabled cue matches. This is not a quality verdict." = "没有匹配的已启用提示。这不是画质判定。";
+"Partial coverage" = "覆盖不完整";
+"Pause checks" = "暂停检查";
+"Photo cues only. This media type has not been analyzed." = "仅提供照片提示。此媒体类型尚未分析。";
+"Photo dates: {0} of {1}; {2} inferred. Missing dates are excluded." = "照片时间：{1} 张中有 {0} 张；{2} 张为推断时间。缺失时间的照片不参与分组。";
+"Quality cues disabled" = "画质提示已停用";
+"Quality cues for {0}. {1}. {2}" = "{0} 的画质提示。{1}。{2}";
+"RAW measurement unavailable; preview evidence only." = "RAW 测量不可用；仅有预览证据。";
+"Recorded date/time" = "记录的日期与时间";
+"Rendered image estimate — measured from a scaled rendered preview." = "渲染图像估算值：根据缩放后的渲染预览测量。";
+"Resume checks" = "继续检查";
+"Rules" = "规则";
+"Show capture bursts" = "显示连拍组";
+"Subseconds: 0.{0} s" = "亚秒：0.{0} s";
+"TIFF date/time" = "TIFF 日期与时间";
+"Unchecked" = "未检查";
+"Whole image, scaled to {0}. Near-black / near-white samples: {1}. {2}" = "整张图像，缩放至 {0}。近黑 / 近白采样：{1}。{2}";
+"Whole seconds only; equal-time order uses filename identity" = "仅精确到整秒；相同时间按文件名标识排序";
+"inferred dates" = "推断的时间";
+"sRGB luminance 0–5 / 250–255; rendered preview." = "sRGB 亮度 0–5 / 250–255；渲染预览。";
+
+/* Quality cues, capture bursts, and date evidence. */
+"Checks found matching photos. Select one to continue reviewing." = "检查发现了匹配的照片。请选择一张以继续筛选。";
+"Choose a matching item" = "选择匹配的项目";
+
+"Saved decisions for {0} files need checking. You can keep reviewing; previous decisions are preserved." = "需要核查 {0} 个文件的已保存决定。你可以继续审阅；之前的决定会保留。";
+
+"Restored saved decisions for {0} identical files." = "已恢复 {0} 个相同文件的已保存决定。";
+
+"File unavailable" = "文件不可用";
+
+"Current decisions kept" = "保留当前决定";
+
+"Could not check file" = "无法检查文件";
+
+"Older session: confirmation needed" = "旧会话：需要确认";
+
+"Waiting for content check" = "等待内容检查";
+
+"Identical contents" = "内容相同";
+
+"File contents changed" = "文件内容已改变";
+
+"Checking file contents: {0} of {1}" = "正在检查文件内容：{0}/{1}";
+
+"Check and Restore…" = "检查并恢复…";
+
+"Check Saved Decisions" = "检查已保存的决定";
+
+"Identical copies restore automatically. Older sessions need your confirmation. Current decisions are kept, and previous decisions remain in recovery history." = "相同副本会自动恢复决定。旧会话需要你确认。当前决定会保留，之前的决定会留在恢复历史中。";
+
+"Previous decisions" = "之前的决定";
+
+"No saved decisions need attention." = "没有需要处理的已保存决定。";
+
+"I confirm the selected files are the same photos or videos." = "我确认所选文件是相同的照片或视频。";
+
+"Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files." = "恢复只会将所选的之前决定应用到尚未审阅的文件，不会修改媒体文件。";
+
+"Keep Current Decisions" = "保留当前决定";
+
+"Restore Selected Decisions" = "恢复所选决定";
+
+"Content checks paused" = "内容检查已暂停";
+
+"Resume Checks" = "继续检查";
+
+"Previous decisions are preserved." = "之前的决定已保留。";
+
+"Recovery History" = "恢复历史";
+
+"Restored or kept in history" = "已恢复或保留在历史中";
+
+"Dismiss notification" = "关闭通知";
+
+"Check Saved Decisions…" = "检查已存决定…";
+
+"No enabled cues." = "没有符合条件的已启用提示。";
+
+"Measurement details" = "测量详情";
+
+"ISO and shutter use camera settings, not measured noise or blur. Near-white and near-black cues estimate image areas from a scaled RAW decode or preview." = "ISO 和快门提示依据相机设置，并非实测噪点或模糊。近白和近黑提示依据缩小的 RAW 解码图像或预览估算图像区域。";
+
+"Luminance histogram" = "亮度直方图";
+
+"Quality cues for {0}" = "{0} 的画质提示";
+
+"Restore defaults for {0}" = "恢复{0}的默认设置";
+
+"Time zone" = "时区";
+
+"{0} · estimated" = "{0} · 估算";

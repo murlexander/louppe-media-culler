@@ -1491,3 +1491,127 @@
 "{0} dBFS" = "{0} dBFS";
 "{0} seconds" = "{0} seconds";
 "{0} s" = "{0} s";
+
+/* Quality cues, capture bursts, and date evidence. */
+" ({0} of {1} shown)" = " ({0} of {1} shown)";
+"% or above" = "% or above";
+"Capture burst · {0} {1} · close photo dates" = "Capture burst · {0} {1} · close photo dates";
+"Checked" = "Checked";
+"Checking photo dates…" = "Checking photo dates…";
+"Checking…" = "Checking…";
+"Consecutive photo date gaps ≤ this interval. Separate shutter presses and cameras can merge. Inferred dates are labeled; no shutter-press identifier is read." = "Consecutive photo date gaps ≤ this interval. Separate shutter presses and cameras can merge. Inferred dates are labeled; no shutter-press identifier is read.";
+"Date precision" = "Date precision";
+"Date source" = "Date source";
+"Date source unverified" = "Date source unverified";
+"Date timezone" = "Date timezone";
+"EXIF digitized time" = "EXIF digitized time";
+"EXIF original capture time" = "EXIF original capture time";
+"File creation date · inferred capture time" = "File creation date · inferred capture time";
+"Groups consecutive photo dates within the chosen gap. File creation dates are inferred; separate shutter presses and cameras can mix." = "Groups consecutive photo dates within the chosen gap. File creation dates are inferred; separate shutter presses and cameras can mix.";
+"ISO and shutter are camera clues, not measured noise or blur. Missing fields are not a clean result." = "ISO and shutter are camera clues, not measured noise or blur. Missing fields are not a clean result.";
+"Image measurement unavailable. Try Rescan Folder if the file changed." = "Image measurement unavailable. Try Rescan Folder if the file changed.";
+"Image measurements: {0} of {1} photos. Missing metadata or RAW fallback gives partial coverage." = "Image measurements: {0} of {1} photos. Missing metadata or RAW fallback gives partial coverage.";
+"Inspect clipping in Gallery" = "Inspect clipping in Gallery";
+"Inspect in Info" = "Inspect in Info";
+"Linear luminance ≤ 0.002 / ≥ 0.995; Apple Default RAW decode." = "Linear luminance ≤ 0.002 / ≥ 0.995; Apple Default RAW decode.";
+"Match any selected cue; other filters still apply." = "Match any selected cue; other filters still apply.";
+"Measured ISO {0}; threshold ≥ ISO {1}." = "Measured ISO {0}; threshold ≥ ISO {1}.";
+"Measured {0} s; threshold ≥ {1} s." = "Measured {0} s; threshold ≥ {1} s.";
+"Measured {0}%; threshold ≥ {1}%." = "Measured {0}%; threshold ≥ {1}%.";
+"Near-black area" = "Near-black area";
+"Near-black area threshold in percent" = "Near-black area threshold in percent";
+"Near-white area" = "Near-white area";
+"Near-white area threshold in percent" = "Near-white area threshold in percent";
+"No UTC offset; assumed {0}" = "No UTC offset; assumed {0}";
+"No enabled cue matches. This is not a quality verdict." = "No enabled cue matches. This is not a quality verdict.";
+"Partial coverage" = "Partial coverage";
+"Pause checks" = "Pause checks";
+"Photo cues only. This media type has not been analyzed." = "Photo cues only. This media type has not been analyzed.";
+"Photo dates: {0} of {1}; {2} inferred. Missing dates are excluded." = "Photo dates: {0} of {1}; {2} inferred. Missing dates are excluded.";
+"Quality cues disabled" = "Quality cues disabled";
+"Quality cues for {0}. {1}. {2}" = "Quality cues for {0}. {1}. {2}";
+"RAW measurement unavailable; preview evidence only." = "RAW measurement unavailable; preview evidence only.";
+"Recorded date/time" = "Recorded date/time";
+"Rendered image estimate — measured from a scaled rendered preview." = "Rendered image estimate — measured from a scaled rendered preview.";
+"Resume checks" = "Resume checks";
+"Rules" = "Rules";
+"Show capture bursts" = "Show capture bursts";
+"Subseconds: 0.{0} s" = "Subseconds: 0.{0} s";
+"TIFF date/time" = "TIFF date/time";
+"Unchecked" = "Unchecked";
+"Whole image, scaled to {0}. Near-black / near-white samples: {1}. {2}" = "Whole image, scaled to {0}. Near-black / near-white samples: {1}. {2}";
+"Whole seconds only; equal-time order uses filename identity" = "Whole seconds only; equal-time order uses filename identity";
+"inferred dates" = "inferred dates";
+"sRGB luminance 0–5 / 250–255; rendered preview." = "sRGB luminance 0–5 / 250–255; rendered preview.";
+
+/* Quality cues, capture bursts, and date evidence. */
+"Checks found matching photos. Select one to continue reviewing." = "Checks found matching photos. Select one to continue reviewing.";
+"Choose a matching item" = "Choose a matching item";
+
+"Saved decisions for {0} files need checking. You can keep reviewing; previous decisions are preserved." = "Saved decisions for {0} files need checking. You can keep reviewing; previous decisions are preserved.";
+
+"Restored saved decisions for {0} identical files." = "Restored saved decisions for {0} identical files.";
+
+"File unavailable" = "File unavailable";
+
+"Current decisions kept" = "Current decisions kept";
+
+"Could not check file" = "Could not check file";
+
+"Older session: confirmation needed" = "Older session: confirmation needed";
+
+"Waiting for content check" = "Waiting for content check";
+
+"Identical contents" = "Identical contents";
+
+"File contents changed" = "File contents changed";
+
+"Checking file contents: {0} of {1}" = "Checking file contents: {0} of {1}";
+
+"Check and Restore…" = "Check and Restore…";
+
+"Check Saved Decisions" = "Check Saved Decisions";
+
+"Identical copies restore automatically. Older sessions need your confirmation. Current decisions are kept, and previous decisions remain in recovery history." = "Identical copies restore automatically. Older sessions need your confirmation. Current decisions are kept, and previous decisions remain in recovery history.";
+
+"Previous decisions" = "Previous decisions";
+
+"No saved decisions need attention." = "No saved decisions need attention.";
+
+"I confirm the selected files are the same photos or videos." = "I confirm the selected files are the same photos or videos.";
+
+"Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files." = "Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files.";
+
+"Keep Current Decisions" = "Keep Current Decisions";
+
+"Restore Selected Decisions" = "Restore Selected Decisions";
+
+"Content checks paused" = "Content checks paused";
+
+"Resume Checks" = "Resume Checks";
+
+"Previous decisions are preserved." = "Previous decisions are preserved.";
+
+"Recovery History" = "Recovery History";
+
+"Restored or kept in history" = "Restored or kept in history";
+
+"Dismiss notification" = "Dismiss notification";
+
+"Check Saved Decisions…" = "Check Saved Decisions…";
+
+"No enabled cues." = "No enabled cues.";
+
+"Measurement details" = "Measurement details";
+
+"ISO and shutter use camera settings, not measured noise or blur. Near-white and near-black cues estimate image areas from a scaled RAW decode or preview." = "ISO and shutter use camera settings, not measured noise or blur. Near-white and near-black cues estimate image areas from a scaled RAW decode or preview.";
+
+"Luminance histogram" = "Luminance histogram";
+
+"Quality cues for {0}" = "Quality cues for {0}";
+
+"Restore defaults for {0}" = "Restore defaults for {0}";
+
+"Time zone" = "Time zone";
+
+"{0} · estimated" = "{0} · estimated";

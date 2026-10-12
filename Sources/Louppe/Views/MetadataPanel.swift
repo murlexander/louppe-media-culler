@@ -31,24 +31,6 @@ struct MetadataPanel: View {
     @State private var filenamePlanningCancelFlag:
         SourceOrganizationPlanningCancelFlag?
     @FocusState private var filenameIsFocused: Bool
-    @AppStorage(CameraQualityWarningPreferences.Keys.isEnabled)
-    private var cameraQualityWarningsEnabled = true
-    @AppStorage(CameraQualityWarningPreferences.Keys.isHighISOEnabled)
-    private var highISOWarningEnabled = true
-    @AppStorage(CameraQualityWarningPreferences.Keys.isSlowShutterEnabled)
-    private var slowShutterWarningEnabled = true
-    @AppStorage(CameraQualityWarningPreferences.Keys.isClippingEnabled)
-    private var clippingWarningEnabled = true
-    @AppStorage(CameraQualityWarningPreferences.Keys.highISOThreshold)
-    private var highISOWarningThreshold =
-        CameraQualityWarningPreferences.defaultHighISOThreshold
-    @AppStorage(CameraQualityWarningPreferences.Keys.slowShutterThreshold)
-    private var slowShutterWarningThreshold =
-        CameraQualityWarningPreferences.defaultSlowShutterThreshold
-    @AppStorage(CameraQualityWarningPreferences.Keys.clippingPercentageThreshold)
-    private var clippingWarningThreshold =
-        CameraQualityWarningPreferences.defaultClippingPercentageThreshold
-
     private struct MetadataLoadID: Hashable {
         let contentRevision: PhotoContentRevision
         let isMultipleSelection: Bool
@@ -124,32 +106,6 @@ struct MetadataPanel: View {
     private var displayedAudioLevelsLoadFailed: Bool {
         audioLevelsRevision == item.contentRevision
             && audioLevelsLoadFailed
-    }
-
-    private var cameraQualityWarningPreferences: CameraQualityWarningPreferences {
-        CameraQualityWarningPreferences(
-            isEnabled: cameraQualityWarningsEnabled,
-            isHighISOEnabled: highISOWarningEnabled,
-            isSlowShutterEnabled: slowShutterWarningEnabled,
-            isClippingEnabled: clippingWarningEnabled,
-            highISOThreshold: highISOWarningThreshold,
-            slowShutterThreshold: slowShutterWarningThreshold,
-            clippingPercentageThreshold: clippingWarningThreshold
-        )
-    }
-
-    private var cameraQualityCuesRow: CameraQualityCuesRow {
-        CameraQualityCuesRow(
-            item: item,
-            analysis: displayedHistogram,
-            analysisSource: displayedHistogramSource,
-            isRawAnalysisPending: displayedRawHistogramIsPending,
-            preferences: cameraQualityWarningPreferences
-        )
-    }
-
-    private var showsCameraQualityCues: Bool {
-        cameraQualityCuesRow.isVisible
     }
 
     private var cameraName: String? {
@@ -358,6 +314,7 @@ struct MetadataPanel: View {
 
         if showsHistogram {
             HistogramSection(
+                item: item,
                 analysis: displayedHistogram,
                 source: displayedHistogramSource,
                 loadFailed: displayedHistogramLoadFailed,
@@ -365,7 +322,9 @@ struct MetadataPanel: View {
             )
         }
 
-        if showsHistogram
+        QualityCueDetailsView(store: store, item: item)
+
+        if (showsHistogram || !store.qualityCues(for: item).isEmpty)
             && (hasCameraLensInfo || hasShootingInfo || !otherFields.isEmpty) {
             Divider()
         }
@@ -378,7 +337,7 @@ struct MetadataPanel: View {
             Divider()
         }
 
-        if hasShootingInfo || showsCameraQualityCues {
+        if hasShootingInfo {
             VStack(spacing: 12) {
                 if !primaryShootingFields.isEmpty {
                     metadataRow(primaryShootingFields, showLabels: false, emphasized: true)
@@ -386,13 +345,10 @@ struct MetadataPanel: View {
                 if !secondaryShootingFields.isEmpty {
                     metadataRow(secondaryShootingFields)
                 }
-                if showsCameraQualityCues {
-                    cameraQualityCuesRow
-                }
             }
         }
 
-        if (hasShootingInfo || showsCameraQualityCues) && !otherFields.isEmpty {
+        if hasShootingInfo && !otherFields.isEmpty {
             Divider()
         }
 

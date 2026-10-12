@@ -20,11 +20,12 @@ final class DuplicateBurstAnalysisTests: XCTestCase {
         XCTAssertEqual(store.visibleIndices, [0, 1])
 
         store.setBurstGroupingInterval(10)
+        try await waitForAnalysis(store)
         XCTAssertEqual(store.visibleIndices, [0, 1, 2])
         store.filter.excludedTypes = ["PNG"]
         XCTAssertEqual(store.visibleIndices, [0, 1])
         XCTAssertEqual(store.visibleGroups.first?.title,
-                       "Capture burst · 2 items · close capture times")
+                       "Capture burst · 2 items · close photo dates · inferred dates (2 of 3 shown)")
         store.filter.excludedTypes = []
         XCTAssertEqual(store.visibleIndices, [0, 1, 2])
 
@@ -41,6 +42,84 @@ final class DuplicateBurstAnalysisTests: XCTestCase {
         XCTAssertEqual(store.visibleIndices, [1, 2])
         store.exitGroupedReview()
         XCTAssertEqual(store.visibleIndices, [0, 1, 2])
+    }
+
+    @MainActor
+    func testClearingPendingBurstsCannotRestoreTheFilter() async throws {
+        let store = SessionStore()
+        store.items = [item(id: "A.JPG", captureDate: Date()), item(id: "B.JPG", captureDate: Date())]
+        store.phase = .ready
+        store.rebuildDerivedDataForTesting()
+        store.enterGroupedReview(.captureBursts)
+        store.exitGroupedReview()
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(store.groupedReviewMode, .off)
+        XCTAssertFalse(store.isDuplicateBurstAnalysisRunning)
+        XCTAssertEqual(store.visibleIndices, [0, 1])
+    }
+
+    @MainActor
+    func testNavigationDuringBurstRequestDoesNotStealCurrentPhoto() async throws {
+        let store = SessionStore()
+        let date = Date(timeIntervalSince1970: 100)
+        store.items = [item(id: "A.JPG", captureDate: date), item(id: "B.JPG", captureDate: date),
+                       item(id: "C.JPG", captureDate: date.addingTimeInterval(100))]
+        store.phase = .ready
+        store.rebuildDerivedDataForTesting()
+        store.enterGroupedReview(.captureBursts)
+        store.setIndex(2)
+        try await waitForAnalysis(store)
+        XCTAssertEqual(store.currentIndex, 2)
+        XCTAssertEqual(store.groupedReviewMode, .off)
+        XCTAssertEqual(store.visibleIndices, [0, 1, 2])
+        // A later explicit request reuses the ready metadata.
+        store.enterGroupedReview(.captureBursts)
+        XCTAssertEqual(store.groupedReviewMode, .captureBursts)
+        XCTAssertEqual(store.visibleIndices, [0, 1])
+    }
+
+    func testNewestFirstOrdersBurstsAndTheirMembers() throws {
+        let date = Date(timeIntervalSince1970: 100)
+        let items = [item(id: "A.JPG", captureDate: date),
+                     item(id: "B.JPG", captureDate: date.addingTimeInterval(1)),
+                     item(id: "C.JPG", captureDate: date.addingTimeInterval(10)),
+                     item(id: "D.JPG", captureDate: date.addingTimeInterval(11))]
+        let sort = PhotoSort(key: .captureDate, ascending: false)
+        var index = PreparedSessionIndex()
+        index.rebuildItems(items, sort: sort)
+        index.applyFilter(PhotoFilter(), to: items, sort: sort, isGroupingEnabled: true)
+        index.applyGroupedReview([
+            .init(id: "first", mode: .captureBursts, itemIDs: ["A.JPG", "B.JPG"]),
+            .init(id: "second", mode: .captureBursts, itemIDs: ["C.JPG", "D.JPG"])
+        ], to: items)
+        XCTAssertEqual(index.visibleIndices, [3, 2, 1, 0])
+        XCTAssertEqual(index.visibleGroups.map(\.indices), [[3, 2], [1, 0]])
+    }
+
+    @MainActor
+    func testLatestBurstIntervalWinsAndCancelKeepsCompletedMembership() async throws {
+        let store = SessionStore()
+        let start = Date(timeIntervalSince1970: 100)
+        store.items = (0..<1000).map { i in
+            item(id: String(format: "%04d.JPG", i),
+                 captureDate: start.addingTimeInterval(Double(i/2)*4 + Double(i%2)*0.25))
+        }
+        store.phase = .ready
+        store.rebuildDerivedDataForTesting()
+        store.enterGroupedReview(.captureBursts)
+        try await waitForAnalysis(store)
+        XCTAssertEqual(store.visibleGroups.count, 500)
+        store.setBurstGroupingInterval(10)
+        store.setBurstGroupingInterval(0.5)
+        try await waitForAnalysis(store)
+        XCTAssertEqual(store.burstGroupingInterval, 0.5)
+        XCTAssertEqual(store.visibleGroups.count, 500)
+        store.setBurstGroupingInterval(10)
+        store.cancelDuplicateBurstAnalysis()
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(store.burstGroupingInterval, 0.5)
+        XCTAssertEqual(store.visibleGroups.count, 500)
+        XCTAssertEqual(store.duplicateBurstAnalysisState, .ready)
     }
 
     @MainActor
@@ -223,6 +302,122 @@ final class DuplicateBurstAnalysisTests: XCTestCase {
         XCTAssertEqual(index.visibleGroups.first?.title, "Exact duplicates · 2 items · matching file fingerprints")
     }
 
+    func testMetadataOnlyBurstRequestNeverHashesOrDecodesAndCannotSatisfyOtherModes() throws {
+        let probe = BurstFileAccessProbe()
+        let start = Date(timeIntervalSince1970: 1_000)
+        // Equal sizes force the full-analysis hash path. Invalid paths would
+        // otherwise hide accidental reads behind ordinary failure fallbacks.
+        let inputs = ["A", "B"].enumerated().map { index, id in
+            let url = URL(fileURLWithPath: "/nonexistent/burst-sentinel/\(id).JPG")
+            return DuplicateBurstAnalysis.Input(
+                id: id, mediaKind: .photo,
+                captureDate: start.addingTimeInterval(Double(index)),
+                exactFiles: [.init(reviewItemID: id, url: url, fileSize: 1)],
+                visualFiles: [.init(url: url)]
+            )
+        }
+        let access = DuplicateBurstAnalysis.FileAccess(
+            exactDigest: { _ in probe.recordHash(); return "sentinel" },
+            visualHash: { _ in probe.recordDecode(); return 0 }
+        )
+        let result = try DuplicateBurstAnalysis.analyze(
+            inputs, mode: .captureBursts, fileAccess: access
+        )
+        XCTAssertEqual(probe.hashCount, 0)
+        XCTAssertEqual(probe.decodeCount, 0)
+        XCTAssertEqual(result.analyzedExactFileCount, 0)
+        XCTAssertEqual(result.analyzedVisualPhotoCount, 0)
+        XCTAssertTrue(result.supports(.captureBursts))
+        XCTAssertFalse(result.supports(.exactDuplicates))
+        XCTAssertFalse(result.supports(.likelySimilarPhotos))
+        XCTAssertEqual(result.groups(
+            for: .captureBursts, visualDistance: 8, burstInterval: 2
+        ).map(\.itemIDs), [["A", "B"]])
+        _ = try DuplicateBurstAnalysis.analyze(inputs, fileAccess: access)
+        XCTAssertEqual(probe.hashCount, 2, "the sentinel must detect the real hash path")
+        XCTAssertEqual(probe.decodeCount, 2, "the sentinel must detect the real preview path")
+    }
+
+    func testCaptureOrderKeepsSubsecondsAndUsesStableIdentityOnlyForTrueTies() throws {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let result = try DuplicateBurstAnalysis.analyze([
+            burstInput(id: "A", date: start.addingTimeInterval(0.7)),
+            burstInput(id: "Z", date: start.addingTimeInterval(0.1)),
+            burstInput(id: "B", date: start.addingTimeInterval(0.7)),
+        ], mode: .captureBursts)
+        XCTAssertEqual(result.groups(
+            for: .captureBursts, visualDistance: 8, burstInterval: 2
+        ).map(\.itemIDs), [["Z", "A", "B"]])
+    }
+
+    func testAdjacentGapIsInclusiveAndDoesNotIdentifySeparateShutterPresses() throws {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let result = try DuplicateBurstAnalysis.analyze([
+            burstInput(id: "first-press-1", date: start),
+            burstInput(id: "first-press-2", date: start.addingTimeInterval(1)),
+            burstInput(id: "second-press", date: start.addingTimeInterval(3)),
+            burstInput(id: "third-press-1", date: start.addingTimeInterval(5.01)),
+            burstInput(id: "third-press-2", date: start.addingTimeInterval(6)),
+        ], mode: .captureBursts)
+        XCTAssertEqual(result.groups(
+            for: .captureBursts, visualDistance: 8, burstInterval: 2
+        ).map(\.itemIDs), [
+            ["first-press-1", "first-press-2", "second-press"],
+            ["third-press-1", "third-press-2"],
+        ])
+    }
+
+    func testMissingDatesAndNonPhotosAreExcludedAndImportedDatesStayInferred() throws {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let inputs = [
+            burstInput(id: "camera-a", date: start, source: .exifOriginal),
+            burstInput(id: "camera-b", date: start.addingTimeInterval(0.25), source: .exifOriginal),
+            burstInput(id: "import-date", date: start.addingTimeInterval(0.5), source: .fileCreation),
+            burstInput(id: "missing", date: nil),
+            burstInput(id: "movie", date: start, mediaKind: .video),
+        ]
+        let result = try DuplicateBurstAnalysis.analyze(inputs, mode: .captureBursts)
+        let groups = result.groups(for: .captureBursts, visualDistance: 8, burstInterval: 2)
+        XCTAssertEqual(result.burstCandidates.count, 3)
+        XCTAssertEqual(groups.map(\.itemIDs), [["camera-a", "camera-b", "import-date"]],
+                       "metadata gaps do not partition cameras or identify shutter presses")
+        XCTAssertEqual(groups.first?.captureDateNote, "inferred dates")
+    }
+
+    func testCaptureBurstGroupingMeasurement() throws {
+        for count in [1_000, 10_000, 100_000] {
+            let start = Date(timeIntervalSince1970: 1_000)
+            let inputs = (0..<count).reversed().map { index in
+                burstInput(id: String(format: "%06d", index),
+                           date: start.addingTimeInterval(Double(index / 2) * 4 + Double(index % 2) * 0.25),
+                           source: .exifOriginal)
+            }
+            let analysisStart = Date()
+            let result = try DuplicateBurstAnalysis.analyze(inputs, mode: .captureBursts)
+            let analysisTime = Date().timeIntervalSince(analysisStart)
+            let groupStart = Date()
+            let groups = result.groups(for: .captureBursts, visualDistance: 8, burstInterval: 2)
+            let groupTime = Date().timeIntervalSince(groupStart)
+            let sensitivityStart = Date()
+            let updated = result.groups(for: .captureBursts, visualDistance: 8, burstInterval: 0.5)
+            let sensitivityTime = Date().timeIntervalSince(sensitivityStart)
+            print("Capture groups \(count): metadata \(analysisTime)s; initial \(groupTime)s; sensitivity \(sensitivityTime)s")
+            XCTAssertEqual(groups.count, count / 2)
+            XCTAssertEqual(updated.count, count / 2)
+        }
+    }
+
+    private func burstInput(
+        id: String,
+        date: Date?,
+        source: CaptureDateEvidence.Source = .unspecified,
+        mediaKind: MediaKind = .photo
+    ) -> DuplicateBurstAnalysis.Input {
+        .init(id: id, mediaKind: mediaKind, captureDate: date,
+              captureDateEvidence: date.map { CaptureDateEvidence(date: $0, source: source) },
+              exactFiles: [], visualFiles: [])
+    }
+
     private func input(
         id: String,
         exactFiles: [DuplicateBurstAnalysis.ExactFile]
@@ -247,4 +442,14 @@ final class DuplicateBurstAnalysisTests: XCTestCase {
             fileSize: 1
         )
     }
+}
+
+private final class BurstFileAccessProbe: @unchecked Sendable {
+    private let lock = NSLock()
+    private var hashes = 0
+    private var decodes = 0
+    var hashCount: Int { lock.withLock { hashes } }
+    var decodeCount: Int { lock.withLock { decodes } }
+    func recordHash() { lock.withLock { hashes += 1 } }
+    func recordDecode() { lock.withLock { decodes += 1 } }
 }

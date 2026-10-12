@@ -133,10 +133,9 @@ private struct BrowserRow: View {
                     RatingBadge(
                         rating: item.rating,
                         isMixed: item.hasMixedRatings,
-                        size: 18
+                        size: TileBadgeLayout.height
                     )
-                    .frame(width: 28, height: 28)
-                    .padding(3)
+                    .padding(TileBadgeLayout.inset)
                 }
                 .onTapGesture {
                     // ⇧-click: range · ⌘-click: add/remove · click: jump.
@@ -163,6 +162,10 @@ private struct BrowserRow: View {
                         store.toggleSelection(of: index)
                     }
                 )
+                .overlay(alignment: .bottomLeading) {
+                    QualityCueTileIcons(store: store, item: item)
+                        .padding(TileBadgeLayout.inset)
+                }
             }
             // Keep the String identity as the follow-scroll target.
             .id(item.id)

@@ -127,7 +127,7 @@
 "Bridge reads sidecar stars, colors, and Louppe decision keywords." = "Bridge lee las estrellas, colores y palabras clave de decisiones de Louppe de los archivos auxiliares.";
 "Broad" = "Amplio";
 "Build sortable filenames from capture metadata." = "Construir nombres de archivo clasificables de metadatos de captura.";
-"Burst interval" = "Intervalo de Burst";
+"Burst interval" = "Intervalo de ráfaga";
 "Calculating histogram" = "Calculando histograma";
 "Camera" = "Cámara";
 "Camera metadata" = "Metadatos de cámara";
@@ -147,10 +147,10 @@
 "Capture Bursts" = "Capture Bursts";
 "Capture One" = "Capture One";
 "Capture One may need XMP Auto Sync or a manual metadata reload." = "Capture One puede requerir XMP Auto Sync o una recarga manual de metadatos.";
-"Capture burst interval" = "Intervalo de explosión de captura";
+"Capture burst interval" = "Intervalo de ráfaga";
 "Capture burst · {0} {1} · close capture times" = "Ráfaga · {0} {1} · tiempos de captura cercanos";
-"Capture bursts" = "ráfagas de captura";
-"Captured" = "Captured";
+"Capture bursts" = "Ráfagas";
+"Captured" = "Capturada";
 "Change Yes/No decision" = "Cambio Sí/No hay decisión";
 "Change decision" = "Decisión sobre el cambio";
 "Change decision for {0}" = "Cambio de decisión para {0}";
@@ -415,7 +415,7 @@
 "Hide Media Information" = "Ocultar información multimedia";
 "Hide Preview Clipping Overlay" = "Ocultar vista previa Clipping Overlay";
 "Hide this tip. See Help > Louppe Help for shortcuts." = "Ocultar este consejo. Ver Ayuda Louppe Ayuda para atajos.";
-"High ISO" = "Alta ISO";
+"High ISO" = "ISO alto";
 "High ISO threshold" = "Alto umbral ISO";
 "Highest first" = "Más alto primero";
 "Highlight clipping" = "Recortado de alta luz";
@@ -727,7 +727,7 @@
 "Purple" = "Morado";
 "Purple to Red" = "Púrpura a Rojo";
 "Quality Cues" = "Indicadores de calidad";
-"Quality cues" = "Cuos de calidad";
+"Quality cues" = "Indicadores de calidad";
 "Quick Start and supported formats" = "Inicio rápido y formatos compatibles";
 "Quick picks" = "Escoge rápido";
 "Quit Without Saving" = "Salir sin guardar";
@@ -929,7 +929,7 @@
 "Show or hide media information (W)" = "Mostrar o ocultar información de los medios (W)";
 "Show or hide the Browser in the Gallery view (Q)" = "Mostrar o ocultar el Navegador en la vista de la galería (Q)";
 "Show or hide the red preview clipping overlay (X)" = "Mostrar o ocultar el recubrimiento rojo de la vista previa (X)";
-"Show quality cues" = "Mostrar fichas de calidad";
+"Show quality cues" = "Mostrar indicadores de calidad";
 "Show quick-start tips while reviewing" = "Mostrar consejos de arranque rápido mientras se revisa";
 "Show the folder in its normal filtered and sorted order." = "Muestra la carpeta en su orden normal, filtrado y ordenado.";
 "Show the full folder again" = "Mostrar toda la carpeta otra vez";
@@ -950,7 +950,7 @@
 "Skip back 15 seconds" = "Retroceda 15 segundos";
 "Skip forward 15 seconds" = "Pasar adelante 15 segundos";
 "Skipped" = "Omitidos";
-"Slow shutter" = "Cierre lento";
+"Slow shutter" = "Obturación lenta";
 "Slow shutter threshold in seconds" = "Umbral de cierre lento en segundos";
 "Slowest first" = "Slowest first";
 "Smaller Grid Thumbnails" = "Más pequeño Grid Thumbnails";
@@ -1491,3 +1491,127 @@
 "{0} dBFS" = "{0} dBFS";
 "{0} seconds" = "{0} segundos";
 "{0} s" = "{0} s";
+
+/* Quality cues, capture bursts, and date evidence. */
+" ({0} of {1} shown)" = " (se muestran {0} de {1})";
+"% or above" = "% o más";
+"Capture burst · {0} {1} · close photo dates" = "Ráfaga · {0} {1} · fechas de fotos próximas";
+"Checked" = "Comprobado";
+"Checking photo dates…" = "Comprobando fechas de las fotos…";
+"Checking…" = "Comprobando…";
+"Consecutive photo date gaps ≤ this interval. Separate shutter presses and cameras can merge. Inferred dates are labeled; no shutter-press identifier is read." = "Agrupa fotos consecutivas con diferencias de tiempo ≤ este intervalo. Pueden agruparse pulsaciones del disparador y cámaras distintas. Las fechas inferidas se indican; no se lee ningún identificador de pulsación del disparador.";
+"Date precision" = "Precisión de la fecha";
+"Date source" = "Origen de la fecha";
+"Date source unverified" = "Origen de la fecha sin verificar";
+"Date timezone" = "Zona horaria de la fecha";
+"EXIF digitized time" = "Hora de digitalización EXIF";
+"EXIF original capture time" = "Hora de captura original EXIF";
+"File creation date · inferred capture time" = "Fecha de creación del archivo · hora de captura inferida";
+"Groups consecutive photo dates within the chosen gap. File creation dates are inferred; separate shutter presses and cameras can mix." = "Agrupa fotos consecutivas cuyas fechas están dentro del intervalo elegido. Las fechas de creación de archivos se usan como fechas inferidas; pueden mezclarse pulsaciones del disparador y cámaras distintas.";
+"ISO and shutter are camera clues, not measured noise or blur. Missing fields are not a clean result." = "El ISO y el obturador son indicios de la cámara, no mediciones de ruido o desenfoque. La ausencia de campos no indica un resultado sin problemas.";
+"Image measurement unavailable. Try Rescan Folder if the file changed." = "Medición de imagen no disponible. Prueba Volver a escanear carpeta si el archivo ha cambiado.";
+"Image measurements: {0} of {1} photos. Missing metadata or RAW fallback gives partial coverage." = "Mediciones de imagen: {0} de {1} fotos. Los metadatos ausentes o la alternativa a RAW dan una cobertura parcial.";
+"Inspect clipping in Gallery" = "Inspeccionar recorte tonal en Galería";
+"Inspect in Info" = "Inspeccionar en Información";
+"Linear luminance ≤ 0.002 / ≥ 0.995; Apple Default RAW decode." = "Luminancia lineal ≤ 0.002 / ≥ 0.995; decodificación RAW Apple Default.";
+"Match any selected cue; other filters still apply." = "Coincide con cualquiera de los indicadores seleccionados; los demás filtros siguen aplicándose.";
+"Measured ISO {0}; threshold ≥ ISO {1}." = "ISO medido: {0}; umbral ≥ ISO {1}.";
+"Measured {0} s; threshold ≥ {1} s." = "Medido: {0} s; umbral ≥ {1} s.";
+"Measured {0}%; threshold ≥ {1}%." = "Medido: {0}%; umbral ≥ {1}%.";
+"Near-black area" = "Área casi negra";
+"Near-black area threshold in percent" = "Umbral del área casi negra en porcentaje";
+"Near-white area" = "Área casi blanca";
+"Near-white area threshold in percent" = "Umbral del área casi blanca en porcentaje";
+"No UTC offset; assumed {0}" = "Sin desfase UTC; se ha supuesto {0}";
+"No enabled cue matches. This is not a quality verdict." = "No coincide ningún indicador activado. Esto no es un veredicto de calidad.";
+"Partial coverage" = "Cobertura parcial";
+"Pause checks" = "Pausar comprobaciones";
+"Photo cues only. This media type has not been analyzed." = "Solo indicadores de fotos. Este tipo de contenido no se ha analizado.";
+"Photo dates: {0} of {1}; {2} inferred. Missing dates are excluded." = "Fechas de fotos: {0} de {1}; {2} inferidas. Se excluyen las fotos sin fecha.";
+"Quality cues disabled" = "Indicadores de calidad desactivados";
+"Quality cues for {0}. {1}. {2}" = "Indicadores de calidad de {0}. {1}. {2}";
+"RAW measurement unavailable; preview evidence only." = "Medición RAW no disponible; solo evidencia de la vista previa.";
+"Recorded date/time" = "Fecha y hora registradas";
+"Rendered image estimate — measured from a scaled rendered preview." = "Estimación de imagen renderizada: medida a partir de una vista previa renderizada y escalada.";
+"Resume checks" = "Reanudar comprobaciones";
+"Rules" = "Reglas";
+"Show capture bursts" = "Mostrar ráfagas";
+"Subseconds: 0.{0} s" = "Fracción de segundo: 0.{0} s";
+"TIFF date/time" = "Fecha y hora TIFF";
+"Unchecked" = "Sin comprobar";
+"Whole image, scaled to {0}. Near-black / near-white samples: {1}. {2}" = "Imagen completa, escalada a {0}. Muestras casi negras / casi blancas: {1}. {2}";
+"Whole seconds only; equal-time order uses filename identity" = "Solo segundos enteros; los tiempos iguales se ordenan por la identidad del nombre de archivo";
+"inferred dates" = "fechas inferidas";
+"sRGB luminance 0–5 / 250–255; rendered preview." = "Luminancia sRGB 0–5 / 250–255; vista previa renderizada.";
+
+/* Quality cues, capture bursts, and date evidence. */
+"Checks found matching photos. Select one to continue reviewing." = "Las comprobaciones encontraron fotos coincidentes. Selecciona una para seguir revisando.";
+"Choose a matching item" = "Elige un elemento coincidente";
+
+"Saved decisions for {0} files need checking. You can keep reviewing; previous decisions are preserved." = "Hay que comprobar las decisiones guardadas de {0} archivos. Puedes seguir revisando; las decisiones anteriores se conservan.";
+
+"Restored saved decisions for {0} identical files." = "Se restauraron las decisiones guardadas de {0} archivos idénticos.";
+
+"File unavailable" = "Archivo no disponible";
+
+"Current decisions kept" = "Se conservan las decisiones actuales";
+
+"Could not check file" = "No se pudo comprobar el archivo";
+
+"Older session: confirmation needed" = "Sesión anterior: requiere confirmación";
+
+"Waiting for content check" = "Esperando la comprobación del contenido";
+
+"Identical contents" = "Contenido idéntico";
+
+"File contents changed" = "El contenido del archivo cambió";
+
+"Checking file contents: {0} of {1}" = "Comprobando contenido: {0} de {1}";
+
+"Check and Restore…" = "Comprobar y restaurar…";
+
+"Check Saved Decisions" = "Comprobar decisiones guardadas";
+
+"Identical copies restore automatically. Older sessions need your confirmation. Current decisions are kept, and previous decisions remain in recovery history." = "Las copias idénticas se restauran automáticamente. Las sesiones anteriores necesitan tu confirmación. Se conservan las decisiones actuales y las anteriores quedan en el historial de recuperación.";
+
+"Previous decisions" = "Decisiones anteriores";
+
+"No saved decisions need attention." = "Ninguna decisión guardada necesita atención.";
+
+"I confirm the selected files are the same photos or videos." = "Confirmo que los archivos seleccionados son las mismas fotos o vídeos.";
+
+"Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files." = "La restauración aplica las decisiones anteriores seleccionadas solo a los archivos que no has revisado. No modifica los archivos multimedia.";
+
+"Keep Current Decisions" = "Conservar decisiones actuales";
+
+"Restore Selected Decisions" = "Restaurar decisiones seleccionadas";
+
+"Content checks paused" = "Comprobación del contenido en pausa";
+
+"Resume Checks" = "Reanudar comprobación";
+
+"Previous decisions are preserved." = "Se conservan las decisiones anteriores.";
+
+"Recovery History" = "Historial de recuperación";
+
+"Restored or kept in history" = "Restaurado o conservado en el historial";
+
+"Dismiss notification" = "Descartar notificación";
+
+"Check Saved Decisions…" = "Comprobar decisiones guardadas…";
+
+"No enabled cues." = "Ningún indicio activo.";
+
+"Measurement details" = "Detalles de medición";
+
+"ISO and shutter use camera settings, not measured noise or blur. Near-white and near-black cues estimate image areas from a scaled RAW decode or preview." = "ISO y obturación usan ajustes de cámara, no mediciones de ruido o desenfoque. Los indicios de zonas casi blancas y casi negras estiman áreas a partir de un RAW reducido o una vista previa.";
+
+"Luminance histogram" = "Histograma de luminancia";
+
+"Quality cues for {0}" = "Indicios de calidad de {0}";
+
+"Restore defaults for {0}" = "Restaurar valores predeterminados de {0}";
+
+"Time zone" = "Zona horaria";
+
+"{0} · estimated" = "{0} · estimada";
