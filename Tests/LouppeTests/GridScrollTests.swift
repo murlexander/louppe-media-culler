@@ -80,23 +80,35 @@ final class GridScrollTests: XCTestCase {
                     .environment(\.displayScale, scale))
                 let window = mountedWindow(host)
                 defer { window.close() }
-                for width in [CGFloat(620), 1100] {
-                    window.setContentSize(NSSize(width: width, height: 800))
-                    for thumbnailSize in [CGFloat(170), 400] {
-                        store.gridThumbSize = thumbnailSize
-                        try await settle(host)
-                        let grid = try XCTUnwrap(descendants(host).compactMap { $0 as? SessionRenderMarker.MarkerView }
-                            .first { $0.kind == .grid })
-                        // Identify Grid by its actual tile surfaces, excluding Info.
-                        let scroll = try XCTUnwrap(descendants(host).compactMap { $0 as? NSScrollView }
-                            .first { descendants($0).contains { $0 is GridImmediateClickSurface.ClickView } })
-                        XCTAssertEqual(scroll.frame.width, grid.frame.width, accuracy: 0.5,
-                                       "Short content must retain the full native pane width")
-                        assertVerticalViewport(scroll)
-                        if count == 1 {
-                            XCTAssertLessThanOrEqual(scroll.documentView!.frame.height - scroll.contentView.bounds.height,
-                                                     1 / scale + 0.1,
-                                                     "The short-grid workaround must add at most one backing pixel")
+                for height in [CGFloat(600), 800] {
+                    for width in [CGFloat(620), 1100] {
+                        window.setContentSize(NSSize(width: width, height: height))
+                        for thumbnailSize in [CGFloat(170), 400] {
+                            store.gridThumbSize = thumbnailSize
+                            try await settle(host)
+                            let grid = try XCTUnwrap(descendants(host).compactMap { $0 as? SessionRenderMarker.MarkerView }
+                                .first { $0.kind == .grid })
+                            // Identify Grid by its actual tile surfaces, excluding Info.
+                            let scroll = try XCTUnwrap(descendants(host).compactMap { $0 as? NSScrollView }
+                                .first { descendants($0).contains { $0 is GridImmediateClickSurface.ClickView } })
+                            XCTAssertEqual(scroll.frame.width, grid.frame.width, accuracy: 0.5,
+                                           "Short content must retain the full native pane width")
+                            assertVerticalViewport(scroll)
+                            if count == 1 {
+                                let document = try XCTUnwrap(scroll.documentView)
+                                let contentBottom = try XCTUnwrap(descendants(scroll)
+                                    .compactMap { $0 as? GridImmediateClickSurface.ClickView }
+                                    .filter { !$0.isHiddenOrHasHiddenAncestor && !$0.visibleRect.isEmpty }
+                                    .map { $0.convert($0.bounds, to: document).maxY }.max())
+                                // A large single tile can exceed a shorter screen's
+                                // actual viewport. Its caption plus 12pt bottom
+                                // padding still needs real vertical scroll range.
+                                let minimumHeight = scroll.contentView.bounds.height + 1 / scale
+                                let contentHeight = contentBottom + 12
+                                XCTAssertEqual(document.frame.height, max(minimumHeight, contentHeight),
+                                               accuracy: 1 / scale + 0.1,
+                                               "Only content or the one-pixel guard may add vertical range: \(direction), requested \(width)x\(height), thumbnail \(thumbnailSize)")
+                            }
                         }
                     }
                 }

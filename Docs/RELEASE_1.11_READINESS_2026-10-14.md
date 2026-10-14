@@ -3,7 +3,7 @@
 One-time readiness check started 14 October 2026 at 12:44 America/Toronto.
 All four coding chats completed; source stability was reconfirmed after native QA.
 
-Status: implementation and final automated validation are complete. Signed direct
+Status: implementation and local automated validation are complete. Signed direct
 and Store candidates are prepared locally. Direct notarization/stapling is blocked:
 the documented `louppe-notary` Keychain profile is missing. No release or Store
 submission has been published. The exact source commit, artifact checksums,
@@ -52,6 +52,17 @@ Fresh checks against unchanged production sources:
   installer payload has the correct team, three sandbox/bookmark entitlements,
   privacy/licenses and no Sparkle/feed. Apple MacDistributionInstaller policy
   validation and exact signed/payload comparison pass in the packaging script.
+
+The first pushed CI run failed only the short-Grid test's unconditional vertical
+range bound. CI's shorter viewport can legitimately need six points of vertical
+scrolling for a 400-point-thumbnail row. A 600-point local window reproduced the
+same assumption with 31 points of required range. The regression now checks the
+measured tile/caption height plus the existing bottom padding, while retaining
+strict zero horizontal travel and the one-pixel guard when content fits. Native
+Grid tests pass at both 600- and 800-point requested heights. This follow-up
+changes tests and this record only; prepared application bytes remain unchanged.
+The local manifest records both the application-source and final validation
+commits, retaining the failed CI attempt.
 
 Supporting implementation records:
 
