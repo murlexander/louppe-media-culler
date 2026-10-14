@@ -9,6 +9,7 @@ import SwiftUI
 struct GridView: View {
     @ObservedObject var store: SessionStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.displayScale) private var displayScale
 
     /// The native scrollbar thumb is inset within its reserved gutter. A
     /// slightly smaller trailing content inset makes the visible photo-to-thumb
@@ -50,104 +51,115 @@ struct GridView: View {
 
     private var grid: some View {
         GeometryReader { geometry in
-            ScrollViewReader { proxy in
-                ScrollView {
-                    if store.items.isEmpty {
-                        SessionEmptyView(
-                            reason: store.emptySessionReason,
-                            canUndo: store.canUndo
-                        )
-                        .padding(.top, 80)
-                    } else if store.visibleIndices.isEmpty
-                                && store.isGroupedReviewActive {
-                        ContentUnavailableView(
-                            store.groupedReviewEmptyTitle,
-                            systemImage: "rectangle.3.group",
-                            description: Text(store.groupedReviewEmptyDescription)
-                        )
-                        .padding(.top, 80)
-                    } else if store.visibleIndices.isEmpty
-                                && store.filter.isActive {
-                        ContentUnavailableView {
-                            Label(L10n.text("No items match the filter"), systemImage: "line.3.horizontal.decrease.circle")
-                        } description: {
-                            Text(L10n.text("Change or clear filters to show media."))
-                        } actions: {
-                            Button(L10n.text("Clear Filters")) { store.resetFilter() }
-                        }
-                        .padding(.top, 80)
+            Group {
+                if store.items.isEmpty {
+                    SessionEmptyView(
+                        reason: store.emptySessionReason,
+                        canUndo: store.canUndo
+                    )
+                    .padding(.top, 80)
+                } else if store.visibleIndices.isEmpty
+                            && store.isGroupedReviewActive {
+                    ContentUnavailableView(
+                        store.groupedReviewEmptyTitle,
+                        systemImage: "rectangle.3.group",
+                        description: Text(store.groupedReviewEmptyDescription)
+                    )
+                    .padding(.top, 80)
+                } else if store.visibleIndices.isEmpty
+                            && store.filter.isActive {
+                    ContentUnavailableView {
+                        Label(L10n.text("No items match the filter"), systemImage: "line.3.horizontal.decrease.circle")
+                    } description: {
+                        Text(L10n.text("Change or clear filters to show media."))
+                    } actions: {
+                        Button(L10n.text("Clear Filters")) { store.resetFilter() }
                     }
-                    // One lazy grid gives SwiftUI one stable row-height model.
-                    // Nesting a separate LazyVGrid for every day inside a
-                    // LazyVStack made off-screen day heights estimates; those
-                    // estimates were corrected while scrolling upward or
-                    // after a thumbnail resize, visibly moving the viewport.
-                    LazyVGrid(columns: columns, spacing: 10) {
-                        ForEach(store.visibleGroups) { group in
-                            Section {
-                                ForEach(group.indices, id: \.self) { index in
-                                    if store.items.indices.contains(index) {
-                                        cell(index: index, item: store.items[index])
+                    .padding(.top, 80)
+                } else {
+                    ScrollViewReader { proxy in
+                        ScrollView(.vertical) {
+                            // One lazy grid gives SwiftUI one stable row-height model.
+                            // Nesting a separate LazyVGrid for every day inside a
+                            // LazyVStack made off-screen day heights estimates; those
+                            // estimates were corrected while scrolling upward or
+                            // after a thumbnail resize, visibly moving the viewport.
+                            LazyVGrid(columns: columns, spacing: 10) {
+                                ForEach(store.visibleGroups) { group in
+                                    Section {
+                                        ForEach(group.indices, id: \.self) { index in
+                                            if store.items.indices.contains(index) {
+                                                cell(index: index, item: store.items[index])
+                                            }
+                                        }
+                                    } header: {
+                                        if let title = group.title {
+                                            HStack(spacing: 8) {
+                                                Text(title)
+                                                    .font(.caption.weight(.semibold))
+                                                    .foregroundStyle(.secondary)
+                                                    .lineLimit(1)
+                                                    .truncationMode(.middle)
+                                                    .help(title)
+                                                RoundedRectangle(cornerRadius: 1)
+                                                    .fill(.secondary.opacity(0.4))
+                                                    .frame(height: 2)
+                                            }
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 4)
+                                        }
                                     }
-                                }
-                            } header: {
-                                if let title = group.title {
-                                    HStack(spacing: 8) {
-                                        Text(title)
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                            .truncationMode(.middle)
-                                            .help(title)
-                                        RoundedRectangle(cornerRadius: 1)
-                                            .fill(.secondary.opacity(0.4))
-                                            .frame(height: 2)
-                                    }
-                                    .padding(.horizontal, 4)
-                                    .padding(.vertical, 4)
                                 }
                             }
+                            .padding(.vertical, Self.verticalPadding)
+                            .padding(.leading, Self.leadingPadding)
+                            .padding(.trailing, Self.trailingPadding)
+                            // Reserve the native gutter before adaptive columns lay out.
+                            .frame(width: max(geometry.size.width - PersistentVerticalScroller.gutterWidth, 1))
+                            // macOS shrinks a non-scrolling SwiftUI viewport to
+                            // this document's width, then subtracts the legacy
+                            // gutter again. One backing pixel keeps the vertical
+                            // viewport active without an extra row or spacer.
+                            .frame(minHeight: geometry.size.height + 1 / max(displayScale, 1), alignment: .top)
+                            .background(PersistentVerticalScroller())
+                            // Make the gaps between tiles draggable too, so a rubber band
+                            // can start anywhere in the grid.
+                            .contentShape(Rectangle())
+                            .overlay(alignment: .topLeading) { rubberBandOverlay }
+                            .coordinateSpace(name: Self.gridSpace)
+                            .simultaneousGesture(rubberBandGesture)
+                            // Mutating the box (not reassigning @State) keeps this off the
+                            // view-invalidation path — scrolling stays cheap.
+                            .onPreferenceChange(TileFrameKey.self) { tileFrames.frames = $0 }
+                        }
+                        .background(Color.appBackground)
+                        .onAppear {
+                            updateColumnCount(for: geometry.size.width)
+                            followCurrentPhoto(using: proxy, animated: false)
+                        }
+                        .onChange(of: geometry.size.width) { _, newWidth in
+                            updateColumnCount(for: newWidth)
+                        }
+                        .onChange(of: store.gridThumbSize) { _, _ in
+                            updateColumnCount(for: geometry.size.width)
+                        }
+                        // Follow the stable media identity as well as numeric index
+                        // changes: Clean Up or Move can replace an item at the same
+                        // index.
+                        .onChange(of: store.currentItem?.id) {
+                            if suppressNextFollow {
+                                suppressNextFollow = false
+                                return
+                            }
+                            followCurrentPhoto(using: proxy, animated: true)
+                        }
+                        .onDisappear {
+                            followTask?.cancel()
                         }
                     }
-                    .padding(.vertical, Self.verticalPadding)
-                    .padding(.leading, Self.leadingPadding)
-                    .padding(.trailing, Self.trailingPadding)
-                    .background(PersistentVerticalScroller())
-                    // Make the gaps between tiles draggable too, so a rubber band
-                    // can start anywhere in the grid.
-                    .contentShape(Rectangle())
-                    .overlay(alignment: .topLeading) { rubberBandOverlay }
-                    .coordinateSpace(name: Self.gridSpace)
-                    .simultaneousGesture(rubberBandGesture)
-                    // Mutating the box (not reassigning @State) keeps this off the
-                    // view-invalidation path — scrolling stays cheap.
-                    .onPreferenceChange(TileFrameKey.self) { tileFrames.frames = $0 }
-                }
-                .background(Color.appBackground)
-                .onAppear {
-                    updateColumnCount(for: geometry.size.width)
-                    followCurrentPhoto(using: proxy, animated: false)
-                }
-                .onChange(of: geometry.size.width) { _, newWidth in
-                    updateColumnCount(for: newWidth)
-                }
-                .onChange(of: store.gridThumbSize) { _, _ in
-                    updateColumnCount(for: geometry.size.width)
-                }
-                // Follow the stable media identity as well as numeric index
-                // changes: Clean Up or Move can replace an item at the same
-                // index.
-                .onChange(of: store.currentItem?.id) {
-                    if suppressNextFollow {
-                        suppressNextFollow = false
-                        return
-                    }
-                    followCurrentPhoto(using: proxy, animated: true)
-                }
-                .onDisappear {
-                    followTask?.cancel()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
     }
 

@@ -395,7 +395,9 @@ enum FolderScanner {
         filenamePolicy: PairingFilenamePolicy
     ) -> [(primary: URL, paired: URL?)] {
         var groups: [PairingFilenamePolicy.Key: [URL]] = [:]
-        for url in files.sorted(by: stableURLOrder) {
+        // Sorted stem keys and per-group paths completely determine output.
+        // Sorting the whole input first repeats work without changing a group.
+        for url in files {
             let key = filenamePolicy.key(for: url)
             groups[key, default: []].append(url)
         }
@@ -557,9 +559,8 @@ enum FolderScanner {
         )
     }
 
-    /// `PreparedSessionIndex` reuses this physical order for `PhotoSort()`.
-    /// Keep the scanner and the UI comparator literally shared so opening a
-    /// folder never needs to repeat the same large localized-name sort.
+    /// `PreparedSessionIndex` validates and caches this chronological order.
+    /// Keep the scanner and UI comparator shared, including exact name/ID ties.
     static func sortItems(_ items: [PhotoItem]) -> [PhotoItem] {
         let defaultSort = PhotoSort()
         return items.sorted(by: defaultSort.areInOrder)

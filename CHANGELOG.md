@@ -1,13 +1,36 @@
 # Version History
 
-## 1.11.0 (13) — 2026-10-12
+## 1.11.0 (13) — 2026-10-14
+
+- Audited English, Spanish, Simplified Chinese, Hindi, Brazilian Portuguese,
+  and Arabic copy. Fixed malformed counters, photographic terms, translated
+  product names, English fallbacks, accessibility labels, and localized export
+  controls. Finder service labels now use the same catalogs. Damaged templates
+  fall back safely before inserting filenames; Arabic numeric ranges retain
+  their reading order.
+
+- Replaced the bottom status strip with a floating Liquid Glass photo zoom
+  control. Save status stays in the toolbar; its popover holds filter details,
+  review completion, and tips. Older macOS versions retain a material fallback.
+  Matched zoom glass to the toolbar height, removed the autosave explainer,
+  and fixed sideways Browser/Grid scrolling caused by the scrollbar gutter,
+  including short grids that previously reserved the gutter twice.
+  Added checked Gallery/Grid choices and shortcut hints to the View menu,
+  with compact Zoom In/Out actions for Grid. Double-clicking anywhere on the
+  floating zoom control returns the photo to Fit. Menu shortcut hints also cover
+  Command Palette, Rescan, Export, Undo, Clear All Decisions, and photo sizes.
 
 - Combined Settings into one scrolling page with consistent sections, the
-  getting-started guide, version and update controls, and optional support.
+  link to the getting-started guide, version and update controls, and optional support.
   Clarified that Louppe is always free and open source.
 
 - Added optional tips: Apple in-app purchases in the App Store build and the author’s Revolut page for direct downloads.
 
+- Made Filter sections consistent, kept cue rules and a numeric burst interval
+  in Settings, and aligned links under Louppe info.
+- Made Filter disclosure headers clickable across their full padded rows.
+  Kept the getting-started guide in Help, with one Settings link and the tips toggle
+  in their own section, separate from Capture bursts.
 - Added Quality cues and Capture bursts to Filter, with consistent Browser/Grid
   badges and compact values in Info. Near-white and near-black rules have
   independent thresholds and reset controls; changing rules reuses measurements.
@@ -19,6 +42,16 @@
   cleared when background checks finish and after reopening.
 - Kept background checks bounded, paused them during file work and Quit, and
   indexed recovery lookups so ordinary decisions avoid folder-wide scans.
+- Reduced pairing and review-sort work, kept Gallery loading independent of
+  thumbnail backlog, and retired cancelled image requests. Moved group membership
+  off the UI thread, removed background RAW dwell, cached image-check coverage,
+  and made saved sessions smaller while preserving recovery and file safety.
+- Reduced quality-check bookkeeping, paced remaining-folder checks with Low Power
+  and thermal backoff, and kept Pause in effect until Resume. Prioritized Info
+  histogram requests while background checks use utility work.
+- Made large-folder Quality Cue filters faster by retaining compact numeric
+  matches and updating only newly measured photos. Rule changes and replacement
+  files invalidate matches; ordering, selection and physical ratings are preserved.
 - Updated saved sessions to format 7 to preserve recovery history; version 1.10
   cannot open sessions saved by 1.11.
 

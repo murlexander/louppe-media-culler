@@ -1,0 +1,114 @@
+{
+  "generatedAt" : "2026-10-13T02:30:09Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 0.09025,
+      "medianMS" : 0.089166,
+      "minMS" : 0.088917,
+      "name" : "snapshot.main-capture.unpaired",
+      "p95MS" : 0.09025,
+      "samplesMS" : [
+        0.09025,
+        0.08925,
+        0.089166,
+        0.089042,
+        0.089208,
+        0.089042,
+        0.088917
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.206625,
+      "medianMS" : 0.188875,
+      "minMS" : 0.181708,
+      "name" : "snapshot.detached-entry-build.unpaired",
+      "p95MS" : 0.206625,
+      "samplesMS" : [
+        0.206625,
+        0.19725,
+        0.191042,
+        0.187667,
+        0.186375,
+        0.181708,
+        0.188875
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1.326625,
+      "medianMS" : 1.113792,
+      "minMS" : 0.919083,
+      "name" : "snapshot.main-capture.unpaired",
+      "p95MS" : 1.326625,
+      "samplesMS" : [
+        0.919083,
+        1.136875,
+        1.326625,
+        0.991125,
+        1.092833,
+        1.113792,
+        1.121291
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1.542,
+      "medianMS" : 1.477666,
+      "minMS" : 1.442333,
+      "name" : "snapshot.detached-entry-build.unpaired",
+      "p95MS" : 1.542,
+      "samplesMS" : [
+        1.542,
+        1.499792,
+        1.444792,
+        1.476208,
+        1.442333,
+        1.477666,
+        1.488167
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 17.770458,
+      "medianMS" : 16.416958,
+      "minMS" : 14.642083,
+      "name" : "snapshot.main-capture.unpaired",
+      "p95MS" : 17.770458,
+      "samplesMS" : [
+        17.770458,
+        16.515709,
+        17.046542,
+        16.416958,
+        15.084791,
+        16.141875,
+        14.642083
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 16.526208,
+      "medianMS" : 14.866667,
+      "minMS" : 14.145542,
+      "name" : "snapshot.detached-entry-build.unpaired",
+      "p95MS" : 16.526208,
+      "samplesMS" : [
+        15.33,
+        15.335875,
+        16.526208,
+        14.866667,
+        14.145542,
+        14.865792,
+        14.8645
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "persistence-snapshot",
+  "warmups" : 1
+}

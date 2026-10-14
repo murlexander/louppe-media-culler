@@ -1,0 +1,182 @@
+{
+  "generatedAt" : "2026-10-13T02:39:57Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 53.554209,
+      "medianMS" : 43.080042,
+      "minMS" : 34.334833,
+      "name" : "mirrored_gallery_backlog_0_with_init_drain_cleanup",
+      "p95MS" : 53.554209,
+      "samplesMS" : [
+        34.334833,
+        34.800708,
+        38.343917,
+        43.080042,
+        50.280292,
+        53.554209,
+        52.111417
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 52.046541,
+      "medianMS" : 42.228,
+      "minMS" : 33.451542,
+      "name" : "gallery.full-ready.backlog-0",
+      "p95MS" : 52.046541,
+      "samplesMS" : [
+        33.451542,
+        33.714333,
+        37.257708,
+        42.228,
+        48.798959,
+        52.046541,
+        51.137041
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 19.000791,
+      "medianMS" : 18.157042,
+      "minMS" : 17.445625,
+      "name" : "gallery.thumbnail-ready.backlog-0",
+      "p95MS" : 19.000791,
+      "samplesMS" : [
+        17.776084,
+        17.543083,
+        18.88225,
+        19.000791,
+        18.157042,
+        17.445625,
+        18.258291
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 52.046541,
+      "medianMS" : 42.228,
+      "minMS" : 33.451542,
+      "name" : "gallery.mirrored-publication.backlog-0",
+      "p95MS" : 52.046541,
+      "samplesMS" : [
+        33.451542,
+        33.714333,
+        37.257708,
+        42.228,
+        48.798959,
+        52.046541,
+        51.137041
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 0,
+      "medianMS" : 0,
+      "minMS" : 0,
+      "name" : "gallery.delay-after-full.backlog-0",
+      "p95MS" : 0,
+      "samplesMS" : [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 629.298875,
+      "medianMS" : 606.487959,
+      "minMS" : 599.021584,
+      "name" : "mirrored_gallery_backlog_128_with_init_drain_cleanup",
+      "p95MS" : 629.298875,
+      "samplesMS" : [
+        599.021584,
+        613.779375,
+        606.487959,
+        600.662917,
+        600.492125,
+        625.849792,
+        629.298875
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 54.220042,
+      "medianMS" : 46.376084,
+      "minMS" : 42.682958,
+      "name" : "gallery.full-ready.backlog-128",
+      "p95MS" : 54.220042,
+      "samplesMS" : [
+        47.342417,
+        44.451375,
+        46.376084,
+        47.81275,
+        42.682958,
+        45.401625,
+        54.220042
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 617.39325,
+      "medianMS" : 595.8295,
+      "minMS" : 588.41675,
+      "name" : "gallery.thumbnail-ready.backlog-128",
+      "p95MS" : 617.39325,
+      "samplesMS" : [
+        588.41675,
+        601.825209,
+        595.8295,
+        590.216125,
+        589.606958,
+        611.343666,
+        617.39325
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 617.39325,
+      "medianMS" : 595.8295,
+      "minMS" : 588.41675,
+      "name" : "gallery.mirrored-publication.backlog-128",
+      "p95MS" : 617.39325,
+      "samplesMS" : [
+        588.41675,
+        601.825209,
+        595.8295,
+        590.216125,
+        589.606958,
+        611.343666,
+        617.39325
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 565.942041,
+      "medianMS" : 549.4534160000001,
+      "minMS" : 541.074333,
+      "name" : "gallery.delay-after-full.backlog-128",
+      "p95MS" : 565.942041,
+      "samplesMS" : [
+        541.074333,
+        557.373834,
+        549.4534160000001,
+        542.403375,
+        546.924,
+        565.942041,
+        563.1732079999999
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-gallery-backlog",
+  "warmups" : 1
+}

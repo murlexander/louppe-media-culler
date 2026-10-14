@@ -1,0 +1,97 @@
+{
+  "generatedAt" : "2026-10-13T02:47:46Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 25.663541,
+      "medianMS" : 22.136667,
+      "minMS" : 21.417791,
+      "name" : "raw.fast-preview.320px",
+      "p95MS" : 25.663541,
+      "samplesMS" : [
+        25.663541,
+        22.810709,
+        21.791667,
+        21.787834,
+        22.136667,
+        21.417791,
+        22.847875
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 236.691416,
+      "medianMS" : 179.405542,
+      "minMS" : 174.005375,
+      "name" : "raw.apple-default.preview.1024px",
+      "p95MS" : 236.691416,
+      "samplesMS" : [
+        236.691416,
+        189.135417,
+        174.005375,
+        182.791458,
+        178.009708,
+        176.101875,
+        179.405542
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 258.139667,
+      "medianMS" : 241.82925,
+      "minMS" : 230.63075,
+      "name" : "raw.apple-default.preview.4096px",
+      "p95MS" : 258.139667,
+      "samplesMS" : [
+        230.63075,
+        237.474709,
+        250.02475,
+        258.139667,
+        241.82925,
+        246.446208,
+        240.352
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 929.870333,
+      "medianMS" : 885.842625,
+      "minMS" : 879.304375,
+      "name" : "raw.apple-default.histogram.dwell-700ms",
+      "p95MS" : 929.870333,
+      "samplesMS" : [
+        929.870333,
+        882.467333,
+        892.413959,
+        885.015292,
+        879.304375,
+        885.842625,
+        901.94875
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 170.443875,
+      "medianMS" : 163.652292,
+      "minMS" : 156.898375,
+      "name" : "raw.apple-default.histogram.dwell-0ms",
+      "p95MS" : 170.443875,
+      "samplesMS" : [
+        165.535084,
+        163.596667,
+        156.898375,
+        157.023625,
+        163.652292,
+        170.443875,
+        168.991
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-real-raw",
+  "warmups" : 1
+}

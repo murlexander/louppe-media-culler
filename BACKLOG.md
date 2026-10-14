@@ -3,6 +3,10 @@
 App product and engineering work lives here. Research, publicity, and CAS notes
 stay in Obsidian. Latest public release: [1.10.0 (12)](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.10.0).
 
+Reviewed 12–13 October 2026 against current code, tests, and published releases.
+The working version is 1.11.0 (13), unreleased. Checked items describe verified
+outcomes; measurements or an active implementation alone do not close a task.
+
 ## Completed readiness work — 7 October 2026
 
 - [x] **AUD-01:** a shared 512 MiB read/CAS/write limit rejects oversized saves
@@ -88,11 +92,15 @@ Configurable shortcuts remain deferred to preserve keyboard safety.
   parent descriptors; retain ExFAT’s no-overwrite probe and durability warning.
 - [ ] **Toolchain test backend.** Xcode 27's default SwiftPM backend failed
   signing an XCTest bundle with Finder metadata in Documents; native passed
-  627 tests but is deprecated upstream. Verify a supported replacement without
-  downgrading the SDK; retain current native checks until then.
-- [ ] **AUD-21 — Media/AV APIs.** Replace semaphore probing with structured async
-  work and review macOS 27 reader/player-notification deprecations. Preserve
-  macOS 14, decoder limits, cancellation/reader exit, and playback tests.
+  the 13 October final full suite (714 tests, 31 explicit skips, zero failures) but is
+  deprecated. Optimized tests currently need `-DDEBUG` for existing test seams.
+  Verify a supported backend and separate those seams from production flags;
+  keep the current SDK and checks until a replacement passes.
+- [ ] **AUD-21 — Media/AV APIs.** Modernize asynchronous AV-property loading
+  behind synchronous worker bridges and macOS 27 reader/player notifications.
+  A UI-thread semaphore stall has not been established. Measure mixed-media scan
+  throughput/cancellation and retain finite timeouts, macOS 14, bounded lanes,
+  reader exit, and playback/audio cancellation tests.
 - [ ] **AUD-18 — Volume/interruption tests.** Extend fault injection on case-sensitive
   APFS, ExFAT, removable/network volumes, disconnect/remount, lid-close, and simulated
   power loss. Verify no overwrite, accurate durability, retained recovery, and safe
@@ -104,8 +112,8 @@ Check current code and reproduce suspected bugs before changing behavior.
 
 All 17 confirmed [29 September findings](Docs/Audits/2026-09-29/README.md) are
 implemented; [tests/evidence](Docs/Audits/2026-09-29/implementation.md) are retained.
-The tasks below are investigations, measurements, and acceptance. Keep IDs stable,
-preserve originals/identity/CAS/journals, and measure before optimizing. Website
+Follow-ups include verified performance fixes, remaining investigations, and
+acceptance. Keep IDs stable and preserve originals/identity/CAS/journals. Website
 work lives in its `BACKLOG.md` (WEB-AUD-01).
 
 ### Correctness investigations — start here
@@ -115,56 +123,142 @@ work lives in its `BACKLOG.md` (WEB-AUD-01).
   Review → Back → Review → Copy after cancellation/failure. Keep recents and
   destinations authorized for their intended lifetime; hardware gaps remain open.
 
-### Performance — measure before changing
+### Performance — measured results and remaining work
 
-- [ ] **AUD-06 — Index/save capture.** Measure Release main-actor time/memory at
-  1k/10k/100k files for rebuild, metadata sort, filter/group, and capture. Reuse
-  unchanged ID/file maps on sort-only changes where useful. Preserve ordering,
-  exact selection, shared metadata, and O(1) rating. Ready-session recovery
-  scheduling now uses touched-file queues; the 12 October 100k rating check is
-  0.3 ms. Also measure active cue-filter projection/coverage on large folders;
-  refreshes now skip unchanged cue matches and coalesce to 100 ms.
-- [x] **AUD-07 — Metadata-only bursts.** Capture requests return before identity,
-  hashing or preview access; instrumented tests prove zero reads while all-mode
-  analysis still invokes its workers. Generation/cancellation guards remain.
-- [ ] **AUD-08 — Background groups.** Capture date grouping moved off-main after
-  optimized 1k/10k/100k measurements (100k: 141/142 ms initial/interval change).
-  Latest-interval, cancellation and navigation guards tested; exact/similar
-  membership work remains. See the Quality Cues review record.
-- [ ] **AUD-09 — Live thumbnail budget.** Coalesce utility-queue pruning by writes/
-  time. Test a small size/age budget and same-day launch. Reach the target without
-  per-thumbnail walks, blocking scroll, or discarding trustworthy pixels.
-- [ ] **AUD-10 — Abandoned Info reads.** Measure cold removable/network reads after
-  dwell. If material, bound/coalesce by content revision and cancel lost interest.
-  Rapid navigation must neither accumulate readers nor publish stale metadata.
-- [ ] **AUD-11 — RAW fit sources.** Measure cold navigation/scale work. Use cached
-  oriented dimensions or dwell where useful; cancel uninterested waiters. Preserve
-  100% inspection, two tile operations, and 128 MiB limit; avoid full-image bitmaps.
-- [ ] **AUD-12 — Lazy routing rows.** Flatten route/unmatched rows into lazy elements.
-  Test tens of thousands of files: construct viewport rows and retain every exact
-  name/path in the safety preview without truncation.
-- [ ] **AUD-13 — Copy flushes.** Measure small-file batches on local/removable storage.
-  Remove proven duplicates only; preserve write → sync → stage → publish → directory
-  sync/checkpoint, copier injection, and recovery after side effects.
-- [ ] **AUD-14 — Export preflight.** Measure per-source volume queries on large/remote
-  selections; freeze inputs and validate off-main. Retain chosen-folder access,
-  progress/cancellation, and the exact binding. No early media/journal changes.
-- [ ] **AUD-15 — Large-copy progress/cancel.** Test `fcopyfile` callbacks or chunks on
-  disposable large videos. Show byte progress and allow safe cancellation before
-  whole-file completion. Retain only identity-proven partials and rollback/remount.
-- [ ] **AUD-16 — Compact JSON.** Compare bytes/save/CAS costs at 1k/10k/100k entries.
-  Check the need for editable formatting before removing it. Preserve sorted keys,
-  schema/lineage compatibility, and exact byte CAS.
-- [ ] **AUD-17 — Undo bytes.** Measure repeated Select All/Clear All at large counts.
-  If the 500-step cap retains too much, add a byte limit and clear eviction. Preserve
-  per-photo undo, independent ratings, and journaled operation undo.
+The [12 October inspection](Docs/PERFORMANCE_REVIEW_2026-10-12.md) retains two
+independent optimized runs, real JPEG/RAW checks, and candidate-equivalence tests.
+The [speed-test guide](Docs/SPEED_TESTS.md) covers reruns and comparison. Large-session
+figures use 100k items; media entries specify their own fixtures. These are local
+stage medians, not shipping or whole-app speedups.
+The separate implementation chat completed the confirmed fixes. Checked items
+have production comparisons and affected safety/native checks; gaps stay open.
+
+- [ ] **AUD-06 — Index, review projection, and save capture.** Finite metadata
+  buckets, sort-only map reuse and exact cached coverage are implemented and
+  tested. At 100k: metadata sort 37–39 ms (formerly 172–255), coverage 0.009 ms
+  (formerly 81), ordinary rating 0.025 ms, decision-sorted rating 120 ms and
+  frozen capture 17.8 ms in final confirmation. The 14 October cue follow-up
+  replaces repeated warning/filename-set construction with one-byte item matches:
+  two optimized 100k runs give 16–44 ms for warm metadata-cue switches,
+  versus 128–159 ms on the new baseline; first use is 53 versus 152 ms.
+  Accepted evidence updates only its own slots. See the [cue-filter review](Docs/QUALITY_CUE_FILTER_PERFORMANCE_2026-10-14.md).
+  Remaining: incremental visible/group projection (clearing cues still exposes
+  every row), retained memory and interaction under load. Profile batch recovery
+  under active sorts before choosing projection/progress batching; preserve
+  serial proofs, arbitrary-input ties, physical/recovery maps, selection and saves.
+- [x] **AUD-07 — Zero-I/O capture-burst analysis.** Capture requests return before
+  identity/hash/preview access; all-mode still invokes its workers. Instrumented
+  checks pass. Unused payload allocation is also removed under AUD-08.
+- [x] **AUD-08 — Analysis preparation and background groups.** Capture-only inputs
+  now cost 15.1 ms versus the former 126 ms at 100k. Exact/similar membership runs
+  off-main with cancellation, latest mode/sensitivity/generation, prior layout
+  and navigation guards. Worker CPU is 29/70–157 ms; lower UI blocking, rather
+  than faster grouping, is the gain. Future measurement: count hashing/preview
+  demand for exact-only/similar-only requests before adding mode capabilities.
+- [x] **AUD-16 — Compact, sorted JSON.** Production encoding retains every field,
+  history, deterministic backup bytes, exact-byte CAS and durability checks.
+  The 100k fixture shrinks 93,933,586 → 63,933,555 bytes (31.9%); encoding remains
+  about 1.2 seconds, so no large encode-speed gain is claimed. Size ceilings,
+  lineage, sequence/generation and legacy roundtrips pass.
+- [x] **AUD-25 — Abandoned image work and Gallery publication.** Already-cancelled
+  requests now produce zero decoded images/cache writes. Full Gallery pixels
+  publish independently of thumbnail backlog; a mounted native check passes.
+  Live coalesced waiters, worker-exit capacity, operation identity, foreground
+  promotion, revision guards and bounded prefetch pass. Physical-screen latency
+  and sustained contention remain AUD-28 acceptance work.
+- [x] **AUD-26 — Pairing preparation.** Production 100k pairing falls 1,351 → 719 ms
+  for distinct stems and 1,175 → 563 ms for RAW+JPEG. Scanner and main-actor pair
+  preparation, exact ordering, ambiguity, case/Unicode rules, independent media
+  and complete physical membership are verified.
+- [x] **AUD-27 — Background RAW cue scheduling.** A copied Fuji RAW measures
+  164 ms without Info's dwell versus 886 ms before; Info retains its 700 ms dwell.
+  Single utility RAW lane, bounded batches, leases, source bytes, mixed foreground
+  JPEG latency and Info-closed evidence pass. The resource follow-up adds paced
+  admission and durable user Pause; see AUD-29. Comparing per-result publication
+  with pair completion remains a latency hypothesis, especially for mixed pairs.
+
+The [implemented performance results](Docs/PERFORMANCE_IMPLEMENTATION_2026-10-12.md)
+and [quality resource follow-up](Docs/QUALITY_CUE_RESOURCES_2026-10-12.md) retain
+acceptance, raw measurements and remaining limits.
+
+
+### Performance — next measurements
+
+After the current pass, prioritize AUD-12/AUD-14 for interface stalls, then
+AUD-17/AUD-09 for retained memory/disk growth. These are code-backed candidates,
+not measured regressions. Export I/O work needs disposable storage fixtures.
+
+- [ ] **AUD-12 — Lazy routing rows.** An outer lazy stack still contains eager
+  route-file/unmatched stacks. Mount 10k+ single-route and unmatched previews;
+  measure opening, realized rows, scrolling and memory. Test per-file lazy rows
+  if justified, retaining every exact name/path and accessible safety detail.
+- [ ] **AUD-14 — Ordinary export preflight.** Destination validation remains
+  synchronous and Move queries each physical source's volume; routed/XMP planning
+  already runs off-main. Count queries and measure large/local/delayed-volume
+  selections. Freeze inputs for bounded off-main validation where justified;
+  preserve grants, exact parent binding, progress/cancel and no early mutations.
+- [ ] **AUD-17 — Undo retention.** The limit is 500 steps, without a byte budget.
+  Select All alone creates no Undo step: measure repeated Select All → decision,
+  star/color edits, Clear All and Undo at 1k/10k/100k. Record retained snapshots
+  and peak RSS before choosing byte-based eviction. Preserve Mixed/independent
+  physical decisions, per-photo Undo and journaled operation Undo.
+- [ ] **AUD-09 — Live disk-thumbnail enforcement.** Delayed daily pruning,
+  512 MiB target and 90-day age policy already exist. Test sustained writes and
+  same-day launches with small injected limits, coalesced write/time maintenance,
+  prune overlap and readable survivors. Measure peak overshoot and scroll latency;
+  avoid per-thumbnail walks or unsupported increases to memory-cache budgets.
+- [ ] **AUD-10 — Abandoned EXIF detail reads.** Histogram/RAW/audio work already
+  has bounded lanes and cancellable/coalesced waiters. The remaining Info detail
+  reader starts detached EXIF work after dwell. Use injected slow reads during
+  rapid navigation to count concurrent/abandoned readers and stale publications;
+  then confirm on disposable removable/network media before changing scheduling.
+- [ ] **AUD-11 — Cold RAW source/navigation work.** High-resolution recipes are
+  requested even for Fit dimensions; source-waiter retirement remains separate
+  from AUD-25's image requests. Measure cold Fit/100% transitions and both decoders
+  before caching dimensions or changing dwell. Test visible-first tile priority
+  and mode-aware RAW prefetch as hypotheses, comparing first visible pixels and
+  warm-pan latency. Keep two tile renders, 128 MiB and bounded source regions.
+- [ ] **AUD-13 — Copy flush costs.** Export Copy is not covered by the new speed
+  suite. Instrument file/directory flush counts and time for small-file batches
+  on local/removable storage, separating production and injected copiers. Remove
+  only proven redundancy; preserve write → sync → stage → publish → directory
+  sync/checkpoint and recovery after side effects.
+- [ ] **AUD-15 — Within-file copy progress/cancel.** Completed-byte totals,
+  throttling, rollback retraction and safe Stop already exist. A single large
+  `fcopyfile` still lacks progress/cancel callbacks. Measure progress intervals
+  and Stop-to-worker-exit on disposable large video/slow storage before choosing
+  callbacks or chunks. Preserve identity-proven partial cleanup, metadata/forks,
+  rollback and remount behavior.
+
+### Performance — future verification
+
+- [ ] **AUD-28 — Foreground latency under contention.** Extend the existing speed
+  suite with mounted Gallery/Grid/Filter/zoom and frame/media-ready barriers during
+  thumbnail, cue, fingerprint and save work. Record input-to-visible-result samples,
+  memory and queue drain/cancel behavior, with warm/source/disk paths separated.
+  Preserve large-session current/selection and test a representative mixed shoot.
+  Establish repeatable baselines before setting regression limits; resolve native
+  capture/AX tooling gaps rather than calling mirrored orchestration visual QA.
+- [ ] **AUD-29 — Background energy and true idle.** Resource fixes are implemented:
+  utility JPEG work, at most two scheduler measurements across generation retirement,
+  linear selection priority, private batched evidence, persistent explicit Pause,
+  and adaptive rest with Low Power/thermal backoff. Controlled worker/idle tests
+  establish those contracts; synthetic CPU results do not establish battery drain.
+  Measure sustained CPU/GPU, RSS, wakeups and decoder/helper exit on representative
+  large RAW folders, after Pause/Close and complete drain. Compare battery/AC and
+  foreground responsiveness. Preserve current/visible interest and accurate evidence;
+  investigate an App Nap/inactive-window policy only after measurement.
+
 
 ### Further verification
 
 - [ ] **AUD-19 — RAW/color/GPU baseline.** Build a licensed RAW/JPEG/profile corpus
   with orientation/transparency cases. Compare preview, RAW/histogram/clipping,
   and 100% tiles to reference renders; measure Release GPU/RSS under navigation/
-  zoom. Record coverage and decoder bounds. Real-camera acceptance remains open.
+  zoom. One copied 84 MiB Fuji RAF now has an optimized Apple Default preview/
+  histogram baseline with byte/identity checks; synthetic 100 MP tile-budget tests
+  also pass. Multi-camera/RAW 9, color/reference, cold-resource and sustained
+  GPU/helper-process memory acceptance remain open. Record actual corpus coverage.
 - [ ] **AUD-20 — Dependencies/security.** Record exact Sparkle/Expat/Adobe XMP/site
   pins, patches, licenses, and official advisories. The 7 October review found no
   published affected-range match; sources and confidential/vendor limits are in

@@ -1,0 +1,51 @@
+[0/1] Planning build
+Building for production...
+[0/6] Write sources
+[1/6] Write swift-version--58304C5D6DBC2206.txt
+[3/7] Compiling Louppe AppBuildInfo.swift
+[3/7] Write Objects.LinkFileList
+[4/7] Linking Louppe
+[6/8] Compiling LouppeTests AccessibilityTests.swift
+[7/9] Compiling LouppePackageTests runner.swift
+[7/9] Write Objects.LinkFileList
+[8/9] Linking LouppePackageTests
+Build complete! (117.20s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-14 11:01:49.928 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-14 11:01:49.937 AM.
+Test Suite 'LouppeSpeedCueFilterTests' started at 2026-10-14 11:01:49.937 AM.
+Test Case '-[LouppeTests.LouppeSpeedCueFilterTests testCueSwitchesAndClassificationStages]' started.
+Test Case '-[LouppeTests.LouppeSpeedCueFilterTests testCueSwitchesAndClassificationStages]' passed (21.705 seconds).
+Test Suite 'LouppeSpeedCueFilterTests' passed at 2026-10-14 11:02:11.642 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 21.705 (21.706) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-14 11:02:11.643 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 21.705 (21.706) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 11:02:11.643 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 21.705 (21.714) seconds
+SPEED cue.switch.high-iso n=1000 median=1.343ms p95=1.557ms
+SPEED cue.switch.slow-shutter n=1000 median=1.407ms p95=1.850ms
+SPEED cue.switch.either-metadata n=1000 median=1.586ms p95=2.010ms
+SPEED cue.switch.unmeasured-clipping n=1000 median=0.964ms p95=1.018ms
+SPEED cue.switch.none n=1000 median=0.687ms p95=0.795ms
+SPEED cue.first-use.high-iso n=1000 median=1.356ms p95=1.547ms
+SPEED cue.switch.high-iso.with-selection n=1000 median=1.342ms p95=1.376ms
+SPEED cue.switch.high-iso.ungrouped n=1000 median=1.089ms p95=1.262ms
+SPEED legacy.classify-and-build-ids n=1000 median=0.640ms p95=0.718ms
+SPEED cue.switch.high-iso n=10000 median=13.680ms p95=14.359ms
+SPEED cue.switch.slow-shutter n=10000 median=11.826ms p95=13.078ms
+SPEED cue.switch.either-metadata n=10000 median=14.925ms p95=15.936ms
+SPEED cue.switch.unmeasured-clipping n=10000 median=8.913ms p95=9.045ms
+SPEED cue.switch.none n=10000 median=6.437ms p95=6.766ms
+SPEED cue.first-use.high-iso n=10000 median=14.513ms p95=16.246ms
+SPEED cue.switch.high-iso.with-selection n=10000 median=13.961ms p95=15.412ms
+SPEED cue.switch.high-iso.ungrouped n=10000 median=11.237ms p95=11.715ms
+SPEED legacy.classify-and-build-ids n=10000 median=7.114ms p95=7.955ms
+SPEED cue.switch.high-iso n=100000 median=148.264ms p95=153.889ms
+SPEED cue.switch.slow-shutter n=100000 median=127.756ms p95=130.192ms
+SPEED cue.switch.either-metadata n=100000 median=158.668ms p95=164.709ms
+SPEED cue.switch.unmeasured-clipping n=100000 median=89.008ms p95=90.058ms
+SPEED cue.switch.none n=100000 median=68.894ms p95=69.222ms
+SPEED cue.first-use.high-iso n=100000 median=152.462ms p95=170.772ms
+SPEED cue.switch.high-iso.with-selection n=100000 median=153.014ms p95=154.404ms
+SPEED cue.switch.high-iso.ungrouped n=100000 median=121.335ms p95=122.526ms
+SPEED legacy.classify-and-build-ids n=100000 median=70.712ms p95=74.241ms

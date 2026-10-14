@@ -1,0 +1,114 @@
+{
+  "generatedAt" : "2026-10-13T03:18:42Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 100000,
+      "maxMS" : 741.504375,
+      "medianMS" : 718.506334,
+      "minMS" : 712.206916,
+      "name" : "pairing.distinct-stems.production",
+      "p95MS" : 741.504375,
+      "samplesMS" : [
+        712.206916,
+        718.506334,
+        716.741333,
+        719.732833,
+        741.504375,
+        712.513459,
+        726.34925
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 981.879041,
+      "medianMS" : 934.984125,
+      "minMS" : 931.496167,
+      "name" : "pairing.distinct-stems.no-global-sort",
+      "p95MS" : 981.879041,
+      "samplesMS" : [
+        937.959542,
+        934.857167,
+        960.849125,
+        981.879041,
+        934.984125,
+        931.496167,
+        933.728292
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 949.452084,
+      "medianMS" : 940.773666,
+      "minMS" : 924.820833,
+      "name" : "pairing.distinct-stems.physical-pair-preparation.production",
+      "p95MS" : 949.452084,
+      "samplesMS" : [
+        931.432708,
+        946.206459,
+        941.78575,
+        924.820833,
+        949.452084,
+        940.773666,
+        938.198291
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 586.315958,
+      "medianMS" : 563.237125,
+      "minMS" : 558.723875,
+      "name" : "pairing.raw-jpeg.production",
+      "p95MS" : 586.315958,
+      "samplesMS" : [
+        558.723875,
+        586.315958,
+        563.237125,
+        566.981583,
+        562.837208,
+        560.904291,
+        564.369292
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 795.658625,
+      "medianMS" : 714.36975,
+      "minMS" : 708.335416,
+      "name" : "pairing.raw-jpeg.no-global-sort",
+      "p95MS" : 795.658625,
+      "samplesMS" : [
+        710.623125,
+        732.61,
+        710.437792,
+        714.36975,
+        725.027917,
+        795.658625,
+        708.335416
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 1252.070416,
+      "medianMS" : 960.28175,
+      "minMS" : 886.290458,
+      "name" : "pairing.raw-jpeg.physical-pair-preparation.production",
+      "p95MS" : 1252.070416,
+      "samplesMS" : [
+        1252.070416,
+        902.661417,
+        886.290458,
+        925.83275,
+        960.28175,
+        1049.633167,
+        963.971125
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "scan-pairing",
+  "warmups" : 1
+}

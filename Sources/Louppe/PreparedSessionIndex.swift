@@ -28,6 +28,9 @@ struct PreparedSessionIndex {
     }
 
     private(set) var sortedIndices: [Int] = []
+    /// Immutable capture-date/name/ID order for the current item structure.
+    /// Review metadata mutations share small stores and cannot change this order.
+    private var chronologicalIndices: [Int]?
     private(set) var itemIndexByID: [String: Int] = [:]
     private(set) var visibleIndices: [Int] = []
     private(set) var visibleEntries: [VisibleEntry] = []
@@ -49,10 +52,30 @@ struct PreparedSessionIndex {
             indicesByID[item.id] = index
         }
         itemIndexByID = indicesByID
-        rebuildSort(items, sort: sort)
+        chronologicalIndices = Self.chronologicalOrder(for: items)
+        rebuildPreparedSort(items, sort: sort)
     }
 
+    /// Pure entry point for arbitrary input, including a different permutation
+    /// or same-count replacement. It never trusts an earlier item's chronology.
     mutating func rebuildSort(
+        _ items: [PhotoItem],
+        sort: PhotoSort
+    ) {
+        invalidateItemOrder()
+        rebuildPreparedSort(items, sort: sort)
+    }
+
+    /// Call when immutable items change, before any sort-only projection. The
+    /// structural owner still rebuilds ID/maps through `rebuildItems` as usual.
+    mutating func invalidateItemOrder() {
+        chronologicalIndices = nil
+    }
+
+    /// Sort-only entry point for the item structure prepared by `rebuildItems`.
+    /// Callers must invalidate/rebuild after replacing, reordering or enriching
+    /// immutable items. Ratings, stars and colors do not invalidate chronology.
+    mutating func rebuildPreparedSort(
         _ items: [PhotoItem],
         sort: PhotoSort
     ) {
@@ -60,32 +83,95 @@ struct PreparedSessionIndex {
         defer {
             Self.signposter.endInterval("Sort Session", interval)
         }
-        // FolderScanner and every structural reconstruction keep `items` in
-        // PhotoSort() order. Reuse that physical order for the default view
-        // instead of repeating the same O(N log N) localized-name sort on the
-        // main actor after a scan, or when the user returns to the default.
         if sort == PhotoSort() {
-            sortedIndices = Array(items.indices)
+            sortedIndices = preparedChronologicalOrder(for: items)
             return
         }
         switch sort.key {
         case .folderHierarchy:
             rebuildFolderHierarchySort(items, ascending: sort.ascending)
         case .decision, .starRating, .colorLabel:
-            let metadata = items.map(\.metadataState)
-            sortedIndices = items.indices.sorted {
-                sort.areInOrder(
-                    items[$0],
-                    metadata: metadata[$0],
-                    items[$1],
-                    metadata: metadata[$1]
-                )
-            }
+            rebuildMetadataSort(items, sort: sort)
         default:
             sortedIndices = items.indices.sorted {
                 sort.areInOrder(items[$0], items[$1])
             }
         }
+    }
+
+    private mutating func preparedChronologicalOrder(for items: [PhotoItem]) -> [Int] {
+        if let chronologicalIndices, chronologicalIndices.count == items.count {
+            return chronologicalIndices
+        }
+        let order = Self.chronologicalOrder(for: items)
+        chronologicalIndices = order
+        return order
+    }
+
+    /// Scans normally arrive canonical, so verify once in O(N). Exceptional
+    /// reconstruction and pure callers may supply any permutation; normalize
+    /// those with the same comparator instead of assuming raw array order.
+    private static func chronologicalOrder(for items: [PhotoItem]) -> [Int] {
+        let chronological = PhotoSort()
+        let indices = Array(items.indices)
+        for index in items.indices.dropFirst() {
+            if chronological.areInOrder(items[index], items[index - 1]) {
+                return indices.sorted {
+                    chronological.areInOrder(items[$0], items[$1])
+                }
+            }
+        }
+        return indices
+    }
+
+    /// Finite review values use a stable linear pass over canonical chronology.
+    /// Direction changes the value buckets only: equal values retain oldest,
+    /// Finder-name and exact-ID order. Missing stars/colors precede Mixed and
+    /// stay last in either direction, matching `PhotoSort`.
+    private mutating func rebuildMetadataSort(_ items: [PhotoItem], sort: PhotoSort) {
+        let chronological = preparedChronologicalOrder(for: items)
+        let valueCount = sort.key == .decision ? 4 : (
+            sort.key == .starRating ? StarRating.allCases.count : PhotoColorLabel.allCases.count
+        )
+        let bucketCount = sort.key == .decision ? valueCount : valueCount + 2
+        var buckets = Array(repeating: [Int](), count: bucketCount)
+        for index in chronological {
+            let metadata = items[index].metadataState
+            let rank: Int
+            switch sort.key {
+            case .decision:
+                let natural: Int
+                switch metadata.decision {
+                case .yes: natural = 0
+                case .undecided: natural = 1
+                case .mixed: natural = 2
+                case .no: natural = 3
+                }
+                rank = sort.ascending ? natural : valueCount - 1 - natural
+            case .starRating:
+                switch metadata.stars {
+                case .stars(let value):
+                    rank = sort.ascending ? value.count - 1 : valueCount - value.count
+                case .unrated: rank = valueCount
+                case .mixed: rank = valueCount + 1
+                }
+            case .colorLabel:
+                switch metadata.color {
+                case .label(let label):
+                    let natural = PhotoColorLabel.allCases.firstIndex(of: label)!
+                    rank = sort.ascending ? natural : valueCount - 1 - natural
+                case .none: rank = valueCount
+                case .mixed: rank = valueCount + 1
+                }
+            default:
+                preconditionFailure("A finite metadata key is required")
+            }
+            buckets[rank].append(index)
+        }
+        var result: [Int] = []
+        result.reserveCapacity(items.count)
+        for bucket in buckets { result.append(contentsOf: bucket) }
+        sortedIndices = result
     }
 
     /// Compare each distinct directory only once, then sort by small ranks.
@@ -124,15 +210,21 @@ struct PreparedSessionIndex {
         to items: [PhotoItem],
         sort: PhotoSort,
         isGroupingEnabled: Bool,
-        matchingItemIDs: Set<String>? = nil
+        qualityCueMatches: [QualityCueMatch]? = nil
     ) {
         let interval = Self.signposter.beginInterval("Filter Session")
         defer {
             Self.signposter.endInterval("Filter Session", interval)
         }
         let prepared = PreparedPhotoFilter(filter)
-        visibleIndices = sortedIndices.filter {
-            (matchingItemIDs?.contains(items[$0].id) ?? true) && prepared.matches(items[$0])
+        if let qualityCueMatches, !filter.selectedQualityCues.isEmpty {
+            precondition(qualityCueMatches.count == items.count, "Cue matches must follow the item structure")
+            let selected = QualityCueMatch(filter.selectedQualityCues)
+            visibleIndices = sortedIndices.filter {
+                !qualityCueMatches[$0].intersection(selected).isEmpty && prepared.matches(items[$0])
+            }
+        } else {
+            visibleIndices = sortedIndices.filter { prepared.matches(items[$0]) }
         }
         rebuildGroups(
             for: items,

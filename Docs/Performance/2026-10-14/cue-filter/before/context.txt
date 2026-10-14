@@ -1,0 +1,129 @@
+2026-10-14T14:59:49Z
+544f6222a499b316d419797e358c232fd56e410a
+ M BACKLOG.md
+ M CHANGELOG.md
+ M Docs/DEVELOPMENT_DETAILS.md
+ M Docs/PERFORMANCE.md
+ M Docs/REVIEW_BUILD.md
+ M README.md
+ M Sources/Louppe/DuplicateBurstAnalysis.swift
+ M Sources/Louppe/FolderScanner.swift
+ M Sources/Louppe/HistogramPipeline.swift
+ M Sources/Louppe/ImagePipeline.swift
+ M Sources/Louppe/LouppeApp.swift
+ M Sources/Louppe/PreparedSessionIndex.swift
+ M Sources/Louppe/QualityCueAnalysis.swift
+ M Sources/Louppe/Resources/ar.lproj/Localizable.strings
+ M Sources/Louppe/Resources/en.lproj/Localizable.strings
+ M Sources/Louppe/Resources/es.lproj/Localizable.strings
+ M Sources/Louppe/Resources/hi.lproj/Localizable.strings
+ M Sources/Louppe/Resources/pt.lproj/Localizable.strings
+ M Sources/Louppe/Resources/zh-Hans.lproj/Localizable.strings
+ M Sources/Louppe/SessionPersistence.swift
+ M Sources/Louppe/SessionStore.swift
+ M Sources/Louppe/UpdaterViews.swift
+ M Sources/Louppe/Views/ActionPaletteView.swift
+ M Sources/Louppe/Views/BrowserView.swift
+ M Sources/Louppe/Views/FilterView.swift
+ M Sources/Louppe/Views/FullImageView.swift
+ M Sources/Louppe/Views/GalleryView.swift
+ M Sources/Louppe/Views/GridView.swift
+ M Sources/Louppe/Views/LouppeHelpView.swift
+ M Sources/Louppe/Views/PhotoZoomControl.swift
+ M Sources/Louppe/Views/SessionReviewGuidance.swift
+ M Sources/Louppe/Views/SessionView.swift
+ M Tests/LouppeTests/DuplicateBurstAnalysisTests.swift
+ M Tests/LouppeTests/QualityCueSessionTests.swift
+ M Tests/LouppeTests/ReviewGuidanceTests.swift
+ M Tests/LouppeTests/SessionDurabilityTests.swift
+ M Tests/LouppeTests/SessionRatingRecoveryTests.swift
+ M Tests/LouppeTests/SettingsLayoutTests.swift
+ M Tests/run_performance_checks.sh
+?? Docs/PERFORMANCE_IMPLEMENTATION_2026-10-12.md
+?? Docs/PERFORMANCE_REVIEW_2026-10-12.md
+?? Docs/Performance/
+?? Docs/QUALITY_CUE_RESOURCES_2026-10-12.md
+?? Docs/SPEED_TESTS.md
+?? Sources/Louppe/QualityCueWorkPolicy.swift
+?? Tests/LouppeTests/BrowserScrollTests.swift
+?? Tests/LouppeTests/CompactSessionPersistenceTests.swift
+?? Tests/LouppeTests/DuplicateBurstWorkerTests.swift
+?? Tests/LouppeTests/FilterDisclosureHitTests.swift
+?? Tests/LouppeTests/GalleryZoomLayoutTests.swift
+?? Tests/LouppeTests/GridScrollTests.swift
+?? Tests/LouppeTests/HistogramResourceTests.swift
+?? Tests/LouppeTests/LouppeQualityResourceTests.swift
+?? Tests/LouppeTests/LouppeSpeedCueFilterTests.swift
+?? Tests/LouppeTests/LouppeSpeedIOTests.swift
+?? Tests/LouppeTests/LouppeSpeedMediaTests.swift
+?? Tests/LouppeTests/LouppeSpeedPersistenceTests.swift
+?? Tests/LouppeTests/LouppeSpeedQualityResourceTests.swift
+?? Tests/LouppeTests/LouppeSpeedRAWTests.swift
+?? Tests/LouppeTests/LouppeSpeedScanTests.swift
+?? Tests/LouppeTests/LouppeSpeedSessionTests.swift
+?? Tests/LouppeTests/MediaPerformanceTests.swift
+?? Tests/LouppeTests/PreparedSessionMetadataOrderingTests.swift
+?? Tests/LouppeTests/QualityCueSchedulingTests.swift
+?? Tests/LouppeTests/QualityCueWorkPolicyTests.swift
+?? Tests/LouppeTests/SessionPerformanceIntegrationTests.swift
+?? Tests/LouppeTests/SpeedBenchmarkSupport.swift
+?? Tests/compare_speed_results.py
+?? Tests/run_speed_tests.sh
+ BACKLOG.md                                         | 192 ++++++---
+ CHANGELOG.md                                       |  26 +-
+ Docs/DEVELOPMENT_DETAILS.md                        |  68 ++-
+ Docs/PERFORMANCE.md                                |  83 +++-
+ Docs/REVIEW_BUILD.md                               | 150 ++++++-
+ README.md                                          |  22 +-
+ Sources/Louppe/DuplicateBurstAnalysis.swift        | 160 ++++++--
+ Sources/Louppe/FolderScanner.swift                 |   9 +-
+ Sources/Louppe/HistogramPipeline.swift             | 175 ++++++--
+ Sources/Louppe/ImagePipeline.swift                 | 225 ++++++----
+ Sources/Louppe/LouppeApp.swift                     |  55 ++-
+ Sources/Louppe/PreparedSessionIndex.swift          | 116 +++++-
+ Sources/Louppe/QualityCueAnalysis.swift            |   4 +-
+ .../Louppe/Resources/ar.lproj/Localizable.strings  |  20 +-
+ .../Louppe/Resources/en.lproj/Localizable.strings  |  20 +-
+ .../Louppe/Resources/es.lproj/Localizable.strings  |  20 +-
+ .../Louppe/Resources/hi.lproj/Localizable.strings  |  20 +-
+ .../Louppe/Resources/pt.lproj/Localizable.strings  |  20 +-
+ .../Resources/zh-Hans.lproj/Localizable.strings    |  20 +-
+ Sources/Louppe/SessionPersistence.swift            |  14 +-
+ Sources/Louppe/SessionStore.swift                  | 454 ++++++++++++++-------
+ Sources/Louppe/UpdaterViews.swift                  |  87 +++-
+ Sources/Louppe/Views/ActionPaletteView.swift       |   8 +-
+ Sources/Louppe/Views/BrowserView.swift             |   4 +
+ Sources/Louppe/Views/FilterView.swift              | 136 ++----
+ Sources/Louppe/Views/FullImageView.swift           |  65 ++-
+ Sources/Louppe/Views/GalleryView.swift             |   9 +
+ Sources/Louppe/Views/GridView.swift                | 186 +++++----
+ Sources/Louppe/Views/LouppeHelpView.swift          |   7 +-
+ Sources/Louppe/Views/PhotoZoomControl.swift        | 129 +++++-
+ Sources/Louppe/Views/SessionReviewGuidance.swift   |  66 +--
+ Sources/Louppe/Views/SessionView.swift             |  70 +++-
+ .../LouppeTests/DuplicateBurstAnalysisTests.swift  |  44 +-
+ Tests/LouppeTests/QualityCueSessionTests.swift     |   3 +
+ Tests/LouppeTests/ReviewGuidanceTests.swift        |  23 ++
+ Tests/LouppeTests/SessionDurabilityTests.swift     |   2 +-
+ Tests/LouppeTests/SessionRatingRecoveryTests.swift |   8 +
+ Tests/LouppeTests/SettingsLayoutTests.swift        | 145 +++++++
+ Tests/run_performance_checks.sh                    |   1 +
+ 39 files changed, 2114 insertions(+), 752 deletions(-)
+ef7bb04e6fc275d681249c887de1f53e698261d32136fd9e3b88613c3833af9c  -
+9cbea2894914567c300e3bfbc9eae15f1cfd804f5f31e34d0ff8b5676f2386d1  Tests/LouppeTests/LouppeSpeedCueFilterTests.swift
+db1687b755e1f32607283b789d05bc14c042a3d7468be180d39f754e05d2151d  Tests/LouppeTests/LouppeSpeedIOTests.swift
+11cbe5ae11d4b8e4fd5ac52e80688e42b61b1f40221f77421112f6fb264463cf  Tests/LouppeTests/LouppeSpeedMediaTests.swift
+8d0fc7bba7a4551932347d6429397ed8d35a361e93d188327432393daf7ae24d  Tests/LouppeTests/LouppeSpeedPersistenceTests.swift
+48f419210ba703e3a031b660c9d05be2b352c269465b957632740cabba1f3de4  Tests/LouppeTests/LouppeSpeedQualityResourceTests.swift
+e40597464097de144ee328c03b02d56eec0bd0fff1d2fc9f381b765f2294e67c  Tests/LouppeTests/LouppeSpeedRAWTests.swift
+e4185743d87ed8cbfad111fb81ce27890a91c757e3e81659108cc80b09603e5d  Tests/LouppeTests/LouppeSpeedScanTests.swift
+6f709cd24709f5fbcd6be806a7ab5711903721d5f4da5b4aa4005dfd9de3f8ae  Tests/LouppeTests/LouppeSpeedSessionTests.swift
+ccfbad575ea3e2ad6eb9fb0fd6ab22e79e97ab141e196306f9eb02b6e69f9833  Tests/LouppeTests/SpeedBenchmarkSupport.swift
+Sizes: 1000,10000,100000
+Repetitions: 7; warmups: 1
+Filter: LouppeSpeedCueFilterTests
+Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)
+Target: arm64-apple-macosx27.0.0
+Xcode 27.0
+Build version 27A266a
+arm64

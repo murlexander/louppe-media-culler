@@ -191,14 +191,15 @@ struct ActionPaletteView: View {
             Text(L10n.text("to open"))
             Spacer()
             Text("↑↓")
+                .environment(\.layoutDirection, .leftToRight)
                 .font(.caption.monospaced())
-            Text("choose")
+            Text(L10n.text("choose"))
             Text("↵")
                 .font(.caption.monospaced())
-            Text("run")
+            Text(L10n.text("run"))
             Text("Esc")
                 .font(.caption.monospaced())
-            Text("close")
+            Text(L10n.text("close"))
         }
         .font(.caption)
         .foregroundStyle(.secondary)
@@ -849,22 +850,22 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "grid-zoom-in",
                 category: L10n.text("View"),
-                title: L10n.text("Larger Grid Thumbnails"),
+                title: L10n.text("Zoom In"),
                 detail: L10n.text("Increase thumbnail size in Grid"),
                 symbol: "plus.magnifyingglass",
                 shortcut: "⌘+",
-                keywords: [L10n.text("zoom grid in"), L10n.text("bigger thumbnails"), L10n.text("increase grid size")],
+                keywords: [L10n.text("Larger Grid Thumbnails"), L10n.text("zoom grid in"), L10n.text("bigger thumbnails"), L10n.text("increase grid size")],
                 isEnabled: store.viewMode == .grid,
                 perform: { store.zoomGrid(larger: true) }
             ),
             ActionPaletteAction(
                 id: "grid-zoom-out",
                 category: L10n.text("View"),
-                title: L10n.text("Smaller Grid Thumbnails"),
+                title: L10n.text("Zoom Out"),
                 detail: L10n.text("Decrease thumbnail size in Grid"),
                 symbol: "minus.magnifyingglass",
                 shortcut: "⌘−",
-                keywords: [L10n.text("zoom grid out"), L10n.text("smaller thumbnails"), L10n.text("decrease grid size")],
+                keywords: [L10n.text("Smaller Grid Thumbnails"), L10n.text("zoom grid out"), L10n.text("smaller thumbnails"), L10n.text("decrease grid size")],
                 isEnabled: store.viewMode == .grid,
                 perform: { store.zoomGrid(larger: false) }
             ),

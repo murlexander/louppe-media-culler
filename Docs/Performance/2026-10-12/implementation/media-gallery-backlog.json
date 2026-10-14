@@ -1,0 +1,352 @@
+{
+  "generatedAt" : "2026-10-13T03:10:15Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 39.185459,
+      "medianMS" : 34.264084,
+      "minMS" : 33.013958,
+      "name" : "mirrored_gallery_backlog_0_with_init_drain_cleanup",
+      "p95MS" : 39.185459,
+      "samplesMS" : [
+        39.185459,
+        33.82125,
+        34.093542,
+        38.927375,
+        34.376125,
+        34.264084,
+        33.013958
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 38.104333,
+      "medianMS" : 33.3745,
+      "minMS" : 32.110833,
+      "name" : "gallery.full-ready.backlog-0",
+      "p95MS" : 38.104333,
+      "samplesMS" : [
+        38.104333,
+        33.053917,
+        33.270375,
+        38.101042,
+        33.592792,
+        33.3745,
+        32.110833
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 18.234792,
+      "medianMS" : 18.084459,
+      "minMS" : 17.227625,
+      "name" : "gallery.thumbnail-ready.backlog-0",
+      "p95MS" : 18.234792,
+      "samplesMS" : [
+        18.078916,
+        18.234792,
+        18.09725,
+        18.152792,
+        18.084459,
+        17.388916,
+        17.227625
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 38.104333,
+      "medianMS" : 33.3745,
+      "minMS" : 32.110833,
+      "name" : "gallery.mirrored-publication.backlog-0",
+      "p95MS" : 38.104333,
+      "samplesMS" : [
+        38.104333,
+        33.053917,
+        33.270375,
+        38.101042,
+        33.592792,
+        33.3745,
+        32.110833
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 0,
+      "medianMS" : 0,
+      "minMS" : 0,
+      "name" : "gallery.delay-after-full.backlog-0",
+      "p95MS" : 0,
+      "samplesMS" : [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 628.313917,
+      "medianMS" : 600.706875,
+      "minMS" : 597.755583,
+      "name" : "mirrored_gallery_backlog_128_with_init_drain_cleanup",
+      "p95MS" : 628.313917,
+      "samplesMS" : [
+        599.377625,
+        600.706875,
+        597.755583,
+        598.520167,
+        628.313917,
+        602.980375,
+        607.271167
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 41.483166,
+      "medianMS" : 36.376084,
+      "minMS" : 33.975084,
+      "name" : "gallery.full-ready.backlog-128",
+      "p95MS" : 41.483166,
+      "samplesMS" : [
+        33.975084,
+        41.483166,
+        35.243375,
+        36.376084,
+        34.907625,
+        36.631833,
+        37.973334
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 616.766792,
+      "medianMS" : 587.216417,
+      "minMS" : 536.585292,
+      "name" : "gallery.thumbnail-ready.backlog-128",
+      "p95MS" : 616.766792,
+      "samplesMS" : [
+        536.585292,
+        587.188541,
+        586.903917,
+        587.216417,
+        616.766792,
+        593.417083,
+        596.20625
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 616.766792,
+      "medianMS" : 587.216417,
+      "minMS" : 536.585292,
+      "name" : "gallery.mirrored-publication.backlog-128",
+      "p95MS" : 616.766792,
+      "samplesMS" : [
+        536.585292,
+        587.188541,
+        586.903917,
+        587.216417,
+        616.766792,
+        593.417083,
+        596.20625
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 581.859167,
+      "medianMS" : 551.660542,
+      "minMS" : 502.610208,
+      "name" : "gallery.delay-after-full.backlog-128",
+      "p95MS" : 581.859167,
+      "samplesMS" : [
+        502.610208,
+        545.705375,
+        551.660542,
+        550.840333,
+        581.859167,
+        556.78525,
+        558.2329159999999
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 137.392792,
+      "medianMS" : 123.048292,
+      "minMS" : 115.761084,
+      "name" : "mounted_gallery_backlog_0_with_init_drain_cleanup",
+      "p95MS" : 137.392792,
+      "samplesMS" : [
+        119.281792,
+        123.048292,
+        125.984291,
+        117.690583,
+        115.761084,
+        125.422584,
+        137.392792
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 129.970584,
+      "medianMS" : 114.355834,
+      "minMS" : 111.4585,
+      "name" : "gallery.production-full-ready.backlog-0",
+      "p95MS" : 129.970584,
+      "samplesMS" : [
+        114.220292,
+        114.355834,
+        115.407334,
+        112.973041,
+        111.4585,
+        114.974375,
+        129.970584
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 19.211666,
+      "medianMS" : 18.51375,
+      "minMS" : 17.575959,
+      "name" : "gallery.production-thumbnail-ready.backlog-0",
+      "p95MS" : 19.211666,
+      "samplesMS" : [
+        18.925084,
+        18.462917,
+        18.51375,
+        19.211666,
+        18.1775,
+        18.69975,
+        17.575959
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 129.975667,
+      "medianMS" : 114.361834,
+      "minMS" : 111.462666,
+      "name" : "gallery.production-mounted-publication.backlog-0",
+      "p95MS" : 129.975667,
+      "samplesMS" : [
+        114.226334,
+        114.361834,
+        115.412084,
+        112.977,
+        111.462666,
+        114.978916,
+        129.975667
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 0.0060419999999936636,
+      "medianMS" : 0.004749999999987153,
+      "minMS" : 0.003959000000008928,
+      "name" : "gallery.production-delay-after-full.backlog-0",
+      "p95MS" : 0.0060419999999936636,
+      "samplesMS" : [
+        0.0060419999999936636,
+        0.006000000000000227,
+        0.004749999999987153,
+        0.003959000000008928,
+        0.004165999999997894,
+        0.004541000000003237,
+        0.00508299999998485
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 706.1755,
+      "medianMS" : 619.344583,
+      "minMS" : 610.747916,
+      "name" : "mounted_gallery_backlog_128_with_init_drain_cleanup",
+      "p95MS" : 706.1755,
+      "samplesMS" : [
+        610.763916,
+        610.747916,
+        621.124958,
+        706.1755,
+        619.87875,
+        619.344583,
+        611.077125
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 145.196417,
+      "medianMS" : 125.856875,
+      "minMS" : 84.178375,
+      "name" : "gallery.production-full-ready.backlog-128",
+      "p95MS" : 145.196417,
+      "samplesMS" : [
+        84.178375,
+        128.33275,
+        145.196417,
+        131.701292,
+        125.856875,
+        100.087375,
+        101.15
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 689.516042,
+      "medianMS" : 604.921291,
+      "minMS" : 597.706458,
+      "name" : "gallery.production-thumbnail-ready.backlog-128",
+      "p95MS" : 689.516042,
+      "samplesMS" : [
+        598.604417,
+        597.706458,
+        607.7095,
+        689.516042,
+        606.720167,
+        604.921291,
+        598.377541
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 145.201792,
+      "medianMS" : 128.336458,
+      "minMS" : 100.089625,
+      "name" : "gallery.production-mounted-publication.backlog-128",
+      "p95MS" : 145.201792,
+      "samplesMS" : [
+        122.242875,
+        128.336458,
+        145.201792,
+        131.707125,
+        125.862333,
+        100.089625,
+        141.210708
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 40.060708000000005,
+      "medianMS" : 0.005458000000004404,
+      "minMS" : 0.002250000000003638,
+      "name" : "gallery.production-delay-after-full.backlog-128",
+      "p95MS" : 40.060708000000005,
+      "samplesMS" : [
+        38.064499999999995,
+        0.0037079999999889424,
+        0.005375000000015007,
+        0.005832999999995536,
+        0.005458000000004404,
+        0.002250000000003638,
+        40.060708000000005
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-gallery-backlog",
+  "warmups" : 1
+}

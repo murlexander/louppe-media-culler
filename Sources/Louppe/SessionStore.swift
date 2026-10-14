@@ -167,12 +167,17 @@ final class SessionStore: ObservableObject {
     @Published var items: [PhotoItem] = [] {
         didSet {
             cachedSelectionSummary = nil
+            preparedIndex.invalidateItemOrder()
+            itemStructureNeedsRebuild = true
             invalidateQualityCueAnalysis()
         }
     }
     @Published var currentIndex: Int = 0 {
         didSet {
-            if currentIndex != oldValue { videoPlayback.stop() }
+            if currentIndex != oldValue {
+                videoPlayback.stop()
+                if needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() }
+            }
         }
     }
     @Published var viewMode: ViewMode = .gallery
@@ -206,6 +211,7 @@ final class SessionStore: ObservableObject {
     @Published var isEarlyUserFeedbackPresented = false
     @Published var isFilterPresented = false
     @Published var isSortPresented = false
+    @Published var isReviewStatusPresented = false
     private var filterSearchFocusRequestGeneration: UInt64 = 0
     private var fulfilledFilterSearchFocusRequestGeneration: UInt64 = 0
     /// Whether same-named RAW and JPEG files are reviewed and acted on as one
@@ -234,15 +240,39 @@ final class SessionStore: ObservableObject {
     /// Consecutive still-photo capture times at or below this gap form one
     /// burst. Videos can still be found as exact byte duplicates, but are not
     /// inferred as still-photo bursts.
+    static let burstGroupingIntervalKey = "review.burstGroupingInterval"
     @Published private(set) var burstGroupingInterval: TimeInterval = 2
     @Published private(set) var qualityCuePreferences = CameraQualityWarningPreferences()
-    @Published private(set) var qualityCueEvidence: [String: QualityCueEvidence] = [:]
-    @Published private(set) var qualityCueCheckingIDs: Set<String> = []
+    // Publish coherent batches through objectWillChange, avoiding the measured
+    // quadratic insertion cost of a growing @Published evidence dictionary.
+    private(set) var qualityCueEvidence: [String: QualityCueEvidence] = [:]
+    private(set) var qualityCueCheckingIDs: Set<String> = []
     @Published private(set) var isQualityCueAnalysisPaused = false
     private let qualityCueMeasurement: @Sendable (PhotoItem) async -> QualityCueEvidence
     private var qualityCueTask: Task<Void, Never>?
+    private var qualityCueTaskID: UUID?
+    private var qualityCueRestartRequested = false
+    private var qualityCueFilterNeedsRefresh = false
+    // One byte per item, aligned to physical item order rather than sort order.
+    // The prepared index borrows this only during a synchronous projection;
+    // retaining another copy would make each accepted evidence edit copy it.
+    private var qualityCueMatchCache: [QualityCueMatch]?
+    private var qualityCueUserPaused = false
+    private var qualityCueRestTask: Task<Void, Never>?
+    private var qualityCueInterestGeneration: UInt64 = 0
+    private var qualityCueSelectionOrder: [Int]?
+    private var qualityCueSelectionCursor = 0
+    private let qualityCueResources: @Sendable () -> QualityCueWorkPolicy.Resources
+    private let qualityCueRest: @Sendable (Duration) async -> Void
+    #if DEBUG
+    private(set) var qualityCueSelectionProbesForTesting = 0
+    private(set) var qualityCueMatchBuildsForTesting = 0
+    private(set) var qualityCueMatchUpdatesForTesting = 0
+    #endif
     private var qualityCueGeneration: UInt64 = 0
     private var qualityCueCursor = 0
+    private var qualityCuePhotoCount = 0
+    private var qualityCueMeasuredCount = 0
     private var qualityCueInterestIDs: [String] = []
     private var qualityCuePreferencesObserver: AnyCancellable?
 
@@ -351,7 +381,8 @@ final class SessionStore: ObservableObject {
             if sort != oldValue {
                 filterDebounce?.cancel()
                 filterDebounce = nil
-                rebuildSortedIndices()
+                if itemStructureNeedsRebuild { rebuildStructuralIndices() }
+                else { preparedIndex.rebuildPreparedSort(items, sort: sort) }
                 applyFilter()
             }
         }
@@ -370,7 +401,16 @@ final class SessionStore: ObservableObject {
     /// normal single-photo state: the selection is just `currentIndex`.
     /// Selection gestures keep `currentIndex` inside the set as the anchor.
     @Published private(set) var selectedIndices: Set<Int> = [] {
-        didSet { cachedSelectionSummary = nil }
+        didSet {
+            cachedSelectionSummary = nil
+            if selectedIndices != oldValue {
+                qualityCueSelectionOrder = nil
+                qualityCueSelectionCursor = 0
+                if selectedIndices.contains(where: { needsQualityCueMeasurement(at: $0) }) {
+                    wakeQualityCueRest()
+                }
+            }
+        }
     }
     /// Scan metadata is immutable between item generations. Rating, playback,
     /// and other UI publications do not change this potentially large summary.
@@ -385,7 +425,14 @@ final class SessionStore: ObservableObject {
         didSet {
             updateFileOperationPowerActivity()
             if activeFileOperation != nil {
-                pauseQualityCueAnalysis()
+                if activeFileOperation == .exportCopy {
+                    pauseQualityCueAnalysis()
+                } else {
+                    // Rollback may refresh shared file identity without an
+                    // items assignment. Retire evidence before that mutation.
+                    invalidateQualityCueAnalysis(keepingPaused: true)
+                    if !filter.selectedQualityCues.isEmpty { applyFilter(preservingCurrent: true) }
+                }
                 pauseSessionContentChecks()
                 invalidateDuplicateBurstAnalysis(rebuildLayout: true)
             } else {
@@ -414,7 +461,8 @@ final class SessionStore: ObservableObject {
         didSet {
             updateFileOperationPowerActivity()
             if isRecoveringInterruptedOperations {
-                pauseQualityCueAnalysis()
+                invalidateQualityCueAnalysis(keepingPaused: true)
+                if !filter.selectedQualityCues.isEmpty { applyFilter(preservingCurrent: true) }
                 pauseSessionContentChecks()
             } else {
                 startQualityCueAnalysis()
@@ -508,6 +556,7 @@ final class SessionStore: ObservableObject {
             || isEarlyUserFeedbackPresented
             || isFilterPresented
             || isSortPresented
+            || isReviewStatusPresented
             || isClearAllRatingsConfirmationPresented
             || isLegacySessionMigrationConfirmationPresented
             || isSessionRecoveryPresented
@@ -683,6 +732,7 @@ final class SessionStore: ObservableObject {
     private var prefetchDebounce: DispatchWorkItem?
     private var scanTask: Task<Void, Never>?
     private var duplicateBurstAnalysisTask: Task<Void, Never>?
+    private let duplicateBurstGrouping: @Sendable (DuplicateBurstAnalysis.Result, DuplicateBurstAnalysis.ReviewMode, Int, TimeInterval) async throws -> [DuplicateBurstAnalysis.Group]
     private var duplicateBurstAnalysisGeneration: UInt64 = 0
     private var duplicateBurstRequestedCurrentID: String?
     private var duplicateBurstRequestedSelectionIDs: Set<String> = []
@@ -739,6 +789,11 @@ final class SessionStore: ObservableObject {
     }
     private var recoveryRescanTarget: RecoveryRescanTarget?
     private var preparedIndex = PreparedSessionIndex()
+    private var itemStructureNeedsRebuild = true
+#if DEBUG
+    private(set) var structuralIndexGenerationForTesting: UInt64 = 0
+    var pendingContentFileIDsForTesting: Set<String> { sessionContentPendingFileIDs }
+#endif
     private struct ScanResumeIdentity {
         let folder: URL
         let currentItemID: String?
@@ -821,12 +876,28 @@ final class SessionStore: ObservableObject {
         },
         qualityCueMeasurement: @escaping @Sendable (PhotoItem) async -> QualityCueEvidence = {
             await QualityCueEvidence.measure($0)
+        },
+        qualityCueResources: @escaping @Sendable () -> QualityCueWorkPolicy.Resources = {
+            .current
+        },
+        qualityCueRest: @escaping @Sendable (Duration) async -> Void = {
+            try? await Task.sleep(for: $0)
+        },
+        duplicateBurstGrouping: @escaping @Sendable (DuplicateBurstAnalysis.Result, DuplicateBurstAnalysis.ReviewMode, Int, TimeInterval) async throws -> [DuplicateBurstAnalysis.Group] = {
+            try $0.groupsCancellable(for: $1, visualDistance: $2, burstInterval: $3)
         }
     ) {
         self.persistence = persistence
         self.sessionContentVerification = sessionContentVerification
         self.qualityCueMeasurement = qualityCueMeasurement
+        self.qualityCueResources = qualityCueResources
+        self.qualityCueRest = qualityCueRest
+        self.duplicateBurstGrouping = duplicateBurstGrouping
         self.reviewDefaults = reviewDefaults
+        if let saved = reviewDefaults.object(forKey: Self.burstGroupingIntervalKey) as? Double,
+           saved.isFinite {
+            burstGroupingInterval = min(max(saved, CaptureBurstIntervalInput.range.lowerBound), CaptureBurstIntervalInput.range.upperBound)
+        }
         qualityCuePreferences = CameraQualityWarningPreferences.load(from: reviewDefaults)
         let preferences = ReviewPreferences.load(from: reviewDefaults)
         viewMode = preferences.defaultView
@@ -1019,6 +1090,10 @@ final class SessionStore: ObservableObject {
     }
 
 #if DEBUG
+    var qualityCueCoverageCountsForTesting: (measured: Int, total: Int) {
+        (qualityCueMeasuredCount, qualityCuePhotoCount)
+    }
+
     /// Gives model-focused tests the same derived-data boundary as a completed
     /// folder scan without requiring filesystem setup.
     func rebuildDerivedDataForTesting(sourceFolder: URL? = nil) {
@@ -1276,6 +1351,32 @@ final class SessionStore: ObservableObject {
         )
     }
 
+    private func qualityCueMatch(
+        for item: PhotoItem,
+        preferences: CameraQualityWarningPreferences
+    ) -> QualityCueMatch {
+        guard preferences.hasEnabledRules, item.mediaKind == .photo else { return [] }
+        // This private index contains only revision-accepted evidence. Item
+        // replacement and source-identity changes invalidate it and the masks
+        // together; do not reconstruct every file revision on each rebuild.
+        return CameraQualityWarning.matchingKinds(
+            for: item, analysis: preferences.needsHistogram ? qualityCueEvidence[item.id]?.analysis : nil,
+            preferences: preferences
+        )
+    }
+
+    private func preparedQualityCueMatches() -> [QualityCueMatch] {
+        if let qualityCueMatchCache { return qualityCueMatchCache }
+        // Read observable preferences once, outside the per-photo loop.
+        let preferences = qualityCuePreferences
+        let matches = items.map { qualityCueMatch(for: $0, preferences: preferences) }
+        qualityCueMatchCache = matches
+        #if DEBUG
+        qualityCueMatchBuildsForTesting += 1
+        #endif
+        return matches
+    }
+
     func qualityCueStatus(for item: PhotoItem) -> QualityCueStatus {
         let preferences = qualityCuePreferences
         guard preferences.hasEnabledRules else { return .disabled }
@@ -1298,13 +1399,12 @@ final class SessionStore: ObservableObject {
     }
 
     var qualityCueCoverageSummary: String {
-        let photos = items.filter { $0.mediaKind == .photo }
-        let measured = photos.reduce(0) { $0 + (qualityEvidence(for: $1)?.sampleCount ?? 0 > 0 ? 1 : 0) }
-        return L10n.text("Image measurements: \(measured) of \(photos.count) photos. Missing metadata or RAW fallback gives partial coverage.")
+        return L10n.text("Image checks: \(qualityCueMeasuredCount) of \(qualityCuePhotoCount) photos. Some cues may be unavailable.")
     }
 
     func updateQualityCuePreferences(_ value: CameraQualityWarningPreferences) {
         guard value != qualityCuePreferences else { return }
+        qualityCueMatchCache = nil
         qualityCuePreferences = value
         value.save(to: reviewDefaults)
         if !filter.selectedQualityCues.isEmpty { applyFilter() }
@@ -1315,51 +1415,100 @@ final class SessionStore: ObservableObject {
     private func reloadQualityCuePreferences() {
         let value = CameraQualityWarningPreferences.load(from: reviewDefaults)
         guard value != qualityCuePreferences else { return }
+        qualityCueMatchCache = nil
         qualityCuePreferences = value
         if !filter.selectedQualityCues.isEmpty { applyFilter() }
         if value.needsHistogram { startQualityCueAnalysis() }
         else { pauseQualityCueAnalysis() }
     }
 
-    /// Tile appearance only changes priority. It never creates a task per tile.
+    /// Tile appearance changes priority without creating a task per tile.
     func prioritizeQualityCues(for item: PhotoItem) {
         qualityCueInterestIDs.removeAll { $0 == item.id }
         qualityCueInterestIDs.insert(item.id, at: 0)
         if qualityCueInterestIDs.count > 64 { qualityCueInterestIDs.removeLast() }
+        if qualityEvidence(for: item) == nil { wakeQualityCueRest() }
     }
 
-    func pauseQualityCueAnalysis() {
+    private func needsQualityCueMeasurement(at index: Int) -> Bool {
+        guard items.indices.contains(index) else { return false }
+        let item = items[index]
+        return item.mediaKind == .photo && item.isSupported
+            && qualityEvidence(for: item) == nil && !qualityCueCheckingIDs.contains(item.id)
+    }
+
+    private func wakeQualityCueRest() {
+        qualityCueInterestGeneration &+= 1
+        qualityCueRestTask?.cancel()
+    }
+
+    /// Automatic suspension preserves the user's separate Pause choice.
+    func pauseQualityCueAnalysis(userInitiated: Bool = false) {
+        if userInitiated { qualityCueUserPaused = true }
         qualityCueGeneration &+= 1
+        qualityCueRestartRequested = false
         qualityCueTask?.cancel()
-        qualityCueTask = nil
-        qualityCueCheckingIDs = []
+        qualityCueRestTask?.cancel()
+        // Keep the task/lease until its group exits: immediate Resume cannot
+        // admit another pair while cancelled measurements are still retiring.
+        if !qualityCueCheckingIDs.isEmpty {
+            objectWillChange.send()
+            qualityCueCheckingIDs.removeAll(keepingCapacity: true)
+        }
         qualityCueCursor = 0
-        isQualityCueAnalysisPaused = true
+        qualityCueSelectionOrder = nil
+        qualityCueSelectionCursor = 0
+        if qualityCueFilterNeedsRefresh, case .ready = phase, !itemStructureNeedsRebuild {
+            applyFilter(preservingCurrent: true)
+        }
+        if !isQualityCueAnalysisPaused { isQualityCueAnalysisPaused = true }
     }
 
-    private func invalidateQualityCueAnalysis() {
+    func resumeQualityCueAnalysis() {
+        qualityCueUserPaused = false
+        startQualityCueAnalysis()
+    }
+
+    private func invalidateQualityCueAnalysis(keepingPaused: Bool = false) {
+        qualityCueFilterNeedsRefresh = false
         pauseQualityCueAnalysis()
-        qualityCueEvidence = [:]
-        qualityCueCursor = 0
+        objectWillChange.send()
+        qualityCueEvidence.removeAll()
+        qualityCueMatchCache = nil
+        qualityCueMeasuredCount = 0
+        qualityCuePhotoCount = items.reduce(0) { $0 + ($1.mediaKind == .photo ? 1 : 0) }
         qualityCueInterestIDs = []
-        isQualityCueAnalysisPaused = false
+        isQualityCueAnalysisPaused = keepingPaused || qualityCueUserPaused
     }
 
-    /// Two interested items at a time; each reuses existing bounded histogram
-    /// lanes. Recompute priority after every pair rather than enqueuing a folder.
+    /// Two interested items at a time, followed by adaptive rest. Selection
+    /// priority has a retained frontier; Select All never restarts an O(N) walk
+    /// for each pair. New current/tile/selection interest can interrupt rest.
     func startQualityCueAnalysis() {
         guard case .ready = phase, !isFileOperationRunning,
-              qualityCuePreferences.needsHistogram, qualityCueTask == nil else { return }
-        isQualityCueAnalysisPaused = false
+              qualityCuePreferences.needsHistogram, !qualityCueUserPaused else { return }
+        if let task = qualityCueTask {
+            if task.isCancelled { qualityCueRestartRequested = true }
+            return
+        }
+        if isQualityCueAnalysisPaused { isQualityCueAnalysisPaused = false }
         let generation = qualityCueGeneration
+        let taskID = UUID()
+        qualityCueTaskID = taskID
         let measure = qualityCueMeasurement
+        let rest = qualityCueRest
         let lease = sourceFolderAccess?.makeIndependentAccess()
         qualityCueTask = Task { @MainActor [weak self] in
-            defer { lease?.stop() }
-            var filterNeedsRefresh = false
+            defer {
+                lease?.stop()
+                self?.finishQualityCueTask(taskID)
+            }
             var lastFilterRefresh = ContinuousClock.now
             while !Task.isCancelled {
-                guard let batch = self?.nextQualityCueBatch(generation: generation), !batch.isEmpty else { break }
+                guard let self,
+                      let batch = self.nextQualityCueBatch(generation: generation), !batch.isEmpty else { break }
+                let interestGeneration = self.qualityCueInterestGeneration
+                let workStart = ContinuousClock.now
                 let results = await withTaskGroup(of: (String, QualityCueEvidence).self) { group in
                     for item in batch {
                         group.addTask(priority: .utility) { (item.id, await measure(item)) }
@@ -1368,59 +1517,114 @@ final class SessionStore: ObservableObject {
                     for await result in group { results.append(result) }
                     return results
                 }
-                guard !Task.isCancelled, let self,
-                      self.qualityCueGeneration == generation else { return }
+                guard !Task.isCancelled, self.qualityCueGeneration == generation else { return }
+                self.objectWillChange.send()
                 for (id, evidence) in results {
+                    self.qualityCueCheckingIDs.remove(id)
                     guard let index = self.preparedIndex.itemIndex(forID: id),
                           self.items[index].contentRevision == evidence.revision else { continue }
-                    let previousMatches = Set(self.qualityCues(for: self.items[index]).map(\.kind))
-                        .intersection(self.filter.selectedQualityCues)
+                    let selectedCues = QualityCueMatch(self.filter.selectedQualityCues)
+                    let previouslyMatched = !selectedCues.isEmpty
+                        && !(self.qualityCueMatchCache?[index] ?? self.qualityCueMatch(for: self.items[index], preferences: self.qualityCuePreferences))
+                            .intersection(selectedCues).isEmpty
+                    let wasMeasured = (self.qualityCueEvidence[id]?.sampleCount ?? 0) > 0
+                    let isMeasured = evidence.sampleCount > 0
+                    if self.items[index].mediaKind == .photo, wasMeasured != isMeasured {
+                        self.qualityCueMeasuredCount += isMeasured ? 1 : -1
+                    }
                     self.qualityCueEvidence[id] = evidence
-                    self.qualityCueCheckingIDs.remove(id)
-                    let currentMatches = Set(self.qualityCues(for: self.items[index]).map(\.kind))
-                        .intersection(self.filter.selectedQualityCues)
-                    if previousMatches != currentMatches { filterNeedsRefresh = true }
+                    if self.qualityCueMatchCache != nil || !selectedCues.isEmpty {
+                        let matches = self.qualityCueMatch(for: self.items[index], preferences: self.qualityCuePreferences)
+                        if self.qualityCueMatchCache != nil {
+                            self.qualityCueMatchCache?[index] = matches
+                            #if DEBUG
+                            self.qualityCueMatchUpdatesForTesting += 1
+                            #endif
+                        }
+                        let currentlyMatches = !matches.intersection(selectedCues).isEmpty
+                        if !selectedCues.isEmpty, previouslyMatched != currentlyMatches {
+                            self.qualityCueFilterNeedsRefresh = true
+                        }
+                    }
                 }
-                // Completion only adds matches. Never retarget the current
-                // item or explicit selection as new measurements arrive.
-                if filterNeedsRefresh, lastFilterRefresh.duration(to: .now) >= .milliseconds(100) {
+                // Visibility uses any selected cue. Another cue on an already
+                // matching item cannot require a complete filter projection.
+                if self.qualityCueFilterNeedsRefresh, lastFilterRefresh.duration(to: .now) >= .milliseconds(100) {
                     self.applyFilter(preservingCurrent: true)
-                    filterNeedsRefresh = false
                     lastFilterRefresh = .now
                 }
-                try? await Task.sleep(for: .milliseconds(20))
+                if self.qualityCueInterestGeneration == interestGeneration {
+                    // Publish accepted visibility before a potentially long rest
+                    // or next RAW batch; pacing must not delay known matches.
+                    if self.qualityCueFilterNeedsRefresh {
+                        self.applyFilter(preservingCurrent: true)
+                        lastFilterRefresh = .now
+                    }
+                    let duration = QualityCueWorkPolicy.rest(
+                        after: workStart.duration(to: .now), resources: self.qualityCueResources())
+                    let sleeper = Task { await rest(duration) }
+                    self.qualityCueRestTask = sleeper
+                    await withTaskCancellationHandler {
+                        await sleeper.value
+                    } onCancel: {
+                        sleeper.cancel()
+                    }
+                    self.qualityCueRestTask = nil
+                }
             }
-            guard let self, self.qualityCueGeneration == generation else { return }
-            if filterNeedsRefresh { self.applyFilter(preservingCurrent: true) }
-            self.qualityCueTask = nil
+            guard let self, !Task.isCancelled, self.qualityCueGeneration == generation else { return }
+            if self.qualityCueFilterNeedsRefresh { self.applyFilter(preservingCurrent: true) }
         }
     }
 
-    private func nextQualityCueBatch(generation: UInt64) -> [PhotoItem] {
-        guard qualityCueGeneration == generation else { return [] }
+    private func finishQualityCueTask(_ taskID: UUID) {
+        guard qualityCueTaskID == taskID else { return }
+        qualityCueTask = nil
+        qualityCueTaskID = nil
+        qualityCueRestTask = nil
+        let restart = qualityCueRestartRequested
+        qualityCueRestartRequested = false
+        if restart { startQualityCueAnalysis() }
+    }
+
+    private func nextQualityCueBatch(generation: UInt64) -> [PhotoItem]? {
+        guard qualityCueGeneration == generation else { return nil }
         var batch: [PhotoItem] = []
         func append(_ index: Int) {
             guard batch.count < 2, items.indices.contains(index) else { return }
             let item = items[index]
             guard item.mediaKind == .photo, item.isSupported,
                   qualityEvidence(for: item) == nil,
-                  !qualityCueCheckingIDs.contains(item.id) else { return }
+                  !qualityCueCheckingIDs.contains(item.id),
+                  !batch.contains(where: { $0.id == item.id }) else { return }
             batch.append(item)
-            qualityCueCheckingIDs.insert(item.id)
         }
         append(currentIndex)
-        for index in selectedIndices {
+        if qualityCueSelectionOrder == nil {
+            qualityCueSelectionOrder = Array(selectedIndices)
+            qualityCueSelectionCursor = 0
+        }
+        while batch.count < 2, let order = qualityCueSelectionOrder,
+              qualityCueSelectionCursor < order.count {
+            let index = order[qualityCueSelectionCursor]
+            qualityCueSelectionCursor += 1
+            #if DEBUG
+            qualityCueSelectionProbesForTesting += 1
+            #endif
             append(index)
-            if batch.count == 2 { return batch }
         }
         for id in qualityCueInterestIDs {
             if let index = preparedIndex.itemIndex(forID: id) { append(index) }
-            if batch.count == 2 { return batch }
+            if batch.count == 2 { break }
         }
         for offset in [1, -1, 2, -2, 3] { append(currentIndex + offset) }
         while batch.count < 2, qualityCueCursor < items.count {
             append(qualityCueCursor)
             qualityCueCursor += 1
+        }
+        if !batch.isEmpty {
+            objectWillChange.send()
+            for item in batch { qualityCueCheckingIDs.insert(item.id) }
         }
         return batch
     }
@@ -1428,17 +1632,14 @@ final class SessionStore: ObservableObject {
     // MARK: - Filtering
 
     private func applyFilter(preservingCurrent: Bool = false) {
-        let matchingCueIDs: Set<String>? = filter.selectedQualityCues.isEmpty ? nil : Set(
-            items.lazy.filter { item in
-                self.qualityCues(for: item).contains { self.filter.selectedQualityCues.contains($0.kind) }
-            }.map(\.id)
-        )
+        qualityCueFilterNeedsRefresh = false
+        let cueMatches = filter.selectedQualityCues.isEmpty ? nil : preparedQualityCueMatches()
         preparedIndex.applyFilter(
             filter,
             to: items,
             sort: sort,
             isGroupingEnabled: isGroupingEnabled,
-            matchingItemIDs: matchingCueIDs
+            qualityCueMatches: cueMatches
         )
         applyGroupedReviewLayoutIfNeeded()
         publishPreparedVisibility()
@@ -1488,9 +1689,13 @@ final class SessionStore: ObservableObject {
         applyFilter()
     }
 
-    private func rebuildSortedIndices() {
+    private func rebuildStructuralIndices() {
         rebuildFileItemIndex()
         preparedIndex.rebuildItems(items, sort: sort)
+        itemStructureNeedsRebuild = false
+#if DEBUG
+        structuralIndexGenerationForTesting &+= 1
+#endif
     }
 
     private func rebuildFileItemIndex() {
@@ -1544,31 +1749,22 @@ final class SessionStore: ObservableObject {
     }
 
     private func applyGroupedReviewLayoutIfNeeded() {
+        // Membership is computed by the detached analysis owner. While a new
+        // sensitivity or mode is pending, retain the completed projection.
         guard groupedReviewMode != .off,
-              let result = duplicateBurstAnalysisResult else { return }
-        let groups: [DuplicateBurstAnalysis.Group]
-        if groupedReviewMode == .captureBursts {
-            // Keep the last completed membership while a new interval is
-            // pending. Date grouping itself never runs in a filter/UI turn.
-            guard let cached = duplicateBurstGroupCache, cached.mode == .captureBursts else { return }
-            groups = cached.groups
-        } else if let cached = duplicateBurstGroupCache,
-           cached.mode == groupedReviewMode,
-           cached.distance == visualSimilarityDistance,
-           cached.interval == burstGroupingInterval {
-            groups = cached.groups
-        } else {
-            groups = result.groups(
-                for: groupedReviewMode,
-                visualDistance: visualSimilarityDistance,
-                burstInterval: burstGroupingInterval
-            )
-            duplicateBurstGroupCache = (
-                groupedReviewMode, visualSimilarityDistance,
-                burstGroupingInterval, groups
-            )
+              let cached = duplicateBurstGroupCache,
+              cached.mode == groupedReviewMode else { return }
+        preparedIndex.applyGroupedReview(cached.groups, to: items)
+    }
+
+    private func hasCompletedGroupedReview(_ mode: DuplicateBurstAnalysis.ReviewMode) -> Bool {
+        guard let cached = duplicateBurstGroupCache, cached.mode == mode else { return false }
+        switch mode {
+        case .captureBursts: return cached.interval == burstGroupingInterval
+        case .likelySimilarPhotos: return cached.distance == visualSimilarityDistance
+        case .exactDuplicates: return true
+        case .off: return false
         }
-        preparedIndex.applyGroupedReview(groups, to: items)
     }
 
     // MARK: - Duplicate + burst grouped review
@@ -1581,7 +1777,7 @@ final class SessionStore: ObservableObject {
               !items.isEmpty,
               !isFileOperationRunning,
               !isXMPPublicationRunning else { return }
-        beginDuplicateBurstAnalysis(entering: groupedReviewMode == .captureBursts ? .captureBursts : nil)
+        beginDuplicateBurstAnalysis(entering: groupedReviewMode == .off ? nil : groupedReviewMode)
     }
 
     /// Enters a specific, separately explained grouped layout. Exact-file,
@@ -1598,11 +1794,12 @@ final class SessionStore: ObservableObject {
               !isXMPPublicationRunning else { return }
         if let result = duplicateBurstAnalysisResult, result.supports(mode),
            duplicateBurstAnalysisMatchesCurrentItems() {
-            if mode == .captureBursts,
-               (duplicateBurstGroupCache?.mode != mode || duplicateBurstGroupCache?.interval != burstGroupingInterval) {
-                beginCaptureBurstGrouping(result)
+            if !hasCompletedGroupedReview(mode) {
+                beginDuplicateBurstGrouping(result, mode: mode)
                 return
             }
+            // A cached explicit request supersedes an outstanding request too.
+            cancelDuplicateBurstAnalysis()
             groupedReviewMode = mode
             applyFilter()
         } else {
@@ -1622,8 +1819,13 @@ final class SessionStore: ObservableObject {
         duplicateBurstAnalysisGeneration &+= 1
         duplicateBurstAnalysisTask?.cancel()
         duplicateBurstAnalysisTask = nil
-        if groupedReviewMode == .captureBursts, let cached = duplicateBurstGroupCache {
-            burstGroupingInterval = cached.interval
+        if let cached = duplicateBurstGroupCache, cached.mode == groupedReviewMode {
+            if groupedReviewMode == .captureBursts {
+                burstGroupingInterval = cached.interval
+                reviewDefaults.set(cached.interval, forKey: Self.burstGroupingIntervalKey)
+            } else if groupedReviewMode == .likelySimilarPhotos {
+                visualSimilarityDistance = cached.distance
+            }
         }
         duplicateBurstAnalysisState = duplicateBurstAnalysisResult == nil
             ? .idle
@@ -1634,37 +1836,50 @@ final class SessionStore: ObservableObject {
         let clamped = min(max(distance, 3), 16)
         guard visualSimilarityDistance != clamped else { return }
         visualSimilarityDistance = clamped
-        guard groupedReviewMode == .likelySimilarPhotos else { return }
-        applyFilter()
+        guard groupedReviewMode == .likelySimilarPhotos,
+              let result = duplicateBurstAnalysisResult else { return }
+        beginDuplicateBurstGrouping(result, mode: .likelySimilarPhotos)
     }
 
     func setBurstGroupingInterval(_ interval: TimeInterval) {
-        let clamped = min(max(interval, 0.5), 10)
+        guard interval.isFinite else { return }
+        let clamped = min(max(interval, CaptureBurstIntervalInput.range.lowerBound), CaptureBurstIntervalInput.range.upperBound)
         guard burstGroupingInterval != clamped else { return }
         burstGroupingInterval = clamped
+        reviewDefaults.set(clamped, forKey: Self.burstGroupingIntervalKey)
         guard groupedReviewMode == .captureBursts,
               let result = duplicateBurstAnalysisResult else { return }
-        beginCaptureBurstGrouping(result)
+        beginDuplicateBurstGrouping(result, mode: .captureBursts)
     }
 
-    private func beginCaptureBurstGrouping(_ result: DuplicateBurstAnalysis.Result) {
+    private func beginDuplicateBurstGrouping(
+        _ result: DuplicateBurstAnalysis.Result,
+        mode: DuplicateBurstAnalysis.ReviewMode
+    ) {
         duplicateBurstAnalysisTask?.cancel()
         duplicateBurstAnalysisGeneration &+= 1
         let generation = duplicateBurstAnalysisGeneration
         let interval = burstGroupingInterval
         let distance = visualSimilarityDistance
         let revisions = duplicateBurstAnalysisRevisions
+        let group = duplicateBurstGrouping
         duplicateBurstRequestedCurrentID = currentItemID
         duplicateBurstRequestedSelectionIDs = selectionState.itemIDs
         duplicateBurstAnalysisState = .analyzing
         duplicateBurstAnalysisTask = Task.detached(priority: .utility) { [weak self] in
-            guard !Task.isCancelled else { return }
-            let groups = result.groups(for: .captureBursts, visualDistance: distance, burstInterval: interval)
-            guard !Task.isCancelled else { return }
-            await MainActor.run { [weak self] in
-                self?.finishDuplicateBurstAnalysis(result, generation: generation,
-                    requestedMode: .captureBursts, revisions: revisions,
-                    burstGroups: groups, burstInterval: interval)
+            do {
+                try Task.checkCancellation()
+                let groups = try await group(result, mode, distance, interval)
+                try Task.checkCancellation()
+                await MainActor.run { [weak self] in
+                    self?.finishDuplicateBurstAnalysis(result, generation: generation,
+                        requestedMode: mode, revisions: revisions,
+                        groups: groups, distance: distance, interval: interval)
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.finishDuplicateBurstAnalysisCancellation(generation: generation)
+                }
             }
         }
     }
@@ -1672,11 +1887,11 @@ final class SessionStore: ObservableObject {
     private func beginDuplicateBurstAnalysis(
         entering requestedMode: DuplicateBurstAnalysis.ReviewMode?
     ) {
-        guard !isDuplicateBurstAnalysisRunning else { return }
         duplicateBurstAnalysisTask?.cancel()
         duplicateBurstAnalysisGeneration &+= 1
         let generation = duplicateBurstAnalysisGeneration
-        let inputs = duplicateBurstInputs()
+        let inputs = DuplicateBurstAnalysis.inputs(from: items,
+            mode: requestedMode == .captureBursts ? .captureBursts : .all)
         let revisions = Dictionary(
             uniqueKeysWithValues: items.map { ($0.id, $0.contentRevision) }
         )
@@ -1686,59 +1901,31 @@ final class SessionStore: ObservableObject {
         duplicateBurstAnalysisState = .analyzing
         let interval = burstGroupingInterval
         let distance = visualSimilarityDistance
+        let group = duplicateBurstGrouping
         duplicateBurstAnalysisTask = Task.detached(priority: .utility) { [weak self] in
             do {
                 let result = try DuplicateBurstAnalysis.analyze(
                     inputs, mode: requestedMode == .captureBursts ? .captureBursts : .all
                 )
-                guard !Task.isCancelled else { return }
-                let groups = requestedMode == .captureBursts
-                    ? result.groups(for: .captureBursts, visualDistance: distance, burstInterval: interval) : nil
-                guard !Task.isCancelled else { return }
+                try Task.checkCancellation()
+                let groups: [DuplicateBurstAnalysis.Group]?
+                if let requestedMode {
+                    groups = try await group(result, requestedMode, distance, interval)
+                } else {
+                    groups = nil
+                }
+                try Task.checkCancellation()
                 await MainActor.run { [weak self] in
                     self?.finishDuplicateBurstAnalysis(
-                        result,
-                        generation: generation,
-                        requestedMode: requestedMode,
-                        revisions: revisions,
-                        burstGroups: groups, burstInterval: interval
+                        result, generation: generation, requestedMode: requestedMode,
+                        revisions: revisions, groups: groups, distance: distance, interval: interval
                     )
                 }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.finishDuplicateBurstAnalysisCancellation(
-                        generation: generation
-                    )
+                    self?.finishDuplicateBurstAnalysisCancellation(generation: generation)
                 }
             }
-        }
-    }
-
-    private func duplicateBurstInputs() -> [DuplicateBurstAnalysis.Input] {
-        items.map { item in
-            let physicalFiles = item.individualFiles
-            return DuplicateBurstAnalysis.Input(
-                id: item.id,
-                mediaKind: item.mediaKind,
-                captureDate: item.captureDate,
-                captureDateEvidence: item.captureDateEvidence,
-                exactFiles: physicalFiles.map { file in
-                    DuplicateBurstAnalysis.ExactFile(
-                        reviewItemID: item.id,
-                        url: file.url,
-                        fileSize: file.fileSize,
-                        expectedIdentity: file.scannedIdentity
-                    )
-                },
-                visualFiles: item.mediaKind == .photo && item.isSupported
-                    ? physicalFiles.map { file in
-                        DuplicateBurstAnalysis.VisualFile(
-                            url: file.url,
-                            expectedIdentity: file.scannedIdentity
-                        )
-                    }
-                    : []
-            )
         }
     }
 
@@ -1747,40 +1934,40 @@ final class SessionStore: ObservableObject {
         generation: UInt64,
         requestedMode: DuplicateBurstAnalysis.ReviewMode?,
         revisions: [String: PhotoContentRevision],
-        burstGroups: [DuplicateBurstAnalysis.Group]? = nil,
-        burstInterval: TimeInterval? = nil
+        groups: [DuplicateBurstAnalysis.Group]?,
+        distance: Int,
+        interval: TimeInterval
     ) {
-        guard generation == duplicateBurstAnalysisGeneration,
-              duplicateBurstAnalysisMatchesCurrentItems(revisions) else { return }
+        guard generation == duplicateBurstAnalysisGeneration else { return }
+        guard duplicateBurstAnalysisMatchesCurrentItems(revisions) else {
+            invalidateDuplicateBurstAnalysis(rebuildLayout: true)
+            return
+        }
         duplicateBurstAnalysisTask = nil
         duplicateBurstAnalysisResult = result
         duplicateBurstAnalysisRevisions = revisions
         let selectionUnchanged = duplicateBurstRequestedCurrentID == currentItemID
             && duplicateBurstRequestedSelectionIDs == selectionState.itemIDs
-        if let burstGroups, let burstInterval {
-            if burstInterval != burstGroupingInterval {
-                if selectionUnchanged || groupedReviewMode == .captureBursts {
-                    beginCaptureBurstGrouping(result)
+        if let requestedMode, let groups {
+            let sensitivityChanged = (requestedMode == .captureBursts && interval != burstGroupingInterval)
+                || (requestedMode == .likelySimilarPhotos && distance != visualSimilarityDistance)
+            if sensitivityChanged {
+                if selectionUnchanged || groupedReviewMode == requestedMode {
+                    beginDuplicateBurstGrouping(result, mode: requestedMode)
                 } else {
                     duplicateBurstAnalysisState = .ready
                 }
                 return
             }
-            if selectionUnchanged || groupedReviewMode == .off || groupedReviewMode == .captureBursts {
-                duplicateBurstGroupCache = (.captureBursts, visualSimilarityDistance, burstInterval, burstGroups)
+            if selectionUnchanged || groupedReviewMode == .off || groupedReviewMode == requestedMode {
+                duplicateBurstGroupCache = (requestedMode, distance, interval, groups)
             }
         } else {
             duplicateBurstGroupCache = nil
         }
         duplicateBurstAnalysisState = .ready
-        if let requestedMode,
-           duplicateBurstRequestedCurrentID == currentItemID,
-           duplicateBurstRequestedSelectionIDs == selectionState.itemIDs {
-            groupedReviewMode = requestedMode
-        }
-        if groupedReviewMode != .off {
-            applyFilter(preservingCurrent: true)
-        }
+        if let requestedMode, selectionUnchanged { groupedReviewMode = requestedMode }
+        if groupedReviewMode != .off { applyFilter(preservingCurrent: true) }
     }
 
     private func finishDuplicateBurstAnalysisCancellation(generation: UInt64) {
@@ -1847,7 +2034,7 @@ final class SessionStore: ObservableObject {
                 || !filter.excludedColorStates.isEmpty
         }
         if changesSort {
-            preparedIndex.rebuildSort(items, sort: sort)
+            preparedIndex.rebuildPreparedSort(items, sort: sort)
         }
         if changesSort || changesFilter {
             applyFilter(preservingCurrent: preservingCurrent)
@@ -2011,7 +2198,7 @@ final class SessionStore: ObservableObject {
         } else if videoPlayback.itemID != nil {
             videoPlayback.stop()
         }
-        rebuildSortedIndices()
+        rebuildStructuralIndices()
         if sourceFolder != nil { startQualityCueAnalysis() }
         if let sourceFolder {
             rawJPEGPairs = FolderScanner.rawJPEGPairs(
@@ -6034,6 +6221,7 @@ final class SessionStore: ObservableObject {
         visibleIndices = []
         isFilterPresented = false
         isSortPresented = false
+        isReviewStatusPresented = false
         isOrganizePresented = false
         isRenamePresented = false
         isActionPalettePresented = false

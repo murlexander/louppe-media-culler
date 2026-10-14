@@ -1,0 +1,102 @@
+Building for production...
+[0/43] /private/tmp/louppe-cue-filter-20261014/snapshot/app/.build/arm64-apple-macosx/release/LouppePackageTests.derived/runner.swift
+[1/43] Write swift-version--58304C5D6DBC2206.txt
+[2/43] Compiling random_arc4random_buf.c
+[3/43] Compiling xmlrole.c
+[4/43] Compiling WXMPIterator.cpp
+[5/43] Compiling CoreObjectFactoryImpl.cpp
+[6/43] Compiling ExpatAdapter.cpp
+[7/43] Compiling MD5.cpp
+[8/43] Compiling ParseRDF.cpp
+[9/43] Compiling XMPBridge XMPBridge.mm
+[10/43] Compiling XMPUtils-FileInfo.cpp
+[11/43] Compiling xmltok.c
+[12/43] Compiling XMP_LibUtils.cpp
+[13/43] Compiling XMPUtils2.cpp
+[14/43] Compiling xmlparse.c
+[15/43] Compiling UnicodeConversions.cpp
+[16/43] Compiling XMPMeta2-GetSet.cpp
+[17/43] Compiling XML_Node.cpp
+[18/43] Compiling XMPIterator2.cpp
+[19/43] Copying Sparkle.framework
+[20/43] Copying Localizable.strings
+[26/43] Copying Info.plist
+[26/43] Write sources
+[30/43] Compiling XMPMeta-Serialize.cpp
+[31/43] Compiling XMPUtils.cpp
+[32/43] Compiling XMPMeta-Parse.cpp
+[33/43] Compiling WXMPUtils.cpp
+[34/43] Compiling XMPIterator.cpp
+[35/43] Compiling XMPMeta-GetSet.cpp
+[36/43] Compiling WXMPMeta.cpp
+[37/43] Compiling XMPMeta.cpp
+[38/43] Compiling XMPCore_Impl.cpp
+[40/44] Compiling Louppe AppBuildInfo.swift
+[40/44] Write Objects.LinkFileList
+[41/44] Linking Louppe
+[43/45] Compiling LouppeTests AccessibilityTests.swift
+[44/46] Compiling LouppePackageTests runner.swift
+[44/46] Write Objects.LinkFileList
+[45/46] Linking LouppePackageTests
+Build complete! (131.35s)
+Test Suite 'Selected tests' started at 2026-10-14 11:42:19.986 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-14 11:42:19.993 AM.
+Test Suite 'LouppeSpeedClippingFilterTests' started at 2026-10-14 11:42:19.993 AM.
+Test Case '-[LouppeTests.LouppeSpeedClippingFilterTests testCompletedClippingEvidenceWarmSwitchesUnionAndFirstUse]' started.
+Test Case '-[LouppeTests.LouppeSpeedClippingFilterTests testCompletedClippingEvidenceWarmSwitchesUnionAndFirstUse]' passed (14.218 seconds).
+Test Case '-[LouppeTests.LouppeSpeedClippingFilterTests testFirstAcceptedClippingPairsUpdateOnlyTheirSlots]' started.
+Test Case '-[LouppeTests.LouppeSpeedClippingFilterTests testFirstAcceptedClippingPairsUpdateOnlyTheirSlots]' passed (1.545 seconds).
+Test Suite 'LouppeSpeedClippingFilterTests' passed at 2026-10-14 11:42:35.757 AM.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 15.763 (15.763) seconds
+Test Suite 'LouppeSpeedCueFilterTests' started at 2026-10-14 11:42:35.757 AM.
+Test Case '-[LouppeTests.LouppeSpeedCueFilterTests testCueSwitchesAndClassificationStages]' started.
+Test Case '-[LouppeTests.LouppeSpeedCueFilterTests testCueSwitchesAndClassificationStages]' passed (8.956 seconds).
+Test Suite 'LouppeSpeedCueFilterTests' passed at 2026-10-14 11:42:44.713 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 8.956 (8.956) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-14 11:42:44.713 AM.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 24.719 (24.720) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 11:42:44.713 AM.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 24.719 (24.727) seconds
+SPEED clipping.warm-switch.highlights n=1000 median=0.357ms p95=0.377ms
+SPEED clipping.warm-switch.shadows n=1000 median=0.369ms p95=0.622ms
+SPEED clipping.warm-switch.either-clipping n=1000 median=0.662ms p95=0.792ms
+SPEED clipping.first-use.highlights.after-threshold-change n=1000 median=0.549ms p95=0.714ms
+SPEED clipping.warm-switch.highlights n=10000 median=4.217ms p95=4.611ms
+SPEED clipping.warm-switch.shadows n=10000 median=4.307ms p95=4.495ms
+SPEED clipping.warm-switch.either-clipping n=10000 median=6.818ms p95=7.258ms
+SPEED clipping.first-use.highlights.after-threshold-change n=10000 median=5.343ms p95=6.063ms
+SPEED clipping.warm-switch.highlights n=100000 median=39.339ms p95=39.799ms
+SPEED clipping.warm-switch.shadows n=100000 median=39.919ms p95=41.013ms
+SPEED clipping.warm-switch.either-clipping n=100000 median=70.649ms p95=72.993ms
+SPEED clipping.first-use.highlights.after-threshold-change n=100000 median=66.114ms p95=70.040ms
+SPEED clipping.accepted-pair.release-to-projection-next-admission.poll-1ms n=1000 median=2.106ms p95=2.172ms
+SPEED clipping.accepted-pair.release-to-projection-next-admission.poll-1ms n=10000 median=2.157ms p95=2.196ms
+SPEED clipping.accepted-pair.release-to-projection-next-admission.poll-1ms n=100000 median=2.108ms p95=2.139ms
+SPEED cue.switch.high-iso n=1000 median=0.323ms p95=0.331ms
+SPEED cue.switch.slow-shutter n=1000 median=0.140ms p95=0.147ms
+SPEED cue.switch.either-metadata n=1000 median=0.376ms p95=0.482ms
+SPEED cue.switch.unmeasured-clipping n=1000 median=0.011ms p95=0.011ms
+SPEED cue.switch.none n=1000 median=0.618ms p95=0.660ms
+SPEED cue.first-use.high-iso n=1000 median=0.404ms p95=0.474ms
+SPEED cue.switch.high-iso.with-selection n=1000 median=0.323ms p95=0.466ms
+SPEED cue.switch.high-iso.ungrouped n=1000 median=0.053ms p95=0.059ms
+SPEED legacy.classify-and-build-ids n=1000 median=0.622ms p95=0.681ms
+SPEED cue.switch.high-iso n=10000 median=3.099ms p95=3.608ms
+SPEED cue.switch.slow-shutter n=10000 median=1.208ms p95=1.563ms
+SPEED cue.switch.either-metadata n=10000 median=3.639ms p95=3.831ms
+SPEED cue.switch.unmeasured-clipping n=10000 median=0.015ms p95=0.016ms
+SPEED cue.switch.none n=10000 median=6.279ms p95=7.043ms
+SPEED cue.first-use.high-iso n=10000 median=4.616ms p95=5.779ms
+SPEED cue.switch.high-iso.with-selection n=10000 median=3.139ms p95=4.516ms
+SPEED cue.switch.high-iso.ungrouped n=10000 median=0.317ms p95=0.338ms
+SPEED legacy.clawarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+ssify-and-build-ids n=10000 median=7.271ms p95=8.269ms
+SPEED cue.switch.high-iso n=100000 median=39.202ms p95=41.361ms
+SPEED cue.switch.slow-shutter n=100000 median=18.052ms p95=23.944ms
+SPEED cue.switch.either-metadata n=100000 median=44.431ms p95=51.071ms
+SPEED cue.switch.unmeasured-clipping n=100000 median=0.055ms p95=0.056ms
+SPEED cue.switch.none n=100000 median=93.979ms p95=100.789ms
+SPEED cue.first-use.high-iso n=100000 median=53.350ms p95=57.437ms
+SPEED cue.switch.high-iso.with-selection n=100000 median=38.922ms p95=42.886ms
+SPEED cue.switch.high-iso.ungrouped n=100000 median=8.155ms p95=9.265ms
+SPEED legacy.classify-and-build-ids n=100000 median=68.573ms p95=69.084ms

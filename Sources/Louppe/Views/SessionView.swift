@@ -21,6 +21,7 @@ import AppKit
 struct SessionView: View {
     @ObservedObject var store: SessionStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("louppe.showQuickStart") private var showQuickStart = true
 
     var body: some View {
         mainContent
@@ -291,12 +292,44 @@ struct SessionView: View {
         return text
     }
 
+    private var hasReviewStatusDetails: Bool {
+        showQuickStart || store.filter.isActive
+            || (store.isReviewComplete && !store.isGroupedReviewActive)
+    }
+
     private var statusText: some View {
+        Group {
+            if hasReviewStatusDetails {
+                Button { store.isReviewStatusPresented.toggle() } label: {
+                    statusLabel
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $store.isReviewStatusPresented, arrowEdge: .bottom) {
+                    SessionReviewStatus(store: store)
+                }
+                .accessibilityLabel(L10n.text("Review progress and decision totals"))
+                .accessibilityValue("\(subtitle), \(store.sessionSaveStatus)")
+            } else {
+                statusLabel
+                    .accessibilityElement(children: .combine)
+            }
+        }
+        .onChange(of: hasReviewStatusDetails) { _, hasDetails in
+            if !hasDetails { store.isReviewStatusPresented = false }
+        }
+    }
+
+    private var statusLabel: some View {
         HStack(spacing: 8) {
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
+            VStack(spacing: 2) {
+                Text(subtitle)
+                    .font(.subheadline)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                Text(store.sessionSaveStatus)
+                    .font(.caption)
+            }
+            .foregroundStyle(.secondary)
             // Background-work spinner. Always present (just invisible when
             // idle) so the status text doesn't shift when it appears.
             ProgressView()
@@ -318,8 +351,13 @@ struct SessionView: View {
                         && !store.isChangingRawJPEGPairingMode
                         && !store.isDuplicateBurstAnalysisRunning
                 )
+            if hasReviewStatusDetails {
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
-        .help(L10n.text("Review progress and decision totals"))
+        .contentShape(Rectangle())
     }
 
     private var mainContent: some View {
@@ -349,9 +387,6 @@ struct SessionView: View {
                         .transition(.move(edge: .trailing))
                 }
             }
-            Divider()
-            SessionReviewFooter(store: store)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -363,11 +398,20 @@ struct SessionView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(store.groupedReviewMode.analysisTitle)
                     .font(.subheadline.weight(.semibold))
-                Text(
-                    store.groupedReviewGroupCount == 1
-                        ? L10n.text("\(store.groupedReviewExplanation) 1 group is visible. Review only — nothing is changed automatically.")
-                        : L10n.text("\(store.groupedReviewExplanation) \(store.groupedReviewGroupCount) groups are visible. Review only — nothing is changed automatically.")
-                )
+                Group {
+                    if store.groupedReviewMode == .captureBursts {
+                        Text(store.groupedReviewGroupCount == 1
+                             ? L10n.text("1 group")
+                             : L10n.text("\(store.groupedReviewGroupCount) groups"))
+                            .help(store.groupedReviewExplanation)
+                    } else {
+                        Text(
+                            store.groupedReviewGroupCount == 1
+                                ? L10n.text("\(store.groupedReviewExplanation) 1 group is visible. Review only — nothing is changed automatically.")
+                                : L10n.text("\(store.groupedReviewExplanation) \(store.groupedReviewGroupCount) groups are visible. Review only — nothing is changed automatically.")
+                        )
+                    }
+                }
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)

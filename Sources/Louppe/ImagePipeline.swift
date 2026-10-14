@@ -41,14 +41,27 @@ final class ImagePipeline: @unchecked Sendable {
         let key: String
     }
     private final class PendingDecode {
-        var waiters: [CheckedContinuation<NSImage?, Never>]
+        var waiters: [UUID: CheckedContinuation<NSImage?, Never>]
         let operation: BlockOperation
 
-        init(waiters: [CheckedContinuation<NSImage?, Never>], operation: BlockOperation) {
+        init(waiters: [UUID: CheckedContinuation<NSImage?, Never>], operation: BlockOperation) {
             self.waiters = waiters
             self.operation = operation
         }
     }
+    private struct DecodedImage {
+        let image: NSImage
+        let cost: Int
+        let diskWrite: (image: CGImage, url: URL)?
+
+        init(_ image: CGImage, diskURL: URL? = nil) {
+            self.image = NSImage(cgImage: image, size: .zero)
+            cost = ImagePipeline.cost(of: image)
+            diskWrite = diskURL.map { (image, $0) }
+        }
+    }
+    private let testingDecoder: (@Sendable (URL, CGFloat) -> CGImage?)?
+
     private final class GeneratedImageBox: @unchecked Sendable {
         private let lock = NSLock()
         private var image: CGImage?
@@ -89,18 +102,28 @@ final class ImagePipeline: @unchecked Sendable {
 
     /// Isolated cache instance for focused tests. Production code always uses
     /// `shared`; this initializer deliberately skips UserDefaults and pruning.
-    convenience init(testingDiskCacheRoot: URL) {
+    convenience init(
+        testingDiskCacheRoot: URL,
+        thumbnailConcurrency: Int? = nil,
+        fullConcurrency: Int? = nil,
+        decoder: (@Sendable (URL, CGFloat) -> CGImage?)? = nil
+    ) {
         self.init(
             diskCacheRoot: testingDiskCacheRoot,
-            schedulesMaintenance: false
+            schedulesMaintenance: false,
+            testingDecoder: decoder
         )
+        if let thumbnailConcurrency { thumbnailDecodeQueue.maxConcurrentOperationCount = max(1, thumbnailConcurrency) }
+        if let fullConcurrency { fullDecodeQueue.maxConcurrentOperationCount = max(1, fullConcurrency) }
     }
 
     private init(
         diskCacheRoot: URL,
-        schedulesMaintenance: Bool
+        schedulesMaintenance: Bool,
+        testingDecoder: (@Sendable (URL, CGFloat) -> CGImage?)? = nil
     ) {
         self.diskCacheRoot = diskCacheRoot
+        self.testingDecoder = testingDecoder
         thumbCache.countLimit = 1200
         thumbCache.totalCostLimit = 256 * 1024 * 1024
         fullCache.countLimit = 8
@@ -152,7 +175,7 @@ final class ImagePipeline: @unchecked Sendable {
     }
 
     func thumbnail(for item: PhotoItem) async -> NSImage? {
-        guard !item.isAudio && !item.isText else { return nil }
+        guard !item.isAudio && !item.isText, !Task.isCancelled else { return nil }
         let key = Self.cacheKey(for: item)
         if let cached = thumbCache.object(forKey: key as NSString) { return cached }
         let revision = MediaSourceRevision(item)
@@ -167,7 +190,7 @@ final class ImagePipeline: @unchecked Sendable {
     }
 
     func fullImage(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault) async -> NSImage? {
-        guard !item.isAudio && !item.isText else { return nil }
+        guard !item.isAudio && !item.isText, !Task.isCancelled else { return nil }
         let key = Self.fullCacheKey(for: item, mode: mode, decoder: decoder)
         if let cached = fullCache.object(forKey: key as NSString) { return cached }
         return await fullImage(
@@ -188,7 +211,8 @@ final class ImagePipeline: @unchecked Sendable {
         rendersRAW: Bool = false,
         decoder: AppleRawDecoder = .appleDefault
     ) async -> NSImage? {
-        await decodeOnce(
+        guard !Task.isCancelled else { return nil }
+        return await decodeOnce(
             kind: .full,
             key: key,
             qualityOfService: qualityOfService,
@@ -214,69 +238,131 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
 
-    /// Coalesce all callers waiting for the same decode. Cancellation of one
-    /// SwiftUI task does not throw away work another tile/prefetch may need;
-    /// the shared bounded operation completes and warms the cache once.
+    /// Each caller owns a cancellable waiter, while live callers still share
+    /// one bounded operation. Retiring the last waiter removes queued work;
+    /// an uncancellable ImageIO call retains its queue slot until it exits.
     private func decodeOnce(
         kind: DecodeKind,
         key: String,
         qualityOfService: QualityOfService,
         queuePriority: Operation.QueuePriority,
-        work: @escaping @Sendable () -> NSImage?
+        work: @escaping @Sendable () -> DecodedImage?
     ) async -> NSImage? {
-        await withCheckedContinuation { continuation in
-            let request = DecodeRequest(kind: kind, key: key)
-            inFlightLock.lock()
-            if let pending = inFlight[request] {
-                pending.waiters.append(continuation)
-                // A visible photo may join a utility prefetch already waiting
-                // in the queue. Promote that shared operation immediately.
-                if queuePriority == .veryHigh {
-                    pending.operation.queuePriority = .veryHigh
-                    pending.operation.qualityOfService = .userInitiated
+        let request = DecodeRequest(kind: kind, key: key)
+        let waiterID = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                inFlightLock.lock()
+                guard !Task.isCancelled else {
+                    inFlightLock.unlock()
+                    continuation.resume(returning: nil)
+                    return
                 }
+                let cached: NSImage?
+                switch kind {
+                case .thumbnail: cached = thumbCache.object(forKey: key as NSString)
+                case .full: cached = fullCache.object(forKey: key as NSString)
+                }
+                if let cached {
+                    inFlightLock.unlock()
+                    continuation.resume(returning: cached)
+                    return
+                }
+                if let pending = inFlight[request] {
+                    pending.waiters[waiterID] = continuation
+                    // Visible work can promote an existing neighbour prefetch.
+                    if queuePriority == .veryHigh {
+                        pending.operation.queuePriority = .veryHigh
+                        pending.operation.qualityOfService = .userInitiated
+                    }
+                    inFlightLock.unlock()
+                    return
+                }
+
+                let operation = BlockOperation()
+                operation.addExecutionBlock { [weak self, weak operation] in
+                    guard let self, let operation, !operation.isCancelled else { return }
+                    let result = autoreleasepool { work() }
+                    self.finish(request, operation: operation, result: result)
+                }
+                operation.qualityOfService = qualityOfService
+                operation.queuePriority = queuePriority
+                inFlight[request] = PendingDecode(
+                    waiters: [waiterID: continuation], operation: operation
+                )
                 inFlightLock.unlock()
-                return
+                switch kind {
+                case .thumbnail: thumbnailDecodeQueue.addOperation(operation)
+                case .full: fullDecodeQueue.addOperation(operation)
+                }
             }
-
-            let operation = BlockOperation { [weak self] in
-                let result = work()
-                self?.finish(request, result: result)
-            }
-            operation.qualityOfService = qualityOfService
-            operation.queuePriority = queuePriority
-            inFlight[request] = PendingDecode(waiters: [continuation], operation: operation)
-            inFlightLock.unlock()
-            switch kind {
-            case .thumbnail: thumbnailDecodeQueue.addOperation(operation)
-            case .full: fullDecodeQueue.addOperation(operation)
-            }
+        } onCancel: { [weak self] in
+            self?.cancelWaiter(waiterID, for: request)
         }
     }
 
-    private func finish(_ request: DecodeRequest, result: NSImage?) {
+    private func cancelWaiter(_ waiterID: UUID, for request: DecodeRequest) {
         inFlightLock.lock()
-        let waiters = inFlight.removeValue(forKey: request)?.waiters ?? []
-        inFlightLock.unlock()
-        for waiter in waiters {
-            waiter.resume(returning: result)
+        guard let pending = inFlight[request],
+              let waiter = pending.waiters.removeValue(forKey: waiterID)
+        else {
+            inFlightLock.unlock()
+            return
         }
+        if pending.waiters.isEmpty {
+            inFlight.removeValue(forKey: request)
+            // BlockOperation cancellation never releases an executing lane:
+            // its synchronous block must return before the next worker starts.
+            pending.operation.cancel()
+        }
+        inFlightLock.unlock()
+        waiter.resume(returning: nil)
     }
+
+    private func finish(_ request: DecodeRequest, operation: BlockOperation, result: DecodedImage?) {
+        inFlightLock.lock()
+        guard let pending = inFlight[request], pending.operation === operation else {
+            inFlightLock.unlock()
+            return
+        }
+        inFlight.removeValue(forKey: request)
+        if let result, !operation.isCancelled {
+            switch request.kind {
+            case .thumbnail: thumbCache.setObject(result.image, forKey: request.key as NSString, cost: result.cost)
+            case .full: fullCache.setObject(result.image, forKey: request.key as NSString, cost: result.cost)
+            }
+            if let write = result.diskWrite {
+                // Only a live operation may warm memory or schedule disk I/O.
+                diskQueue.async {
+                    let rep = NSBitmapImageRep(cgImage: write.image)
+                    if let jpeg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.8]) {
+                        try? jpeg.write(to: write.url, options: .atomic)
+                    }
+                }
+            }
+        }
+        let waiters = Array(pending.waiters.values)
+        inFlightLock.unlock()
+        for waiter in waiters { waiter.resume(returning: result?.image) }
+    }
+
+    #if DEBUG
+    func decodeWaiterCountForTesting(for item: PhotoItem, full: Bool = false) -> Int {
+        let request = DecodeRequest(kind: full ? .full : .thumbnail, key: Self.cacheKey(for: item))
+        return inFlightLock.withLock { inFlight[request]?.waiters.count ?? 0 }
+    }
+    #endif
 
     // MARK: - Decoding
 
-    private func loadThumbnailSync(item: PhotoItem, revision: MediaSourceRevision, key: String) -> NSImage? {
+    private func loadThumbnailSync(item: PhotoItem, revision: MediaSourceRevision, key: String) -> DecodedImage? {
         guard !item.isAudio && !item.isText else { return nil }
-        if let cached = thumbCache.object(forKey: key as NSString) { return cached }
-
         // Try the on-disk thumbnail cache first.
         let diskURL = diskCacheRoot.appendingPathComponent(
             Self.diskFileName(for: key)
         )
         if let cgImage = Self.decodeImage(url: diskURL, maxPixel: Self.thumbPixelSize) {
-            let image = NSImage(cgImage: cgImage, size: .zero)
-            thumbCache.setObject(image, forKey: key as NSString, cost: Self.cost(of: cgImage))
-            return image
+            return DecodedImage(cgImage)
         }
 
         // v5 binds the cache to scan-time physical identity. Identity-less
@@ -297,58 +383,29 @@ final class ImagePipeline: @unchecked Sendable {
                 maxPixel: Self.thumbPixelSize
             ) else { continue }
 
-            let image = NSImage(cgImage: cgImage, size: .zero)
-            thumbCache.setObject(
-                image,
-                forKey: key as NSString,
-                cost: Self.cost(of: cgImage)
-            )
-            // Re-encode the image ImageIO already validated. Atomic write
-            // replaces a corrupt v5 destination as well as creating a missing
-            // one, without trusting compatibility bytes a second time after a
-            // possible prune or another process's cache mutation.
-            diskQueue.async {
-                let rep = NSBitmapImageRep(cgImage: cgImage)
-                if let jpeg = rep.representation(
-                    using: .jpeg,
-                    properties: [.compressionFactor: 0.8]
-                ) {
-                    try? jpeg.write(to: diskURL, options: .atomic)
-                }
-            }
-            return image
+            // Re-encode validated compatibility pixels only if the operation
+            // still owns live waiters when it finishes.
+            return DecodedImage(cgImage, diskURL: diskURL)
         }
 
         let cgImage = revision.read {
-            item.isVideo
+            if let testingDecoder { return testingDecoder(revision.url, Self.thumbPixelSize) }
+            return item.isVideo
                 ? decodeFirstVideoFrame(url: revision.url, maxPixel: Self.thumbPixelSize)
                 : Self.decodeImage(url: revision.url, maxPixel: Self.thumbPixelSize)
         }
         guard let cgImage else { return nil }
-        let image = NSImage(cgImage: cgImage, size: .zero)
-        thumbCache.setObject(image, forKey: key as NSString, cost: Self.cost(of: cgImage))
-
-        // The decoded image can render immediately; JPEG compression and disk
-        // writing are best-effort background maintenance.
-        diskQueue.async {
-            let rep = NSBitmapImageRep(cgImage: cgImage)
-            if let jpeg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.8]) {
-                try? jpeg.write(to: diskURL, options: .atomic)
-            }
-        }
-        return image
+        return DecodedImage(cgImage, diskURL: diskURL)
     }
 
-    private func loadFullSync(revision: MediaSourceRevision, key: String, rendersRAW: Bool, decoder: AppleRawDecoder) -> NSImage? {
-        if let cached = fullCache.object(forKey: key as NSString) { return cached }
+    private func loadFullSync(revision: MediaSourceRevision, key: String, rendersRAW: Bool, decoder: AppleRawDecoder) -> DecodedImage? {
         guard let cgImage = revision.read({
-            rendersRAW
+            if let testingDecoder { return testingDecoder(revision.url, Self.fullPixelSize) }
+            return rendersRAW
                 ? RawImageRendering.preview(url: revision.url, maximumPixelSize: Self.fullPixelSize, decoder: decoder)
                 : Self.decodeImage(url: revision.url, maxPixel: Self.fullPixelSize)
         }) else { return nil }
-        let image = NSImage(cgImage: cgImage, size: .zero)
-        fullCache.setObject(image, forKey: key as NSString, cost: Self.cost(of: cgImage))
-        return image
+        return DecodedImage(cgImage)
     }
 
     /// Exact first displayable movie frame. This runs on the existing bounded

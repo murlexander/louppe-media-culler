@@ -1,64 +1,30 @@
 import SwiftUI
 
-/// A single status strip below the media, with optional first-use guidance.
-struct SessionReviewFooter: View {
+/// Session details live in the toolbar popover, leaving the media full height.
+struct SessionReviewStatus: View {
     @ObservedObject var store: SessionStore
     @AppStorage("louppe.showQuickStart") private var showQuickStart = true
 
     var body: some View {
-        VStack(spacing: 4) {
-            if showQuickStart {
-                HStack(spacing: 8) {
-                    Text(L10n.text("F Yes · D No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .help(L10n.text("F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Arrows browse; ⌘Z undoes. Decisions save automatically; No never trashes files."))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Button(L10n.text("Dismiss tips"), systemImage: "xmark") {
-                        showQuickStart = false
-                    }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.plain)
-                    .help(L10n.text("Hide this tip. See Help > Louppe Help for shortcuts."))
-                }
-            }
-
-            HStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 12) {
+            if !informationSummary.isEmpty {
                 Text(informationSummary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .help(informationSummary)
-                    .accessibilityLabel(informationSummary)
-                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-
-                Group {
-                    if store.viewMode == .gallery,
-                       let item = store.currentItem,
-                       item.mediaKind == .photo && item.isSupported {
-                        PhotoZoomControl(store: store)
-                    } else {
-                        Color.clear
-                    }
-                }
-                .frame(width: store.currentItem?.isRaw == true ? 300 : 240, height: 28)
-
-                Text(store.sessionSaveStatus)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .help(L10n.text("Decisions, stars, and colors save automatically. Reopen this folder to continue. Export → Metadata (XMP) shares ratings with editing apps."))
-                    .accessibilityLabel(L10n.text("Session: \(store.sessionSaveStatus)"))
-                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
+                    .font(.callout)
             }
-            .frame(height: 28)
+
+            if showQuickStart {
+                if !informationSummary.isEmpty { Divider() }
+                Text(L10n.text("F Yes · D No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place."))
+                    .font(.callout)
+                Button(L10n.text("Dismiss tips")) {
+                    showQuickStart = false
+                }
+                .help(L10n.text("Hide this tip. See Help > Louppe Help for shortcuts."))
+            }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 6)
-        .background(Color.appBackground)
+        .padding(16)
+        .frame(width: 320, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var informationSummary: String {
@@ -83,7 +49,8 @@ extension PhotoFilter {
                 (.yes, L10n.text("Yes")), (.no, L10n.text("No")), (.undecided, L10n.text("Undecided")), (.mixed, L10n.text("Mixed"))
             ]
             let included = choices.filter { !excludedDecisionStates.contains($0.0) }.map(\.1)
-            parts.append("Decision: " + (included.isEmpty ? L10n.text("none") : included.joined(separator: ", ")))
+            let decisions = included.isEmpty ? L10n.text("none") : included.joined(separator: ", ")
+            parts.append(L10n.text("Decision: \(decisions)"))
         }
         if !excludedStarStates.isEmpty { parts.append(L10n.text("Stars")) }
         if !excludedColorStates.isEmpty { parts.append(L10n.text("Color")) }
@@ -98,6 +65,6 @@ extension PhotoFilter {
         if videoFrameRateEnabled || !excludedVideoResolutions.isEmpty || !excludedVideoCodecs.isEmpty {
             parts.append(L10n.text("Video details"))
         }
-        return "Filters: " + parts.joined(separator: " · ")
+        return L10n.text("Filters: \(parts.joined(separator: " · "))")
     }
 }

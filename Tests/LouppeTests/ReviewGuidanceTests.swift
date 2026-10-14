@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import XCTest
 @testable import Louppe
 
@@ -34,6 +35,28 @@ final class ReviewGuidanceTests: XCTestCase {
         store.rate(.yes, at: 3)
         XCTAssertTrue(store.isReviewComplete)
         XCTAssertEqual(store.yesCount + store.noCount, store.items.count)
+    }
+
+    func testStatusPopoverOwnsReviewKeysUntilDismissed() throws {
+        let store = SessionStore()
+        store.items = [item("PENDING.JPG")]
+        store.phase = .ready
+        store.rebuildDerivedDataForTesting()
+        let view = SessionView(store: store)
+        let rateYes = try XCTUnwrap(NSEvent.keyEvent(
+            with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+            windowNumber: 0, context: nil, characters: "f",
+            charactersIgnoringModifiers: "f", isARepeat: false, keyCode: 3
+        ))
+
+        store.isReviewStatusPresented = true
+        XCTAssertFalse(view.handleKey(rateYes))
+        XCTAssertEqual(store.items[0].rating, .undecided)
+        store.presentActionPalette()
+        XCTAssertFalse(store.isActionPalettePresented, "Commands must not run behind status details")
+        store.isReviewStatusPresented = false
+        XCTAssertTrue(view.handleKey(rateYes))
+        XCTAssertEqual(store.items[0].rating, .yes)
     }
 
     func testFilterSummaryNamesOnlyActiveChoices() {

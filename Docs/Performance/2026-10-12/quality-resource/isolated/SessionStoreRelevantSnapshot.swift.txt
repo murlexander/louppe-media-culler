@@ -1,0 +1,20 @@
+// Original SessionStore.swift line 242
+    @Published private(set) var qualityCueEvidence: [String: QualityCueEvidence] = [:]
+
+// Original SessionStore.swift lines 1405-1420
+                for (id, evidence) in results {
+                    guard let index = self.preparedIndex.itemIndex(forID: id),
+                          self.items[index].contentRevision == evidence.revision else { continue }
+                    let previousMatches = Set(self.qualityCues(for: self.items[index]).map(\.kind))
+                        .intersection(self.filter.selectedQualityCues)
+                    let wasMeasured = (self.qualityCueEvidence[id]?.sampleCount ?? 0) > 0
+                    let isMeasured = evidence.sampleCount > 0
+                    if self.items[index].mediaKind == .photo, wasMeasured != isMeasured {
+                        self.qualityCueMeasuredCount += isMeasured ? 1 : -1
+                    }
+                    self.qualityCueEvidence[id] = evidence
+                    self.qualityCueCheckingIDs.remove(id)
+                    let currentMatches = Set(self.qualityCues(for: self.items[index]).map(\.kind))
+                        .intersection(self.filter.selectedQualityCues)
+                    if previousMatches != currentMatches { filterNeedsRefresh = true }
+                }

@@ -193,7 +193,7 @@ struct ExportView: View {
             Picker(L10n.text("Mode"), selection: $mode) {
                 Text(L10n.text("Copy")).tag(ExportMode.copy)
                 Text(L10n.text("Move")).tag(ExportMode.move)
-                Text("Metadata (XMP)").tag(ExportMode.metadataXMP)
+                Text(L10n.text("Metadata (XMP)")).tag(ExportMode.metadataXMP)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -438,11 +438,11 @@ struct ExportView: View {
                 }
             }
             HStack(spacing: 8) {
-                quickPickButton("Keepers (Yes)", pick: .keepers)
+                quickPickButton(L10n.text("Keepers (Yes)"), pick: .keepers)
                     .help(store.exportKeepersRequested
                         ? L10n.text("Yes decisions, with any stars or colors, from the whole folder")
                         : L10n.text("Yes decisions, with any stars or colors, from the current filter"))
-                quickPickButton("4–5 Stars", pick: .fourFiveStars)
+                quickPickButton(L10n.text("4–5 Stars"), pick: .fourFiveStars)
                     .help(L10n.text("4 or 5 stars with any decision or color, from the current filter"))
                 quickPickButton(L10n.text("All Selected"), pick: .allSelected)
                     .help(L10n.text("Every explicitly selected item, regardless of decision, stars, or color"))
@@ -548,7 +548,7 @@ struct ExportView: View {
             Picker(L10n.text("Mode"), selection: $mode) {
                 Text(L10n.text("Copy")).tag(ExportMode.copy)
                 Text(L10n.text("Move")).tag(ExportMode.move)
-                Text("Metadata (XMP)").tag(ExportMode.metadataXMP)
+                Text(L10n.text("Metadata (XMP)")).tag(ExportMode.metadataXMP)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -1265,7 +1265,7 @@ struct ExportView: View {
         switch state {
         case .unrated: return L10n.text("Unrated")
         case .stars(let rating):
-            return rating == .one ? L10n.text("1 star") : "\(rating.count) stars"
+            return rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count) stars")
         case .mixed: return L10n.text("Mixed")
         }
     }
@@ -1303,7 +1303,8 @@ struct ExportView: View {
             Spacer()
             content()
                 .labelsHidden()
-                .frame(width: 170)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(minWidth: 170, alignment: .trailing)
         }
     }
 
@@ -1416,7 +1417,7 @@ struct ExportView: View {
     private func xmpPreflightView(_ plan: XMPPublicationPlan) -> some View {
         let issues = plan.entries.filter { !$0.category.canPublish }
         let changes = plan.changeCounts
-        return SheetForm(title: "Metadata (XMP)") {
+        return SheetForm(title: L10n.text("Metadata (XMP)")) {
             Text(L10n.text("Ready to write with \(plan.profile.displayName)"))
                 .font(.headline)
 
@@ -1519,7 +1520,7 @@ struct ExportView: View {
             Text(result.cancelled
                 ? L10n.text("Metadata writing stopped")
                 : result.isClean
-                    ? "Metadata (XMP) complete"
+                    ? L10n.text("Metadata (XMP) complete")
                     : L10n.text("Metadata (XMP) finished with problems"))
                 .font(.title3.bold())
 

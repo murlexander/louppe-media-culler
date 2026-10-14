@@ -176,7 +176,7 @@ enum DuplicateBurstAnalysis {
             case .likelySimilarPhotos:
                 return L10n.text("Likely similar · \(count) \(itemText) · local preview comparison")
             case .captureBursts:
-                let title = L10n.text("Capture burst · \(count) \(itemText) · close photo dates")
+                let title = L10n.text("Capture burst · \(count) \(itemText)")
                 return captureDateNote.map { "\(title) · \($0)" } ?? title
             case .off:
                 return ""
@@ -220,42 +220,77 @@ enum DuplicateBurstAnalysis {
             visualDistance: Int,
             burstInterval: TimeInterval
         ) -> [Group] {
+            groups(for: mode, visualDistance: visualDistance,
+                   burstInterval: burstInterval, checkingCancellation: {})
+        }
+
+        /// Membership runs in the session's existing detached analysis owner.
+        /// Cancellation never returns partial groups for publication.
+        func groupsCancellable(
+            for mode: ReviewMode,
+            visualDistance: Int,
+            burstInterval: TimeInterval
+        ) throws -> [Group] {
+            try groups(for: mode, visualDistance: visualDistance,
+                       burstInterval: burstInterval,
+                       checkingCancellation: DuplicateBurstAnalysis.checkCancellation)
+        }
+
+        /// A per-call checkpoint also makes cooperative cancellation testable
+        /// without timing a worker against the scheduler.
+        func groups(
+            for mode: ReviewMode,
+            visualDistance: Int,
+            burstInterval: TimeInterval,
+            checkingCancellation: () throws -> Void
+        ) rethrows -> [Group] {
+            try checkingCancellation()
             guard supports(mode) else { return [] }
+            let itemSets: [[String]]
             switch mode {
             case .off:
                 return []
             case .exactDuplicates:
-                return makeGroups(
-                    from: exactDuplicateItemSets,
-                    mode: mode
-                )
+                itemSets = exactDuplicateItemSets
             case .likelySimilarPhotos:
-                return makeGroups(
-                    from: visualDuplicateSets(maxDistance: visualDistance),
-                    mode: mode
+                itemSets = try visualDuplicateSets(
+                    maxDistance: visualDistance,
+                    checkingCancellation: checkingCancellation
                 )
             case .captureBursts:
-                return makeGroups(
-                    from: burstSets(maximumGap: burstInterval),
-                    mode: mode
+                itemSets = try burstSets(
+                    maximumGap: burstInterval,
+                    checkingCancellation: checkingCancellation
                 )
             }
+            return try makeGroups(from: itemSets, mode: mode,
+                                  checkingCancellation: checkingCancellation)
         }
 
         private func makeGroups(
             from itemSets: [[String]],
-            mode: ReviewMode
-        ) -> [Group] {
-            let inferredDateIDs = mode == .captureBursts ? Set(
-                burstCandidates.filter {
-                    $0.captureDateEvidence?.isInferred ?? true
-                }.map(\.itemID)
-            ) : []
-            return itemSets.enumerated().compactMap { index, itemIDs in
+            mode: ReviewMode,
+            checkingCancellation: () throws -> Void
+        ) rethrows -> [Group] {
+            var inferredDateIDs = Set<String>()
+            if mode == .captureBursts {
+                for candidate in burstCandidates {
+                    try checkingCancellation()
+                    if candidate.captureDateEvidence?.isInferred ?? true {
+                        inferredDateIDs.insert(candidate.itemID)
+                    }
+                }
+            }
+            return try itemSets.enumerated().compactMap { index, itemIDs in
+                try checkingCancellation()
                 var seen = Set<String>()
-                let unique = mode == .captureBursts
-                    ? itemIDs.filter { seen.insert($0).inserted }
-                    : Array(Set(itemIDs)).sorted()
+                var unique: [String] = []
+                for itemID in itemIDs {
+                    try checkingCancellation()
+                    if seen.insert(itemID).inserted { unique.append(itemID) }
+                }
+                if mode != .captureBursts { unique.sort() }
+                try checkingCancellation()
                 guard unique.count >= 2 else { return nil }
                 return Group(
                     id: "\(mode.rawValue)-\(index)-\(unique[0])",
@@ -271,25 +306,32 @@ enum DuplicateBurstAnalysis {
         /// always joined. Near-hash comparison uses four 16-bit locality
         /// buckets and caps pair checks, so large folders cannot turn the
         /// review feature into an unbounded all-pairs search.
-        private func visualDuplicateSets(maxDistance: Int) -> [[String]] {
+        private func visualDuplicateSets(
+            maxDistance: Int,
+            checkingCancellation: () throws -> Void
+        ) rethrows -> [[String]] {
             guard visualFingerprints.count >= 2 else { return [] }
             let distance = min(max(maxDistance, 0), 64)
             let ordered = visualFingerprints.sorted { $0.itemID < $1.itemID }
+            try checkingCancellation()
             var sets = DisjointSets(itemIDs: ordered.map(\.itemID))
             var identifiersByHash: [UInt64: [String]] = [:]
             for fingerprint in ordered {
+                try checkingCancellation()
                 identifiersByHash[fingerprint.hash, default: []].append(
                     fingerprint.itemID
                 )
             }
             for identifiers in identifiersByHash.values where identifiers.count > 1 {
                 for identifier in identifiers.dropFirst() {
+                    try checkingCancellation()
                     sets.union(identifiers[0], identifier)
                 }
             }
 
             var distinctHashesByBucket: [UInt16: [UInt64]] = [:]
             for hash in identifiersByHash.keys.sorted() {
+                try checkingCancellation()
                 for bucket in DuplicateBurstAnalysis.visualBuckets(for: hash) {
                     distinctHashesByBucket[bucket, default: []].append(hash)
                 }
@@ -298,6 +340,7 @@ enum DuplicateBurstAnalysis {
             var checkedPairs = Set<HashPair>()
             var checkedCount = 0
             outer: for bucket in distinctHashesByBucket.keys.sorted() {
+                try checkingCancellation()
                 let hashes = distinctHashesByBucket[bucket, default: []].sorted()
                 // An extremely common low-detail thumbnail can share a bucket
                 // with thousands of images. Exact fingerprint matches above
@@ -307,6 +350,7 @@ enum DuplicateBurstAnalysis {
                 }
                 for leftIndex in hashes.indices {
                     for rightIndex in hashes.indices.dropFirst(leftIndex + 1) {
+                        try checkingCancellation()
                         let left = hashes[leftIndex]
                         let right = hashes[rightIndex]
                         let pair = HashPair(left, right)
@@ -327,10 +371,14 @@ enum DuplicateBurstAnalysis {
                     }
                 }
             }
-            return sets.components(minimumCount: 2)
+            return try sets.components(minimumCount: 2,
+                                       checkingCancellation: checkingCancellation)
         }
 
-        private func burstSets(maximumGap: TimeInterval) -> [[String]] {
+        private func burstSets(
+            maximumGap: TimeInterval,
+            checkingCancellation: () throws -> Void
+        ) rethrows -> [[String]] {
             guard burstCandidates.count >= 2 else { return [] }
             let gap = min(max(maximumGap, 0.1), 30)
             let ordered = burstCandidates.sorted {
@@ -339,10 +387,12 @@ enum DuplicateBurstAnalysis {
                 }
                 return $0.itemID < $1.itemID
             }
+            try checkingCancellation()
             var groups: [[String]] = []
             var current: [String] = []
             var previousDate: Date?
             for candidate in ordered {
+                try checkingCancellation()
                 if let previousDate,
                    candidate.captureDate.timeIntervalSince(previousDate) > gap {
                     if current.count >= 2 { groups.append(current) }
@@ -358,6 +408,32 @@ enum DuplicateBurstAnalysis {
 
     enum AnalysisError: Error {
         case cancelled
+    }
+
+    /// Freeze only the payload needed by this request. Capture grouping reads
+    /// cached metadata and never constructs physical-file or preview arrays.
+    static func inputs(from items: [PhotoItem], mode: AnalysisMode) -> [Input] {
+        items.map { item in
+            if mode == .captureBursts {
+                return Input(id: item.id, mediaKind: item.mediaKind,
+                             captureDate: item.captureDate,
+                             captureDateEvidence: item.captureDateEvidence,
+                             exactFiles: [], visualFiles: [])
+            }
+            let files = item.individualFiles
+            return Input(
+                id: item.id, mediaKind: item.mediaKind,
+                captureDate: item.captureDate,
+                captureDateEvidence: item.captureDateEvidence,
+                exactFiles: files.map {
+                    ExactFile(reviewItemID: item.id, url: $0.url,
+                              fileSize: $0.fileSize, expectedIdentity: $0.scannedIdentity)
+                },
+                visualFiles: item.mediaKind == .photo && item.isSupported
+                    ? files.map { VisualFile(url: $0.url, expectedIdentity: $0.scannedIdentity) }
+                    : []
+            )
+        }
     }
 
     /// Runs on the caller's detached utility task. Capture bursts use only
@@ -612,15 +688,26 @@ private struct DisjointSets {
     }
 
     mutating func components(minimumCount: Int) -> [[String]] {
+        components(minimumCount: minimumCount, checkingCancellation: {})
+    }
+
+    mutating func components(
+        minimumCount: Int,
+        checkingCancellation: () throws -> Void
+    ) rethrows -> [[String]] {
+        try checkingCancellation()
         var values: [String: [String]] = [:]
         for identifier in parent.keys.sorted() {
+            try checkingCancellation()
             guard let root = root(of: identifier) else { continue }
             values[root, default: []].append(identifier)
         }
-        return values.values
+        let result = values.values
             .filter { $0.count >= minimumCount }
             .map { $0.sorted() }
             .sorted { ($0.first ?? "") < ($1.first ?? "") }
+        try checkingCancellation()
+        return result
     }
 
     private mutating func root(of identifier: String) -> String? {
@@ -629,5 +716,26 @@ private struct DisjointSets {
         guard let rootID = root(of: parentID) else { return nil }
         parent[identifier] = rootID
         return rootID
+    }
+}
+
+/// The Settings field accepts seconds in the current locale, without rounding.
+enum CaptureBurstIntervalInput {
+    static let range = 0.5...10.0
+
+    static func parse(_ text: String, locale: Locale = .current) -> Double? {
+        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: locale.decimalSeparator ?? ".", with: ".")
+        guard !normalized.isEmpty,
+              normalized.allSatisfy({ $0.isASCII && ($0.isNumber || $0 == ".") }),
+              let value = Double(normalized), value.isFinite, range.contains(value)
+        else { return nil }
+        return value
+    }
+
+    static func format(_ value: Double, locale: Locale = .current) -> String {
+        var text = String(value)
+        if text.hasSuffix(".0") { text.removeLast(2) }
+        return text.replacingOccurrences(of: ".", with: locale.decimalSeparator ?? ".")
     }
 }

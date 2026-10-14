@@ -1,0 +1,63 @@
+{
+  "generatedAt" : "2026-10-14T15:42:35Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 2.172333,
+      "medianMS" : 2.105541,
+      "minMS" : 1.446834,
+      "name" : "clipping.accepted-pair.release-to-projection-next-admission.poll-1ms",
+      "p95MS" : 2.172333,
+      "samplesMS" : [
+        1.446834,
+        2.15625,
+        2.105541,
+        2.132125,
+        2.172333,
+        1.502334,
+        2.094167
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 2.196459,
+      "medianMS" : 2.15725,
+      "minMS" : 2.101583,
+      "name" : "clipping.accepted-pair.release-to-projection-next-admission.poll-1ms",
+      "p95MS" : 2.196459,
+      "samplesMS" : [
+        2.196459,
+        2.15725,
+        2.120042,
+        2.157959,
+        2.101583,
+        2.16525,
+        2.104083
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 2.138542,
+      "medianMS" : 2.108042,
+      "minMS" : 1.242958,
+      "name" : "clipping.accepted-pair.release-to-projection-next-admission.poll-1ms",
+      "p95MS" : 2.138542,
+      "samplesMS" : [
+        2.108042,
+        1.242958,
+        2.114875,
+        1.554875,
+        2.116542,
+        1.457416,
+        2.138542
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "clipping-filter-arrivals",
+  "warmups" : 1
+}

@@ -43,13 +43,13 @@ struct QualityCueEvidence: Equatable, Sendable {
 
     static func measure(_ item: PhotoItem) async -> Self {
         if RawHistogramPipeline.supportsAnalysis(for: item),
-           let raw = await RawHistogramPipeline.shared.analysis(for: item) {
+           let raw = await RawHistogramPipeline.shared.analysis(for: item, purpose: .backgroundQuality) {
             return Self(item: item, analysis: raw, source: .rawDecode)
         }
         guard !Task.isCancelled else {
             return Self(item: item, analysis: nil, source: .renderedPreview)
         }
-        let preview = await HistogramPipeline.shared.analysis(for: item)
+        let preview = await HistogramPipeline.shared.analysis(for: item, purpose: .backgroundQuality)
         return Self(item: item, analysis: preview, source: .renderedPreview,
                     rawFallback: item.isRaw)
     }

@@ -1,0 +1,46 @@
+{
+  "generatedAt" : "2026-10-13T02:33:46Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 100000,
+      "maxMS" : 18.283167,
+      "medianMS" : 16.105375,
+      "minMS" : 15.509417,
+      "name" : "snapshot.main-capture.unpaired",
+      "p95MS" : 18.283167,
+      "samplesMS" : [
+        18.283167,
+        15.790667,
+        16.105375,
+        15.686333,
+        15.509417,
+        17.662791,
+        16.118708
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 14.307417,
+      "medianMS" : 13.870833,
+      "minMS" : 12.966708,
+      "name" : "snapshot.detached-entry-build.unpaired",
+      "p95MS" : 14.307417,
+      "samplesMS" : [
+        14.307417,
+        14.096166,
+        13.870833,
+        12.966708,
+        14.029333,
+        13.571125,
+        13.833125
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "persistence-snapshot",
+  "warmups" : 1
+}

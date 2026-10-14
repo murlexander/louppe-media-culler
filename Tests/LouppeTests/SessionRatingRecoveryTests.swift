@@ -127,6 +127,14 @@ final class SessionRatingRecoveryTests: XCTestCase {
         reopen.isSessionRecoveryPresented = true
         XCTAssertTrue(reopen.isSessionCommandPresentationActive)
         reopen.isSessionRecoveryPresented = false
+        let structuralGeneration = reopen.structuralIndexGenerationForTesting
+        let pendingFiles = reopen.pendingContentFileIDsForTesting
+        for key in [PhotoSort.Key.camera, .decision, .starRating, .colorLabel] {
+            reopen.sort = PhotoSort(key: key, ascending: false)
+            XCTAssertTrue(reopen.canRestoreSessionRecoveryEntry(record))
+            XCTAssertEqual(reopen.pendingContentFileIDsForTesting, pendingFiles)
+            XCTAssertEqual(reopen.structuralIndexGenerationForTesting, structuralGeneration)
+        }
         reopen.restoreSessionRecoveryEntries([record.id])
         try await finished(reopen)
         XCTAssertEqual(reopen.items.first?.rating, .no)

@@ -670,7 +670,7 @@ final class SessionDurabilityTests: XCTestCase {
         )
         var expected = session
         expected.snapshotGeneration = 1
-        let limit = try encodedSession(expected).count
+        let limit = try SessionPersistence.encodeSnapshot(expected).count
         let persistence = SessionPersistence(
             backupDirectory: fixture.backup,
             maximumSnapshotBytesForTesting: limit

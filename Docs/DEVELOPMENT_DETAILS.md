@@ -155,6 +155,8 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   must not make a durable decision look unsaved or add a clean Quit dependency.
   Actual restored decisions advance the existing dirty/save authority.
 
+- Saves use compact sorted JSON, preserving deterministic keys and every schema
+  field/history. Exact bytes still own CAS lineage.
 - Decoding, CAS revision reads, and encoding share a 512 MiB ceiling.
   `snapshotTooLarge` fails before locking or changing either copy. Retry keeps
   its sequence/generation; dirty Close/Quit remains unsafe.
@@ -212,6 +214,17 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 - Reset/recompute `visibleIndices` in the same turn as replacing/emptying
   `items` (see `openFolder`). Stale indices previously crashed rescan; retain
   `visibleItems` bounds checks.
+- Sort-only changes retain ID, physical-file and recovery maps; finite metadata
+  sorts reuse a validated chronological permutation. Item replacement invalidates
+  that permutation before another sort can run. Quality coverage counts update
+  on structural invalidation and accepted evidence, so its getter is constant-time.
+- Quality filtering retains one byte of numeric cue matches per physical item
+  index, prepared lazily and borrowed only during synchronous filtering. Cue
+  switches reuse it; accepted measurements update their own slots. Both preference
+  paths and structural/source invalidation clear it. Numeric classification shares
+  the displayed warnings' inclusive rules; empty cue selection stays neutral.
+  Private classification consumes already revision-accepted evidence; public UI
+  access still checks revisions. No filename-set or per-photo task is created.
 - Update rating counts incrementally. Structural item changes rebuild facets
   and sorted indices: call `rebuildDerivedData()` before `applyFilter()`.
 - Pairing projects physical `PhotoFile` records. Grouped scans keep hidden JPEGs
@@ -255,6 +268,17 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   files, invalid Unicode, and stale results. Native Markdown becomes serif text
   with web/email links; XML stays literal. `contentRevision` owns reader lifetime;
   ratings preserve selection/scrolling. Text never enters image decoding.
+- Image requests retire cancelled waiters individually and guard completions by
+  operation identity. Running lanes remain occupied until worker exit. Gallery's
+  full preview publishes independently of thumbnail stand-in work. Background RAW
+  quality requests bypass Info's 700 ms dwell on the same single utility lane.
+- Quality checks use utility JPEG operations; Info joins/promotes shared numeric
+  work. Two scheduler measurements retire before restarting; background native
+  cancellation waits for executing histogram work to exit. Low Power/thermal
+  backoff paces remaining batches; only pending foreground interest wakes rest.
+  Explicit Pause survives threshold edits, file work and replacement until Resume.
+  Evidence mutates privately with coherent batch notifications; selection priority
+  consumes one frontier. Accepted filter matches flush before adaptive rest.
 - `ImagePipeline.decodeImage` tries embedded JPEG previews first, then full
   decode if undersized (~160px). Preserve this fallback to prevent pixelation.
 - `PhotoItem.id` survives rescans and cannot identify content. Caches and async
@@ -288,12 +312,16 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 ## Native UI
 
 - Settings uses one grouped, scrolling form in a 520 × 600-point content area.
-  Review, new-folder defaults, RAW display, Quality Cues, Get started, Updates,
-  and Support share margins and regular native control sizing. Never embed
-  separate forms or scroll views inside its section views. Get started shares
-  `LouppeQuickStartContent` with Help and the existing quick-start preference;
-  its disclosure keeps the page concise until the guide is needed. Support links
-  share a compact row.
+  Review, new-folder defaults, RAW display, Quality Cues, Capture bursts,
+  Louppe Help, Updates, and Louppe info share margins and regular native control
+  sizing. Never embed
+  separate forms or scroll views inside its section views. Get started opens
+  the existing Help window; its guide lives only in Help. Settings retains the
+  quick-start tips preference in its own Louppe Help section, without an inline
+  disclosure or grouping under Capture bursts. Filter disclosure
+  buttons own the full padded header row between dividers, including its edges;
+  expanded controls stay outside that button. Support links
+  share equal-width columns aligned leading, center, and trailing.
   Updates shows the running bundle's version/build; direct builds use Sparkle's
   existing file-operation gate and automatic-update preferences, Store builds
   open the App Store, and review builds keep updates disabled. Support reuses
@@ -311,6 +339,14 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   the next folder opening/rescan resets the temporary dismissal.
   Its full-width row has an opaque Color.appBackground fill so pane backgrounds
   cannot show through the safe-area inset.
+
+- View menu Gallery/Grid choices show Tab / G; Grid Zoom In/Out show ⌘+ / ⌘−.
+  File also shows Command Palette ⌘K, Rescan ⌘R, and Export E / ⌘E; Edit shows
+  Undo Z / ⌘Z and Clear All Decisions R. Photo sizes show S (100%) and A (Phone).
+  Actions without a dedicated shortcut, including Fit and Close Session, have
+  no invented hint. Standard macOS commands retain their system equivalents.
+  These are display-only hints with LTR-isolated glyphs. SessionView keeps sole
+  ownership of shortcut routing and its existing focus/presentation gates.
 
 - Localization uses `L10n.text` with complete English messages and numbered
   interpolation slots, plus UTF-8 `Localizable.strings` in `Resources/*.lproj`.
@@ -332,9 +368,19 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   backend because Xcode's default backend attempted to sign resource bundles
   inside this File Provider workspace and failed on reattached Finder metadata.
   Use `--build-system native` for focused `swift build`/`swift test` here.
-- Catalog drafts were generated offline, with core UI and safety wording
-  reviewed and corrected. Full native-speaker and visual layout acceptance
-  across all five languages remains a release acceptance check.
+- The 2026-10-14 audit inspected all 1,600 existing entries per catalog and
+  added complete messages for missed controls and operation summaries. Portuguese
+  uses pt-BR consistently. Runtime template validation rejects stray braces as
+  well as missing/repeated slots before inserting literal user text. Regression
+  tests render every catalog value, protect technical tokens, and allow unchanged
+  English only for identified brands, units, and shared words.
+- `Scripts/localize_services.sh` derives Finder service labels from the same
+  catalogs during packaging. It changes only staged display labels, preserving
+  the service selector, folder types, port, and keyboard routing.
+- Native fixture coverage and remaining linguistic/layout gaps are recorded in
+  [the localization audit](LOCALIZATION_AUDIT_2026-10-14.md). No native-speaker
+  review has been obtained; full linguistic and modal/layout acceptance remains
+  a release check.
 
 - `RootView` shows early-user feedback once per preference domain during 1.10.
   Mark it shown on appearance, including Close/Escape/email, so relaunch or patch
@@ -343,7 +389,18 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   the sheet. Email opens the system handler for `a@alex-markin.com` and sends
   nothing.
 - After its flexible frame, the Gallery pane clips rendering and hit testing
-  to its allocated area; fitted pinch cannot overlap Browser, Info, or footer.
+  to its allocated area; fitted pinch cannot overlap Browser or Info.
+  Photo zoom floats inside that pane, 16 points above its bottom edge, without
+  reducing the image viewport. One regular Liquid Glass capsule on macOS 26+
+  is 36 points high to match native toolbar groups and contains native
+  Fit/slider/RAW controls; older systems use regular material,
+  and Reduce Transparency uses the opaque app background with a contrast border.
+  A window-bound mouse monitor returns double-clicks anywhere within the visible
+  capsule to Fit before native slider tracking starts. Ordinary clicks/drags
+  pass through immediately; removal/detachment removes the monitor.
+  The session has no bottom strip. Toolbar status retains the save readout and
+  opens filter/completion/tips details only when present, using the shared
+  command gate. Saving has no explainer or duplicate heading.
   Video transport, full-screen, and Picture-in-Picture stay visible during playback.
 - Filter drafts parse only edited endpoints. Open/close never round-trips stored
   precision through display text; editing one bound preserves the other.
@@ -370,7 +427,9 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   the shadow/highlight percentage row. No status, source, technical disclosure or
   inspection action appears in that block. Cue icons, names and values use the
   primary text color. Tile popovers share the compact rows.
-  Settings contains only cue controls. Each row has a trailing reset icon that
+  Settings owns cue rules and the saved, numeric burst interval (0.5–10 seconds).
+  Filter only selects cues and toggles burst grouping; all disclosure rows share
+  the same title and spacing. Each cue row has a trailing reset icon that
   restores that cue's default threshold and enabled state. Each field owns its
   reset generation so resetting one cue cannot discard another cue's draft.
   There is no explanatory note or global reset button.
@@ -413,7 +472,21 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 - `PersistentVerticalScroller` keeps the native legacy scroller and gutter.
   Never substitute a hand-drawn subclass. Resolve mounted scroll views
   synchronously and coalesce initial deferred lookup to avoid queued work
-  delaying the indicator.
+  delaying the indicator. Browser constrains its padded document to the
+  122-point clip width, excluding the native gutter, to prevent sideways scroll.
+  Grid constrains its tile document to the current pane width minus that
+  gutter. Short Grid documents extend one backing pixel past the viewport height:
+  otherwise macOS SwiftUI shrinks the native scroll view to the document width,
+  subtracts the legacy gutter again, and leaves 17 points of sideways travel.
+  This preserves one lazy grid and adds at most one backing pixel of vertical
+  range when content fits. Empty/filter messages stay outside the tile scroller.
+  Native configuration repairs horizontal-scroller/elasticity drift too.
+  Column navigation uses the same available width across resizing and thumbnail
+  changes. Native regressions include short/long grids, Info, RTL, display scales,
+  thumbnail sizes, and horizontal bounds; exclude hidden cached tile frames.
+- View → Gallery/Grid uses an inline native picker bound to the focused
+  session’s view mode, with the existing presentation gate and no duplicate
+  key equivalents. Toolbar, menu, and G/Tab stay synchronized.
 - `RootView` owns `WindowContentLayout`: Welcome uses measured minimum, Scanning
   compact launch size, and Ready the usable display frame. Welcome/Scanning use
   `.fullSizeContentView`; Ready restores session minimum and removes full-size

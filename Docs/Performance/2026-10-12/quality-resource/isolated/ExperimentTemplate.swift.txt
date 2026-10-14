@@ -1,0 +1,297 @@
+import Foundation
+import CoreGraphics
+import Combine
+import Darwin
+
+__PRODUCTION_HISTOGRAM__
+
+__BASELINE_PROCESSOR__
+
+__CANDIDATE_PROCESSOR__
+
+struct ResourceSample: Codable {
+    let suite: String
+    let variant: String
+    let count: Int
+    let iteration: Int
+    let wallMilliseconds: Double
+    let processCPUMilliseconds: Double
+    let checksum: UInt64
+    let willChangeEvents: Int
+    let dictionaryEvents: Int
+}
+
+struct ResourceReport: Codable {
+    let provenance: [String: String]
+    let limitations: [String]
+    let correctnessChecks: [String]
+    let samples: [ResourceSample]
+}
+
+private func processCPUSeconds() -> Double {
+    var usage = rusage()
+    precondition(getrusage(RUSAGE_SELF, &usage) == 0)
+    return Double(usage.ru_utime.tv_sec) + Double(usage.ru_stime.tv_sec)
+        + Double(usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / 1_000_000
+}
+
+@MainActor
+private func sample(suite: String, variant: String, count: Int, iteration: Int,
+                    operation: () -> (UInt64, Int, Int)) -> ResourceSample {
+    let cpuBefore = processCPUSeconds()
+    let wallBefore = DispatchTime.now().uptimeNanoseconds
+    let result = operation()
+    let wallAfter = DispatchTime.now().uptimeNanoseconds
+    let cpuAfter = processCPUSeconds()
+    return ResourceSample(suite: suite, variant: variant, count: count, iteration: iteration,
+                          wallMilliseconds: Double(wallAfter - wallBefore) / 1_000_000,
+                          processCPUMilliseconds: (cpuAfter - cpuBefore) * 1_000,
+                          checksum: result.0, willChangeEvents: result.1, dictionaryEvents: result.2)
+}
+
+private enum FixtureKind: String, CaseIterable {
+    case opaque, mixed, partial, transparent
+}
+
+private func fixture(_ kind: FixtureKind, side: Int) -> CGImage {
+    let pixels = side * side
+    var bytes = [UInt8](repeating: 0, count: pixels * 4)
+    let levels: [UInt8] = [0, 5, 6, 249, 250, 255, 127, 64]
+    let alphas: [UInt8] = [0, 1, 2, 17, 64, 128, 254, 255]
+    for pixel in 0..<pixels {
+        let alpha: UInt8
+        switch kind {
+        case .opaque: alpha = 255
+        case .mixed: alpha = alphas[pixel % alphas.count]
+        case .partial: alpha = UInt8(1 + pixel % 254)
+        case .transparent: alpha = 0
+        }
+        let gray = levels[(pixel / alphas.count) % levels.count]
+        let red = pixel % 11 == 0 ? UInt8(255) : gray
+        let green = pixel % 13 == 0 ? UInt8(255) : gray
+        let blue = pixel % 17 == 0 ? UInt8(255) : gray
+        bytes[pixel * 4] = UInt8((Int(red) * Int(alpha) + 127) / 255)
+        bytes[pixel * 4 + 1] = UInt8((Int(green) * Int(alpha) + 127) / 255)
+        bytes[pixel * 4 + 2] = UInt8((Int(blue) * Int(alpha) + 127) / 255)
+        bytes[pixel * 4 + 3] = alpha
+    }
+    let data = Data(bytes) as CFData
+    let provider = CGDataProvider(data: data)!
+    return CGImage(width: side, height: side, bitsPerComponent: 8, bitsPerPixel: 32,
+                   bytesPerRow: side * 4,
+                   space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                   bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
+                    .union(.byteOrder32Big),
+                   provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+}
+
+private func histogramChecksum(_ value: HistogramAnalysis) -> UInt64 {
+    var sum = UInt64(value.sampleCount + value.shadowCount + value.highlightCount + value.width + value.height)
+    for (index, count) in value.bins.enumerated() { sum &+= UInt64(index + 1) &* UInt64(count) }
+    return sum
+}
+
+/// Synthetic values intentionally avoid media I/O and app dependencies.
+private struct SyntheticRevision: Equatable {
+    let pathIdentity: String
+    let modificationTimeBits: UInt64
+    let fileSize: Int64
+    let volumeRoot: String
+    let volumeUUID: String
+    let systemNumber: UInt64
+    let fileNumber: UInt64
+    let modificationSeconds: Int64
+    let modificationNanoseconds: Int64
+    let statusChangeSeconds: Int64
+    let statusChangeNanoseconds: Int64
+    let birthSeconds: Int64
+    let birthNanoseconds: Int64
+}
+
+private struct SyntheticEvidence: Equatable {
+    let revision: SyntheticRevision
+    let sampleCount: Int
+    let shadowCount: Int
+    let highlightCount: Int
+    let width: Int
+    let height: Int
+    let source: Int
+    let rawFallback: Bool
+}
+
+@MainActor
+private final class EventProbe {
+    var willChange = 0
+    var dictionary = 0
+}
+
+@MainActor
+private final class PublishedEvidence: ObservableObject {
+    @Published var evidence: [String: SyntheticEvidence] = [:]
+}
+
+@MainActor
+private final class PrivateEvidence: @MainActor ObservableObject {
+    let objectWillChange = ObservableObjectPublisher()
+    private var evidence: [String: SyntheticEvidence] = [:]
+
+    func insert(_ entries: [(String, SyntheticEvidence)], batchSize: Int) {
+        for start in stride(from: 0, to: entries.count, by: batchSize) {
+            objectWillChange.send()
+            for index in start..<min(start + batchSize, entries.count) {
+                evidence[entries[index].0] = entries[index].1
+            }
+        }
+    }
+
+    var snapshot: [String: SyntheticEvidence] { evidence }
+    func checksum(lastID: String) -> UInt64 {
+        UInt64(evidence.count) &+ UInt64(evidence[lastID]?.sampleCount ?? 0)
+    }
+}
+
+private enum DictionaryVariant: String, CaseIterable {
+    case publishedUnobserved = "published.unobserved"
+    case publishedObserved = "published.observed"
+    case privateSingle = "private.publish-every-item"
+    case privateBatchTwo = "private.publish-every-two"
+}
+
+@MainActor
+private func dictionaryWork(_ variant: DictionaryVariant, entries: [(String, SyntheticEvidence)]) -> (UInt64, Int, Int) {
+    let probe = EventProbe()
+    switch variant {
+    case .publishedUnobserved, .publishedObserved:
+        let owner = PublishedEvidence()
+        var subscriptions: [AnyCancellable] = []
+        if variant == .publishedObserved {
+            subscriptions.append(owner.objectWillChange.sink { _ in probe.willChange += 1 })
+            subscriptions.append(owner.$evidence.sink { _ in probe.dictionary += 1 })
+            probe.dictionary = 0 // Exclude the publisher's initial value.
+        }
+        for (id, value) in entries { owner.evidence[id] = value }
+        let checksum = UInt64(owner.evidence.count) &+ UInt64(owner.evidence[entries.last!.0]?.sampleCount ?? 0)
+        withExtendedLifetime(subscriptions) {}
+        return (checksum, probe.willChange, probe.dictionary)
+    case .privateSingle, .privateBatchTwo:
+        let owner = PrivateEvidence()
+        let subscription = owner.objectWillChange.sink { _ in probe.willChange += 1 }
+        owner.insert(entries, batchSize: variant == .privateSingle ? 1 : 2)
+        let checksum = owner.checksum(lastID: entries.last!.0)
+        withExtendedLifetime(subscription) {}
+        return (checksum, probe.willChange, probe.dictionary)
+    }
+}
+
+private func evidenceEntries(_ count: Int) -> [(String, SyntheticEvidence)] {
+    (0..<count).map { index in
+        let id = "Photo_\(index).JPG"
+        let revision = SyntheticRevision(
+            pathIdentity: "/private/tmp/QualityFixture/\(id)", modificationTimeBits: 123,
+            fileSize: 4_000_000, volumeRoot: "/", volumeUUID: "11111111-2222-3333-4444-555555555555",
+            systemNumber: 1, fileNumber: UInt64(index + 1),
+            modificationSeconds: 100, modificationNanoseconds: 1,
+            statusChangeSeconds: 101, statusChangeNanoseconds: 2,
+            birthSeconds: 99, birthNanoseconds: 3
+        )
+        return (id, SyntheticEvidence(revision: revision, sampleCount: 1_048_576,
+                                      shadowCount: index % 10_000, highlightCount: index % 20_000,
+                                      width: 1024, height: 1024, source: 0, rawFallback: false))
+    }
+}
+
+@main
+private struct Experiment {
+    @MainActor
+    static func main() throws {
+        let provenance: [String: String] = [
+__PROVENANCE__
+        ]
+        let repetitions = min(30, max(3, Int(ProcessInfo.processInfo.environment["LOUPPE_RESOURCE_SAMPLES"] ?? "7") ?? 7))
+        var samples: [ResourceSample] = []
+        var checks: [String] = []
+        for kind in FixtureKind.allCases {
+            let image = fixture(kind, side: 1024)
+            let baseline = BaselineClippingWarningProcessor.analyze(image)!
+            let candidate = OpaqueFastClippingWarningProcessor.analyze(image)!
+            precondition(baseline == candidate, "Full histogram differs for \(kind.rawValue)")
+            precondition(baseline.bins.reduce(0, +) == baseline.sampleCount)
+            precondition(baseline.width == 1024 && baseline.height == 1024)
+            if kind == .opaque || kind == .partial { precondition(baseline.sampleCount == 1024 * 1024) }
+            if kind == .transparent { precondition(baseline.sampleCount == 0) }
+            if kind == .mixed { precondition(baseline.sampleCount == 1024 * 1024 * 7 / 8) }
+            checks.append("\(kind.rawValue): full HistogramAnalysis equality (256 bins, counts, dimensions); expected alpha coverage")
+            for _ in 0..<2 {
+                _ = BaselineClippingWarningProcessor.analyze(image)
+                _ = OpaqueFastClippingWarningProcessor.analyze(image)
+            }
+            for iteration in 0..<repetitions {
+                let order = iteration.isMultiple(of: 2) ? ["baseline", "opaque-fast"] : ["opaque-fast", "baseline"]
+                for variant in order {
+                    samples.append(sample(suite: "histogram.\(kind.rawValue)", variant: variant,
+                                          count: image.width * image.height, iteration: iteration) {
+                        let result = variant == "baseline"
+                            ? BaselineClippingWarningProcessor.analyze(image)!
+                            : OpaqueFastClippingWarningProcessor.analyze(image)!
+                        return (histogramChecksum(result), 0, 0)
+                    })
+                }
+            }
+        }
+        for count in [1_000, 2_000, 10_000] {
+            let entries = evidenceEntries(count)
+            let expected = Dictionary(uniqueKeysWithValues: entries)
+            let published = PublishedEvidence()
+            let correctnessSubscription = published.$evidence.sink { _ in }
+            for (id, value) in entries { published.evidence[id] = value }
+            precondition(published.evidence == expected)
+            withExtendedLifetime(correctnessSubscription) {}
+            for batchSize in [1, 2] {
+                let owner = PrivateEvidence()
+                owner.insert(entries, batchSize: batchSize)
+                precondition(owner.snapshot == expected, "Private batch \(batchSize) lost evidence")
+            }
+            checks.append("dictionary \(count): complete published/private dictionary equality; every key, revision, scalar field retained")
+            for variant in DictionaryVariant.allCases {
+                _ = dictionaryWork(variant, entries: entries)
+                _ = dictionaryWork(variant, entries: entries)
+            }
+            for iteration in 0..<repetitions {
+                let variants = DictionaryVariant.allCases
+                let offset = iteration % variants.count
+                let order = Array(variants[offset...]) + Array(variants[..<offset])
+                for variant in order {
+                    let result = sample(suite: "evidence-dictionary", variant: variant.rawValue,
+                                        count: count, iteration: iteration) {
+                        dictionaryWork(variant, entries: entries)
+                    }
+                    precondition(result.checksum == UInt64(count + 1_048_576))
+                    if variant == .publishedObserved {
+                        precondition(result.willChangeEvents == count && result.dictionaryEvents == count)
+                    } else if variant == .privateSingle {
+                        precondition(result.willChangeEvents == count && result.dictionaryEvents == 0)
+                    } else if variant == .privateBatchTwo {
+                        precondition(result.willChangeEvents == (count + 1) / 2 && result.dictionaryEvents == 0)
+                    }
+                    samples.append(result)
+                }
+            }
+        }
+        let report = ResourceReport(provenance: provenance, limitations: [
+            "No RAW/ImageIO/CIRAWFilter decode, disk IO, SessionStore scheduling, real SwiftUI rendering, or app navigation is measured.",
+            "Pixel measurements include production CGContext buffer conversion and scalar histogram analysis of fixed premultiplied 1024-square sRGB images.",
+            "Synthetic pixel fixtures exercise alpha and luminance boundaries; they do not establish speedups across a representative photography collection.",
+            "Only opaque RGB unpremultiplication is changed. Partial and transparent behavior use the production implementation.",
+            "getrusage reports this process CPU (user + system), including its library worker threads, not whole-system CPU, energy, battery drain, GPU burden, or thermal behavior.",
+            "Dictionary payload is a documented synthetic approximation. Published.observed includes synchronous Combine subscribers; subscribers do not retain dictionary snapshots.",
+            "Private per-item publication separates dictionary-storage effects from batching. Batch-of-two matches the existing scheduler batch width, not a validated UI implementation.",
+            "Fixtures, correctness comparisons, and two warmups per variant are outside measurement. Samples alternate/rotate variant order, run sequentially, and include full raw observations.",
+            "Run after other Louppe benchmarks finish. Avoid claiming absolute resource savings from these isolated experiments."
+        ], correctnessChecks: checks, samples: samples)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let output = try encoder.encode(report)
+        FileHandle.standardOutput.write(output)
+        FileHandle.standardOutput.write(Data("\n".utf8))
+    }
+}

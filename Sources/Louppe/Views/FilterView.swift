@@ -40,8 +40,6 @@ struct FilterView: View {
 
     @State private var qualityExpanded = false
     @State private var burstsExpanded = false
-    @State private var qualityRulesExpanded = false
-    @State private var qualityThresholdReset = 0
     @State private var decisionExpanded = false
     @State private var starsExpanded = false
     @State private var colorExpanded = false
@@ -102,10 +100,37 @@ struct FilterView: View {
             if store.rawJPEGPairCount > 0 {
                 rawJPEGPairingToggle
             }
-            Divider()
+            filterSections
+            footer
+        }
+        .toggleStyle(.checkbox)
+        .padding(14)
+        .frame(width: 340, height: 560)
+        .background(Color.appBackground)
+        .tint(Color.louppeAccent)
+        .onAppear {
+            syncAllSettingDrafts()
+            if store.takeFilterSearchFocusRequest() {
+                isSearchFocused = true
+            }
+        }
+        .onDisappear {
+            settingCommitTask?.cancel()
+            settingCommitTask = nil
+            commitAllSettingDrafts()
+        }
+        .onChange(of: focusedSettingField) { previous, current in
+            if let previous, previous != current {
+                restoreInvalidDraft(for: previous)
+            }
+        }
+    }
 
+    private var filterSections: some View {
+        VStack(spacing: 0) {
+            Divider()
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 0) {
                     qualitySection
                     Divider()
                     captureBurstsSection
@@ -162,36 +187,12 @@ struct FilterView: View {
             }
 
             Divider()
-            footer
-        }
-        .toggleStyle(.checkbox)
-        .padding(14)
-        .frame(width: 340, height: 560)
-        .background(Color.appBackground)
-        .tint(Color.louppeAccent)
-        .onAppear {
-            syncAllSettingDrafts()
-            if store.takeFilterSearchFocusRequest() {
-                isSearchFocused = true
-            }
-        }
-        .onDisappear {
-            settingCommitTask?.cancel()
-            settingCommitTask = nil
-            commitAllSettingDrafts()
-        }
-        .onChange(of: focusedSettingField) { previous, current in
-            if let previous, previous != current {
-                restoreInvalidDraft(for: previous)
-            }
         }
     }
 
     private var qualitySection: some View {
-        DisclosureGroup(L10n.text("Quality cues"), isExpanded: $qualityExpanded) {
+        FilterDisclosureSection(title: L10n.text("Quality cues"), isExpanded: $qualityExpanded) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(L10n.text("Match any selected cue; other filters still apply."))
-                    .font(.caption).foregroundStyle(.secondary)
                 ForEach(CameraQualityWarning.Kind.allCases, id: \.self) { kind in
                     Toggle(isOn: Binding(
                         get: { store.filter.selectedQualityCues.contains(kind) },
@@ -208,57 +209,17 @@ struct FilterView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 if store.qualityCuePreferences.needsHistogram {
                     Button(store.isQualityCueAnalysisPaused ? L10n.text("Resume checks") : L10n.text("Pause checks")) {
-                        if store.isQualityCueAnalysisPaused { store.startQualityCueAnalysis() }
-                        else { store.pauseQualityCueAnalysis() }
+                        if store.isQualityCueAnalysisPaused { store.resumeQualityCueAnalysis() }
+                        else { store.pauseQualityCueAnalysis(userInitiated: true) }
                     }
                     .buttonStyle(.borderless)
                 }
-                DisclosureGroup(L10n.text("Rules"), isExpanded: $qualityRulesExpanded) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Toggle(L10n.text("Show quality cues"), isOn: qualityBinding(\.isEnabled))
-                        ruleRow(.highISO, enabled: \.isHighISOEnabled,
-                                threshold: \.highISOThreshold, input: .highISO, units: L10n.text("ISO or above"))
-                        ruleRow(.slowShutter, enabled: \.isSlowShutterEnabled,
-                                threshold: \.slowShutterThreshold, input: .slowShutter, units: L10n.text("s or slower"))
-                        ruleRow(.highlightClipping, enabled: \.isHighlightClippingEnabled,
-                                threshold: \.highlightPercentageThreshold, input: .clipping, units: L10n.text("% or above"))
-                        ruleRow(.shadowClipping, enabled: \.isShadowClippingEnabled,
-                                threshold: \.shadowPercentageThreshold, input: .clipping, units: L10n.text("% or above"))
-                    }
-                }
             }
-            .padding(.top, 6)
         }
-        .font(.subheadline)
-    }
-
-    private func qualityBinding<Value>(_ keyPath: WritableKeyPath<CameraQualityWarningPreferences, Value>) -> Binding<Value> {
-        Binding(get: { store.qualityCuePreferences[keyPath: keyPath] }, set: { value in
-            var preferences = store.qualityCuePreferences
-            preferences[keyPath: keyPath] = value
-            store.updateQualityCuePreferences(preferences)
-        })
-    }
-
-    private func ruleRow(_ kind: CameraQualityWarning.Kind,
-                         enabled: WritableKeyPath<CameraQualityWarningPreferences, Bool>,
-                         threshold: WritableKeyPath<CameraQualityWarningPreferences, Double>,
-                         input: CameraQualityThresholdInput, units: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Toggle(kind.title, isOn: qualityBinding(enabled))
-            HStack(spacing: 6) {
-                CameraQualityThresholdField(kind: input, value: qualityBinding(threshold),
-                                            resetGeneration: $qualityThresholdReset,
-                                            accessibilityName: kind.title + ": " + input.accessibilityLabel)
-                Text(units).font(.caption).foregroundStyle(.secondary)
-            }
-            .padding(.leading, 20)
-        }
-        .disabled(!store.qualityCuePreferences.isEnabled)
     }
 
     private var captureBurstsSection: some View {
-        DisclosureGroup(L10n.text("Capture bursts"), isExpanded: $burstsExpanded) {
+        FilterDisclosureSection(title: L10n.text("Capture bursts"), isExpanded: $burstsExpanded) {
             VStack(alignment: .leading, spacing: 8) {
                 Toggle(L10n.text("Show capture bursts"), isOn: Binding(
                     get: { store.groupedReviewMode == .captureBursts },
@@ -268,16 +229,6 @@ struct FilterView: View {
                     }
                 ))
                 .disabled(store.isFileOperationRunning || store.items.isEmpty)
-                HStack {
-                    Text(L10n.text("Burst interval"))
-                    Spacer()
-                    Text(L10n.text("\(String(format: "%.1f", store.burstGroupingInterval)) s"))
-                        .foregroundStyle(.secondary)
-                }
-                Slider(value: Binding(get: { store.burstGroupingInterval },
-                                      set: { store.setBurstGroupingInterval($0) }),
-                       in: 0.5...10, step: 0.5)
-                    .accessibilityLabel(L10n.text("Capture burst interval"))
                 if store.isDuplicateBurstAnalysisRunning {
                     HStack {
                         ProgressView().controlSize(.small)
@@ -288,13 +239,8 @@ struct FilterView: View {
                 Text(store.captureBurstCoverageSummary)
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(L10n.text("Consecutive photo date gaps ≤ this interval. Separate shutter presses and cameras can merge. Inferred dates are labeled; no shutter-press identifier is read."))
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.top, 6)
         }
-        .font(.subheadline)
     }
 
     // MARK: - Review metadata
@@ -311,9 +257,6 @@ struct FilterView: View {
                 quickDecisionButton(L10n.text("Yes"), included: .yes)
                 quickDecisionButton(L10n.text("No"), included: .no)
             }
-            Text(L10n.text("All shows every decision; other filters still apply."))
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -563,7 +506,7 @@ struct FilterView: View {
                         width: 76,
                         invalid: !durationDraftIsValid
                     )
-                    Text("to").foregroundStyle(.secondary)
+                    Text(L10n.text("to")).foregroundStyle(.secondary)
                     validatedTextField(
                         $durationToText,
                         field: .durationTo,
@@ -638,7 +581,7 @@ struct FilterView: View {
                     width: 62,
                     invalid: !videoFrameRateDraftIsValid
                 )
-                Text("to").foregroundStyle(.secondary)
+                Text(L10n.text("to")).foregroundStyle(.secondary)
                 validatedTextField(
                     $videoFrameRateToText,
                     field: .videoFrameRateTo,
@@ -671,7 +614,7 @@ struct FilterView: View {
                 Text(L10n.text("From"))
                 Text("f/").foregroundStyle(.secondary)
                 validatedTextField($apertureFromText, field: .apertureFrom, width: 52, invalid: !apertureDraftIsValid)
-                Text("to").foregroundStyle(.secondary)
+                Text(L10n.text("to")).foregroundStyle(.secondary)
                 Text("f/").foregroundStyle(.secondary)
                 validatedTextField($apertureToText, field: .apertureTo, width: 52, invalid: !apertureDraftIsValid)
             }
@@ -688,7 +631,7 @@ struct FilterView: View {
             HStack(spacing: 5) {
                 Text(L10n.text("From"))
                 validatedTextField($shutterFromText, field: .shutterFrom, width: 72, invalid: !shutterDraftIsValid)
-                Text("to").foregroundStyle(.secondary)
+                Text(L10n.text("to")).foregroundStyle(.secondary)
                 validatedTextField($shutterToText, field: .shutterTo, width: 72, invalid: !shutterDraftIsValid)
             }
             .padding(.leading, 20)
@@ -704,7 +647,7 @@ struct FilterView: View {
             HStack(spacing: 5) {
                 Text(L10n.text("From"))
                 validatedTextField($isoFromText, field: .isoFrom, width: 68, invalid: !isoDraftIsValid)
-                Text("to").foregroundStyle(.secondary)
+                Text(L10n.text("to")).foregroundStyle(.secondary)
                 validatedTextField($isoToText, field: .isoTo, width: 68, invalid: !isoDraftIsValid)
             }
             .padding(.leading, 20)
@@ -859,7 +802,6 @@ struct FilterView: View {
             Spacer()
             Button(L10n.text("Reset")) {
                 focusedSettingField = nil
-                qualityThresholdReset &+= 1
                 store.exitGroupedReview()
                 store.resetFilter()
                 syncAllSettingDrafts()
@@ -1433,10 +1375,9 @@ struct FilterView: View {
     }
 }
 
-/// A native-looking disclosure row whose whole width, including its title, is
-/// clickable. SwiftUI's standard DisclosureGroup gives the chevron a much more
-/// obvious hit target than the label on macOS, which made the title feel inert.
-private struct FilterDisclosureSection<Content: View>: View {
+/// The header owns its spacing and hit shape so the full collapsed row between
+/// dividers is clickable. Expanded controls remain outside the header button.
+struct FilterDisclosureSection<Content: View>: View {
     let title: String
     @Binding var isExpanded: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -1467,6 +1408,9 @@ private struct FilterDisclosureSection<Content: View>: View {
                         .font(.subheadline.weight(.semibold))
                     Spacer(minLength: 0)
                 }
+                .padding(.top, 12)
+                .padding(.bottom, isExpanded ? 6 : 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -1474,7 +1418,7 @@ private struct FilterDisclosureSection<Content: View>: View {
 
             if isExpanded {
                 content
-                    .padding(.top, 6)
+                    .padding(.bottom, 12)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

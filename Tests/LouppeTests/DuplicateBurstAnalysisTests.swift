@@ -5,7 +5,7 @@ import XCTest
 final class DuplicateBurstAnalysisTests: XCTestCase {
     @MainActor
     func testGroupedReviewCacheFollowsFiltersSensitivityAndFreshAnalysis() async throws {
-        let store = SessionStore()
+        let store = SessionStore(reviewDefaults: makeDefaults())
         let start = Date(timeIntervalSince1970: 1_000)
         store.items = [
             item(id: "A.JPG", captureDate: start),
@@ -25,7 +25,7 @@ final class DuplicateBurstAnalysisTests: XCTestCase {
         store.filter.excludedTypes = ["PNG"]
         XCTAssertEqual(store.visibleIndices, [0, 1])
         XCTAssertEqual(store.visibleGroups.first?.title,
-                       "Capture burst · 2 items · close photo dates · inferred dates (2 of 3 shown)")
+                       "Capture burst · 2 items · inferred dates (2 of 3 shown)")
         store.filter.excludedTypes = []
         XCTAssertEqual(store.visibleIndices, [0, 1, 2])
 
@@ -46,7 +46,7 @@ final class DuplicateBurstAnalysisTests: XCTestCase {
 
     @MainActor
     func testClearingPendingBurstsCannotRestoreTheFilter() async throws {
-        let store = SessionStore()
+        let store = SessionStore(reviewDefaults: makeDefaults())
         store.items = [item(id: "A.JPG", captureDate: Date()), item(id: "B.JPG", captureDate: Date())]
         store.phase = .ready
         store.rebuildDerivedDataForTesting()
@@ -60,7 +60,7 @@ final class DuplicateBurstAnalysisTests: XCTestCase {
 
     @MainActor
     func testNavigationDuringBurstRequestDoesNotStealCurrentPhoto() async throws {
-        let store = SessionStore()
+        let store = SessionStore(reviewDefaults: makeDefaults())
         let date = Date(timeIntervalSince1970: 100)
         store.items = [item(id: "A.JPG", captureDate: date), item(id: "B.JPG", captureDate: date),
                        item(id: "C.JPG", captureDate: date.addingTimeInterval(100))]
@@ -98,7 +98,7 @@ final class DuplicateBurstAnalysisTests: XCTestCase {
 
     @MainActor
     func testLatestBurstIntervalWinsAndCancelKeepsCompletedMembership() async throws {
-        let store = SessionStore()
+        let store = SessionStore(reviewDefaults: makeDefaults())
         let start = Date(timeIntervalSince1970: 100)
         store.items = (0..<1000).map { i in
             item(id: String(format: "%04d.JPG", i),
@@ -120,6 +120,40 @@ final class DuplicateBurstAnalysisTests: XCTestCase {
         XCTAssertEqual(store.burstGroupingInterval, 0.5)
         XCTAssertEqual(store.visibleGroups.count, 500)
         XCTAssertEqual(store.duplicateBurstAnalysisState, .ready)
+    }
+
+    private func makeDefaults() -> UserDefaults {
+        let name = "Louppe-BurstTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        addTeardownBlock { UserDefaults(suiteName: name)?.removePersistentDomain(forName: name) }
+        return defaults
+    }
+
+    @MainActor
+    func testBurstIntervalPersistsWithFractionalValuesAndRejectsNonfiniteInput() {
+        let defaults = makeDefaults()
+        let store = SessionStore(reviewDefaults: defaults)
+        XCTAssertEqual(store.burstGroupingInterval, 2)
+        store.setBurstGroupingInterval(1.25)
+        XCTAssertEqual(SessionStore(reviewDefaults: defaults).burstGroupingInterval, 1.25)
+        store.setBurstGroupingInterval(.nan)
+        store.setBurstGroupingInterval(.infinity)
+        XCTAssertEqual(store.burstGroupingInterval, 1.25)
+        store.setBurstGroupingInterval(0)
+        XCTAssertEqual(store.burstGroupingInterval, 0.5)
+        store.setBurstGroupingInterval(100)
+        XCTAssertEqual(SessionStore(reviewDefaults: defaults).burstGroupingInterval, 10)
+    }
+
+    func testBurstIntervalDraftHandlesDecimalsLocalesAndInvalidInput() {
+        XCTAssertEqual(CaptureBurstIntervalInput.parse("1.25", locale: Locale(identifier: "en_US")), 1.25)
+        XCTAssertEqual(CaptureBurstIntervalInput.parse("1,25", locale: Locale(identifier: "es_ES")), 1.25)
+        for text in ["", "0", "0.25", "11", "NaN", "inf", "1.2.5", "1,000", "1s"] {
+            XCTAssertNil(CaptureBurstIntervalInput.parse(text, locale: Locale(identifier: "en_US")), text)
+        }
+        let value = 1.234567891
+        let locale = Locale(identifier: "es_ES")
+        XCTAssertEqual(CaptureBurstIntervalInput.parse(CaptureBurstIntervalInput.format(value, locale: locale), locale: locale), value)
     }
 
     @MainActor

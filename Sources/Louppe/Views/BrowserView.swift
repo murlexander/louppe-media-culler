@@ -37,6 +37,10 @@ struct BrowserView: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 10)
+                // The native legacy scroller reserves its gutter after SwiftUI
+                // proposes the outer width. Keep the document inside the clip
+                // width so horizontal input and follow-scroll cannot shift it.
+                .frame(width: Self.width - PersistentVerticalScroller.gutterWidth)
                 .background(PersistentVerticalScroller())
             }
             // The current item's id can change while its numeric index stays

@@ -1,0 +1,29 @@
+{
+  "generatedAt" : "2026-10-13T02:29:41Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 32,
+      "maxMS" : 147.174292,
+      "medianMS" : 146.638667,
+      "minMS" : 145.443209,
+      "name" : "already_cancelled_32_unique_thumbnails_including_disk_drain",
+      "p95MS" : 147.174292,
+      "samplesMS" : [
+        147.174292,
+        146.782458,
+        146.853083,
+        146.417666,
+        146.638667,
+        146.4735,
+        145.443209
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-cancellation",
+  "warmups" : 1
+}

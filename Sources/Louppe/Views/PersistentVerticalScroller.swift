@@ -26,6 +26,8 @@ struct PersistentVerticalScroller: NSViewRepresentable {
         // path, so the invariant remains self-healing.
         if scrollView.scrollerStyle == .legacy,
            scrollView.hasVerticalScroller,
+           !scrollView.hasHorizontalScroller,
+           scrollView.horizontalScrollElasticity == .none,
            !scrollView.autohidesScrollers,
            scrollView.verticalScroller?.controlSize == .regular,
            scrollView.verticalScroller?.isHidden == false,
@@ -37,6 +39,8 @@ struct PersistentVerticalScroller: NSViewRepresentable {
         // the lazy Grid was realizing tiles.
         scrollView.scrollerStyle = .legacy
         scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.horizontalScrollElasticity = .none
         scrollView.verticalScroller?.controlSize = .regular
         scrollView.verticalScroller?.isHidden = false
         scrollView.verticalScroller?.alphaValue = 1

@@ -1,0 +1,60 @@
+{
+  "completedAt": "2026-10-14T01:40:18.791451+00:00",
+  "app": "/Applications/Louppe.app",
+  "version": "1.11.0",
+  "build": "13",
+  "bundleIdentifier": "com.alexandermarkin.louppe",
+  "updatesDisabled": true,
+  "running": [
+    {
+      "bundleID": "com.alexandermarkin.louppe",
+      "name": "Louppe",
+      "path": "/Applications/Louppe.app",
+      "pid": 3720
+    }
+  ],
+  "binarySHA256": "cb50122f5149bb554ac7e57b85ccddc75361a19c7dd175250be96e1a3a2f5f9d",
+  "previousBinarySHA256": "d5bd45723f41923fb371efa672d8ea202911d59c856d75e508bd85f048fea46e",
+  "fixture": "/private/tmp/Louppe-Combined-Review-Media-eecwefti",
+  "physicalEntries": 34,
+  "existingDecisionsPreserved": true,
+  "mediaBytesUnchanged": true,
+  "strictInstalledSignatureVerified": true,
+  "reviewArchiveIndependentlyVerified": true,
+  "completeContentsEqualForStageArchiveAndInstall": true,
+  "changedSince714TestBaseline": [
+    "Sources/Louppe/UpdaterViews.swift",
+    "Sources/Louppe/Views/FilterView.swift",
+    "Sources/Louppe/Views/LouppeHelpView.swift",
+    "Tests/LouppeTests/SettingsLayoutTests.swift"
+  ],
+  "focusedTestsExecuted": 47,
+  "focusedTestsSkipped": 2,
+  "focusedTestsFailures": 0,
+  "retiredCopies": [
+    {
+      "original": "/Applications/Louppe.app",
+      "trash": "/Users/alexander_markin/.Trash/Louppe 9-40-15-248\u202fPM.app"
+    },
+    {
+      "original": "/Users/alexander_markin/Documents/code/louppe/app/dist/Louppe.app",
+      "trash": "/Users/alexander_markin/Library/Mobile Documents/.Trash/Louppe 10.app"
+    },
+    {
+      "original": "/Users/alexander_markin/Documents/code/louppe/app/dist/Louppe.zip",
+      "trash": "/Users/alexander_markin/Library/Mobile Documents/.Trash/Louppe 8.zip"
+    },
+    {
+      "original": "/private/tmp/louppe-ui-feedback-quobyuzs/Louppe.app",
+      "trash": "/Users/alexander_markin/.Trash/Louppe 9-40-18-764\u202fPM.app"
+    },
+    {
+      "original": "/private/tmp/louppe-ui-feedback-quobyuzs/Louppe UI Review.zip",
+      "trash": "/Users/alexander_markin/.Trash/Louppe UI Review.zip"
+    },
+    {
+      "original": "/private/tmp/louppe-ui-feedback-quobyuzs/extracted/Louppe.app",
+      "trash": "/Users/alexander_markin/.Trash/Louppe 9-40-18-789\u202fPM.app"
+    }
+  ]
+}

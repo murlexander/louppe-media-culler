@@ -1,0 +1,219 @@
+[0/1] Planning build
+Building for debugging...
+[0/7] Write sources
+[2/7] Write swift-version--58304C5D6DBC2206.txt
+[4/10] Emitting module Louppe
+[5/10] Compiling Louppe PreparedSessionIndex.swift
+[6/10] Compiling Louppe SessionStore.swift
+[6/11] Write Objects.LinkFileList
+[7/11] Linking Louppe
+[8/11] Applying Louppe
+[10/21] Compiling LouppeTests QualityCueSessionTests.swift
+[11/21] Compiling LouppeTests RawDisplayTests.swift
+[12/21] Compiling LouppeTests RAWJPEGXMPResolutionTests.swift
+[13/21] Compiling LouppeTests RecoveryGatingTests.swift
+[14/21] Compiling LouppeTests QualityCueWorkPolicyTests.swift
+[15/21] Compiling LouppeTests QualityCueSchedulingTests.swift
+[16/21] Compiling LouppeTests PreparedSessionCueMaskTests.swift
+[17/21] Compiling LouppeTests QualityCueFilterProjectionTests.swift
+[18/21] Compiling LouppeTests RAWJPEGPaletteTests.swift
+[19/21] Emitting module LouppeTests
+[19/21] Write Objects.LinkFileList
+[20/21] Linking LouppePackageTests
+Build complete! (8.58s)
+Test Suite 'Selected tests' started at 2026-10-14 11:08:06.579 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-14 11:08:06.588 AM.
+Test Suite 'CameraQualityWarningTests' started at 2026-10-14 11:08:06.588 AM.
+Test Case '-[LouppeTests.CameraQualityWarningTests testAllIndividualCuesCanBeDisabledAndRestored]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testAllIndividualCuesCanBeDisabledAndRestored]' passed (0.006 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testArbitraryCustomThresholdsAndIndependentEnabledFlagsPersist]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testArbitraryCustomThresholdsAndIndependentEnabledFlagsPersist]' passed (0.002 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testCustomPreferencesPersistIndependently]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testCustomPreferencesPersistIndependently]' passed (0.003 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testCustomThresholdsAndMissingOrInvalidMetadataAreHandledSafely]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testCustomThresholdsAndMissingOrInvalidMetadataAreHandledSafely]' passed (0.001 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testDefaultPreferencesAreSensibleAndEnabled]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testDefaultPreferencesAreSensibleAndEnabled]' passed (0.002 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testDisablingEachCueLeavesOtherWarningsAndThresholdsIntact]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testDisablingEachCueLeavesOtherWarningsAndThresholdsIntact]' passed (0.003 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testGroupedRawJPEGUsesDisplayedPrimaryPhoto]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testGroupedRawJPEGUsesDisplayedPrimaryPhoto]' passed (0.008 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testInfoDetailsPreserveCustomThresholdPrecisionInCurrentLocale]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testInfoDetailsPreserveCustomThresholdPrecisionInCurrentLocale]' passed (0.001 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testInvalidCommitRetainsExactPreviousCustomThreshold]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testInvalidCommitRetainsExactPreviousCustomThreshold]' passed (0.001 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testInvalidStoredThresholdsSafelyUseDefaults]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testInvalidStoredThresholdsSafelyUseDefaults]' passed (0.004 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testLegacyThresholdsKeepAllIndividualCuesEnabled]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testLegacyThresholdsKeepAllIndividualCuesEnabled]' passed (0.002 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testLocaleDecimalInputAndGroupedISOAreStrict]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testLocaleDecimalInputAndGroupedISOAreStrict]' passed (0.002 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testNoiseCueSymbolAndCompactValues]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testNoiseCueSymbolAndCompactValues]' passed (0.056 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testRawClippingUsesRawSourceWithoutDuplicateRenderedWarnings]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testRawClippingUsesRawSourceWithoutDuplicateRenderedWarnings]' passed (0.001 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testShutterInputAcceptsFractionsAndSecondsWithoutRounding]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testShutterInputAcceptsFractionsAndSecondsWithoutRounding]' passed (0.000 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testThresholdBoundariesProduceClearWarnings]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testThresholdBoundariesProduceClearWarnings]' passed (0.001 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testThresholdInputRejectsPartialInvalidAndNonfiniteValues]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testThresholdInputRejectsPartialInvalidAndNonfiniteValues]' passed (0.001 seconds).
+Test Case '-[LouppeTests.CameraQualityWarningTests testVideoAndDisabledCuesStayNonBlocking]' started.
+Test Case '-[LouppeTests.CameraQualityWarningTests testVideoAndDisabledCuesStayNonBlocking]' passed (0.001 seconds).
+Test Suite 'CameraQualityWarningTests' passed at 2026-10-14 11:08:06.683 AM.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.094 (0.095) seconds
+Test Suite 'PreparedSessionCueMaskTests' started at 2026-10-14 11:08:06.683 AM.
+Test Case '-[LouppeTests.PreparedSessionCueMaskTests testEmptyCueSelectionIgnoresPreparedMasksAndStillAppliesOtherFilters]' started.
+Test Case '-[LouppeTests.PreparedSessionCueMaskTests testEmptyCueSelectionIgnoresPreparedMasksAndStillAppliesOtherFilters]' passed (0.001 seconds).
+Test Suite 'PreparedSessionCueMaskTests' passed at 2026-10-14 11:08:06.684 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'PreparedSessionMetadataOrderingTests' started at 2026-10-14 11:08:06.684 AM.
+Test Case '-[LouppeTests.PreparedSessionMetadataOrderingTests testEqualMetadataOnReversedNamesKeepsCanonicalTies]' started.
+Test Case '-[LouppeTests.PreparedSessionMetadataOrderingTests testEqualMetadataOnReversedNamesKeepsCanonicalTies]' passed (0.001 seconds).
+Test Case '-[LouppeTests.PreparedSessionMetadataOrderingTests testPreparedMetadataEditsAndResetRetainComparatorOrderAndLookupIdentity]' started.
+Test Case '-[LouppeTests.PreparedSessionMetadataOrderingTests testPreparedMetadataEditsAndResetRetainComparatorOrderAndLookupIdentity]' passed (0.048 seconds).
+Test Case '-[LouppeTests.PreparedSessionMetadataOrderingTests testPureMetadataSortMatchesComparatorForArbitraryInputAndEveryDirection]' started.
+Test Case '-[LouppeTests.PreparedSessionMetadataOrderingTests testPureMetadataSortMatchesComparatorForArbitraryInputAndEveryDirection]' passed (0.047 seconds).
+Test Case '-[LouppeTests.PreparedSessionMetadataOrderingTests testRealScanAndMainActorPairPreparationPreserveAllPhysicalFiles]' started.
+Test Case '-[LouppeTests.PreparedSessionMetadataOrderingTests testRealScanAndMainActorPairPreparationPreserveAllPhysicalFiles]' passed (0.088 seconds).
+Test Case '-[LouppeTests.PreparedSessionMetadataOrderingTests testSameCountReplacementAndReorderingRebuildChronology]' started.
+Test Case '-[LouppeTests.PreparedSessionMetadataOrderingTests testSameCountReplacementAndReorderingRebuildChronology]' passed (0.010 seconds).
+Test Suite 'PreparedSessionMetadataOrderingTests' passed at 2026-10-14 11:08:06.878 AM.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.194 (0.194) seconds
+Test Suite 'QualityCueFilterProjectionTests' started at 2026-10-14 11:08:06.878 AM.
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testArrivingEvidenceUpdatesWarmORProjectionWithoutRetargetingSelection]' started.
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testArrivingEvidenceUpdatesWarmORProjectionWithoutRetargetingSelection]' passed (0.021 seconds).
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testBurstAndNormalGroupsPreservePartialMembershipAcrossCueSwitches]' started.
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testBurstAndNormalGroupsPreservePartialMembershipAcrossCueSwitches]' passed (0.014 seconds).
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testEveryCueSubsetUsesORAcrossMixedMediaAndPrimaryOnlyPairs]' started.
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testEveryCueSubsetUsesORAcrossMixedMediaAndPrimaryOnlyPairs]' passed (0.101 seconds).
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testOtherFiltersSortAndSelectionIntersectWarmCueMembership]' started.
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testOtherFiltersSortAndSelectionIntersectWarmCueMembership]' passed (0.163 seconds).
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testPreparedIndexTreatsNoSelectedCueAsNeutralEvenWhenMatchesAreSupplied]' started.
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testPreparedIndexTreatsNoSelectedCueAsNeutralEvenWhenMatchesAreSupplied]' passed (0.001 seconds).
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testSameIDReplacementAndReorderingDiscardWarmProjectionUntilFreshEvidence]' started.
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testSameIDReplacementAndReorderingDiscardWarmProjectionUntilFreshEvidence]' passed (0.013 seconds).
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testWarmCueSwitchingAndAcceptedPairsAvoidFullReclassification]' started.
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testWarmCueSwitchingAndAcceptedPairsAvoidFullReclassification]' passed (0.018 seconds).
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testWarmProjectionReclassifiesThresholdsAndEnabledFlagsWithoutRemeasuring]' started.
+Test Case '-[LouppeTests.QualityCueFilterProjectionTests testWarmProjectionReclassifiesThresholdsAndEnabledFlagsWithoutRemeasuring]' passed (0.015 seconds).
+Test Suite 'QualityCueFilterProjectionTests' passed at 2026-10-14 11:08:07.224 AM.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.345 (0.346) seconds
+Test Suite 'QualityCueSchedulingTests' started at 2026-10-14 11:08:07.224 AM.
+Test Case '-[LouppeTests.QualityCueSchedulingTests testActualSelectedPriorityWalkIsLinearAtTwoThousandPhotos]' started.
+Test Case '-[LouppeTests.QualityCueSchedulingTests testActualSelectedPriorityWalkIsLinearAtTwoThousandPhotos]' passed (0.337 seconds).
+Test Case '-[LouppeTests.QualityCueSchedulingTests testAnotherBatchCannotStartUntilAdaptiveRestYields]' started.
+Test Case '-[LouppeTests.QualityCueSchedulingTests testAnotherBatchCannotStartUntilAdaptiveRestYields]' passed (0.015 seconds).
+Test Case '-[LouppeTests.QualityCueSchedulingTests testCoveredCurrentPhotoDoesNotInterruptRest]' started.
+Test Case '-[LouppeTests.QualityCueSchedulingTests testCoveredCurrentPhotoDoesNotInterruptRest]' passed (0.010 seconds).
+Test Case '-[LouppeTests.QualityCueSchedulingTests testCoveredSelectionChangesDoNotInterruptRest]' started.
+Test Case '-[LouppeTests.QualityCueSchedulingTests testCoveredSelectionChangesDoNotInterruptRest]' passed (0.010 seconds).
+Test Case '-[LouppeTests.QualityCueSchedulingTests testCurrentPhotoInterruptsRestAndRunsInNextBatch]' started.
+Test Case '-[LouppeTests.QualityCueSchedulingTests testCurrentPhotoInterruptsRestAndRunsInNextBatch]' passed (0.012 seconds).
+Test Case '-[LouppeTests.QualityCueSchedulingTests testNewTileInterestInterruptsRestButCoveredTileDoesNot]' started.
+Test Case '-[LouppeTests.QualityCueSchedulingTests testNewTileInterestInterruptsRestButCoveredTileDoesNot]' passed (0.013 seconds).
+Test Case '-[LouppeTests.QualityCueSchedulingTests testPauseFlushesAcceptedCueMatchesWithoutRetargetingSelection]' started.
+Test Case '-[LouppeTests.QualityCueSchedulingTests testPauseFlushesAcceptedCueMatchesWithoutRetargetingSelection]' passed (0.009 seconds).
+Test Case '-[LouppeTests.QualityCueSchedulingTests testUserPausePersistsUntilExplicitResume]' started.
+Test Case '-[LouppeTests.QualityCueSchedulingTests testUserPausePersistsUntilExplicitResume]' passed (0.013 seconds).
+Test Suite 'QualityCueSchedulingTests' passed at 2026-10-14 11:08:07.644 AM.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.419 (0.420) seconds
+Test Suite 'QualityCueSessionTests' started at 2026-10-14 11:08:07.644 AM.
+Test Case '-[LouppeTests.QualityCueSessionTests testAnyCueIntersectsDecisionAndPartialBurstMembership]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testAnyCueIntersectsDecisionAndPartialBurstMembership]' passed (0.271 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testBackgroundMatchesNeverRateTheHiddenCurrentPhoto]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testBackgroundMatchesNeverRateTheHiddenCurrentPhoto]' passed (0.013 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testIndependentInclusiveRulesKeepDisabledCutoffs]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testIndependentInclusiveRulesKeepDisabledCutoffs]' passed (0.000 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testLegacySplitPreservesDisabledFlagsAndExactCutoffOnce]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testLegacySplitPreservesDisabledFlagsAndExactCutoffOnce]' passed (0.003 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testMissingMetadataFailedImageAndUnsupportedRemainDistinct]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testMissingMetadataFailedImageAndUnsupportedRemainDistinct]' passed (0.012 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testMixedPairFiltersUsePrimaryEvidenceAndPreservePhysicalDecisions]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testMixedPairFiltersUsePrimaryEvidenceAndPreservePhysicalDecisions]' passed (0.005 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testPreferencesNotificationsFromWorkersReachMainActor]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testPreferencesNotificationsFromWorkersReachMainActor]' passed (0.012 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testQuitPreparationRetiresInFlightCuesAndCancellationRestartsThem]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testQuitPreparationRetiresInFlightCuesAndCancellationRestartsThem]' passed (0.048 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testRealFolderHistogramWithInfoClosedLeavesOriginalsAndRatingsIntact]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testRealFolderHistogramWithInfoClosedLeavesOriginalsAndRatingsIntact]' passed (0.124 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testRealRAWProvidesBoundedSourceEvidenceWithInfoClosed]' started.
+/Users/alexander_markin/Documents/code/louppe/app/Tests/LouppeTests/QualityCueSessionTests.swift:246: -[LouppeTests.QualityCueSessionTests testRealRAWProvidesBoundedSourceEvidenceWithInfoClosed] : Test skipped - Set LOUPPE_RAW_TEST_FILE for real camera cue evidence
+Test Case '-[LouppeTests.QualityCueSessionTests testRealRAWProvidesBoundedSourceEvidenceWithInfoClosed]' skipped (0.001 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testThresholdEditsReuseEvidenceWithoutReadsOrSelectionChanges]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testThresholdEditsReuseEvidenceWithoutReadsOrSelectionChanges]' passed (0.014 seconds).
+Test Case '-[LouppeTests.QualityCueSessionTests testUncheckedCheckingCanceledReplacementAndHonestCoverage]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testUncheckedCheckingCanceledReplacementAndHonestCoverage]' passed (0.051 seconds).
+Test Suite 'QualityCueSessionTests' passed at 2026-10-14 11:08:08.201 AM.
+	 Executed 12 tests, with 1 test skipped and 0 failures (0 unexpected) in 0.556 (0.557) seconds
+Test Suite 'QualityCueWorkPolicyTests' started at 2026-10-14 11:08:08.201 AM.
+Test Case '-[LouppeTests.QualityCueWorkPolicyTests testLowPowerAndThermalStatesIncreaseRest]' started.
+Test Case '-[LouppeTests.QualityCueWorkPolicyTests testLowPowerAndThermalStatesIncreaseRest]' passed (0.000 seconds).
+Test Case '-[LouppeTests.QualityCueWorkPolicyTests testNormalBackgroundRestTracksSlowDecodeWork]' started.
+Test Case '-[LouppeTests.QualityCueWorkPolicyTests testNormalBackgroundRestTracksSlowDecodeWork]' passed (0.000 seconds).
+Test Case '-[LouppeTests.QualityCueWorkPolicyTests testQuickBackgroundWorkHasARealMinimumRest]' started.
+Test Case '-[LouppeTests.QualityCueWorkPolicyTests testQuickBackgroundWorkHasARealMinimumRest]' passed (0.000 seconds).
+Test Suite 'QualityCueWorkPolicyTests' passed at 2026-10-14 11:08:08.202 AM.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'SelectionStateTests' started at 2026-10-14 11:08:08.202 AM.
+Test Case '-[LouppeTests.SelectionStateTests testBatchRatingAndUndoKeepSelectionAndIdentityRules]' started.
+Test Case '-[LouppeTests.SelectionStateTests testBatchRatingAndUndoKeepSelectionAndIdentityRules]' passed (0.004 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testDisjointSelectionFilteringKeepsDisplayedPhotoInsideDecisionTargets]' started.
+Test Case '-[LouppeTests.SelectionStateTests testDisjointSelectionFilteringKeepsDisplayedPhotoInsideDecisionTargets]' passed (0.011 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testFileOperationPreventsIdleSystemSleepUntilCompletion]' started.
+Test Case '-[LouppeTests.SelectionStateTests testFileOperationPreventsIdleSystemSleepUntilCompletion]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testGridBatchRatingDoesNotSignalCurrentPhotoChange]' started.
+Test Case '-[LouppeTests.SelectionStateTests testGridBatchRatingDoesNotSignalCurrentPhotoChange]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testGridPhotoClickSignalsBeforeChangingCurrentPhoto]' started.
+Test Case '-[LouppeTests.SelectionStateTests testGridPhotoClickSignalsBeforeChangingCurrentPhoto]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testGridRatingClickSignalsOnlyWhenItMovesCurrentPhoto]' started.
+Test Case '-[LouppeTests.SelectionStateTests testGridRatingClickSignalsOnlyWhenItMovesCurrentPhoto]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testGridRatingControlCountsEveryRapidActivation]' started.
+Test Case '-[LouppeTests.SelectionStateTests testGridRatingControlCountsEveryRapidActivation]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testGridRatingControlCyclesEveryStateWithoutAdvancing]' started.
+Test Case '-[LouppeTests.SelectionStateTests testGridRatingControlCyclesEveryStateWithoutAdvancing]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testGridRatingControlDoesNotMutateWhileRatingIsUnavailable]' started.
+Test Case '-[LouppeTests.SelectionStateTests testGridRatingControlDoesNotMutateWhileRatingIsUnavailable]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testGridRatingControlPreservesBatchSelectionBehavior]' started.
+Test Case '-[LouppeTests.SelectionStateTests testGridRatingControlPreservesBatchSelectionBehavior]' passed (0.002 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testGridRubberBandDefersToRatingAndPlayableVideoControls]' started.
+Test Case '-[LouppeTests.SelectionStateTests testGridRubberBandDefersToRatingAndPlayableVideoControls]' passed (0.000 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testLargeSelectionSummaryAndMetadataReadCost]' started.
+Test Case '-[LouppeTests.SelectionStateTests testLargeSelectionSummaryAndMetadataReadCost]' passed (1.086 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testPlainGridSelectionLeavesRatingUntouchedAndClearsSelection]' started.
+Test Case '-[LouppeTests.SelectionStateTests testPlainGridSelectionLeavesRatingUntouchedAndClearsSelection]' passed (0.004 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testRangeSelectionDropsMembersHiddenByFilter]' started.
+Test Case '-[LouppeTests.SelectionStateTests testRangeSelectionDropsMembersHiddenByFilter]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testSelectionMetadataReadsStayLiveForUniformMixedAndEmptySelections]' started.
+Test Case '-[LouppeTests.SelectionStateTests testSelectionMetadataReadsStayLiveForUniformMixedAndEmptySelections]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testSelectionSummaryFollowsSelectionFilteringAndItemReplacement]' started.
+Test Case '-[LouppeTests.SelectionStateTests testSelectionSummaryFollowsSelectionFilteringAndItemReplacement]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testTogglingCurrentMovesAnchorToSurvivingSelection]' started.
+Test Case '-[LouppeTests.SelectionStateTests testTogglingCurrentMovesAnchorToSurvivingSelection]' passed (0.003 seconds).
+Test Case '-[LouppeTests.SelectionStateTests testZeroMatchFilterHasNoImplicitSelection]' started.
+Test Case '-[LouppeTests.SelectionStateTests testZeroMatchFilterHasNoImplicitSelection]' passed (0.002 seconds).
+Test Suite 'SelectionStateTests' passed at 2026-10-14 11:08:09.345 AM.
+	 Executed 18 tests, with 0 failures (0 uwarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+nexpected) in 1.141 (1.142) seconds
+Test Suite 'SessionPerformanceIntegrationTests' started at 2026-10-14 11:08:09.345 AM.
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testCancelNavigationAndReplacementRejectPendingMembership]' started.
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testCancelNavigationAndReplacementRejectPendingMembership]' passed (0.040 seconds).
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testCancelSimilarityRegroupingRestoresCompletedSensitivity]' started.
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testCancelSimilarityRegroupingRestoresCompletedSensitivity]' passed (0.026 seconds).
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testCoverageCountsAreExactForSupportedUnsupportedAndEmptySessions]' started.
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testCoverageCountsAreExactForSupportedUnsupportedAndEmptySessions]' passed (0.012 seconds).
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testLatestSensitivityAndModeWinWhileCompletedMembershipRemains]' started.
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testLatestSensitivityAndModeWinWhileCompletedMembershipRemains]' passed (0.051 seconds).
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testNavigationDuringModeChangeKeepsPreviousCompletedProjection]' started.
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testNavigationDuringModeChangeKeepsPreviousCompletedProjection]' passed (0.018 seconds).
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testRollbackIdentityRefreshWithoutItemReplacementCannotDoubleCountCoverage]' started.
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testRollbackIdentityRefreshWithoutItemReplacementCannotDoubleCountCoverage]' passed (0.019 seconds).
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testSortOnlyRetainsStructuralGenerationPendingProofsAndSelection]' started.
+Test Case '-[LouppeTests.SessionPerformanceIntegrationTests testSortOnlyRetainsStructuralGenerationPendingProofsAndSelection]' passed (0.007 seconds).
+Test Suite 'SessionPerformanceIntegrationTests' passed at 2026-10-14 11:08:09.518 AM.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.173 (0.173) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-14 11:08:09.518 AM.
+	 Executed 80 tests, with 1 test skipped and 0 failures (0 unexpected) in 2.923 (2.930) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 11:08:09.518 AM.
+	 Executed 80 tests, with 1 test skipped and 0 failures (0 unexpected) in 2.923 (2.939) seconds
+20k selection summary: previous path 0.14973902702331543s, cached read 1.8393993377685547e-06s

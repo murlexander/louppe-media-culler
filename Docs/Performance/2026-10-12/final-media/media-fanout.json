@@ -1,0 +1,29 @@
+{
+  "generatedAt" : "2026-10-13T02:39:51Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 32,
+      "maxMS" : 19.381667,
+      "medianMS" : 19.17775,
+      "minMS" : 18.590375,
+      "name" : "same_revision_32_thumbnail_waiters_including_disk_drain",
+      "p95MS" : 19.381667,
+      "samplesMS" : [
+        19.2175,
+        18.590375,
+        19.17775,
+        18.831,
+        19.381667,
+        18.6385,
+        19.355291
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-fanout",
+  "warmups" : 1
+}

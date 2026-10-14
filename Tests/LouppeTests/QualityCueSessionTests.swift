@@ -141,10 +141,13 @@ final class QualityCueSessionTests: XCTestCase {
         try? await Task.sleep(for: .milliseconds(30))
         XCTAssertNil(store.qualityEvidence(for: store.items[0]))
         XCTAssertNil(store.qualityEvidence(for: previous))
+        XCTAssertEqual(store.qualityCueCoverageCountsForTesting.measured, 0)
+        XCTAssertEqual(store.qualityCueCoverageCountsForTesting.total, 1)
         XCTAssertEqual(store.qualityCueStatus(for: store.items[0]), .unchecked)
         store.startQualityCueAnalysis()
         await waitUntil { store.qualityCueStatus(for: store.items[0]) == .checked }
         store.pauseQualityCueAnalysis()
+        XCTAssertEqual(store.qualityCueCoverageCountsForTesting.measured, 1)
         XCTAssertEqual(store.qualityCueStatus(for: store.items[0]), .checked)
     }
 

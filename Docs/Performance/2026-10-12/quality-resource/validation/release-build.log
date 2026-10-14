@@ -1,0 +1,20 @@
+Compiling direct-download Louppe 1.11.0 (13)…
+[0/1] Planning build
+Building for production...
+[0/3] Write swift-version--58304C5D6DBC2206.txt
+[2/4] Compiling Louppe AppBuildInfo.swift
+[2/4] Write Objects.LinkFileList
+[3/4] Linking Louppe
+Build complete! (68.64s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+/* com.apple.actool.compilation-results */
+/private/tmp/Louppe-build.NKvKEz/icon-output/icon.plist
+/tmp/Louppe-build.NKvKEz/icon-output/AppIcon.icns
+/tmp/Louppe-build.NKvKEz/icon-output/Assets.car
+
+/private/tmp/Louppe-build.NKvKEz/Louppe.app: replacing existing signature
+Signed feed contains published updates; routine build leaves it unchanged.
+Release preflight passed for Louppe 1.11.0 (13).
+
+Done → /Users/alexander_markin/Documents/code/louppe/app/dist/Louppe.app
+Archive → /Users/alexander_markin/Documents/code/louppe/app/dist/Louppe.zip

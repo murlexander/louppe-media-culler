@@ -191,6 +191,12 @@ private struct FocusedLouppeSessionCommands: Commands {
     @ObservedObject var store: SessionStore
     @FocusedValue(\.louppeSessionStore) private var sceneStore
 
+    // Display hints only: SessionView's window monitor owns shortcut routing.
+    // Isolate glyphs so their order stays stable in right-to-left menus.
+    private func menuLabel(_ title: L10n.Message, shortcut: String) -> Text {
+        Text(verbatim: "\(L10n.text(title))  \u{2066}\(shortcut)\u{2069}")
+    }
+
     private var focusedStore: SessionStore? {
         guard sceneStore === store else { return nil }
         return sceneStore
@@ -213,8 +219,10 @@ private struct FocusedLouppeSessionCommands: Commands {
 
     var body: some Commands {
         CommandGroup(after: .newItem) {
-            Button(L10n.text("Command Palette…")) {
+            Button {
                 actionableStore?.presentActionPalette()
+            } label: {
+                menuLabel("Command Palette…", shortcut: "⌘K")
             }
             .disabled(
                 actionableStore?.isFileOperationRunning != false
@@ -222,8 +230,10 @@ private struct FocusedLouppeSessionCommands: Commands {
 
             Divider()
 
-            Button(L10n.text("Rescan Folder")) {
+            Button {
                 actionableStore?.rescan()
+            } label: {
+                menuLabel("Rescan Folder", shortcut: "⌘R")
             }
             .disabled(
                 actionableStore?.sourceFolder == nil
@@ -240,16 +250,20 @@ private struct FocusedLouppeSessionCommands: Commands {
         }
 
         CommandGroup(after: .undoRedo) {
-            Button(L10n.text("Undo Louppe Action")) {
+            Button {
                 actionableStore?.undo()
+            } label: {
+                menuLabel("Undo Louppe Action", shortcut: "Z / ⌘Z")
             }
             .disabled(
                 actionableStore?.isFileOperationRunning != false
                     || actionableStore?.canUndo != true
             )
 
-            Button(L10n.text("Clear All Decisions")) {
+            Button {
                 actionableStore?.requestClearAllRatings()
+            } label: {
+                menuLabel("Clear All Decisions", shortcut: "R")
             }
             .disabled(
                 actionableStore?.ratedCount == 0
@@ -271,8 +285,10 @@ private struct FocusedLouppeSessionCommands: Commands {
                 actionableStore?.canOrganizeSource != true
             )
 
-            Button(L10n.text("Export…")) {
+            Button {
                 actionableStore?.presentExport()
+            } label: {
+                menuLabel("Export…", shortcut: "E / ⌘E")
             }
             .disabled(
                 actionableStore?.canExport != true
@@ -291,13 +307,30 @@ private struct FocusedLouppeSessionCommands: Commands {
         }
 
         CommandGroup(after: .toolbar) {
-            Button(L10n.text("Larger Thumbnails")) {
+            Picker(L10n.text("View"), selection: Binding(
+                get: { focusedStore?.viewMode ?? .gallery },
+                set: { actionableStore?.viewMode = $0 }
+            )) {
+                menuLabel("Gallery", shortcut: "Tab / G").tag(ViewMode.gallery)
+                menuLabel("Grid", shortcut: "Tab / G").tag(ViewMode.grid)
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+            .disabled(actionableStore == nil)
+
+            Divider()
+
+            Button {
                 actionableStore?.zoomGrid(larger: true)
+            } label: {
+                menuLabel("Zoom In", shortcut: "⌘+")
             }
             .disabled(actionableStore?.viewMode != .grid)
 
-            Button(L10n.text("Smaller Thumbnails")) {
+            Button {
                 actionableStore?.zoomGrid(larger: false)
+            } label: {
+                menuLabel("Zoom Out", shortcut: "⌘−")
             }
             .disabled(actionableStore?.viewMode != .grid)
 
@@ -308,17 +341,21 @@ private struct FocusedLouppeSessionCommands: Commands {
             }
             .disabled(!canChangeGalleryImageSize)
 
-            Button(L10n.text("View Photo at 100%")) {
+            Button {
                 if actionableStore?.isAtActualSize != true {
                     actionableStore?.toggleZoom(.actual)
                 }
+            } label: {
+                menuLabel("View Photo at 100%", shortcut: "S")
             }
             .disabled(!canChangeGalleryImageSize)
 
-            Button(L10n.text("View Photo at Phone Size")) {
+            Button {
                 if actionableStore?.zoomMode != .small {
                     actionableStore?.toggleZoom(.small)
                 }
+            } label: {
+                menuLabel("View Photo at Phone Size", shortcut: "A")
             }
             .disabled(!canChangeGalleryImageSize)
 

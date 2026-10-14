@@ -1,0 +1,21 @@
+{
+  "unchanged": true,
+  "sha256": "bf770ab39092f873b7624ac600d80cb4a23a65be7f3d867e930ce9438a1898b7",
+  "paths": [
+    "CHANGELOG.md",
+    "Docs/DEVELOPMENT_DETAILS.md",
+    "README.md",
+    "Sources/Louppe/DuplicateBurstAnalysis.swift",
+    "Sources/Louppe/Resources/ar.lproj/Localizable.strings",
+    "Sources/Louppe/Resources/en.lproj/Localizable.strings",
+    "Sources/Louppe/Resources/es.lproj/Localizable.strings",
+    "Sources/Louppe/Resources/hi.lproj/Localizable.strings",
+    "Sources/Louppe/Resources/pt.lproj/Localizable.strings",
+    "Sources/Louppe/Resources/zh-Hans.lproj/Localizable.strings",
+    "Sources/Louppe/SessionStore.swift",
+    "Sources/Louppe/UpdaterViews.swift",
+    "Sources/Louppe/Views/FilterView.swift",
+    "Sources/Louppe/Views/SessionView.swift",
+    "Tests/LouppeTests/DuplicateBurstAnalysisTests.swift"
+  ]
+}

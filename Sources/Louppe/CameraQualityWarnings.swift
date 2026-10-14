@@ -1,5 +1,31 @@
 import Foundation
 
+/// Allocation-free cue membership, aligned with the four optional rules.
+struct QualityCueMatch: OptionSet, Sendable {
+    let rawValue: UInt8
+
+    init(rawValue: UInt8) {
+        self.rawValue = rawValue
+    }
+
+    static let highISO = Self(rawValue: 1 << 0)
+    static let slowShutter = Self(rawValue: 1 << 1)
+    static let highlightClipping = Self(rawValue: 1 << 2)
+    static let shadowClipping = Self(rawValue: 1 << 3)
+
+    init(_ kinds: Set<QualityCueKind>) {
+        self = []
+        for kind in kinds {
+            switch kind {
+            case .highISO: insert(.highISO)
+            case .slowShutter: insert(.slowShutter)
+            case .highlightClipping: insert(.highlightClipping)
+            case .shadowClipping: insert(.shadowClipping)
+            }
+        }
+    }
+}
+
 /// Per-app preferences for optional camera-quality cues. These live
 /// in UserDefaults, deliberately separate from the folder-bound review
 /// session, so changing a threshold never writes a sidecar or affects a photo.
@@ -369,20 +395,48 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
         L10n.text("\(title). \(exactDetail). Source: \(source.description). Review cue only.")
     }
 
+    /// Numeric classification shared by filters and displayed warnings. Only
+    /// the displayed primary owns paired metadata and revision-bound analysis.
+    static func matchingKinds(
+        for item: PhotoItem,
+        analysis: HistogramAnalysis?,
+        preferences: CameraQualityWarningPreferences
+    ) -> QualityCueMatch {
+        guard preferences.isEnabled, item.mediaKind == .photo else { return [] }
+        var matches: QualityCueMatch = []
+        if preferences.isHighISOEnabled,
+           let iso = MediaNumeric.iso(item.iso), iso >= preferences.highISOThreshold {
+            matches.insert(.highISO)
+        }
+        if preferences.isSlowShutterEnabled,
+           let shutter = MediaNumeric.shutterSpeed(item.shutterSpeed),
+           shutter >= preferences.slowShutterThreshold {
+            matches.insert(.slowShutter)
+        }
+        if let analysis {
+            if preferences.isHighlightClippingEnabled,
+               analysis.highlightPercentage >= preferences.highlightPercentageThreshold {
+                matches.insert(.highlightClipping)
+            }
+            if preferences.isShadowClippingEnabled,
+               analysis.shadowPercentage >= preferences.shadowPercentageThreshold {
+                matches.insert(.shadowClipping)
+            }
+        }
+        return matches
+    }
+
     static func warnings(
         for item: PhotoItem,
         analysis: HistogramAnalysis?,
         analysisSource: HistogramAnalysisSource = .renderedPreview,
         preferences: CameraQualityWarningPreferences
     ) -> [Self] {
-        guard preferences.isEnabled, item.mediaKind == .photo else { return [] }
+        let matches = matchingKinds(for: item, analysis: analysis, preferences: preferences)
+        guard !matches.isEmpty else { return [] }
         var warnings: [Self] = []
 
-        // A paired projection has one displayed primary file (the RAW when an
-        // unambiguous RAW+JPEG match is grouped). Its metadata and its
-        // content-keyed luminance analysis are the only correct source here.
-        if preferences.isHighISOEnabled,
-           let iso = MediaNumeric.iso(item.iso), iso >= preferences.highISOThreshold {
+        if matches.contains(.highISO), let iso = item.iso {
             warnings.append(
                 Self(
                     kind: .highISO,
@@ -392,9 +446,7 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
                 )
             )
         }
-        if preferences.isSlowShutterEnabled,
-           let shutter = MediaNumeric.shutterSpeed(item.shutterSpeed),
-           shutter >= preferences.slowShutterThreshold {
+        if matches.contains(.slowShutter), let shutter = item.shutterSpeed {
             warnings.append(
                 Self(
                     kind: .slowShutter,
@@ -405,8 +457,7 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
             )
         }
         if let analysis {
-            if preferences.isHighlightClippingEnabled,
-               analysis.highlightPercentage >= preferences.highlightPercentageThreshold {
+            if matches.contains(.highlightClipping) {
                 warnings.append(
                     Self(
                         kind: .highlightClipping,
@@ -416,8 +467,7 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
                     )
                 )
             }
-            if preferences.isShadowClippingEnabled,
-               analysis.shadowPercentage >= preferences.shadowPercentageThreshold {
+            if matches.contains(.shadowClipping) {
                 warnings.append(
                     Self(
                         kind: .shadowClipping,

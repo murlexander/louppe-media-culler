@@ -1,0 +1,80 @@
+{
+  "generatedAt" : "2026-10-13T02:35:22Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 100000,
+      "maxMS" : 1493.706041,
+      "medianMS" : 1372.234792,
+      "minMS" : 1349.362125,
+      "name" : "pairing.distinct-stems.production",
+      "p95MS" : 1493.706041,
+      "samplesMS" : [
+        1411.471958,
+        1372.234792,
+        1355.143667,
+        1493.706041,
+        1355.971542,
+        1349.362125,
+        1441.001792
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 955.078292,
+      "medianMS" : 931.113,
+      "minMS" : 924.98575,
+      "name" : "pairing.distinct-stems.no-global-sort",
+      "p95MS" : 955.078292,
+      "samplesMS" : [
+        924.98575,
+        936.352292,
+        931.113,
+        925.748625,
+        925.367667,
+        955.078292,
+        942.542083
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 1196.359208,
+      "medianMS" : 1178.404375,
+      "minMS" : 1163.90675,
+      "name" : "pairing.raw-jpeg.production",
+      "p95MS" : 1196.359208,
+      "samplesMS" : [
+        1178.404375,
+        1165.981209,
+        1186.656459,
+        1181.756417,
+        1196.359208,
+        1172.828084,
+        1163.90675
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 730.82225,
+      "medianMS" : 707.773583,
+      "minMS" : 700.106625,
+      "name" : "pairing.raw-jpeg.no-global-sort",
+      "p95MS" : 730.82225,
+      "samplesMS" : [
+        716.954167,
+        730.82225,
+        705.897125,
+        700.106625,
+        709.720334,
+        702.028,
+        707.773583
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "scan-pairing",
+  "warmups" : 1
+}

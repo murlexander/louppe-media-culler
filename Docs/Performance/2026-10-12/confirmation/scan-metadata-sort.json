@@ -1,0 +1,216 @@
+{
+  "generatedAt" : "2026-10-13T02:34:43Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 100000,
+      "maxMS" : 183.003584,
+      "medianMS" : 180.277209,
+      "minMS" : 177.086458,
+      "name" : "metadata.decision.ascending.production",
+      "p95MS" : 183.003584,
+      "samplesMS" : [
+        183.003584,
+        180.440541,
+        179.641709,
+        180.785667,
+        177.086458,
+        179.797708,
+        180.277209
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 66.121583,
+      "medianMS" : 45.772708,
+      "minMS" : 44.340416,
+      "name" : "metadata.decision.ascending.stable-buckets",
+      "p95MS" : 66.121583,
+      "samplesMS" : [
+        44.577708,
+        45.772708,
+        46.210291,
+        45.403417,
+        44.340416,
+        52.119583,
+        66.121583
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 181.801791,
+      "medianMS" : 178.138625,
+      "minMS" : 175.759625,
+      "name" : "metadata.decision.descending.production",
+      "p95MS" : 181.801791,
+      "samplesMS" : [
+        181.519583,
+        181.801791,
+        179.501625,
+        176.230625,
+        175.7675,
+        175.759625,
+        178.138625
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 46.730791,
+      "medianMS" : 40.928792,
+      "minMS" : 40.312417,
+      "name" : "metadata.decision.descending.stable-buckets",
+      "p95MS" : 46.730791,
+      "samplesMS" : [
+        46.730791,
+        43.623875,
+        40.928792,
+        40.393833,
+        40.312417,
+        41.488542,
+        40.869917
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 252.626542,
+      "medianMS" : 247.622875,
+      "minMS" : 243.963375,
+      "name" : "metadata.starRating.ascending.production",
+      "p95MS" : 252.626542,
+      "samplesMS" : [
+        252.626542,
+        243.963375,
+        245.430208,
+        248.433292,
+        247.5165,
+        247.622875,
+        251.827208
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 42.402541,
+      "medianMS" : 41.835917,
+      "minMS" : 39.958875,
+      "name" : "metadata.starRating.ascending.stable-buckets",
+      "p95MS" : 42.402541,
+      "samplesMS" : [
+        42.402541,
+        39.958875,
+        41.847208,
+        41.127958,
+        40.318708,
+        42.329125,
+        41.835917
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 251.284667,
+      "medianMS" : 247.586917,
+      "minMS" : 245.793959,
+      "name" : "metadata.starRating.descending.production",
+      "p95MS" : 251.284667,
+      "samplesMS" : [
+        246.51725,
+        251.284667,
+        246.428417,
+        250.030542,
+        247.586917,
+        245.793959,
+        248.860958
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 43.195417,
+      "medianMS" : 42.528417,
+      "minMS" : 40.652625,
+      "name" : "metadata.starRating.descending.stable-buckets",
+      "p95MS" : 43.195417,
+      "samplesMS" : [
+        40.652625,
+        42.463375,
+        42.562375,
+        42.628958,
+        43.195417,
+        42.385708,
+        42.528417
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 261.943584,
+      "medianMS" : 259.043208,
+      "minMS" : 258.473208,
+      "name" : "metadata.colorLabel.ascending.production",
+      "p95MS" : 261.943584,
+      "samplesMS" : [
+        259.043208,
+        258.473208,
+        261.943584,
+        261.119833,
+        261.264625,
+        258.76625,
+        258.927042
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 44.514375,
+      "medianMS" : 41.794209,
+      "minMS" : 41.501042,
+      "name" : "metadata.colorLabel.ascending.stable-buckets",
+      "p95MS" : 44.514375,
+      "samplesMS" : [
+        42.698167,
+        43.593875,
+        41.794209,
+        41.501042,
+        41.62025,
+        44.514375,
+        41.677583
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 407.717292,
+      "medianMS" : 270.585208,
+      "minMS" : 262.49675,
+      "name" : "metadata.colorLabel.descending.production",
+      "p95MS" : 407.717292,
+      "samplesMS" : [
+        269.815375,
+        407.717292,
+        272.537708,
+        270.585208,
+        264.230084,
+        288.22325,
+        262.49675
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 47.186542,
+      "medianMS" : 43.14725,
+      "minMS" : 41.355209,
+      "name" : "metadata.colorLabel.descending.stable-buckets",
+      "p95MS" : 47.186542,
+      "samplesMS" : [
+        47.186542,
+        41.355209,
+        43.391625,
+        42.372667,
+        43.201584,
+        43.14725,
+        41.966084
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "scan-metadata-sort",
+  "warmups" : 1
+}

@@ -1,0 +1,63 @@
+{
+  "generatedAt" : "2026-10-13T02:34:23Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 100000,
+      "maxMS" : 1281.987625,
+      "medianMS" : 1243.967417,
+      "minMS" : 1233.610292,
+      "name" : "json.encode.pretty-sorted",
+      "p95MS" : 1281.987625,
+      "samplesMS" : [
+        1244.215792,
+        1281.987625,
+        1243.967417,
+        1235.778042,
+        1236.094875,
+        1260.855125,
+        1233.610292
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 1216.854334,
+      "medianMS" : 1185.422792,
+      "minMS" : 1178.098834,
+      "name" : "json.encode.compact-sorted",
+      "p95MS" : 1216.854334,
+      "samplesMS" : [
+        1183.790542,
+        1185.422792,
+        1178.098834,
+        1201.192125,
+        1179.380334,
+        1189.695417,
+        1216.854334
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 1188.079083,
+      "medianMS" : 1110.868791,
+      "minMS" : 1083.701916,
+      "name" : "json.encode.compact",
+      "p95MS" : 1188.079083,
+      "samplesMS" : [
+        1086.58675,
+        1136.037833,
+        1186.725208,
+        1097.752458,
+        1188.079083,
+        1083.701916,
+        1110.868791
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "persistence-json-format",
+  "warmups" : 1
+}

@@ -251,42 +251,78 @@ enum ClippingWarningProcessor {
     }
 }
 
+private struct HistogramAnalysisWaiter {
+    let continuation: CheckedContinuation<HistogramAnalysis?, Never>
+    /// A session's folder-access lease must outlive native reads that cannot
+    /// stop mid-decode. Info navigation can retire its own interest immediately.
+    let waitsForWorkerExit: Bool
+}
+
 /// Bounded, coalesced histogram work. At most two 1,024-pixel analysis
 /// previews are decoded at once; the cache retains tiny value results, never
 /// decoded bitmaps.
 final class HistogramPipeline: @unchecked Sendable {
+    enum RequestPurpose: Sendable {
+        case info, backgroundQuality
+
+        var qualityOfService: QualityOfService {
+            self == .info ? .userInitiated : .utility
+        }
+
+        var queuePriority: Operation.QueuePriority {
+            self == .info ? .high : .low
+        }
+    }
+
+    typealias Decoder = @Sendable (URL) -> HistogramAnalysis?
+
     static let shared = HistogramPipeline()
     static let analysisPixelSize: CGFloat = 1024
     static let resultCacheLimit = 256
 
     private final class PendingAnalysis {
-        var waiters: [UUID: CheckedContinuation<HistogramAnalysis?, Never>]
+        var waiters: [UUID: HistogramAnalysisWaiter]
         let operation: BlockOperation
+        let completionID: UUID
 
         init(
-            waiters: [UUID: CheckedContinuation<HistogramAnalysis?, Never>],
-            operation: BlockOperation
+            waiters: [UUID: HistogramAnalysisWaiter],
+            operation: BlockOperation,
+            completionID: UUID
         ) {
             self.waiters = waiters
             self.operation = operation
+            self.completionID = completionID
         }
     }
 
-    private let queue: OperationQueue = {
-        let queue = OperationQueue()
-        queue.name = "louppe.histogram"
-        queue.maxConcurrentOperationCount = 2
-        queue.qualityOfService = .userInitiated
-        return queue
-    }()
+    private let queue: OperationQueue
+    private let decoder: Decoder
     private let lock = NSLock()
     private var cache: [String: HistogramAnalysis] = [:]
     private var cacheOrder: [String] = []
     private var inFlight: [String: PendingAnalysis] = [:]
+    /// Retired requests cannot publish/cache or be confused with a renewed key.
+    private var retiredWaiters: [UUID: [CheckedContinuation<HistogramAnalysis?, Never>]] = [:]
 
-    private init() {}
+    /// Isolated workers/queues make resource and cancellation contracts testable;
+    /// production uses the shared instance with the same two-operation ceiling.
+    init(
+        decoder: @escaping Decoder = { url in
+            ImagePipeline.decodeImage(url: url, maxPixel: HistogramPipeline.analysisPixelSize)
+                .flatMap(ClippingWarningProcessor.analyze)
+        },
+        operationQueue: OperationQueue? = nil
+    ) {
+        self.decoder = decoder
+        let queue = operationQueue ?? OperationQueue()
+        queue.name = "louppe.histogram"
+        queue.maxConcurrentOperationCount = 2
+        queue.qualityOfService = .utility
+        self.queue = queue
+    }
 
-    func analysis(for item: PhotoItem) async -> HistogramAnalysis? {
+    func analysis(for item: PhotoItem, purpose: RequestPurpose = .info) async -> HistogramAnalysis? {
         guard item.mediaKind == .photo, item.isSupported else { return nil }
         let key = ImagePipeline.cacheKey(for: item) + "|histogram-v1-srgb-1024"
         let revision = MediaSourceRevision(item)
@@ -306,29 +342,40 @@ final class HistogramPipeline: @unchecked Sendable {
                     return
                 }
                 if let pending = inFlight[key] {
-                    pending.waiters[requestID] = continuation
+                    pending.waiters[requestID] = HistogramAnalysisWaiter(
+                        continuation: continuation,
+                        waitsForWorkerExit: purpose == .backgroundQuality
+                    )
+                    if purpose == .info {
+                        pending.operation.queuePriority = .high
+                        pending.operation.qualityOfService = .userInitiated
+                    }
                     lock.unlock()
                     return
                 }
 
+                let completionID = UUID()
                 let operation = BlockOperation()
+                operation.completionBlock = { [weak self] in
+                    self?.completeOperation(completionID)
+                }
                 operation.addExecutionBlock { [weak self, weak operation] in
                     guard let self, let operation, !operation.isCancelled
                     else { return }
                     let result = autoreleasepool {
-                        revision.read {
-                            ImagePipeline.decodeImage(
-                                url: revision.url,
-                                maxPixel: Self.analysisPixelSize
-                            ).flatMap(ClippingWarningProcessor.analyze)
-                        }
+                        revision.read { self.decoder(revision.url) }
                     }
                     self.finish(key: key, operation: operation, result: result)
                 }
-                operation.qualityOfService = .userInitiated
+                operation.qualityOfService = purpose.qualityOfService
+                operation.queuePriority = purpose.queuePriority
                 inFlight[key] = PendingAnalysis(
-                    waiters: [requestID: continuation],
-                    operation: operation
+                    waiters: [requestID: HistogramAnalysisWaiter(
+                        continuation: continuation,
+                        waitsForWorkerExit: purpose == .backgroundQuality
+                    )],
+                    operation: operation,
+                    completionID: completionID
                 )
                 lock.unlock()
                 queue.addOperation(operation)
@@ -353,7 +400,7 @@ final class HistogramPipeline: @unchecked Sendable {
                 cache.removeValue(forKey: removed)
             }
         }
-        let waiters = pending.waiters.values
+        let waiters = pending.waiters.values.map(\.continuation)
         lock.unlock()
         for waiter in waiters {
             waiter.resume(returning: result)
@@ -363,6 +410,8 @@ final class HistogramPipeline: @unchecked Sendable {
     /// Dropping the final waiter also drops the queued analysis. A running
     /// ImageIO decode is allowed to finish safely, but it cannot publish a
     /// stale result because its in-flight entry has already been removed.
+    /// Cancelled background waiters settle after native worker exit so their
+    /// scheduler retains folder access; Info waiters remain immediate.
     private func cancelWaiter(_ requestID: UUID, for key: String) {
         lock.lock()
         guard let pending = inFlight[key],
@@ -373,10 +422,24 @@ final class HistogramPipeline: @unchecked Sendable {
         }
         if pending.waiters.isEmpty {
             inFlight.removeValue(forKey: key)
+            // Cancel before checking execution: a queued operation that starts
+            // concurrently must either skip its block or own the running lane.
             pending.operation.cancel()
         }
+        if waiter.waitsForWorkerExit, pending.operation.isExecuting {
+            retiredWaiters[pending.completionID, default: []].append(waiter.continuation)
+            lock.unlock()
+            return
+        }
         lock.unlock()
-        waiter.resume(returning: nil)
+        waiter.continuation.resume(returning: nil)
+    }
+
+    private func completeOperation(_ completionID: UUID) {
+        lock.lock()
+        let waiters = retiredWaiters.removeValue(forKey: completionID) ?? []
+        lock.unlock()
+        for waiter in waiters { waiter.resume(returning: nil) }
     }
 
     private func touch(_ key: String) {
@@ -538,6 +601,10 @@ enum RawHistogramProcessor {
 /// time, duplicate requests share it, and only small content-revision-keyed
 /// histogram values survive in the LRU cache.
 final class RawHistogramPipeline: @unchecked Sendable {
+    enum RequestPurpose: Sendable {
+        case info, backgroundQuality
+    }
+
     typealias Decoder = @Sendable (URL) -> HistogramAnalysis?
 
     static let shared = RawHistogramPipeline()
@@ -546,15 +613,18 @@ final class RawHistogramPipeline: @unchecked Sendable {
     static let resultCacheLimit = 128
 
     private final class PendingAnalysis {
-        var waiters: [UUID: CheckedContinuation<HistogramAnalysis?, Never>]
+        var waiters: [UUID: HistogramAnalysisWaiter]
         let operation: BlockOperation
+        let completionID: UUID
 
         init(
-            waiters: [UUID: CheckedContinuation<HistogramAnalysis?, Never>],
-            operation: BlockOperation
+            waiters: [UUID: HistogramAnalysisWaiter],
+            operation: BlockOperation,
+            completionID: UUID
         ) {
             self.waiters = waiters
             self.operation = operation
+            self.completionID = completionID
         }
     }
 
@@ -566,6 +636,8 @@ final class RawHistogramPipeline: @unchecked Sendable {
     private var cache: [String: HistogramAnalysis] = [:]
     private var cacheOrder: [String] = []
     private var inFlight: [String: PendingAnalysis] = [:]
+    /// Retired requests cannot publish/cache or be confused with a renewed key.
+    private var retiredWaiters: [UUID: [CheckedContinuation<HistogramAnalysis?, Never>]] = [:]
 
     init(
         delayNanoseconds: UInt64 = analysisDelayNanoseconds,
@@ -598,16 +670,20 @@ final class RawHistogramPipeline: @unchecked Sendable {
         return result
     }
 
-    func analysis(for item: PhotoItem) async -> HistogramAnalysis? {
+    func analysis(for item: PhotoItem, purpose: RequestPurpose = .info) async -> HistogramAnalysis? {
         guard Self.supportsAnalysis(for: item), !Task.isCancelled else {
             return nil
         }
         if let cached = cachedAnalysis(for: item) { return cached }
 
-        do {
-            try await Task.sleep(nanoseconds: delayNanoseconds)
-        } catch {
-            return nil
+        // Info defers expensive sensor decoding while the user navigates.
+        // Bounded background quality batches already own their scheduling.
+        if purpose == .info {
+            do {
+                try await Task.sleep(nanoseconds: delayNanoseconds)
+            } catch {
+                return nil
+            }
         }
         guard !Task.isCancelled else { return nil }
         if let cached = cachedAnalysis(for: item) { return cached }
@@ -630,12 +706,19 @@ final class RawHistogramPipeline: @unchecked Sendable {
                     return
                 }
                 if let pending = inFlight[key] {
-                    pending.waiters[requestID] = continuation
+                    pending.waiters[requestID] = HistogramAnalysisWaiter(
+                        continuation: continuation,
+                        waitsForWorkerExit: purpose == .backgroundQuality
+                    )
                     lock.unlock()
                     return
                 }
 
+                let completionID = UUID()
                 let operation = BlockOperation()
+                operation.completionBlock = { [weak self] in
+                    self?.completeOperation(completionID)
+                }
                 operation.addExecutionBlock { [weak self, weak operation] in
                     guard let self, let operation, !operation.isCancelled
                     else { return }
@@ -647,8 +730,12 @@ final class RawHistogramPipeline: @unchecked Sendable {
                 operation.qualityOfService = .utility
                 operation.queuePriority = .low
                 inFlight[key] = PendingAnalysis(
-                    waiters: [requestID: continuation],
-                    operation: operation
+                    waiters: [requestID: HistogramAnalysisWaiter(
+                        continuation: continuation,
+                        waitsForWorkerExit: purpose == .backgroundQuality
+                    )],
+                    operation: operation,
+                    completionID: completionID
                 )
                 lock.unlock()
                 queue.addOperation(operation)
@@ -673,7 +760,7 @@ final class RawHistogramPipeline: @unchecked Sendable {
                 cache.removeValue(forKey: removed)
             }
         }
-        let waiters = pending.waiters.values
+        let waiters = pending.waiters.values.map(\.continuation)
         lock.unlock()
         for waiter in waiters {
             waiter.resume(returning: result)
@@ -690,10 +777,24 @@ final class RawHistogramPipeline: @unchecked Sendable {
         }
         if pending.waiters.isEmpty {
             inFlight.removeValue(forKey: key)
+            // Cancel before checking execution: a queued operation that starts
+            // concurrently must either skip its block or own the running lane.
             pending.operation.cancel()
         }
+        if waiter.waitsForWorkerExit, pending.operation.isExecuting {
+            retiredWaiters[pending.completionID, default: []].append(waiter.continuation)
+            lock.unlock()
+            return
+        }
         lock.unlock()
-        waiter.resume(returning: nil)
+        waiter.continuation.resume(returning: nil)
+    }
+
+    private func completeOperation(_ completionID: UUID) {
+        lock.lock()
+        let waiters = retiredWaiters.removeValue(forKey: completionID) ?? []
+        lock.unlock()
+        for waiter in waiters { waiter.resume(returning: nil) }
     }
 
     private func touch(_ key: String) {

@@ -1,0 +1,114 @@
+{
+  "generatedAt" : "2026-10-13T02:30:04Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 1.687292,
+      "medianMS" : 1.268291,
+      "minMS" : 1.178209,
+      "name" : "burst.input.full-production-shape",
+      "p95MS" : 1.687292,
+      "samplesMS" : [
+        1.215625,
+        1.178209,
+        1.687292,
+        1.208417,
+        1.629333,
+        1.497833,
+        1.268291
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.166542,
+      "medianMS" : 0.15325,
+      "minMS" : 0.153083,
+      "name" : "burst.input.metadata-only-hypothesis",
+      "p95MS" : 0.166542,
+      "samplesMS" : [
+        0.166542,
+        0.153083,
+        0.153083,
+        0.153125,
+        0.15325,
+        0.15325,
+        0.15325
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 13.613125,
+      "medianMS" : 12.6025,
+      "minMS" : 12.433958,
+      "name" : "burst.input.full-production-shape",
+      "p95MS" : 13.613125,
+      "samplesMS" : [
+        13.472708,
+        12.610875,
+        13.613125,
+        12.433958,
+        12.449917,
+        12.6025,
+        12.588583
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1.761167,
+      "medianMS" : 1.607333,
+      "minMS" : 1.562917,
+      "name" : "burst.input.metadata-only-hypothesis",
+      "p95MS" : 1.761167,
+      "samplesMS" : [
+        1.753667,
+        1.655917,
+        1.566166,
+        1.576042,
+        1.562917,
+        1.607333,
+        1.761167
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 134.453625,
+      "medianMS" : 125.53725,
+      "minMS" : 123.607667,
+      "name" : "burst.input.full-production-shape",
+      "p95MS" : 134.453625,
+      "samplesMS" : [
+        134.453625,
+        130.801792,
+        126.152833,
+        124.379083,
+        123.607667,
+        125.53725,
+        124.045583
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 18.880584,
+      "medianMS" : 18.527375,
+      "minMS" : 17.688875,
+      "name" : "burst.input.metadata-only-hypothesis",
+      "p95MS" : 18.880584,
+      "samplesMS" : [
+        18.811583,
+        18.641292,
+        17.784833,
+        17.688875,
+        18.527375,
+        18.880584,
+        17.70975
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "burst-input-allocation",
+  "warmups" : 1
+}

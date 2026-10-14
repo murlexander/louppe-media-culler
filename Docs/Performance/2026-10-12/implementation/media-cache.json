@@ -1,0 +1,114 @@
+{
+  "generatedAt" : "2026-10-13T03:10:18Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 17.849417,
+      "medianMS" : 17.448458,
+      "minMS" : 17.005584,
+      "name" : "jpeg_source_decode_320px_os_cache_warm",
+      "p95MS" : 17.849417,
+      "samplesMS" : [
+        17.448458,
+        17.849417,
+        17.005584,
+        17.620917,
+        17.060792,
+        17.260833,
+        17.758292
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 49.165583,
+      "medianMS" : 42.115417,
+      "minMS" : 40.90625,
+      "name" : "jpeg_source_decode_4096px_os_cache_warm",
+      "p95MS" : 49.165583,
+      "samplesMS" : [
+        49.165583,
+        43.432292,
+        47.840084,
+        40.90625,
+        41.568542,
+        42.115417,
+        41.543917
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 2.49025,
+      "medianMS" : 2.384667,
+      "minMS" : 2.354708,
+      "name" : "thumbnail_memory_hit_1000",
+      "p95MS" : 2.49025,
+      "samplesMS" : [
+        2.374125,
+        2.384667,
+        2.375375,
+        2.444875,
+        2.39875,
+        2.49025,
+        2.354708
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 3.221417,
+      "medianMS" : 2.417292,
+      "minMS" : 2.355,
+      "name" : "full_memory_hit_1000",
+      "p95MS" : 3.221417,
+      "samplesMS" : [
+        2.3645,
+        2.471792,
+        2.430375,
+        2.355,
+        3.221417,
+        2.417292,
+        2.381667
+      ]
+    },
+    {
+      "count" : 16,
+      "maxMS" : 13.048084,
+      "medianMS" : 11.663625,
+      "minMS" : 11.166333,
+      "name" : "thumbnail_disk_hit_16_including_pipeline_init",
+      "p95MS" : 13.048084,
+      "samplesMS" : [
+        11.663625,
+        12.37575,
+        13.048084,
+        11.333917,
+        11.38225,
+        12.1785,
+        11.166333
+      ]
+    },
+    {
+      "count" : 16,
+      "maxMS" : 324.918875,
+      "medianMS" : 294.259625,
+      "minMS" : 280.344667,
+      "name" : "thumbnail_source_16_including_pipeline_init_and_disk_drain",
+      "p95MS" : 324.918875,
+      "samplesMS" : [
+        294.259625,
+        313.877083,
+        324.918875,
+        281.811042,
+        280.344667,
+        297.800375,
+        284.145041
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-cache",
+  "warmups" : 1
+}

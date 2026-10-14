@@ -587,7 +587,7 @@ struct MetadataPanel: View {
 
     private func selectionTitle(for summary: PhotoSelectionSummary) -> String {
         let itemLabel = summary.photoCount == summary.count
-            ? "photos"
+            ? L10n.text("photos")
             : L10n.text("media items")
         return L10n.text("\(summary.count) \(itemLabel) selected · \(summary.fileCount) files")
     }
@@ -619,12 +619,16 @@ struct MetadataPanel: View {
             }
         }
         if summary.unknownDateCount > 0 {
-            let itemLabel = summary.photoCount == summary.count
-                ? L10n.text("photo")
-                : L10n.text("media item")
-            let label = summary.unknownDateCount == 1
-                ? L10n.text("1 \(itemLabel) without a capture date")
-                : L10n.text("\(summary.unknownDateCount) \(itemLabel)s without a capture date")
+            let label: String
+            if summary.photoCount == summary.count {
+                label = summary.unknownDateCount == 1
+                    ? L10n.text("1 photo without a capture date")
+                    : L10n.text("\(summary.unknownDateCount) photos without a capture date")
+            } else {
+                label = summary.unknownDateCount == 1
+                    ? L10n.text("1 media item without a capture date")
+                    : L10n.text("\(summary.unknownDateCount) media items without a capture date")
+            }
             lines.append(label)
         }
         return lines.isEmpty ? L10n.text("Unknown") : lines.joined(separator: "\n")

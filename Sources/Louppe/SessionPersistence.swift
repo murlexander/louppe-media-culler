@@ -538,6 +538,15 @@ actor SessionPersistence: SessionPersistenceClient {
         }
     }
 
+    /// One encoding policy for durable snapshots and direct CPU measurements.
+    /// Sorted keys retain deterministic bytes without indentation overhead.
+    static func encodeSnapshot(_ session: SessionFile) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.sortedKeys]
+        return try encoder.encode(session)
+    }
+
     func save(
         _ session: SessionFile,
         for folder: URL,
@@ -575,10 +584,7 @@ actor SessionPersistence: SessionPersistenceClient {
 
         let data: Data
         do {
-            let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .iso8601
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            data = try encoder.encode(persistedSession)
+            data = try Self.encodeSnapshot(persistedSession)
         } catch {
             return .failed(SaveFailure(sidecar: .encoding, backup: .encoding))
         }

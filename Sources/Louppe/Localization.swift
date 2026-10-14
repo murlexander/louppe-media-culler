@@ -60,10 +60,15 @@ enum L10n {
         let translated = languageBundles[language]?.localizedString(
             forKey: message.key, value: message.key, table: "Localizable"
         ) ?? message.key
-        let slots = placeholders(in: translated)
-        let expected = placeholders(in: message.key)
-        // A damaged/incomplete translation cannot drop safety details or values.
-        let template = slots == expected ? translated : message.key
+        return render(message, translation: translated)
+    }
+
+    /// Also used by regression tests to exercise damaged catalog entries.
+    static func render(_ message: Message, translation: String) -> String {
+        // Count matching slots AND reject stray braces: the old count-only check
+        // accepted Arabic counters such as "{0} } {1} {مراجعة }".
+        // Validate before substitution; braces in user filenames are literal data.
+        let template = isValidTemplate(translation, for: message.key) ? translation : message.key
         // Scan the template once. Never interpret braces inside inserted filenames
         // or error descriptions as another slot; these values remain byte-for-byte.
         var output = ""
@@ -85,6 +90,17 @@ enum L10n {
 
     private static let placeholderExpression = try! NSRegularExpression(pattern: #"\{([0-9]+)\}"#)
 
+    static func isValidTemplate(_ translation: String, for key: String) -> Bool {
+        guard !translation.isEmpty, placeholders(in: translation) == placeholders(in: key) else { return false }
+        let range = NSRange(translation.startIndex..., in: translation)
+        let matches = placeholderExpression.matches(in: translation, range: range)
+        guard matches.count == placeholders(in: translation).values.reduce(0, +) else { return false }
+        let literal = placeholderExpression.stringByReplacingMatches(
+            in: translation, range: NSRange(translation.startIndex..., in: translation), withTemplate: ""
+        )
+        return !literal.contains("{") && !literal.contains("}")
+    }
+
     static func placeholders(in value: String) -> [Int: Int] {
         let expression = placeholderExpression
         var result: [Int: Int] = [:]
@@ -99,6 +115,11 @@ enum L10n {
     struct Message: ExpressibleByStringLiteral, ExpressibleByStringInterpolation {
         let key: String
         let arguments: [String]
+
+        init(key: String, arguments: [String]) {
+            self.key = key
+            self.arguments = arguments
+        }
 
         init(stringLiteral value: String) {
             key = value

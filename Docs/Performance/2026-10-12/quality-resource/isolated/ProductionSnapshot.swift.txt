@@ -1,0 +1,204 @@
+struct HistogramAnalysis: Equatable, Sendable {
+    static let nearBlackUpperBound: UInt8 = 5
+    static let nearWhiteLowerBound: UInt8 = 250
+    static let highPercentageThreshold = 10.0
+
+    let bins: [Int]
+    let sampleCount: Int
+    let shadowCount: Int
+    let highlightCount: Int
+    let width: Int
+    let height: Int
+
+    init(bins: [Int], sampleCount: Int, shadowCount: Int, highlightCount: Int,
+         width: Int = 0, height: Int = 0) {
+        self.bins = bins
+        self.sampleCount = sampleCount
+        self.shadowCount = shadowCount
+        self.highlightCount = highlightCount
+        self.width = width
+        self.height = height
+    }
+
+    var shadowPercentage: Double {
+        percentage(for: shadowCount)
+    }
+
+    var highlightPercentage: Double {
+        percentage(for: highlightCount)
+    }
+
+    static func isHighPercentage(_ value: Double) -> Bool {
+        value > highPercentageThreshold
+    }
+
+    private func percentage(for count: Int) -> Double {
+        guard sampleCount > 0 else { return 0 }
+        return Double(count) * 100 / Double(sampleCount)
+    }
+}
+
+enum ClippingWarningProcessor {
+    static func luminance(red: UInt8, green: UInt8, blue: UInt8) -> UInt8 {
+        // Integer Rec. 709 coefficients, summing to 256.
+        let redContribution = 54 * Int(red)
+        let greenContribution = 183 * Int(green)
+        let blueContribution = 19 * Int(blue)
+        let weighted =
+            redContribution + greenContribution + blueContribution + 128
+        return UInt8(min(weighted >> 8, 255))
+    }
+
+    static func isWarning(red: UInt8, green: UInt8, blue: UInt8) -> Bool {
+        let value = luminance(red: red, green: green, blue: blue)
+        return value <= HistogramAnalysis.nearBlackUpperBound
+            || value >= HistogramAnalysis.nearWhiteLowerBound
+    }
+
+    static func analyze(_ image: CGImage) -> HistogramAnalysis? {
+        guard let buffer = rgbaBuffer(for: image) else { return nil }
+        var bins = Array(repeating: 0, count: 256)
+        var sampleCount = 0
+        var shadowCount = 0
+        var highlightCount = 0
+        let pixelCount = buffer.width * buffer.height
+
+        buffer.bytes.withUnsafeBytes { rawBytes in
+            guard let bytes = rawBytes.bindMemory(to: UInt8.self).baseAddress
+            else { return }
+            for pixel in 0..<pixelCount {
+                let offset = pixel * 4
+                let alpha = bytes[offset + 3]
+                guard alpha > 0 else { continue }
+                let value = luminance(
+                    red: straight(bytes[offset], alpha: alpha),
+                    green: straight(bytes[offset + 1], alpha: alpha),
+                    blue: straight(bytes[offset + 2], alpha: alpha)
+                )
+                sampleCount += 1
+                bins[Int(value)] += 1
+                if value <= HistogramAnalysis.nearBlackUpperBound {
+                    shadowCount += 1
+                }
+                if value >= HistogramAnalysis.nearWhiteLowerBound {
+                    highlightCount += 1
+                }
+            }
+        }
+
+        return HistogramAnalysis(
+            bins: bins,
+            sampleCount: sampleCount,
+            shadowCount: shadowCount,
+            highlightCount: highlightCount,
+            width: buffer.width, height: buffer.height
+        )
+    }
+
+    static func overlay(on image: CGImage) -> CGImage? {
+        guard var buffer = rgbaBuffer(for: image) else { return nil }
+        let pixelCount = buffer.width * buffer.height
+
+        buffer.bytes.withUnsafeMutableBytes { rawBytes in
+            guard let bytes = rawBytes.bindMemory(to: UInt8.self).baseAddress
+            else { return }
+            for pixel in 0..<pixelCount {
+                let offset = pixel * 4
+                let alpha = bytes[offset + 3]
+                guard alpha > 0 else { continue }
+                let red = straight(bytes[offset], alpha: alpha)
+                let green = straight(bytes[offset + 1], alpha: alpha)
+                let blue = straight(bytes[offset + 2], alpha: alpha)
+                guard isWarning(red: red, green: green, blue: blue) else { continue }
+                // Blend straight color, then restore valid premultiplied RGBA.
+                // Transparent pixels and their alpha stay untouched.
+                bytes[offset] = premultiplied(blend(red, with: 255), alpha: alpha)
+                bytes[offset + 1] = premultiplied(blend(green, with: 0), alpha: alpha)
+                bytes[offset + 2] = premultiplied(blend(blue, with: 0), alpha: alpha)
+            }
+        }
+
+        return buffer.makeImage()
+    }
+
+    private static func straight(_ component: UInt8, alpha: UInt8) -> UInt8 {
+        UInt8(min(255, (Int(component) * 255 + Int(alpha) / 2) / Int(alpha)))
+    }
+
+    private static func premultiplied(_ component: UInt8, alpha: UInt8) -> UInt8 {
+        UInt8((Int(component) * Int(alpha) + 127) / 255)
+    }
+
+    private static func blend(_ original: UInt8, with warning: UInt8) -> UInt8 {
+        let originalContribution = 28 * Int(original)
+        let warningContribution = 72 * Int(warning)
+        return UInt8(
+            (originalContribution + warningContribution + 50) / 100
+        )
+    }
+
+    private struct RGBABuffer {
+        let width: Int
+        let height: Int
+        let bytesPerRow: Int
+        var bytes: [UInt8]
+
+        func makeImage() -> CGImage? {
+            bytes.withUnsafeBytes { rawBytes in
+                guard let baseAddress = rawBytes.baseAddress,
+                      let context = CGContext(
+                        data: UnsafeMutableRawPointer(mutating: baseAddress),
+                        width: width,
+                        height: height,
+                        bitsPerComponent: 8,
+                        bytesPerRow: bytesPerRow,
+                        space: Self.colorSpace,
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                      )
+                else { return nil }
+                return context.makeImage()
+            }
+        }
+
+        static let colorSpace =
+            CGColorSpace(name: CGColorSpace.sRGB)
+            ?? CGColorSpaceCreateDeviceRGB()
+    }
+
+    private static func rgbaBuffer(for image: CGImage) -> RGBABuffer? {
+        let width = image.width
+        let height = image.height
+        guard width > 0, height > 0 else { return nil }
+        let bytesPerRow = width * 4
+        var bytes = Array(
+            repeating: UInt8(0),
+            count: bytesPerRow * height
+        )
+        let rendered = bytes.withUnsafeMutableBytes { rawBytes -> Bool in
+            guard let baseAddress = rawBytes.baseAddress,
+                  let context = CGContext(
+                    data: baseAddress,
+                    width: width,
+                    height: height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space: RGBABuffer.colorSpace,
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                  )
+            else { return false }
+            context.interpolationQuality = .high
+            context.draw(
+                image,
+                in: CGRect(x: 0, y: 0, width: width, height: height)
+            )
+            return true
+        }
+        guard rendered else { return nil }
+        return RGBABuffer(
+            width: width,
+            height: height,
+            bytesPerRow: bytesPerRow,
+            bytes: bytes
+        )
+    }
+}

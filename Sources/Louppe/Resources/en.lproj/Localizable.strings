@@ -17,9 +17,9 @@
 " Try adjusting the normal filter to include more media." = " Try adjusting the normal filter to include more media.";
 " and " = " and ";
 " and {0} more" = " and {0} more";
-" — {0} item couldn't be copied and rolled back." = " — {0} item couldn't be copied and rolled back.";
+" — {0} item couldn't be copied and rolled back." = " — Copy failed for {0} item.";
 " — {0} item couldn't be moved and stayed in the session." = " — {0} item couldn't be moved and stayed in the session.";
-" — {0} items couldn't be copied and rolled back." = " — {0} items couldn't be copied and rolled back.";
+" — {0} items couldn't be copied and rolled back." = " — Copy failed for {0} items.";
 " — {0} items couldn't be moved and stayed in the session." = " — {0} items couldn't be moved and stayed in the session.";
 "% near black or white" = "% near black or white";
 ", and {0} more" = ", and {0} more";
@@ -76,7 +76,6 @@
 "All Selected" = "All Selected";
 "All decisions" = "All decisions";
 "All selected" = "All selected";
-"All shows every decision; other filters still apply." = "All shows every decision; other filters still apply.";
 "All {0} folder items are considered, even those hidden by filters." = "All {0} folder items are considered, even those hidden by filters.";
 "Allow replacing or removing external color labels" = "Allow replacing or removing external color labels";
 "Already Organized" = "Already Organized";
@@ -1096,7 +1095,7 @@
 "This storage does not support the collision-safe rename needed to move {0}." = "This storage does not support the collision-safe rename needed to move {0}.";
 "This video's format or codec isn't supported by macOS." = "This video's format or codec isn't supported by macOS.";
 "This view is already selected" = "This view is already selected";
-"Time taken" = "Time taken";
+"Time taken" = "Capture time";
 "Timeline" = "Timeline";
 "To" = "To";
 "Toggle 100% photo view" = "Toggle 100% photo view";
@@ -1196,7 +1195,7 @@
 "Waveform unavailable" = "Waveform unavailable";
 "White balance" = "White balance";
 "Widest first" = "Widest first";
-"Within this scope, Yes and unrated items stay in the folder." = "Within this scope, Yes and unrated items stay in the folder.";
+"Within this scope, Yes and unrated items stay in the folder." = "Within this scope, Yes and Undecided items stay in the folder.";
 "Write Sidecars" = "Write Sidecars";
 "Write decisions, stars, and colors to XMP sidecars for editing apps. Originals stay unchanged." = "Write decisions, stars, and colors to XMP sidecars for editing apps. Originals stay unchanged.";
 "Writing Metadata (XMP)…" = "Writing Metadata (XMP)…";
@@ -1423,8 +1422,8 @@
 "{0} included RAW+JPEG pair has different file decisions and is treated as undecided." = "{0} included RAW+JPEG pair has different file decisions and is treated as undecided.";
 "{0} included RAW+JPEG pairs have different file decisions and are treated as undecided." = "{0} included RAW+JPEG pairs have different file decisions and are treated as undecided.";
 "{0} item couldn't be moved completely. " = "{0} item couldn't be moved completely. ";
-"{0} item match more than one route: {1}." = "{0} item match more than one route: {1}.";
-"{0} item still undecided in this scope — they won't be exported." = "{0} item still undecided in this scope — they won't be exported.";
+"{0} item match more than one route: {1}." = "{0} item matches more than one route: {1}.";
+"{0} item still undecided in this scope — they won't be exported." = "{0} item is still undecided in this scope — it won't be exported.";
 "{0} item · {1} media file" = "{0} item · {1} media file";
 "{0} item · {1} media files" = "{0} item · {1} media files";
 "{0} items" = "{0} items";
@@ -1434,7 +1433,7 @@
 "{0} items found" = "{0} items found";
 "{0} items have" = "{0} items have";
 "{0} items match more than one route: {1}." = "{0} items match more than one route: {1}.";
-"{0} items still undecided in this scope — they won't be exported." = "{0} items still undecided in this scope — they won't be exported.";
+"{0} items still undecided in this scope — they won't be exported." = "{0} items are still undecided in this scope — they won't be exported.";
 "{0} items will be copied" = "{0} items will be copied";
 "{0} items will be moved" = "{0} items will be moved";
 "{0} items will be prepared for XMP publication" = "{0} items will be prepared for XMP publication";
@@ -1495,11 +1494,9 @@
 /* Quality cues, capture bursts, and date evidence. */
 " ({0} of {1} shown)" = " ({0} of {1} shown)";
 "% or above" = "% or above";
-"Capture burst · {0} {1} · close photo dates" = "Capture burst · {0} {1} · close photo dates";
 "Checked" = "Checked";
 "Checking photo dates…" = "Checking photo dates…";
 "Checking…" = "Checking…";
-"Consecutive photo date gaps ≤ this interval. Separate shutter presses and cameras can merge. Inferred dates are labeled; no shutter-press identifier is read." = "Consecutive photo date gaps ≤ this interval. Separate shutter presses and cameras can merge. Inferred dates are labeled; no shutter-press identifier is read.";
 "Date precision" = "Date precision";
 "Date source" = "Date source";
 "Date source unverified" = "Date source unverified";
@@ -1510,11 +1507,9 @@
 "Groups consecutive photo dates within the chosen gap. File creation dates are inferred; separate shutter presses and cameras can mix." = "Groups consecutive photo dates within the chosen gap. File creation dates are inferred; separate shutter presses and cameras can mix.";
 "ISO and shutter are camera clues, not measured noise or blur. Missing fields are not a clean result." = "ISO and shutter are camera clues, not measured noise or blur. Missing fields are not a clean result.";
 "Image measurement unavailable. Try Rescan Folder if the file changed." = "Image measurement unavailable. Try Rescan Folder if the file changed.";
-"Image measurements: {0} of {1} photos. Missing metadata or RAW fallback gives partial coverage." = "Image measurements: {0} of {1} photos. Missing metadata or RAW fallback gives partial coverage.";
 "Inspect clipping in Gallery" = "Inspect clipping in Gallery";
 "Inspect in Info" = "Inspect in Info";
 "Linear luminance ≤ 0.002 / ≥ 0.995; Apple Default RAW decode." = "Linear luminance ≤ 0.002 / ≥ 0.995; Apple Default RAW decode.";
-"Match any selected cue; other filters still apply." = "Match any selected cue; other filters still apply.";
 "Measured ISO {0}; threshold ≥ ISO {1}." = "Measured ISO {0}; threshold ≥ ISO {1}.";
 "Measured {0} s; threshold ≥ {1} s." = "Measured {0} s; threshold ≥ {1} s.";
 "Measured {0}%; threshold ≥ {1}%." = "Measured {0}%; threshold ≥ {1}%.";
@@ -1640,3 +1635,47 @@
 "Louppe is always free and open source. Tips are optional." = "Louppe is always free and open source. Tips are optional.";
 
 "Source code" = "Source code";
+
+/* Filter and Settings refinements. */
+"Louppe info" = "Louppe info";
+"s" = "s";
+"0.5–10 seconds between photos. Separate shutter presses or cameras may be grouped together." = "0.5–10 seconds between photos. Separate shutter presses or cameras may be grouped together.";
+"Image checks: {0} of {1} photos. Some cues may be unavailable." = "Image checks: {0} of {1} photos. Some cues may be unavailable.";
+"Capture burst · {0} {1}" = "Capture burst · {0} {1}";
+"1 group" = "1 group";
+"{0} groups" = "{0} groups";
+
+"Zoom In" = "Zoom In";
+
+"Zoom Out" = "Zoom Out";
+
+"Double-click to fit" = "Double-click to fit";
+
+/* Complete messages for localized controls and operation summaries. */
+"to" = "to";
+"choose" = "choose";
+"run" = "run";
+"close" = "close";
+"Metadata (XMP)" = "Metadata (XMP)";
+"Loading" = "Loading";
+"photos" = "photos";
+"1 photo without a capture date" = "1 photo without a capture date";
+"{0} photos without a capture date" = "{0} photos without a capture date";
+"1 media item without a capture date" = "1 media item without a capture date";
+"{0} media items without a capture date" = "{0} media items without a capture date";
+"Filters: {0}" = "Filters: {0}";
+"Metadata (XMP) complete" = "Metadata (XMP) complete";
+"1 file renamed" = "1 file renamed";
+"{0} files renamed" = "{0} files renamed";
+"1 file moved" = "1 file moved";
+"{0} files moved" = "{0} files moved";
+"1 file restored" = "1 file restored";
+"{0} files restored" = "{0} files restored";
+
+/* Export quick picks. */
+"Keepers (Yes)" = "Keepers (Yes)";
+"4–5 Stars" = "4–5 Stars";
+
+/* Contact and recovery selection controls. */
+"Contact Alex" = "Contact Alex";
+"Select All" = "Select All";

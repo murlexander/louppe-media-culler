@@ -1,0 +1,80 @@
+{
+  "generatedAt" : "2026-10-13T02:33:45Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 100000,
+      "maxMS" : 24.101292,
+      "medianMS" : 22.4615,
+      "minMS" : 21.263292,
+      "name" : "groups.exact.pairs",
+      "p95MS" : 24.101292,
+      "samplesMS" : [
+        23.735,
+        24.101292,
+        21.263292,
+        21.947125,
+        23.000458,
+        22.4615,
+        22.4245
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 72.916542,
+      "medianMS" : 70.168625,
+      "minMS" : 68.012458,
+      "name" : "groups.similar.equal",
+      "p95MS" : 72.916542,
+      "samplesMS" : [
+        68.869667,
+        70.242625,
+        68.901042,
+        72.499,
+        68.012458,
+        70.168625,
+        72.916542
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 137.757375,
+      "medianMS" : 136.666417,
+      "minMS" : 134.354792,
+      "name" : "groups.similar.paired-random",
+      "p95MS" : 137.757375,
+      "samplesMS" : [
+        136.499208,
+        134.354792,
+        134.446375,
+        137.757375,
+        136.666417,
+        137.477,
+        137.06375
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 109.43575,
+      "medianMS" : 106.126125,
+      "minMS" : 103.732584,
+      "name" : "groups.similar.random",
+      "p95MS" : 109.43575,
+      "samplesMS" : [
+        106.126125,
+        106.337292,
+        104.631,
+        109.43575,
+        108.314125,
+        103.732584,
+        104.876459
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "group-construction",
+  "warmups" : 1
+}

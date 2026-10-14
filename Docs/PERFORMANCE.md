@@ -3,6 +3,16 @@
 Ownership and resource limits for scanning, filtering, decoding, persistence,
 and Clean Up. Read the relevant sections before editing.
 
+## Repeatable speed measurements
+
+Run `./Tests/run_speed_tests.sh` for optimized statistical baselines, candidate
+equivalence, real JPEG I/O and optional RAW measurements. See
+[the runner guide](SPEED_TESTS.md) and
+[the 12 October 2026 inspection](PERFORMANCE_REVIEW_2026-10-12.md) and
+[implemented results](PERFORMANCE_IMPLEMENTATION_2026-10-12.md) for evidence,
+limits and the implementation acceptance list. These complement the existing
+75 safety checks.
+
 ## Disposable verification fixtures
 
 Performance fixtures use `/private/tmp`. On 7 October 2026, a Documents control
@@ -79,12 +89,18 @@ persistence reads and final identity checks.
 - `ImagePipeline` has separate bounded `OperationQueue`s: two full decodes
   (4096 px bound) and `min(4, cores/2)` thumbnail decodes (320 px). Same URL/size
   requests coalesce across foreground/prefetch; foreground joins promote utility
-  work. Thumbnail backlog cannot delay the full-image lane.
+  work. Cancellation removes only that waiter; last-waiter retirement cancels
+  queued work and rejects completion by operation identity. Executing blocks
+  keep their lane until exit. Gallery publishes full pixels independently of
+  its thumbnail stand-in, then retires an unneeded stand-in waiter.
 - `HistogramPipeline` runs two 1,024-pixel photo decodes, coalesces requests,
-  and retains 256 numeric results. Cancellation removes its waiter and cancels
+  and retains 256 numeric results. Background operations use utility/low priority;
+  Info uses user-initiated/high priority and promotes shared work without splitting
+  the revision cache. Cancellation removes its waiter and cancels
   queued work when no waiter remains; finishing decodes cannot publish to removed
   requests. Videos, audio and unsupported files skip photo analysis.
-  `RawHistogramPipeline` handles RAW primaries (Info waits 700 ms): one utility
+  `RawHistogramPipeline` handles RAW primaries (Info waits 700 ms; background
+  quality batches bypass presentation dwell): one utility
   `CIRAWFilter` decode, native scaling, and a final lazy bound keeping each
   extended-linear RGBA-float dimension near 1,024 pixels. Its 128-entry LRU
   retains numbers, never pixels. Same revisions coalesce; cancellation removes
@@ -95,11 +111,23 @@ persistence reads and final identity checks.
   selected/rendered/nearby photos, requests at most two items per batch, then
   walks the remaining session. It retains only revision/source/dimensions/sample
   and clipping counts per item; bins/bitmaps stay in the bounded workers above.
-  Tile interest is capped at 64 IDs. Pause, file work, pairing, replacement and
+  Tile interest is capped at 64 IDs. Selection priority has a retained frontier;
+  it does not repeatedly scan completed selections. Private evidence/checking state
+  sends one admission and one result publication per pair. Pause, file work, pairing, replacement and
   Close cancel pending work; revision/generation guards reject stale completion.
   RAW measurement uses Apple Default independently of presentation decoder, with
   explicit preview fallback. Analyzer/color/resolution configuration is included
-  in cache keys. Threshold edits reuse counts without decoding.
+  in cache keys. Threshold edits reuse counts without decoding. A cancelled
+  scheduler keeps its task/lease through measurement exit; executing background
+  histogram cancellation waits for worker completion. Explicit Pause survives
+  automatic suspensions/preferences until Resume. Accepted filter matches flush
+  before rest and on ordinary Pause. Between batches, rest is at least 100 ms and
+  the preceding work duration; Low Power/serious thermal state uses three times
+  that duration, critical seven times. Pending current/selection/uncovered-tile
+  interest interrupts rest; covered interests and Select All cannot bypass every
+  batch. System state is sampled per batch with no idle polling. Admission pacing
+  is not a hard CPU/GPU/framework-memory cap. See the
+  [resource review](QUALITY_CUE_RESOURCES_2026-10-12.md).
 - `AudioLevelPipeline` runs only for the selected playable video/audio after
   Info dwell or a Gallery waveform request. One utility `AVAssetReader` PCM
   task runs at a time; same revisions coalesce. Last-waiter cancellation stops
@@ -233,7 +261,7 @@ fresh source decode; replacements never inherit old pixels, even for slow RAW.
 | Neighbour prefetch | 60 ms debounce |
 | Full/clipping view decode | 40 ms; memory hits remain immediate |
 | Secondary Info EXIF/histogram | 80 ms |
-| RAW histogram | 700 ms; separate utility lane; rendered histogram is immediate |
+| RAW histogram in Info | 700 ms; separate utility lane; background quality requests have no dwell |
 
 At 100%, document points equal source pixels/backing scale, giving one physical
 pixel per source pixel on standard/Retina displays. `ActualSizeViewport` holds
@@ -367,9 +395,12 @@ analysis owner, guarded by generation/revisions/interval. Late completion never
 enters capture mode after navigation or Reset. The previous completed projection
 remains during interval work; Cancel retains its interval. Optimized local
 1k/10k/100k measurements on 12 October 2026: initial grouping 11.2/18.1/141.4 ms;
-interval regrouping 2.4/15.9/141.8 ms. The first includes cold localization. This
-justified moving date grouping off-main. Exact/similar synchronous membership
-work remains AUD-08 followup. See the dated Quality Cues review record.
+interval regrouping 2.4/15.9/141.8 ms. The first includes cold localization.
+Exact/similar membership now uses the same detached owner, with cooperative
+cancellation and mode/sensitivity/revision/generation guards. Pending work keeps
+the previous completed projection; navigation cannot enter a requested mode or
+replace another mode's completed cache. Capture input contains only cached
+metadata; Analyze-all retains physical-file payloads.
 
 Same-name XMP conflict preflight retains typed stable IDs, scan identities,
 metadata snapshots, and exact paths. Apply resolution as one small main-actor
@@ -418,8 +449,11 @@ ISO, video resolution, frame rate, and codec at scan. Filters/sorts never reopen
 files. Compare `captureDay` directly in `sameGroup`; avoid per-pair
 `Calendar.current`. One `PreparedPhotoFilter` prepares query, whole-day bounds,
 and ranges before traversal. Decision/star/color exclusions use one mutable
-snapshot, never immutable `searchableText`. Metadata sort captures snapshots before
-O(N log N) comparisons, avoiding repeated locks. Search/camera-setting drafts
+snapshot, never immutable `searchableText`. Decision/star/color sorts use finite
+buckets over a validated cached chronological permutation. Structural boundaries
+validate chronological order once and sort exceptional arbitrary input. Metadata
+edits reuse that permutation; missing/Mixed ordering and chronological ties stay
+identical to the comparison sort. Search/camera-setting drafts
 use 150 ms debounce and one valid filter assignment per commit.
 
 Date/exposure controls stay visible. Folder-wide full ranges are neutral and
@@ -732,9 +766,25 @@ Comparison baselines, not fixed pass/fail limits; CI varies. Assert structural
 counts/all locations. Grid groups use metadata-derived stable IDs so removing
 first members does not recreate surviving sections.
 
-`FolderScanner.sortItems` uses `PhotoSort()`. Prepared indexing reuses physical
-order for default sort, avoiding duplicate O(N log N) localized-name sorting
-on open/default-sort return. Other keys rebuild their own order.
+`FolderScanner.sortItems` uses `PhotoSort()`. Prepared indexing validates/caches
+its chronological permutation at structural boundaries; already ordered scans
+need only a linear check. Default and finite metadata sorts reuse it. The pure
+`rebuildSort` entry point accepts arbitrary input; `rebuildPreparedSort` requires
+unchanged immutable items, with `items.didSet` invalidating the permutation.
+Sort-only changes retain item-ID, physical-file and portable-recovery maps;
+structural changes rebuild them before filtering.
+
+Quality-cue filtering borrows a dense, item-order numeric match array from
+`SessionStore`; one byte per item replaces the extra warning-array and filename-set
+pass. The four rules share classification with displayed warnings. Masks are
+prepared lazily with one preference snapshot, invalidated on both preference
+paths and structural/source changes, and updated only at revision-accepted
+measurement slots. The pure index treats empty selected cues as unrestricted,
+even when a caller provides masks. Sorting/ratings retain classification;
+ordinary facets, groups, selection and current-item policy remain authoritative.
+The array is never retained by the prepared index, avoiding copy-on-write
+whole-array edits during background completion. Group/presentation projection
+still scales with visible results; this is not constant-time filtering.
 
 ## Selection state
 
@@ -759,6 +809,22 @@ macOS Trash access for round trips. Never test Clean Up on irreplaceable origina
 Each quality-check generation retains its own folder-access lease through worker
 exit. Folder transitions, file operations, recovery and Quit retire that generation;
 late evidence cannot publish across the boundary. Canceling Quit resumes checks.
-Tile evidence publishes promptly; active filter projection skips unchanged cue
-matches and coalesces changed matches to 100 ms, with a final completion flush.
-Large-folder filter/coverage measurements remain AUD-06 work.
+Tile evidence publishes in pairs; active filter projection skips unchanged any-cue
+matches, coalesces changed matches to 100 ms during rapid interest changes, and
+flushes before adaptive rest, ordinary Pause and final completion.
+Large-folder projection/memory measurements remain AUD-06 work; numeric cue
+classification is now cached and updated per accepted measurement.
+
+Quality coverage retains exact photo/measured counts. Item replacement invalidates
+both evidence and counts, including pairing/rescan/empty sessions. Source-changing
+operations and recovery also invalidate before rollback can refresh shared file
+identity without replacing items; active cue filters drop invalid matches.
+Accepted revision-bound evidence adjusts measured count once; ordinary pause,
+Quit cancellation and Copy keep completed evidence. The getter performs no folder
+scan. Cue matches reuse the accepted generation without rebuilding filename sets
+or file revisions; visibility/group/presentation projection still traverses the
+session. See the 14 October cue-filter review for measurements.
+
+Persistence emits compact JSON with sorted keys and ISO8601 dates through the
+same encoder used by durable saves. Exact-byte CAS, schema/history validation,
+512 MiB ceilings, generation ordering and sidecar/backup durability remain in force.

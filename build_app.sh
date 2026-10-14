@@ -211,11 +211,6 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
             <dict>
                 <key>default</key>
                 <string>Open in Louppe</string>
-                <key>es</key><string>Abrir en Louppe</string>
-                <key>zh-Hans</key><string>在 Louppe 中打开</string>
-                <key>hi</key><string>Louppe में खोलें</string>
-                <key>pt</key><string>Abrir no Louppe</string>
-                <key>ar</key><string>فتح في Louppe</string>
             </dict>
             <key>NSMessage</key>
             <string>openMediaFolder</string>
@@ -257,6 +252,8 @@ cat >> "$APP_DIR/Contents/Info.plist" <<'PLIST'
 </dict>
 </plist>
 PLIST
+
+"$PWD/Scripts/localize_services.sh" "$APP_DIR/Contents/Info.plist"
 
 xattr -cr "$APP_DIR"
 if $APP_STORE; then

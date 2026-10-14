@@ -1,0 +1,114 @@
+{
+  "generatedAt" : "2026-10-13T02:37:29Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 100,
+      "maxMS" : 21.19925,
+      "medianMS" : 9.523917,
+      "minMS" : 8.700167,
+      "name" : "scan.jpeg.warm-filesystem",
+      "p95MS" : 21.19925,
+      "samplesMS" : [
+        21.19925,
+        9.211208,
+        9.523917,
+        8.965333,
+        15.691958,
+        9.905792,
+        8.700167
+      ]
+    },
+    {
+      "count" : 100,
+      "maxMS" : 17.6545,
+      "medianMS" : 13.365042,
+      "minMS" : 10.257666,
+      "name" : "save.durable-sidecar-and-backup",
+      "p95MS" : 17.6545,
+      "samplesMS" : [
+        17.6545,
+        14.039,
+        11.595083,
+        13.365042,
+        12.009416,
+        10.257666,
+        13.763416
+      ]
+    },
+    {
+      "count" : 100,
+      "maxMS" : 2.639458,
+      "medianMS" : 2.533208,
+      "minMS" : 2.491333,
+      "name" : "reopen.durable-session",
+      "p95MS" : 2.639458,
+      "samplesMS" : [
+        2.515125,
+        2.491333,
+        2.550917,
+        2.533208,
+        2.543666,
+        2.51925,
+        2.639458
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 92.124709,
+      "medianMS" : 88.945417,
+      "minMS" : 84.754667,
+      "name" : "scan.jpeg.warm-filesystem",
+      "p95MS" : 92.124709,
+      "samplesMS" : [
+        88.945417,
+        88.946958,
+        92.124709,
+        84.754667,
+        86.657625,
+        89.444292,
+        86.4405
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 30.180084,
+      "medianMS" : 25.002,
+      "minMS" : 22.185958,
+      "name" : "save.durable-sidecar-and-backup",
+      "p95MS" : 30.180084,
+      "samplesMS" : [
+        25.002,
+        30.180084,
+        25.734333,
+        22.820334,
+        22.185958,
+        26.0005,
+        22.558333
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 21.547709,
+      "medianMS" : 21.308375,
+      "minMS" : 20.907042,
+      "name" : "reopen.durable-session",
+      "p95MS" : 21.547709,
+      "samplesMS" : [
+        20.907042,
+        21.283791,
+        21.308375,
+        21.418375,
+        21.06075,
+        21.358375,
+        21.547709
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "io-scan-save",
+  "warmups" : 1
+}

@@ -20,7 +20,7 @@ its first launch.
 ## Quick start
 
 1. Open a folder or memory card.
-2. Review media in Gallery or Grid.
+2. Review media in Gallery or Grid; switch from the toolbar or the View menu.
 3. Press **F** for Yes or **D** for No.
 4. Filter, sort, select, clean up, organize, or export.
 
@@ -32,15 +32,17 @@ folder in the existing window.
 
 *Grid for comparing and selecting frames.*
 
-The bottom panel shows filters, review progress, and save status. Zoom
-30–400% with the slider or a pinch; pan with two-finger scrolling or dragging.
+The toolbar shows review progress and save status. Its dropdown holds active
+filter details and review tips. The floating photo control provides Fit and 30–400% zoom.
+Double-click anywhere on the zoom control to Fit.
+Pinch to zoom; pan with two-finger scrolling or dragging.
 **S** returns custom zoom to centered 100%, then toggles Fit; **A** toggles
 Phone size. **Help → Louppe Help** has searchable shortcuts. Dismissed review
 tips can be restored from Help.
 
 Yes/No, stars, and color labels are independent. **No never trashes files.**
-Ratings save automatically; reopen the folder to continue. The bottom panel
-confirms when every item has a decision.
+Ratings save automatically; reopen the folder to continue. The toolbar status
+popover confirms when every item has a decision.
 
 Export starts with **All selected** when you select items, otherwise with
 filtered **Keepers (Yes)**. **4–5 stars** includes either decision. Check the
@@ -108,10 +110,14 @@ linear analysis, independent of photo rendering. Other photo formats have no
 source tag. The **X** overlay measures the displayed rendering.
 
 **Filter → Quality cues** finds High ISO, Slow shutter, Near-white and Near-black
-areas. Rules have independent switches and thresholds; cues appear inside
-Browser/Grid tiles and below the Info histogram. Cues never set decisions.
+areas. Set their switches and thresholds in **Settings → Quality Cues**; cues
+appear inside Browser/Grid tiles and below the Info histogram. Checks prioritize
+photos you view and pace the remaining folder in the background. Use **Pause checks**
+and **Resume checks** in Filter; Pause stays in effect until you resume. Cues never
+set decisions.
 **Filter → Capture bursts** groups consecutive photo times within the chosen gap;
-it can merge separate shutter presses or cameras. Inferred dates are labeled.
+set the interval in **Settings → Capture bursts**. It can merge separate shutter
+presses or cameras. Inferred dates are labeled.
 
 Text previews are read-only and selectable. TXT, TEXT, MD/MARKDOWN, XML,
 JSON, CSV, TSV, LOG, YAML, and YML appear alongside media. Markdown supports

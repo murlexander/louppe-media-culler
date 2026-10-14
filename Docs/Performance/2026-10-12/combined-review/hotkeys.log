@@ -1,0 +1,84 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.35s)
+Test Suite 'Selected tests' started at 2026-10-13 12:28:22.797 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-13 12:28:22.804 AM.
+Test Suite 'HotkeyTests' started at 2026-10-13 12:28:22.804 AM.
+Test Case '-[LouppeTests.HotkeyTests testAppCommandsRemainAvailableFromNonTextControlFocus]' started.
+Test Case '-[LouppeTests.HotkeyTests testAppCommandsRemainAvailableFromNonTextControlFocus]' passed (0.067 seconds).
+Test Case '-[LouppeTests.HotkeyTests testArrowKeysNavigateGridEvenWhenCurrentItemIsVideo]' started.
+Test Case '-[LouppeTests.HotkeyTests testArrowKeysNavigateGridEvenWhenCurrentItemIsVideo]' passed (0.004 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandArrowsAdjustMediaSpeedAndNavigatePhotos]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandArrowsAdjustMediaSpeedAndNavigatePhotos]' passed (0.005 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandFFocusesFilterSearchThroughFocusedSessionGate]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandFFocusesFilterSearchThroughFocusedSessionGate]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesPairedComponentCleanUpActions]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesPairedComponentCleanUpActions]' passed (0.025 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesWorkingMediaAndAdjacentItemActions]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesWorkingMediaAndAdjacentItemActions]' passed (0.032 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteKeepsBatchRenameButNotSingleFileRename]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteKeepsBatchRenameButNotSingleFileRename]' passed (0.010 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteRanksSpecificActionsAndNormalizesSearch]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteRanksSpecificActionsAndNormalizesSearch]' passed (0.024 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteShowsHotkeysAndNewActions]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteShowsHotkeysAndNewActions]' passed (0.006 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFilterWordingForRAWJPEGPairing]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFilterWordingForRAWJPEGPairing]' passed (0.006 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFocusedSessionGateAndRunsAfterDismissal]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFocusedSessionGateAndRunsAfterDismissal]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testDestructiveShortcutPassesThroughOutsideUnobstructedSessionContext]' started.
+Test Case '-[LouppeTests.HotkeyTests testDestructiveShortcutPassesThroughOutsideUnobstructedSessionContext]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testEmptySessionCannotPresentExportFromToolbarOrHotkeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testEmptySessionCannotPresentExportFromToolbarOrHotkeys]' passed (0.004 seconds).
+Test Case '-[LouppeTests.HotkeyTests testFeedbackPromptOwnsKeysUntilDismissed]' started.
+Test Case '-[LouppeTests.HotkeyTests testFeedbackPromptOwnsKeysUntilDismissed]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testFileOperationPassesThroughModifiersSheetsAndUnknownKeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testFileOperationPassesThroughModifiersSheetsAndUnknownKeys]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testHorizontalReviewKeysKeepJLForItemsAndArrowsForVideoSeeking]' started.
+Test Case '-[LouppeTests.HotkeyTests testHorizontalReviewKeysKeepJLForItemsAndArrowsForVideoSeeking]' passed (0.005 seconds).
+Test Case '-[LouppeTests.HotkeyTests testHostedSwiftUIButtonFocusStillAllowsCullingHotkeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testHostedSwiftUIButtonFocusStillAllowsCullingHotkeys]' passed (0.112 seconds).
+Test Case '-[LouppeTests.HotkeyTests testInstalledMonitorRoutesWindowEventsAndIsRemovedWithSessionView]' started.
+Test Case '-[LouppeTests.HotkeyTests testInstalledMonitorRoutesWindowEventsAndIsRemovedWithSessionView]' passed (0.227 seconds).
+Test Case '-[LouppeTests.HotkeyTests testKTogglesPlayableMediaWithoutChangingPhotoNavigation]' started.
+Test Case '-[LouppeTests.HotkeyTests testKTogglesPlayableMediaWithoutChangingPhotoNavigation]' passed (0.006 seconds).
+Test Case '-[LouppeTests.HotkeyTests testLegacyMigrationConfirmationBlocksSessionHotkeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testLegacyMigrationConfirmationBlocksSessionHotkeys]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testMenuEquivalentKeysUseTheSameFocusedSessionGate]' started.
+Test Case '-[LouppeTests.HotkeyTests testMenuEquivalentKeysUseTheSameFocusedSessionGate]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testNumericHotkeysSetStarsWithoutChangingDecisionOrAdvancing]' started.
+Test Case '-[LouppeTests.HotkeyTests testNumericHotkeysSetStarsWithoutChangingDecisionOrAdvancing]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testOnlyExactDocumentedModifiersReachSessionCommands]' started.
+Test Case '-[LouppeTests.HotkeyTests testOnlyExactDocumentedModifiersReachSessionCommands]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testPresentedSessionUIPassesThroughBeforeCommandShortcuts]' started.
+Test Case '-[LouppeTests.HotkeyTests testPresentedSessionUIPassesThroughBeforeCommandShortcuts]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testResponderRolesSeparateTextFromNativeControlNavigation]' started.
+Test Case '-[LouppeTests.HotkeyTests testResponderRolesSeparateTextFromNativeControlNavigation]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testReviewHotkeysStillRateAndAdvance]' started.
+Test Case '-[LouppeTests.HotkeyTests testReviewHotkeysStillRateAndAdvance]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testRootPhaseTransitionReinstallsLiveSessionMonitor]' started.
+Test Case '-[LouppeTests.HotkeyTests testRootPhaseTransitionReinstallsLiveSessionMonitor]' passed (1.881 seconds).
+Test Case '-[LouppeTests.HotkeyTests testSelectableTextRetainsEverySessionCommand]' started.
+Test Case '-[LouppeTests.HotkeyTests testSelectableTextRetainsEverySessionCommand]' passed (0.010 seconds).
+Test Case '-[LouppeTests.HotkeyTests testSessionEventSurvivesTransientMissingKeyWindow]' started.
+Test Case '-[LouppeTests.HotkeyTests testSessionEventSurvivesTransientMissingKeyWindow]' passed (0.005 seconds).
+Test Case '-[LouppeTests.HotkeyTests testSpaceTogglesPlayableMediaButAdvancesFromPhoto]' started.
+Test Case '-[LouppeTests.HotkeyTests testSpaceTogglesPlayableMediaButAdvancesFromPhoto]' passed (0.008 seconds).
+Test Case '-[LouppeTests.HotkeyTests testTextEditingRetainsStandardCommandShortcuts]' started.
+Test Case '-[LouppeTests.HotkeyTests testTextEditingRetainsStandardCommandShortcuts]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testTextEditorBlocksUntilEditingFocusEnds]' started.
+Test Case '-[LouppeTests.HotkeyTests testTextEditorBlocksUntilEditingFocusEnds]' passed (0.010 seconds).
+Test Case '-[LouppeTests.HotkeyTests testWindowRootFocusDoesNotInheritNestedSelectableText]' started.
+Test Case '-[LouppeTests.HotkeyTests testWindowRootFocusDoesNotInheritNestedSelectableText]' passed (0.064 seconds).
+Test Case '-[LouppeTests.HotkeyTests testXDoesNotToggleClippingWarningsForVideo]' started.
+Test Case '-[LouppeTests.HotkeyTests testXDoesNotToggleClippingWarningsForVideo]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testXTogglesClippingWarningsOnlyForSingleGalleryPhoto]' started.
+Test Case '-[LouppeTests.HotkeyTests testXTogglesClippingWarningsOnlyForSingleGalleryPhoto]' passed (0.003 seconds).
+Test Suite 'HotkeyTests' passed at 2026-10-13 12:28:25.352 AM.
+	 Executed 35 tests, with 0 failures (0 unexpected) in 2.545 (2.548) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-13 12:28:25.352 AM.
+	 Executed 35 tests, with 0 failures (0 unexpected) in 2.545 (2.548) seconds
+Test Suite 'Selected tests' passed at warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+2026-10-13 12:28:25.352 AM.
+	 Executed 35 tests, with 0 failures (0 unexpected) in 2.545 (2.555) seconds

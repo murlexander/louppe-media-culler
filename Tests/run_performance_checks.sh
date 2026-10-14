@@ -25,6 +25,7 @@ swiftc \
     Sources/Louppe/HistogramPipeline.swift \
     Sources/Louppe/CameraQualityWarnings.swift \
     Sources/Louppe/QualityCueAnalysis.swift \
+    Sources/Louppe/QualityCueWorkPolicy.swift \
     Sources/Louppe/HighResolutionImagePipeline.swift \
     Sources/Louppe/ZoomViewport.swift \
     Sources/Louppe/VideoPlaybackController.swift \

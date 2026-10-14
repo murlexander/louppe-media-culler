@@ -1,4 +1,228 @@
-# louppe - to review
+# Louppe local review
+
+**Quality-cue performance follow-up — 14 October 2026:**
+[Louppe 1.11.0 (13)](/Applications/Louppe.app) is installed and open. This combines
+the captured uncommitted UI/localization work, including the short-Grid fix,
+with the compact cue-match index. Bundle identity/preferences are retained and
+updates remain disabled for review; the version is unreleased.
+
+Fresh 100k optimized tests improve repeated high-ISO filtering from 148 to 38–39 ms
+and first use from 152 to 53 ms. Near-white/near-black switches over accepted
+numeric evidence take about 40 ms. Matching adds about 100 KB per 100k items and
+updates only newly accepted slots; visible/group projection still scales with results.
+See the [performance review](QUALITY_CUE_FILTER_PERFORMANCE_2026-10-14.md).
+
+Validation: full suite 754 executed, 36 explicit skips, zero failures; complete
+35/35 HotkeyTests, 75/75 performance/file-safety checks, three opt-in statistical
+methods, shipping release preflight, strict installed signature, and complete
+staged/archive/installed Contents equality. A coherent source snapshot prevents
+concurrent edits from changing compiler inputs. The existing 30-file review folder,
+including saved decisions, is reused; its media bytes and decisions are unchanged.
+Older review instances quit normally and superseded review/staging copies moved
+to Trash. Separate published Store/capture inputs are preserved.
+[Installed-build manifest](Performance/2026-10-14/cue-filter/installed-review.json).
+
+Earlier review records follow; use the installed app above for this validation.
+
+---
+
+**Remaining Grid overflow — 14 October 2026:** the signed
+[updated review app](</private/tmp/Louppe-Floating-Zoom-Build.1Sm9C3/louppe - to review.app>)
+is running in Grid with the existing copied photos and both saved Yes decisions.
+The previous bundle is recoverable at `review-before-grid-short-content` beside it.
+Installed Louppe is unchanged.
+
+Reproduced the missed short-content case with Info open: a 339-point Grid pane
+produced a 322-point native scroll view, 305-point clip, and 322-point document,
+allowing 17 points of horizontal travel. Keeping the document one backing pixel
+taller than the viewport prevents that second gutter subtraction while retaining
+one lazy grid and the native legacy scroller. It adds at most one backing pixel
+of vertical range when content fits. Native configuration also repairs horizontal
+scroller/elasticity drift.
+
+Validation: 50 focused native layout/input/hotkey tests, 22 current localization
+tests, and 75/75 required performance/file-safety checks passed. Coverage includes
+short/long grids, Info, RTL, standard/Retina scales, narrow panes, thumbnail sizes,
+visible tile bounds, follow navigation, selection controls, and view switching.
+An English resource change during packaging was caught; after refreshing resources,
+release preflight passed. Loose, extracted-archive, and updated-review strict
+signatures and complete Contents comparisons passed.
+
+Native accessibility confirms Grid startup and the Info panel. The final live
+horizontal-scroll attempt returned `noWindowsAvailable` while the process stayed
+running; live pointer verification is unavailable. The native hosted bounds tests
+verify matching document/clip widths and zero horizontal range.
+
+---
+
+**Menu-bar shortcut audit — 14 October 2026:** added existing shortcut hints
+for File → Command Palette (⌘K), Rescan (⌘R), Export (E / ⌘E), Edit → Undo
+(Z / ⌘Z), Clear All Decisions (R), and View → 100% (S) and Phone Size (A).
+Standard macOS equivalents remain unchanged. Actions without a dedicated key
+have no invented hint. The existing session monitor still owns routing.
+
+Validation: all 47 HotkeyTests/localization tests and 75/75 required
+performance/file-safety checks passed. Release preflight passed. The signed
+[review package](</private/tmp/Louppe-Menu-Hints-Build.l8iz4f2y/louppe - to review.zip>)
+and its extracted app independently pass strict signatures and complete Contents
+comparison. After Alex quit the prior copy, the existing review app was updated,
+strictly verified against the package, and reopened with its copied photo folder.
+The previous bundle is recoverable at `review-before-menu-hints` beside it.
+Native accessibility confirms Gallery startup, both saved Yes decisions, and
+File menu hints for Command Palette, Rescan, and Export. ScreenCaptureKit -3811
+failures blocked continuing the live Edit/View inspection; those menus were
+checked against the existing shortcut handler in source. Installed Louppe is
+unchanged.
+
+---
+
+**Shortcuts and double-click follow-up — 14 October 2026:** the signed
+[updated review app](</private/tmp/Louppe-Floating-Zoom-Build.1Sm9C3/louppe - to review.app>)
+is running with the existing copied photos and both saved Yes decisions intact.
+View now shows compact Zoom In/Out actions with ⌘+ / ⌘−, plus Tab / G hints
+for Gallery/Grid. Hints preserve the existing window/focus shortcut routing.
+Command Palette uses the same names and retains the older thumbnail search terms.
+
+Double-clicking anywhere on the floating zoom capsule returns to Fit. Normal
+slider clicks and dragging remain immediate. A window-bound native mouse monitor
+handles only visible capsule double-clicks and is removed with the control.
+
+Validation: 86 focused tests and 75/75 required performance/file-safety checks
+passed, including the complete HotkeyTests, all six localization catalogs,
+native slider clicks/drags, double-clicks on track/thumb/percentage/padding,
+and monitor removal/reattachment and window bounds. Release preflight passed;
+loose, extracted archive, and updated review signatures and complete Contents
+comparisons passed. The previous review bundle remains at
+`review-before-shortcut-feedback` beside the app.
+
+The updated copy quit/reopened normally using its existing review identifier.
+Native accessibility confirms Gallery startup, the Fit control, and a custom
+162% slider change. ScreenCaptureKit -3811/-3812 blocked the final live pointer
+and menu check; those are not counted as verified interactions. The automated
+native double-click/drag regressions passed. Installed Louppe is unchanged.
+
+---
+
+**Grid and View-menu follow-up — 14 October 2026:** the signed
+[updated review app](</private/tmp/Louppe-Floating-Zoom-Build.1Sm9C3/louppe - to review.app>)
+is running. Grid now sizes its tile document to the pane minus the native scrollbar
+gutter, keeping adaptive columns and keyboard navigation aligned. Empty and
+no-match messages sit outside the tile scroller. View has native, checked
+Gallery/Grid choices bound to the focused session, with its existing command
+gate and no duplicate key equivalents.
+
+Validation: 42 focused tests and 75/75 required performance/file-safety checks
+passed. Grid coverage includes pane resizing, 90/170/400-point thumbnails,
+empty/no-match layouts, horizontal bounds, and distant vertical navigation.
+The loose review app and extracted archive independently pass strict signatures
+and complete Contents comparison. Release packaging passed with Xcode/macOS SDK 27.
+
+After Alex quit the previous review, the same copy was updated with its existing
+identifier and reopened in Grid using the copied review media. The previous bundle
+is recoverable at `review-before-grid-feedback` beside it; installed Louppe is
+unchanged. Native accessibility confirms Grid startup, both View menu choices,
+and switching to Gallery from the menu. ScreenCaptureKit again failed during the
+return-to-Grid input check; full pixel capture remains unavailable. Automated
+Grid bounds, native control input, keyboard, and repeated view-switch tests pass.
+
+---
+
+**Zoom feedback follow-up — 14 October 2026:** the same
+[review app](</private/tmp/Louppe-Floating-Zoom-Build.1Sm9C3/louppe - to review.app>)
+has been updated and opened with 30 copied media files in
+`/private/tmp/Louppe-Zoom-Feedback-Media`.
+
+Removed the Saved heading/explainer. Status is plain text when no filter,
+completion, or enabled review tips need a dropdown; the running app's native
+accessibility tree confirms this. Zoom glass is now 36 points high to match
+the supplied toolbar reference; native Fit/slider input and compact/RTL layout
+checks pass at that height.
+
+Fixed Browser sideways scrolling by constraining its padded document to the
+122-point clip width. Before the fix, the native document measured 139 points
+while the gutter left only 122 visible. The regression verifies matching widths,
+horizontal bounds, and vertical following to the last item and back.
+
+Validation: 74 focused tests and 75/75 required performance/file-safety checks
+passed. Release packaging, separate review signatures, and complete Contents
+comparisons between loose/archive/updated review apps passed. The previous
+review bundle remains recoverable at `review-before-feedback` beside the app.
+The installed Louppe is unchanged. Native accessibility inspection succeeded;
+subsequent scroll input was blocked by an app-state change, and refresh again
+failed with ScreenCaptureKit -3811. Final screen-capture verification remains
+unavailable; hosted native layout/input regressions are the verification for
+the size and scrolling change.
+
+---
+
+**Floating zoom review — 14 October 2026:** the separate
+[review app](</private/tmp/Louppe-Floating-Zoom-Build.1Sm9C3/louppe - to review.app>)
+is open with copied, disposable photos in `/private/tmp/Louppe-Floating-Zoom-Review`.
+The installed Louppe is unchanged.
+
+- Removed the bottom strip. Photo zoom floats 16 points above the Gallery
+  pane edge; Fit, the logarithmic 30–400% slider, percentage, and RAW menu remain.
+- One regular Liquid Glass capsule supports macOS 26+. Older macOS versions
+  use regular material; Reduce Transparency uses an opaque, contrast-bordered
+  capsule. The control stays visible while reviewing supported photos.
+- Toolbar status keeps saving visible and opens filter/completion details and
+  dismissible tips. Its popover joins the existing keyboard/menu command gate.
+
+Validation: 71 focused tests passed, including native mouse clicks on Fit and
+the slider, full-height media layout, narrow light/dark/RTL controls, zoom/pinch
+transitions, all 35 HotkeyTests, and save/status behavior. Required performance
+and file-safety checks passed 75/75. Xcode 27/macOS 27 SDK release packaging passed;
+the extracted review app's strict signature and complete Contents comparison
+passed, and its process opened the fixture and saved a session.
+
+Full visual acceptance remains pending: Computer Use screen capture failed twice
+with ScreenCaptureKit error -3811. Hosted snapshots omit GPU-composited glass and
+are not evidence of its final appearance. Actual system accessibility settings
+and older-macOS rendering were not verified. The synced review copy acquired
+Finder metadata and failed strict signature verification; the verified extracted
+copy above runs from local temporary storage.
+
+---
+
+**Current combined build — 13 October 2026:** [Louppe 1.11.0 (13)](/Applications/Louppe.app).
+It is installed and open, with the uncommitted UI, Quality Cues, saved-decision
+recovery and measured performance improvements in one app. The canonical bundle
+identity and existing preferences are retained; automatic updates are disabled
+for this local review. This is an unreleased build.
+
+The latest UI follow-up gives Get started a link in its own **Louppe Help**
+section, separate from Capture bursts. Settings retains the review tips toggle;
+the guide lives only in Help. Filter disclosure headers now own the full padded
+row between dividers, while expanded controls remain independent.
+
+Initial consolidation quit five earlier instances normally and moved ten old app
+copies and three ZIPs to Trash. This update replaces that single installed app
+and retires its packaging/staging copies. The newer App Store media chat uses
+published 1.10 reference/capture copies, which are preserved for that work.
+Source, test evidence, media, saved sessions and preferences are retained.
+
+The app opens the existing disposable 34-file demonstration folder, including
+quality-cue examples, two RAW+JPEG pairs, text and one intentionally unreadable
+JPEG. Its path and current binary hash are recorded in the
+[updated installed-build manifest](Performance/2026-10-12/ui-review-feedback/installed-review.json).
+
+Validation: 47 focused tests, 45 passed and two explicit hosted accessibility skips;
+zero failures. Native mouse events verify Help navigation, tips persistence in
+both directions, disclosure padding in LTR/RTL, neighboring rows, expanded
+controls and the actual Filter popover. All 35 HotkeyTests and precise numeric
+filter checks pass; mounted Settings/Help/Filter renders were inspected.
+Performance/file-safety checks pass 75/75. Packaging verifies loose/archive
+contents independently; the installed signature, staged/archive/installed Contents
+equality, one current review process, existing decisions and media bytes are checked.
+
+The earlier full suite ran 714 tests with 31 explicit skips and zero failures.
+Core source is unchanged from that baseline; this follow-up changes three UI views
+and adds native interaction coverage. See
+[UI validation evidence](Performance/2026-10-12/ui-review-feedback/),
+[initial consolidation](Performance/2026-10-12/combined-review/) and
+[quality-resource limits](QUALITY_CUE_RESOURCES_2026-10-12.md).
+
+---
 
 Historical review/consolidation, 29 September 2026. Unreleased: 1.10.0 (12);
 public: 1.9.0 (11). Earlier review copies are superseded by the production app.

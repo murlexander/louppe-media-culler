@@ -9,6 +9,7 @@ struct FullImageView: View {
     @AppStorage(AppleRawDecoder.preferenceKey) private var rawDecoder = AppleRawDecoder.appleDefault
 
     let item: PhotoItem
+    private let imagePipeline: ImagePipeline
     @Binding var zoomMode: ZoomMode
     let showsClippingWarnings: Bool
     let actualSizeViewport: ActualSizeViewport
@@ -57,6 +58,11 @@ struct FullImageView: View {
         let decoder: AppleRawDecoder
     }
 
+    private struct StandInLoadID: Hashable {
+        let preview: PreviewLoadID
+        let fullIsLoaded: Bool
+    }
+
     private var displayMode: RawDisplayMode {
         fallbackRevision == item.contentRevision ? .fast : rawDisplayMode
     }
@@ -73,9 +79,11 @@ struct FullImageView: View {
         onFittedScaleMeasured: @escaping (CGFloat, PhotoContentRevision, ZoomMode) -> Void = { _, _, _ in },
         onZoomFromFit: @escaping (CGFloat, NormalizedImagePosition, CGPoint, PhotoContentRevision) -> Void = { _, _, _, _ in },
         onRepresentation: @escaping (PhotoRepresentation, PhotoContentRevision) -> Void = { _, _ in },
-        onLoading: @escaping (Bool) -> Void = { _ in }
+        onLoading: @escaping (Bool) -> Void = { _ in },
+        imagePipeline: ImagePipeline = .shared
     ) {
         self.item = item
+        self.imagePipeline = imagePipeline
         self._zoomMode = zoomMode
         self.showsClippingWarnings = showsClippingWarnings
         self.actualSizeViewport = actualSizeViewport
@@ -100,13 +108,13 @@ struct FullImageView: View {
         self._clippingDecoder = State(initialValue: decoder)
         self._loadedDisplayMode = State(initialValue: mode)
         self._clippingDisplayMode = State(initialValue: mode)
-        let cachedFull = ImagePipeline.shared.cachedFullImage(for: item, mode: mode, decoder: decoder)
+        let cachedFull = imagePipeline.cachedFullImage(for: item, mode: mode, decoder: decoder)
         self._image = State(initialValue: cachedFull)
         self._clippingImage = State(
             initialValue: ClippingPreviewPipeline.shared.cachedImage(for: item, mode: mode, decoder: decoder)
         )
         if cachedFull == nil, !mode.rendersRAW(for: item) {
-            self._preview = State(initialValue: ImagePipeline.shared.cachedThumbnail(for: item))
+            self._preview = State(initialValue: imagePipeline.cachedThumbnail(for: item))
         }
     }
 
@@ -117,10 +125,10 @@ struct FullImageView: View {
         let currentLoad = imageRevision == contentRevision && loadedDisplayMode == mode && loadedDecoder == rawDecoder
         let displayedImage = currentLoad
             ? image
-            : ImagePipeline.shared.cachedFullImage(for: item, mode: mode, decoder: rawDecoder)
+            : imagePipeline.cachedFullImage(for: item, mode: mode, decoder: rawDecoder)
         let displayedPreview = rendersRAW ? nil : currentLoad
             ? preview
-            : ImagePipeline.shared.cachedThumbnail(for: item)
+            : imagePipeline.cachedThumbnail(for: item)
         let displayedClippingImage = clippingRevision == contentRevision && clippingDisplayMode == mode && clippingDecoder == rawDecoder
             ? clippingImage
             : ClippingPreviewPipeline.shared.cachedImage(for: item, mode: mode, decoder: rawDecoder)
@@ -310,14 +318,14 @@ struct FullImageView: View {
             let requestedItem = item
             let decoder = rawDecoder
             let requestedRevision = requestedItem.contentRevision
-            let cachedFull = ImagePipeline.shared.cachedFullImage(
+            let cachedFull = imagePipeline.cachedFullImage(
                 for: requestedItem, mode: mode, decoder: decoder
             )
             loadedDisplayMode = mode
             loadedDecoder = decoder
             image = cachedFull
             preview = cachedFull == nil && !rendersRAW
-                ? ImagePipeline.shared.cachedThumbnail(for: requestedItem)
+                ? imagePipeline.cachedThumbnail(for: requestedItem)
                 : nil
             failedToLoad = false
             imageRevision = requestedRevision
@@ -332,23 +340,42 @@ struct FullImageView: View {
             else { return }
             onLoading(true)
             defer { onLoading(false) }
-            async let full = ImagePipeline.shared.fullImage(
+            let loaded = await imagePipeline.fullImage(
                 for: requestedItem, mode: mode, decoder: decoder
             )
-            if !rendersRAW, preview == nil,
-               let thumb = await ImagePipeline.shared.thumbnail(
-                   for: requestedItem
-               ),
-               !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode,
-               imageRevision == requestedRevision,
-               image == nil {
-                preview = thumb
-            }
-            let loaded = await full
             guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode, imageRevision == requestedRevision
             else { return }
             image = loaded
             failedToLoad = (loaded == nil)
+        }
+        .task(id: StandInLoadID(
+            preview: PreviewLoadID(
+                contentRevision: contentRevision,
+                retryGeneration: previewRetryGeneration,
+                mode: mode,
+                decoder: rawDecoder
+            ),
+            fullIsLoaded: currentLoad && image != nil
+        )) {
+            // The stand-in has its own task: a busy thumbnail lane must never
+            // hold up publication or loading settlement of the full preview.
+            // Publishing full pixels also retires an unneeded stand-in waiter.
+            let requestedItem = item
+            let requestedRevision = requestedItem.contentRevision
+            let decoder = rawDecoder
+            guard requestedItem.isSupported, !rendersRAW,
+                  imagePipeline.cachedFullImage(for: requestedItem, mode: mode, decoder: decoder) == nil,
+                  imagePipeline.cachedThumbnail(for: requestedItem) == nil
+            else { return }
+            try? await Task.sleep(nanoseconds: Self.navigationDebounceNanoseconds)
+            guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode,
+                  loadedDecoder == decoder, imageRevision == requestedRevision, image == nil
+            else { return }
+            let thumb = await imagePipeline.thumbnail(for: requestedItem)
+            guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode,
+                  loadedDecoder == decoder, imageRevision == requestedRevision, image == nil
+            else { return }
+            preview = thumb
         }
         .task(
             id: ClippingLoadID(
@@ -396,7 +423,7 @@ struct FullImageView: View {
         let mode = displayMode
         guard mode.rendersRAW(for: item) else { return .preview }
         guard loadedDisplayMode == mode, loadedDecoder == rawDecoder, imageRevision == item.contentRevision else {
-            return ImagePipeline.shared.cachedFullImage(for: item, mode: mode, decoder: rawDecoder) == nil ? .loadingRAW : .raw
+            return imagePipeline.cachedFullImage(for: item, mode: mode, decoder: rawDecoder) == nil ? .loadingRAW : .raw
         }
         if image != nil { return .raw }
         return failedToLoad ? .unavailable : .loadingRAW

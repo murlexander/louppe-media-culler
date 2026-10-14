@@ -1,0 +1,61 @@
+{
+  "apps": [
+    {
+      "path": "/Applications/Louppe 2.app",
+      "bundleID": "com.alexandermarkin.louppe",
+      "version": "1.10.0",
+      "build": "12"
+    },
+    {
+      "path": "/Applications/Louppe.app",
+      "bundleID": "com.alexandermarkin.louppe",
+      "version": "1.11.0",
+      "build": "13"
+    },
+    {
+      "path": "/private/tmp/louppe-dark-store-2026-10-13/source/capture/Louppe.app",
+      "bundleID": "com.alexandermarkin.louppe.marketingcapture",
+      "version": "1.10.0",
+      "build": "12"
+    },
+    {
+      "path": "/private/tmp/louppe-dark-store-2026-10-13/source/release/Louppe.app",
+      "bundleID": "com.alexandermarkin.louppe",
+      "version": "1.10.0",
+      "build": "12"
+    }
+  ],
+  "running": [
+    {
+      "bundleID": "com.alexandermarkin.louppe",
+      "name": "Louppe",
+      "path": "/Applications/Louppe.app",
+      "pid": 3720
+    },
+    {
+      "bundleID": "com.alexandermarkin.louppe.marketingcapture",
+      "name": "Louppe",
+      "path": "/private/tmp/louppe-dark-store-2026-10-13/source/capture/Louppe.app",
+      "pid": 3902
+    }
+  ],
+  "currentReview": [
+    {
+      "bundleID": "com.alexandermarkin.louppe",
+      "name": "Louppe",
+      "path": "/Applications/Louppe.app",
+      "pid": 3720
+    }
+  ],
+  "auditedRoots": [
+    "/Applications",
+    "/Users/alexander_markin/Applications",
+    "/Users/alexander_markin/Downloads",
+    "/Users/alexander_markin/Desktop",
+    "/Users/alexander_markin/Documents/code/louppe/app",
+    "/private/tmp",
+    "/var/folders/g4/zdb256l15jg441l_0bj50xfc0000gn/T"
+  ],
+  "separateStoreMediaWorkPreserved": true,
+  "note": "The newer user-authorized App Store media chat needs published 1.10 reference/capture inputs. Those copies are preserved; the only 1.11 review app is /Applications/Louppe.app."
+}
