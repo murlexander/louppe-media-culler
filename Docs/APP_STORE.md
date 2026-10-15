@@ -18,6 +18,13 @@ recovery journal needs it; completing or retiring that record releases access.
 It requests no broad Pictures, Movies, Music, Full Disk Access, network,
 camera, microphone, contacts, or accessibility permissions.
 
+## Release-note copy
+
+App Store release notes must not mention Revolut or the GitHub version, and must
+not reuse the GitHub support-link introduction. Describe the Store app’s changes;
+optional Apple in-app tips may be mentioned. The prepared 1.11 Store update copy
+contains no Revolut or GitHub reference.
+
 ## Optional tips
 
 The Store build adds **Louppe → Support Louppe…**. Tips use StoreKit 2

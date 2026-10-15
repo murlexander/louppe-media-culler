@@ -84,6 +84,10 @@ signature. Stable releases also update [Homebrew](HOMEBREW.md).
 Follow [the 1.9.0 note](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.9.0):
 title `Louppe vX.Y.Z`, one benefit sentence, a few **What’s new** bullets,
 **Download** instructions with minimum macOS, and a changelog link.
+Begin GitHub release notes with:
+`You can support me: [tip me on Revolut](https://revolut.me/murlexander).`
+Keep the support request in that opening line; omit passing tipping or
+cross-distribution payment explanations from the feature bullets.
 Keep beta limits and safety caveats that affect users; put technical detail in
 the changelog. Check signing claims for each version: before 1.8.0, first
 launch needed right-click; 1.8.0 onward is signed and notarized.
