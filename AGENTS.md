@@ -193,13 +193,22 @@ when Computer Use is available.
 
 - GitHub: `murlexander/louppe-media-culler` (public). Commit/push only when the
   owner asks; he reviews PRs via the GitHub UI "Merge" button or asks here.
-- **Use `main` only.** Do not create or retain local or remote feature branches
-  unless the owner explicitly asks for one. Commit directly to `main` only when
-  asked; after any exceptional branch is merged, delete it both locally and on
-  GitHub.
+- **Use `main` only in Alex's managed checkout.** Do not create or retain local
+  or remote feature branches there unless the owner explicitly asks for one.
+  Commit directly to `main` only when asked; after an exceptional branch is merged,
+  delete it locally and on GitHub. External contributors use branches in their
+  own forks and open pull requests against this repository's `main`.
 - `dist/` and `.build/` are gitignored build products; `AppIcon/` holds the
   source glyph and the built `.icns` (both tracked).
 
-## Louppe project location
+## Standalone checkouts and local project layout
 
-Shared project layout and materials are documented in `../AGENTS.md` and `../README.md`. Use `/Users/alexander_markin/Documents/code/louppe/` for application work; personal notes and CAS logs stay in Obsidian.
+This repository contains the app's source, tests, fixtures, build tools, and
+engineering instructions. Run commands from the root of this checkout, wherever
+it is cloned. Normal app development does not require parent files, the website,
+marketing media, personal notes, or release-signing credentials.
+
+Alex's managed app checkout sits in a shared local Louppe workspace.
+Its optional parent `AGENTS.md` and `README.md` describe the shared local workspace;
+consult them when present in that workspace. Standalone contributors do not need
+those files or that local directory layout. Personal notes and CAS logs stay in Obsidian.

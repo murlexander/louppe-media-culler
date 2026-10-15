@@ -1,5 +1,8 @@
 # Louppe 1.11.0 (13) release preparation
 
+Historical 14 October record. Current status and Alex’s manual acceptance are in
+[the 15 October preparation](RELEASE_1.11_PREPARATION_2026-10-15.md).
+
 One-time readiness check started 14 October 2026 at 12:44 America/Toronto.
 All four coding chats completed; source stability was reconfirmed after native QA.
 
@@ -66,11 +69,11 @@ commits, retaining the failed CI attempt.
 
 Supporting implementation records:
 
-- [Final cue-filter work](QUALITY_CUE_FILTER_PERFORMANCE_2026-10-14.md): 754 tests,
+- [Final cue-filter work](Archive/2026-10-14/QUALITY_CUE_FILTER_PERFORMANCE_2026-10-14.md): 754 tests,
   718 passed, 36 explicit skips, no failures; all 35 HotkeyTests and 75/75 required
   performance/file-safety checks. Optimized runs independently confirm retained
   cue matches and bounded per-result classification updates.
-- [Localization audit](LOCALIZATION_AUDIT_2026-10-14.md): 97 affected tests, 22
+- [Localization audit](Archive/2026-10-14/LOCALIZATION_AUDIT_2026-10-14.md): 97 affected tests, 22
   localization tests per language, 42 inspected native snapshots, isolated launch.
   Native-speaker review and full modal/layout acceptance remain open.
 - [UI review record](REVIEW_BUILD.md): final short-Grid bounds fix and focused
@@ -93,27 +96,20 @@ Supporting implementation records:
 Compatibility: 1.11 saves session format 7. Louppe 1.10 cannot read sessions saved
 by 1.11. Preserve a copy of saved sessions before evaluating a downgrade.
 
-## Remaining integration and publication handoff
+## Remaining publication handoff
 
-1. Confirm all coding and shared validation have stopped. Review intended tracked
-   and untracked changes, including performance evidence, for private/generated
-   content. Do not stage unrelated files, private photos, secrets or raw local
-   machine data merely because they are untracked.
-2. Establish upstream, review the integrated diff, and run final full XCTest,
-   complete HotkeyTests, localization and affected cue/performance checks, plus
-   Tests/run_performance_checks.sh. Use full Xcode/current SDK and the documented
-   working backend. Record every skip separately; prove launch/save/recovery and
-   media integrity on disposable fixtures without replacing the installed app.
-3. Commit intended completed app work on main and push normally, as authorized.
-   Verify the remote commit and CI. Tie final artifact manifests to that exact
-   source commit; no force-push or release tags.
-4. Restore the documented notarization profile. Submit and staple the
-   Developer ID app, recreate its ZIP, and reverify Gatekeeper/checksums/Contents.
-   Only then prepare the signed Sparkle feed from the final archive. The current
-   candidate has passed signing/Contents checks but has no notarization ticket.
-5. Retain the prepared Store installer and exact checksums. Complete signed Store
+Application implementation, integration, push, and final validation are recorded
+above. After subsequent changes, recheck the affected validation and artifact/source
+identity before publishing; do not treat the dated candidates as rebuilt artifacts.
+
+1. Restore the missing notarization profile. Submit and staple the Developer ID
+   app, recreate its ZIP, and reverify Gatekeeper, checksums, and complete Contents.
+   Prepare the signed Sparkle feed only from that final archive.
+2. Retain the prepared Store installer's exact checksums. Complete signed Store
    workflow and purchase acceptance before upload/submission. The local-check ZIP
    is an ad-hoc test package, not an upload artifact.
+3. Complete the acceptance below, including refreshed Store captures. Keep open
+   work in [the backlog](../BACKLOG.md); publishing requires a separate request.
 
 ## Remaining release acceptance
 

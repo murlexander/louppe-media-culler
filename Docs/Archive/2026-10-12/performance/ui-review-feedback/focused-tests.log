@@ -1,0 +1,124 @@
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/6] Compiling LouppeTests FilterDisclosureHitTests.swift
+[4/6] Compiling LouppeTests SettingsLayoutTests.swift
+[5/6] Emitting module LouppeTests
+[5/7] Write Objects.LinkFileList
+[6/7] Linking LouppePackageTests
+Build complete! (3.30s)
+Test Suite 'Selected tests' started at 2026-10-13 9:35:34.868 PM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-13 9:35:34.876 PM.
+Test Suite 'FilterDisclosureHitTests' started at 2026-10-13 9:35:34.876 PM.
+Test Case '-[LouppeTests.FilterDisclosureHitTests testCollapsedHeaderClicksReachTheFullPaddedRowInBothDirections]' started.
+Test Case '-[LouppeTests.FilterDisclosureHitTests testCollapsedHeaderClicksReachTheFullPaddedRowInBothDirections]' passed (3.832 seconds).
+Test Case '-[LouppeTests.FilterDisclosureHitTests testDividerAdjacentClicksOnlyToggleTheirOwnSection]' started.
+Test Case '-[LouppeTests.FilterDisclosureHitTests testDividerAdjacentClicksOnlyToggleTheirOwnSection]' passed (0.835 seconds).
+Test Case '-[LouppeTests.FilterDisclosureHitTests testExpandedControlsRemainSeparateFromHeaderHitArea]' started.
+Test Case '-[LouppeTests.FilterDisclosureHitTests testExpandedControlsRemainSeparateFromHeaderHitArea]' passed (0.632 seconds).
+Test Case '-[LouppeTests.FilterDisclosureHitTests testRealFilterExpandsQualityFromTopPaddingWithoutChangingPredicates]' started.
+Test Case '-[LouppeTests.FilterDisclosureHitTests testRealFilterExpandsQualityFromTopPaddingWithoutChangingPredicates]' passed (0.566 seconds).
+Test Suite 'FilterDisclosureHitTests' passed at 2026-10-13 9:35:40.741 PM.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 5.864 (5.865) seconds
+Test Suite 'HotkeyTests' started at 2026-10-13 9:35:40.741 PM.
+Test Case '-[LouppeTests.HotkeyTests testAppCommandsRemainAvailableFromNonTextControlFocus]' started.
+Test Case '-[LouppeTests.HotkeyTests testAppCommandsRemainAvailableFromNonTextControlFocus]' passed (0.005 seconds).
+Test Case '-[LouppeTests.HotkeyTests testArrowKeysNavigateGridEvenWhenCurrentItemIsVideo]' started.
+Test Case '-[LouppeTests.HotkeyTests testArrowKeysNavigateGridEvenWhenCurrentItemIsVideo]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandArrowsAdjustMediaSpeedAndNavigatePhotos]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandArrowsAdjustMediaSpeedAndNavigatePhotos]' passed (0.004 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandFFocusesFilterSearchThroughFocusedSessionGate]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandFFocusesFilterSearchThroughFocusedSessionGate]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesPairedComponentCleanUpActions]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesPairedComponentCleanUpActions]' passed (0.014 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesWorkingMediaAndAdjacentItemActions]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesWorkingMediaAndAdjacentItemActions]' passed (0.027 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteKeepsBatchRenameButNotSingleFileRename]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteKeepsBatchRenameButNotSingleFileRename]' passed (0.009 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteRanksSpecificActionsAndNormalizesSearch]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteRanksSpecificActionsAndNormalizesSearch]' passed (0.025 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteShowsHotkeysAndNewActions]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteShowsHotkeysAndNewActions]' passed (0.007 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFilterWordingForRAWJPEGPairing]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFilterWordingForRAWJPEGPairing]' passed (0.006 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFocusedSessionGateAndRunsAfterDismissal]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFocusedSessionGateAndRunsAfterDismissal]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testDestructiveShortcutPassesThroughOutsideUnobstructedSessionContext]' started.
+Test Case '-[LouppeTests.HotkeyTests testDestructiveShortcutPassesThroughOutsideUnobstructedSessionContext]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testEmptySessionCannotPresentExportFromToolbarOrHotkeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testEmptySessionCannotPresentExportFromToolbarOrHotkeys]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testFeedbackPromptOwnsKeysUntilDismissed]' started.
+Test Case '-[LouppeTests.HotkeyTests testFeedbackPromptOwnsKeysUntilDismissed]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testFileOperationPassesThroughModifiersSheetsAndUnknownKeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testFileOperationPassesThroughModifiersSheetsAndUnknownKeys]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testHorizontalReviewKeysKeepJLForItemsAndArrowsForVideoSeeking]' started.
+Test Case '-[LouppeTests.HotkeyTests testHorizontalReviewKeysKeepJLForItemsAndArrowsForVideoSeeking]' passed (0.006 seconds).
+Test Case '-[LouppeTests.HotkeyTests testHostedSwiftUIButtonFocusStillAllowsCullingHotkeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testHostedSwiftUIButtonFocusStillAllowsCullingHotkeys]' passed (0.066 seconds).
+Test Case '-[LouppeTests.HotkeyTests testInstalledMonitorRoutesWindowEventsAndIsRemovedWithSessionView]' started.
+Test Case '-[LouppeTests.HotkeyTests testInstalledMonitorRoutesWindowEventsAndIsRemovedWithSessionView]' passed (0.202 seconds).
+Test Case '-[LouppeTests.HotkeyTests testKTogglesPlayableMediaWithoutChangingPhotoNavigation]' started.
+Test Case '-[LouppeTests.HotkeyTests testKTogglesPlayableMediaWithoutChangingPhotoNavigation]' passed (0.007 seconds).
+Test Case '-[LouppeTests.HotkeyTests testLegacyMigrationConfirmationBlocksSessionHotkeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testLegacyMigrationConfirmationBlocksSessionHotkeys]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testMenuEquivalentKeysUseTheSameFocusedSessionGate]' started.
+Test Case '-[LouppeTests.HotkeyTests testMenuEquivalentKeysUseTheSameFocusedSessionGate]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testNumericHotkeysSetStarsWithoutChangingDecisionOrAdvancing]' started.
+Test Case '-[LouppeTests.HotkeyTests testNumericHotkeysSetStarsWithoutChangingDecisionOrAdvancing]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testOnlyExactDocumentedModifiersReachSessionCommands]' started.
+Test Case '-[LouppeTests.HotkeyTests testOnlyExactDocumentedModifiersReachSessionCommands]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testPresentedSessionUIPassesThroughBeforeCommandShortcuts]' started.
+Test Case '-[LouppeTests.HotkeyTests testPresentedSessionUIPassesThroughBeforeCommandShortcuts]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testResponderRolesSeparateTextFromNativeControlNavigation]' started.
+Test Case '-[LouppeTests.HotkeyTests testResponderRolesSeparateTextFromNativeControlNavigation]' passed (0.007 seconds).
+Test Case '-[LouppeTests.HotkeyTests testReviewHotkeysStillRateAndAdvance]' started.
+Test Case '-[LouppeTests.HotkeyTests testReviewHotkeysStillRateAndAdvance]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testRootPhaseTransitionReinstallsLiveSessionMonitor]' started.
+Test Case '-[LouppeTests.HotkeyTests testRootPhaseTransitionReinstallsLiveSessionMonitor]' passed (1.983 seconds).
+Test Case '-[LouppeTests.HotkeyTests testSelectableTextRetainsEverySessionCommand]' started.
+Test Case '-[LouppeTests.HotkeyTests testSelectableTextRetainsEverySessionCommand]' passed (0.010 seconds).
+Test Case '-[LouppeTests.HotkeyTests testSessionEventSurvivesTransientMissingKeyWindow]' started.
+Test Case '-[LouppeTests.HotkeyTests testSessionEventSurvivesTransientMissingKeyWindow]' passed (0.004 seconds).
+Test Case '-[LouppeTests.HotkeyTests testSpaceTogglesPlayableMediaButAdvancesFromPhoto]' started.
+Test Case '-[LouppeTests.HotkeyTests testSpaceTogglesPlayableMediaButAdvancesFromPhoto]' passed (0.008 seconds).
+Test Case '-[LouppeTests.HotkeyTests testTextEditingRetainsStandardCommandShortcuts]' started.
+Test Case '-[LouppeTests.HotkeyTests testTextEditingRetainsStandardCommandShortcuts]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testTextEditorBlocksUntilEditingFocusEnds]' started.
+Test Case '-[LouppeTests.HotkeyTests testTextEditorBlocksUntilEditingFocusEnds]' passed (0.009 seconds).
+Test Case '-[LouppeTests.HotkeyTests testWindowRootFocusDoesNotInheritNestedSelectableText]' started.
+Test Case '-[LouppeTests.HotkeyTests testWindowRootFocusDoesNotInheritNestedSelectableText]' passed (0.068 seconds).
+Test Case '-[LouppeTests.HotkeyTests testXDoesNotToggleClippingWarningsForVideo]' started.
+Test Case '-[LouppeTests.HotkeyTests testXDoesNotToggleClippingWarningsForVideo]' passed (0.004 seconds).
+Test Case '-[LouppeTests.HotkeyTests testXTogglesClippingWarningsOnlyForSingleGalleryPhoto]' started.
+Test Case '-[LouppeTests.HotkeyTests testXTogglesClippingWarningsOnlyForSingleGalleryPhoto]' passed (0.004 seconds).
+Test Suite 'HotkeyTests' passed at 2026-10-13 9:35:43.257 PM.
+	 Executed 35 tests, with 0 failures (0 unexpected) in 2.513 (2.516) seconds
+Test Suite 'NumericFilterDraftTests' started at 2026-10-13 9:35:43.257 PM.
+Test Case '-[LouppeTests.NumericFilterDraftTests testNoEditsNeverParsesOrCommitsRoundedDisplayValues]' started.
+Test Case '-[LouppeTests.NumericFilterDraftTests testNoEditsNeverParsesOrCommitsRoundedDisplayValues]' passed (0.000 seconds).
+Test Case '-[LouppeTests.NumericFilterDraftTests testOneEditedEndpointPreservesUntouchedPreciseValueAndDisabledRangeUsesAvailableBounds]' started.
+Test Case '-[LouppeTests.NumericFilterDraftTests testOneEditedEndpointPreservesUntouchedPreciseValueAndDisabledRangeUsesAvailableBounds]' passed (0.000 seconds).
+Test Case '-[LouppeTests.NumericFilterDraftTests testOpeningWaitingAndClosingRealFilterPreservesAllPreciseCutoffs]' started.
+Test Case '-[LouppeTests.NumericFilterDraftTests testOpeningWaitingAndClosingRealFilterPreservesAllPreciseCutoffs]' passed (0.357 seconds).
+Test Case '-[LouppeTests.NumericFilterDraftTests testPrecisionIsUsedWhenValidatingEditedEndpointAndFullRangeSnapSurvives]' started.
+Test Case '-[LouppeTests.NumericFilterDraftTests testPrecisionIsUsedWhenValidatingEditedEndpointAndFullRangeSnapSurvives]' passed (0.000 seconds).
+Test Suite 'NumericFilterDraftTests' passed at 2026-10-13 9:35:43.615 PM.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.358 (0.358) seconds
+Test Suite 'SettingsLayoutTests' started at 2026-10-13 9:35:43.615 PM.
+Test Case '-[LouppeTests.SettingsLayoutTests testAllSettingsShareOneScrollableForm]' started.
+Test Case '-[LouppeTests.SettingsLayoutTests testAllSettingsShareOneScrollableForm]' passed (0.557 seconds).
+Test Case '-[LouppeTests.SettingsLayoutTests testGetStartedAccessibilityHasOneHelpRouteAndNoInlineGuide]' started.
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/SettingsLayoutTests.swift:107: -[LouppeTests.SettingsLayoutTests testGetStartedAccessibilityHasOneHelpRouteAndNoInlineGuide] : Test skipped - SwiftUI's XCTest host has no in-process accessibility children; native route/preference interaction is tested separately.
+Test Case '-[LouppeTests.SettingsLayoutTests testGetStartedAccessibilityHasOneHelpRouteAndNoInlineGuide]' skipped (0.129 seconds).
+Test Case '-[LouppeTests.SettingsLayoutTests testGetStartedButtonOpensHelpAndTipsTogglePersists]' started.
+Test Case '-[LouppeTests.SettingsLayoutTests testGetStartedButtonOpensHelpAndTipsTogglePersists]' passed (0.447 seconds).
+Test Case '-[LouppeTests.SettingsLayoutTests testHelpKeepsTheGuideWithoutDuplicatingItsReviewPreference]' started.
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/SettingsLayoutTests.swift:133: -[LouppeTests.SettingsLayoutTests testHelpKeepsTheGuideWithoutDuplicatingItsReviewPreference] : Test skipped - SwiftUI's XCTest host has no in-process accessibility children; the mounted Help snapshot still records the guide.
+Test Case '-[LouppeTests.SettingsLayoutTests testHelpKeepsTheGuideWithoutDuplicatingItsReviewPreference]' skipped (0.162 seconds).
+Test Suite 'SettingsLayoutTests' passed at 2026-10-13 9:35:44.911 PM.
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+	 Executed 4 tests, with 2 tests skipped and 0 failures (0 unexpected) in 1.295 (1.296) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-13 9:35:44.911 PM.
+	 Executed 47 tests, with 2 tests skipped and 0 failures (0 unexpected) in 10.030 (10.035) seconds
+Test Suite 'Selected tests' passed at 2026-10-13 9:35:44.911 PM.
+	 Executed 47 tests, with 2 tests skipped and 0 failures (0 unexpected) in 10.030 (10.043) seconds

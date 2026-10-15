@@ -445,7 +445,7 @@ final class XMPPhase6Tests: XCTestCase {
         let repository = tests.deletingLastPathComponent().deletingLastPathComponent()
         return try Data(
             contentsOf: repository
-                .appendingPathComponent("Prototypes/XMPBridgeProof/Fixtures")
+                .appendingPathComponent("Tests/Fixtures/XMP")
                 .appendingPathComponent(name)
         )
     }

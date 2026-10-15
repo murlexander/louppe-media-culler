@@ -8,8 +8,8 @@ and Clean Up. Read the relevant sections before editing.
 Run `./Tests/run_speed_tests.sh` for optimized statistical baselines, candidate
 equivalence, real JPEG I/O and optional RAW measurements. See
 [the runner guide](SPEED_TESTS.md) and
-[the 12 October 2026 inspection](PERFORMANCE_REVIEW_2026-10-12.md) and
-[implemented results](PERFORMANCE_IMPLEMENTATION_2026-10-12.md) for evidence,
+[the 12 October 2026 inspection](Archive/2026-10-12/PERFORMANCE_REVIEW_2026-10-12.md) and
+[implemented results](Archive/2026-10-12/PERFORMANCE_IMPLEMENTATION_2026-10-12.md) for evidence,
 limits and the implementation acceptance list. These complement the existing
 75 safety checks.
 
@@ -127,7 +127,7 @@ persistence reads and final identity checks.
   interest interrupts rest; covered interests and Select All cannot bypass every
   batch. System state is sampled per batch with no idle polling. Admission pacing
   is not a hard CPU/GPU/framework-memory cap. See the
-  [resource review](QUALITY_CUE_RESOURCES_2026-10-12.md).
+  [resource review](Archive/2026-10-12/QUALITY_CUE_RESOURCES_2026-10-12.md).
 - `AudioLevelPipeline` runs only for the selected playable video/audio after
   Info dwell or a Gallery waveform request. One utility `AVAssetReader` PCM
   task runs at a time; same revisions coalesce. Last-waiter cancellation stops
@@ -828,3 +828,16 @@ session. See the 14 October cue-filter review for measurements.
 Persistence emits compact JSON with sorted keys and ISO8601 dates through the
 same encoder used by durable saves. Exact-byte CAS, schema/history validation,
 512 MiB ceilings, generation ordering and sidecar/backup durability remain in force.
+
+## Historical evidence
+
+Dated measurements, failed attempts, and validation records are under
+[Docs/Archive](Archive/). See the [README](../README.md#historical-records) for
+the layout and the [backlog](../BACKLOG.md#performance) for open work.
+Source digest manifests with `schema: source-sha256-v1` use a `files` array of
+`path`/`sha256` records. These explicit fields preserve the original digests
+without credential-scanner false positives from filenames containing Security
+or SafeStringAPIs. Other JSON retains its original runner's format.
+Historical timings, failed attempts, and source digests are retained. Machine-specific
+usernames in archived paths are redacted for publication; unredacted originals
+stay outside Git in the owner’s local media library.

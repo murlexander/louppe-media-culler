@@ -98,19 +98,19 @@ not physical screen frames. New rows without saved baselines are measurements,
 not before/after claims.
 
 The first investigation and implementation acceptance list are in
-[the performance review](PERFORMANCE_REVIEW_2026-10-12.md). This suite complements
+[the performance review](Archive/2026-10-12/PERFORMANCE_REVIEW_2026-10-12.md). This suite complements
 `run_performance_checks.sh`; it does not replace its 75 safety checks or native
 UI, volume/provider, cancellation, and memory-budget acceptance tests.
 
-The [implemented results](PERFORMANCE_IMPLEMENTATION_2026-10-12.md) retain actual
+The [implemented results](Archive/2026-10-12/PERFORMANCE_IMPLEMENTATION_2026-10-12.md) retain actual
 production comparisons, final acceptance and remaining limits.
 
 Quality-resource measurements inject immediate evidence and disable rest to isolate
 scheduler/bookkeeping cost; they include task admission and the awaiting harness.
 They exclude decode, fixture setup, UI rendering and the production duty cycle.
-The separate [resource review](QUALITY_CUE_RESOURCES_2026-10-12.md) documents
+The separate [resource review](Archive/2026-10-12/QUALITY_CUE_RESOURCES_2026-10-12.md) documents
 adaptive-rest tests, rejected pixel shortcuts and retained CPU experiments.
 
-The [14 October cue-filter follow-up](QUALITY_CUE_FILTER_PERFORMANCE_2026-10-14.md)
+The [14 October cue-filter follow-up](Archive/2026-10-14/QUALITY_CUE_FILTER_PERFORMANCE_2026-10-14.md)
 retains repeated switch, first-use and controlled arrival results. Clipping arrival
 rows include 1 ms polling and the next-admission barrier; they exclude decode/rest.

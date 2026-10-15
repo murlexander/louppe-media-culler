@@ -378,9 +378,9 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   catalogs during packaging. It changes only staged display labels, preserving
   the service selector, folder types, port, and keyboard routing.
 - Native fixture coverage and remaining linguistic/layout gaps are recorded in
-  [the localization audit](LOCALIZATION_AUDIT_2026-10-14.md). No native-speaker
-  review has been obtained; full linguistic and modal/layout acceptance remains
-  a release check.
+  [the localization audit](Archive/2026-10-14/LOCALIZATION_AUDIT_2026-10-14.md). Alex
+  accepted manual release review on 15 October; no separate native-speaker
+  certification is recorded. See the current release-preparation record.
 
 - `RootView` shows early-user feedback once per preference domain during 1.10.
   Mark it shown on appearance, including Close/Escape/email, so relaunch or patch

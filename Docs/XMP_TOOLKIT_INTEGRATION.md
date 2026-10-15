@@ -1,6 +1,6 @@
 # XMPCore integration record
 
-Parser pins and shipping bridge. Isolation proof: `Prototypes/XMPBridgeProof`.
+Parser pins, shipping bridge, and production regression checks.
 
 ## Reviewed dependencies
 
@@ -28,44 +28,24 @@ procedure. `build_app.sh` copies both complete license texts into the app, and
 `Scripts/verify_release.sh` compares them independently in the loose and
 archived bundles.
 
-## What the proof establishes
+## Production regression checks
 
-`Scripts/run_xmp_bridge_proof.sh` builds only the legacy XMPCore metadata API,
-Expat, a narrow C bridge implemented in Objective-C++, and a Swift runner. It
-does not build XMPFiles because Louppe will never embed metadata in media.
-The build explicitly enables XMPCore's `BanAllEntityUsage` guard; Adobe's
-source defaults that guard off, which is unsuitable for untrusted sidecars.
-The bridge also installs an error callback that refuses XMPCore's default
-"recover and return a partial packet" behavior for malformed XML.
-
-The runner covers synthetic, non-copyrighted packets shaped for Universal
-XMP, Lightroom Classic, Adobe Bridge, Capture One, and darktable. Together
-they exercise:
-
-- unknown namespaces and custom properties;
-- custom `xmp:Label` text;
-- flat and hierarchical keyword arrays;
-- localized values and qualifiers;
-- Adobe Camera Raw settings;
-- darktable history, blend, and multi-color data;
-- a writable packet wrapper with padding;
-- malformed XML rejection.
-
-Each valid fixture preserves foreign sentinels through parse/serialize,
-updates rating/color/decision, reparses, verifies four owned properties, and
-repeats the merge on its output. The malformed fixture must fail.
-
-Run `./Scripts/run_xmp_bridge_proof.sh` to check the production vendored sources.
-Alternatively, run it with exact local checkouts:
+The shipping bridge and Swift field mappings are exercised by `XMPPhase5Tests`,
+`XMPPhase6Tests`, `XMPPhase7Tests`, and `XMPSecurityTests`. Synthetic packets in
+`Tests/Fixtures/XMP/` cover foreign namespaces, keywords, qualifiers, Camera Raw
+edits, darktable history, writable packet padding, and malformed XML. Security
+tests also cover DOCTYPE/entity rejection and bounded hostile packets.
 
 ```sh
-./Scripts/run_xmp_bridge_proof.sh \
-  /path/to/XMP-Toolkit-SDK \
-  /path/to/libexpat
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  swift test --disable-keychain --build-system native \
+  --filter 'XMPPhase[567]Tests|XMPSecurityTests'
 ```
 
-Explicit checkouts must match the pins. The script prefers installed full Xcode’s
-current SDK and retains its temporary objects/executable for inspection.
+The standalone August prototype and its separate build runner were retired;
+their synthetic packets are retained unchanged. Tests now exercise the production
+bridge rather than a second implementation. Actual editor acceptance remains
+in the [backlog](../BACKLOG.md).
 
 ## Findings carried into production
 

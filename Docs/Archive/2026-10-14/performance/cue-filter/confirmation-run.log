@@ -1,0 +1,12 @@
+swift-driver version: 1.168.6 Speed results: /private/tmp/louppe-cue-filter-20261014/confirmation
+[0/1] Planning build
+Building for production...
+[0/7] Copying Localizable.strings
+[1/7] Write sources
+[3/12] Copying Localizable.strings
+[8/12] Write swift-version--58304C5D6DBC2206.txt
+[10/13] Compiling Louppe AppBuildInfo.swift
+error: input file '/Users/developer/Documents/code/louppe/app/Sources/Louppe/Views/ExportView.swift' was modified during the build
+error: input file '/Users/developer/Documents/code/louppe/app/Sources/Louppe/Views/ExportView.swift' was modified during the build
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+error: fatalError

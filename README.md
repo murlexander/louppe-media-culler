@@ -168,9 +168,61 @@ and window state are separate from `Louppe.app`; automatic updates are off.
 `.louppe_session.json`, so experiment with copies of media. See
 [the review record](Docs/REVIEW_BUILD.md).
 
-See [BACKLOG.md](BACKLOG.md) for planned work; [AGENTS.md](AGENTS.md),
-[PERFORMANCE.md](Docs/PERFORMANCE.md), [UPDATES.md](Docs/UPDATES.md), and
-[APP_STORE.md](Docs/APP_STORE.md) for development and release guidance.
+## Development and release
+
+[Open backlog](BACKLOG.md) · [Build/test rules](AGENTS.md) · [Version history](CHANGELOG.md)
+
+### Contributing
+
+Fork this repository, work on a branch in your fork, and open a pull request
+against `main`. This app repository is self-contained: source, tests, fixtures,
+build tools, and engineering instructions are included. The parent workspace,
+website, marketing assets, and private signing credentials are not needed for
+normal development. Read [AGENTS.md](AGENTS.md) before changing code.
+
+Use full Xcode with the current macOS SDK. From the root of your clone:
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --disable-keychain
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-keychain --build-system native
+```
+
+Sparkle is a public, checksum-pinned dependency; the XMP parser sources are vendored.
+The guides below cover affected checks and local app packaging. Optional hardware,
+RAW-corpus, and release acceptance checks document their separate requirements.
+
+| Guide | Use |
+| --- | --- |
+| [Development details](Docs/DEVELOPMENT_DETAILS.md) | Ownership, file safety, persistence, media, and native UI |
+| [Performance](Docs/PERFORMANCE.md) | Resource policies and subsystem limits |
+| [Speed tests](Docs/SPEED_TESTS.md) | Repeatable measurements and comparisons |
+| [Review builds](Docs/REVIEW_BUILD.md) | Isolated local builds and launch checks |
+| [Automatic updates](Docs/UPDATES.md) | Direct-download feed and signing |
+| [App Store](Docs/APP_STORE.md) | Sandboxed packaging and submission |
+| [Homebrew](Docs/HOMEBREW.md) | Cask maintenance |
+| [XMPCore integration](Docs/XMP_TOOLKIT_INTEGRATION.md) | Parser pins, boundaries, and tests |
+
+[1.11 release preparation](Docs/RELEASE_1.11_PREPARATION_2026-10-15.md) records
+current candidates, verification, owner acceptance, and the publication handoff.
+
+### Utilities
+
+`build_app.sh` builds/packages the app. `Scripts/` contains release verification,
+review packaging, signing/notarization, Store packaging, update-feed preparation,
+Homebrew maintenance, and credential/localization checks. Shared resource/service
+helpers are used by packaging.
+
+`Tests/run_performance_checks.sh`, `run_scrollbar_checks.sh`, `run_video_checks.sh`,
+and `run_resource_bundle_checks.sh` cover native/filesystem contracts.
+`Tests/run_file_volume_remount_check.py` uses disposable volume images.
+Speed runners and comparisons are described in the speed-test guide above.
+
+### Historical records
+
+[Docs/Archive](Docs/Archive/) holds dated implementation/release records, audit
+reports, and benchmark evidence together by date. Completed outcomes remain in
+those records and version history; the backlog contains open work and later ideas.
+Scratch paths, logs, and source digests describe the original runs.
 
 Free and open source under the [MIT License](LICENSE).
 Created by [Alex Markin](https://alex-markin.com). Contact: a@alex-markin.com

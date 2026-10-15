@@ -126,7 +126,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./build_app.sh --app-st
 Packaging requires the correct team’s Store certificates. App Store Connect
 requires an authorized account and complete listing/review fields.
 
-See [7 October readiness](APP_STORE_READINESS_2026-10-07.md) for fixes,
+See [7 October readiness](Archive/2026-10-07/APP_STORE_READINESS_2026-10-07.md) for fixes,
 validation, review notes, and remaining acceptance gates. Developer ID signing
 can test sandbox permissions locally; upload requires Apple Distribution and
 installer signatures.
