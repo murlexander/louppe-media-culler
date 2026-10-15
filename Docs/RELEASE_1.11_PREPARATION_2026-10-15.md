@@ -1,22 +1,48 @@
 # Louppe 1.11.0 (13) preparation — 15 October 2026
 
-## Current status after Alex’s submission
+## Current status: app and tips submitted together
 
-Apple confirms macOS 1.11.0 was submitted by Alex on 15 October at 1:30 PM
-and is Waiting for Review. Submission ID: `671f28cb-fec9-46ca-b069-ba982809a5c6`.
-The submission contains one item: the app version. All three tip products remain
-Prepare for Submission and were not included. The existing submission was left
-untouched; no withdrawal or additional submission was attempted.
+Apple confirms four items submitted on 15 October at 1:55 PM, all Waiting for
+Review: macOS 1.11.0 build 13 and Small, Medium, and Large Tip. Submission ID:
+`d986b1ac-8e26-44d6-b5bb-95c1ce7daecd`.
 
-The updated Developer Program License Agreement notice remains visible. The Free
-Apps agreement still shows Active (New Agreement Available), and Paid Apps shows
-Active. The earlier claim that agreement acceptance necessarily prevented this
-submission was too strong: Apple accepted it while the notice remained. The
-notice is relevant to the developer account, but no current publication hold or
-deadline was verified. Account Holder review remains outstanding. The earlier
-automatic-review rejection describes the agent’s attempted action, not proof
-that Apple itself blocked this submission. Earlier preparation details below
-describe the state before Alex submitted.
+Alex explicitly approved cancelling the earlier app-only submission and
+resubmitting the same build with all three tips, accepting a possible review
+queue reset. The earlier 1:30 PM submission
+(`671f28cb-fec9-46ca-b069-ba982809a5c6`) was cancelled. Apple’s final receipt lists
+all four items, each Waiting for Review; no draft items remain.
+
+All tips retain six localizations, optional/repeatable consumable behavior,
+Ireland EUR base prices (€3/€7/€18), and regional equivalents. The Store tip
+selector displays Apple product names and prices; its $3/$6/$17 display matches
+the U.S. storefront (Large Tip’s saved U.S. price was checked against €18 base).
+The app uses SwiftUI for selection and StoreKit `Product.purchase()` for Apple’s
+payment confirmation. No purchase was initiated or charged; checkout and
+settlement remain unverified.
+
+Each tip has a private App Review screenshot. Alex supplied the real Store tip
+window and explicitly authorized an ordinary pixel crop to 1440×900 after Apple
+rejected the original dimensions. The image is kept only in ignored local
+release artifacts and Apple’s private Review Information fields. Alex explicitly
+prohibited public publication: it is absent from GitHub, the website, and public
+App Store assets. Existing marketing screenshots/previews are unchanged.
+
+The ad-hoc Store copy initially failed to launch. A disposable copy signed with
+the existing Developer ID, retaining the three Store sandbox entitlements and
+StoreKit linkage, launched through Finder. Native controls read all tip buttons;
+capture still returned a blank thumbnail, so the authorized owner screenshot was
+used. The uploaded installer was untouched; its SHA-256 still matches the table
+below. The Codex browser connection briefly failed; reopening its panel restored
+access and the failed Medium screenshot upload was completed.
+
+Automatic approval review initially rejected cancelling the app submission for
+lack of explicit authorization. After Alex’s explicit approval, cancellation
+and combined resubmission succeeded. The earlier agreement-based agent rejection
+was not proof of an Apple server block. The account’s updated Developer Program
+agreement notice remains a follow-up; Paid Apps is Active and no agreement was
+accepted here. Apple accepted both submissions while that notice remained.
+
+Earlier preparation details below are historical and superseded by this status.
 
 Alex reports manual checking complete, accepts preparation for release, and
 requests keeping the existing screenshots. This is owner acceptance, without
