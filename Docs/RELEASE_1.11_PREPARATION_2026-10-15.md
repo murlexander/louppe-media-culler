@@ -15,11 +15,11 @@ was made for publication metadata.
 Alex authorized GitHub publication as soon as ready, without waiting for Store
 approval. Both channels continue: GitHub uses Sparkle/Revolut tips; Store uses
 Apple updates/StoreKit tips. All features remain free in both products.
-The signed Store installer is prepared. Alex authorized Store upload and
-submission. The English Store update notes were saved without Revolut or GitHub
-references. Upload/submission and product/account checks remain pending because
-desktop controls could not reliably operate Transporter. Existing screenshots
-remain unchanged.
+The signed Store installer was uploaded through Transporter. Apple shows
+1.11.0 (13) as Validated, and that build is selected and saved on the 1.11 draft.
+Alex authorized submission, which remains pending. All six Store update-note
+translations are saved without Revolut or GitHub references. Existing screenshots
+and previews remain unchanged.
 
 Local outputs: `dist/release-preparation/1.11.0-13-2026-10-15/`.
 The [14 October record](RELEASE_1.11_READINESS_2026-10-14.md) is historical;
@@ -93,18 +93,60 @@ The API integration initially failed installer authentication with an unsigned
 runner; signing that temporary runner with the matching existing Developer ID
 resolved it. These limits and exact results are retained in local validation logs.
 
-Store work remains: upload the verified installer and complete Apple-required
-listing, tip-product, agreement, compliance, and review fields before submission.
-Keep StoreKit tips and Apple-delivered updates in that build; GitHub retains
-Revolut tips and Sparkle updates.
+## App Store preparation status
 
-The later signed-in check found 1.11.0 in Prepare for Submission, with no build
-selected, and 1.10.0 Ready for Distribution. The prepared installer was loaded
-in Transporter; delivery was not verified. English update notes were saved.
-Transporter window capture/control failed repeatedly, including after restart;
-Alex was asked to bring it forward and deliver the top 1.11 package. Tip products,
-agreements, remaining localized notes, build selection, and review submission
-still require completion. Automatic release after approval remains selected.
+Signed-in App Store Connect confirms 1.11.0 remains Prepare for Submission;
+1.10.0 remains Ready for Distribution. Apple reports build 13 uploaded on
+15 October at 1:02 PM and Validated, with arm64, macOS 14, and the expected
+sandbox/bookmark entitlements. Build 13 is selected and survives draft reload.
+The encryption declaration is saved as none of the listed algorithms; source
+inspection found Apple CryptoKit SHA-256 hashes, not app-implemented encryption.
+
+- English, Arabic, Simplified Chinese, Hindi, Brazilian Portuguese, and Spanish
+  update notes are saved and checked by switching locales. None mentions Revolut
+  or GitHub. The format-7 compatibility warning appears in every translation.
+- `sample-media.zip` is attached and survives reload. Review notes explain the
+  disposable sample workflow and optional, repeatable StoreKit tips; no features
+  or content are unlocked. Existing review contacts and sandbox usage are retained.
+- Automatic release after approval and immediate availability to all users remain
+  selected. Existing 36 screenshots and six previews are retained.
+- Paid Apps, banking, tax forms, DSA, and DAC7 show Active. The Free Apps agreement
+  is Active with a new agreement available. No legal agreement was accepted.
+
+Three consumable tip products were created with all 175 territories and future
+territories enabled, Ireland (EUR) as base, and Apple-adjusted comparable prices
+elsewhere. Each has six localized names/descriptions and review notes explaining
+that tipping is optional and unlocks nothing. Tax category matches the parent app.
+
+| Tip | Product ID | Apple ID | Base price |
+| --- | --- | --- | ---: |
+| Small | `com.alexandermarkin.louppe.tip.small` | 6823267142 | €3.00 |
+| Medium | `com.alexandermarkin.louppe.tip.medium` | 6823268884 | €7.00 |
+| Large | `com.alexandermarkin.louppe.tip.large` | 6823269537 | €18.00 |
+
+Remaining blockers and work:
+
+1. Apple explicitly requires the Account Holder to review and accept the updated
+   Developer Program License Agreement at <https://developer.apple.com/account>
+   before updates can be submitted. Alex was asked to handle this legal action.
+2. App Review screenshots for all three tip products are still absent. These are
+   private review evidence, separate from the unchanged public Store screenshots.
+   The ad-hoc Store local-check app could not be launched through native controls;
+   a direct diagnostic launch exited 134. No replacement image was fabricated.
+3. After those prerequisites, add the app version and all three tips to the same
+   draft submission and Submit for Review. These are the first consumables, so
+   Apple requires submission with an app version. No review submission exists yet.
+
+Automatic approval review rejected adding Large Tip for review while the updated
+agreement remains unaccepted. That action was not retried through another route.
+Native Helium/Transporter controls failed repeatedly; the signed-in Codex browser
+resolved metadata access. Its actual file-input chooser successfully uploaded the
+review sample after the associated-button chooser attempt timed out. Native
+control of the Codex app itself was denied and was not bypassed.
+
+Keep StoreKit tips and Apple-delivered updates in the Store build; GitHub retains
+Revolut tips and Sparkle updates. Do not describe this as waiting for App Review
+until a successful submission is verified.
 
 1.11 saves session format 7; 1.10 cannot read those saved sessions. Include that
 compatibility note in public release notes.
