@@ -15,8 +15,11 @@ was made for publication metadata.
 Alex authorized GitHub publication as soon as ready, without waiting for Store
 approval. Both channels continue: GitHub uses Sparkle/Revolut tips; Store uses
 Apple updates/StoreKit tips. All features remain free in both products.
-The signed Store installer is prepared; Store upload/submission and account
-checks have not been performed. Existing screenshots remain unchanged.
+The signed Store installer is prepared. Alex authorized Store upload and
+submission. The English Store update notes were saved without Revolut or GitHub
+references. Upload/submission and product/account checks remain pending because
+desktop controls could not reliably operate Transporter. Existing screenshots
+remain unchanged.
 
 Local outputs: `dist/release-preparation/1.11.0-13-2026-10-15/`.
 The [14 October record](RELEASE_1.11_READINESS_2026-10-14.md) is historical;
@@ -95,8 +98,13 @@ listing, tip-product, agreement, compliance, and review fields before submission
 Keep StoreKit tips and Apple-delivered updates in that build; GitHub retains
 Revolut tips and Sparkle updates.
 
-App Store Connect redirected the preparation check to sign-in. Product/account
-configuration was not independently verified or changed in this run.
+The later signed-in check found 1.11.0 in Prepare for Submission, with no build
+selected, and 1.10.0 Ready for Distribution. The prepared installer was loaded
+in Transporter; delivery was not verified. English update notes were saved.
+Transporter window capture/control failed repeatedly, including after restart;
+Alex was asked to bring it forward and deliver the top 1.11 package. Tip products,
+agreements, remaining localized notes, build selection, and review submission
+still require completion. Automatic release after approval remains selected.
 
 1.11 saves session format 7; 1.10 cannot read those saved sessions. Include that
 compatibility note in public release notes.
