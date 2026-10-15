@@ -71,9 +71,24 @@ they use 1.10 captures. The dark icon remains outside this release.
 
 ## Publication handoff
 
-The GitHub release and signed feed are published. Public-download identity,
-Homebrew automation, and a real Sparkle update from 1.10 are checked after
-publication; exact results are retained in the local manifest and validation logs.
+The GitHub release and signed feed are published. CI passed for the released
+source (`51225b9`) and the [signed-feed commit](https://github.com/murlexander/louppe-media-culler/actions/runs/38767922085)
+(`b915215`). Post-publication checks pass:
+
+- The public latest-release ZIP matches the exact notarized archive checksum.
+- The public feed matches the locally verified signed feed byte-for-byte.
+- Homebrew automation passed and pinned 1.11.0 to that exact checksum.
+- All six live website homepages retain the correct latest-release download link.
+- An isolated public 1.10 app upgraded through Sparkle’s documented updater API,
+  downloading and installing the public 1.11 archive. All 111 file/symlink entries
+  and executable bits match the published app; signature and Gatekeeper pass.
+  The updated app launched and migrated a disposable session from format 6 to 7,
+  preserving the generated photo’s bytes. The installed user app was not replaced.
+
+Desktop capture failed twice, so the standard update-dialog UI was not checked.
+The API integration initially failed installer authentication with an unsigned
+runner; signing that temporary runner with the matching existing Developer ID
+resolved it. These limits and exact results are retained in local validation logs.
 
 Store work remains: upload the verified installer and complete Apple-required
 listing, tip-product, agreement, compliance, and review fields before submission.

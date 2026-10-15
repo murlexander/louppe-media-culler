@@ -39,7 +39,9 @@ linguistic, hardware, or energy measurements. The investigations below remain op
   for this release. Check Apple-required listing fields during submission.
 - [x] **GitHub publication.** Published the exact notarized 1.11 archive and
   matching signed feed as authorized on 15 October, without waiting for Store
-  approval. Post-publication download/update/Homebrew checks are retained locally.
+  approval. Public download/feed identity, Homebrew, six website download links,
+  and a real Sparkle installer upgrade from 1.10 pass. The update-dialog UI was
+  not checked because desktop capture was unavailable; API evidence is retained.
 - [ ] **Store publication.** Keep the Store channel shipping alongside GitHub,
   with Apple updates/StoreKit tips; direct downloads retain Sparkle/Revolut tips.
   Complete upload/submission and required product/listing/account checks separately.
