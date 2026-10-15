@@ -409,6 +409,9 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   Route them through `SessionStore.openFolder` for recovery, safe switching, and
   scoped access. Review builds omit the service to prevent duplicate commands
   and port collisions.
+- Welcome and Scanning hide the empty native window title so it reserves no
+  leading toolbar space; their principal Louppe title stays centered at compact
+  and expanded widths. Session restores native title visibility.
 - Welcome uses a short top inset and top alignment, without a large branding
   block. Help stays 24 points from bottom/trailing edges outside measured columns;
   overflow scrolling reserves its footer.

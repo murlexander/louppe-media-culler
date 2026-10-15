@@ -1,6 +1,8 @@
 # Version History
 
-## 1.11.0 (13) — 2026-10-14
+## 1.11.0 (13) — 2026-10-15
+
+- Kept the welcome and scanning title centered at compact window widths.
 
 - Audited English, Spanish, Simplified Chinese, Hindi, Brazilian Portuguese,
   and Arabic copy. Fixed malformed counters, photographic terms, translated

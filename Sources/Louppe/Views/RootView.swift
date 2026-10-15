@@ -445,6 +445,14 @@ struct WindowContentLayout: NSViewRepresentable {
                 }
             }
 
+            // An empty but visible native title still reserves leading toolbar
+            // space, pushing the principal title right in compact windows.
+            let titleVisibility: NSWindow.TitleVisibility =
+                windowLayout.usesFullSizeContent ? .hidden : .visible
+            if window.titleVisibility != titleVisibility {
+                window.titleVisibility = titleVisibility
+            }
+
             let current = window.contentRect(forFrameRect: window.frame).size
             let usable = window.contentLayoutRect.size
             let covered = CGSize(

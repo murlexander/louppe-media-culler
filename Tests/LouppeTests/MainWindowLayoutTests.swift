@@ -5,6 +5,50 @@ import XCTest
 
 @MainActor
 final class MainWindowLayoutTests: XCTestCase {
+    func testLaunchToolbarTitleCentersAtCompactAndExpandedWidths() async throws {
+        _ = NSApplication.shared
+        let store = SessionStore()
+        store.recentFolders = []
+        let drives = ConnectedDrivesStore { [] }
+        defer { drives.stop() }
+        let window = NSWindow(
+            contentRect: CGRect(x: 100, y: 100, width: 456, height: 520),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered, defer: false
+        )
+        window.isReleasedWhenClosed = false
+        let host = NSHostingView(rootView: AnyView(EmptyView()))
+        window.contentView = host
+        defer { window.close() }
+        for layout in [MainWindowLayout.welcome, .scanning] {
+            let content: AnyView = layout == .welcome
+                ? AnyView(WelcomeView(store: store, connectedDrives: drives))
+                : AnyView(ScanningView(store: store, found: 0))
+            host.rootView = AnyView(content.frame(
+                minWidth: layout.minimumContentSize.width,
+                minHeight: layout.minimumContentSize.height
+            ).background(WindowContentLayout(
+                layout: layout, minimumContentSize: layout.minimumContentSize
+            )))
+            window.orderFront(nil)
+            // Let SwiftUI mount the real toolbar and the window bridge.
+            try await Task.sleep(for: .milliseconds(100))
+            for width in [layout.minimumContentSize.width, 1100] {
+                window.setContentSize(CGSize(width: width, height: 520))
+                host.layoutSubtreeIfNeeded()
+                try await Task.sleep(for: .milliseconds(100))
+                let toolbar = try XCTUnwrap(window.toolbar)
+                let title = try XCTUnwrap(toolbar.items.first {
+                    toolbar.centeredItemIdentifiers.contains($0.itemIdentifier)
+                }?.view)
+                let titleFrame = title.convert(title.bounds, to: nil)
+                XCTAssertEqual(titleFrame.midX, window.frame.width / 2, accuracy: 1,
+                               "\(layout) title at width \(width)")
+                XCTAssertEqual(window.titleVisibility, .hidden)
+            }
+        }
+    }
+
     func testWelcomeMinimumIncludesIntrinsicContentAndWarnings() {
         XCTAssertEqual(
             MainWindowLayout.welcome.minimumContentSize(measuredWelcome: .zero, warningHeight: 0),
@@ -105,6 +149,7 @@ final class MainWindowLayoutTests: XCTestCase {
         controller.minimumContentSize = MainWindowLayout.session.minimumContentSize
         controller.apply()
         XCTAssertFalse(window.styleMask.contains(.fullSizeContentView))
+        XCTAssertEqual(window.titleVisibility, .visible)
         guard let visible = window.screen?.visibleFrame else {
             XCTFail("window needs a screen")
             return
