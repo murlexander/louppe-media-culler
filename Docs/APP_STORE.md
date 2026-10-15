@@ -6,6 +6,11 @@ Louppe builds two products:
 - `./build_app.sh --app-store`: sandboxed Store app with a privacy manifest,
   no Sparkle or update feed. Its ZIP is for local checks, not upload.
 
+Keep both distribution channels shipping each version. Publish the GitHub build
+when its notarized archive and signed update feed are ready, without waiting for
+Store approval. See [direct releases](UPDATES.md) for that handoff. Both builds
+remain free; their update and tipping routes stay separate as described below.
+
 Store updates come through Apple; the app cannot add code after review.
 The app requests read/write access only to selected folders. Recent folders
 use security-scoped bookmarks. Export destinations retain access while a

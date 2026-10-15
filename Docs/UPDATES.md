@@ -2,6 +2,13 @@
 
 This guide covers direct downloads. The [Store build](APP_STORE.md) has no Sparkle.
 
+Maintain both GitHub and App Store releases for each version. Alex’s policy,
+confirmed 15 October 2026, is to publish the GitHub build as soon as its signed,
+notarized archive and update feed are ready; Apple’s Store review can finish later.
+GitHub downloads use Sparkle updates and optional Revolut tips. Store builds use
+Apple-delivered updates and optional StoreKit consumable tips. All features stay
+free in both builds; tips never unlock features or create a subscription.
+
 Sparkle 2.10.0 checks daily, downloads in the background, and installs on quit.
 **Louppe → Check for Updates…** checks manually; **Settings…** controls
 automatic checks and downloads.

@@ -37,9 +37,13 @@ linguistic, hardware, or energy measurements. The investigations below remain op
 - [x] **Store media decision.** Keep the staged 36 screenshots and six previews
   for now, as Alex requested. They use 1.10 captures. No dark-icon change is planned
   for this release. Check Apple-required listing fields during submission.
-- [ ] **Publication.** On a separate request, publish the exact verified GitHub
-  archive and matching signed feed, update Homebrew/website release details, and
-  upload/submit the Store package with its required product/listing metadata.
+- [ ] **GitHub publication.** Alex authorized publication as soon as ready on
+  15 October. After notarization, publish the exact verified archive and matching
+  signed feed, then verify the Homebrew update and website download. Do not wait
+  for App Store approval.
+- [ ] **Store publication.** Keep the Store channel shipping alongside GitHub,
+  with Apple updates/StoreKit tips; direct downloads retain Sparkle/Revolut tips.
+  Complete upload/submission and required product/listing/account checks separately.
 
 1.11 saves session format 7; 1.10 cannot read it. Preserve saved-session copies
 before testing a downgrade. The public feed stays on 1.10 until publication.

@@ -12,8 +12,12 @@ the exact direct ZIP to Apple. Automatic approval review rejected that upload
 under general release-preparation authorization; the certificates and
 `louppe-notary` profile are accessible. VERSION remains 1.11.0 (13).
 
-The public direct release/feed remains 1.10.0. Preparation and commit/push are
-authorized; GitHub publication and App Store upload/submission are separate.
+The public direct release/feed remains 1.10.0. On 15 October Alex authorized
+GitHub publication as soon as ready, without waiting for App Store approval.
+Both distribution channels continue: GitHub uses Sparkle/Revolut tips; Store
+uses Apple updates/StoreKit tips. All features remain free in both products.
+The notarization upload still requires the explicit approval requested below;
+Store account/upload/submission checks remain separate.
 
 Local outputs: `dist/release-preparation/1.11.0-13-2026-10-15/`.
 The [14 October record](RELEASE_1.11_READINESS_2026-10-14.md) is historical;
@@ -66,7 +70,7 @@ they use 1.10 captures. The dark icon remains outside this release.
 
 ## Publication handoff
 
-After a separate publication request:
+GitHub publication is authorized once the notarized archive is ready:
 
 1. Publish `v1.11.0` with the exact verified direct ZIP and prepared public notes.
 2. Publish its matching signed `appcast.xml`; never recompress the ZIP afterward.
