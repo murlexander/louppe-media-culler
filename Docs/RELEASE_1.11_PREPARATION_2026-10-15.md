@@ -1,5 +1,23 @@
 # Louppe 1.11.0 (13) preparation — 15 October 2026
 
+## Current status after Alex’s submission
+
+Apple confirms macOS 1.11.0 was submitted by Alex on 15 October at 1:30 PM
+and is Waiting for Review. Submission ID: `671f28cb-fec9-46ca-b069-ba982809a5c6`.
+The submission contains one item: the app version. All three tip products remain
+Prepare for Submission and were not included. The existing submission was left
+untouched; no withdrawal or additional submission was attempted.
+
+The updated Developer Program License Agreement notice remains visible. The Free
+Apps agreement still shows Active (New Agreement Available), and Paid Apps shows
+Active. The earlier claim that agreement acceptance necessarily prevented this
+submission was too strong: Apple accepted it while the notice remained. The
+notice is relevant to the developer account, but no current publication hold or
+deadline was verified. Account Holder review remains outstanding. The earlier
+automatic-review rejection describes the agent’s attempted action, not proof
+that Apple itself blocked this submission. Earlier preparation details below
+describe the state before Alex submitted.
+
 Alex reports manual checking complete, accepts preparation for release, and
 requests keeping the existing screenshots. This is owner acceptance, without
 independently captured per-case StoreKit, native-language, hardware, or energy
@@ -17,7 +35,7 @@ approval. Both channels continue: GitHub uses Sparkle/Revolut tips; Store uses
 Apple updates/StoreKit tips. All features remain free in both products.
 The signed Store installer was uploaded through Transporter. Apple shows
 1.11.0 (13) as Validated, and that build is selected and saved on the 1.11 draft.
-Alex authorized submission, which remains pending. All six Store update-note
+Alex subsequently submitted the app; see the current status above. All six Store update-note
 translations are saved without Revolut or GitHub references. Existing screenshots
 and previews remain unchanged.
 
@@ -93,7 +111,7 @@ The API integration initially failed installer authentication with an unsigned
 runner; signing that temporary runner with the matching existing Developer ID
 resolved it. These limits and exact results are retained in local validation logs.
 
-## App Store preparation status
+## App Store preparation status before manual submission
 
 Signed-in App Store Connect confirms 1.11.0 remains Prepare for Submission;
 1.10.0 remains Ready for Distribution. Apple reports build 13 uploaded on
@@ -124,7 +142,7 @@ that tipping is optional and unlocks nothing. Tax category matches the parent ap
 | Medium | `com.alexandermarkin.louppe.tip.medium` | 6823268884 | €7.00 |
 | Large | `com.alexandermarkin.louppe.tip.large` | 6823269537 | €18.00 |
 
-Remaining blockers and work:
+Outstanding work identified before Alex’s manual submission:
 
 1. Apple explicitly requires the Account Holder to review and accept the updated
    Developer Program License Agreement at <https://developer.apple.com/account>
