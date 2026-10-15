@@ -2,7 +2,8 @@
 
 Reviewed on 15 October 2026. Alex reports manual checking complete and accepts
 1.11.0 (13) for release preparation, keeping the existing screenshots.
-1.10.0 (12) remains the public direct release. See the
+[1.11.0 (13)](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.11.0)
+is now the public GitHub release. See the
 [current preparation record](Docs/RELEASE_1.11_PREPARATION_2026-10-15.md).
 
 [Release acceptance](#release-acceptance) ·
@@ -25,10 +26,9 @@ linguistic, hardware, or energy measurements. The investigations below remain op
 - [x] **Local packages.** Rebuilt Developer ID and signed Store candidates from
   current source, verified archives/installer, and retained exact checksums,
   fresh validation, and public notes. See the current preparation record.
-- [ ] **Notarization and feed.** Explicit approval to upload the exact direct ZIP
-  to Apple remains pending after automatic approval review rejected the upload.
-  Certificates and `louppe-notary` are accessible. Notarize/staple, recreate the
-  ZIP, refresh checksums, and then prepare/verify the final signed update feed.
+- [x] **Notarization and feed.** Apple accepted the explicitly approved candidate;
+  the stapled ZIP passed Gatekeeper and complete archive verification. The signed
+  1.11 feed matches the exact published archive. Checksums/results are retained.
 - [x] **Manual review.** Alex reports all looks good for release after checking.
   This closes the release hold for Store workflows/tips, accessibility (AUD-23),
   display/provider layouts (AUD-24), burst behavior (AUD-22), languages/older-system
@@ -37,16 +37,15 @@ linguistic, hardware, or energy measurements. The investigations below remain op
 - [x] **Store media decision.** Keep the staged 36 screenshots and six previews
   for now, as Alex requested. They use 1.10 captures. No dark-icon change is planned
   for this release. Check Apple-required listing fields during submission.
-- [ ] **GitHub publication.** Alex authorized publication as soon as ready on
-  15 October. After notarization, publish the exact verified archive and matching
-  signed feed, then verify the Homebrew update and website download. Do not wait
-  for App Store approval.
+- [x] **GitHub publication.** Published the exact notarized 1.11 archive and
+  matching signed feed as authorized on 15 October, without waiting for Store
+  approval. Post-publication download/update/Homebrew checks are retained locally.
 - [ ] **Store publication.** Keep the Store channel shipping alongside GitHub,
   with Apple updates/StoreKit tips; direct downloads retain Sparkle/Revolut tips.
   Complete upload/submission and required product/listing/account checks separately.
 
 1.11 saves session format 7; 1.10 cannot read it. Preserve saved-session copies
-before testing a downgrade. The public feed stays on 1.10 until publication.
+before testing a downgrade. GitHub releases continue alongside the Store channel.
 
 ## Correctness and compatibility
 

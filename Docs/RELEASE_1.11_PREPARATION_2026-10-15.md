@@ -5,19 +5,18 @@ requests keeping the existing screenshots. This is owner acceptance, without
 independently captured per-case StoreKit, native-language, hardware, or energy
 measurements. Longer-term investigations stay in [BACKLOG.md](../BACKLOG.md).
 
-Local preparation is complete: rebuilt Developer ID and signed Store candidates,
-fresh validation, exact checksums, and public notes are retained locally.
-Notarization/stapling and the final signed feed await explicit approval to upload
-the exact direct ZIP to Apple. Automatic approval review rejected that upload
-under general release-preparation authorization; the certificates and
-`louppe-notary` profile are accessible. VERSION remains 1.11.0 (13).
+GitHub [1.11.0 (13)](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.11.0)
+is published with the signed, notarized archive. Apple accepted submission
+`aee5a86a-5433-4d97-8133-38afdcb76417`; stapling, Gatekeeper, complete
+loose/archive Contents, and signed feed/archive verification passed.
+The matching signed feed is published with this handoff. No new version bump
+was made for publication metadata.
 
-The public direct release/feed remains 1.10.0. On 15 October Alex authorized
-GitHub publication as soon as ready, without waiting for App Store approval.
-Both distribution channels continue: GitHub uses Sparkle/Revolut tips; Store
-uses Apple updates/StoreKit tips. All features remain free in both products.
-The notarization upload still requires the explicit approval requested below;
-Store account/upload/submission checks remain separate.
+Alex authorized GitHub publication as soon as ready, without waiting for Store
+approval. Both channels continue: GitHub uses Sparkle/Revolut tips; Store uses
+Apple updates/StoreKit tips. All features remain free in both products.
+The signed Store installer is prepared; Store upload/submission and account
+checks have not been performed. Existing screenshots remain unchanged.
 
 Local outputs: `dist/release-preparation/1.11.0-13-2026-10-15/`.
 The [14 October record](RELEASE_1.11_READINESS_2026-10-14.md) is historical;
@@ -37,8 +36,9 @@ The local manifest records the final committed/pushed revision and CI result.
 - Redacted credential scans pass. The concurrent privacy review found no
   credentials; personal paths/names were redacted and a personal screenshot
   retained outside Git. Historical public commits were not rewritten.
-- The existing public feed signature verifies using the updater Keychain key;
-  the new feed remains deferred until the final notarized archive exists.
+- The final 1.11 feed and archive signatures verify using the updater Keychain
+  key. Publishing preflight verifies the version/build, enclosure URL/length,
+  notarization, Gatekeeper, and complete loose/archive Contents.
 - Both build scripts verified the complete loose/archive Contents independently.
   The Store installer passed application/installer signatures, Apple distribution
   trust policy, sandbox/bookmark entitlements, and exact expanded-payload checks.
@@ -52,12 +52,13 @@ The local manifest records the final committed/pushed revision and CI result.
 
 | Artifact | Bytes | SHA-256 |
 | --- | ---: | --- |
-| Developer ID `direct/Louppe.zip` — awaiting notarization | 7,036,754 | `ac6355bf55bd0b9227628f748bb4c91684ab5af8a0779ffd757c26d49913171c` |
+| Notarized `direct/Louppe.zip` — published | 7,038,639 | `6b232a6be28245435068c160a71eba6d4539d371e44fceeed67a5f8f7a4af547` |
 | Signed Store `app-store/Louppe.pkg` | 5,937,966 | `2d9897c226a4fdf804b25af39adddab2dbab4a2fd96f271a48bf1439cf9697e9` |
 
 The Store local-check ZIP is ad-hoc and is not an upload artifact. The final
-signed feed must be generated only after notarization recreates the direct ZIP;
-that step changes its checksum. Public `appcast.xml` remains unchanged on 1.10.
+signed feed was generated after notarization recreated the direct ZIP; it matches
+the published archive exactly. The submitted pre-stapling ZIP is retained only
+as local provenance; do not publish or substitute it for the final archive.
 The preparation directory contains `MANIFEST.json`, `SHA256SUMS`, draft GitHub
 notes, Store update copy, validation logs, and `RELEASE_HANDOFF.md`.
 
@@ -70,13 +71,14 @@ they use 1.10 captures. The dark icon remains outside this release.
 
 ## Publication handoff
 
-GitHub publication is authorized once the notarized archive is ready:
+The GitHub release and signed feed are published. Public-download identity,
+Homebrew automation, and a real Sparkle update from 1.10 are checked after
+publication; exact results are retained in the local manifest and validation logs.
 
-1. Publish `v1.11.0` with the exact verified direct ZIP and prepared public notes.
-2. Publish its matching signed `appcast.xml`; never recompress the ZIP afterward.
-3. Complete a real update from 1.10, then update Homebrew and website claims/links.
-4. Upload the verified Store installer and complete Apple-required listing,
-   tip-product, agreement, compliance, and review fields before submission.
+Store work remains: upload the verified installer and complete Apple-required
+listing, tip-product, agreement, compliance, and review fields before submission.
+Keep StoreKit tips and Apple-delivered updates in that build; GitHub retains
+Revolut tips and Sparkle updates.
 
 App Store Connect redirected the preparation check to sign-in. Product/account
 configuration was not independently verified or changed in this run.
