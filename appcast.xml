@@ -6,76 +6,52 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>Louppe</title>
         <item>
-            <title>1.11.0</title>
-            <pubDate>Thu, 15 Oct 2026 12:14:24 -0400</pubDate>
-            <link>https://github.com/murlexander/louppe-media-culler/releases/tag/v1.11.0</link>
-            <sparkle:version>13</sparkle:version>
-            <sparkle:shortVersionString>1.11.0</sparkle:shortVersionString>
+            <title>1.12.0</title>
+            <pubDate>Wed, 21 Oct 2026 00:26:43 +0200</pubDate>
+            <link>https://github.com/murlexander/louppe-media-culler/releases/tag/v1.12.0</link>
+            <sparkle:version>14</sparkle:version>
+            <sparkle:shortVersionString>1.12.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description sparkle:format="markdown"><![CDATA[
-- Kept the welcome and scanning title centered at compact window widths.
+- Prevent sideways movement in Browser and Grid, including short folders and layout changes.
 
-- Audited English, Spanish, Simplified Chinese, Hindi, Brazilian Portuguese,
-  and Arabic copy. Fixed malformed counters, photographic terms, translated
-  product names, English fallbacks, accessibility labels, and localized export
-  controls. Finder service labels now use the same catalogs. Damaged templates
-  fall back safely before inserting filenames; Arabic numeric ranges retain
-  their reading order.
+- Open a media folder by dropping it onto Louppe's Dock icon or directly into
+  the review window. Folder changes save existing decisions first and preserve
+  the chosen window size.
+- Customize single-key review shortcuts in Settings, using keyboard characters
+  or physical key positions for Dvorak and other layouts. Assign several keys
+  per action, narrow each key by view or media, and reuse keys only where their
+  contexts do not overlap. A visual keyboard helps find assigned actions, and
+  the searchable editor supports adding, removing and resetting keys. New setups
+  default to physical positions; saved choices are retained. Menu hints align
+  in the native shortcut column and update with changed bindings. Command and
+  Shift keyboard layers reveal modified shortcuts; Export, Command Palette and
+  Rescan support custom Command aliases. Related keys appear together in the
+  editor. Menus, the Command Palette and Help show current keys; standard Mac
+  commands and modified navigation retain their familiar behavior.
+- Show Fuji film simulation in Info and filter by simulation, including
+  monochrome and ACROS variants.
+- Keep RAW display and decoder preferences in Settings, with a simpler Gallery
+  zoom bar for Fit and magnification.
+- Show a small loading indicator beside photo zoom while the full preview is
+  still replacing a thumbnail. Cached previews stay ready without a loading
+  flash; navigation cannot publish the previous photo's loading state.
+- Simplify Rename Files with draggable filename parts and dates matching the
+  Mac’s preferred format. Keep keyboard/VoiceOver reordering and the exact
+  preview, conflict checks, and confirmation. Help explains how to rename keepers.
+- Documented JPEG XL support and added real JPEG XL, AVIF, and WebP regression
+  fixtures for scanning, thumbnails, Gallery previews, and actual-size tiles.
 
-- Replaced the bottom status strip with a floating Liquid Glass photo zoom
-  control. Save status stays in the toolbar; its popover holds filter details,
-  review completion, and tips. Older macOS versions retain a material fallback.
-  Matched zoom glass to the toolbar height, removed the autosave explainer,
-  and fixed sideways Browser/Grid scrolling caused by the scrollbar gutter,
-  including short grids that previously reserved the gutter twice.
-  Added checked Gallery/Grid choices and shortcut hints to the View menu,
-  with compact Zoom In/Out actions for Grid. Double-clicking anywhere on the
-  floating zoom control returns the photo to Fit. Menu shortcut hints also cover
-  Command Palette, Rescan, Export, Undo, Clear All Decisions, and photo sizes.
-
-- Combined Settings into one scrolling page with consistent sections, the
-  link to the getting-started guide, version and update controls, and optional support.
-  Clarified that Louppe is always free and open source.
-
-- Added optional tips: Apple in-app purchases in the App Store build and the author’s Revolut page for direct downloads.
-
-- Made Filter sections consistent, kept cue rules and a numeric burst interval
-  in Settings, and aligned links under Louppe info.
-- Made Filter disclosure headers clickable across their full padded rows.
-  Kept the getting-started guide in Help, with one Settings link and the tips toggle
-  in their own section, separate from Capture bursts.
-- Added Quality cues and Capture bursts to Filter, with consistent Browser/Grid
-  badges and compact values in Info. Near-white and near-black rules have
-  independent thresholds and reset controls; changing rules reuses measurements.
-- Made burst detection use scanned dates without hashing photos or decoding
-  previews. Preserved fractional capture times, time zones, and estimated dates.
-- Opened changed-file sessions without discarding earlier decisions. Identical
-  copies and returning originals recover verified decisions; older sessions offer
-  explicit restoration and retain recovery history. Clear All Decisions and Undo stay
-  cleared when background checks finish and after reopening.
-- Kept background checks bounded, paused them during file work and Quit, and
-  indexed recovery lookups so ordinary decisions avoid folder-wide scans.
-- Reduced pairing and review-sort work, kept Gallery loading independent of
-  thumbnail backlog, and retired cancelled image requests. Moved group membership
-  off the UI thread, removed background RAW dwell, cached image-check coverage,
-  and made saved sessions smaller while preserving recovery and file safety.
-- Reduced quality-check bookkeeping, paced remaining-folder checks with Low Power
-  and thermal backoff, and kept Pause in effect until Resume. Prioritized Info
-  histogram requests while background checks use utility work.
-- Made large-folder Quality Cue filters faster by retaining compact numeric
-  matches and updating only newly measured photos. Rule changes and replacement
-  files invalidate matches; ordering, selection and physical ratings are preserved.
-- Updated saved sessions to format 7 to preserve recovery history; version 1.10
-  cannot open sessions saved by 1.11.
-
+Thanks to Henri and Aymeric, whose reviews and feature requests helped shape
+the last two updates. Send feedback and ideas to [a@alex-markin.com](mailto:a@alex-markin.com).
 
 ]]></description>
-            <enclosure url="https://github.com/murlexander/louppe-media-culler/releases/download/v1.11.0/Louppe.zip" length="7038639" type="application/octet-stream" sparkle:edSignature="Zt0k1obMjF98OgAVHkHkbNVvzuceGeRVTXDgbtgmdvtp+F4bSPxsbz/jbIXomj00rENE2KV8MARtSZS/IPZUAQ=="/>
+            <enclosure url="https://github.com/murlexander/louppe-media-culler/releases/download/v1.12.0/Louppe.zip" length="7414266" type="application/octet-stream" sparkle:edSignature="JPb0BU3LXbG0s/1mQUeE6kSDAhUQpY4CgYIZFDA7ODrOP6GlI8az/NTpxyZaLDP6EXRbNod/FVz1Gp1yGOfCDw=="/>
         </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: tvstdGhHjkU9qRDwFP0o8iqYVMV2EB4oMtQsAR36F93s1DJYUFHIRPAGeT3siA941t75n8/34YtxYzRjVdjACQ==
-length: 4983
+edSignature: IzfBqKUNZaDU8bo90553p1ytveFR94ySS3s6h+K0PwNVBXKfOFokLrYu/ttFUO+qAbz8DbD5Km5Lh2OF4GTqBg==
+length: 3441
 -->
