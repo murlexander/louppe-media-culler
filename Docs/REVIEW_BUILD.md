@@ -1,7 +1,8 @@
 # Local review builds
 
 The current local installation is the single `/Applications/Louppe.app`, updated
-to 1.12.0 (14) on 20 October at Alex's request. It uses the official identifier
+to the signed public 1.12.0 (14) archive on 21 October at Alex's request. It uses
+the official identifier
 `com.alexandermarkin.louppe`. Future local installs replace that copy; do not
 install a second review app unless requested. The separate packaging workflow
 below remains available for an explicitly requested isolated review artifact.
@@ -30,6 +31,16 @@ source revision, build identity, fixtures, results, explicit skips, and native
 acceptance limits. Always launch with `-openFolder`.
 
 ## Latest recorded review
+
+21 October release: replaced the single official app with the notarized public
+archive (SHA-256 `2cd47cf21aaceeb0919b306a9b14093cb9f1ab1283dc932cc29d57eb3396c99e`).
+Complete Contents, strict signatures, Gatekeeper and stapling pass. All 41 hotkey
+and complete Browser/Grid/scroll bridge gates passed before installation. Native
+launch shows Welcome with retained recents; final media/physical scroll inspection
+was unavailable because native capture failed. The same source's sandbox media,
+rename/Undo and persistence acceptance passed earlier. See the
+[release record](RELEASE_1.12_PREPARATION_2026-10-21.md) for CI, public update,
+Store submission and explicit limits. Preferences/grants were not reset.
 
 20 October consolidation: installed the verified 1.12 official-identity archive
 at `/Applications/Louppe.app` and moved both previous installed copies outside

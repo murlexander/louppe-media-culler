@@ -1,10 +1,10 @@
 # Louppe app backlog
 
-Reviewed on 15 October 2026. Alex reports manual checking complete and accepts
-1.11.0 (13) for release preparation, keeping the existing screenshots.
-[1.11.0 (13)](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.11.0)
-is now the public GitHub release. See the
-[current preparation record](Docs/RELEASE_1.11_PREPARATION_2026-10-15.md).
+Reviewed on 21 October 2026. Independent 1.12 review and release gates pass.
+[1.12.0 (14)](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.12.0)
+is public on GitHub with its signed feed and Homebrew package. The App Store
+build is Waiting for Review. Existing screenshots/previews are retained.
+See the [current preparation record](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md).
 
 [Release acceptance](#release-acceptance) ·
 [Correctness and compatibility](#correctness-and-compatibility) ·
@@ -19,34 +19,28 @@ manual acceptance. Research, publicity plans, and CAS notes stay in Obsidian.
 
 ## Release acceptance
 
-Alex accepted the manual review on 15 October 2026 and deferred screenshot
-refresh. This records owner acceptance; it does not invent per-case transaction,
-linguistic, hardware, or energy measurements. The investigations below remain open.
+Alex authorized release after independent review and verification, then explicitly
+confirmed GitHub publication and Apple submission on 21 October. These checks do
+not invent hardware, linguistic, energy or transaction measurements; open work
+below remains open. Prior owner acceptance is recorded in the 1.11 release record.
 
-- [x] **Local packages.** Rebuilt Developer ID and signed Store candidates from
-  current source, verified archives/installer, and retained exact checksums,
-  fresh validation, and public notes. See the current preparation record.
-- [x] **Notarization and feed.** Apple accepted the explicitly approved candidate;
-  the stapled ZIP passed Gatekeeper and complete archive verification. The signed
-  1.11 feed matches the exact published archive. Checksums/results are retained.
-- [x] **Manual review.** Alex reports all looks good for release after checking.
-  This closes the release hold for Store workflows/tips, accessibility (AUD-23),
-  display/provider layouts (AUD-24), burst behavior (AUD-22), languages/older-system
-  layouts, and representative responsiveness. Detailed measurements under
-  AUD-28/AUD-29 and broader compatibility work remain follow-ups.
-- [x] **Store media decision.** Keep the staged 36 screenshots and six previews
-  for now, as Alex requested. They use 1.10 captures. No dark-icon change is planned
-  for this release. Check Apple-required listing fields during submission.
-- [x] **GitHub publication.** Published the exact notarized 1.11 archive and
-  matching signed feed as authorized on 15 October, without waiting for Store
-  approval. Public download/feed identity, Homebrew, six website download links,
-  and a real Sparkle installer upgrade from 1.10 pass. The update-dialog UI was
-  not checked because desktop capture was unavailable; API evidence is retained.
-- [ ] **Store publication.** Keep the Store channel shipping alongside GitHub,
-  with Apple updates/StoreKit tips; direct downloads retain Sparkle/Revolut tips.
-  Complete upload/submission and required product/listing/account checks separately.
+- [x] **Local packages.** Developer ID and Store installer signatures, independent
+  archive/payload checks, complete Contents comparisons and retained checksums pass.
+- [x] **Notarization and feed.** Apple accepted the direct build; the stapled ZIP
+  passes Gatekeeper. Public archive/feed bytes and both Sparkle signatures match.
+- [x] **Independent review and regression gates.** Focused findings are fixed;
+  final CI, real media, file safety, APFS remount and optimized speed checks pass.
+  Physical/native and hardware coverage limits are explicit in the release record.
+- [x] **Store media decision.** Keep the existing 36 screenshots and six previews,
+  as requested. Six translated update notes and required review metadata are saved.
+- [x] **GitHub publication.** Exact 1.12 archive, matching feed, Homebrew, six
+  website languages and a real public 1.11 → 1.12 Sparkle installer upgrade pass.
+- [x] **Store submission.** Build 14 is delivered and Waiting for Review, with
+  automatic release selected after approval. Apple updates/StoreKit tips remain
+  separate from direct-download Sparkle/Revolut tips.
+- [ ] **Apple review.** Await approval; the Store version is not yet public.
 
-1.11 saves session format 7; 1.10 cannot read it. Preserve saved-session copies
+Saved sessions use format 7; 1.10 cannot read it. Preserve saved-session copies
 before testing a downgrade. GitHub releases continue alongside the Store channel.
 
 ## Correctness and compatibility
