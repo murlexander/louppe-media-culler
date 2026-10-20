@@ -59,8 +59,39 @@ RAF with identity/hash checks. Current 100k camera-sort median is 756.056 ms
 measurements, not a whole-app speedup claim. Results:
 `/private/tmp/Louppe-1.12-release-speed-f70q7p8d`.
 
-All correctness/release-source gates are accepted with the stated nonblocking
-hardware/host limits. Signing and public-artifact checks follow when complete.
+The final CI run at `b86dc26` passes 856 cases: 818 passed, 38 explicit skips,
+zero failures. Run: https://github.com/murlexander/louppe-media-culler/actions/runs/39508338837.
+An initial runner failure exposed a fixture requesting a window taller than its
+screen. The fixture now fits the actual display, and a separate regression checks
+that Back correctly fits oversized sessions. This changes tests only. All 491
+frozen packaging inputs remain byte-identical. The post-fix local installation
+gates pass 68 cases: 67 passed, one two-display skip, zero failures.
+
+## Signed artifacts
+
+The final direct archive has 7,414,266 bytes; SHA-256:
+`2cd47cf21aaceeb0919b306a9b14093cb9f1ab1283dc932cc29d57eb3396c99e`.
+Apple notarization accepted request `734a3341-d193-4d47-a91c-799838b369b0`.
+Stapling, Gatekeeper, strict deep signatures, complete loose/archive Contents
+comparison, Sparkle signatures and publishing preflight pass.
+
+The Apple Distribution/installer-signed Store package has 6,317,190 bytes;
+SHA-256: `f47ced4d0ce66cbd7694f10b28530820b2814c04e0411c4184da9bd3ca1a9ef5`.
+Expanded installer payload and signing checks pass. Artifacts and validation
+logs are retained in ignored `dist/release-preparation/1.12.0-14-2026-10-21/`.
+
+The sandbox-entitled Store executable opened four disposable real Fuji copies
+through its picker, saved a Yes decision, switched folders safely, and reopened
+Recent with that decision intact. Accessible ordering changed the rename preview;
+confirmed renaming changed both JPEG/RAF names, and journaled Undo restored them.
+All four original content hashes remained unchanged after both operations.
+
+The App Store 1.12 draft retains the existing media, has all six translated
+What's New texts saved and read back after reload, and includes the existing
+sample-media.zip attachment. Build upload/submission and the final direct install
+and public update check remain pending. The tag `v1.12.0` points to `b86dc26`;
+GitHub release and its exact archive are published after Alex explicitly confirmed
+publication. Signed-feed delivery and real previous-version update checks follow.
 
 ## Acceptance limits
 
@@ -71,7 +102,7 @@ verified in the existing review record. This is an interaction coverage limit,
 not a proven mutation defect; exact confirmation and journal gates are unchanged.
 
 Physical Dock dragging, ISO/JIS/dead-key/IME input, full VoiceOver, older macOS,
-sandbox grants, real X-T4 simulation brackets and removable/network timing remain
+stale/revoked sandbox grants, real X-T4 simulation brackets and removable/network timing remain
 unverified in their dedicated environments. Folder URL validation includes one
 synchronous directory-metadata query; stalled-volume UI latency is not measured.
 No claim of a hard process CPU/memory cap or sustained energy acceptance is made.
