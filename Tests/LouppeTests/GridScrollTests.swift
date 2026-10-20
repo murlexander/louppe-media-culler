@@ -18,6 +18,7 @@ final class GridScrollTests: XCTestCase {
                 try await settle(host)
                 let scroll = try nativeScroll(in: host)
                 assertVerticalViewport(scroll)
+                try VerticalScrollRegression.assertWheelInputStaysVertical(scroll)
                 let expectedColumns = max(1, Int((scroll.contentView.bounds.width - 18 + 10) / (thumbnailSize + 10)))
                 XCTAssertEqual(store.gridColumnCount, expectedColumns,
                                "Arrow navigation must match the rendered columns")
@@ -68,46 +69,48 @@ final class GridScrollTests: XCTestCase {
     func testShortGridFitsWithInfoPanelAndLargeThumbnails() async throws {
         _ = NSApplication.shared
         for direction in [LayoutDirection.leftToRight, .rightToLeft] {
-            for count in [1, 5, 30] {
-                let store = readyStore()
-                store.items = Array(store.items.prefix(count))
-                store.rebuildDerivedDataForTesting()
-                store.showMetadataPanel = true
-                // Exercise the minimum-height guard at standard and Retina scales.
-                let scale: CGFloat = count == 1 ? 1 : 2
-                let host = NSHostingView(rootView: SessionView(store: store)
-                    .environment(\.layoutDirection, direction)
-                    .environment(\.displayScale, scale))
-                let window = mountedWindow(host)
-                defer { window.close() }
-                for height in [CGFloat(600), 800] {
-                    for width in [CGFloat(620), 1100] {
-                        window.setContentSize(NSSize(width: width, height: height))
-                        for thumbnailSize in [CGFloat(170), 400] {
-                            store.gridThumbSize = thumbnailSize
-                            try await settle(host)
-                            let grid = try XCTUnwrap(descendants(host).compactMap { $0 as? SessionRenderMarker.MarkerView }
-                                .first { $0.kind == .grid })
-                            // Identify Grid by its actual tile surfaces, excluding Info.
-                            let scroll = try XCTUnwrap(descendants(host).compactMap { $0 as? NSScrollView }
-                                .first { descendants($0).contains { $0 is GridImmediateClickSurface.ClickView } })
-                            XCTAssertEqual(scroll.frame.width, grid.frame.width, accuracy: 0.5,
-                                           "Short content must retain the full native pane width")
-                            assertVerticalViewport(scroll)
-                            if count == 1 {
-                                let document = try XCTUnwrap(scroll.documentView)
-                                let contentBottom = try XCTUnwrap(descendants(scroll)
-                                    .compactMap { $0 as? GridImmediateClickSurface.ClickView }
-                                    .filter { !$0.isHiddenOrHasHiddenAncestor && !$0.visibleRect.isEmpty }
-                                    .map { $0.convert($0.bounds, to: document).maxY }.max())
-                                // A large single tile can exceed a shorter screen's
-                                // actual viewport. Its caption plus 12pt bottom
-                                // padding still needs real vertical scroll range.
-                                let minimumHeight = scroll.contentView.bounds.height + 1 / scale
-                                let contentHeight = contentBottom + 12
-                                XCTAssertEqual(document.frame.height, max(minimumHeight, contentHeight),
-                                               accuracy: 1 / scale + 0.1,
-                                               "Only content or the one-pixel guard may add vertical range: \(direction), requested \(width)x\(height), thumbnail \(thumbnailSize)")
+            for scale in [CGFloat(1), 2] {
+                for count in [1, 5, 30] {
+                    let store = readyStore()
+                    store.items = Array(store.items.prefix(count))
+                    store.rebuildDerivedDataForTesting()
+                    store.showMetadataPanel = true
+                    // Exercise the minimum-height guard at standard and Retina scales.
+                    let host = NSHostingView(rootView: SessionView(store: store)
+                        .environment(\.layoutDirection, direction)
+                        .environment(\.displayScale, scale))
+                    let window = mountedWindow(host)
+                    defer { window.close() }
+                    for height in [CGFloat(600), 800] {
+                        for width in [CGFloat(620), 1100, 1512] {
+                            window.setContentSize(NSSize(width: width, height: height))
+                            for thumbnailSize in [CGFloat(170), 400] {
+                                store.gridThumbSize = thumbnailSize
+                                try await settle(host)
+                                let grid = try XCTUnwrap(descendants(host).compactMap { $0 as? SessionRenderMarker.MarkerView }
+                                    .first { $0.kind == .grid })
+                                // Identify Grid by its actual tile surfaces, excluding Info.
+                                let scroll = try XCTUnwrap(descendants(host).compactMap { $0 as? NSScrollView }
+                                    .first { descendants($0).contains { $0 is GridImmediateClickSurface.ClickView } })
+                                XCTAssertEqual(scroll.frame.width, grid.frame.width, accuracy: 0.5,
+                                               "Short content must retain the full native pane width")
+                                assertVerticalViewport(scroll)
+                                try VerticalScrollRegression.assertWheelInputStaysVertical(scroll)
+                                if count == 1 {
+                                    let document = try XCTUnwrap(scroll.documentView)
+                                    let contentBottom = try XCTUnwrap(descendants(scroll)
+                                        .compactMap { $0 as? GridImmediateClickSurface.ClickView }
+                                        .filter { !$0.isHiddenOrHasHiddenAncestor && !$0.visibleRect.isEmpty }
+                                        .map { $0.convert($0.bounds, to: document).maxY }.max())
+                                    // A large single tile can exceed a shorter screen's
+                                    // actual viewport. Its caption plus 12pt bottom
+                                    // padding still needs real vertical scroll range.
+                                    let minimumHeight = scroll.contentView.bounds.height + 1
+                                    let contentHeight = contentBottom + 12
+                                    XCTAssertEqual(document.frame.height, max(minimumHeight, contentHeight),
+                                                   accuracy: 1 / scale + 0.1,
+                                                   "Only content or the one-point guard may add vertical range: \(direction), requested \(width)x\(height), thumbnail \(thumbnailSize)")
+                                }
                             }
                         }
                     }
@@ -120,9 +123,16 @@ final class GridScrollTests: XCTestCase {
         guard let document = scroll.documentView else {
             return XCTFail("Grid needs its native document", file: file, line: line)
         }
-        XCTAssertLessThanOrEqual(document.frame.width, scroll.contentView.bounds.width + 0.5, file: file, line: line)
-        let requested = NSRect(origin: NSPoint(x: 100, y: 100), size: scroll.contentView.bounds.size)
-        XCTAssertEqual(scroll.contentView.constrainBoundsRect(requested).minX, 0, accuracy: 0.5, file: file, line: line)
+        let canvas = descendants(document).compactMap { $0 as? PersistentVerticalScroller.Configurator }.first
+        if let canvas {
+            let frame = canvas.convert(canvas.bounds, to: document)
+            XCTAssertEqual(frame.minX, 0, accuracy: 0.5, file: file, line: line)
+            XCTAssertLessThanOrEqual(frame.maxX, scroll.contentView.bounds.width + 0.5, file: file, line: line)
+        } else {
+            XCTAssertLessThanOrEqual(document.frame.width, scroll.contentView.bounds.width + 0.5, file: file, line: line)
+        }
+        let previousY = scroll.contentView.bounds.minY
+        scroll.contentView.setBoundsOrigin(NSPoint(x: 100, y: previousY))
         XCTAssertEqual(scroll.contentView.bounds.minX, 0, accuracy: 0.5, file: file, line: line)
         XCTAssertTrue(scroll.hasVerticalScroller, file: file, line: line)
         XCTAssertEqual(scroll.scrollerStyle, .legacy, file: file, line: line)

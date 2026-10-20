@@ -9,7 +9,7 @@ import SwiftUI
 struct GridView: View {
     @ObservedObject var store: SessionStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.displayScale) private var displayScale
+    @Environment(\.layoutDirection) private var layoutDirection
 
     /// The native scrollbar thumb is inset within its reserved gutter. A
     /// slightly smaller trailing content inset makes the visible photo-to-thumb
@@ -118,9 +118,9 @@ struct GridView: View {
                             .frame(width: max(geometry.size.width - PersistentVerticalScroller.gutterWidth, 1))
                             // macOS shrinks a non-scrolling SwiftUI viewport to
                             // this document's width, then subtracts the legacy
-                            // gutter again. One backing pixel keeps the vertical
-                            // viewport active without an extra row or spacer.
-                            .frame(minHeight: geometry.size.height + 1 / max(displayScale, 1), alignment: .top)
+                            // gutter again. Use a whole layout point so this
+                            // viewport guard is independent of display scale.
+                            .frame(minHeight: geometry.size.height + 1, alignment: .top)
                             .background(PersistentVerticalScroller())
                             // Make the gaps between tiles draggable too, so a rubber band
                             // can start anywhere in the grid.
@@ -131,6 +131,10 @@ struct GridView: View {
                             // Mutating the box (not reassigning @State) keeps this off the
                             // view-invalidation path — scrolling stays cheap.
                             .onPreferenceChange(TileFrameKey.self) { tileFrames.frames = $0 }
+                            // Match Browser: keep the native pane full-width while
+                            // its gutter-excluding canvas stays at physical X=0.
+                            .frame(maxWidth: .infinity,
+                                   alignment: layoutDirection == .rightToLeft ? .trailing : .leading)
                         }
                         .background(Color.appBackground)
                         .onAppear {

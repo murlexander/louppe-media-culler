@@ -7,6 +7,8 @@ struct RenameFilesView: View {
     @State private var scope: SourceOrganizationScope = .selected
     @State private var metadataConfiguration = FileRenamingConfiguration.initial
     @State private var customBaseName: String
+    @State private var partDragID = UUID().uuidString
+    @State private var targetedPart: FileRenamingPartKind?
     @State private var plan: SourceOrganizationPlan?
     @State private var planningError: String?
     @State private var isPlanning = false
@@ -72,10 +74,7 @@ struct RenameFilesView: View {
 
     private var singleSetup: some View {
         VStack(spacing: 0) {
-            header(
-                L10n.text("Rename File"),
-                subtitle: L10n.text("Change the name while keeping every file extension.")
-            )
+            header(L10n.text("Rename File"))
             Divider()
 
             ScrollView {
@@ -94,10 +93,6 @@ struct RenameFilesView: View {
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
-                        Text(singleFamilyExplanation)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Divider()
@@ -127,10 +122,7 @@ struct RenameFilesView: View {
 
     private var metadataSetup: some View {
         VStack(spacing: 0) {
-            header(
-                L10n.text("Rename Files"),
-                subtitle: L10n.text("Build sortable filenames from capture metadata.")
-            )
+            header(L10n.text("Rename Files"))
             Divider()
 
             ScrollView {
@@ -149,10 +141,6 @@ struct RenameFilesView: View {
 
                     Divider()
                     section(L10n.text("Filename parts")) {
-                        Text(L10n.text("Enabled parts form names in this order, separated by underscores. Extensions stay unchanged."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
                         VStack(spacing: 0) {
                             ForEach(metadataConfiguration.parts) { part in
                                 filenamePartRow(part)
@@ -168,10 +156,6 @@ struct RenameFilesView: View {
                                     lineWidth: 1
                                 )
                         }
-                        Text(L10n.text("Sequence follows capture time, then original path. Keep it when shots share a second."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Divider()
@@ -205,34 +189,61 @@ struct RenameFilesView: View {
         HStack(spacing: 10) {
             Toggle(part.kind.label, isOn: partBinding(part.kind))
                 .toggleStyle(.checkbox)
-            Spacer()
-            if part.isEnabled {
-                Button {
+                .accessibilityIdentifier("rename.part.\(part.kind.rawValue)")
+                .accessibilityAction(named: L10n.text("Move \(part.kind.label) earlier")) {
                     movePart(part.kind, offset: -1)
-                } label: {
-                    Image(systemName: "chevron.up")
                 }
-                .buttonStyle(.plain)
-                .disabled(enabledIndex(of: part.kind) == 0)
-                .accessibilityLabel(L10n.text("Move \(part.kind.label) earlier"))
-
-                Button {
+                .accessibilityAction(named: L10n.text("Move \(part.kind.label) later")) {
                     movePart(part.kind, offset: 1)
-                } label: {
-                    Image(systemName: "chevron.down")
                 }
-                .buttonStyle(.plain)
-                .disabled(
-                    enabledIndex(of: part.kind)
-                        == metadataConfiguration.enabledParts.count - 1
-                )
-                .accessibilityLabel(L10n.text("Move \(part.kind.label) later"))
-            }
+            Spacer()
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
         .frame(minHeight: 42)
+        .contentShape(Rectangle())
         .opacity(part.isEnabled ? 1 : 0.62)
+        .overlay {
+            if targetedPart == part.kind {
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(Color.louppeAccent, lineWidth: 2)
+                    .allowsHitTesting(false)
+            }
+        }
+        // Scope text transfers to this sheet; unrelated text and drags from
+        // another rename window cannot reorder its configuration.
+        .draggable("\(partDragID):\(part.kind.rawValue)")
+        .dropDestination(for: String.self) { payloads, _ in
+            guard payloads.count == 1,
+                  payloads[0].hasPrefix(partDragID + ":"),
+                  let source = FileRenamingPartKind(rawValue:
+                    String(payloads[0].dropFirst(partDragID.count + 1)))
+            else { return false }
+            var changed = false
+            withAnimation(reduceMotion ? nil : .default) {
+                changed = metadataConfiguration.movePart(source, to: part.kind)
+            }
+            return changed
+        } isTargeted: { targeted in
+            if targeted {
+                targetedPart = part.kind
+            } else if targetedPart == part.kind {
+                targetedPart = nil
+            }
+        }
+        .contextMenu {
+            Button(L10n.text("Move \(part.kind.label) earlier")) {
+                movePart(part.kind, offset: -1)
+            }
+            .disabled(metadataConfiguration.parts.first?.kind == part.kind)
+            Button(L10n.text("Move \(part.kind.label) later")) {
+                movePart(part.kind, offset: 1)
+            }
+            .disabled(metadataConfiguration.parts.last?.kind == part.kind)
+        }
     }
 
     @ViewBuilder
@@ -310,11 +321,6 @@ struct RenameFilesView: View {
                 Text(L10n.text("Lightroom .acr companions stay untouched."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            } else if !changed.isEmpty {
-                Text(L10n.text("Nothing is overwritten. RAW + JPEG partners and recognized XMP sidecars keep matching names."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         } else {
             Text(L10n.text("Choose at least one filename part."))
@@ -324,10 +330,7 @@ struct RenameFilesView: View {
 
     private func confirmationView(_ plan: SourceOrganizationPlan) -> some View {
         VStack(spacing: 0) {
-            header(
-                L10n.text("Rename \(plan.movingFileCount) files?"),
-                subtitle: L10n.text("Review the exact source-folder change before Louppe renames anything.")
-            )
+            header(L10n.text("Rename \(plan.movingFileCount) files?"))
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
@@ -425,13 +428,8 @@ struct RenameFilesView: View {
         .padding(30)
     }
 
-    private func header(_ title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.title2.weight(.semibold))
-            Text(subtitle)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+    private func header(_ title: String) -> some View {
+        Text(title).font(.title2.weight(.semibold))
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
         .padding(.top, 22)
@@ -452,9 +450,7 @@ struct RenameFilesView: View {
     private var planningIndicator: some View {
         if isPlanning {
             ProgressView().controlSize(.small)
-            Text(L10n.text("Checking filenames and sidecars…"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .accessibilityLabel(L10n.text("Checking filenames and sidecars…"))
         }
     }
 
@@ -506,27 +502,9 @@ struct RenameFilesView: View {
         )
     }
 
-    private func enabledIndex(of kind: FileRenamingPartKind) -> Int? {
-        metadataConfiguration.enabledParts.firstIndex(where: {
-            $0.kind == kind
-        })
-    }
-
     private func movePart(_ kind: FileRenamingPartKind, offset: Int) {
-        let enabled = metadataConfiguration.enabledParts
-        guard let enabledIndex = enabled.firstIndex(where: {
-            $0.kind == kind
-        }) else { return }
-        let destination = enabledIndex + offset
-        guard enabled.indices.contains(destination),
-              let from = metadataConfiguration.parts.firstIndex(where: {
-                $0.kind == kind
-              }),
-              let to = metadataConfiguration.parts.firstIndex(where: {
-                $0.kind == enabled[destination].kind
-              }) else { return }
         withAnimation(reduceMotion ? nil : .default) {
-            metadataConfiguration.parts.swapAt(from, to)
+            _ = metadataConfiguration.movePart(kind, offset: offset)
         }
     }
 

@@ -52,6 +52,7 @@ struct FilterView: View {
     @State private var fileTypesExpanded = false
     @State private var camerasExpanded = false
     @State private var lensesExpanded = false
+    @State private var filmSimulationsExpanded = false
 
     @State private var apertureFromText = ""
     @State private var apertureToText = ""
@@ -171,6 +172,11 @@ struct FilterView: View {
                     if store.availableCameras.count > 1 {
                         Divider()
                         camerasSection
+                    }
+
+                    if !store.availableFilmSimulations.isEmpty {
+                        Divider()
+                        filmSimulationsSection
                     }
 
                     if store.availableLenses.count > 1 {
@@ -787,6 +793,32 @@ struct FilterView: View {
                 ForEach(store.availableLenses, id: \.self) { lens in
                     Toggle(isOn: exclusionBinding(lens, \.excludedLenses)) {
                         labeledCount(lens == "Unknown" ? L10n.text("Unknown") : lens, store.lensCounts[lens, default: 0])
+                    }
+                }
+            }
+        }
+    }
+
+    private var filmSimulationsSection: some View {
+        FilterDisclosureSection(title: L10n.text("Film simulation"), isExpanded: $filmSimulationsExpanded) {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack {
+                    Button(L10n.text("All")) { store.filter.excludedFilmSimulations = [] }
+                    Button(L10n.text("None")) {
+                        store.filter.excludedFilmSimulations = Set(store.availableFilmSimulations)
+                    }
+                    Spacer()
+                }
+                .buttonStyle(.link)
+                ForEach(store.availableFilmSimulations, id: \.self) { simulation in
+                    Toggle(isOn: Binding(
+                        get: { !store.filter.excludedFilmSimulations.contains(simulation) },
+                        set: { included in
+                            if included { store.filter.excludedFilmSimulations.remove(simulation) }
+                            else { store.filter.excludedFilmSimulations.insert(simulation) }
+                        }
+                    )) {
+                        labeledCount(simulation.label, store.filmSimulationCounts[simulation, default: 0])
                     }
                 }
             }

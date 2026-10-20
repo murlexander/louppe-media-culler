@@ -330,6 +330,7 @@ struct PhotoFile: Identifiable, Sendable {
     let captureDay: Date?
     let cameraModel: String?
     let lensModel: String?
+    let filmSimulation: FujiFilmSimulation?
     let subfolder: String?
     let aperture: Double?
     let shutterSpeed: Double?
@@ -379,6 +380,7 @@ struct PhotoFile: Identifiable, Sendable {
         captureDateEvidence: CaptureDateEvidence? = nil,
         cameraModel: String?,
         lensModel: String?,
+        filmSimulation: FujiFilmSimulation? = nil,
         aperture: Double? = nil,
         shutterSpeed: Double? = nil,
         iso: Double? = nil,
@@ -427,6 +429,7 @@ struct PhotoFile: Identifiable, Sendable {
         self.captureDay = self.captureDate.map { Calendar.current.startOfDay(for: $0) }
         self.cameraModel = cameraModel
         self.lensModel = lensModel
+        self.filmSimulation = filmSimulation
         self.subfolder = subfolder
         self.aperture = aperture
         self.shutterSpeed = shutterSpeed
@@ -448,6 +451,7 @@ struct PhotoFile: Identifiable, Sendable {
         if let subfolder { parts.append(subfolder) }
         if let cameraModel { parts.append(cameraModel) }
         if let lensModel { parts.append(lensModel) }
+        if let filmSimulation { parts.append(filmSimulation.label) }
         if let captureDate { parts.append(AppDateFormat.day(captureDate)) }
         searchableText = PhotoItem.normalizeForSearch(parts.joined(separator: " "))
     }
@@ -712,6 +716,10 @@ struct PhotoItem: Identifiable, Sendable {
     var captureDay: Date? { primaryFile.captureDay }
     var cameraModel: String? { primaryFile.cameraModel }
     var lensModel: String? { primaryFile.lensModel }
+    /// Pairing keeps the primary file authoritative, just like camera/exposure.
+    /// Splitting reveals the JPEG's own separately indexed simulation.
+    var filmSimulation: FujiFilmSimulation? { primaryFile.filmSimulation }
+    var filmSimulationFacet: FujiFilmSimulation { filmSimulation ?? .notRecorded }
     var subfolder: String? { primaryFile.subfolder }
     var aperture: Double? { primaryFile.aperture }
     var shutterSpeed: Double? { primaryFile.shutterSpeed }
@@ -811,6 +819,7 @@ struct PhotoItem: Identifiable, Sendable {
         captureDate: Date?,
         cameraModel: String?,
         lensModel: String?,
+        filmSimulation: FujiFilmSimulation? = nil,
         aperture: Double? = nil,
         shutterSpeed: Double? = nil,
         iso: Double? = nil,
@@ -838,6 +847,7 @@ struct PhotoItem: Identifiable, Sendable {
             captureDate: captureDate,
             cameraModel: cameraModel,
             lensModel: lensModel,
+            filmSimulation: filmSimulation,
             aperture: aperture,
             shutterSpeed: shutterSpeed,
             iso: iso,
@@ -1009,6 +1019,7 @@ struct PhotoSelectionSummary: Equatable {
     let textCount: Int
     let cameras: [String]
     let lenses: [String]
+    let filmSimulations: [String]
     let captureDayRange: ClosedRange<Date>?
     let unknownDateCount: Int
     let totalBytes: Int64
@@ -1023,6 +1034,8 @@ struct PhotoSelectionSummary: Equatable {
         textCount = items.count { $0.mediaKind == .text }
         cameras = Self.distinctMetadataLabels(items.map(\.cameraModel))
         lenses = Self.distinctMetadataLabels(items.map(\.lensModel))
+        filmSimulations = Set(items.compactMap(\.filmSimulation).map(\.label))
+            .sorted(by: Self.localizedOrder)
 
         let captureDays = items.compactMap(\.captureDay)
         captureDayRange = captureDays.min().flatMap { earliest in
@@ -1970,6 +1983,7 @@ struct PhotoFilter: Equatable {
     /// Same exclusion pattern for camera and lens labels.
     var excludedCameras: Set<String> = []
     var excludedLenses: Set<String> = []
+    var excludedFilmSimulations: Set<FujiFilmSimulation> = []
     /// Video-specific facets only affect videos once the user narrows one of
     /// these values; photos and audio recordings stay untouched otherwise.
     var excludedVideoResolutions: Set<String> = []
@@ -1994,6 +2008,7 @@ struct PhotoFilter: Equatable {
             || !excludedTypes.isEmpty
             || !excludedCameras.isEmpty
             || !excludedLenses.isEmpty
+            || !excludedFilmSimulations.isEmpty
             || !excludedVideoResolutions.isEmpty
             || !excludedVideoCodecs.isEmpty
             || !excludedSubfolders.isEmpty
@@ -2011,6 +2026,7 @@ struct PreparedPhotoFilter {
     let excludedTypes: Set<String>
     let excludedCameras: Set<String>
     let excludedLenses: Set<String>
+    let excludedFilmSimulations: Set<FujiFilmSimulation>
     let excludedVideoResolutions: Set<String>
     let excludedVideoCodecs: Set<String>
     let excludedSubfolders: Set<String>
@@ -2033,6 +2049,7 @@ struct PreparedPhotoFilter {
         excludedTypes = filter.excludedTypes
         excludedCameras = filter.excludedCameras
         excludedLenses = filter.excludedLenses
+        excludedFilmSimulations = filter.excludedFilmSimulations
         excludedVideoResolutions = filter.excludedVideoResolutions
         excludedVideoCodecs = filter.excludedVideoCodecs
         excludedSubfolders = filter.excludedSubfolders
@@ -2083,6 +2100,7 @@ struct PreparedPhotoFilter {
         if excludedTypes.contains(item.fileTypeLabel) { return false }
         if excludedCameras.contains(item.cameraLabel) { return false }
         if excludedLenses.contains(item.lensLabel) { return false }
+        if excludedFilmSimulations.contains(item.filmSimulationFacet) { return false }
         if !excludedVideoResolutions.isEmpty {
             guard item.isVideo else { return false }
             if excludedVideoResolutions.contains(

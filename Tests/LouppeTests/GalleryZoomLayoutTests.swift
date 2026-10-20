@@ -5,6 +5,33 @@ import XCTest
 
 @MainActor
 final class GalleryZoomLayoutTests: XCTestCase {
+    func testCompactReadoutKeepsPillSizeStableWhileDetailLoads() throws {
+        _ = NSApplication.shared
+        let store = readyStore()
+        let revision = try XCTUnwrap(store.currentItem?.contentRevision)
+        store.zoomToFit()
+        store.reportFittedPhotoZoomScale(0.23, revision: revision, mode: .fit)
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            for scheme in [ColorScheme.light, .dark] {
+                let host = NSHostingView(rootView: PhotoZoomControl(store: store).fixedSize()
+                    .environment(\.layoutDirection, direction)
+                    .preferredColorScheme(scheme))
+                let window = mountedWindow(host, width: 240, height: 60)
+                defer { window.close() }
+                settle(host)
+                let idle = host.fittingSize
+                XCTAssertLessThanOrEqual(idle.width, 240, "The percentage must not reserve a separate trailing indicator column")
+                for representation in [PhotoRepresentation.loadingPreview, .preview, .loadingRAW, .raw, .unavailable] {
+                    store.reportPhotoRepresentation(representation, revision: revision)
+                    settle(host)
+                    XCTAssertEqual(host.fittingSize.width, idle.width, accuracy: 0.5,
+                                   "Loading must not resize the pill or shift its native controls")
+                    XCTAssertEqual(host.fittingSize.height, 36, accuracy: 0.5)
+                }
+            }
+        }
+    }
+
     func testSessionMediaUsesFullHeightWithBothPanelsHidden() async throws {
         _ = NSApplication.shared
         let store = readyStore()

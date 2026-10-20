@@ -8,8 +8,6 @@ struct PhotoZoomControl: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var lastReading: ZoomReading?
-    @AppStorage(RawDisplayMode.preferenceKey) private var rawDisplayMode = RawDisplayMode.fast
-    @AppStorage(AppleRawDecoder.preferenceKey) private var rawDecoder = AppleRawDecoder.appleDefault
 
     private let minimum = 0.30
     private let maximum = Double(ActualSizeGeometry.maximumZoom)
@@ -31,29 +29,6 @@ struct PhotoZoomControl: View {
 
     private var controls: some View {
         HStack(spacing: 10) {
-            if store.currentItem?.isRaw == true {
-                Menu {
-                    Picker(L10n.text("RAW display"), selection: $rawDisplayMode) {
-                        ForEach(RawDisplayMode.allCases, id: \.self) { mode in
-                            Text(mode.title).tag(mode)
-                        }
-                    }
-                    Picker(L10n.text("Apple RAW decoder"), selection: $rawDecoder) {
-                        ForEach(AppleRawDecoder.allCases, id: \.self) { decoder in
-                            Text(decoder.title).tag(decoder)
-                                .disabled(decoder == .raw9 && !AppleRawDecoder.supportsRAW9)
-                        }
-                    }
-                } label: {
-                    Text(store.currentPhotoRepresentation?.label ?? "…")
-                        .font(.caption)
-                }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-                .help(L10n.text("RAW display and decoder. RAW 9 requires a supported macOS 27 file and uses more time and memory."))
-                .accessibilityLabel(L10n.text("RAW display"))
-                .accessibilityValue("\(store.currentPhotoRepresentation?.label ?? L10n.text("Loading")), \(rawDecoder.title)")
-            }
             Button { store.zoomToFit() } label: {
                 Text(L10n.text("Fit"))
                     .frame(minWidth: 30, minHeight: 28)
@@ -71,15 +46,34 @@ struct PhotoZoomControl: View {
                 .accessibilityValue(currentValueLabel)
                 .help(L10n.text("Zoom from 30% to 400%. At 100%, one source pixel fills one display pixel."))
 
-            Text(currentValueLabel)
-                .environment(\.layoutDirection, .leftToRight)
-                .font(.caption.monospacedDigit())
-                .frame(minWidth: 38, alignment: .trailing)
-                .fixedSize()
-                .accessibilityHidden(true) // The slider already announces this value.
+            // Share the readout's space while fitted detail loads. No empty
+            // trailing slot, and no change to the pill or native input positions.
+            ZStack {
+                Text(currentValueLabel)
+                    .environment(\.layoutDirection, .leftToRight)
+                    .font(.caption.monospacedDigit())
+                    .opacity(isLoadingFittedDetail ? 0 : 1)
+                    .accessibilityHidden(true) // The slider announces the value.
+
+                if isLoadingFittedDetail {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .help(L10n.text("Loading photo preview"))
+                        .accessibilityLabel(L10n.text("Loading photo preview"))
+                        .accessibilityIdentifier("photoDetailLoading")
+                }
+            }
+            .frame(minWidth: 38)
+            .fixedSize()
         }
         .controlSize(.small)
         .tint(Color.louppeAccent)
+    }
+
+    private var isLoadingFittedDetail: Bool {
+        guard store.zoomMode != .actual else { return false }
+        return store.currentPhotoRepresentation == .loadingPreview
+            || store.currentPhotoRepresentation == .loadingRAW
     }
 
     private struct ZoomReading: Equatable {

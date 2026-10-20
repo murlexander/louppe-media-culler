@@ -157,6 +157,7 @@ final class MainWindowLayoutTests: XCTestCase {
         XCTAssertEqual(window.frame.width, visible.width, accuracy: 1)
         XCTAssertEqual(window.frame.height, visible.height, accuracy: 1)
 
+        let sessionFrame = window.frame
         controller.windowLayout = .welcome
         controller.minimumContentSize = CGSize(width: 961, height: 650)
         controller.apply()
@@ -164,8 +165,84 @@ final class MainWindowLayoutTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(window.contentLayoutRect.width, 961)
         let fittedHeight = fittingWelcomeHeight(650, in: window)
         XCTAssertGreaterThanOrEqual(window.contentLayoutRect.height, fittedHeight)
-        XCTAssertEqual(window.contentLayoutRect.width, 961, accuracy: 1)
-        XCTAssertEqual(window.contentLayoutRect.height, fittedHeight, accuracy: 1)
+        XCTAssertEqual(window.frame, sessionFrame, "Back keeps the review window's size and position")
+    }
+
+    func testReplacementAndBackPreserveManuallyResizedSessionFrame() {
+        let (window, controller) = makeWindow()
+        defer { window.close() }
+        controller.windowLayout = .session
+        controller.minimumContentSize = MainWindowLayout.session.minimumContentSize
+        controller.apply()
+        window.setContentSize(CGSize(width: 1000, height: 700))
+        // Keep the manually chosen frame inside the actual test display.
+        // A hard-coded y=150 put the toolbar-inclusive frame above smaller
+        // displays, correctly triggering the bridge's screen-safety clamp.
+        if let visible = window.screen?.visibleFrame {
+            window.setFrameOrigin(CGPoint(
+                x: visible.minX + max(0, min(20, visible.width - window.frame.width)),
+                y: visible.minY + max(0, min(20, visible.height - window.frame.height))
+            ))
+        }
+        let chosenFrame = window.frame
+        for layout in [MainWindowLayout.scanning, .session, .welcome, .scanning, .session] {
+            controller.windowLayout = layout
+            controller.minimumContentSize = layout.minimumContentSize
+            controller.apply()
+            XCTAssertEqual(window.frame, chosenFrame, "\(layout) must keep the chosen frame")
+        }
+    }
+
+    func testManyDrivesFitRetainedWindowWidthOnBack() async throws {
+        let (window, controller) = makeWindow()
+        defer { window.close() }
+        controller.windowLayout = .session
+        controller.minimumContentSize = MainWindowLayout.session.minimumContentSize
+        controller.apply()
+        window.setContentSize(CGSize(width: 1000, height: 700))
+        var usableSize: CGSize?
+        controller.onCurrentContentSizeChange = { usableSize = $0 }
+        controller.apply()
+        try await Task.sleep(for: .milliseconds(30))
+        let retainedWidth = try XCTUnwrap(usableSize).width
+        XCTAssertEqual(retainedWidth, window.contentLayoutRect.width, accuracy: 1)
+
+        let fixtures = (0..<13).map { index in
+            ConnectedDrive(
+                id: .init(volumeUUID: "retained-\(index)", mediaUUID: "retained-media-\(index)",
+                          bsdName: "fixture\(index)",
+                          mountURL: URL(fileURLWithPath: "/tmp/RetainedDrive-\(index)")),
+                name: "Review drive \(index)", availableBytes: 1_000_000,
+                totalBytes: 2_000_000, isRemovable: true
+            )
+        }
+        let drives = ConnectedDrivesStore { fixtures }
+        defer { drives.stop() }
+        let store = SessionStore()
+        store.recentFolders = (0..<5).map { URL(fileURLWithPath: "/tmp/RetainedRecent-\($0)") }
+        var measured = CGSize.zero
+        let host = NSHostingView(rootView: WelcomeView(
+            store: store, availableScreenWidth: retainedWidth,
+            connectedDrives: drives
+        ).onPreferenceChange(WelcomeContentSizeKey.self) { measured = $0 })
+        host.frame = window.contentLayoutRect
+        window.contentView?.addSubview(host)
+        for _ in 0..<40 where drives.drives.count != fixtures.count {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(drives.drives.count, fixtures.count)
+        host.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertGreaterThan(measured.width, 0)
+        XCTAssertLessThanOrEqual(measured.width, retainedWidth,
+                                "Drive columns on Back must fit the chosen review width")
+        let frameBeforeBack = window.frame
+        controller.windowLayout = .welcome
+        controller.minimumContentSize = MainWindowLayout.welcome.minimumContentSize(
+            measuredWelcome: measured, warningHeight: 0
+        )
+        controller.apply()
+        XCTAssertEqual(window.frame.width, frameBeforeBack.width, accuracy: 1)
     }
 
     func testSessionKeepsManualResizeUntilDisplayChanges() throws {

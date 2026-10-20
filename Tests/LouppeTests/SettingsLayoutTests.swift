@@ -20,7 +20,7 @@ final class SettingsLayoutTests: XCTestCase {
         #endif
         let host = NSHostingView(rootView: settings.preferredColorScheme(.dark))
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 600),
+            contentRect: NSRect(x: 0, y: 0, width: 620, height: 600),
             styleMask: [.titled], backing: .buffered, defer: false
         )
         window.isReleasedWhenClosed = false
@@ -34,7 +34,7 @@ final class SettingsLayoutTests: XCTestCase {
         let scroll = try XCTUnwrap(scrollViews.first)
         let document = try XCTUnwrap(scroll.documentView)
         XCTAssertGreaterThan(document.bounds.height, scroll.contentView.bounds.height)
-        XCTAssertEqual(host.bounds.width, 520, accuracy: 1)
+        XCTAssertEqual(host.bounds.width, 620, accuracy: 1)
         XCTAssertEqual(host.bounds.height, 600, accuracy: 1)
         try snapshot(host, name: "top")
 

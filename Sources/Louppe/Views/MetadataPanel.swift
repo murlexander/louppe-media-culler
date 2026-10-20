@@ -577,6 +577,9 @@ struct MetadataPanel: View {
 
         selectionSummaryField(L10n.text("Cameras"), value: summary.cameras.joined(separator: ", "))
         selectionSummaryField(L10n.text("Lenses"), value: summary.lenses.joined(separator: ", "))
+        if !summary.filmSimulations.isEmpty {
+            selectionSummaryField(L10n.text("Film simulation"), value: summary.filmSimulations.joined(separator: ", "))
+        }
         selectionSummaryField(L10n.text("Captured"), value: captureDateText(for: summary))
         selectionSummaryField(
             L10n.text("Total size"),

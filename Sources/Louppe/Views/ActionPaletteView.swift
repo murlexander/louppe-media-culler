@@ -6,6 +6,23 @@ import SwiftUI
 /// crowding the review surface.
 struct ActionPaletteView: View {
     @ObservedObject var store: SessionStore
+    @AppStorage(ReviewShortcutPreferences.preferenceKey) private var shortcutSettings = ""
+    @AppStorage(CommandShortcutPreferences.preferenceKey) private var commandShortcutSettings = ""
+
+    private func shortcut(_ action: ReviewShortcutAction) -> String {
+        let context = ReviewShortcutContext(viewMode: store.viewMode, mediaKind: store.currentItem?.mediaKind,
+                                            isPlayable: store.currentItem?.isPlayableMedia == true,
+                                            canSeekVideo: store.canSeekCurrentVideo)
+        return ReviewShortcutPreferences.decode(shortcutSettings).hint(for: action, context: context)
+    }
+
+    private func commandShortcut(_ action: CommandShortcutAction) -> String {
+        CommandShortcutPreferences.decode(commandShortcutSettings).hint(for: action)
+    }
+
+    private func shortcut(_ action: ReviewShortcutAction, command: CommandShortcutAction) -> String {
+        [shortcut(action), commandShortcut(command)].filter { !$0.isEmpty }.joined(separator: " / ")
+    }
 
     @State private var query = ""
     @State private var selectedActionID: String?
@@ -124,7 +141,7 @@ struct ActionPaletteView: View {
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
-                if let shortcut = action.shortcut {
+                if let shortcut = action.shortcut, !shortcut.isEmpty {
                     Text(shortcut)
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
@@ -150,7 +167,10 @@ struct ActionPaletteView: View {
             }
         }
         .accessibilityLabel(action.title)
-        .accessibilityHint(action.isEnabled ? action.detail : unavailableReason(for: action))
+        .accessibilityHint([
+            action.isEnabled ? action.detail : unavailableReason(for: action),
+            action.shortcut ?? "",
+        ].filter { !$0.isEmpty }.joined(separator: "; "))
     }
 
     func unavailableReason(for action: ActionPaletteAction) -> String {
@@ -186,9 +206,12 @@ struct ActionPaletteView: View {
 
     private var footer: some View {
         HStack(spacing: 14) {
-            Text("⌘K")
-                .font(.caption.monospaced())
-            Text(L10n.text("to open"))
+            if !commandShortcut(.commandPalette).isEmpty {
+                Text(commandShortcut(.commandPalette))
+                    .environment(\.layoutDirection, .leftToRight)
+                    .font(.caption.monospaced())
+                Text(L10n.text("to open"))
+            }
             Spacer()
             Text("↑↓")
                 .environment(\.layoutDirection, .leftToRight)
@@ -219,7 +242,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Export…"),
                 detail: L10n.text("Copy, move, or write Metadata (XMP)"),
                 symbol: "square.and.arrow.up",
-                shortcut: "E / ⌘E",
+                shortcut: shortcut(.export, command: .export),
                 keywords: ["copy", "move", "xmp", "metadata", "sidecar", L10n.text("export media")],
                 isEnabled: store.canExport,
                 perform: { store.presentExport() }
@@ -270,7 +293,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Open Different Folder…"),
                 detail: L10n.text("Save, then choose another media folder"),
                 symbol: "folder",
-                shortcut: "⌘O",
+                shortcut: commandShortcut(.openFolder),
                 keywords: [L10n.text("change folder"), L10n.text("open folder"), L10n.text("choose folder")],
                 isEnabled: !store.isFileOperationRunning,
                 perform: { store.promptForSourceFolder() }
@@ -281,7 +304,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Rescan Folder"),
                 detail: L10n.text("Find new or changed media in this folder"),
                 symbol: "arrow.triangle.2.circlepath",
-                shortcut: "⌘R",
+                shortcut: commandShortcut(.rescan),
                 keywords: [L10n.text("refresh folder"), L10n.text("scan folder"), L10n.text("find new media")],
                 isEnabled: !store.isFileOperationRunning,
                 perform: { store.rescan() }
@@ -315,7 +338,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Search Media…"),
                 detail: L10n.text("Open Filter and focus Search"),
                 symbol: "magnifyingglass",
-                shortcut: "⌘F",
+                shortcut: commandShortcut(.filterSearch),
                 keywords: [L10n.text("find media"), L10n.text("filter search"), "filename", L10n.text("metadata search")],
                 isEnabled: !store.isFileOperationRunning,
                 perform: { store.presentFilterSearch() }
@@ -480,7 +503,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Mark Yes"),
                 detail: L10n.text("Apply Yes; advance if enabled in Review settings"),
                 symbol: "checkmark.circle",
-                shortcut: "F",
+                shortcut: shortcut(.yes),
                 keywords: [L10n.text("keep photo"), L10n.text("accept photo"), L10n.text("yes decision")],
                 isEnabled: store.canRate,
                 perform: { store.rate(.yes) }
@@ -491,7 +514,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Mark No"),
                 detail: L10n.text("Apply No; advance if enabled in Review settings"),
                 symbol: "xmark.circle",
-                shortcut: "D",
+                shortcut: shortcut(.no),
                 keywords: [L10n.text("reject photo"), L10n.text("no decision")],
                 isEnabled: store.canRate,
                 perform: { store.rate(.no) }
@@ -502,7 +525,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Clear Stars"),
                 detail: L10n.text("Remove the star rating from the current photo or selection"),
                 symbol: "star.slash",
-                shortcut: "0",
+                shortcut: shortcut(.clearStars),
                 keywords: [L10n.text("zero stars"), "unrated", L10n.text("remove star rating")],
                 isEnabled: store.canRate,
                 perform: { store.setStarRating(nil) }
@@ -529,12 +552,8 @@ struct ActionPaletteView: View {
                 title: L10n.text("Select Previous Item"),
                 detail: L10n.text("Choose the previous visible item, including when reviewing a video"),
                 symbol: "chevron.left",
-                shortcut: store.viewMode == .gallery
-                    ? (store.canSeekCurrentVideo ? "J / ↑"
-                        : (store.currentItem?.isPlayableMedia == true
-                            ? "J / ↑ / ←" : "J / ↑ / ← / ⌘←"))
-                    : (store.currentItem?.isPlayableMedia == true
-                        ? "J / ←" : "J / ← / ⌘←"),
+                shortcut: [shortcut(.previous), store.currentItem?.isPlayableMedia == true ? "" : commandShortcut(.slower)]
+                    .filter { !$0.isEmpty }.joined(separator: " / "),
                 keywords: ["previous", "back", "left", "navigate", L10n.text("video"), "clip"],
                 isEnabled: !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.goPrevious() }
@@ -545,12 +564,8 @@ struct ActionPaletteView: View {
                 title: L10n.text("Select Next Item"),
                 detail: L10n.text("Choose the next visible item, including when reviewing a video"),
                 symbol: "chevron.right",
-                shortcut: store.viewMode == .gallery
-                    ? (store.canSeekCurrentVideo ? "L / ↓"
-                        : (store.currentItem?.isPlayableMedia == true
-                            ? "L / ↓ / →" : "L / ↓ / → / ⌘→ / Space"))
-                    : (store.currentItem?.isPlayableMedia == true
-                        ? "L / →" : "L / → / ⌘→ / Space"),
+                shortcut: [shortcut(.next), store.currentItem?.isPlayableMedia == true ? "" : commandShortcut(.faster)]
+                    .filter { !$0.isEmpty }.joined(separator: " / "),
                 keywords: ["next", "forward", "right", "navigate", L10n.text("video"), "clip"],
                 isEnabled: !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.goNext() }
@@ -561,7 +576,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Select Grid Item Above"),
                 detail: L10n.text("Move to the item in the row above"),
                 symbol: "chevron.up",
-                shortcut: "↑",
+                shortcut: shortcut(.previousRow),
                 keywords: [L10n.text("grid up"), L10n.text("previous row"), L10n.text("navigate grid")],
                 isEnabled: store.viewMode == .grid
                     && !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
@@ -573,7 +588,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Select Grid Item Below"),
                 detail: L10n.text("Move to the item in the row below"),
                 symbol: "chevron.down",
-                shortcut: "↓",
+                shortcut: shortcut(.nextRow),
                 keywords: [L10n.text("grid down"), L10n.text("next row"), L10n.text("navigate grid")],
                 isEnabled: store.viewMode == .grid
                     && !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
@@ -585,7 +600,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Choose Slower Playback Speed"),
                 detail: L10n.text("Step down through the available video or audio playback speeds"),
                 symbol: "backward.end",
-                shortcut: "⌘←",
+                shortcut: commandShortcut(.slower),
                 keywords: [L10n.text("video"), L10n.text("audio"), "playback", "speed", "slower"],
                 isEnabled: store.canSetCurrentPlayableMediaPlaybackRate,
                 perform: {
@@ -600,7 +615,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Choose Faster Playback Speed"),
                 detail: L10n.text("Step up through the available video or audio playback speeds"),
                 symbol: "forward.end",
-                shortcut: "⌘→",
+                shortcut: commandShortcut(.faster),
                 keywords: [L10n.text("video"), L10n.text("audio"), "playback", "speed", "faster"],
                 isEnabled: store.canSetCurrentPlayableMediaPlaybackRate,
                 perform: {
@@ -615,7 +630,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Seek Video Backward 0.5 Seconds"),
                 detail: L10n.text("Inspect the current Gallery video half a second earlier"),
                 symbol: "gobackward",
-                shortcut: "←",
+                shortcut: shortcut(.seekBackward),
                 keywords: [L10n.text("video"), "clip", "scrub", "rewind", "back", "left"],
                 isEnabled: store.canSeekCurrentVideo,
                 perform: { store.seekCurrentVideo(by: -0.5) }
@@ -626,7 +641,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Seek Video Forward 0.5 Seconds"),
                 detail: L10n.text("Inspect the current Gallery video half a second later"),
                 symbol: "goforward",
-                shortcut: "→",
+                shortcut: shortcut(.seekForward),
                 keywords: [L10n.text("video"), "clip", "scrub", "forward", "right"],
                 isEnabled: store.canSeekCurrentVideo,
                 perform: { store.seekCurrentVideo(by: 0.5) }
@@ -637,7 +652,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Seek Video Backward 5 Seconds"),
                 detail: L10n.text("Jump five seconds earlier in the current Gallery video"),
                 symbol: "gobackward.5",
-                shortcut: "⇧←",
+                shortcut: commandShortcut(.seekBackward),
                 keywords: [L10n.text("video"), "clip", "scrub", "rewind", "back", "left", "jump"],
                 isEnabled: store.canSeekCurrentVideo,
                 perform: { store.seekCurrentVideo(by: -5) }
@@ -648,7 +663,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Seek Video Forward 5 Seconds"),
                 detail: L10n.text("Jump five seconds later in the current Gallery video"),
                 symbol: "goforward.5",
-                shortcut: "⇧→",
+                shortcut: commandShortcut(.seekForward),
                 keywords: [L10n.text("video"), "clip", "scrub", "forward", "right", "jump"],
                 isEnabled: store.canSeekCurrentVideo,
                 perform: { store.seekCurrentVideo(by: 5) }
@@ -659,7 +674,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Play or Pause Current Media"),
                 detail: L10n.text("Play or pause the current video or audio recording"),
                 symbol: "playpause",
-                shortcut: "Space / K",
+                shortcut: shortcut(.playPause),
                 keywords: [L10n.text("video"), L10n.text("audio"), "clip", "recording", "play", "pause", "transport", "k"],
                 isEnabled: store.canToggleCurrentPlayableMedia,
                 perform: { _ = store.toggleCurrentPlayableMedia() }
@@ -714,7 +729,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Select All Visible Media"),
                 detail: L10n.text("Select every item that passes the current filter"),
                 symbol: "checklist",
-                shortcut: "⌘A",
+                shortcut: commandShortcut(.selectAll),
                 keywords: ["selection", "filter"],
                 isEnabled: !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.selectAllVisible() }
@@ -725,7 +740,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Select to First Item"),
                 detail: L10n.text("Extend the selection from the current item to the first visible item"),
                 symbol: "arrow.up.to.line",
-                shortcut: "⌘⇧←",
+                shortcut: commandShortcut(.selectFirst),
                 keywords: [L10n.text("extend selection"), L10n.text("selection edge"), L10n.text("select previous")],
                 isEnabled: !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.selectToEdge(forward: false) }
@@ -736,7 +751,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Select to Last Item"),
                 detail: L10n.text("Extend the selection from the current item to the last visible item"),
                 symbol: "arrow.down.to.line",
-                shortcut: "⌘⇧→",
+                shortcut: commandShortcut(.selectLast),
                 keywords: [L10n.text("extend selection"), L10n.text("selection edge"), L10n.text("select next")],
                 isEnabled: !store.visibleIndices.isEmpty && !store.isFileOperationRunning,
                 perform: { store.selectToEdge(forward: true) }
@@ -758,7 +773,7 @@ struct ActionPaletteView: View {
                 title: store.selectionCleanUpTitle,
                 detail: L10n.text("Palette confirms; ⌘⌫ skips confirmation"),
                 symbol: "trash",
-                shortcut: "⌘⌫",
+                shortcut: commandShortcut(.trash),
                 keywords: [L10n.text("trash selection"), L10n.text("delete selected"), L10n.text("remove selected"), L10n.text("clean up selection")],
                 isEnabled: store.canCleanUp && store.hasCleanUpTargets(for: .selection),
                 perform: { store.requestCleanUp(.selection) }
@@ -809,7 +824,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Undo Louppe Action"),
                 detail: L10n.text("Restore the latest review, metadata, Trash, or organization action"),
                 symbol: "arrow.uturn.backward",
-                shortcut: "Z / ⌘Z",
+                shortcut: shortcut(.undo, command: .undo),
                 keywords: ["restore", "revert", L10n.text("undo action")],
                 isEnabled: store.canUndo,
                 perform: { store.undo() }
@@ -820,7 +835,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Clear All Decisions"),
                 detail: L10n.text("Remove Yes and No decisions while keeping stars and color labels"),
                 symbol: "eraser",
-                shortcut: "R",
+                shortcut: shortcut(.clear),
                 keywords: [L10n.text("reset yes no"), L10n.text("clear yes no"), L10n.text("remove decisions")],
                 isEnabled: store.ratedCount > 0 && !store.isFileOperationRunning,
                 perform: { store.requestClearAllRatings() }
@@ -831,7 +846,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Switch to Gallery"),
                 detail: L10n.text("Review one photo, video, or audio file at a time"),
                 symbol: "photo",
-                shortcut: "Tab / G",
+                shortcut: shortcut(.grid),
                 keywords: ["view", "single"],
                 isEnabled: store.viewMode != .gallery,
                 perform: { store.toggleViewMode() }
@@ -842,7 +857,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Switch to Grid"),
                 detail: L10n.text("Review a visual overview of the folder"),
                 symbol: "square.grid.3x3",
-                shortcut: "Tab / G",
+                shortcut: shortcut(.grid),
                 keywords: ["view", "thumbnails"],
                 isEnabled: store.viewMode != .grid,
                 perform: { store.toggleViewMode() }
@@ -853,7 +868,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Zoom In"),
                 detail: L10n.text("Increase thumbnail size in Grid"),
                 symbol: "plus.magnifyingglass",
-                shortcut: "⌘+",
+                shortcut: commandShortcut(.zoomIn),
                 keywords: [L10n.text("Larger Grid Thumbnails"), L10n.text("zoom grid in"), L10n.text("bigger thumbnails"), L10n.text("increase grid size")],
                 isEnabled: store.viewMode == .grid,
                 perform: { store.zoomGrid(larger: true) }
@@ -864,7 +879,7 @@ struct ActionPaletteView: View {
                 title: L10n.text("Zoom Out"),
                 detail: L10n.text("Decrease thumbnail size in Grid"),
                 symbol: "minus.magnifyingglass",
-                shortcut: "⌘−",
+                shortcut: commandShortcut(.zoomOut),
                 keywords: [L10n.text("Smaller Grid Thumbnails"), L10n.text("zoom grid out"), L10n.text("smaller thumbnails"), L10n.text("decrease grid size")],
                 isEnabled: store.viewMode == .grid,
                 perform: { store.zoomGrid(larger: false) }
@@ -875,7 +890,7 @@ struct ActionPaletteView: View {
                 title: store.isAtActualSize ? L10n.text("Return to Fit from 100%") : L10n.text("View at 100%"),
                 detail: L10n.text("Toggle source-pixel inspection in Gallery"),
                 symbol: "1.magnifyingglass",
-                shortcut: "S",
+                shortcut: shortcut(.actualSize),
                 keywords: [L10n.text("actual size"), "100 percent", L10n.text("zoom photo"), L10n.text("source pixels")],
                 isEnabled: store.viewMode == .gallery
                     && store.currentItem?.mediaKind == .photo,
@@ -887,7 +902,7 @@ struct ActionPaletteView: View {
                 title: store.zoomMode == .small ? L10n.text("Return to Fit from Phone Size") : L10n.text("View Phone-Sized Preview"),
                 detail: L10n.text("Toggle a smaller preview in Gallery"),
                 symbol: "iphone",
-                shortcut: "A",
+                shortcut: shortcut(.phoneSize),
                 keywords: [L10n.text("phone size"), L10n.text("small preview"), L10n.text("zoom photo"), "fit"],
                 isEnabled: store.viewMode == .gallery
                     && store.currentItem?.mediaKind == .photo,
@@ -899,7 +914,7 @@ struct ActionPaletteView: View {
                 title: store.showBrowser ? L10n.text("Hide Browser") : L10n.text("Show Browser"),
                 detail: L10n.text("Toggle the thumbnail browser in Gallery"),
                 symbol: "sidebar.left",
-                shortcut: "Q",
+                shortcut: shortcut(.browser),
                 keywords: ["thumbnails", "sidebar"],
                 isEnabled: store.viewMode == .gallery,
                 perform: { store.toggleBrowser() }
@@ -910,7 +925,7 @@ struct ActionPaletteView: View {
                 title: store.showMetadataPanel ? L10n.text("Hide Media Information") : L10n.text("Show Media Information"),
                 detail: L10n.text("Toggle the camera, histogram, and metadata panel"),
                 symbol: "info.circle",
-                shortcut: "W",
+                shortcut: shortcut(.info),
                 keywords: ["metadata", "histogram", "camera"],
                 isEnabled: true,
                 perform: { store.showMetadataPanel.toggle() }
@@ -921,7 +936,7 @@ struct ActionPaletteView: View {
                 title: store.showClippingWarnings ? L10n.text("Hide Preview Clipping Overlay") : L10n.text("Show Preview Clipping Overlay"),
                 detail: L10n.text("Mark clipping estimated from the displayed preview"),
                 symbol: "exclamationmark.triangle",
-                shortcut: "X",
+                shortcut: shortcut(.clipping),
                 keywords: ["preview", "histogram", "exposure", "highlights", "shadows"],
                 isEnabled: store.canToggleClippingWarnings,
                 perform: { _ = store.toggleClippingWarnings() }
@@ -976,7 +991,7 @@ struct ActionPaletteView: View {
                 title: title,
                 detail: L10n.text("Apply a portable star rating to the current photo or selection"),
                 symbol: "star",
-                shortcut: "\(rating.count)",
+                shortcut: shortcut([ReviewShortcutAction.oneStar, .twoStars, .threeStars, .fourStars, .fiveStars][rating.count - 1]),
                 keywords: ["rating", "metadata", "xmp"],
                 isEnabled: store.canRate,
                 perform: { store.setStarRating(rating) }

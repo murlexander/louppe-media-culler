@@ -421,12 +421,13 @@ struct FullImageView: View {
 
     private var fittedRepresentation: PhotoRepresentation {
         let mode = displayMode
-        guard mode.rendersRAW(for: item) else { return .preview }
+        let ready: PhotoRepresentation = mode.rendersRAW(for: item) ? .raw : .preview
+        let loading: PhotoRepresentation = mode.rendersRAW(for: item) ? .loadingRAW : .loadingPreview
         guard loadedDisplayMode == mode, loadedDecoder == rawDecoder, imageRevision == item.contentRevision else {
-            return imagePipeline.cachedFullImage(for: item, mode: mode, decoder: rawDecoder) == nil ? .loadingRAW : .raw
+            return imagePipeline.cachedFullImage(for: item, mode: mode, decoder: rawDecoder) == nil ? loading : ready
         }
-        if image != nil { return .raw }
-        return failedToLoad ? .unavailable : .loadingRAW
+        if image != nil { return ready }
+        return failedToLoad ? .unavailable : loading
     }
 
     private func showInFinder() {

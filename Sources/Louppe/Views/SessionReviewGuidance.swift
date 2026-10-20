@@ -4,7 +4,6 @@ import SwiftUI
 struct SessionReviewStatus: View {
     @ObservedObject var store: SessionStore
     @AppStorage("louppe.showQuickStart") private var showQuickStart = true
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if !informationSummary.isEmpty {
@@ -14,7 +13,7 @@ struct SessionReviewStatus: View {
 
             if showQuickStart {
                 if !informationSummary.isEmpty { Divider() }
-                Text(L10n.text("F Yes · D No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place."))
+                Text(L10n.text("Use Yes and No to decide, and navigation controls to browse. ⌘Z undoes your last action. Decisions save automatically; No leaves files in place."))
                     .font(.callout)
                 Button(L10n.text("Dismiss tips")) {
                     showQuickStart = false
@@ -60,6 +59,7 @@ extension PhotoFilter {
         if !excludedSubfolders.isEmpty { parts.append(L10n.text("Subfolder")) }
         if !excludedCameras.isEmpty { parts.append(L10n.text("Camera")) }
         if !excludedLenses.isEmpty { parts.append(L10n.text("Lens")) }
+        if !excludedFilmSimulations.isEmpty { parts.append(L10n.text("Film simulation")) }
         if apertureEnabled || shutterEnabled || isoEnabled { parts.append(L10n.text("Exposure")) }
         if durationEnabled { parts.append(L10n.text("Duration")) }
         if videoFrameRateEnabled || !excludedVideoResolutions.isEmpty || !excludedVideoCodecs.isEmpty {

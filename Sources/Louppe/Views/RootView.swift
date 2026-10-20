@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 extension Color {
     /// The single background gray used everywhere in the app (Browser, photo
@@ -16,10 +17,19 @@ extension Color {
 /// welcome screen → scanning progress → the culling session.
 struct RootView: View {
     @ObservedObject var store: SessionStore
+    @StateObject private var folderOpening: FolderOpening
+    @State private var isFolderDropTarget = false
     @AppStorage(EarlyUserFeedback.shownKey) private var hasShownEarlyUserFeedback = false
     @State private var welcomeContentSize: CGSize = .zero
     @State private var warningHeight: CGFloat = 0
     @State private var availableContentSize: CGSize?
+    @State private var currentContentSize: CGSize?
+    @State private var hasPresentedSession = false
+
+    init(store: SessionStore, folderOpening: FolderOpening? = nil) {
+        self.store = store
+        _folderOpening = StateObject(wrappedValue: folderOpening ?? FolderOpening())
+    }
 
     var body: some View {
         Group {
@@ -27,18 +37,40 @@ struct RootView: View {
             case .welcome:
                 WelcomeView(
                     store: store,
-                    availableScreenWidth: availableContentSize?.width
-                        ?? NSScreen.main?.visibleFrame.width ?? 1280,
+                    availableScreenWidth: welcomeLayoutWidth,
                     scrollsVertically: MainWindowLayout.welcome.needsVerticalScrolling(
                         measuredWelcome: welcomeContentSize,
                         warningHeight: warningHeight,
                         availableContentSize: availableContentSize
-                    )
+                    ),
+                    isFolderDropTarget: isFolderDropTarget
                 )
             case .scanning(let found):
                 ScanningView(store: store, found: found)
             case .ready:
                 SessionView(store: store)
+            }
+        }
+        .onAppear { folderOpening.store = store }
+        .contentShape(Rectangle())
+        .onDrop(
+            of: [UTType.fileURL.identifier],
+            isTargeted: $isFolderDropTarget,
+            perform: folderOpening.openDroppedFolder
+        )
+        .overlay {
+            if isFolderDropTarget {
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(Color.louppeAccent, lineWidth: 3)
+                    .padding(4)
+                    .overlay {
+                        Label(L10n.text("Release to open this folder"), systemImage: "folder.badge.plus")
+                            .font(.headline)
+                            .padding(14)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
         }
         .sheet(isPresented: $store.isEarlyUserFeedbackPresented) {
@@ -56,6 +88,26 @@ struct RootView: View {
         .tint(Color.louppeAccent)
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
+                if let error = folderOpening.error {
+                    HStack(spacing: 10) {
+                        Image(systemName: "folder.badge.questionmark")
+                            .foregroundStyle(.orange)
+                            .accessibilityHidden(true)
+                        Text(error).font(.callout)
+                        Spacer(minLength: 12)
+                        Button {
+                            folderOpening.error = nil
+                        } label: {
+                            Image(systemName: "xmark")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.text("Dismiss"))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(Color.appBackground)
+                    .overlay(alignment: .bottom) { Divider() }
+                }
                 if store.recoveryNeedsAttention {
                     RecoveryWarningBanner(
                         message: store.recoveryAttentionMessage
@@ -90,6 +142,12 @@ struct RootView: View {
             minWidth: minimumContentSize.width,
             minHeight: minimumContentSize.height
         )
+        .onChange(of: windowLayout, initial: true) { _, layout in
+            if layout == .session { hasPresentedSession = true }
+            // Do not reuse a wide launch measurement on the first Back layout
+            // pass, before Welcome can measure its new, narrower columns.
+            if layout != .welcome { welcomeContentSize = .zero }
+        }
         .onPreferenceChange(WelcomeContentSizeKey.self) { welcomeContentSize = $0 }
         .onPreferenceChange(WindowWarningSizeKey.self) { warningHeight = $0.height }
         .overlay {
@@ -113,8 +171,18 @@ struct RootView: View {
         .background(WindowContentLayout(
             layout: windowLayout,
             minimumContentSize: minimumContentSize,
-            onAvailableContentSizeChange: { availableContentSize = $0 }
+            onAvailableContentSizeChange: { availableContentSize = $0 },
+            onCurrentContentSizeChange: { currentContentSize = $0 }
         ))
+    }
+
+    private var welcomeLayoutWidth: CGFloat {
+        // On Back, drive columns must fit the review window the photographer
+        // chose. A fresh launch may still use the display for its source list.
+        if hasPresentedSession, let currentContentSize {
+            return currentContentSize.width
+        }
+        return availableContentSize?.width ?? NSScreen.main?.visibleFrame.width ?? 1280
     }
 
     private var canPresentEarlyUserFeedback: Bool {
@@ -357,12 +425,14 @@ struct WindowContentLayout: NSViewRepresentable {
     /// Required usable area, excluding the native titlebar and toolbar.
     let minimumContentSize: CGSize
     var onAvailableContentSizeChange: (CGSize) -> Void = { _ in }
+    var onCurrentContentSizeChange: (CGSize) -> Void = { _ in }
 
     func makeNSView(context: Context) -> NSView {
         let view = Configurator()
         view.windowLayout = layout
         view.minimumContentSize = minimumContentSize
         view.onAvailableContentSizeChange = onAvailableContentSizeChange
+        view.onCurrentContentSizeChange = onCurrentContentSizeChange
         return view
     }
 
@@ -371,6 +441,7 @@ struct WindowContentLayout: NSViewRepresentable {
         view.windowLayout = layout
         view.minimumContentSize = minimumContentSize
         view.onAvailableContentSizeChange = onAvailableContentSizeChange
+        view.onCurrentContentSizeChange = onCurrentContentSizeChange
         view.apply()
     }
 
@@ -378,7 +449,10 @@ struct WindowContentLayout: NSViewRepresentable {
         var windowLayout = MainWindowLayout.welcome
         var minimumContentSize = MainWindowLayout.welcome.minimumContentSize
         private var appliedLayout: MainWindowLayout?
+        private var hasPresentedSession = false
         var onAvailableContentSizeChange: (CGSize) -> Void = { _ in }
+        var onCurrentContentSizeChange: (CGSize) -> Void = { _ in }
+        private var reportedCurrentContentSize: CGSize?
         private var isApplying = false
         private var reportedAvailableContentSize: CGSize?
         private var shouldFitToCurrentScreen = false
@@ -433,10 +507,29 @@ struct WindowContentLayout: NSViewRepresentable {
             }
         }
 
+        private func reportCurrentContentSize(_ size: CGSize) {
+            guard size != reportedCurrentContentSize else { return }
+            reportedCurrentContentSize = size
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.reportedCurrentContentSize == size,
+                      self.window != nil else { return }
+                self.onCurrentContentSizeChange(size)
+            }
+        }
+
         func apply() {
             guard let window, !isApplying else { return }
             isApplying = true
             defer { isApplying = false }
+            // Full-screen geometry belongs to AppKit. Retain the phase so
+            // replacing a folder cannot resize or leave the full-screen space.
+            if window.styleMask.contains(.fullScreen) {
+                appliedLayout = windowLayout
+                hasPresentedSession = hasPresentedSession || windowLayout == .session
+                return
+            }
+            let previousFrame = window.frame
+            let preservesPreviousOrigin = hasPresentedSession && appliedLayout != windowLayout
             if window.styleMask.contains(.fullSizeContentView) != windowLayout.usesFullSizeContent {
                 if windowLayout.usesFullSizeContent {
                     window.styleMask.insert(.fullSizeContentView)
@@ -455,6 +548,7 @@ struct WindowContentLayout: NSViewRepresentable {
 
             let current = window.contentRect(forFrameRect: window.frame).size
             let usable = window.contentLayoutRect.size
+            reportCurrentContentSize(usable)
             let covered = CGSize(
                 width: max(0, current.width - usable.width),
                 height: max(0, current.height - usable.height)
@@ -478,7 +572,7 @@ struct WindowContentLayout: NSViewRepresentable {
             window.contentMinSize = nativeMinimum
 
             let changedPhase = appliedLayout != windowLayout
-            let wasLaunch = appliedLayout?.usesFullSizeContent == true
+            let isInitialLayout = appliedLayout == nil
             appliedLayout = windowLayout
             var target = current
             if changedPhase {
@@ -486,12 +580,16 @@ struct WindowContentLayout: NSViewRepresentable {
                     width: windowLayout.preferredContentSize.width + covered.width,
                     height: windowLayout.preferredContentSize.height + covered.height
                 )
-                if windowLayout == .welcome {
+                if isInitialLayout && windowLayout == .welcome {
                     target = nativeMinimum
-                } else if windowLayout == .session {
+                } else if windowLayout == .session && !hasPresentedSession {
                     target = available ?? preferred
-                } else if !wasLaunch {
-                    target = preferred
+                    hasPresentedSession = true
+                } else {
+                    // Switching full-size content changes the content rect.
+                    // Convert the old frame using the new style to preserve
+                    // the user's outer window size across Back and new folders.
+                    target = window.contentRect(forFrameRect: previousFrame).size
                 }
             }
             target.width = max(target.width, nativeMinimum.width)
@@ -510,8 +608,14 @@ struct WindowContentLayout: NSViewRepresentable {
                     shouldFitToCurrentScreen = false
                 }
             }
-            guard target != current else { return }
-            window.setContentSize(target)
+            guard target != current || preservesPreviousOrigin else { return }
+            if target != current { window.setContentSize(target) }
+            // AppKit can shift the origin when toggling full-size content or
+            // resizing content around a new titlebar. Restore the chosen
+            // position even if the final content size already matches.
+            if preservesPreviousOrigin {
+                window.setFrameOrigin(previousFrame.origin)
+            }
             keepWindowOnScreen(window)
         }
 

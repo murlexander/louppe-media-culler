@@ -63,6 +63,7 @@ enum MetadataExtractor {
         var aperture: Double? = nil
         var shutterSpeed: Double? = nil
         var iso: Double? = nil
+        var filmSimulation: FujiFilmSimulation? = nil
     }
 
     /// Reads the metadata used by filtering and sorting in a single pass during
@@ -91,7 +92,8 @@ enum MetadataExtractor {
             lensModel: exif?[kCGImagePropertyExifLensModel] as? String,
             aperture: aperture,
             shutterSpeed: shutterSpeed,
-            iso: iso
+            iso: iso,
+            filmSimulation: FujiFilmSimulationReader.read(url: url, properties: props)
         )
     }
 
@@ -141,6 +143,7 @@ enum MetadataExtractor {
         }
         add("Camera", tiff[kCGImagePropertyTIFFModel] as? String)
         add("Lens", exif[kCGImagePropertyExifLensModel] as? String)
+        add("Film simulation", item.filmSimulation?.label)
 
         if let focal = MediaNumeric.focalLength(
             finiteNumericValue(exif[kCGImagePropertyExifFocalLength])

@@ -104,11 +104,17 @@ session state and is passed to every view. Slow I/O stays off the main actor.
   conflicting operations and Quit. Unresolved recovery awaiting attention
   blocks new file mutations, not reviewing, saving, folder access, updates, or
   Quit. See the reference for exact operation and recovery boundaries.
-- The hotkey map lives in `SessionView.handleKey` and is documented in
-  README's shortcut table — keep the two in sync when changing keys.
+- Shortcut actions, aliases and view/media contexts live in `ReviewShortcuts`;
+  `CommandShortcuts` owns editable Command aliases and the standard inventory.
+  `SessionView.handleKey` owns routing and focus/operation gates. Keep their
+  defaults in sync with README's shortcut table when changing keys.
 - `SessionView`'s local monitor is the sole owner of session Command shortcuts;
   do not add duplicate menu `.keyboardShortcut` equivalents that bypass its
-  window/focus gates. Review letters remain active after ordinary controls,
+  window/focus gates. `MenuShortcutColumns` may temporarily use native
+  key-equivalent strings during deliberate main-menu tracking to align hints
+  with the OS column. Restore originals synchronously at tracking end, app
+  resignation, menu replacement/removal and teardown; no added equivalents
+  remain active outside menu tracking. Review letters remain active after ordinary controls,
   but keyboard-focused controls keep Space, Tab, Escape, and arrows; editing or
   selecting text and modal UI keep every key. Preserve VoiceOver, Fn/Globe,
   Help, and unsupported modifier chords. Its monitor token belongs to the
@@ -120,6 +126,19 @@ session state and is passed to every view. Slow I/O stays off the main actor.
   #9853A6 (defined in RootView.swift, applied as a global `.tint` and used
   for the app-icon glyph). Green/red stay reserved for yes/no ratings; don't
   use blue or `Color.accentColor` for anything.
+- **Browser and Grid scroll vertically only.** Preserve the padded document
+  content widths excluding the native gutter and the short-document viewport guards
+  in both views. `PersistentVerticalScroller` must synchronously keep the clip's
+  horizontal origin at zero through gestures, momentum, layout and follow-scroll,
+  retaining its native scroller/clip view and vertical position. Hiding the
+  horizontal scroller or disabling elasticity alone does not lock the axis.
+  Scope observation to the mounted bridge and release/rebind it on teardown or
+  reparenting. Never fix this by clipping thumbnails or disabling scrolling.
+  Both views need a flexible outer document that may include an empty
+  gutter-width tail; actual content must stay at native X=0 inside the clip,
+  in both LTR and RTL. Keep each bridge on the content before the flexible wrapper.
+  Browser's padded column remains 122 points. Include large windows (1512 points)
+  with Info visible so the Grid's last column cannot hide under the scrollbar.
 
 ## Build & install
 
@@ -168,6 +187,22 @@ Run complete `HotkeyTests` before **every** local install. They cover real
 AppKit events and session-monitor detach/reattach; direct `handleKey` tests
 alone are insufficient.
 
+Also run complete `BrowserScrollTests`, `GridScrollTests`, and
+`PersistentVerticalScrollerTests` before **every** local install, including
+unrelated UI edits. These are recurring-regression gates: cover short (1/4-item)
+and long folders, resizing, Info, thumbnail sizes, RTL/scales, unconstrained X
+changes, horizontal/diagonal pixel wheel and momentum events, vertical scrolling,
+follow-navigation, and observer teardown/rebinding. Do not replace input tests
+with assertions about hidden scrollers or pre-constrained test bounds. For
+scroll/layout changes, check both views in the installed app with horizontal
+and diagonal gestures when native UI access is available; report unavailable
+checks explicitly instead of treating them as passes.
+
+Alex unified the installed stable/review copies on 20 October 2026. Use the
+single `/Applications/Louppe.app` with the official bundle identifier for local
+updates. Do not install a second review copy unless he explicitly requests one;
+the optional review-packaging script may still create artifacts in `dist/`.
+
 The last two checks use disposable files for a real Trash/restore round trip.
 In a restricted agent sandbox, rerun the script with permission to access the
 macOS Trash if those checks report that the paired photo could not move.
@@ -176,8 +211,9 @@ macOS Trash if those checks report that the paired photo could not move.
 open /Applications/Louppe.app --args -openFolder /path/to/photos
 ```
 
-**Always use `-openFolder`.** A bare `--args /path` becomes a document-open
-request; Louppe declares no document types, so macOS suppresses its window.
+**Use `-openFolder` for repeatable test launches.** Dock and Finder folder opens
+use the registered `public.folder` document type and the app delegate; verify
+cold and warm native opens separately from the test launch argument.
 
 The app writes `.louppe_session.json` into the opened folder within a few
 seconds. Use disposable media, inspect saved ratings, and verify native UI

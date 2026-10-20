@@ -40,7 +40,7 @@ it to every view.
 | `Sources/Louppe/ExportDestinationValidator.swift` | Export preflight: source-tree exclusion, destination permission and capacity |
 | `Sources/Louppe/SourceOrganization.swift` | Pure source-folder hierarchy/rename, exact-path collision/XMP-family preflight, and preview planning |
 | `Sources/Louppe/SourceOrganizationWorker.swift` | Journaled source-folder moves/renames, exact directory creation, and in-session undo restoration |
-| `Sources/Louppe/FileRenaming.swift` | Pure filename recipes, fixed date/time rendering, sanitization, sequencing, and source-rename configuration |
+| `Sources/Louppe/FileRenaming.swift` | Pure filename recipes, preferred-date/fixed-time rendering, sanitization, sequencing, and source-rename configuration |
 | `Sources/Louppe/Models.swift` | Physical `PhotoFile` records, projected `PhotoItem` groups, ratings/filter models, sidecar codables |
 | `Sources/Louppe/Views/RootView.swift` | Phase switch (welcome/scanning/session), `Color.appBackground` |
 | `Sources/Louppe/Views/WelcomeView.swift` | Start screen + cancellable scanning progress |
@@ -272,6 +272,11 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   operation identity. Running lanes remain occupied until worker exit. Gallery's
   full preview publishes independently of thumbnail stand-in work. Background RAW
   quality requests bypass Info's 700 ms dwell on the same single utility lane.
+- Fitted photo representation distinguishes a thumbnail stand-in from a ready
+  full preview. The revision-bound loading state shows a small progress indicator
+  within the existing zoom control until detail is ready or decoding fails.
+  Warm full-image hits publish ready immediately. Its slot stays fixed and no
+  progress view is instantiated at idle; source/tile loading remains separate.
 - Quality checks use utility JPEG operations; Info joins/promotes shared numeric
   work. Two scheduler measurements retire before restarting; background native
   cancellation waits for executing histogram work to exit. Low Power/thermal
@@ -311,7 +316,9 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 
 ## Native UI
 
-- Settings uses one grouped, scrolling form in a 520 × 600-point content area.
+- Settings uses one grouped, scrolling form in a 620 × 600-point content area.
+  RAW display and decoder preferences appear only in Settings; the Gallery zoom
+  bar contains Fit, magnification and its loading indicator.
   Review, new-folder defaults, RAW display, Quality Cues, Capture bursts,
   Louppe Help, Updates, and Louppe info share margins and regular native control
   sizing. Never embed
@@ -345,8 +352,21 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   Undo Z / ⌘Z and Clear All Decisions R. Photo sizes show S (100%) and A (Phone).
   Actions without a dedicated shortcut, including Fit and Close Session, have
   no invented hint. Standard macOS commands retain their system equivalents.
-  These are display-only hints with LTR-isolated glyphs. SessionView keeps sole
-  ownership of shortcut routing and its existing focus/presentation gates.
+  `MenuShortcutColumns` uses AppKit's native key-equivalent column during explicit
+  main-menu tracking, with complete saved alias strings and no attributed-title
+  spacing. Plain action titles and accessibility labels remain clean. Standard
+  native equivalents stay intact; temporary hint strings restore synchronously
+  when tracking ends (including parent/nested menus), the app resigns, a menu or
+  item detaches/replaces, or presentation tears down. No added equivalents remain
+  outside menu tracking; SessionView retains ordinary keyboard ownership.
+  Preference and session context changes refresh the hints; full physical-position
+  descriptions remain in help. Menu structure notifications refresh synchronously
+  so SwiftUI's lazy Edit/View contents are decorated before tracking draws them;
+  only notifications from that tree trigger decoration. Background and detached
+  menu notifications are ignored. Scheduled state/default refreshes compare the
+  localized entries and menu identity before traversing; structural/tracking
+  events always bypass that cache. SessionView keeps sole ownership of shortcut
+  routing and its existing focus/presentation gates.
 
 - Localization uses `L10n.text` with complete English messages and numbered
   interpolation slots, plus UTF-8 `Localizable.strings` in `Resources/*.lproj`.
@@ -393,7 +413,10 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   Photo zoom floats inside that pane, 16 points above its bottom edge, without
   reducing the image viewport. One regular Liquid Glass capsule on macOS 26+
   is 36 points high to match native toolbar groups and contains native
-  Fit/slider/RAW controls; older systems use regular material,
+  Fit, slider and magnification; the loading indicator temporarily shares the
+  percentage readout's space, keeping the capsule compact with steady input
+  positions and equal outer padding. RAW preferences stay in Settings.
+  Older systems use regular material,
   and Reduce Transparency uses the opaque app background with a contrast border.
   A window-bound mouse monitor returns double-clicks anywhere within the visible
   capsule to Fit before native slider tracking starts. Ordinary clicks/drags
@@ -409,6 +432,70 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   Route them through `SessionStore.openFolder` for recovery, safe switching, and
   scoped access. Review builds omit the service to prevent duplicate commands
   and port collisions.
+- Dock opens and the whole main-window drop target share `FolderOpening`
+  validation and visible errors. The delegate buffers early folder events until
+  launch and scene configuration are ready, then explicitly shows the main window.
+  `public.folder` registration uses Viewer/Alternate, preserving Finder's default
+  role. Modal UI and active file operations refuse replacement; `openFolder`
+  owns the existing asynchronous save-before-switch and access lifetime.
+- Single-key review bindings live in app preferences (`review.shortcuts.v1`).
+  Schema 2 retains independent ordered alias arrays for layout characters and
+  QWERTY positions; schema-1 custom keys migrate without discarding navigation
+  defaults. Each alias has a view/media scope intersected with its action's
+  availability. A key can serve two actions only in disjoint concrete contexts;
+  the same model validates recording, reset, saved preferences and event routing.
+  Settings groups/searches actions, adds/removes aliases, shows each key's When
+  scope and identifies conflicts inline. Mode explanations live in tooltips and
+  accessibility hints; action context is not repeated beneath each title.
+  Recording and errors show their text only when needed. Mode/action resets preserve unrelated
+  bindings. Defaults for arrows, Space and Tab use this same authority, preserving
+  Gallery seeking, Grid rows and playback without duplicate hardcoded routes.
+  The decoded preference cache is bounded to one immutable value behind a lock;
+  validation indexes key/context claims, and defaults retain stable row IDs.
+  Missing/empty preferences now start in physical-position mode, including older
+  installations without a shortcut setup. Both saved schema versions retain
+  their explicit mode and custom aliases. Settings includes a compact assignable-
+  key map: choosing a key filters actions rather than editing assignments. Layout
+  labels use the current macOS input source; physical labels name QWERTY positions.
+  Input-source notifications refresh the map, without polling. Key geometry stays
+  LTR in all interface languages and native buttons expose assigned actions.
+  The compact ANSI Mac silhouette includes the function row, Delete, Caps Lock,
+  Return and modifier keys, with wide Space and split-height up/down arrows.
+  Function keys, Caps Lock, Return, Control and Option are decorative and excluded
+  from accessibility navigation. Review keys and supported modified keys filter
+  actions; Command and Shift keycaps preview layers.
+  The traditional editor remains below the keyboard. Review includes Export,
+  Clear Decisions and Undo; each disclosure header owns its full-width hit area,
+  with editor controls outside it. Add, reset, remove and cancel use equal-sized
+  native bordered circular buttons with regular control sizing and named
+  accessibility labels. System styling supplies current macOS appearance.
+  Command aliases live separately in `app.commandShortcuts.v1`; schema 1 validates
+  ordered aliases for Export, Command Palette and Rescan, excluding reserved
+  system/text chords. Matching is character-based independently of review mode;
+  removing an alias removes its route, and resets cannot steal another action's
+  keys. Standard Mac commands and modified navigation remain read-only. Menus,
+  palette, Help and tooltips read this same validated authority. Its decoded
+  cache is bounded to one immutable value.
+  Command/Shift keycaps latch visual layers; held modifiers combine with the
+  latch and release restores it. A window-owned, non-consuming flags observer
+  detaches cleanly, clears on resignation and respects recording and VoiceOver.
+  Modified key labels translate with actual layout flags (including Command)
+  rather than assuming QWERTY. Aliases appear with related actions in the list.
+  Settings captures keys in focused AppKit controls; the session
+  window monitor remains the ordinary review/Command router. Directional keys, Tab
+  and Space retain native-control focus ownership even after remapping. Standard Command,
+  modified-arrow and Escape shortcuts keep fixed behavior. Help, menus, the palette and
+  tooltips read the same bindings; physical hints identify the QWERTY position.
+- Fuji film simulation is immutable scan metadata per physical file, projected
+  from the primary file when paired. Color FilmMode and monochrome Saturation
+  resolve together; Info and Filter reuse the indexed value. A bounded read-only
+  MakerNote/container fallback handles fields ImageIO does not expose. Missing
+  Saturation in a partial numeric Fuji dictionary consults the full bounded
+  container before accepting a color FilmMode, preserving monochrome overrides.
+  Complete numeric tags retain precedence; absent container tags retain the
+  available numeric evidence, while malformed tags remain Unknown. Missing
+  and unknown simulations remain distinct. Filters use the existing exclusion
+  facets and selection/current-item policies without rereading files.
 - Welcome and Scanning hide the empty native window title so it reserves no
   leading toolbar space; their principal Louppe title stays centered at compact
   and expanded widths. Session restores native title visibility.
@@ -457,7 +544,7 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   Show five recents and all drives in aligned columns, adding columns as needed.
   Measured content, banners, and toolbar space determine minimum size. Cap it at
   usable display height and enable native vertical scrolling only on overflow.
-  Remeasure on display/toolbar changes. Open/return at that minimum; new content
+  Remeasure on display/toolbar changes. Open at that minimum; new content
   grows the window, removed content lowers its minimum without shrinking it.
   Review performs no device discovery, polling, or whole-volume scanning.
 - `SessionView.toolbarContent` uses the owner's arrangement and native fixed
@@ -475,28 +562,42 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 - `PersistentVerticalScroller` keeps the native legacy scroller and gutter.
   Never substitute a hand-drawn subclass. Resolve mounted scroll views
   synchronously and coalesce initial deferred lookup to avoid queued work
-  delaying the indicator. Browser constrains its padded document to the
-  122-point clip width, excluding the native gutter, to prevent sideways scroll.
+  delaying the indicator. Browser constrains its padded thumbnail column to
+  the 122-point clip width, excluding the native gutter. Its flexible outer
+  document retains the full native pane width for short folders; only an empty
+  gutter-width tail extends outside the clip. Align the column at physical X=0
+  in both LTR and RTL, and keep the bridge on the column before this wrapper.
   Grid constrains its tile document to the current pane width minus that
-  gutter. Short Grid documents extend one backing pixel past the viewport height:
-  otherwise macOS SwiftUI shrinks the native scroll view to the document width,
-  subtracts the legacy gutter again, and leaves 17 points of sideways travel.
-  This preserves one lazy grid and adds at most one backing pixel of vertical
+  gutter. Both views use the flexible outer wrapper with their bridge attached
+  to the actual content before it. Short documents extend one layout point past
+  the viewport height. Preserve both this viewport guard and the flexible wrapper:
+  a short native viewport can otherwise shrink to the content width, subtract
+  the legacy gutter again, and leave 17 points of sideways travel.
+  This preserves lazy content and adds at most one layout point of vertical
   range when content fits. Empty/filter messages stay outside the tile scroller.
-  Native configuration repairs horizontal-scroller/elasticity drift too.
+  Native configuration repairs horizontal-scroller/elasticity drift too. Those
+  flags alone do not lock the axis: the mounted bridge observes clip bounds
+  synchronously and resets only X to zero, preserving Y and native clip/scroller
+  identity. Observation detaches/rebinds with the bridge and cannot restart after
+  dismantling. No global event monitor or SwiftUI scroll-state publication is used.
   Column navigation uses the same available width across resizing and thumbnail
   changes. Native regressions include short/long grids, Info, RTL, display scales,
   thumbnail sizes, and horizontal bounds; exclude hidden cached tile frames.
+  Run BrowserScrollTests, GridScrollTests and PersistentVerticalScrollerTests
+  before every installation; exercise unconstrained offsets and pixel wheel/
+  momentum events as well as settled geometry and vertical follow-navigation.
 - View → Gallery/Grid uses an inline native picker bound to the focused
   session’s view mode, with the existing presentation gate and no duplicate
   key equivalents. Toolbar, menu, and G/Tab stay synchronized.
-- `RootView` owns `WindowContentLayout`: Welcome uses measured minimum, Scanning
-  compact launch size, and Ready the usable display frame. Welcome/Scanning use
+- `RootView` owns `WindowContentLayout`: first Welcome uses its measured minimum
+  and first Ready expands to the usable display frame. Later phase transitions
+  preserve the chosen window frame, including Back and replacement-folder scans.
+  Welcome/Scanning use
   `.fullSizeContentView`; Ready restores session minimum and removes full-size
   content so photos stay below the toolbar. Manual session size persists until
   display changes. A real unified `LaunchToolbarTitle` supplies macOS 26's native
   large corners; never fake them with a window mask.
-- `WelcomeView` owns one drop target over its whole content; the dashed chooser
-  is visual. Share dropped-item validation/errors across the window.
+- `RootView` owns one drop target over the whole window; Welcome's dashed chooser
+  is visual. Share dropped-item validation/errors across every phase.
 - Square thumbnails letterbox (`fit`) to preserve the whole photo and prevent
   portrait overflow.

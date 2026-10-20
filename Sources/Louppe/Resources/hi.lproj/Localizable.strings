@@ -1679,3 +1679,145 @@
 /* Contact and recovery selection controls. */
 "Contact Alex" = "Alex से संपर्क करें";
 "Select All" = "सभी चुनें";
+
+/* Folder opening, Fuji film simulations, and review shortcuts. */
+"Open one folder at a time." = "एक बार में एक ही फ़ोल्डर खोलें।";
+"Close the current dialog or popover, then open the folder." = "मौजूदा डायलॉग या पॉपओवर बंद करें, फिर फ़ोल्डर खोलें।";
+"Unknown film simulation" = "अज्ञात फ़िल्म सिमुलेशन";
+"Not recorded" = "दर्ज नहीं";
+"Previous item" = "पिछला आइटम";
+"Next item" = "अगला आइटम";
+"Play / Pause" = "चलाएँ / रोकें";
+"Show / Hide Browser" = "ब्राउज़र दिखाएँ / छिपाएँ";
+"Show / Hide Info" = "जानकारी दिखाएँ / छिपाएँ";
+"Toggle clipping overlay" = "क्लिपिंग ओवरले चालू / बंद करें";
+"2 stars" = "2 स्टार";
+"3 stars" = "3 स्टार";
+"4 stars" = "4 स्टार";
+"5 stars" = "5 स्टार";
+"Follow keyboard layout" = "कीबोर्ड लेआउट के अनुसार";
+"Physical key positions" = "कुंजियों की भौतिक स्थिति";
+"{0} position" = "{0} की स्थिति";
+"Film simulation" = "फ़िल्म सिमुलेशन";
+"Show or hide the red preview clipping overlay ({0})" = "प्रीव्यू का लाल क्लिपिंग ओवरले दिखाएँ या छिपाएँ ({0})";
+"Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%." = "स्लाइडर या पिंच से ज़ूम करें; दो उँगलियों से स्क्रॉल या ड्रैग करके तस्वीर खिसकाएँ। {0} कस्टम ज़ूम को केंद्रित 100% पर लौटाता है, फिर फ़िट पर बदलता है। {1} फ़ोन आकार चालू / बंद करता है। किसी बिंदु को 100% पर देखने के लिए उस पर डबल-क्लिक करें।";
+"Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts." = "सेटिंग्स → कीबोर्ड शॉर्टकट में समीक्षा कुंजियाँ और कीबोर्ड लेआउट का व्यवहार बदलें।";
+"{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "{0} से हाँ और {1} से नहीं चिह्नित करें। दोनों डिफ़ॉल्ट रूप से अगले अनिर्णीत आइटम पर जाते हैं (सेटिंग्स → समीक्षा)। स्टार और रंग लेबल अलग-अलग हैं।";
+"Match shortcuts by" = "शॉर्टकट मिलान का आधार";
+"Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard." = "भौतिक स्थिति चुनने पर Dvorak और अन्य लेआउट में उँगलियों की चाल समान रहती है। स्थिति के नाम QWERTY कीबोर्ड के अनुसार हैं।";
+"Customize shortcuts" = "शॉर्टकट अनुकूलित करें";
+"Click a shortcut, then press one key without modifiers. Escape cancels. Arrows, Tab, Space, and Command shortcuts stay unchanged." = "किसी शॉर्टकट पर क्लिक करें, फिर बिना संशोधक कुंजियों के एक कुंजी दबाएँ। Escape से रद्द करें। तीर, Tab, Space और Command शॉर्टकट नहीं बदलते।";
+"That key or position is already used for {0}. Choose another key." = "यह कुंजी या स्थिति पहले से {0} के लिए उपयोग हो रही है। कोई दूसरी कुंजी चुनें।";
+"Press a letter, number, or punctuation key without modifiers." = "बिना संशोधक कुंजियों के कोई अक्षर, अंक या विराम चिह्न की कुंजी दबाएँ।";
+"Restore Shortcut Defaults" = "डिफ़ॉल्ट शॉर्टकट बहाल करें";
+"Press a key…" = "कोई कुंजी दबाएँ…";
+"{0}: {1}" = "{0}: {1}";
+"Click to record a shortcut. Escape cancels." = "शॉर्टकट रिकॉर्ड करने के लिए क्लिक करें। Escape से रद्द करें।";
+"Dismiss" = "बंद करें";
+"Show or hide the Browser in the Gallery view ({0})" = "गैलरी दृश्य में ब्राउज़र दिखाएँ या छिपाएँ ({0})";
+"Show or hide media information ({0})" = "मीडिया जानकारी दिखाएँ या छिपाएँ ({0})";
+"Copy or move selected media, or write Metadata (XMP) sidecars ({0} or ⌘E)" = "चुना हुआ मीडिया कॉपी या स्थानांतरित करें, या मेटाडेटा (XMP) साइडकार लिखें ({0} या ⌘E)";
+
+/* Current shortcut hints. */
+"{0} Yes · {1} No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place." = "{0} हाँ · {1} नहीं · तीरों से देखें · ⌘Z से पूर्ववत करें। निर्णय अपने आप सहेजते हैं; नहीं चिह्नित करने पर फ़ाइलें वहीं रहती हैं।";
+"Undo the last decision, stars, color label, or clean-up ({0} or ⌘Z)" = "पिछला निर्णय, स्टार, रंग लेबल या सफ़ाई पूर्ववत करें ({0} या ⌘Z)";
+"Clear all Yes/No decisions ({0})" = "सभी हाँ/नहीं निर्णय साफ़ करें ({0})";
+"Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position; {0} resets it." = "जाँचने के लिए स्क्रॉल या पिंच करें; फ़िट के लिए डबल-क्लिक करें। नेविगेशन से स्थिति नहीं बदलती; {0} इसे रीसेट करता है।";
+
+"Bindings are saved separately for each matching mode." = "हर मिलान मोड के लिए कुंजी असाइनमेंट अलग से सहेजे जाते हैं।";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"No current item" = "कोई मौजूदा आइटम नहीं";
+"{0} · {1}" = "{0} · {1}";
+"Where available" = "जहाँ उपलब्ध हो";
+"Playable video and audio" = "चलाने योग्य वीडियो और ऑडियो";
+"Media without playback" = "बिना प्लेबैक वाला मीडिया";
+"Gallery photos" = "गैलरी की तस्वीरें";
+"Gallery videos with seeking" = "गैलरी में समय पर जाने योग्य वीडियो";
+"Outside Gallery video seeking" = "गैलरी वीडियो में समय पर जाने के अलावा";
+"Navigation" = "नेविगेशन";
+"Playback" = "प्लेबैक";
+"Actions" = "कार्रवाइयाँ";
+"Previous row" = "पिछली पंक्ति";
+"Next row" = "अगली पंक्ति";
+"Seek backward" = "वीडियो में पीछे जाएँ";
+"Seek forward" = "वीडियो में आगे जाएँ";
+"All views and media" = "सभी दृश्य और मीडिया";
+"Space" = "स्पेस";
+"Tab" = "टैब";
+"Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position." = "जाँचने के लिए स्क्रॉल या पिंच करें; फ़िट के लिए डबल-क्लिक करें। नेविगेशन से स्थिति बनी रहती है।";
+"Show or hide the red preview clipping overlay" = "प्रीव्यू की लाल क्लिपिंग परत दिखाएँ या छिपाएँ";
+"No shortcut assigned" = "कोई शॉर्टकट असाइन नहीं है";
+"Change playback speed; previous / next item without playback" = "प्लेबैक गति बदलें; बिना प्लेबैक के पिछला / अगला आइटम";
+"Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "स्लाइडर या पिंच से ज़ूम करें; दो उँगलियों से स्क्रॉल या ड्रैग करके खिसकाएँ। किसी बिंदु को 100% पर जाँचने के लिए डबल-क्लिक करें। फ़िट, 100% या फ़ोन आकार पर लौटने के लिए तस्वीर के आकार के नियंत्रणों का उपयोग करें।";
+"Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "नीचे हर कुंजी के साथ बताया गया है कि वह कब लागू होती है। साझा कुंजियाँ केवल अलग दृश्यों या मीडिया संदर्भों में अलग काम करती हैं।";
+"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "बटन या अपने असाइन किए गए शॉर्टकट से हाँ या नहीं चिह्नित करें। डिफ़ॉल्ट रूप से दोनों अगले अनिर्णीत आइटम पर जाते हैं (सेटिंग्स → समीक्षा)। सितारे और रंग लेबल स्वतंत्र हैं।";
+"Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "एक कार्रवाई में कई कुंजियाँ जोड़ें। कोई कुंजी तभी साझा की जा सकती है जब उसके दृश्य और मीडिया संदर्भ एक-दूसरे से न मिलें।";
+"Find a shortcut" = "शॉर्टकट खोजें";
+"No matching shortcuts." = "कोई मिलता-जुलता शॉर्टकट नहीं।";
+"Fixed shortcuts" = "निश्चित शॉर्टकट";
+"These shortcuts keep their standard behavior and cannot be reassigned here." = "ये शॉर्टकट अपना मानक व्यवहार बनाए रखते हैं और इन्हें यहाँ दोबारा असाइन नहीं किया जा सकता।";
+"Restore all shortcuts for the selected matching mode." = "चुने गए मिलान मोड के सभी शॉर्टकट बहाल करें।";
+"Add shortcut" = "शॉर्टकट जोड़ें";
+"Add shortcut for {0}" = "{0} के लिए शॉर्टकट जोड़ें";
+"Defaults overlap another shortcut. Remove that assignment first." = "डिफ़ॉल्ट किसी अन्य शॉर्टकट से टकराते हैं। पहले उस असाइनमेंट को हटाएँ।";
+"Restore defaults for this action" = "इस कार्रवाई के डिफ़ॉल्ट बहाल करें";
+"Remove shortcut" = "शॉर्टकट हटाएँ";
+"Remove {0} from {1}" = "{1} से {0} हटाएँ";
+"Record key…" = "कुंजी रिकॉर्ड करें…";
+"Cancel new shortcut" = "नया शॉर्टकट रद्द करें";
+"Choose when it applies, then press one key without modifiers. Escape cancels." = "चुनें कि यह कब लागू होता है, फिर बिना मॉडिफ़ायर के एक कुंजी दबाएँ। Escape से रद्द होता है।";
+"When" = "कब";
+"When {0} applies" = "{0} कब लागू होता है";
+"Already used for {0} in {1}. Choose another key or a separate context." = "{1} में {0} के लिए पहले से उपयोग हो रहा है। दूसरी कुंजी या अलग संदर्भ चुनें।";
+"Press one letter, number, punctuation key, arrow, Tab, or Space without modifiers." = "बिना मॉडिफ़ायर के एक अक्षर, अंक, विराम चिह्न, तीर, टैब या स्पेस दबाएँ।";
+"Use Yes and No to decide, and navigation controls to browse. ⌘Z undoes your last action. Decisions save automatically; No leaves files in place." = "निर्णय के लिए हाँ और नहीं, और ब्राउज़ करने के लिए नेविगेशन नियंत्रणों का उपयोग करें। ⌘Z आपकी पिछली कार्रवाई पूर्ववत करता है। निर्णय अपने-आप सहेजे जाते हैं; नहीं से फ़ाइलें अपनी जगह रहती हैं।";
+"Switch between Gallery and Grid views ({0})" = "गैलरी और ग्रिड दृश्यों के बीच बदलें ({0})";
+"Search filters" = "फ़िल्टर खोजें";
+"Command palette" = "कमांड पैलेट";
+"Rescan folder" = "फ़ोल्डर फिर स्कैन करें";
+"Move selected files to Trash" = "चुनी हुई फ़ाइलों को ट्रैश में डालें";
+"Select all filtered items" = "सभी फ़िल्टर किए गए आइटम चुनें";
+"Resize Grid thumbnails" = "ग्रिड थंबनेल का आकार बदलें";
+"Playback speed; previous / next item for other media" = "प्लेबैक गति; अन्य मीडिया के लिए पिछला / अगला आइटम";
+"Seek video by five seconds in Gallery" = "गैलरी में वीडियो में पाँच सेकंड जाएँ";
+"Extend selection to the first / last item" = "चयन को पहले / आखिरी आइटम तक बढ़ाएँ";
+"Clear selection" = "चयन साफ़ करें";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"Restore defaults for this mode" = "इस मोड के डिफ़ॉल्ट बहाल करें";
+"Open folder" = "फ़ोल्डर खोलें";
+"Clear selection or cancel scan" = "चयन साफ़ करें या स्कैन रद्द करें";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"Settings" = "सेटिंग्स";
+
+/* Help: renaming keepers. */
+"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "रखने वाली फ़ोटो के नाम बदलने के लिए हाँ से फ़िल्टर करें, कमांड पैलेट (⌘K) → मेटाडेटा से फ़ाइलों के नाम बदलें… खोलें और फ़िल्टर किए हुए चुनें। पुष्टि से पहले नाम देखें; ⌘Z पुराने नाम वापस लाता है।";
+
+/* Command shortcut discovery and customization */
+"Quit Louppe" = "Louppe बंद करें";
+"Slower playback" = "प्लेबैक धीमा करें";
+"Faster playback" = "प्लेबैक तेज़ करें";
+"Select to first item" = "पहले आइटम तक चुनें";
+"Select to last item" = "अंतिम आइटम तक चुनें";
+"This shortcut is reserved by macOS." = "यह शॉर्टकट macOS के लिए आरक्षित है।";
+"Already assigned to {0}." = "पहले से {0} को असाइन है।";
+"Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing." = "फ़िल्टर या कमांड पैलेट में मेल खाने वाली RAW + JPEG फ़ाइलों की एक साथ या अलग-अलग समीक्षा करें। RAW, JPEG या पेयरिंग खोजें।";
+"Command Palette" = "कमांड पैलेट";
+"Command Palette ({0})" = "कमांड पैलेट ({0})";
+"To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "रखने वाली फ़ाइलों का नाम बदलने के लिए हाँ का फ़िल्टर लगाएँ, {0} → मेटाडेटा से फ़ाइलों का नाम बदलें… खोलें और फ़िल्टर किए गए चुनें। पुष्टि से पहले नामों का पूर्वावलोकन करें; ⌘Z पुराने नाम बहाल करता है।";
+"Shift" = "Shift";
+"Command" = "Command";
+"A default shortcut is already assigned to another action." = "एक डिफ़ॉल्ट शॉर्टकट पहले से किसी अन्य क्रिया को असाइन है।";
+"Single key" = "एक कुंजी";
+"Command shortcut" = "Command शॉर्टकट";
+"Standard Mac shortcut" = "मानक Mac शॉर्टकट";
+"Press Command and a letter. Add Shift if needed." = "Command और एक अक्षर दबाएँ। आवश्यकता हो तो Shift जोड़ें।";
+"Press a shortcut…" = "शॉर्टकट दबाएँ…";
+"Undo the last decision, stars, color label, or clean-up ({0})" = "पिछला निर्णय, स्टार, रंग लेबल या क्लीन अप पूर्ववत करें ({0})";
+"Copy or move selected media, or write Metadata (XMP) sidecars ({0})" = "चुना गया मीडिया कॉपी या स्थानांतरित करें, या मेटाडेटा (XMP) साइडकार लिखें ({0})";
+"Restore shortcut defaults" = "डिफ़ॉल्ट शॉर्टकट बहाल करें";
+"Restore review shortcuts for this mode and all Command shortcuts." = "इस मोड के समीक्षा शॉर्टकट और सभी Command शॉर्टकट बहाल करें।";
+
+"RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "RAW 9 के लिए macOS 27, समर्थित फ़ाइल और Apple के मॉडल संसाधन चाहिए। फिर कोशिश करें या सेटिंग्स में Apple Default चुनें।";

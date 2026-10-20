@@ -115,6 +115,10 @@ safety/native checks. Local stage medians are not whole-app speedups.
   every row), retained memory and interaction under load. Profile batch recovery
   under active sorts before choosing projection/progress batching; preserve
   serial proofs, arbitrary-input ties, physical/recovery maps, selection and saves.
+  The 20 October 1.12 quality run records 100k camera-sort median 755 ms and
+  decision-sorted rating 123 ms (1k camera sort 6 ms). Keep large-folder sort/
+  projection profiling open; no comparable pre-1.12 run establishes a regression.
+  See the [quality review](Docs/QUALITY_REVIEW_1.12_2026-10-20.md).
 
 ### Next measurements
 
@@ -191,12 +195,36 @@ safety/native checks. Local stage medians are not whole-app speedups.
 
 ## Product follow-ups
 
+- [ ] **1.12 local acceptance.** Review Dock cold/warm opens, direct folder
+  replacement and retained window geometry, custom layout/physical shortcuts,
+  and Fuji simulation Info/filtering with Alex's real shoot. Native shortcut
+  editing and Fuji Info/filtering pass; read-only ExifTool comparison matches
+  39 real JPEGs and 23 RAFs. Actual Dock dragging, owner workflow acceptance and
+  folder grants in a sandboxed Store candidate remain. Implementation and local evidence are in the
+  [review record](Docs/REVIEW_1.12_2026-10-20.md); publication remains separate.
+- [x] **Renaming discovery — Aymeric feedback, 20 October 2026.** Help now
+  explains Filter Yes → Command Palette → Rename Files from Metadata → Filtered,
+  with exact name preview and Undo. No renaming behavior changed. New recipe
+  controls stay deferred until Alex supplies the desired ExifRenamer pattern;
+  retain family/collision checks and journaled undo.
+- [ ] **Temporary preview softness — Aymeric feedback, 20 October 2026.**
+  A small indicator beside zoom now distinguishes the thumbnail stand-in from
+  ready fitted detail, with deterministic delayed/success/failure and stale-
+  navigation coverage. Local/SD-card cold and warm navigation measurements remain
+  before changing decoding/prefetch. Reuse AUD-28 measurements; keep cache and
+  concurrency bounds. This state indication does not claim a decoding speedup.
+- [ ] **Photo location lookup — Aymeric feedback, 20 October 2026.** Alex deferred
+  this from 1.12 on 20 October; finish the current scope first. Later, add an
+  explicit Open in Maps action to valid GPS coordinates in Info. No location
+  lookup before the click. Consider an embedded shoot map separately only if
+  demand justifies its interface and resource costs.
 - [ ] **Automatic blur detection.** After the first cue prototype, experiment
   with measured relative softness within bursts and verified detail crops.
   Flag uncertain photos for human review; retain low-texture/intentional-blur
   uncertainty. Early-user feedback recorded 11 October 2026.
-- [ ] Show Fuji film simulation in metadata. Camera previews include it; Apple
-  RAW rendering bypasses it. Keep originals intact and avoid a redundant toggle.
+- Fuji film simulation is implemented for 1.12 in Info and Filter; native
+  acceptance is tracked above. Camera previews include it; Apple RAW rendering
+  bypasses it. Keep originals intact and avoid a redundant rendering toggle.
 - [ ] Extend format support where macOS allows.
 
 Burst acceptance is AUD-22 above; inline comparison stays in the research list.
@@ -211,6 +239,9 @@ These are deferred ideas, not committed implementation scope.
   retention limits without losing unresolved decisions or the saved generation.
 - [ ] SD-card ingest, naming templates, and review during copy.
 - [ ] Preview-first EXIF routing/auto-culling; never silently move originals.
+- [ ] Arbitrary metadata filters beyond Fuji film simulation. Design supported
+  tag discovery, typed value matching and bounded indexing; avoid repeated
+  per-file reads when changing filters. Aymeric feedback, 20 October 2026.
 - [ ] Focus peaking and detail/edge inspection.
 - [ ] Inline burst comparison with matched crops/synchronized zoom in the existing
   Gallery/Info surfaces; avoid new screens or user-facing modes by default.
@@ -226,7 +257,6 @@ These are deferred ideas, not committed implementation scope.
 - [ ] Scenes / chronological-story review.
 - [ ] iPad Grid companion.
 - [ ] Embedded metadata in exported JPEG copies only, with a separate safety design.
-- [ ] Configurable shortcuts, deferred to preserve keyboard safety.
 
 ## Decisions already made
 

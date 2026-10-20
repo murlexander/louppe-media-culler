@@ -28,6 +28,10 @@ In Finder, select a media folder and choose **Services → Open in Louppe**.
 Install Louppe in Applications first to register the service. It opens the
 folder in the existing window.
 
+You can also drop one folder onto the Dock icon or anywhere in the main window,
+including while reviewing another folder. Louppe saves current decisions before
+switching and keeps your chosen review-window size.
+
 ![Louppe Grid comparing street scenes, architecture, reflections and still life, with a photo selected in purple](Docs/Media/2026-09-26/grid-overview.png)
 
 *Grid for comparing and selecting frames.*
@@ -55,6 +59,9 @@ builds folders from decisions, dates, ratings, and other metadata.
 
 - Filter and sort by decisions, stars, colors, dates, folders, camera details,
   file types, and media properties.
+- Fuji film simulation appears in Info and **Filter → Film simulation**. Include
+  any combination of the recorded simulations, including monochrome and ACROS
+  variants; hidden photos keep their decisions. **All** restores that facet.
 - **Sort → Folder hierarchy** shows root files, then each folder before its
   descendants. Reversing changes sibling order; headers show relative paths.
 - **Sort → Review groups → Analyze Folder Locally** finds exact duplicates,
@@ -66,8 +73,10 @@ builds folders from decisions, dates, ratings, and other metadata.
   RAW-only or JPEG-only Trash for unambiguous pairs. **⌘Z** restores the batch
   before closing the session, while files remain in Trash.
 - **Organize Source Folder** previews nested folders before moving files.
-  **Rename Files…** supports single names and metadata-based batches;
-  extensions stay unchanged and recognized RAW+JPEG/XMP families follow.
+  **Rename Files…** supports single names and metadata-based batches. Drag
+  filename parts into order; dates follow the Mac’s preferred format with safe
+  filename separators. Extensions stay unchanged and recognized RAW+JPEG/XMP
+  families follow.
 - Export Copy and Move support All Media, Filtered, and Selected scopes.
   **Route copies to multiple folders** previews decision, stars, color,
   file-type, or media-type rules before copying.
@@ -88,19 +97,19 @@ Sessions saved by 1.11 use a newer format that 1.10 cannot read.
 
 ## Media and inspection
 
-Louppe supports common camera RAW, JPEG, TIFF, PNG, HEIC, WebP, AVIF, video,
-audio, and text formats. Unsupported files remain available to rate and export.
+Louppe supports common camera RAW, JPEG, TIFF, PNG, HEIC, JPEG XL (.jxl),
+WebP, AVIF, video, audio, and text formats. Unsupported files remain available to rate and export.
 Gallery has Fit, Phone size, true 100% zoom, playback, metadata, histogram,
 clipping information, and optional quality cues. VoiceOver and keyboard review
 are supported.
 
 For RAW photos, **Fast** uses previews below 100% and Apple RAW rendering at
-100% and above. **RAW** beside zoom or in **Settings → RAW display** uses RAW at
-all zoom levels. **Preview**, **RAW**, and **RAW…** identify the source and
-loading state; **Use Preview** is an explicit fallback after failure.
+100% and above. **Settings → RAW display** can use RAW at all zoom levels.
+The Gallery zoom bar stays focused on Fit and magnification; **Use Preview**
+remains an explicit fallback after a RAW loading failure.
 Apple rendering may differ from your editor or the camera JPEG.
 
-The RAW menu and RAW display settings offer **Apple Default** or opt-in **RAW 9**.
+RAW display settings offer **Apple Default** or opt-in **RAW 9**.
 RAW 9 requires macOS 27, a supported file, and Apple’s model resources; it
 uses more time and memory. Failure offers Retry or **Use Apple Default**;
 Louppe never silently switches decoders. Grid and Browser retain fast previews.
@@ -128,6 +137,33 @@ text. UTF-8 and BOM-marked UTF-16/32 are supported up to 1 MiB per file.
 
 Shortcuts work while reviewing media. Text fields, dialogs, and native macOS
 controls keep their normal shortcuts.
+
+In **Settings → Keyboard shortcuts**, choose **Follow keyboard layout** or
+**Physical key positions**. Physical positions keep the same finger movements
+when switching layouts, including Dvorak; position names refer to QWERTY keys.
+New setups start with physical positions; saved choices are retained.
+Choose a key on the keyboard map to see its actions, or search the grouped editor.
+Choosing a key only filters the editor. Use **Add shortcut** to record another
+key, click an existing binding to replace it, or use its remove button.
+Letters, numbers, punctuation, arrows, Tab and Space can be assigned. Each
+matching mode keeps its own bindings.
+
+Click Command or Shift on the keyboard to preview modified shortcuts; holding
+the keys previews them temporarily. Command shortcuts follow the current Mac
+keyboard layout independently of physical review positions. Export, Command
+Palette and Rescan accept several Command or Shift-Command letter shortcuts.
+Their aliases appear with the corresponding actions in the same editor.
+Standard Mac and modified navigation shortcuts remain read-only.
+
+**When** limits a key to a view or media type. A key can serve different actions
+only when their contexts do not overlap: Left Arrow navigates outside Gallery
+video and seeks within a playable Gallery video. Conflicts name the existing
+action and overlapping context. Reset an action with its reset button, or use
+**Restore shortcut defaults** to reset the current review mode and Command
+shortcuts together. Menus, the Command Palette, Help and tooltips reflect the
+saved keys and contexts. Escape retains its native selection/cancel behavior.
+
+The table below lists the defaults.
 
 | Shortcut | Action |
 |---|---|
@@ -202,8 +238,9 @@ RAW-corpus, and release acceptance checks document their separate requirements.
 | [Homebrew](Docs/HOMEBREW.md) | Cask maintenance |
 | [XMPCore integration](Docs/XMP_TOOLKIT_INTEGRATION.md) | Parser pins, boundaries, and tests |
 
-[1.11 release preparation](Docs/RELEASE_1.11_PREPARATION_2026-10-15.md) records
-current candidates, verification, owner acceptance, and the publication handoff.
+[1.12 release preparation](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md) records
+the independent review, current verification, acceptance limits, and release handoff.
+The [1.11 record](Docs/RELEASE_1.11_PREPARATION_2026-10-15.md) retains its Store submission history.
 
 ### Utilities
 

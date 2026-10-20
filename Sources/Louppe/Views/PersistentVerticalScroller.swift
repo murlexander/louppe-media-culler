@@ -18,6 +18,10 @@ struct PersistentVerticalScroller: NSViewRepresentable {
         (nsView as? Configurator)?.scheduleConfiguration()
     }
 
+    static func dismantleNSView(_ nsView: NSView, coordinator: ()) {
+        (nsView as? Configurator)?.dismantle()
+    }
+
     /// Internal for the focused AppKit regression check.
     static func configure(_ scrollView: NSScrollView) {
         // updateNSView re-runs this on every SwiftUI update pass (every store
@@ -49,25 +53,72 @@ struct PersistentVerticalScroller: NSViewRepresentable {
         scrollView.reflectScrolledClipView(scrollView.contentView)
     }
 
-    private final class Configurator: NSView {
+    final class Configurator: NSView {
         private var configurationScheduled = false
+        private weak var observedClipView: NSClipView?
+        private var correctingHorizontalOrigin = false
+        private var isDismantled = false
+
+        func dismantle() {
+            isDismantled = true
+            stopObserving()
+        }
+
+        private func stopObserving() {
+            NotificationCenter.default.removeObserver(self, name: NSView.boundsDidChangeNotification, object: observedClipView)
+            observedClipView = nil
+        }
+
+        private func bind(to scrollView: NSScrollView) {
+            let clipView = scrollView.contentView
+            if observedClipView !== clipView {
+                stopObserving()
+                observedClipView = clipView
+                clipView.postsBoundsChangedNotifications = true
+                NotificationCenter.default.addObserver(
+                    self, selector: #selector(clipBoundsChanged),
+                    name: NSView.boundsDidChangeNotification, object: clipView
+                )
+            }
+            pinHorizontalOrigin()
+        }
+
+        @objc private func clipBoundsChanged(_ notification: Notification) {
+            pinHorizontalOrigin()
+        }
+
+        private func pinHorizontalOrigin() {
+            guard !correctingHorizontalOrigin, let clipView = observedClipView,
+                  clipView.bounds.origin.x != 0 else { return }
+            // Hiding a scroller and disabling rubber-banding do not lock an
+            // axis. SwiftUI layout/follow-scroll can still introduce X travel.
+            // Correct synchronously, preserving the native clip and vertical Y.
+            correctingHorizontalOrigin = true
+            clipView.setBoundsOrigin(NSPoint(x: 0, y: clipView.bounds.origin.y))
+            clipView.enclosingScrollView?.reflectScrolledClipView(clipView)
+            correctingHorizontalOrigin = false
+        }
 
         override func viewDidMoveToSuperview() {
             super.viewDidMoveToSuperview()
+            if superview == nil { stopObserving(); return }
             scheduleConfiguration()
         }
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
+            if window == nil { stopObserving(); return }
             scheduleConfiguration()
         }
 
         func scheduleConfiguration() {
+            guard !isDismantled else { return }
             // Once mounted, update synchronously. Queueing one block for every
             // lazy-Grid update can make those callbacks compete with live
             // scrolling even though configure itself immediately returns.
             if let scrollView = enclosingScrollView {
                 PersistentVerticalScroller.configure(scrollView)
+                bind(to: scrollView)
                 return
             }
 
@@ -77,10 +128,11 @@ struct PersistentVerticalScroller: NSViewRepresentable {
             guard !configurationScheduled else { return }
             configurationScheduled = true
             DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
+                guard let self, !self.isDismantled else { return }
                 self.configurationScheduled = false
                 guard let scrollView = self.enclosingScrollView else { return }
                 PersistentVerticalScroller.configure(scrollView)
+                self.bind(to: scrollView)
             }
         }
     }

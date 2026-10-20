@@ -177,6 +177,111 @@ final class MediaPerformanceTests: XCTestCase {
         await pipeline.waitForPendingDiskWrites()
     }
 
+    func testMountedThumbnailReportsLoadingUntilFullPreviewCompletesOrFails() async throws {
+        guard NSScreen.main != nil else { throw XCTSkip("A WindowServer screen is required to mount Gallery") }
+        for fails in [false, true] {
+            let root = try temporaryDirectory()
+            defer { try? FileManager.default.removeItem(at: root) }
+            let photo = try jpegItem(in: root, name: "detail.JPG")
+            let gate = MediaDecodeGate()
+            defer { gate.release.signal() }
+            let pipeline = ImagePipeline(testingDiskCacheRoot: root.appendingPathComponent("cache")) { url, bound in
+                if bound == ImagePipeline.fullPixelSize {
+                    _ = gate.begin()
+                    defer { gate.end() }
+                    _ = mediaWait(gate.release, seconds: 5)
+                    if fails { return nil }
+                }
+                return ImagePipeline.decodeImage(url: url, maxPixel: bound)
+            }
+            let thumbnail = await pipeline.thumbnail(for: photo)
+            XCTAssertNotNil(thumbnail)
+            var representations: [PhotoRepresentation] = []
+            let view = FullImageView(
+                item: photo, zoomMode: .constant(.fit), actualSizeViewport: ActualSizeViewport(),
+                onZoomToActual: { _ in }, onZoomToFit: {},
+                onRepresentation: { representation, revision in
+                    XCTAssertEqual(revision, photo.contentRevision)
+                    representations.append(representation)
+                }, imagePipeline: pipeline
+            )
+            let host = NSHostingView(rootView: view)
+            let window = mount(host)
+            defer { window.orderOut(nil); window.contentView = nil; window.close() }
+            try await waitUntil {
+                host.layoutSubtreeIfNeeded()
+                return gate.calls == 1 && self.hasFittedSurface(host)
+                    && representations.last == .loadingPreview
+            }
+            XCTAssertNil(pipeline.cachedFullImage(for: photo))
+            XCTAssertFalse(representations.contains(.preview), "A thumbnail must not claim that fitted detail is ready")
+            gate.release.signal()
+            try await waitUntil {
+                host.layoutSubtreeIfNeeded()
+                return representations.last == (fails ? .unavailable : .preview)
+            }
+            XCTAssertEqual(hasFittedSurface(host), !fails,
+                           "A failed full preview must leave the retry state, not a permanently loading stand-in")
+            await pipeline.waitForPendingDiskWrites()
+        }
+    }
+
+    func testWarmPreviewStaysReadyWhenPreviousPhotoDecodeFinishesLate() async throws {
+        guard NSScreen.main != nil else { throw XCTSkip("A WindowServer screen is required to mount Gallery") }
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let slow = try jpegItem(in: root, name: "slow.JPG")
+        let warm = try jpegItem(in: root, name: "warm.JPG")
+        let gate = MediaDecodeGate()
+        defer { gate.release.signal() }
+        let pipeline = ImagePipeline(testingDiskCacheRoot: root.appendingPathComponent("cache")) { url, bound in
+            if url.lastPathComponent == "slow.JPG", bound == ImagePipeline.fullPixelSize {
+                _ = gate.begin()
+                defer { gate.end() }
+                _ = mediaWait(gate.release, seconds: 5)
+                return nil
+            }
+            return ImagePipeline.decodeImage(url: url, maxPixel: bound)
+        }
+        _ = await pipeline.thumbnail(for: slow)
+        let warmImage = await pipeline.fullImage(for: warm)
+        XCTAssertNotNil(warmImage)
+        let store = SessionStore()
+        store.items = [slow, warm]
+        store.phase = .ready
+        store.rebuildDerivedDataForTesting()
+        var warmReports: [PhotoRepresentation] = []
+        func view(_ photo: PhotoItem) -> FullImageView {
+            FullImageView(
+                item: photo, zoomMode: .constant(.fit), actualSizeViewport: ActualSizeViewport(),
+                onZoomToActual: { _ in }, onZoomToFit: {},
+                onRepresentation: { representation, revision in
+                    store.reportPhotoRepresentation(representation, revision: revision)
+                    if revision == warm.contentRevision { warmReports.append(representation) }
+                }, imagePipeline: pipeline
+            )
+        }
+        let host = NSHostingView(rootView: view(slow))
+        let window = mount(host)
+        defer { window.orderOut(nil); window.contentView = nil; window.close() }
+        try await waitUntil { gate.calls == 1 && store.currentPhotoRepresentation == .loadingPreview }
+        store.setIndex(1)
+        host.rootView = view(warm)
+        try await waitUntil {
+            host.layoutSubtreeIfNeeded()
+            return store.currentPhotoRepresentation == .preview && self.hasFittedSurface(host)
+        }
+        XCTAssertFalse(warmReports.isEmpty)
+        XCTAssertTrue(warmReports.allSatisfy { $0 == .preview }, "A warm preview must not flash a loading state")
+        gate.release.signal()
+        try await waitUntil { pipeline.decodeWaiterCountForTesting(for: slow, full: true) == 0 }
+        try await Task.sleep(for: .milliseconds(60))
+        XCTAssertEqual(store.currentPhotoRepresentation, .preview,
+                       "Late failure from the previous photo must not change the current detail state")
+        XCTAssertTrue(hasFittedSurface(host))
+        await pipeline.waitForPendingDiskWrites()
+    }
+
     func testBackgroundRAWBypassesDwellWhileInfoRetainsItAndJPEGUsesIndependentLane() async throws {
         let gate = MediaDecodeGate()
         defer { gate.release.signal() }
@@ -214,6 +319,23 @@ final class MediaPerformanceTests: XCTestCase {
     private func item(_ name: String, url: URL? = nil) -> PhotoItem {
         PhotoItem(id: name, primaryURL: url ?? URL(fileURLWithPath: "/private/tmp/\(UUID())/\(name)"),
                   pairedURL: nil, captureDate: nil, cameraModel: nil, lensModel: nil, fileSize: 1)
+    }
+
+    private func jpegItem(in root: URL, name: String) throws -> PhotoItem {
+        let source = root.appendingPathComponent(name)
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithURL(source as CFURL, UTType.jpeg.identifier as CFString, 1, nil))
+        CGImageDestinationAddImage(destination, try XCTUnwrap(mediaImage(width: 64)), nil)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        return item(name, url: source)
+    }
+
+    private func mount(_ host: NSView) -> NSWindow {
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 500, height: 400),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        return window
     }
 
     private func temporaryDirectory() throws -> URL {

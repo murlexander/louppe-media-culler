@@ -832,6 +832,7 @@ final class SessionStore: ObservableObject {
     @Published private(set) var availableMediaKinds: [MediaKind] = []
     @Published private(set) var availableCameras: [String] = []
     @Published private(set) var availableLenses: [String] = []
+    @Published private(set) var availableFilmSimulations: [FujiFilmSimulation] = []
     @Published private(set) var availableSubfolders: [String] = []
     @Published private(set) var availableCaptureDates: [Date] = []
     @Published private(set) var captureDateRange: ClosedRange<Date>?
@@ -844,6 +845,7 @@ final class SessionStore: ObservableObject {
     @Published private(set) var mediaKindCounts: [MediaKind: Int] = [:]
     @Published private(set) var cameraCounts: [String: Int] = [:]
     @Published private(set) var lensCounts: [String: Int] = [:]
+    @Published private(set) var filmSimulationCounts: [FujiFilmSimulation: Int] = [:]
     @Published private(set) var videoResolutionCounts: [String: Int] = [:]
     @Published private(set) var videoCodecCounts: [String: Int] = [:]
     @Published private(set) var subfolderCounts: [String: Int] = [:]
@@ -2064,6 +2066,8 @@ final class SessionStore: ObservableObject {
         var mediaKinds: [MediaKind: Int] = [:]
         var cameras: [String: Int] = [:]
         var lenses: [String: Int] = [:]
+        var filmSimulations: [FujiFilmSimulation: Int] = [:]
+        var hasFujiMetadata = false
         var videoResolutions: [String: Int] = [:]
         var videoCodecs: [String: Int] = [:]
         var subfolders: [String: Int] = [:]
@@ -2108,6 +2112,8 @@ final class SessionStore: ObservableObject {
             mediaKinds[item.mediaKind, default: 0] += 1
             cameras[item.cameraLabel, default: 0] += 1
             lenses[item.lensLabel, default: 0] += 1
+            filmSimulations[item.filmSimulationFacet, default: 0] += 1
+            hasFujiMetadata = hasFujiMetadata || item.filmSimulation != nil
             subfolders[item.subfolderLabel, default: 0] += 1
             if let day = item.captureDay {
                 dates[day, default: 0] += 1
@@ -2160,6 +2166,12 @@ final class SessionStore: ObservableObject {
         mediaKindCounts = mediaKinds
         cameraCounts = cameras
         lensCounts = lenses
+        filmSimulationCounts = filmSimulations
+        availableFilmSimulations = hasFujiMetadata ? filmSimulations.keys.sorted {
+            if $0 == .notRecorded { return false }
+            if $1 == .notRecorded { return true }
+            return $0.label.localizedStandardCompare($1.label) == .orderedAscending
+        } : []
         videoResolutionCounts = videoResolutions
         videoCodecCounts = videoCodecs
         subfolderCounts = subfolders
@@ -2227,6 +2239,7 @@ final class SessionStore: ObservableObject {
         updated.excludedMediaKinds.formIntersection(availableMediaKinds)
         updated.excludedCameras.formIntersection(availableCameras)
         updated.excludedLenses.formIntersection(availableLenses)
+        updated.excludedFilmSimulations.formIntersection(availableFilmSimulations)
         updated.excludedVideoResolutions.formIntersection(availableVideoResolutions)
         updated.excludedVideoCodecs.formIntersection(availableVideoCodecs)
         updated.excludedSubfolders.formIntersection(availableSubfolders)
@@ -2393,6 +2406,7 @@ final class SessionStore: ObservableObject {
         availableMediaKinds = []
         availableCameras = []
         availableLenses = []
+        availableFilmSimulations = []
         availableSubfolders = []
         availableCaptureDates = []
         captureDateRange = nil
@@ -2405,6 +2419,7 @@ final class SessionStore: ObservableObject {
         mediaKindCounts = [:]
         cameraCounts = [:]
         lensCounts = [:]
+        filmSimulationCounts = [:]
         videoResolutionCounts = [:]
         videoCodecCounts = [:]
         subfolderCounts = [:]

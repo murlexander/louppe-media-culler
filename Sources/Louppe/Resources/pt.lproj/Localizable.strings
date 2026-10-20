@@ -1679,3 +1679,145 @@
 /* Contact and recovery selection controls. */
 "Contact Alex" = "Falar com Alex";
 "Select All" = "Selecionar tudo";
+
+/* Folder opening, Fuji film simulations, and review shortcuts. */
+"Open one folder at a time." = "Abra uma pasta de cada vez.";
+"Close the current dialog or popover, then open the folder." = "Feche a caixa de diálogo ou o painel flutuante atual e abra a pasta.";
+"Unknown film simulation" = "Simulação de filme desconhecida";
+"Not recorded" = "Não registrado";
+"Previous item" = "Item anterior";
+"Next item" = "Próximo item";
+"Play / Pause" = "Reproduzir / Pausar";
+"Show / Hide Browser" = "Mostrar / Ocultar navegador";
+"Show / Hide Info" = "Mostrar / Ocultar informações";
+"Toggle clipping overlay" = "Mostrar ou ocultar sobreposição de recorte tonal";
+"2 stars" = "2 estrelas";
+"3 stars" = "3 estrelas";
+"4 stars" = "4 estrelas";
+"5 stars" = "5 estrelas";
+"Follow keyboard layout" = "Seguir o layout do teclado";
+"Physical key positions" = "Posições físicas das teclas";
+"{0} position" = "Posição de {0}";
+"Film simulation" = "Simulação de filme";
+"Show or hide the red preview clipping overlay ({0})" = "Mostrar ou ocultar a sobreposição vermelha de recorte tonal da prévia ({0})";
+"Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%." = "Use o controle deslizante ou o gesto de pinça para ampliar; role com dois dedos ou arraste para mover a imagem. {0} retorna o zoom personalizado a 100% centralizado e depois alterna para Ajustar. {1} alterna o tamanho Telefone. Clique duas vezes em um ponto para examiná-lo a 100%.";
+"Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts." = "Altere as teclas de revisão e o comportamento do layout em Ajustes → Atalhos de teclado.";
+"{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "{0} marca Sim; {1} marca Não. Por padrão, ambas avançam para o próximo item sem decisão (Ajustes → Revisão). As estrelas e as etiquetas de cor são independentes.";
+"Match shortcuts by" = "Identificar atalhos por";
+"Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard." = "As posições físicas mantêm os mesmos movimentos dos dedos no Dvorak e em outros layouts. Os nomes das posições se referem a um teclado QWERTY.";
+"Customize shortcuts" = "Personalizar atalhos";
+"Click a shortcut, then press one key without modifiers. Escape cancels. Arrows, Tab, Space, and Command shortcuts stay unchanged." = "Clique em um atalho e pressione uma tecla sem modificadores. Escape cancela. As setas, Tab, Espaço e os atalhos com Command permanecem iguais.";
+"That key or position is already used for {0}. Choose another key." = "Essa tecla ou posição já é usada para {0}. Escolha outra tecla.";
+"Press a letter, number, or punctuation key without modifiers." = "Pressione uma tecla de letra, número ou pontuação sem modificadores.";
+"Restore Shortcut Defaults" = "Restaurar atalhos padrão";
+"Press a key…" = "Pressione uma tecla…";
+"{0}: {1}" = "{0}: {1}";
+"Click to record a shortcut. Escape cancels." = "Clique para gravar um atalho. Escape cancela.";
+"Dismiss" = "Dispensar";
+"Show or hide the Browser in the Gallery view ({0})" = "Mostrar ou ocultar o navegador na visualização Galeria ({0})";
+"Show or hide media information ({0})" = "Mostrar ou ocultar informações da mídia ({0})";
+"Copy or move selected media, or write Metadata (XMP) sidecars ({0} or ⌘E)" = "Copiar ou mover a mídia selecionada, ou gravar arquivos auxiliares de metadados (XMP) ({0} ou ⌘E)";
+
+/* Current shortcut hints. */
+"{0} Yes · {1} No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place." = "{0} Sim · {1} Não · setas para navegar · ⌘Z para desfazer. As decisões são salvas automaticamente; Não mantém os arquivos no lugar.";
+"Undo the last decision, stars, color label, or clean-up ({0} or ⌘Z)" = "Desfazer a última decisão, estrelas, etiqueta de cor ou limpeza ({0} ou ⌘Z)";
+"Clear all Yes/No decisions ({0})" = "Limpar todas as decisões Sim/Não ({0})";
+"Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position; {0} resets it." = "Role ou use o gesto de pinça para examinar; clique duas vezes para Ajustar. A navegação mantém a posição; {0} a redefine.";
+
+"Bindings are saved separately for each matching mode." = "As atribuições são salvas separadamente para cada modo de identificação.";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"No current item" = "Nenhum item atual";
+"{0} · {1}" = "{0} · {1}";
+"Where available" = "Onde disponível";
+"Playable video and audio" = "Vídeo e áudio reproduzíveis";
+"Media without playback" = "Mídia sem reprodução";
+"Gallery photos" = "Fotos na Galeria";
+"Gallery videos with seeking" = "Vídeos da Galeria com busca temporal";
+"Outside Gallery video seeking" = "Fora da busca temporal de vídeo na Galeria";
+"Navigation" = "Navegação";
+"Playback" = "Reprodução";
+"Actions" = "Ações";
+"Previous row" = "Linha anterior";
+"Next row" = "Próxima linha";
+"Seek backward" = "Retroceder no vídeo";
+"Seek forward" = "Avançar no vídeo";
+"All views and media" = "Todas as visualizações e mídias";
+"Space" = "Espaço";
+"Tab" = "Tabulação";
+"Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position." = "Role ou faça o gesto de pinça para inspecionar; clique duas vezes para Ajustar. A navegação mantém a posição.";
+"Show or hide the red preview clipping overlay" = "Mostrar ou ocultar a sobreposição vermelha de recorte da prévia";
+"No shortcut assigned" = "Nenhum atalho atribuído";
+"Change playback speed; previous / next item without playback" = "Alterar a velocidade de reprodução; item anterior / próximo sem reprodução";
+"Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "Amplie com o controle deslizante ou gesto de pinça; mova com rolagem de dois dedos ou arrastando. Clique duas vezes em um ponto para inspecioná-lo em 100%. Use os controles de tamanho para voltar a Ajustar, 100% ou tamanho de Celular.";
+"Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "Cada tecla abaixo mostra quando se aplica. Teclas compartilhadas executam ações diferentes apenas em visualizações ou contextos de mídia separados.";
+"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "Marque Sim ou Não usando os botões ou seus atalhos atribuídos. Por padrão, ambos avançam para o próximo item sem decisão (Ajustes → Revisão). Estrelas e etiquetas de cor são independentes.";
+"Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "Adicione várias teclas a uma ação. Uma tecla só pode ser compartilhada quando seus contextos de visualização e mídia não se sobrepõem.";
+"Find a shortcut" = "Buscar um atalho";
+"No matching shortcuts." = "Nenhum atalho correspondente.";
+"Fixed shortcuts" = "Atalhos fixos";
+"These shortcuts keep their standard behavior and cannot be reassigned here." = "Estes atalhos mantêm o comportamento padrão e não podem ser reatribuídos aqui.";
+"Restore all shortcuts for the selected matching mode." = "Restaurar todos os atalhos do modo de correspondência selecionado.";
+"Add shortcut" = "Adicionar atalho";
+"Add shortcut for {0}" = "Adicionar atalho para {0}";
+"Defaults overlap another shortcut. Remove that assignment first." = "Os padrões se sobrepõem a outro atalho. Remova essa atribuição primeiro.";
+"Restore defaults for this action" = "Restaurar padrões desta ação";
+"Remove shortcut" = "Remover atalho";
+"Remove {0} from {1}" = "Remover {0} de {1}";
+"Record key…" = "Registrar tecla…";
+"Cancel new shortcut" = "Cancelar novo atalho";
+"Choose when it applies, then press one key without modifiers. Escape cancels." = "Escolha quando se aplica e pressione uma tecla sem modificadores. Escape cancela.";
+"When" = "Quando";
+"When {0} applies" = "Quando {0} se aplica";
+"Already used for {0} in {1}. Choose another key or a separate context." = "Já usada para {0} em {1}. Escolha outra tecla ou um contexto separado.";
+"Press one letter, number, punctuation key, arrow, Tab, or Space without modifiers." = "Pressione uma letra, número, pontuação, seta, Tabulação ou Espaço sem modificadores.";
+"Use Yes and No to decide, and navigation controls to browse. ⌘Z undoes your last action. Decisions save automatically; No leaves files in place." = "Use Sim e Não para decidir e os controles de navegação para percorrer. ⌘Z desfaz a última ação. As decisões são salvas automaticamente; Não mantém os arquivos no lugar.";
+"Switch between Gallery and Grid views ({0})" = "Alternar entre Galeria e Grade ({0})";
+"Search filters" = "Buscar nos filtros";
+"Command palette" = "Paleta de comandos";
+"Rescan folder" = "Examinar pasta novamente";
+"Move selected files to Trash" = "Mover arquivos selecionados para o Lixo";
+"Select all filtered items" = "Selecionar todos os itens filtrados";
+"Resize Grid thumbnails" = "Redimensionar miniaturas da Grade";
+"Playback speed; previous / next item for other media" = "Velocidade de reprodução; item anterior / próximo para outras mídias";
+"Seek video by five seconds in Gallery" = "Avançar ou retroceder cinco segundos no vídeo da Galeria";
+"Extend selection to the first / last item" = "Estender seleção até o primeiro / último item";
+"Clear selection" = "Limpar seleção";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"Restore defaults for this mode" = "Restaurar padrões deste modo";
+"Open folder" = "Abrir pasta";
+"Clear selection or cancel scan" = "Limpar seleção ou cancelar verificação";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"Settings" = "Ajustes";
+
+/* Help: renaming keepers. */
+"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "Para renomear as fotos que deseja manter, filtre por Sim, abra Paleta de comandos (⌘K) → Renomear arquivos com metadados… e escolha Filtrado. Confira os nomes antes de confirmar; ⌘Z restaura os anteriores.";
+
+/* Command shortcut discovery and customization */
+"Quit Louppe" = "Sair do Louppe";
+"Slower playback" = "Reprodução mais lenta";
+"Faster playback" = "Reprodução mais rápida";
+"Select to first item" = "Selecionar até o primeiro item";
+"Select to last item" = "Selecionar até o último item";
+"This shortcut is reserved by macOS." = "Este atalho está reservado pelo macOS.";
+"Already assigned to {0}." = "Já atribuído a {0}.";
+"Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing." = "Revise arquivos RAW + JPEG correspondentes juntos ou separadamente no Filtro ou na Paleta de comandos. Busque RAW, JPEG ou emparelhamento.";
+"Command Palette" = "Paleta de comandos";
+"Command Palette ({0})" = "Paleta de comandos ({0})";
+"To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "Para renomear os arquivos mantidos, filtre por Sim, abra {0} → Renomear arquivos pelos metadados… e escolha Filtrados. Confira os nomes antes de confirmar; ⌘Z restaura os nomes anteriores.";
+"Shift" = "Shift";
+"Command" = "Command";
+"A default shortcut is already assigned to another action." = "Um atalho padrão já está atribuído a outra ação.";
+"Single key" = "Tecla única";
+"Command shortcut" = "Atalho com Command";
+"Standard Mac shortcut" = "Atalho padrão do Mac";
+"Press Command and a letter. Add Shift if needed." = "Pressione Command e uma letra. Adicione Shift se necessário.";
+"Press a shortcut…" = "Pressione um atalho…";
+"Undo the last decision, stars, color label, or clean-up ({0})" = "Desfazer a última decisão, estrelas, etiqueta de cor ou limpeza ({0})";
+"Copy or move selected media, or write Metadata (XMP) sidecars ({0})" = "Copiar ou mover a mídia selecionada, ou gravar arquivos auxiliares de metadados (XMP) ({0})";
+"Restore shortcut defaults" = "Restaurar atalhos padrão";
+"Restore review shortcuts for this mode and all Command shortcuts." = "Restaurar os atalhos de revisão deste modo e todos os atalhos com Command.";
+
+"RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "RAW 9 requer macOS 27, um arquivo compatível e os recursos de modelos da Apple. Tente novamente ou escolha Apple Default nos Ajustes.";

@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Compact photo-only luminance inspection for the Info panel.
 struct HistogramSection: View {
+    @AppStorage(ReviewShortcutPreferences.preferenceKey) private var shortcutSettings = ""
     let item: PhotoItem
     let analysis: HistogramAnalysis?
     let source: HistogramAnalysisSource
@@ -98,9 +99,17 @@ struct HistogramSection: View {
         .accessibilityValue(
             store.showClippingWarnings ? L10n.text("On") : L10n.text("Off")
         )
-        .help(L10n.text("Show or hide the red preview clipping overlay (X)"))
+        .help(clippingHelp)
     }
 
+    private var clippingHelp: String {
+        let context = ReviewShortcutContext(viewMode: store.viewMode, mediaKind: store.currentItem?.mediaKind,
+                                            isPlayable: store.currentItem?.isPlayableMedia == true,
+                                            canSeekVideo: store.canSeekCurrentVideo)
+        let hint = ReviewShortcutPreferences.decode(shortcutSettings).hint(for: .clipping, context: context)
+        return hint.isEmpty ? L10n.text("Show or hide the red preview clipping overlay")
+            : L10n.text("Show or hide the red preview clipping overlay (\(hint))")
+    }
 
 }
 

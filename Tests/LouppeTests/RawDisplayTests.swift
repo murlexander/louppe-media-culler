@@ -62,6 +62,10 @@ final class RawDisplayTests: XCTestCase {
         store.setIndex(1)
         store.reportPhotoRepresentation(.preview, revision: first)
         XCTAssertNil(store.currentPhotoRepresentation)
+        store.reportPhotoRepresentation(.loadingPreview, revision: first)
+        XCTAssertNil(store.currentPhotoRepresentation)
+        store.reportPhotoRepresentation(.unavailable, revision: first)
+        XCTAssertNil(store.currentPhotoRepresentation)
         store.reportPhotoRepresentation(.preview, revision: store.items[1].contentRevision)
         XCTAssertEqual(store.currentPhotoRepresentation, .preview)
     }

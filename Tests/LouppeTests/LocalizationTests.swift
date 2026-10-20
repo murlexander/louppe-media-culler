@@ -107,7 +107,11 @@ final class LocalizationTests: XCTestCase {
 
     func testUnchangedEnglishTextIsLimitedToBrandsUnitsAndSharedWords() throws {
         let technical: Set<String> = ["Adobe Bridge", "Adobe Lightroom Classic", "Capture One",
-                                      "{0} XMP", "{0} fps", "{0} dBFS", "{0} {1} RAW + JPEG"]
+                                      // Printed Mac modifier names, also used by localized keyboards.
+                                      "Command", "Shift",
+                                      "{0} XMP", "{0} fps", "{0} dBFS", "{0} {1} RAW + JPEG",
+                                      // Labels and values are already localized; only punctuation is shared.
+                                      "{0}: {1}", "{0} · {1}"]
         let shared: [String: Set<String>] = [
             "es": ["Audio", "Color", "Color: {0}", "Manual", "Mono", "No", "OK", "audio", "{0} s", "s"],
             "pt": ["Codec", "Manual", "Mono", "OK", "Picture in Picture", "Volume", "item", "{0} s", "s"]

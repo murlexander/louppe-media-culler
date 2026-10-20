@@ -17,6 +17,7 @@ enum RawDisplayMode: String, CaseIterable, Sendable {
 
 enum PhotoRepresentation: Equatable, Sendable {
     case preview
+    case loadingPreview
     case loadingRAW
     case raw
     case unavailable
@@ -24,6 +25,7 @@ enum PhotoRepresentation: Equatable, Sendable {
     var label: String {
         switch self {
         case .preview: return L10n.text("Preview")
+        case .loadingPreview: return L10n.text("Loading")
         case .loadingRAW: return "RAW…"
         case .raw: return "RAW"
         case .unavailable: return L10n.text("Unavailable")
@@ -77,7 +79,7 @@ enum AppleRawDecoder: String, CaseIterable, Sendable {
 
     var failureMessage: String {
         self == .raw9
-            ? L10n.text("RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in the RAW menu.")
+            ? L10n.text("RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings.")
             : L10n.text("This Mac couldn’t render the RAW. Retry or use the camera preview.")
     }
 }

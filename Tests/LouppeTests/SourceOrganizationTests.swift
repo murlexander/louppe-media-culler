@@ -20,7 +20,7 @@ final class SourceOrganizationTests: XCTestCase {
         XCTAssertEqual(restored.fileCountDescription(for: .rename), "1 file restored")
     }
 
-    func testMetadataRenameBuildsStableSortableNamesAndPreservesExtensions() throws {
+    func testMetadataRenameUsesPreferredDateAndPreservesExtensions() throws {
         let fixture = try makeFixture(named: "MetadataRename")
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let firstURL = try mediaFile("DSC_9002.NEF", under: fixture.photos)
@@ -74,8 +74,8 @@ final class SourceOrganizationTests: XCTestCase {
             $0.destination.lastPathComponent
         }
         XCTAssertEqual(names, [
-            "2026-09-04_14-32-17_Sony-ILCE-7RM5_002.NEF",
-            "2026-09-04_14-32-16_Sony-ILCE-7RM5_001.JPG",
+            "\(FileRenamingPlanner.safeGeneratedPart(AppDateFormat.day(firstDate)))_14-32-17_Sony-ILCE-7RM5_002.NEF",
+            "\(FileRenamingPlanner.safeGeneratedPart(AppDateFormat.day(secondDate)))_14-32-16_Sony-ILCE-7RM5_001.JPG",
         ])
         XCTAssertTrue(result.mappings.allSatisfy {
             $0.source.deletingLastPathComponent()

@@ -7,50 +7,53 @@ enum LouppeHelpWindow {
 /// A small, searchable reference that can open independently of a photo session.
 struct LouppeHelpView: View {
     @State private var shortcutSearch = ""
+    @AppStorage(ReviewShortcutPreferences.preferenceKey) private var shortcutSettings = ""
+    @AppStorage(CommandShortcutPreferences.preferenceKey) private var commandShortcutSettings = ""
+
+    private var shortcuts: ReviewShortcutPreferences { ReviewShortcutPreferences.decode(shortcutSettings) }
+    private var commandShortcuts: CommandShortcutPreferences { .decode(commandShortcutSettings) }
 
     private struct Shortcut: Identifiable {
+        let id: String
         let keys: String
         let action: String
-        var id: String { keys }
+        var context: String = ""
 
         func matches(_ query: String) -> Bool {
             keys.localizedStandardContains(query)
                 || action.localizedStandardContains(query)
+                || context.localizedStandardContains(query)
         }
     }
 
-    private static let shortcuts: [Shortcut] = [
-        .init(keys: "F / D", action: L10n.text("Mark Yes / No; advance by default (Settings → Review)")),
-        .init(keys: "0–5", action: L10n.text("Clear or set stars, independently of Yes / No")),
-        .init(keys: "← / →, J / L", action: L10n.text("Previous / next item; arrows seek in Gallery video")),
-        .init(keys: "↑ / ↓", action: L10n.text("Previous / next item or Grid row")),
-        .init(keys: "Space / K", action: L10n.text("Play or pause media; Space advances on photos")),
-        .init(keys: "⇧← / ⇧→", action: L10n.text("Seek five seconds in Gallery video")),
-        .init(keys: "S", action: L10n.text("Toggle 100% photo view")),
-        .init(keys: "A", action: L10n.text("Toggle phone-sized photo view")),
-        .init(keys: "X", action: L10n.text("Toggle photo clipping overlay")),
-        .init(keys: "Tab / G", action: L10n.text("Switch Gallery / Grid")),
-        .init(keys: "Q", action: L10n.text("Show or hide Gallery thumbnail browser")),
-        .init(keys: "W", action: L10n.text("Show or hide Info panel")),
-        .init(keys: "⌘+ / ⌘−", action: L10n.text("Make Grid thumbnails larger / smaller")),
-        .init(keys: "E / ⌘E", action: L10n.text("Open Export")),
-        .init(keys: "R", action: L10n.text("Clear all Yes / No decisions")),
-        .init(keys: "Z / ⌘Z", action: L10n.text("Undo the latest review or file action")),
-        .init(keys: "⌘O", action: L10n.text("Open another folder")),
-        .init(keys: "⌘R", action: L10n.text("Rescan the current folder")),
-        .init(keys: "⌘F", action: L10n.text("Open Filter and focus Search")),
-        .init(keys: "⌘K", action: L10n.text("Open Command Palette")),
-        .init(keys: "⌘A", action: L10n.text("Select all visible items")),
-        .init(keys: "⌘← / ⌘→", action: L10n.text("Change playback speed; previous / next photo")),
-        .init(keys: "⌘⇧← / ⌘⇧→", action: L10n.text("Select to the first / last item")),
-        .init(keys: "Esc", action: L10n.text("Cancel a scan or clear selection")),
-        .init(keys: "⌘⌫", action: L10n.text("Move selected items to Trash; ⌘Z restores them")),
-    ]
+    private var shortcutReference: [Shortcut] {
+        let configurable = ReviewShortcutAction.allCases.flatMap { action -> [Shortcut] in
+            let assignments = shortcuts.assignments(for: action)
+            if assignments.isEmpty {
+                return [.init(id: "action-\(action.rawValue)", keys: L10n.text("No shortcut assigned"), action: action.title,
+                              context: action.contextLabel)]
+            }
+            return assignments.map { assignment in
+                .init(id: "action-\(action.rawValue)-\(assignment.id)", keys: shortcuts.display(for: assignment.binding),
+                      action: action.title,
+                      context: assignment.scope == .all ? action.contextLabel : assignment.scope.title)
+            }
+        }
+        let commands = CommandShortcutAction.allCases.map { action -> Shortcut in
+            let hint = commandShortcuts.hint(for: action)
+            return .init(id: "command-\(action.rawValue)",
+                         keys: hint.isEmpty ? L10n.text("No shortcut assigned") : hint,
+                         action: action.title, context: action.contextLabel)
+        }
+        return configurable + commands + [
+            .init(id: "escape", keys: "Esc", action: L10n.text("Cancel a scan or clear selection")),
+        ]
+    }
 
     private var matchingShortcuts: [Shortcut] {
         let query = shortcutSearch.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return Self.shortcuts }
-        return Self.shortcuts.filter { $0.matches(query) }
+        guard !query.isEmpty else { return shortcutReference }
+        return shortcutReference.filter { $0.matches(query) }
     }
 
     var body: some View {
@@ -67,9 +70,9 @@ struct LouppeHelpView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L10n.text("Look closer and find similar photos"))
                         .font(.headline)
-                    Text(L10n.text("Zoom with the slider or pinch; pan with two-finger scrolling or dragging. S returns custom zoom to centered 100%, then toggles Fit. A toggles Phone size. Double-click a point to inspect it at 100%."))
+                    Text(L10n.text("Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size."))
                     Text(L10n.text("View → Review Groups finds exact duplicates, similar photos, and capture bursts locally. Ratings and files stay unchanged. Normal Review exits groups."))
-                    Text(L10n.text("Review matching RAW + JPEG files together or separately in Filter or the Command Palette (⌘K). Search for RAW, JPEG, or pairing."))
+                    Text(L10n.text("Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing."))
                 }
 
                 Divider()
@@ -87,6 +90,12 @@ struct LouppeHelpView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(L10n.text("Keyboard shortcuts"))
                         .font(.headline)
+                    Text(L10n.text("Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(L10n.text("Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     TextField(L10n.text("Search shortcuts or actions"), text: $shortcutSearch)
                         .textFieldStyle(.roundedBorder)
                         .accessibilityLabel(L10n.text("Search keyboard shortcuts"))
@@ -100,8 +109,15 @@ struct LouppeHelpView: View {
                                     .environment(\.layoutDirection, .leftToRight)
                                     .font(.system(.body, design: .monospaced))
                                     .frame(width: 122, alignment: .leading)
-                                Text(shortcut.action)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(shortcut.action)
+                                    if !shortcut.context.isEmpty {
+                                        Text(shortcut.context)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                     }
@@ -120,11 +136,16 @@ struct LouppeHelpView: View {
 
 /// The onboarding guide lives in Help; review preferences live in Settings.
 struct LouppeQuickStartContent: View {
+    @AppStorage(CommandShortcutPreferences.preferenceKey) private var commandShortcutSettings = ""
+
     var body: some View {
+        let paletteShortcut = CommandShortcutPreferences.decode(commandShortcutSettings).hint(for: .commandPalette)
+        let paletteName = paletteShortcut.isEmpty ? L10n.text("Command Palette") : L10n.text("Command Palette (\(paletteShortcut))")
         VStack(alignment: .leading, spacing: 8) {
             Text(L10n.text("Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid."))
-            Text(L10n.text("F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Stars (0–5) and color labels are independent."))
+            Text(L10n.text("Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent."))
             Text(L10n.text("Export copies chosen media. Clean Up asks before moving rejects to the macOS Trash."))
+            Text(L10n.text("To rename keepers, filter to Yes, open \(paletteName) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names."))
             Text(L10n.text("Decisions, stars, and colors save automatically. Reopen the folder to continue. No never trashes files. Export → Metadata (XMP) shares ratings with compatible editing apps."))
         }
         .fixedSize(horizontal: false, vertical: true)

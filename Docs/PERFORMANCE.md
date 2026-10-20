@@ -157,6 +157,14 @@ session. Final identity checks iterate physical files without a flattened copy,
 poll cancellation between files and before an empty pass, and check again after
 sorting. Keep filesystem loops and JSON encoding off `SessionStore`.
 
+Fuji film simulation is a finite scan-time value on each physical file. Reuse
+ImageIO metadata, then bound the read-only MakerNote/container fallback to 1 MiB,
+256 JPEG markers and 1,024 IFD entries. Color FilmMode and monochrome Saturation
+share one resolver. Existing scan/lazy-enrichment revision checks remain in force;
+Info, search, filter changes and cached facet counts do not trigger another Fuji
+read. A paired item's primary file remains authoritative; hidden JPEG metadata
+is loaded only through the existing Separate projection path.
+
 ## Portable saved decisions
 
 One serial utility actor hashes full file contents in 1 MiB chunks. Only reviewed
@@ -433,6 +441,15 @@ column calculations. Keep native `NSScroller`; the former hand-drawn thumb stepp
 under lazy-cell load. Resolve mounted scroll views synchronously; queue/coalesce
 only the initial unresolved lookup. `configure` returns early once configured,
 avoiding redundant `tile()` on every keystroke/drag.
+Both Browser and Grid retain a one-point minimum-height guard for short
+documents. Both also need a flexible outer document around their gutter-excluding,
+physically left-aligned content; otherwise SwiftUI can shrink the native
+pane to the content width and subtract the legacy gutter twice. Only an empty
+tail extends outside the clip. The bridge also
+pins only the horizontal clip origin synchronously when it changes. Ordinary
+vertical bounds notifications return immediately; no tiles/layout are rebuilt,
+no per-scroll task is queued, and no scroll position is published to SwiftUI.
+Keep this observer local to its mounted clip and detach/rebind on lifecycle changes.
 
 ## Filtering and derived data
 
@@ -729,10 +746,12 @@ requires exclusive rename and directory sync.
 ## Source Renaming lifecycle
 
 Source Renaming has its own Info/batch UI and reuses Organization's
-snapshot → plan → background move → rescan boundary. Recipes use fixed
-`yyyy-MM-dd`/`HH-mm-ss`, sanitized camera/lens/original components, and sequence
-ordered by capture time/stable ID. Default Date + Time + Sequence is sortable
-and independent of visible sort.
+snapshot → plan → background move → rescan boundary. Date parts use the Mac's
+preferred short/custom date format through `AppDateFormat.day`, with unsafe
+filename characters sanitized; time uses fixed `HH-mm-ss`. Camera, lens, and
+original-name parts are sanitized too. Sequence follows capture time/stable ID,
+independent of visible sort. Preferred date formats do not guarantee chronological
+filename sorting.
 
 Keep source directory/extension and reserve filenames plus directory+stem
 families so unrelated RAW/JPEG cannot become paired on rescan. Existing targets,

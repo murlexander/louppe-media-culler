@@ -22,6 +22,36 @@ struct SessionView: View {
     @ObservedObject var store: SessionStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("louppe.showQuickStart") private var showQuickStart = true
+    @AppStorage(ReviewShortcutPreferences.preferenceKey) private var shortcutSettings = ""
+    @AppStorage(CommandShortcutPreferences.preferenceKey) private var commandShortcutSettings = ""
+
+    private var shortcuts: ReviewShortcutPreferences {
+        ReviewShortcutPreferences.decode(shortcutSettings)
+    }
+
+    private var commandShortcuts: CommandShortcutPreferences {
+        CommandShortcutPreferences.decode(commandShortcutSettings)
+    }
+
+    func toolbarShortcutHint(
+        for action: ReviewShortcutAction,
+        command: CommandShortcutAction? = nil,
+        shortcutPreferences: ReviewShortcutPreferences? = nil,
+        commandShortcutPreferences: CommandShortcutPreferences? = nil
+    ) -> String {
+        let reviewHint = (shortcutPreferences ?? shortcuts).hint(for: action, context: reviewShortcutContext)
+        let commandHint = command.map { (commandShortcutPreferences ?? commandShortcuts).hint(for: $0) } ?? ""
+        return [reviewHint, commandHint].filter { !$0.isEmpty }.joined(separator: " / ")
+    }
+
+    private var reviewShortcutContext: ReviewShortcutContext {
+        ReviewShortcutContext(
+            viewMode: store.viewMode,
+            mediaKind: store.currentItem?.mediaKind,
+            isPlayable: store.currentItem?.isPlayableMedia == true,
+            canSeekVideo: store.canSeekCurrentVideo
+        )
+    }
 
     var body: some View {
         mainContent
@@ -532,7 +562,7 @@ struct SessionView: View {
                     .tag(ViewMode.grid)
             }
             .pickerStyle(.segmented)
-            .help(L10n.text("Switch between Gallery and Grid views (Tab or G)"))
+            .help(L10n.text("Switch between Gallery and Grid views (\(toolbarShortcutHint(for: .grid)))"))
         }
 
         // Session status stays centered and opts out of a glass capsule.
@@ -555,7 +585,7 @@ struct SessionView: View {
             }
             .disabled(store.isFileOperationRunning || !store.canUndo)
             .accessibilityLabel(L10n.text("Undo"))
-            .help(L10n.text("Undo the last decision, stars, color label, or clean-up (Z or ⌘Z)"))
+            .help(L10n.text("Undo the last decision, stars, color label, or clean-up (\(toolbarShortcutHint(for: .undo, command: .undo)))"))
             Button {
                 store.requestClearAllRatings()
             } label: {
@@ -563,7 +593,7 @@ struct SessionView: View {
             }
             .disabled(store.isFileOperationRunning || store.ratedCount == 0)
             .accessibilityLabel(L10n.text("Clear All Decisions"))
-            .help(L10n.text("Clear all Yes/No decisions (R)"))
+            .help(L10n.text("Clear all Yes/No decisions (\(toolbarShortcutHint(for: .clear)))"))
         }
 
         if #available(macOS 26.0, *) {
@@ -580,7 +610,7 @@ struct SessionView: View {
                     Image(systemName: store.showBrowser ? "sidebar.squares.left" : "sidebar.left")
                 }
                 .accessibilityLabel(store.showBrowser ? L10n.text("Hide Browser") : L10n.text("Show Browser"))
-                .help(L10n.text("Show or hide the Browser in the Gallery view (Q)"))
+                .help(L10n.text("Show or hide the Browser in the Gallery view (\(toolbarShortcutHint(for: .browser)))"))
             }
 
             Button {
@@ -591,7 +621,7 @@ struct SessionView: View {
             .accessibilityLabel(
                 store.showMetadataPanel ? L10n.text("Hide Media Information") : L10n.text("Show Media Information")
             )
-            .help(L10n.text("Show or hide media information (W)"))
+            .help(L10n.text("Show or hide media information (\(toolbarShortcutHint(for: .info)))"))
         }
 
         if #available(macOS 26.0, *) {
@@ -642,7 +672,7 @@ struct SessionView: View {
             .buttonBorderShape(.circle)
             .tint(Color.louppeAccent)
             .accessibilityLabel(L10n.text("Export"))
-            .help(L10n.text("Copy or move selected media, or write Metadata (XMP) sidecars (E or ⌘E)"))
+            .help(L10n.text("Copy or move selected media, or write Metadata (XMP) sidecars (\(toolbarShortcutHint(for: .export, command: .export)))"))
         }
     }
 
@@ -659,7 +689,9 @@ struct SessionView: View {
     /// has proved that the active session owns keyboard input.
     func handleKey(
         _ event: NSEvent,
-        context: SessionKeyRoutingContext
+        context: SessionKeyRoutingContext,
+        shortcutPreferences: ReviewShortcutPreferences? = nil,
+        commandShortcutPreferences: CommandShortcutPreferences? = nil
     ) -> Bool {
         guard context.sessionOwnsEvent,
               !context.hasModalPresentation,
@@ -694,25 +726,22 @@ struct SessionView: View {
         let acceptsNavigationModifiers =
             acceptsReviewModifiers && !modifiers.contains(.shift)
 
+        let shortcut = (shortcutPreferences ?? shortcuts).match(
+            for: event, context: reviewShortcutContext
+        )
+
         if store.isFileOperationRunning {
             // Only unmodified, explicitly safe view controls stay live. Every
             // other key passes through to AppKit, including VoiceOver chords
             // and unsupported Command combinations.
             guard context.acceptsReviewShortcuts else { return false }
-            if event.keyCode == 48 {
+            guard acceptsReviewModifiers else { return false }
+            guard let shortcut, shortcut.action.isSafeDuringFileOperation else { return false }
+            if shortcut.requiresNavigationFocus {
                 guard context.acceptsNavigationShortcuts,
                       acceptsNavigationModifiers else { return false }
-                store.toggleViewMode()
-                return true
             }
-            guard acceptsReviewModifiers else { return false }
-            switch event.charactersIgnoringModifiers?.lowercased() {
-            case "q": withAnimation(reduceMotion ? nil : .default) { store.toggleBrowser() }; return true
-            case "w": withAnimation(reduceMotion ? nil : .default) { store.showMetadataPanel.toggle() }; return true
-            case "x": return store.toggleClippingWarnings()
-            case "g": store.toggleViewMode(); return true
-            default: return false
-            }
+            return performReviewShortcut(shortcut.action)
         }
 
         // App commands remain available when a Button, Picker, or Slider has
@@ -720,6 +749,27 @@ struct SessionView: View {
         // command instead (notably Undo, Select All, and Use Selection for
         // Find).
         let acceptsAppCommand = context.acceptsReviewShortcuts
+
+        // Editable Command aliases share the session's ownership and operation
+        // gates. Do not leave E/K/R fallbacks active after users remove them.
+        if acceptsAppCommand,
+           modifiers == [.command] || modifiers == [.command, .shift],
+           let action = (commandShortcutPreferences ?? commandShortcuts).match(for: event, context: reviewShortcutContext),
+           action.isEditable {
+            switch action {
+            case .export:
+                guard store.canExport else { return false }
+                store.presentExport()
+                return true
+            case .commandPalette:
+                store.presentActionPalette()
+                return store.isActionPalettePresented
+            case .rescan:
+                store.rescan()
+                return true
+            default: break
+            }
+        }
 
         // ⌘+ / ⌘− resize the Grid view.
         if acceptsAppCommand,
@@ -745,17 +795,6 @@ struct SessionView: View {
             switch event.charactersIgnoringModifiers?.lowercased() {
             case "f":
                 store.presentFilterSearch()
-                return true
-            case "k":
-                store.presentActionPalette()
-                return store.isActionPalettePresented
-
-            case "e":
-                guard store.canExport else { return false }
-                store.presentExport()
-                return true
-            case "r":
-                store.rescan()
                 return true
             default:
                 break
@@ -836,117 +875,60 @@ struct SessionView: View {
 
         guard context.acceptsReviewShortcuts else { return false }
 
-        // J/L are review letters, not native control-navigation keys. They
-        // always move between items after an ordinary control or AVKit player
-        // has focus; text editing and modal UI were excluded above.
-        if acceptsReviewModifiers {
-            switch event.charactersIgnoringModifiers?.lowercased() {
-            case "j": store.goPrevious(); return true
-            case "l": store.goNext(); return true
-            default: break
-            }
-        }
-        switch event.keyCode {
-        case 123:
-            guard context.acceptsNavigationShortcuts,
-                  acceptsNavigationModifiers else { return false }
-            store.performHorizontalReviewAction(forward: false)
-            return true                                      // ←
-        case 124:
-            guard context.acceptsNavigationShortcuts,
-                  acceptsNavigationModifiers else { return false }
-            store.performHorizontalReviewAction(forward: true)
-            return true                                      // →
-        case 126:                                             // ↑
-            guard context.acceptsNavigationShortcuts,
-                  acceptsNavigationModifiers else { return false }
-            // Grid: same column, one row up. Gallery: previous photo, matching
-            // the vertical Browser strip where the photo above is the previous one.
-            if store.viewMode == .grid {
-                store.goVertical(-1)
-            } else {
-                store.goPrevious()
-            }
-            return true
-        case 125:                                             // ↓
-            guard context.acceptsNavigationShortcuts,
-                  acceptsNavigationModifiers else { return false }
-            if store.viewMode == .grid {
-                store.goVertical(1)
-            } else {
-                store.goNext()
-            }
-            return true
-        case 48:
-            guard context.acceptsNavigationShortcuts,
-                  acceptsNavigationModifiers else { return false }
-            store.toggleViewMode()
-            return true                                      // Tab
-        case 49:                                             // Space
-            guard context.acceptsNavigationShortcuts,
-                  acceptsNavigationModifiers else { return false }
-            if let item = store.currentItem, item.isPlayableMedia {
-                store.videoPlayback.toggle(item)
-            } else {
-                store.goNext()
-            }
-            return true
-        case 53:                                             // Esc: drop the selection
+        if event.keyCode == 53 {                              // Esc: drop the selection
             guard context.acceptsNavigationShortcuts,
                   acceptsNavigationModifiers else { return false }
             guard !store.selectedIndices.isEmpty else { return false }
             store.clearSelection()
             return true
-        default: break
         }
 
-        // Unmodified 0–5 assign portable XMP stars without changing the
-        // independent Yes/No decision or advancing the current item.
-        if modifiers.isEmpty,
-           let character = event.charactersIgnoringModifiers {
-            switch character {
-            case "0": store.setStarRating(nil); return true
-            case "1": store.setStarRating(.one); return true
-            case "2": store.setStarRating(.two); return true
-            case "3": store.setStarRating(.three); return true
-            case "4": store.setStarRating(.four); return true
-            case "5": store.setStarRating(.five); return true
-            default: break
-            }
+        // All configurable aliases share one context-aware authority. Native
+        // controls retain directional/Space/Tab input; review letters still
+        // work after an ordinary control has focus.
+        guard acceptsReviewModifiers, let shortcut else { return false }
+        if shortcut.requiresNavigationFocus {
+            guard context.acceptsNavigationShortcuts,
+                  acceptsNavigationModifiers else { return false }
         }
+        return performReviewShortcut(shortcut.action)
+    }
 
-        // The remaining shortcuts are letters. Shift and ordinary Caps Lock
-        // may change their glyph but not their Louppe meaning; every other
-        // modifier, including Fn/Globe and Help, remains native.
-        guard acceptsReviewModifiers else { return false }
-        switch event.charactersIgnoringModifiers?.lowercased() {
-        case "f": store.rate(.yes); return true
-        case "d": store.rate(.no); return true
-        case "k": return store.toggleCurrentPlayableMedia()
-        case "q": withAnimation(reduceMotion ? nil : .default) { store.toggleBrowser() }; return true
-        case "w": withAnimation(reduceMotion ? nil : .default) { store.showMetadataPanel.toggle() }; return true
-        case "x": return store.toggleClippingWarnings()
-        case "g": store.toggleViewMode(); return true
-        case "e":
+    private func performReviewShortcut(_ shortcut: ReviewShortcutAction) -> Bool {
+        switch shortcut {
+        case .yes: store.rate(.yes); return true
+        case .no: store.rate(.no); return true
+        case .previous: store.goPrevious(); return true
+        case .next: store.goNext(); return true
+        case .previousRow: store.goVertical(-1); return true
+        case .nextRow: store.goVertical(1); return true
+        case .seekBackward: store.seekCurrentVideo(by: -0.5); return true
+        case .seekForward: store.seekCurrentVideo(by: 0.5); return true
+        case .playPause: return store.toggleCurrentPlayableMedia()
+        case .browser: withAnimation(reduceMotion ? nil : .default) { store.toggleBrowser() }; return true
+        case .info: withAnimation(reduceMotion ? nil : .default) { store.showMetadataPanel.toggle() }; return true
+        case .clipping: return store.toggleClippingWarnings()
+        case .grid: store.toggleViewMode(); return true
+        case .export:
             guard store.canExport else { return false }
             store.presentExport()
             return true
-        case "r": store.requestClearAllRatings(); return true
-        case "z": store.undo(); return true                  // bare Z = ⌘Z
-        case "s":
-            if store.viewMode == .gallery {
-                store.toggleZoom(.actual)
-                return true
-            }
-            return false
-        case "a":
-            if store.viewMode == .gallery {
-                store.toggleZoom(.small)
-                return true
-            }
-            return false
-        default:
-            return false
+        case .clear: store.requestClearAllRatings(); return true
+        case .undo: store.undo(); return true
+        case .actualSize:
+            guard store.viewMode == .gallery else { return false }
+            store.toggleZoom(.actual)
+            return true
+        case .phoneSize:
+            guard store.viewMode == .gallery else { return false }
+            store.toggleZoom(.small)
+            return true
+        case .clearStars: store.setStarRating(nil); return true
+        case .oneStar: store.setStarRating(.one); return true
+        case .twoStars: store.setStarRating(.two); return true
+        case .threeStars: store.setStarRating(.three); return true
+        case .fourStars: store.setStarRating(.four); return true
+        case .fiveStars: store.setStarRating(.five); return true
         }
     }
 

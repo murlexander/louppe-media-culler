@@ -1,5 +1,39 @@
 # Version History
 
+## 1.12.0 (14) — 2026-10-21
+
+- Prevent sideways movement in Browser and Grid, including short folders and layout changes.
+
+- Open a media folder by dropping it onto Louppe's Dock icon or directly into
+  the review window. Folder changes save existing decisions first and preserve
+  the chosen window size.
+- Customize single-key review shortcuts in Settings, using keyboard characters
+  or physical key positions for Dvorak and other layouts. Assign several keys
+  per action, narrow each key by view or media, and reuse keys only where their
+  contexts do not overlap. A visual keyboard helps find assigned actions, and
+  the searchable editor supports adding, removing and resetting keys. New setups
+  default to physical positions; saved choices are retained. Menu hints align
+  in the native shortcut column and update with changed bindings. Command and
+  Shift keyboard layers reveal modified shortcuts; Export, Command Palette and
+  Rescan support custom Command aliases. Related keys appear together in the
+  editor. Menus, the Command Palette and Help show current keys; standard Mac
+  commands and modified navigation retain their familiar behavior.
+- Show Fuji film simulation in Info and filter by simulation, including
+  monochrome and ACROS variants.
+- Keep RAW display and decoder preferences in Settings, with a simpler Gallery
+  zoom bar for Fit and magnification.
+- Show a small loading indicator beside photo zoom while the full preview is
+  still replacing a thumbnail. Cached previews stay ready without a loading
+  flash; navigation cannot publish the previous photo's loading state.
+- Simplify Rename Files with draggable filename parts and dates matching the
+  Mac’s preferred format. Keep keyboard/VoiceOver reordering and the exact
+  preview, conflict checks, and confirmation. Help explains how to rename keepers.
+- Documented JPEG XL support and added real JPEG XL, AVIF, and WebP regression
+  fixtures for scanning, thumbnails, Gallery previews, and actual-size tiles.
+
+Thanks to Henri and Aymeric, whose reviews and feature requests helped shape
+the last two updates. Send feedback and ideas to [a@alex-markin.com](mailto:a@alex-markin.com).
+
 ## 1.11.0 (13) — 2026-10-15
 
 - Kept the welcome and scanning title centered at compact window widths.

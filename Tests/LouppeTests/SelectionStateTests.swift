@@ -180,7 +180,7 @@ final class SelectionStateTests: XCTestCase {
         store.toggleRating(at: 0)
         store.selectRange(to: 2)
 
-        GridCellActions(store: store, index: 3).selectPhoto()
+        GridCellActions(store: store, index: 3).selectPhoto(modifiers: [])
 
         XCTAssertEqual(store.currentIndex, 3)
         XCTAssertTrue(store.selectedIndices.isEmpty)
@@ -325,7 +325,7 @@ final class SelectionStateTests: XCTestCase {
             }
         )
 
-        actions.selectPhoto()
+        actions.selectPhoto(modifiers: [])
 
         XCTAssertEqual(currentWhenSignalled, 0)
         XCTAssertEqual(store.currentIndex, 3)

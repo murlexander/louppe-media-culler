@@ -150,9 +150,10 @@ final class ActualSizeScrollView: NSScrollView {
         self.onZoomScaleChanged = onZoomScaleChanged
         displayedItemName = item.displayName
         updateAccessibilityZoomLabel()
-        setAccessibilityHelp(
-            L10n.text("Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position; S resets it.")
-        )
+        let resetKeys = ReviewShortcutPreferences.load().hint(for: .actualSize, context: .galleryPhoto)
+        setAccessibilityHelp(resetKeys.isEmpty
+            ? L10n.text("Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position.")
+            : L10n.text("Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position; \(resetKeys) resets it."))
         canvas.onTileActivityChanged = { [weak self] active in
             self?.onLoading(active)
         }

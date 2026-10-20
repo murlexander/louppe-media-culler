@@ -10,6 +10,7 @@ struct BrowserView: View {
 
     @ObservedObject var store: SessionStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.layoutDirection) private var layoutDirection
     @State private var followTask: Task<Void, Never>?
     /// A plain click targets a thumbnail that is already on screen, so the
     /// follow-scroll that click's index change triggers must be skipped —
@@ -18,45 +19,52 @@ struct BrowserView: View {
     @State private var suppressNextFollow = false
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.vertical) {
-                LazyVStack(spacing: 6) {
-                    // Prepared entries keep stable media IDs without rebuilding
-                    // this whole array for each rating/loading publication.
-                    ForEach(store.browserEntries) { entry in
-                        BrowserRow(store: store, index: entry.index) {
-                            // Only set when the click will actually move
-                            // currentIndex, so the flag is always consumed
-                            // by the onChange it precedes.
-                            if entry.index != store.currentIndex {
-                                suppressNextFollow = true
+        GeometryReader { geometry in
+            ScrollViewReader { proxy in
+                ScrollView(.vertical) {
+                    LazyVStack(spacing: 6) {
+                        // Prepared entries keep stable media IDs without rebuilding
+                        // this whole array for each rating/loading publication.
+                        ForEach(store.browserEntries) { entry in
+                            BrowserRow(store: store, index: entry.index) {
+                                // Only set when the click will actually move
+                                // currentIndex, so the flag is always consumed
+                                // by the onChange it precedes.
+                                if entry.index != store.currentIndex {
+                                    suppressNextFollow = true
+                                }
+                                store.setIndex(entry.index)
                             }
-                            store.setIndex(entry.index)
                         }
                     }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 10)
+                    // Keep the padded thumbnail column inside the native clip.
+                    .frame(width: Self.width - PersistentVerticalScroller.gutterWidth)
+                    .frame(minHeight: geometry.size.height + 1, alignment: .top)
+                    .background(PersistentVerticalScroller())
+                    // A flexible outer document keeps short folders from shrinking
+                    // the native pane and subtracting its gutter twice. Only empty
+                    // space extends past the clip; the bridge pins X to zero.
+                    .frame(maxWidth: .infinity,
+                           alignment: layoutDirection == .rightToLeft ? .trailing : .leading)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 10)
-                // The native legacy scroller reserves its gutter after SwiftUI
-                // proposes the outer width. Keep the document inside the clip
-                // width so horizontal input and follow-scroll cannot shift it.
-                .frame(width: Self.width - PersistentVerticalScroller.gutterWidth)
-                .background(PersistentVerticalScroller())
-            }
-            // The current item's id can change while its numeric index stays
-            // the same after Clean Up or Move export.
-            .onChange(of: store.currentItem?.id) {
-                if suppressNextFollow {
-                    suppressNextFollow = false
-                    return
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                // The current item's id can change while its numeric index stays
+                // the same after Clean Up or Move export.
+                .onChange(of: store.currentItem?.id) {
+                    if suppressNextFollow {
+                        suppressNextFollow = false
+                        return
+                    }
+                    followCurrentPhoto(using: proxy, animated: true)
                 }
-                followCurrentPhoto(using: proxy, animated: true)
-            }
-            .onAppear {
-                followCurrentPhoto(using: proxy, animated: false)
-            }
-            .onDisappear {
-                followTask?.cancel()
+                .onAppear {
+                    followCurrentPhoto(using: proxy, animated: false)
+                }
+                .onDisappear {
+                    followTask?.cancel()
+                }
             }
         }
     }

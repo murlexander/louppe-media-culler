@@ -8,6 +8,7 @@ import Sparkle
 struct LouppeApp: App {
     @NSApplicationDelegateAdaptor(LouppeApplicationDelegate.self) private var appDelegate
     @Environment(\.openWindow) private var openWindow
+    @StateObject private var folderOpening = FolderOpening()
     #if APP_STORE
     @StateObject private var store = SessionStore(
         automaticallyRecoversInterruptedOperations: false
@@ -38,23 +39,25 @@ struct LouppeApp: App {
     }
 
     var body: some Scene {
+        // Configure from the scene lifecycle, before a document-open launch
+        // can suppress the default window and prevent RootView.onAppear.
+        let _ = appDelegate.configure(
+            store: store, folderOpening: folderOpening,
+            showMainWindow: { openWindow(id: "main") }
+        )
         Window(AppBuildInfo.displayName, id: "main") {
-            RootView(store: store)
+            RootView(store: store, folderOpening: folderOpening)
                 .localizedInterface()
                 .onAppear {
                     #if APP_STORE
                     // Initialize the listener even when the tip window stays closed.
                     _ = tipStore
                     #endif
-                    appDelegate.store = store
-                    appDelegate.showMainWindow = { openWindow(id: "main") }
-                    appDelegate.openPendingFolderIfNeeded()
                     NSApp.activate(ignoringOtherApps: true)
                     // Optional launch argument for testing:
                     //   open Louppe.app --args -openFolder /path/to/photos
-                    // Flag-style on purpose: a bare path argument makes macOS
-                    // treat the launch as a document-open request and suppress
-                    // the app's default window entirely.
+                    // Keep test launches explicit. Dock/Finder document-open
+                    // requests use the application delegate's folder path.
                     #if !APP_STORE
                     if let path = UserDefaults.standard.string(forKey: "openFolder"),
                        FileManager.default.fileExists(atPath: path) {
@@ -191,12 +194,6 @@ private struct FocusedLouppeSessionCommands: Commands {
     @ObservedObject var store: SessionStore
     @FocusedValue(\.louppeSessionStore) private var sceneStore
 
-    // Display hints only: SessionView's window monitor owns shortcut routing.
-    // Isolate glyphs so their order stays stable in right-to-left menus.
-    private func menuLabel(_ title: L10n.Message, shortcut: String) -> Text {
-        Text(verbatim: "\(L10n.text(title))  \u{2066}\(shortcut)\u{2069}")
-    }
-
     private var focusedStore: SessionStore? {
         guard sceneStore === store else { return nil }
         return sceneStore
@@ -222,7 +219,7 @@ private struct FocusedLouppeSessionCommands: Commands {
             Button {
                 actionableStore?.presentActionPalette()
             } label: {
-                menuLabel("Command Palette…", shortcut: "⌘K")
+                Text(L10n.text("Command Palette…"))
             }
             .disabled(
                 actionableStore?.isFileOperationRunning != false
@@ -233,7 +230,7 @@ private struct FocusedLouppeSessionCommands: Commands {
             Button {
                 actionableStore?.rescan()
             } label: {
-                menuLabel("Rescan Folder", shortcut: "⌘R")
+                Text(L10n.text("Rescan Folder"))
             }
             .disabled(
                 actionableStore?.sourceFolder == nil
@@ -253,7 +250,7 @@ private struct FocusedLouppeSessionCommands: Commands {
             Button {
                 actionableStore?.undo()
             } label: {
-                menuLabel("Undo Louppe Action", shortcut: "Z / ⌘Z")
+                Text(L10n.text("Undo Louppe Action"))
             }
             .disabled(
                 actionableStore?.isFileOperationRunning != false
@@ -263,7 +260,7 @@ private struct FocusedLouppeSessionCommands: Commands {
             Button {
                 actionableStore?.requestClearAllRatings()
             } label: {
-                menuLabel("Clear All Decisions", shortcut: "R")
+                Text(L10n.text("Clear All Decisions"))
             }
             .disabled(
                 actionableStore?.ratedCount == 0
@@ -288,7 +285,7 @@ private struct FocusedLouppeSessionCommands: Commands {
             Button {
                 actionableStore?.presentExport()
             } label: {
-                menuLabel("Export…", shortcut: "E / ⌘E")
+                Text(L10n.text("Export…"))
             }
             .disabled(
                 actionableStore?.canExport != true
@@ -311,8 +308,8 @@ private struct FocusedLouppeSessionCommands: Commands {
                 get: { focusedStore?.viewMode ?? .gallery },
                 set: { actionableStore?.viewMode = $0 }
             )) {
-                menuLabel("Gallery", shortcut: "Tab / G").tag(ViewMode.gallery)
-                menuLabel("Grid", shortcut: "Tab / G").tag(ViewMode.grid)
+                Text(L10n.text("Gallery")).tag(ViewMode.gallery)
+                Text(L10n.text("Grid")).tag(ViewMode.grid)
             }
             .pickerStyle(.inline)
             .labelsHidden()
@@ -323,14 +320,14 @@ private struct FocusedLouppeSessionCommands: Commands {
             Button {
                 actionableStore?.zoomGrid(larger: true)
             } label: {
-                menuLabel("Zoom In", shortcut: "⌘+")
+                Text(L10n.text("Zoom In"))
             }
             .disabled(actionableStore?.viewMode != .grid)
 
             Button {
                 actionableStore?.zoomGrid(larger: false)
             } label: {
-                menuLabel("Zoom Out", shortcut: "⌘−")
+                Text(L10n.text("Zoom Out"))
             }
             .disabled(actionableStore?.viewMode != .grid)
 
@@ -346,7 +343,7 @@ private struct FocusedLouppeSessionCommands: Commands {
                     actionableStore?.toggleZoom(.actual)
                 }
             } label: {
-                menuLabel("View Photo at 100%", shortcut: "S")
+                Text(L10n.text("View Photo at 100%"))
             }
             .disabled(!canChangeGalleryImageSize)
 
@@ -355,7 +352,7 @@ private struct FocusedLouppeSessionCommands: Commands {
                     actionableStore?.toggleZoom(.small)
                 }
             } label: {
-                menuLabel("View Photo at Phone Size", shortcut: "A")
+                Text(L10n.text("View Photo at Phone Size"))
             }
             .disabled(!canChangeGalleryImageSize)
 
@@ -421,14 +418,40 @@ extension FocusedValues {
 /// snapshot reaches stable storage. AppKit's terminate-later handshake avoids
 /// freezing the main thread during the final save.
 @MainActor
-private final class LouppeApplicationDelegate: NSObject, NSApplicationDelegate {
+final class LouppeApplicationDelegate: NSObject, NSApplicationDelegate {
     weak var store: SessionStore?
     var showMainWindow: (() -> Void)?
-    private var pendingFolderURL: URL?
+    private var folderOpening: FolderOpening?
+    private var menuShortcuts: MenuShortcutColumns?
+    private var pendingFolderURLs: [URL]?
+    private var hasFinishedLaunching = false
     private var isPreparingToTerminate = false
+
+    func configure(
+        store: SessionStore,
+        folderOpening: FolderOpening,
+        showMainWindow: @escaping () -> Void
+    ) {
+        self.store = store
+        self.folderOpening = folderOpening
+        folderOpening.store = store
+        if menuShortcuts == nil {
+            menuShortcuts = MenuShortcutColumns(store: store)
+        }
+        self.showMainWindow = showMainWindow
+        openPendingFolderIfNeeded()
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.servicesProvider = self
+        hasFinishedLaunching = true
+        menuShortcuts?.refresh()
+        openPendingFolderIfNeeded()
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        pendingFolderURLs = urls
+        openPendingFolderIfNeeded()
     }
 
     @objc(openMediaFolder:userData:error:)
@@ -441,35 +464,38 @@ private final class LouppeApplicationDelegate: NSObject, NSApplicationDelegate {
             forClasses: [NSURL.self],
             options: [.urlReadingFileURLsOnly: true]
         ) as? [URL] ?? []
-        guard urls.count == 1,
-              (try? urls[0].resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else {
-            error.pointee = L10n.text("Select one folder in Finder to open in Louppe.") as NSString
+        if let message = FolderOpening.validationError(for: urls) {
+            error.pointee = message as NSString
             return
         }
-
-        let folder = urls[0].standardizedFileURL
-        if let store {
-            guard !store.isFileOperationRunning else {
-                error.pointee = L10n.text("Wait for Louppe to finish its current operation, then try again.") as NSString
-                return
+        if hasFinishedLaunching, let folderOpening {
+            if let message = folderOpening.open(urls) {
+                error.pointee = message as NSString
             }
-            store.openFolder(folder)
+            presentMainWindow()
         } else {
-            // Finder can invoke the service before SwiftUI mounts the window.
-            pendingFolderURL = folder
-        }
-        NSApp.activate(ignoringOtherApps: true)
-        if let showMainWindow {
-            showMainWindow()
-        } else {
-            NSApp.windows.first { $0.canBecomeKey }?.makeKeyAndOrderFront(nil)
+            pendingFolderURLs = urls
+            openPendingFolderIfNeeded()
         }
     }
 
     func openPendingFolderIfNeeded() {
-        guard let folder = pendingFolderURL, let store else { return }
-        pendingFolderURL = nil
-        store.openFolder(folder)
+        guard hasFinishedLaunching, folderOpening != nil,
+              pendingFolderURLs != nil else { return }
+        // Opening a SwiftUI window is valid once the scene has mounted. The
+        // main-queue hop also handles Finder events delivered during startup.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let urls = self.pendingFolderURLs,
+                  let folderOpening = self.folderOpening else { return }
+            self.pendingFolderURLs = nil
+            self.presentMainWindow()
+            folderOpening.open(urls)
+        }
+    }
+
+    private func presentMainWindow() {
+        showMainWindow?()
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

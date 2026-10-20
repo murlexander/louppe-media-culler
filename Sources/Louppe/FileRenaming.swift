@@ -46,6 +46,37 @@ struct FileRenamingConfiguration: Equatable, Sendable {
     var enabledParts: [FileRenamingPart] {
         parts.filter(\.isEnabled)
     }
+
+    /// Moves the complete part, including its enabled state. The destination
+    /// is its original row index, so dropping downward places it after that row.
+    @discardableResult
+    mutating func movePart(
+        _ kind: FileRenamingPartKind,
+        to destination: FileRenamingPartKind
+    ) -> Bool {
+        guard let sourceIndex = parts.firstIndex(where: { $0.kind == kind }),
+              let destinationIndex = parts.firstIndex(where: {
+                  $0.kind == destination
+              }), sourceIndex != destinationIndex else { return false }
+        let part = parts.remove(at: sourceIndex)
+        parts.insert(part, at: destinationIndex)
+        return true
+    }
+
+    @discardableResult
+    mutating func movePart(
+        _ kind: FileRenamingPartKind,
+        offset: Int
+    ) -> Bool {
+        guard let index = parts.firstIndex(where: { $0.kind == kind }) else {
+            return false
+        }
+        let (destinationIndex, overflow) = index.addingReportingOverflow(offset)
+        guard !overflow, parts.indices.contains(destinationIndex) else {
+            return false
+        }
+        return movePart(kind, to: parts[destinationIndex].kind)
+    }
 }
 
 enum FileRenamingPresentationMode: Equatable, Sendable {
@@ -203,13 +234,9 @@ enum FileRenamingPlanner {
         switch kind {
         case .captureDate:
             guard let date = item.captureDate else { return "Unknown-Date" }
-            let components = localDateComponents(date)
-            return String(
-                format: "%04d-%02d-%02d",
-                components.year ?? 0,
-                components.month ?? 0,
-                components.day ?? 0
-            )
+            // The shared style formatter also honors the Mac's custom date
+            // format. Only filename-unsafe separators need replacement.
+            return safeGeneratedPart(AppDateFormat.day(date))
         case .captureTime:
             guard let date = item.captureDate else { return "Unknown-Time" }
             let components = localDateComponents(date)
@@ -243,7 +270,7 @@ enum FileRenamingPlanner {
         )
     }
 
-    private static func safeGeneratedPart(_ value: String) -> String {
+    static func safeGeneratedPart(_ value: String) -> String {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         var output = ""
         var lastWasSeparator = false

@@ -22,6 +22,8 @@ struct ReviewPreferencesSettingsView: View {
                 Text(L10n.text("Review"))
             }
 
+            ReviewShortcutsSettingsView()
+
             Section {
                 Picker(L10n.text("View"), selection: savedPreferences.defaultView) {
                     Text(L10n.text("Gallery")).tag(ViewMode.gallery)

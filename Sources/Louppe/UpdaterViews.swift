@@ -162,7 +162,7 @@ struct LouppeSettingsView: View {
                 Text(L10n.text("Louppe info"))
             }
         }
-        .frame(width: 520, height: 600)
+        .frame(width: 620, height: 600)
         .tint(Color.louppeAccent)
     }
 }

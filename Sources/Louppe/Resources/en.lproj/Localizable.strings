@@ -1679,3 +1679,145 @@
 /* Contact and recovery selection controls. */
 "Contact Alex" = "Contact Alex";
 "Select All" = "Select All";
+
+/* Folder opening, Fuji film simulations, and review shortcuts. */
+"Open one folder at a time." = "Open one folder at a time.";
+"Close the current dialog or popover, then open the folder." = "Close the current dialog or popover, then open the folder.";
+"Unknown film simulation" = "Unknown film simulation";
+"Not recorded" = "Not recorded";
+"Previous item" = "Previous item";
+"Next item" = "Next item";
+"Play / Pause" = "Play / Pause";
+"Show / Hide Browser" = "Show / Hide Browser";
+"Show / Hide Info" = "Show / Hide Info";
+"Toggle clipping overlay" = "Toggle clipping overlay";
+"2 stars" = "2 stars";
+"3 stars" = "3 stars";
+"4 stars" = "4 stars";
+"5 stars" = "5 stars";
+"Follow keyboard layout" = "Follow keyboard layout";
+"Physical key positions" = "Physical key positions";
+"{0} position" = "{0} position";
+"Film simulation" = "Film simulation";
+"Show or hide the red preview clipping overlay ({0})" = "Show or hide the red preview clipping overlay ({0})";
+"Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%." = "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%.";
+"Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts." = "Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts.";
+"{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent.";
+"Match shortcuts by" = "Match shortcuts by";
+"Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard." = "Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard.";
+"Customize shortcuts" = "Customize shortcuts";
+"Click a shortcut, then press one key without modifiers. Escape cancels. Arrows, Tab, Space, and Command shortcuts stay unchanged." = "Click a shortcut, then press one key without modifiers. Escape cancels. Arrows, Tab, Space, and Command shortcuts stay unchanged.";
+"That key or position is already used for {0}. Choose another key." = "That key or position is already used for {0}. Choose another key.";
+"Press a letter, number, or punctuation key without modifiers." = "Press a letter, number, or punctuation key without modifiers.";
+"Restore Shortcut Defaults" = "Restore Shortcut Defaults";
+"Press a key…" = "Press a key…";
+"{0}: {1}" = "{0}: {1}";
+"Click to record a shortcut. Escape cancels." = "Click to record a shortcut. Escape cancels.";
+"Dismiss" = "Dismiss";
+"Show or hide the Browser in the Gallery view ({0})" = "Show or hide the Browser in the Gallery view ({0})";
+"Show or hide media information ({0})" = "Show or hide media information ({0})";
+"Copy or move selected media, or write Metadata (XMP) sidecars ({0} or ⌘E)" = "Copy or move selected media, or write Metadata (XMP) sidecars ({0} or ⌘E)";
+
+/* Current shortcut hints. */
+"{0} Yes · {1} No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place." = "{0} Yes · {1} No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place.";
+"Undo the last decision, stars, color label, or clean-up ({0} or ⌘Z)" = "Undo the last decision, stars, color label, or clean-up ({0} or ⌘Z)";
+"Clear all Yes/No decisions ({0})" = "Clear all Yes/No decisions ({0})";
+"Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position; {0} resets it." = "Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position; {0} resets it.";
+
+"Bindings are saved separately for each matching mode." = "Bindings are saved separately for each matching mode.";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"No current item" = "No current item";
+"{0} · {1}" = "{0} · {1}";
+"Where available" = "Where available";
+"Playable video and audio" = "Playable video and audio";
+"Media without playback" = "Media without playback";
+"Gallery photos" = "Gallery photos";
+"Gallery videos with seeking" = "Gallery videos with seeking";
+"Outside Gallery video seeking" = "Outside Gallery video seeking";
+"Navigation" = "Navigation";
+"Playback" = "Playback";
+"Actions" = "Actions";
+"Previous row" = "Previous row";
+"Next row" = "Next row";
+"Seek backward" = "Seek backward";
+"Seek forward" = "Seek forward";
+"All views and media" = "All views and media";
+"Space" = "Space";
+"Tab" = "Tab";
+"Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position." = "Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position.";
+"Show or hide the red preview clipping overlay" = "Show or hide the red preview clipping overlay";
+"No shortcut assigned" = "No shortcut assigned";
+"Change playback speed; previous / next item without playback" = "Change playback speed; previous / next item without playback";
+"Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size.";
+"Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts.";
+"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent.";
+"Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap.";
+"Find a shortcut" = "Find a shortcut";
+"No matching shortcuts." = "No matching shortcuts.";
+"Fixed shortcuts" = "Fixed shortcuts";
+"These shortcuts keep their standard behavior and cannot be reassigned here." = "These shortcuts keep their standard behavior and cannot be reassigned here.";
+"Restore all shortcuts for the selected matching mode." = "Restore all shortcuts for the selected matching mode.";
+"Add shortcut" = "Add shortcut";
+"Add shortcut for {0}" = "Add shortcut for {0}";
+"Defaults overlap another shortcut. Remove that assignment first." = "Defaults overlap another shortcut. Remove that assignment first.";
+"Restore defaults for this action" = "Restore defaults for this action";
+"Remove shortcut" = "Remove shortcut";
+"Remove {0} from {1}" = "Remove {0} from {1}";
+"Record key…" = "Record key…";
+"Cancel new shortcut" = "Cancel new shortcut";
+"Choose when it applies, then press one key without modifiers. Escape cancels." = "Choose when it applies, then press one key without modifiers. Escape cancels.";
+"When" = "When";
+"When {0} applies" = "When {0} applies";
+"Already used for {0} in {1}. Choose another key or a separate context." = "Already used for {0} in {1}. Choose another key or a separate context.";
+"Press one letter, number, punctuation key, arrow, Tab, or Space without modifiers." = "Press one letter, number, punctuation key, arrow, Tab, or Space without modifiers.";
+"Use Yes and No to decide, and navigation controls to browse. ⌘Z undoes your last action. Decisions save automatically; No leaves files in place." = "Use Yes and No to decide, and navigation controls to browse. ⌘Z undoes your last action. Decisions save automatically; No leaves files in place.";
+"Switch between Gallery and Grid views ({0})" = "Switch between Gallery and Grid views ({0})";
+"Search filters" = "Search filters";
+"Command palette" = "Command palette";
+"Rescan folder" = "Rescan folder";
+"Move selected files to Trash" = "Move selected files to Trash";
+"Select all filtered items" = "Select all filtered items";
+"Resize Grid thumbnails" = "Resize Grid thumbnails";
+"Playback speed; previous / next item for other media" = "Playback speed; previous / next item for other media";
+"Seek video by five seconds in Gallery" = "Seek video by five seconds in Gallery";
+"Extend selection to the first / last item" = "Extend selection to the first / last item";
+"Clear selection" = "Clear selection";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"Restore defaults for this mode" = "Restore defaults for this mode";
+"Open folder" = "Open folder";
+"Clear selection or cancel scan" = "Clear selection or cancel scan";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"Settings" = "Settings";
+
+/* Help: renaming keepers. */
+"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names.";
+
+/* Command shortcut discovery and customization */
+"Quit Louppe" = "Quit Louppe";
+"Slower playback" = "Slower playback";
+"Faster playback" = "Faster playback";
+"Select to first item" = "Select to first item";
+"Select to last item" = "Select to last item";
+"This shortcut is reserved by macOS." = "This shortcut is reserved by macOS.";
+"Already assigned to {0}." = "Already assigned to {0}.";
+"Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing." = "Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing.";
+"Command Palette" = "Command Palette";
+"Command Palette ({0})" = "Command Palette ({0})";
+"To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names.";
+"Shift" = "Shift";
+"Command" = "Command";
+"A default shortcut is already assigned to another action." = "A default shortcut is already assigned to another action.";
+"Single key" = "Single key";
+"Command shortcut" = "Command shortcut";
+"Standard Mac shortcut" = "Standard Mac shortcut";
+"Press Command and a letter. Add Shift if needed." = "Press Command and a letter. Add Shift if needed.";
+"Press a shortcut…" = "Press a shortcut…";
+"Undo the last decision, stars, color label, or clean-up ({0})" = "Undo the last decision, stars, color label, or clean-up ({0})";
+"Copy or move selected media, or write Metadata (XMP) sidecars ({0})" = "Copy or move selected media, or write Metadata (XMP) sidecars ({0})";
+"Restore shortcut defaults" = "Restore shortcut defaults";
+"Restore review shortcuts for this mode and all Command shortcuts." = "Restore review shortcuts for this mode and all Command shortcuts.";
+
+"RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings.";

@@ -19,6 +19,7 @@ swiftc \
     Sources/Louppe/AppDateFormat.swift \
     Sources/Louppe/FolderScanner.swift \
     Sources/Louppe/MetadataExtractor.swift \
+    Sources/Louppe/FujiFilmSimulation.swift \
     Sources/Louppe/VideoSupport.swift \
     Sources/Louppe/RawDisplay.swift \
     Sources/Louppe/ImagePipeline.swift \

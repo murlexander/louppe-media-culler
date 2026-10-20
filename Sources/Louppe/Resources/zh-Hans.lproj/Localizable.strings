@@ -1696,3 +1696,145 @@
 /* Contact and recovery selection controls. */
 "Contact Alex" = "联系 Alex";
 "Select All" = "全选";
+
+/* Folder opening, Fuji film simulations, and review shortcuts. */
+"Open one folder at a time." = "一次只能打开一个文件夹。";
+"Close the current dialog or popover, then open the folder." = "请先关闭当前对话框或弹出面板，然后打开文件夹。";
+"Unknown film simulation" = "未知胶片模拟";
+"Not recorded" = "未记录";
+"Previous item" = "上一项";
+"Next item" = "下一项";
+"Play / Pause" = "播放 / 暂停";
+"Show / Hide Browser" = "显示 / 隐藏浏览器";
+"Show / Hide Info" = "显示 / 隐藏信息";
+"Toggle clipping overlay" = "切换溢出警告叠加层";
+"2 stars" = "2 星";
+"3 stars" = "3 星";
+"4 stars" = "4 星";
+"5 stars" = "5 星";
+"Follow keyboard layout" = "跟随键盘布局";
+"Physical key positions" = "按键物理位置";
+"{0} position" = "{0} 键位置";
+"Film simulation" = "胶片模拟";
+"Show or hide the red preview clipping overlay ({0})" = "显示或隐藏预览中的红色溢出警告叠加层（{0}）";
+"Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%." = "使用滑块或捏合手势缩放；双指滚动或拖移可平移。{0} 将自定义缩放恢复为居中的 100%，再次按下可切换至适应窗口。{1} 切换手机尺寸。连按某一点可在 100% 下查看该位置。";
+"Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts." = "在设置 → 键盘快捷键中更改审阅按键及键盘布局行为。";
+"{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "{0} 标记为是；{1} 标记为否。默认情况下，两者都会前进到下一个未决定项目（设置 → 审阅）。星级和颜色标签相互独立。";
+"Match shortcuts by" = "快捷键匹配方式";
+"Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard." = "物理位置模式让你在 Dvorak 和其他布局下保持相同的手指动作。位置名称以 QWERTY 键盘为准。";
+"Customize shortcuts" = "自定义快捷键";
+"Click a shortcut, then press one key without modifiers. Escape cancels. Arrows, Tab, Space, and Command shortcuts stay unchanged." = "点按快捷键，再按下一个不带修饰键的按键。按 Escape 取消。方向键、Tab、空格和 Command 组合快捷键保持不变。";
+"That key or position is already used for {0}. Choose another key." = "该按键或位置已用于{0}。请选择其他按键。";
+"Press a letter, number, or punctuation key without modifiers." = "请按下一个字母、数字或标点按键，不要使用修饰键。";
+"Restore Shortcut Defaults" = "恢复默认快捷键";
+"Press a key…" = "请按键…";
+"{0}: {1}" = "{0}：{1}";
+"Click to record a shortcut. Escape cancels." = "点按以录制快捷键。按 Escape 取消。";
+"Dismiss" = "关闭";
+"Show or hide the Browser in the Gallery view ({0})" = "在画廊视图中显示或隐藏浏览器（{0}）";
+"Show or hide media information ({0})" = "显示或隐藏媒体信息（{0}）";
+"Copy or move selected media, or write Metadata (XMP) sidecars ({0} or ⌘E)" = "复制或移动所选媒体，或写入元数据（XMP）附属文件（{0} 或 ⌘E）";
+
+/* Current shortcut hints. */
+"{0} Yes · {1} No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place." = "{0} 是 · {1} 否 · 方向键浏览 · ⌘Z 撤销。决定会自动保存；标记为否的文件仍保留在原处。";
+"Undo the last decision, stars, color label, or clean-up ({0} or ⌘Z)" = "撤销上次决定、星级、颜色标签或清理操作（{0} 或 ⌘Z）";
+"Clear all Yes/No decisions ({0})" = "清除所有是/否决定（{0}）";
+"Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position; {0} resets it." = "滚动或捏合以查看细节；连按可适应窗口。浏览其他项目时保留位置；{0} 重置位置。";
+
+"Bindings are saved separately for each matching mode." = "每种匹配模式的按键绑定会分别保存。";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"No current item" = "无当前项目";
+"{0} · {1}" = "{0} · {1}";
+"Where available" = "可用时";
+"Playable video and audio" = "可播放的视频和音频";
+"Media without playback" = "不支持播放的媒体";
+"Gallery photos" = "画廊中的照片";
+"Gallery videos with seeking" = "画廊中可跳转的视频";
+"Outside Gallery video seeking" = "画廊视频跳转以外的情境";
+"Navigation" = "导航";
+"Playback" = "播放";
+"Actions" = "操作";
+"Previous row" = "上一行";
+"Next row" = "下一行";
+"Seek backward" = "向后跳转";
+"Seek forward" = "向前跳转";
+"All views and media" = "所有视图和媒体";
+"Space" = "空格";
+"Tab" = "Tab 键";
+"Scroll or pinch to inspect; double-click for Fit. Navigation keeps the position." = "滚动或捏合以检查；双击以适应窗口。切换项目时会保留位置。";
+"Show or hide the red preview clipping overlay" = "显示或隐藏预览中的红色溢出叠加层";
+"No shortcut assigned" = "未分配快捷键";
+"Change playback speed; previous / next item without playback" = "更改播放速度；无播放功能时切换到上一个／下一个项目";
+"Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "使用滑块或捏合缩放；双指滚动或拖移以平移。双击某一点以按 100% 查看。使用照片大小控件切换到适应窗口、100% 或手机大小。";
+"Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "下方每个快捷键都会标明适用情境。只有在不同视图或媒体情境中，同一个键才能执行不同操作。";
+"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "使用按钮或已分配的快捷键标记“是”或“否”。默认情况下，两者都会前进到下一个未决定的项目（设置 → 审阅）。星级和颜色标签独立保存。";
+"Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "可为一个操作添加多个键。只有适用的视图和媒体情境不重叠时，才能共用同一个键。";
+"Find a shortcut" = "查找快捷键";
+"No matching shortcuts." = "没有匹配的快捷键。";
+"Fixed shortcuts" = "固定快捷键";
+"These shortcuts keep their standard behavior and cannot be reassigned here." = "这些快捷键保留标准行为，无法在此重新分配。";
+"Restore all shortcuts for the selected matching mode." = "恢复所选匹配模式下的所有快捷键。";
+"Add shortcut" = "添加快捷键";
+"Add shortcut for {0}" = "为{0}添加快捷键";
+"Defaults overlap another shortcut. Remove that assignment first." = "默认快捷键与另一个快捷键重叠。请先移除该分配。";
+"Restore defaults for this action" = "恢复此操作的默认设置";
+"Remove shortcut" = "移除快捷键";
+"Remove {0} from {1}" = "从{1}移除{0}";
+"Record key…" = "录入按键…";
+"Cancel new shortcut" = "取消新快捷键";
+"Choose when it applies, then press one key without modifiers. Escape cancels." = "选择适用情境，然后按下一个不带修饰键的键。按 Escape 取消。";
+"When" = "适用情境";
+"When {0} applies" = "{0}的适用情境";
+"Already used for {0} in {1}. Choose another key or a separate context." = "已在{1}中用于{0}。请选择其他键或独立的适用情境。";
+"Press one letter, number, punctuation key, arrow, Tab, or Space without modifiers." = "按下一个字母、数字、标点、方向键、Tab 或空格，不要同时按修饰键。";
+"Use Yes and No to decide, and navigation controls to browse. ⌘Z undoes your last action. Decisions save automatically; No leaves files in place." = "使用“是”和“否”作出决定，使用导航控件浏览。⌘Z 撤销上一次操作。决定会自动保存；“否”不会移动文件。";
+"Switch between Gallery and Grid views ({0})" = "切换画廊与网格视图（{0}）";
+"Search filters" = "搜索筛选条件";
+"Command palette" = "命令面板";
+"Rescan folder" = "重新扫描文件夹";
+"Move selected files to Trash" = "将所选文件移到废纸篓";
+"Select all filtered items" = "选择筛选出的所有项目";
+"Resize Grid thumbnails" = "调整网格缩略图大小";
+"Playback speed; previous / next item for other media" = "播放速度；其他媒体切换到上一个／下一个项目";
+"Seek video by five seconds in Gallery" = "在画廊视频中跳转五秒";
+"Extend selection to the first / last item" = "将选择范围扩展到第一个／最后一个项目";
+"Clear selection" = "清除选择";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"Restore defaults for this mode" = "恢复此模式的默认设置";
+"Open folder" = "打开文件夹";
+"Clear selection or cancel scan" = "清除选择或取消扫描";
+
+/* Multiple keyboard shortcuts and context-specific assignments. */
+"Settings" = "设置";
+
+/* Help: renaming keepers. */
+"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "要重命名保留的照片，请筛选“是”，打开命令面板 (⌘K) → 根据元数据重命名文件…，然后选择“筛选结果”。确认前预览名称；⌘Z 可恢复原名称。";
+
+/* Command shortcut discovery and customization */
+"Quit Louppe" = "退出 Louppe";
+"Slower playback" = "降低播放速度";
+"Faster playback" = "提高播放速度";
+"Select to first item" = "选择到第一项";
+"Select to last item" = "选择到最后一项";
+"This shortcut is reserved by macOS." = "此快捷键由 macOS 保留。";
+"Already assigned to {0}." = "已分配给{0}。";
+"Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing." = "在筛选或命令面板中，可选择一起或分别审阅匹配的 RAW + JPEG 文件。搜索 RAW、JPEG 或配对。";
+"Command Palette" = "命令面板";
+"Command Palette ({0})" = "命令面板（{0}）";
+"To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "要重命名保留的照片，请筛选“是”，打开{0} → 根据元数据重命名文件…，然后选择“筛选结果”。确认前预览名称；⌘Z 可恢复原名称。";
+"Shift" = "Shift";
+"Command" = "Command";
+"A default shortcut is already assigned to another action." = "默认快捷键已分配给其他操作。";
+"Single key" = "单键";
+"Command shortcut" = "Command 快捷键";
+"Standard Mac shortcut" = "标准 Mac 快捷键";
+"Press Command and a letter. Add Shift if needed." = "按下 Command 和一个字母。需要时加入 Shift。";
+"Press a shortcut…" = "按下快捷键…";
+"Undo the last decision, stars, color label, or clean-up ({0})" = "撤销上一次决定、星级、颜色标签或清理（{0}）";
+"Copy or move selected media, or write Metadata (XMP) sidecars ({0})" = "复制或移动所选媒体，或写入元数据（XMP）附属文件（{0}）";
+"Restore shortcut defaults" = "恢复默认快捷键";
+"Restore review shortcuts for this mode and all Command shortcuts." = "恢复此模式的审阅快捷键以及所有 Command 快捷键。";
+
+"RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "RAW 9 需要 macOS 27、受支持的文件和 Apple 的模型资源。请重试，或在设置中选择 Apple Default。";

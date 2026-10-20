@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 /// The start screen: pick a folder (or a recent one) to begin a session.
 struct WelcomeView: View {
@@ -10,24 +9,25 @@ struct WelcomeView: View {
     private let helpFooterHeight: CGFloat = 16 + 28 + 24
     @StateObject private var connectedDrives: ConnectedDrivesStore
     @Environment(\.openWindow) private var openWindow
-    @State private var isFolderDropTarget = false
-    @State private var folderDropError: String?
+    var isFolderDropTarget = false
     @State private var isNewSessionConfirmationPresented = false
 
     init(
         store: SessionStore,
         availableScreenWidth: CGFloat = NSScreen.main?.visibleFrame.width ?? 1280,
         connectedDrives: ConnectedDrivesStore = ConnectedDrivesStore(),
-        scrollsVertically: Bool = false
+        scrollsVertically: Bool = false,
+        isFolderDropTarget: Bool = false
     ) {
         self.store = store
         self.availableScreenWidth = availableScreenWidth
         self.scrollsVertically = scrollsVertically
+        self.isFolderDropTarget = isFolderDropTarget
         _connectedDrives = StateObject(wrappedValue: connectedDrives)
     }
 
     // Keep the common case to two quiet columns. Additional drive columns
-    // use the display's available width instead of hiding drives in an overflow.
+    // fit the available width: the display on launch, the retained window on Back.
     private var driveColumnCount: Int {
         let recentWidth: CGFloat = store.recentFolders.isEmpty ? 0 : 300
         let available = availableScreenWidth - 64 - recentWidth
@@ -88,11 +88,6 @@ struct WelcomeView: View {
         .onAppear { connectedDrives.start() }
         .onDisappear { connectedDrives.stop() }
         .contentShape(Rectangle())
-        .onDrop(
-            of: [UTType.fileURL.identifier],
-            isTargeted: $isFolderDropTarget,
-            perform: openDroppedFolder
-        )
         .alert(
             L10n.text("Open as a New Session?"),
             isPresented: $isNewSessionConfirmationPresented
@@ -140,13 +135,6 @@ struct WelcomeView: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel(L10n.text("Open a media folder"))
             .accessibilityHint(L10n.text("Choose a folder or drop one anywhere in this window"))
-
-            if let folderDropError {
-                Text(folderDropError)
-                    .font(.callout)
-                    .foregroundStyle(.orange)
-                    .multilineTextAlignment(.center)
-            }
 
             if let error = store.scanError {
                 VStack(spacing: 8) {
@@ -228,49 +216,7 @@ struct WelcomeView: View {
         return path
     }
 
-    private func openDroppedFolder(_ providers: [NSItemProvider]) -> Bool {
-        guard let provider = providers.first(where: {
-            $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
-        }) else {
-            return false
-        }
 
-        provider.loadItem(
-            forTypeIdentifier: UTType.fileURL.identifier,
-            options: nil
-        ) { item, _ in
-            let url: URL?
-            if let urlItem = item as? URL {
-                url = urlItem
-            } else if let urlItem = item as? NSURL {
-                url = urlItem as URL
-            } else if let data = item as? Data {
-                url = URL(dataRepresentation: data, relativeTo: nil)
-            } else {
-                url = nil
-            }
-
-            Task { @MainActor in
-                guard let url else {
-                    folderDropError = L10n.text("Louppe couldn't read the dropped folder. Please try again.")
-                    return
-                }
-
-                var isDirectory = ObjCBool(false)
-                guard FileManager.default.fileExists(
-                    atPath: url.path,
-                    isDirectory: &isDirectory
-                ), isDirectory.boolValue else {
-                    folderDropError = L10n.text("Drop a folder containing photos, videos, audio, or text files, not an individual file.")
-                    return
-                }
-
-                folderDropError = nil
-                store.openFolder(url)
-            }
-        }
-        return true
-    }
 }
 
 /// A compact source shortcut, shown only while physical drives are connected.
