@@ -168,29 +168,57 @@ final class MainWindowLayoutTests: XCTestCase {
         XCTAssertEqual(window.frame, sessionFrame, "Back keeps the review window's size and position")
     }
 
-    func testReplacementAndBackPreserveManuallyResizedSessionFrame() {
+    func testReplacementAndBackPreserveManuallyResizedSessionFrame() throws {
         let (window, controller) = makeWindow()
         defer { window.close() }
         controller.windowLayout = .session
         controller.minimumContentSize = MainWindowLayout.session.minimumContentSize
         controller.apply()
-        window.setContentSize(CGSize(width: 1000, height: 700))
-        // Keep the manually chosen frame inside the actual test display.
-        // A hard-coded y=150 put the toolbar-inclusive frame above smaller
-        // displays, correctly triggering the bridge's screen-safety clamp.
-        if let visible = window.screen?.visibleFrame {
-            window.setFrameOrigin(CGPoint(
-                x: visible.minX + max(0, min(20, visible.width - window.frame.width)),
-                y: visible.minY + max(0, min(20, visible.height - window.frame.height))
-            ))
+        let visible = try XCTUnwrap(window.screen).visibleFrame
+        // Bound content as well as origin: native titlebar/toolbar chrome can
+        // make 700 content points taller than a hosted runner's whole display.
+        let maximumContent = window.contentRect(forFrameRect: visible).size
+        guard maximumContent.width >= window.contentMinSize.width,
+              maximumContent.height >= window.contentMinSize.height else {
+            throw XCTSkip("Display cannot fit the session's native minimum size")
         }
+        window.setContentSize(CGSize(
+            width: min(1000, maximumContent.width),
+            height: min(700, maximumContent.height)
+        ))
+        window.setFrameOrigin(CGPoint(
+            x: visible.minX + max(0, min(20, visible.width - window.frame.width)),
+            y: visible.minY + max(0, min(20, visible.height - window.frame.height))
+        ))
         let chosenFrame = window.frame
+        XCTAssertLessThanOrEqual(chosenFrame.width, visible.width)
+        XCTAssertLessThanOrEqual(chosenFrame.height, visible.height)
         for layout in [MainWindowLayout.scanning, .session, .welcome, .scanning, .session] {
             controller.windowLayout = layout
             controller.minimumContentSize = layout.minimumContentSize
             controller.apply()
             XCTAssertEqual(window.frame, chosenFrame, "\(layout) must keep the chosen frame")
         }
+    }
+
+    func testBackFitsOversizedSessionFrameToVisibleDisplayHeight() throws {
+        let (window, controller) = makeWindow()
+        defer { window.close() }
+        controller.windowLayout = .session
+        controller.minimumContentSize = MainWindowLayout.session.minimumContentSize
+        controller.apply()
+        let visible = try XCTUnwrap(window.screen).visibleFrame
+        window.setContentSize(CGSize(width: 1000, height: visible.height + 100))
+        let oversizedFrame = window.frame
+        XCTAssertGreaterThan(oversizedFrame.height, visible.height)
+
+        controller.windowLayout = .welcome
+        controller.minimumContentSize = MainWindowLayout.welcome.minimumContentSize
+        controller.apply()
+
+        XCTAssertEqual(window.frame.height, visible.height, accuracy: 1,
+                       "Back caps oversized geometry so Welcome remains reachable")
+        XCTAssertEqual(window.frame.width, oversizedFrame.width, accuracy: 1)
     }
 
     func testManyDrivesFitRetainedWindowWidthOnBack() async throws {
