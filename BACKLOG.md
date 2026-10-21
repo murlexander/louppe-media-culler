@@ -1,47 +1,69 @@
 # Louppe app backlog
 
-Reviewed on 21 October 2026. Independent 1.12 review and release gates pass.
-[1.12.0 (14)](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.12.0)
-is public on GitHub with its signed feed and Homebrew package. The App Store
-build is Waiting for Review. Existing screenshots/previews are retained.
-See the [current preparation record](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md).
+Reviewed on 21 October 2026 against current source, version history, and the
+[1.12 release record](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md).
+The next planned release is **1.13.0 (15)**. Implemented changes belong in
+[CHANGELOG.md](CHANGELOG.md); this backlog contains unfinished work only.
 
-[Release acceptance](#release-acceptance) ·
+[1.13 planned release](#113-planned-release) ·
 [Correctness and compatibility](#correctness-and-compatibility) ·
 [Performance](#performance) · [People and access](#people-and-access) ·
-[Product follow-ups](#product-follow-ups) · [Later and research](#later-and-research)
+[Release acceptance](#release-acceptance) · [Later and research](#later-and-research)
 
 [App guide](README.md#development-and-release) · [Website backlog](../website/BACKLOG.md)
 
 Keep audit IDs stable and each task in one list. Check current code and reproduce
 suspected bugs before changing behavior. Implementation alone does not close
-manual acceptance. Research, publicity plans, and CAS notes stay in Obsidian.
+manual acceptance. Completed outcomes stay in version history and dated reports.
+Research notes, publicity plans, and CAS notes stay in Obsidian.
 
-## Release acceptance
+## 1.13 planned release
 
-Alex authorized release after independent review and verification, then explicitly
-confirmed GitHub publication and Apple submission on 21 October. These checks do
-not invent hardware, linguistic, energy or transaction measurements; open work
-below remains open. Prior owner acceptance is recorded in the 1.11 release record.
+Carry unfinished work from older releases into this plan. The correctness and
+performance queues below retain their acceptance criteria; investigations need
+measurements before choosing a fix. Later ideas remain deferred.
 
-- [x] **Local packages.** Developer ID and Store installer signatures, independent
-  archive/payload checks, complete Contents comparisons and retained checksums pass.
-- [x] **Notarization and feed.** Apple accepted the direct build; the stapled ZIP
-  passes Gatekeeper. Public archive/feed bytes and both Sparkle signatures match.
-- [x] **Independent review and regression gates.** Focused findings are fixed;
-  final CI, real media, file safety, APFS remount and optimized speed checks pass.
-  Physical/native and hardware coverage limits are explicit in the release record.
-- [x] **Store media decision.** Keep the existing 36 screenshots and six previews,
-  as requested. Six translated update notes and required review metadata are saved.
-- [x] **GitHub publication.** Exact 1.12 archive, matching feed, Homebrew, six
-  website languages and a real public 1.11 → 1.12 Sparkle installer upgrade pass.
-- [x] **Store submission.** Build 14 is delivered and Waiting for Review, with
-  automatic release selected after approval. Apple updates/StoreKit tips remain
-  separate from direct-download Sparkle/Revolut tips.
-- [ ] **Apple review.** Await approval; the Store version is not yet public.
+- [ ] **Fast, stable opening and browsing of large folders.** Make folders with
+  thousands of photos usable sooner and keep navigation/scrolling responsive
+  during processing. Alex requested this on 21 October 2026.
+  - **Approach to validate:** profile discovery, identity checks, RAW+JPEG pairing,
+    metadata extraction, saved-decision loading, and first layout separately.
+    Evaluate showing a stable file inventory with placeholders before all metadata
+    is ready, then prioritize visible/current items and fill the rest through
+    bounded background work and batched UI updates. A raw file count alone cannot
+    identify cells or establish the paired item count. Adopt staged opening only
+    if measurements show a useful improvement without weakening correctness.
+  - **Grid and Browser stability:** reserve cell geometry; retain stable item IDs,
+    the visible scroll anchor, current photo, and selection as results arrive.
+    Define how incomplete date/sort/filter data settles without repeated reshuffling,
+    disappearing rows, wrong thumbnails, flashing placeholders, or sideways drift,
+    including during rapid scrolling, resizing, and Gallery/Grid switches.
+  - **Safe partial loading:** preserve pairing, source identity, saved decisions,
+    and recovery gates. Do not overwrite unread decisions with a partial save or
+    permit file mutations based on incomplete data. Cancel promptly on folder
+    changes/Close and reject late results from the previous scan.
+  - **Acceptance:** compare current and proposed behavior on representative 1k/10k+
+    JPEG, RAW+JPEG, and mixed-media folders, cold/warm on local storage and an
+    SD card. Measure first usable view, first useful thumbnails, full readiness,
+    input-to-visible latency, and memory while processing and scrolling. Exercise
+    fast reverse scrolling, long jumps, Info, resizing, and cancellation in the
+    actual mounted Grid/Browser. Reuse AUD-06/AUD-28 measurements and the existing
+    scroll regression gates; a faster loading screen alone is not completion.
+- [ ] **Photo location lookup — Aymeric feedback, 20 October 2026.** Add an
+  explicit Open in Maps action to valid GPS coordinates in Info. Do not look up
+  locations before the click. Carry this forward from the deferred 1.12 work;
+  an embedded shoot map remains a separate later idea.
+- [ ] **Native workflow acceptance carried from 1.12.** Exercise physical Dock
+  dragging at cold launch and with an open folder, retained window geometry,
+  and physical rename-row dragging on disposable media. Review custom shortcuts
+  in Alex's real-shoot workflow, then cover ISO/JIS/dead-key/IME input, VoiceOver,
+  older macOS, and the two-display transition in their actual environments.
+  Native shortcut editing and Fuji Info/filtering already passed; their completed
+  checks are in the [review record](Docs/REVIEW_1.12_2026-10-20.md).
+  Sandbox grant/reconnect cases belong to AUD-03, not a second checklist here.
 
-Saved sessions use format 7; 1.10 cannot read it. Preserve saved-session copies
-before testing a downgrade. GitHub releases continue alongside the Store channel.
+Temporary preview softness is now a measurement follow-up under AUD-28. The
+loading indicator shipped in 1.12; do not reimplement it as an unfinished feature.
 
 ## Correctness and compatibility
 
@@ -56,21 +78,23 @@ before testing a downgrade. GitHub releases continue alongside the Store channel
   failed downloads, and compressed/lossless-compressed Fuji RAFs. Verify retry/
   default remedies, fresh pixels after decoder changes, and intact originals.
   macOS 27 X-T50 uncompressed decoding/regressions passed.
-- [ ] **Toolchain test backend.** Xcode 27's default SwiftPM backend failed
-  signing an XCTest bundle with Finder metadata in Documents; native passed
-  the 13 October final full suite (714 tests, 31 explicit skips, zero failures) but is
-  deprecated. Optimized tests currently need `-DDEBUG` for existing test seams.
-  Verify a supported backend and separate those seams from production flags;
-  keep the current SDK and checks until a replacement passes.
+- [ ] **Toolchain test backend.** Verify a supported replacement for Xcode 27's
+  deprecated native SwiftPM backend and separate optimized test seams from
+  production `-DDEBUG` flags. The default backend previously failed XCTest signing
+  after Finder metadata appeared in Documents. Keep the current SDK and checks
+  until the replacement passes; the latest full-suite baseline is in the
+  [1.12 release record](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md#verification).
 - [ ] **AUD-21 — Media/AV APIs.** Modernize asynchronous AV-property loading
   behind synchronous worker bridges and macOS 27 reader/player notifications.
   A UI-thread semaphore stall has not been established. Measure mixed-media scan
   throughput/cancellation and retain finite timeouts, macOS 14, bounded lanes,
   reader exit, and playback/audio cancellation tests.
-- [ ] **AUD-18 — Volume/interruption tests.** Extend fault injection on case-sensitive
-  APFS, ExFAT, removable/network volumes, disconnect/remount, lid-close, and simulated
-  power loss. Verify no overwrite, accurate durability, retained recovery, and safe
-  undo/retry. Record actual coverage. UI: AUD-23/24; Release baselines: AUD-06/19.
+- [ ] **AUD-18 — Volume/interruption tests.** Extend fault injection beyond the
+  recorded case-sensitive APFS and detach/remount cases: ExFAT, removable/network
+  volumes, interrupted operations, lid-close, and simulated power loss. ExFAT
+  image creation was unavailable on the release host, not a pass. Verify no
+  overwrite, accurate durability, retained recovery, and safe undo/retry. Record
+  actual coverage; related performance baselines remain AUD-06/AUD-19.
 - [ ] **AUD-19 — RAW/color/GPU baseline.** Build a licensed RAW/JPEG/profile corpus
   with orientation/transparency cases. Compare preview, RAW/histogram/clipping,
   and 100% tiles to reference renders; measure Release GPU/RSS under navigation/
@@ -78,11 +102,12 @@ before testing a downgrade. GitHub releases continue alongside the Store channel
   histogram baseline with byte/identity checks; synthetic 100 MP tile-budget tests
   also pass. Multi-camera/RAW 9, color/reference, cold-resource and sustained
   GPU/helper-process memory acceptance remain open. Record actual corpus coverage.
-- [ ] **AUD-20 — Dependencies/security.** Record exact Sparkle/Expat/Adobe XMP/site
-  pins, patches, licenses, and official advisories. The 7 October review found no
-  published affected-range match; sources and confidential/vendor limits are in
-  the submission packet. Investigate exposures and extend hostile-XMP tests as
-  needed. Parser tests cover only the reviewed subset.
+- [ ] **AUD-20 — Dependencies/security.** Refresh the recorded Sparkle/Expat/
+  Adobe XMP pins, patches, licenses, and official-advisory review for 1.13;
+  coordinate the independent website dependency check with its release work.
+  The bounded 7 October review is historical evidence, not a current security
+  clearance. Investigate exposures and extend hostile-XMP tests as needed;
+  parser tests cover only the reviewed subset.
 
 ## Performance
 
@@ -96,23 +121,17 @@ safety/native checks. Local stage medians are not whole-app speedups.
 
 ### Projection
 
-- [ ] **AUD-06 — Index, review projection, and save capture.** Finite metadata
-  buckets, sort-only map reuse and exact cached coverage are implemented and
-  tested. At 100k: metadata sort 37–39 ms (formerly 172–255), coverage 0.009 ms
-  (formerly 81), ordinary rating 0.025 ms, decision-sorted rating 120 ms and
-  frozen capture 17.8 ms in final confirmation. The 14 October cue follow-up
-  replaces repeated warning/filename-set construction with one-byte item matches:
-  two optimized 100k runs give 16–44 ms for warm metadata-cue switches,
-  versus 128–159 ms on the new baseline; first use is 53 versus 152 ms.
-  Accepted evidence updates only its own slots. See the [cue-filter review](Docs/Archive/2026-10-14/QUALITY_CUE_FILTER_PERFORMANCE_2026-10-14.md).
-  Remaining: incremental visible/group projection (clearing cues still exposes
-  every row), retained memory and interaction under load. Profile batch recovery
-  under active sorts before choosing projection/progress batching; preserve
-  serial proofs, arbitrary-input ties, physical/recovery maps, selection and saves.
-  The 20 October 1.12 quality run records 100k camera-sort median 755 ms and
-  decision-sorted rating 123 ms (1k camera sort 6 ms). Keep large-folder sort/
-  projection profiling open; no comparable pre-1.12 run establishes a regression.
-  See the [quality review](Docs/QUALITY_REVIEW_1.12_2026-10-20.md).
+- [ ] **AUD-06 — Index, review projection, and save capture.** Profile incremental
+  visible/group projection, clearing cues, decision-sorted ratings, and batch
+  recovery under active sorts at 1k/10k/100k. Measure retained memory and interaction
+  under load before choosing projection/progress batching. Preserve serial proofs,
+  arbitrary-input ties, physical/recovery maps, selection, and saves.
+  The latest 1.12 release run records 100k camera-sort median 756 ms; the quality
+  review records decision-sorted rating at 123 ms. These are current baselines,
+  not evidence of a regression against an equivalent pre-1.12 run.
+  [Release measurements](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md#verification) ·
+  [Quality review](Docs/QUALITY_REVIEW_1.12_2026-10-20.md) ·
+  [Implemented cue-filter optimizations](Docs/Archive/2026-10-14/QUALITY_CUE_FILTER_PERFORMANCE_2026-10-14.md).
 
 ### Next measurements
 
@@ -142,7 +161,7 @@ safety/native checks. Local stage medians are not whole-app speedups.
   then confirm on disposable removable/network media before changing scheduling.
 - [ ] **AUD-11 — Cold RAW source/navigation work.** High-resolution recipes are
   requested even for Fit dimensions; source-waiter retirement remains separate
-  from AUD-25's image requests. Measure cold Fit/100% transitions and both decoders
+  from image-request cancellation. Measure cold Fit/100% transitions and both decoders
   before caching dimensions or changing dwell. Test visible-first tile priority
   and mode-aware RAW prefetch as hypotheses, comparing first visible pixels and
   warm-pan latency. Keep two tile renders, 128 MiB and bounded source regions.
@@ -164,18 +183,21 @@ safety/native checks. Local stage medians are not whole-app speedups.
   suite with mounted Gallery/Grid/Filter/zoom and frame/media-ready barriers during
   thumbnail, cue, fingerprint and save work. Record input-to-visible-result samples,
   memory and queue drain/cancel behavior, with warm/source/disk paths separated.
-  Preserve large-session current/selection and test a representative mixed shoot.
+  Include cold/warm local and SD-card navigation to measure temporary preview
+  softness (Aymeric feedback, 20 October): time first thumbnail, fitted detail,
+  and loading-indicator settlement before changing decoding or prefetch. Retain
+  cache/concurrency bounds. Preserve large-session current/selection and test a
+  representative mixed shoot.
   Establish repeatable baselines before setting regression limits; resolve native
   capture/AX tooling gaps rather than calling mirrored orchestration visual QA.
-- [ ] **AUD-29 — Background energy and true idle.** Resource fixes are implemented:
-  utility JPEG work, at most two scheduler measurements across generation retirement,
-  linear selection priority, private batched evidence, persistent explicit Pause,
-  and adaptive rest with Low Power/thermal backoff. Controlled worker/idle tests
-  establish those contracts; synthetic CPU results do not establish battery drain.
-  Measure sustained CPU/GPU, RSS, wakeups and decoder/helper exit on representative
-  large RAW folders, after Pause/Close and complete drain. Compare battery/AC and
-  foreground responsiveness. Preserve current/visible interest and accurate evidence;
-  investigate an App Nap/inactive-window policy only after measurement.
+- [ ] **AUD-29 — Background energy and true idle.** Measure sustained CPU/GPU,
+  RSS, wakeups, and decoder/helper exit on representative large RAW folders,
+  after Pause/Close and complete drain. Compare battery/AC and foreground
+  responsiveness. Existing bounded scheduling, explicit Pause, and thermal/
+  Low Power backoff are implemented; worker tests and synthetic CPU results do
+  not establish battery drain. Preserve current/visible interest and accurate
+  evidence; investigate an App Nap/inactive-window policy only after measurement.
+  Keep the resource contracts in [PERFORMANCE.md](Docs/PERFORMANCE.md).
 
 ## People and access
 
@@ -187,46 +209,35 @@ safety/native checks. Local stage medians are not whole-app speedups.
   RAW/JPEG conflict/reload in Capture One. Packet/resolver tests passed; editor
   acceptance remains open.
 
-## Product follow-ups
+## Release acceptance
 
-- [ ] **1.12 local acceptance.** Review Dock cold/warm opens, direct folder
-  replacement and retained window geometry, custom layout/physical shortcuts,
-  and Fuji simulation Info/filtering with Alex's real shoot. Native shortcut
-  editing and Fuji Info/filtering pass; read-only ExifTool comparison matches
-  39 real JPEGs and 23 RAFs. Actual Dock dragging, owner workflow acceptance and
-  folder grants in a sandboxed Store candidate remain. Implementation and local evidence are in the
-  [review record](Docs/REVIEW_1.12_2026-10-20.md); publication remains separate.
-- [x] **Renaming discovery — Aymeric feedback, 20 October 2026.** Help now
-  explains Filter Yes → Command Palette → Rename Files from Metadata → Filtered,
-  with exact name preview and Undo. No renaming behavior changed. New recipe
-  controls stay deferred until Alex supplies the desired ExifRenamer pattern;
-  retain family/collision checks and journaled undo.
-- [ ] **Temporary preview softness — Aymeric feedback, 20 October 2026.**
-  A small indicator beside zoom now distinguishes the thumbnail stand-in from
-  ready fitted detail, with deterministic delayed/success/failure and stale-
-  navigation coverage. Local/SD-card cold and warm navigation measurements remain
-  before changing decoding/prefetch. Reuse AUD-28 measurements; keep cache and
-  concurrency bounds. This state indication does not claim a decoding speedup.
-- [ ] **Photo location lookup — Aymeric feedback, 20 October 2026.** Alex deferred
-  this from 1.12 on 20 October; finish the current scope first. Later, add an
-  explicit Open in Maps action to valid GPS coordinates in Info. No location
-  lookup before the click. Consider an embedded shoot map separately only if
-  demand justifies its interface and resource costs.
-- [ ] **Automatic blur detection.** After the first cue prototype, experiment
-  with measured relative softness within bursts and verified detail crops.
-  Flag uncertain photos for human review; retain low-texture/intentional-blur
-  uncertainty. Early-user feedback recorded 11 October 2026.
-- Fuji film simulation is implemented for 1.12 in Info and Filter; native
-  acceptance is tracked above. Camera previews include it; Apple RAW rendering
-  bypasses it. Keep originals intact and avoid a redundant rendering toggle.
-- [ ] Extend format support where macOS allows.
+- [ ] **Apple review follow-up.** Check the outcome of the submitted 1.12 build
+  14 and respond to any review request. The last recorded state on 21 October is
+  Waiting for Review, with automatic release after approval; current approval
+  has not been rechecked during this backlog cleanup. This is a distribution
+  follow-up, separate from the 1.13 feature plan.
+  [Submission evidence](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md#publication-and-installed-app).
 
-Burst acceptance is AUD-22 above; inline comparison stays in the research list.
+Keep the existing Store screenshots/previews unless Alex changes that decision.
+GitHub/Sparkle and App Store distribution remain separate. Saved sessions use
+format 7; preserve copies before testing a downgrade to 1.10.
 
 ## Later and research
 
-These are deferred ideas, not committed implementation scope.
+These are deferred ideas, not committed implementation scope for 1.13.
 
+- [ ] **Automatic blur detection.** Experiment with measured relative softness
+  within bursts and verified detail crops. Flag uncertainty for human review,
+  including low-texture and intentional-blur cases. Early-user feedback,
+  11 October 2026; the 1.12 review explicitly deferred this research.
+- [ ] **Additional media formats.** Identify a specific unsupported format and
+  representative licensed fixtures before expanding support where macOS allows.
+  JPEG XL, AVIF, and WebP decode routes already have regression fixtures.
+- [ ] **Additional rename recipes.** Obtain Alex's desired ExifRenamer filename
+  pattern before adding recipe controls. Keep exact previews, family/collision
+  checks, and journaled undo.
+- [ ] **Embedded shoot map.** Consider only after demand justifies the interface
+  and resource costs; the explicit GPS-to-Maps action belongs to the 1.13 plan.
 - [ ] Portable recovery beyond the same relative filename: copied-and-renamed
   or reorganized copies need explicit remapping/verified content discovery.
   Physical originals already follow unique disk identity. Design recovery-history

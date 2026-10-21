@@ -7,9 +7,9 @@ Website consent was unpublished at closeout; it is now published. Remaining
 WEB-AUD-01 acceptance is in the [website backlog](../../../../website/BACKLOG.md#browser-acceptance).
 The reports preserve pre-fix behavior and 29 September verification.
 
-### Follow-up transfer coverage
+### Original follow-up transfer
 
-| Original follow-up | Active backlog owner |
+| Original follow-up | Original backlog IDs |
 | --- | --- |
 | Session size, lazy JPEG identity, sandbox recents/routing, final scan cancellation | AUD-01–AUD-04 |
 | ExFAT path fallback and actual-volume/interruption verification | AUD-05, AUD-18 |
@@ -23,8 +23,11 @@ The reports preserve pre-fix behavior and 29 September verification.
 | VoiceOver/keyboard/display/provider/drive acceptance | AUD-23, AUD-24 |
 | Website consent publication and real-tab smoke check | WEB-AUD-01 (website) |
 
-M1 regressions cover source replacement. Use current code and backlog acceptance
-checks for further work; historical line numbers are review records.
+This table records the September transfer, not current open status. Completed
+IDs are retired from the live backlog; owner acceptance for the AUD-22–24 release
+holds is recorded in the [15 October release record](../../RELEASE_1.11_PREPARATION_2026-10-15.md).
+M1 regressions cover source replacement. Use current code and the live backlog
+for further work; historical line numbers are review records.
 
 ## Result
 
