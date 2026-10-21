@@ -123,7 +123,7 @@ struct SessionView: View {
                 titleVisibility: .visible,
                 presenting: store.pendingCleanUp
             ) { mode in
-                Button(L10n.text("Move to Trash"), role: .destructive) {
+                Button(L10n.text("Trash"), role: .destructive) {
                     store.performCleanUp(mode)
                 }
                 .keyboardShortcut(.defaultAction)
@@ -227,17 +227,17 @@ struct SessionView: View {
         let counts = store.cleanUpCounts(for: mode)
         switch mode {
         case .selection:
-            return L10n.text("Move \(itemsPhrase(counts.photos)) to the Trash?")
+            return L10n.text("Trash \(itemsPhrase(counts.photos))?")
         case .trashNo:
-            return L10n.text("Move \(itemsPhrase(counts.photos)) marked “No” to the Trash?")
+            return L10n.text("Trash \(itemsPhrase(counts.photos)) marked No?")
         case .keepOnlyYes:
-            return L10n.text("Move \(itemsPhrase(counts.photos)) not marked “Yes” to the Trash?")
+            return L10n.text("Trash \(itemsPhrase(counts.photos)) marked No or Undecided?")
         case .pairedJPEGs:
             let noun = counts.photos == 1 ? L10n.text("JPEG from 1 RAW + JPEG pair") : L10n.text("JPEGs from \(counts.photos) RAW + JPEG pairs")
-            return L10n.text("Move the \(noun) to the Trash?")
+            return L10n.text("Trash the \(noun)?")
         case .pairedRAWs:
             let noun = counts.photos == 1 ? L10n.text("RAW from 1 RAW + JPEG pair") : L10n.text("RAWs from \(counts.photos) RAW + JPEG pairs")
-            return L10n.text("Move the \(noun) to the Trash?")
+            return L10n.text("Trash the \(noun)?")
         }
     }
 
@@ -619,7 +619,7 @@ struct SessionView: View {
                 Image(systemName: "info.circle")
             }
             .accessibilityLabel(
-                store.showMetadataPanel ? L10n.text("Hide Media Information") : L10n.text("Show Media Information")
+                store.showMetadataPanel ? L10n.text("Hide Info") : L10n.text("Show Info")
             )
             .help(L10n.text("Show or hide media information (\(toolbarShortcutHint(for: .info)))"))
         }
@@ -649,7 +649,7 @@ struct SessionView: View {
             .menuIndicator(.hidden)
             .tint(Color.primary)
             .accessibilityLabel(L10n.text("Clean Up"))
-            .help(L10n.text("Choose items to move to the Trash"))
+            .help(L10n.text("Choose items to trash"))
         }
 
         if #available(macOS 26.0, *) {
@@ -1304,11 +1304,11 @@ struct CleanUpMenuItems: View {
         }
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .keepOnlyYes))
         Divider()
-        Button(L10n.text("Move Paired JPEGs to Trash…")) {
+        Button(L10n.text("Trash Paired JPEGs…")) {
             store.requestCleanUp(.pairedJPEGs)
         }
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .pairedJPEGs))
-        Button(L10n.text("Move Paired RAWs to Trash…")) {
+        Button(L10n.text("Trash Paired RAWs…")) {
             store.requestCleanUp(.pairedRAWs)
         }
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .pairedRAWs))

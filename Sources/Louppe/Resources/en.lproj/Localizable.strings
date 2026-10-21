@@ -175,10 +175,10 @@
 "Checking sidecars…" = "Checking sidecars…";
 "Checking the selected photos for existing XMP sidecars…" = "Checking the selected photos for existing XMP sidecars…";
 "Choose Destination…" = "Choose Destination…";
-"Choose Faster Playback Speed" = "Choose Faster Playback Speed";
+"Faster Playback" = "Faster Playback";
 "Choose Folder…" = "Choose Folder…";
 "Choose Media Folder…" = "Choose Media Folder…";
-"Choose Slower Playback Speed" = "Choose Slower Playback Speed";
+"Slower Playback" = "Slower Playback";
 "Choose a destination folder for every route before reviewing the copy plan." = "Choose a destination folder for every route before reviewing the copy plan.";
 "Choose a destination folder for every route." = "Choose a destination folder for every route.";
 "Choose a destination outside the folder you are reviewing." = "Choose a destination outside the folder you are reviewing.";
@@ -194,7 +194,7 @@
 "Choose date, stars, color, camera, video details, and more" = "Choose date, stars, color, camera, video details, and more";
 "Choose destination for {0}" = "Choose destination for {0}";
 "Choose folder levels and drag enabled rows into order. The top row comes first." = "Choose folder levels and drag enabled rows into order. The top row comes first.";
-"Choose items to move to the Trash" = "Choose items to move to the Trash";
+"Choose items to trash" = "Choose items to trash";
 "Choose media for each destination. Unmatched items stay in the source folder." = "Choose media for each destination. Unmatched items stay in the source folder.";
 "Choose one visible folder name. Dot-prefixed names and macOS packages such as .app cannot be scanned." = "Choose one visible folder name. Dot-prefixed names and macOS packages such as .app cannot be scanned.";
 "Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid." = "Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid.";
@@ -230,7 +230,6 @@
 "Close" = "Close";
 "Close Folder" = "Close Folder";
 "Close Picture in Picture" = "Close Picture in Picture";
-"Close Session" = "Close Session";
 "Codec" = "Codec";
 "Collapsed" = "Collapsed";
 "Color" = "Color";
@@ -411,7 +410,7 @@
 "Groups similar small local previews; review every match yourself." = "Groups similar small local previews; review every match yourself.";
 "Hide Browser" = "Hide Browser";
 "Hide Details" = "Hide Details";
-"Hide Media Information" = "Hide Media Information";
+"Hide Info" = "Hide Info";
 "Hide Preview Clipping Overlay" = "Hide Preview Clipping Overlay";
 "Hide this tip. See Help > Louppe Help for shortcuts." = "Hide this tip. See Help > Louppe Help for shortcuts.";
 "High ISO" = "High ISO";
@@ -556,31 +555,31 @@
 "Move" = "Move";
 "Move 1 file?" = "Move 1 file?";
 "Move Files" = "Move Files";
-"Move Paired JPEGs to Trash" = "Move Paired JPEGs to Trash";
-"Move Paired JPEGs to Trash…" = "Move Paired JPEGs to Trash…";
-"Move Paired RAWs to Trash" = "Move Paired RAWs to Trash";
-"Move Paired RAWs to Trash…" = "Move Paired RAWs to Trash…";
-"Move Selected to Trash" = "Move Selected to Trash";
-"Move Selected to Trash…" = "Move Selected to Trash…";
+"Trash Paired JPEGs" = "Trash Paired JPEGs";
+"Trash Paired JPEGs…" = "Trash Paired JPEGs…";
+"Trash Paired RAWs" = "Trash Paired RAWs";
+"Trash Paired RAWs…" = "Trash Paired RAWs…";
+"Trash Selected" = "Trash Selected";
+"Trash Selected…" = "Trash Selected…";
 "Move media into folders built from review and capture metadata." = "Move media into folders built from review and capture metadata.";
 "Move requires the same storage volume. Use Copy for another drive or card to protect originals during interruption." = "Move requires the same storage volume. Use Copy for another drive or card to protect originals during interruption.";
 "Move requires the source and destination to be on the same storage volume" = "Move requires the source and destination to be on the same storage volume";
-"Move selected items to Trash; ⌘Z restores them" = "Move selected items to Trash; ⌘Z restores them";
-"Move the {0} to the Trash?" = "Move the {0} to the Trash?";
-"Move to Trash" = "Move to Trash";
+"Trash selected items; ⌘Z restores them" = "Trash selected items; ⌘Z restores them";
+"Trash the {0}?" = "Trash the {0}?";
+"Trash" = "Trash";
 "Move to the item in the row above" = "Move to the item in the row above";
 "Move to the item in the row below" = "Move to the item in the row below";
 "Move with XMP" = "Move with XMP";
 "Move works on the same drive only; use Copy for another drive or card. Moved items leave this session and cannot be undone in Louppe." = "Move works on the same drive only; use Copy for another drive or card. Moved items leave this session and cannot be undone in Louppe.";
-"Move {0} Selected to Trash…" = "Move {0} Selected to Trash…";
+"Trash {0} Selected…" = "Trash {0} Selected…";
 "Move {0} earlier" = "Move {0} earlier";
 "Move {0} files?" = "Move {0} files?";
 "Move {0} later" = "Move {0} later";
-"Move {0} marked “No” to the Trash?" = "Move {0} marked “No” to the Trash?";
-"Move {0} not marked “Yes” to the Trash?" = "Move {0} not marked “Yes” to the Trash?";
-"Move {0} to the Trash?" = "Move {0} to the Trash?";
-"Move “No” to Trash" = "Move “No” to Trash";
-"Move “No” to Trash…" = "Move “No” to Trash…";
+"Trash {0} marked No?" = "Trash {0} marked No?";
+"Trash {0} marked No or Undecided?" = "Trash {0} marked No or Undecided?";
+"Trash {0}?" = "Trash {0}?";
+"Trash No" = "Trash No";
+"Trash No…" = "Trash No…";
 "Moved files: {0}. Destination folders: {1}." = "Moved files: {0}. Destination folders: {1}.";
 "Moved files: {0}. Destination: {1}" = "Moved files: {0}. Destination: {1}";
 "Moving files to the Trash…" = "Moving files to the Trash…";
@@ -656,13 +655,12 @@
 "Only {0} visible items are considered; {1} hidden items stay untouched." = "Only {0} visible items are considered; {1} hidden items stay untouched.";
 "Open Anyway" = "Open Anyway";
 "Open Command Palette" = "Open Command Palette";
-"Open Different Folder…" = "Open Different Folder…";
+"Open Folder…" = "Open Folder…";
 "Open Export" = "Open Export";
 "Open Filter and focus Search" = "Open Filter and focus Search";
 "Open Folder" = "Open Folder";
 "Open Folder and Forget Missing Item" = "Open Folder and Forget Missing Item";
 "Open Folder and Forget Missing Items" = "Open Folder and Forget Missing Items";
-"Open Folder…" = "Open Folder…";
 "Open Recent Folder “{0}”" = "Open Recent Folder “{0}”";
 "Open a media folder" = "Open a media folder";
 "Open another folder" = "Open another folder";
@@ -680,7 +678,7 @@
 "Organize Source Folder" = "Organize Source Folder";
 "Organize Source Folder…" = "Organize Source Folder…";
 "Organize by Date Taken Only…" = "Organize by Date Taken Only…";
-"Organize with Full date only" = "Organize with Full date only";
+"Preview folders named by date taken" = "Preview folders named by date taken";
 "Organized" = "Organized";
 "Organizing source folder…" = "Organizing source folder…";
 "Original name" = "Original name";
@@ -772,7 +770,6 @@
 "Rename File" = "Rename File";
 "Rename Files" = "Rename Files";
 "Rename Files Anyway" = "Rename Files Anyway";
-"Rename Files from Metadata…" = "Rename Files from Metadata…";
 "Rename Files…" = "Rename Files…";
 "Rename finished with problems" = "Rename finished with problems";
 "Rename {0} files?" = "Rename {0} files?";
@@ -833,8 +830,8 @@
 "Review progress and decision totals" = "Review progress and decision totals";
 "Review the current video or audio recording at double speed" = "Review the current video or audio recording at double speed";
 "Review the current video or audio recording at normal speed" = "Review the current video or audio recording at normal speed";
-"Review the current video or audio recording at one and a half speed" = "Review the current video or audio recording at one and a half speed";
-"Review the current video or audio recording at two and a half speed" = "Review the current video or audio recording at two and a half speed";
+"Play the current video or audio recording at 1.5× speed" = "Play the current video or audio recording at 1.5× speed";
+"Play the current video or audio recording at 2.5× speed" = "Play the current video or audio recording at 2.5× speed";
 "Review the exact source-folder change before Louppe renames anything." = "Review the exact source-folder change before Louppe renames anything.";
 "Route Copies" = "Route Copies";
 "Route copies to multiple folders" = "Route copies to multiple folders";
@@ -917,7 +914,7 @@
 "Show Details" = "Show Details";
 "Show First Folder" = "Show First Folder";
 "Show Item" = "Show Item";
-"Show Media Information" = "Show Media Information";
+"Show Info" = "Show Info";
 "Show Preview Clipping Overlay" = "Show Preview Clipping Overlay";
 "Show Videos Only" = "Show Videos Only";
 "Show exact values and sources" = "Show exact values and sources";
@@ -1110,7 +1107,6 @@
 "Total size" = "Total size";
 "Trash No + Undecided" = "Trash No + Undecided";
 "Trash No + Undecided…" = "Trash No + Undecided…";
-"Trash No…" = "Trash No…";
 "Treat matching RAW + JPEG as one photo" = "Treat matching RAW + JPEG as one photo";
 "Treat matching RAW and JPEG as one photo" = "Treat matching RAW and JPEG as one photo";
 "Try a different search term." = "Try a different search term.";
@@ -1165,7 +1161,7 @@
 "Use actions to show, open, change decision, stars, or color label, or select this item." = "Use actions to show, open, change decision, stars, or color label, or select this item.";
 "Use actions to show, open, or select this item." = "Use actions to show, open, or select this item.";
 "Use m:ss or h:mm:ss" = "Use m:ss or h:mm:ss";
-"Use the current Clean Up scope and ask for confirmation" = "Use the current Clean Up scope and ask for confirmation";
+"Confirm which items to trash in the current Clean Up scope" = "Confirm which items to trash in the current Clean Up scope";
 "Version History" = "Version History";
 "Video and audio files do not support XMP publication." = "Video and audio files do not support XMP publication.";
 "Video and audio media export without XMP." = "Video and audio media export without XMP.";
@@ -1776,7 +1772,7 @@
 "Search filters" = "Search filters";
 "Command palette" = "Command palette";
 "Rescan folder" = "Rescan folder";
-"Move selected files to Trash" = "Move selected files to Trash";
+"Trash selected items" = "Trash selected items";
 "Select all filtered items" = "Select all filtered items";
 "Resize Grid thumbnails" = "Resize Grid thumbnails";
 "Playback speed; previous / next item for other media" = "Playback speed; previous / next item for other media";
@@ -1793,7 +1789,7 @@
 "Settings" = "Settings";
 
 /* Help: renaming keepers. */
-"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names.";
+"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names.";
 
 /* Command shortcut discovery and customization */
 "Quit Louppe" = "Quit Louppe";
@@ -1806,7 +1802,7 @@
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing." = "Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing.";
 "Command Palette" = "Command Palette";
 "Command Palette ({0})" = "Command Palette ({0})";
-"To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names.";
+"To rename keepers, filter to Yes, open {0} → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "To rename keepers, filter to Yes, open {0} → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names.";
 "Shift" = "Shift";
 "Command" = "Command";
 "A default shortcut is already assigned to another action." = "A default shortcut is already assigned to another action.";
@@ -1821,3 +1817,4 @@
 "Restore review shortcuts for this mode and all Command shortcuts." = "Restore review shortcuts for this mode and all Command shortcuts.";
 
 "RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings.";
+"Clear All Decisions…" = "Clear All Decisions…";

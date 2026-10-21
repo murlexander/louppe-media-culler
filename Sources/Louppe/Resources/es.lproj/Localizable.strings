@@ -175,10 +175,10 @@
 "Checking sidecars…" = "Comprobando archivos auxiliares…";
 "Checking the selected photos for existing XMP sidecars…" = "Buscando archivos XMP auxiliares existentes de las fotos seleccionadas…";
 "Choose Destination…" = "Elegir destino…";
-"Choose Faster Playback Speed" = "Aumentar velocidad de reproducción";
+"Faster Playback" = "Reproducción más rápida";
 "Choose Folder…" = "Elegir carpeta…";
 "Choose Media Folder…" = "Elegir carpeta de medios…";
-"Choose Slower Playback Speed" = "Reducir velocidad de reproducción";
+"Slower Playback" = "Reproducción más lenta";
 "Choose a destination folder for every route before reviewing the copy plan." = "Elige una carpeta de destino para cada ruta antes de revisar el plan de copia.";
 "Choose a destination folder for every route." = "Elige una carpeta de destino para cada ruta.";
 "Choose a destination outside the folder you are reviewing." = "Elige un destino fuera de la carpeta que estás revisando.";
@@ -194,7 +194,7 @@
 "Choose date, stars, color, camera, video details, and more" = "Elige fecha, estrellas, color, cámara, detalles de vídeo y más";
 "Choose destination for {0}" = "Elegir destino de {0}";
 "Choose folder levels and drag enabled rows into order. The top row comes first." = "Elige los niveles y ordena las filas activadas arrastrándolas. La fila superior va primero.";
-"Choose items to move to the Trash" = "Elegir elementos para la Papelera";
+"Choose items to trash" = "Elegir elementos para la Papelera";
 "Choose media for each destination. Unmatched items stay in the source folder." = "Elige los medios de cada destino. Los elementos sin coincidencia quedan en la carpeta de origen.";
 "Choose one visible folder name. Dot-prefixed names and macOS packages such as .app cannot be scanned." = "Elige un nombre de carpeta visible. No se pueden escanear nombres que empiecen con punto ni paquetes de macOS como .app.";
 "Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid." = "Elige o arrastra una carpeta de medios. Louppe escanea sus subcarpetas y abre Galería o Cuadrícula.";
@@ -230,7 +230,6 @@
 "Close" = "Cerrar";
 "Close Folder" = "Cerrar carpeta";
 "Close Picture in Picture" = "Cerrar imagen en imagen";
-"Close Session" = "Cerrar sesión";
 "Codec" = "Códec";
 "Collapsed" = "Contraído";
 "Color" = "Color";
@@ -411,7 +410,7 @@
 "Groups similar small local previews; review every match yourself." = "Agrupa vistas previas locales reducidas y similares; revisa cada coincidencia.";
 "Hide Browser" = "Ocultar navegador";
 "Hide Details" = "Ocultar detalles";
-"Hide Media Information" = "Ocultar información multimedia";
+"Hide Info" = "Ocultar información";
 "Hide Preview Clipping Overlay" = "Ocultar aviso de recorte tonal";
 "Hide this tip. See Help > Louppe Help for shortcuts." = "Ocultar este consejo. Consulta los atajos en Ayuda > Ayuda de Louppe.";
 "High ISO" = "ISO alto";
@@ -556,31 +555,31 @@
 "Move" = "Trasladar";
 "Move 1 file?" = "¿Trasladar 1 archivo?";
 "Move Files" = "Trasladar archivos";
-"Move Paired JPEGs to Trash" = "Llevar los JPEG emparejados a la Papelera";
-"Move Paired JPEGs to Trash…" = "Llevar los JPEG emparejados a la Papelera…";
-"Move Paired RAWs to Trash" = "Llevar los RAW emparejados a la Papelera";
-"Move Paired RAWs to Trash…" = "Llevar los RAW emparejados a la Papelera…";
-"Move Selected to Trash" = "Llevar seleccionados a la Papelera";
-"Move Selected to Trash…" = "Llevar seleccionados a la Papelera…";
+"Trash Paired JPEGs" = "Llevar los JPEG emparejados a la Papelera";
+"Trash Paired JPEGs…" = "Llevar los JPEG emparejados a la Papelera…";
+"Trash Paired RAWs" = "Llevar los RAW emparejados a la Papelera";
+"Trash Paired RAWs…" = "Llevar los RAW emparejados a la Papelera…";
+"Trash Selected" = "Llevar seleccionados a la Papelera";
+"Trash Selected…" = "Llevar seleccionados a la Papelera…";
 "Move media into folders built from review and capture metadata." = "Traslada los medios a carpetas creadas a partir de los metadatos de revisión y captura.";
 "Move requires the same storage volume. Use Copy for another drive or card to protect originals during interruption." = "Trasladar requiere la misma unidad. Usa Copiar para otra unidad o tarjeta y proteger los originales si hay una interrupción.";
 "Move requires the source and destination to be on the same storage volume" = "Trasladar requiere que el origen y el destino estén en la misma unidad";
-"Move selected items to Trash; ⌘Z restores them" = "Lleva los seleccionados a la Papelera; ⌘Z los restaura";
-"Move the {0} to the Trash?" = "¿Llevar {0} a la Papelera?";
-"Move to Trash" = "Llevar a la Papelera";
+"Trash selected items; ⌘Z restores them" = "Lleva los seleccionados a la Papelera; ⌘Z los restaura";
+"Trash the {0}?" = "¿Llevar {0} a la Papelera?";
+"Trash" = "Llevar a la Papelera";
 "Move to the item in the row above" = "Ir al elemento de la fila superior";
 "Move to the item in the row below" = "Ir al elemento de la fila inferior";
 "Move with XMP" = "Trasladar con XMP";
 "Move works on the same drive only; use Copy for another drive or card. Moved items leave this session and cannot be undone in Louppe." = "Trasladar solo funciona en la misma unidad; usa Copiar para otra unidad o tarjeta. Los elementos trasladados salen de esta sesión y no se pueden restaurar con Deshacer en Louppe.";
-"Move {0} Selected to Trash…" = "Llevar {0} seleccionados a la Papelera…";
+"Trash {0} Selected…" = "Llevar {0} seleccionados a la Papelera…";
 "Move {0} earlier" = "Subir {0}";
 "Move {0} files?" = "¿Trasladar {0} archivos?";
 "Move {0} later" = "Bajar {0}";
-"Move {0} marked “No” to the Trash?" = "¿Llevar {0} marcados No a la Papelera?";
-"Move {0} not marked “Yes” to the Trash?" = "¿Llevar {0} no marcados Sí a la Papelera?";
-"Move {0} to the Trash?" = "¿Llevar {0} a la Papelera?";
-"Move “No” to Trash" = "Llevar No a la Papelera";
-"Move “No” to Trash…" = "Llevar No a la Papelera…";
+"Trash {0} marked No?" = "¿Llevar {0} marcados No a la Papelera?";
+"Trash {0} marked No or Undecided?" = "¿Llevar {0} marcados No o Sin decidir a la Papelera?";
+"Trash {0}?" = "¿Llevar {0} a la Papelera?";
+"Trash No" = "Llevar No a la Papelera";
+"Trash No…" = "Llevar No a la Papelera…";
 "Moved files: {0}. Destination folders: {1}." = "Archivos trasladados: {0}. Carpetas de destino: {1}.";
 "Moved files: {0}. Destination: {1}" = "Archivos trasladados: {0}. Destino: {1}";
 "Moving files to the Trash…" = "Llevando archivos a la Papelera…";
@@ -656,13 +655,12 @@
 "Only {0} visible items are considered; {1} hidden items stay untouched." = "Solo se consideran {0} elementos visibles; los {1} ocultos no cambian.";
 "Open Anyway" = "Abrir de todos modos";
 "Open Command Palette" = "Abrir paleta de comandos";
-"Open Different Folder…" = "Abrir otra carpeta…";
+"Open Folder…" = "Abrir carpeta…";
 "Open Export" = "Abrir exportación";
 "Open Filter and focus Search" = "Abrir filtros y enfocar la búsqueda";
 "Open Folder" = "Abrir carpeta";
 "Open Folder and Forget Missing Item" = "Abrir carpeta y olvidar elemento ausente";
 "Open Folder and Forget Missing Items" = "Abrir carpeta y olvidar elementos ausentes";
-"Open Folder…" = "Abrir carpeta…";
 "Open Recent Folder “{0}”" = "Abrir carpeta reciente «{0}»";
 "Open a media folder" = "Abrir una carpeta de medios";
 "Open another folder" = "Abrir otra carpeta";
@@ -680,7 +678,7 @@
 "Organize Source Folder" = "Organizar carpeta de origen";
 "Organize Source Folder…" = "Organizar carpeta de origen…";
 "Organize by Date Taken Only…" = "Organizar solo por fecha de captura…";
-"Organize with Full date only" = "Organizar solo con fecha completa";
+"Preview folders named by date taken" = "Previsualiza carpetas con nombres basados en la fecha de captura";
 "Organized" = "Organizado";
 "Organizing source folder…" = "Organizando la carpeta de origen…";
 "Original name" = "Nombre original";
@@ -772,7 +770,6 @@
 "Rename File" = "Cambiar nombre de archivo";
 "Rename Files" = "Cambiar nombres de archivos";
 "Rename Files Anyway" = "Cambiar nombres de todos modos";
-"Rename Files from Metadata…" = "Cambiar nombres con metadatos…";
 "Rename Files…" = "Cambiar nombres de archivos…";
 "Rename finished with problems" = "Cambio de nombres terminado con problemas";
 "Rename {0} files?" = "¿Cambiar nombres de {0} archivos?";
@@ -833,8 +830,8 @@
 "Review progress and decision totals" = "Progreso de revisión y totales de decisiones";
 "Review the current video or audio recording at double speed" = "Revisar el vídeo o audio actual a velocidad 2×";
 "Review the current video or audio recording at normal speed" = "Revisar el vídeo o audio actual a velocidad normal";
-"Review the current video or audio recording at one and a half speed" = "Revisar el vídeo o audio actual a velocidad 1.5×";
-"Review the current video or audio recording at two and a half speed" = "Revisar el vídeo o audio actual a velocidad 2.5×";
+"Play the current video or audio recording at 1.5× speed" = "Reproduce el vídeo o audio actual a una velocidad de 1.5×";
+"Play the current video or audio recording at 2.5× speed" = "Reproduce el vídeo o audio actual a una velocidad de 2.5×";
 "Review the exact source-folder change before Louppe renames anything." = "Revisa el cambio exacto en la carpeta de origen antes de que Louppe cambie ningún nombre.";
 "Route Copies" = "Copias por rutas";
 "Route copies to multiple folders" = "Copiar a varias carpetas por rutas";
@@ -917,7 +914,7 @@
 "Show Details" = "Mostrar detalles";
 "Show First Folder" = "Mostrar primera carpeta";
 "Show Item" = "Mostrar elemento";
-"Show Media Information" = "Mostrar información multimedia";
+"Show Info" = "Mostrar información";
 "Show Preview Clipping Overlay" = "Mostrar aviso de recorte tonal";
 "Show Videos Only" = "Mostrar vídeos solamente";
 "Show exact values and sources" = "Mostrar valores y fuentes exactos";
@@ -1110,7 +1107,6 @@
 "Total size" = "Tamaño total";
 "Trash No + Undecided" = "Llevar No y sin decidir a la Papelera";
 "Trash No + Undecided…" = "Llevar No y sin decidir a la Papelera…";
-"Trash No…" = "Llevar No a la Papelera…";
 "Treat matching RAW + JPEG as one photo" = "Tratar los RAW + JPEG coincidentes como una sola foto";
 "Treat matching RAW and JPEG as one photo" = "Tratar los RAW y JPEG coincidentes como una sola foto";
 "Try a different search term." = "Prueba otro término de búsqueda.";
@@ -1165,7 +1161,7 @@
 "Use actions to show, open, change decision, stars, or color label, or select this item." = "Usa las acciones para mostrar, abrir o seleccionar este elemento, o cambiar su decisión, estrellas o etiqueta de color.";
 "Use actions to show, open, or select this item." = "Usa las acciones para mostrar, abrir o seleccionar este elemento.";
 "Use m:ss or h:mm:ss" = "Usa m:ss o h:mm:ss";
-"Use the current Clean Up scope and ask for confirmation" = "Usa el ámbito actual de Limpiar y pide confirmación";
+"Confirm which items to trash in the current Clean Up scope" = "Confirma qué elementos llevar a la Papelera en el ámbito actual de Limpiar";
 "Version History" = "Historial de versiones";
 "Video and audio files do not support XMP publication." = "Los archivos de vídeo y audio no admiten publicación XMP.";
 "Video and audio media export without XMP." = "Los vídeos y audios se exportan sin XMP.";
@@ -1776,7 +1772,7 @@
 "Search filters" = "Buscar en los filtros";
 "Command palette" = "Paleta de comandos";
 "Rescan folder" = "Volver a escanear la carpeta";
-"Move selected files to Trash" = "Mover los archivos seleccionados a la Papelera";
+"Trash selected items" = "Mover los archivos seleccionados a la Papelera";
 "Select all filtered items" = "Seleccionar todos los elementos filtrados";
 "Resize Grid thumbnails" = "Cambiar el tamaño de las miniaturas de Cuadrícula";
 "Playback speed; previous / next item for other media" = "Velocidad de reproducción; elemento anterior / siguiente para otros archivos";
@@ -1793,7 +1789,7 @@
 "Settings" = "Ajustes";
 
 /* Help: renaming keepers. */
-"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "Para renombrar las fotos que conservas, filtra por Sí, abre Paleta de comandos (⌘K) → Cambiar nombres con metadatos… y elige Filtrados. Revisa los nombres antes de confirmar; ⌘Z restaura los anteriores.";
+"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "Para renombrar las fotos que conservas, filtra por Sí, abre Paleta de comandos (⌘K) → Cambiar nombres de archivos… y elige Filtrados. Revisa los nombres antes de confirmar; ⌘Z restaura los anteriores.";
 
 /* Command shortcut discovery and customization */
 "Quit Louppe" = "Salir de Louppe";
@@ -1806,7 +1802,7 @@
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing." = "Revisa los archivos RAW + JPEG coincidentes juntos o por separado desde Filtrar o la Paleta de comandos. Busca RAW, JPEG o emparejamiento.";
 "Command Palette" = "Paleta de comandos";
 "Command Palette ({0})" = "Paleta de comandos ({0})";
-"To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "Para renombrar las fotos que conservas, filtra por Sí, abre {0} → Cambiar nombres con metadatos… y elige Filtrados. Revisa los nombres antes de confirmar; ⌘Z restaura los anteriores.";
+"To rename keepers, filter to Yes, open {0} → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "Para renombrar las fotos que conservas, filtra por Sí, abre {0} → Cambiar nombres de archivos… y elige Filtrados. Revisa los nombres antes de confirmar; ⌘Z restaura los anteriores.";
 "Shift" = "Mayúsculas";
 "Command" = "Comando";
 "A default shortcut is already assigned to another action." = "Un atajo predeterminado ya está asignado a otra acción.";
@@ -1821,3 +1817,4 @@
 "Restore review shortcuts for this mode and all Command shortcuts." = "Restaurar los atajos de revisión de este modo y todos los atajos con Command.";
 
 "RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "RAW 9 necesita macOS 27, un archivo compatible y los recursos de modelos de Apple. Reintenta o elige Apple Default en Ajustes.";
+"Clear All Decisions…" = "Borrar todas las decisiones…";

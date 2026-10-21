@@ -175,10 +175,10 @@
 "Checking sidecars…" = "साइडकार जाँचे जा रहे हैं…";
 "Checking the selected photos for existing XMP sidecars…" = "चुनी हुई तस्वीरों के मौजूदा XMP साइडकार जाँचे जा रहे हैं…";
 "Choose Destination…" = "गंतव्य चुनें…";
-"Choose Faster Playback Speed" = "ज़्यादा प्लेबैक गति चुनें";
+"Faster Playback" = "तेज़ प्लेबैक";
 "Choose Folder…" = "फ़ोल्डर चुनें…";
 "Choose Media Folder…" = "मीडिया फ़ोल्डर चुनें…";
-"Choose Slower Playback Speed" = "कम प्लेबैक गति चुनें";
+"Slower Playback" = "धीमा प्लेबैक";
 "Choose a destination folder for every route before reviewing the copy plan." = "कॉपी योजना की समीक्षा से पहले हर मार्ग का गंतव्य फ़ोल्डर चुनें।";
 "Choose a destination folder for every route." = "हर मार्ग का गंतव्य फ़ोल्डर चुनें।";
 "Choose a destination outside the folder you are reviewing." = "जिस फ़ोल्डर की समीक्षा कर रहे हैं उसके बाहर गंतव्य चुनें।";
@@ -194,7 +194,7 @@
 "Choose date, stars, color, camera, video details, and more" = "तारीख, स्टार, रंग, कैमरा, वीडियो विवरण और अन्य विकल्प चुनें";
 "Choose destination for {0}" = "{0} का गंतव्य चुनें";
 "Choose folder levels and drag enabled rows into order. The top row comes first." = "फ़ोल्डर के स्तर चुनें और सक्रिय पंक्तियाँ खींचकर क्रम में रखें। ऊपर की पंक्ति पहले आएगी।";
-"Choose items to move to the Trash" = "कूड़ेदान में भेजने वाले आइटम चुनें";
+"Choose items to trash" = "कूड़ेदान में भेजने वाले आइटम चुनें";
 "Choose media for each destination. Unmatched items stay in the source folder." = "हर गंतव्य के लिए मीडिया चुनें। किसी मार्ग से न मिलने वाले आइटम स्रोत फ़ोल्डर में रहेंगे।";
 "Choose one visible folder name. Dot-prefixed names and macOS packages such as .app cannot be scanned." = "दिखने वाले फ़ोल्डर का नाम चुनें। बिंदु से शुरू नाम और .app जैसे macOS पैकेज स्कैन नहीं हो सकते।";
 "Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid." = "मीडिया फ़ोल्डर चुनें या छोड़ें। Louppe उसके उपफ़ोल्डर स्कैन करके गैलरी या ग्रिड खोलता है।";
@@ -230,7 +230,6 @@
 "Close" = "बंद करें";
 "Close Folder" = "फ़ोल्डर बंद करें";
 "Close Picture in Picture" = "पिक्चर-इन-पिक्चर बंद करें";
-"Close Session" = "सत्र बंद करें";
 "Codec" = "कोडेक";
 "Collapsed" = "संकुचित";
 "Color" = "रंग";
@@ -411,7 +410,7 @@
 "Groups similar small local previews; review every match yourself." = "मिलते छोटे स्थानीय पूर्वावलोकन समूहित करता है; हर मिलान स्वयं जाँचें।";
 "Hide Browser" = "ब्राउज़र छुपाएं";
 "Hide Details" = "विवरण छुपाएं";
-"Hide Media Information" = "मीडिया जानकारी छिपाएँ";
+"Hide Info" = "जानकारी छिपाएँ";
 "Hide Preview Clipping Overlay" = "पूर्वावलोकन का क्लिपिंग ओवरले छिपाएँ";
 "Hide this tip. See Help > Louppe Help for shortcuts." = "यह सुझाव छिपाएँ। शॉर्टकट के लिए सहायता > Louppe की सहायता देखें।";
 "High ISO" = "उच्च ISO";
@@ -556,31 +555,31 @@
 "Move" = "स्थानांतरित करें";
 "Move 1 file?" = "1 फ़ाइल स्थानांतरित करें?";
 "Move Files" = "फ़ाइलें स्थानांतरित करें";
-"Move Paired JPEGs to Trash" = "जोड़ी के JPEG कूड़ेदान में भेजें";
-"Move Paired JPEGs to Trash…" = "जोड़ी के JPEG कूड़ेदान में भेजें…";
-"Move Paired RAWs to Trash" = "जोड़ी के RAW कूड़ेदान में भेजें";
-"Move Paired RAWs to Trash…" = "जोड़ी के RAW कूड़ेदान में भेजें…";
-"Move Selected to Trash" = "चयन कूड़ेदान में भेजें";
-"Move Selected to Trash…" = "चयन कूड़ेदान में भेजें…";
+"Trash Paired JPEGs" = "जोड़ी के JPEG कूड़ेदान में भेजें";
+"Trash Paired JPEGs…" = "जोड़ी के JPEG कूड़ेदान में भेजें…";
+"Trash Paired RAWs" = "जोड़ी के RAW कूड़ेदान में भेजें";
+"Trash Paired RAWs…" = "जोड़ी के RAW कूड़ेदान में भेजें…";
+"Trash Selected" = "चयन कूड़ेदान में भेजें";
+"Trash Selected…" = "चयन कूड़ेदान में भेजें…";
 "Move media into folders built from review and capture metadata." = "समीक्षा और कैप्चर मेटाडेटा से बने फ़ोल्डर में मीडिया स्थानांतरित करें।";
 "Move requires the same storage volume. Use Copy for another drive or card to protect originals during interruption." = "स्थानांतरण के लिए वही स्टोरेज वॉल्यूम चाहिए। दूसरी ड्राइव या कार्ड के लिए कॉपी करें, ताकि रुकावट में मूल फ़ाइलें सुरक्षित रहें।";
 "Move requires the source and destination to be on the same storage volume" = "स्थानांतरण में स्रोत और गंतव्य एक ही स्टोरेज वॉल्यूम पर होने चाहिए";
-"Move selected items to Trash; ⌘Z restores them" = "चयन कूड़ेदान में भेजें; ⌘Z से वापस पाएँ";
-"Move the {0} to the Trash?" = "{0} कूड़ेदान में भेजें?";
-"Move to Trash" = "कूड़ेदान में भेजें";
+"Trash selected items; ⌘Z restores them" = "चयन कूड़ेदान में भेजें; ⌘Z से वापस पाएँ";
+"Trash the {0}?" = "{0} कूड़ेदान में भेजें?";
+"Trash" = "कूड़ेदान में भेजें";
 "Move to the item in the row above" = "ऊपर की पंक्ति के आइटम पर जाएँ";
 "Move to the item in the row below" = "नीचे की पंक्ति के आइटम पर जाएँ";
 "Move with XMP" = "XMP के साथ स्थानांतरित करें";
 "Move works on the same drive only; use Copy for another drive or card. Moved items leave this session and cannot be undone in Louppe." = "स्थानांतरण केवल उसी ड्राइव पर हो सकता है; दूसरी ड्राइव या कार्ड के लिए कॉपी करें। स्थानांतरित आइटम इस सत्र से हटेंगे और Louppe में पूर्ववत नहीं किए जा सकते।";
-"Move {0} Selected to Trash…" = "चुने हुए {0} आइटम कूड़ेदान में भेजें…";
+"Trash {0} Selected…" = "चुने हुए {0} आइटम कूड़ेदान में भेजें…";
 "Move {0} earlier" = "{0} पहले रखें";
 "Move {0} files?" = "{0} फ़ाइलें स्थानांतरित करें?";
 "Move {0} later" = "{0} बाद में रखें";
-"Move {0} marked “No” to the Trash?" = "“नहीं” चिह्नित {0} आइटम कूड़ेदान में भेजें?";
-"Move {0} not marked “Yes” to the Trash?" = "“हाँ” नहीं चिह्नित {0} आइटम कूड़ेदान में भेजें?";
-"Move {0} to the Trash?" = "{0} कूड़ेदान में भेजें?";
-"Move “No” to Trash" = "“नहीं” वाले कूड़ेदान में भेजें";
-"Move “No” to Trash…" = "“नहीं” वाले कूड़ेदान में भेजें…";
+"Trash {0} marked No?" = "“नहीं” चिह्नित {0} आइटम कूड़ेदान में भेजें?";
+"Trash {0} marked No or Undecided?" = "“नहीं” या अनिर्णीत चिह्नित {0} आइटम कूड़ेदान में भेजें?";
+"Trash {0}?" = "{0} कूड़ेदान में भेजें?";
+"Trash No" = "“नहीं” वाले कूड़ेदान में भेजें";
+"Trash No…" = "“नहीं” वाले कूड़ेदान में भेजें…";
 "Moved files: {0}. Destination folders: {1}." = "स्थानांतरित फ़ाइलें: {0}। गंतव्य फ़ोल्डर: {1}।";
 "Moved files: {0}. Destination: {1}" = "स्थानांतरित फ़ाइलें: {0}। गंतव्य: {1}";
 "Moving files to the Trash…" = "फ़ाइलें कूड़ेदान में भेजी जा रही हैं…";
@@ -656,13 +655,12 @@
 "Only {0} visible items are considered; {1} hidden items stay untouched." = "केवल {0} दिख रहे आइटम शामिल हैं; {1} छिपे आइटम नहीं बदलेंगे।";
 "Open Anyway" = "फिर भी खोलें";
 "Open Command Palette" = "कमांड पैलेट खोलें";
-"Open Different Folder…" = "दूसरा फ़ोल्डर खोलें…";
+"Open Folder…" = "फ़ोल्डर खोलें…";
 "Open Export" = "निर्यात खोलें";
 "Open Filter and focus Search" = "फ़िल्टर खोलकर खोज पर जाएँ";
 "Open Folder" = "फ़ोल्डर खोलें";
 "Open Folder and Forget Missing Item" = "फ़ोल्डर खोलें और गायब फ़ाइल का निर्णय हटाएँ";
 "Open Folder and Forget Missing Items" = "फ़ोल्डर खोलें और गायब फ़ाइलों के निर्णय हटाएँ";
-"Open Folder…" = "फ़ोल्डर खोलें…";
 "Open Recent Folder “{0}”" = "हाल का फ़ोल्डर “{0}” खोलें";
 "Open a media folder" = "मीडिया फ़ोल्डर खोलें";
 "Open another folder" = "दूसरा फ़ोल्डर खोलें";
@@ -680,7 +678,7 @@
 "Organize Source Folder" = "स्रोत फ़ोल्डर व्यवस्थित करें";
 "Organize Source Folder…" = "स्रोत फ़ोल्डर व्यवस्थित करें…";
 "Organize by Date Taken Only…" = "केवल कैप्चर तारीख से व्यवस्थित करें…";
-"Organize with Full date only" = "केवल पूरी तारीख से व्यवस्थित करें";
+"Preview folders named by date taken" = "फ़ोटो लेने की तारीख़ वाले नामों के फ़ोल्डर का पूर्वावलोकन करें";
 "Organized" = "व्यवस्थित";
 "Organizing source folder…" = "स्रोत फ़ोल्डर व्यवस्थित हो रहा है…";
 "Original name" = "मूल नाम";
@@ -772,7 +770,6 @@
 "Rename File" = "फ़ाइल का नाम बदलें";
 "Rename Files" = "फ़ाइलों के नाम बदलें";
 "Rename Files Anyway" = "फिर भी फ़ाइलों के नाम बदलें";
-"Rename Files from Metadata…" = "मेटाडेटा से फ़ाइलों के नाम बदलें…";
 "Rename Files…" = "फ़ाइलों के नाम बदलें…";
 "Rename finished with problems" = "नाम बदलना समस्याओं के साथ पूरा हुआ";
 "Rename {0} files?" = "{0} फ़ाइलों के नाम बदलें?";
@@ -833,8 +830,8 @@
 "Review progress and decision totals" = "प्रगति और निर्णय कुल की समीक्षा";
 "Review the current video or audio recording at double speed" = "वर्तमान वीडियो या ऑडियो रिकॉर्डिंग की 2× गति पर समीक्षा करें";
 "Review the current video or audio recording at normal speed" = "सामान्य गति पर वर्तमान वीडियो या ऑडियो रिकॉर्डिंग की समीक्षा करें";
-"Review the current video or audio recording at one and a half speed" = "वर्तमान वीडियो या ऑडियो रिकॉर्डिंग की 1.5× गति पर समीक्षा करें";
-"Review the current video or audio recording at two and a half speed" = "वर्तमान वीडियो या ऑडियो रिकॉर्डिंग की 2.5× गति पर समीक्षा करें";
+"Play the current video or audio recording at 1.5× speed" = "मौजूदा वीडियो या ऑडियो रिकॉर्डिंग 1.5× गति पर चलाएँ";
+"Play the current video or audio recording at 2.5× speed" = "मौजूदा वीडियो या ऑडियो रिकॉर्डिंग 2.5× गति पर चलाएँ";
 "Review the exact source-folder change before Louppe renames anything." = "Louppe के कोई भी नाम बदलने से पहले स्रोत फ़ोल्डर का सटीक बदलाव जाँचें।";
 "Route Copies" = "मार्गों से कॉपी करें";
 "Route copies to multiple folders" = "कई फ़ोल्डर में कॉपी के मार्ग बनाएँ";
@@ -917,7 +914,7 @@
 "Show Details" = "विवरण दिखाएं";
 "Show First Folder" = "पहला फ़ोल्डर दिखाएँ";
 "Show Item" = "आइटम दिखाएँ";
-"Show Media Information" = "मीडिया जानकारी दिखाएँ";
+"Show Info" = "जानकारी दिखाएँ";
 "Show Preview Clipping Overlay" = "पूर्वावलोकन का क्लिपिंग ओवरले दिखाएँ";
 "Show Videos Only" = "केवल वीडियो दिखाएं";
 "Show exact values and sources" = "सटीक मान और स्रोत दिखाएं";
@@ -1110,7 +1107,6 @@
 "Total size" = "कुल आकार";
 "Trash No + Undecided" = "“नहीं” और अनिर्णीत वाले कूड़ेदान में भेजें";
 "Trash No + Undecided…" = "“नहीं” और अनिर्णीत वाले कूड़ेदान में भेजें…";
-"Trash No…" = "“नहीं” वाले कूड़ेदान में भेजें…";
 "Treat matching RAW + JPEG as one photo" = "मेल खाने वाली RAW + JPEG को एक फ़ोटो मानें";
 "Treat matching RAW and JPEG as one photo" = "मेल खाने वाली RAW और JPEG को एक फ़ोटो मानें";
 "Try a different search term." = "कोई दूसरा खोज शब्द आज़माएँ।";
@@ -1165,7 +1161,7 @@
 "Use actions to show, open, change decision, stars, or color label, or select this item." = "इस आइटम को दिखाने, खोलने, चुनने या उसका निर्णय, स्टार या रंग लेबल बदलने के लिए कार्रवाइयाँ इस्तेमाल करें।";
 "Use actions to show, open, or select this item." = "यह आइटम दिखाने, खोलने या चुनने के लिए कार्रवाइयाँ इस्तेमाल करें।";
 "Use m:ss or h:mm:ss" = "m:ss या h:mm:ss इस्तेमाल करें";
-"Use the current Clean Up scope and ask for confirmation" = "सफ़ाई का मौजूदा दायरा इस्तेमाल करके पुष्टि माँगें";
+"Confirm which items to trash in the current Clean Up scope" = "सफ़ाई के मौजूदा दायरे में कूड़ेदान में भेजने वाले आइटम की पुष्टि करें";
 "Version History" = "संस्करण इतिहास";
 "Video and audio files do not support XMP publication." = "वीडियो और ऑडियो फ़ाइलों में XMP लिखना समर्थित नहीं है।";
 "Video and audio media export without XMP." = "वीडियो और ऑडियो XMP के बिना निर्यात होते हैं।";
@@ -1776,7 +1772,7 @@
 "Search filters" = "फ़िल्टर खोजें";
 "Command palette" = "कमांड पैलेट";
 "Rescan folder" = "फ़ोल्डर फिर स्कैन करें";
-"Move selected files to Trash" = "चुनी हुई फ़ाइलों को ट्रैश में डालें";
+"Trash selected items" = "चुनी हुई फ़ाइलों को ट्रैश में डालें";
 "Select all filtered items" = "सभी फ़िल्टर किए गए आइटम चुनें";
 "Resize Grid thumbnails" = "ग्रिड थंबनेल का आकार बदलें";
 "Playback speed; previous / next item for other media" = "प्लेबैक गति; अन्य मीडिया के लिए पिछला / अगला आइटम";
@@ -1793,7 +1789,7 @@
 "Settings" = "सेटिंग्स";
 
 /* Help: renaming keepers. */
-"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "रखने वाली फ़ोटो के नाम बदलने के लिए हाँ से फ़िल्टर करें, कमांड पैलेट (⌘K) → मेटाडेटा से फ़ाइलों के नाम बदलें… खोलें और फ़िल्टर किए हुए चुनें। पुष्टि से पहले नाम देखें; ⌘Z पुराने नाम वापस लाता है।";
+"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "रखने वाली फ़ोटो के नाम बदलने के लिए हाँ से फ़िल्टर करें, कमांड पैलेट (⌘K) → फ़ाइलों के नाम बदलें… खोलें और फ़िल्टर किए हुए चुनें। पुष्टि से पहले नाम देखें; ⌘Z पुराने नाम वापस लाता है।";
 
 /* Command shortcut discovery and customization */
 "Quit Louppe" = "Louppe बंद करें";
@@ -1806,7 +1802,7 @@
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing." = "फ़िल्टर या कमांड पैलेट में मेल खाने वाली RAW + JPEG फ़ाइलों की एक साथ या अलग-अलग समीक्षा करें। RAW, JPEG या पेयरिंग खोजें।";
 "Command Palette" = "कमांड पैलेट";
 "Command Palette ({0})" = "कमांड पैलेट ({0})";
-"To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "रखने वाली फ़ाइलों का नाम बदलने के लिए हाँ का फ़िल्टर लगाएँ, {0} → मेटाडेटा से फ़ाइलों का नाम बदलें… खोलें और फ़िल्टर किए गए चुनें। पुष्टि से पहले नामों का पूर्वावलोकन करें; ⌘Z पुराने नाम बहाल करता है।";
+"To rename keepers, filter to Yes, open {0} → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "रखने वाली फ़ाइलों का नाम बदलने के लिए हाँ का फ़िल्टर लगाएँ, {0} → मेटाडेटा से फ़ाइलों का नाम बदलें… खोलें और फ़िल्टर किए गए चुनें। पुष्टि से पहले नामों का पूर्वावलोकन करें; ⌘Z पुराने नाम बहाल करता है।";
 "Shift" = "Shift";
 "Command" = "Command";
 "A default shortcut is already assigned to another action." = "एक डिफ़ॉल्ट शॉर्टकट पहले से किसी अन्य क्रिया को असाइन है।";
@@ -1821,3 +1817,4 @@
 "Restore review shortcuts for this mode and all Command shortcuts." = "इस मोड के समीक्षा शॉर्टकट और सभी Command शॉर्टकट बहाल करें।";
 
 "RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "RAW 9 के लिए macOS 27, समर्थित फ़ाइल और Apple के मॉडल संसाधन चाहिए। फिर कोशिश करें या सेटिंग्स में Apple Default चुनें।";
+"Clear All Decisions…" = "सभी निर्णय मिटाएँ…";

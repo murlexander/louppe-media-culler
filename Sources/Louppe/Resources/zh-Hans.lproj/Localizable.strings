@@ -175,10 +175,10 @@
 "Checking sidecars…" = "正在检查附属文件…";
 "Checking the selected photos for existing XMP sidecars…" = "正在检查所选照片现有的 XMP 附属文件…";
 "Choose Destination…" = "选择目标位置…";
-"Choose Faster Playback Speed" = "选择更快的回放速度";
+"Faster Playback" = "提高播放速度";
 "Choose Folder…" = "选择文件夹…";
 "Choose Media Folder…" = "选择媒体文件夹…";
-"Choose Slower Playback Speed" = "选择较慢的播放速度";
+"Slower Playback" = "降低播放速度";
 "Choose a destination folder for every route before reviewing the copy plan." = "审阅复制方案前，请为每条路径选择目标文件夹。";
 "Choose a destination folder for every route." = "请为每条路径选择目标文件夹。";
 "Choose a destination outside the folder you are reviewing." = "请选择正在审阅的文件夹之外的目标位置。";
@@ -194,7 +194,7 @@
 "Choose date, stars, color, camera, video details, and more" = "选择日期、星级、颜色、相机、视频详情等条件";
 "Choose destination for {0}" = "选择 {0} 的目标位置";
 "Choose folder levels and drag enabled rows into order. The top row comes first." = "选择文件夹级别，并拖动已启用的行排序。最上方的行排在最前。";
-"Choose items to move to the Trash" = "选择要移到废纸篓的项目";
+"Choose items to trash" = "选择要移到废纸篓的项目";
 "Choose media for each destination. Unmatched items stay in the source folder." = "选择每个目标位置的媒体。不匹配的项目留在源文件夹中。";
 "Choose one visible folder name. Dot-prefixed names and macOS packages such as .app cannot be scanned." = "请选择一个可见文件夹名称。无法扫描以点开头的名称或 .app 等 macOS 软件包。";
 "Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid." = "选择或拖入媒体文件夹。Louppe 会扫描其子文件夹，并打开图库或网格视图。";
@@ -230,7 +230,6 @@
 "Close" = "关闭";
 "Close Folder" = "关闭文件夹";
 "Close Picture in Picture" = "关闭画中画";
-"Close Session" = "关闭会话";
 "Codec" = "编解码器";
 "Collapsed" = "折叠";
 "Color" = "颜色";
@@ -411,7 +410,7 @@
 "Groups similar small local previews; review every match yourself." = "根据本机的小尺寸预览将相似照片分组；请逐一审阅所有匹配结果。";
 "Hide Browser" = "隐藏浏览器";
 "Hide Details" = "隐藏详情";
-"Hide Media Information" = "隐藏媒体信息";
+"Hide Info" = "隐藏信息";
 "Hide Preview Clipping Overlay" = "隐藏预览剪切叠层";
 "Hide this tip. See Help > Louppe Help for shortcuts." = "隐藏此提示。快捷键请见帮助 > Louppe 帮助。";
 "High ISO" = "高 ISO";
@@ -556,31 +555,31 @@
 "Move" = "移动";
 "Move 1 file?" = "移动 1 个文件？";
 "Move Files" = "移动文件";
-"Move Paired JPEGs to Trash" = "将配对 JPEG 移到废纸篓";
-"Move Paired JPEGs to Trash…" = "将配对 JPEG 移到废纸篓…";
-"Move Paired RAWs to Trash" = "将配对 RAW 移到废纸篓";
-"Move Paired RAWs to Trash…" = "将配对 RAW 移到废纸篓…";
-"Move Selected to Trash" = "将所选项目移到废纸篓";
-"Move Selected to Trash…" = "将所选项目移到废纸篓…";
+"Trash Paired JPEGs" = "将配对 JPEG 移到废纸篓";
+"Trash Paired JPEGs…" = "将配对 JPEG 移到废纸篓…";
+"Trash Paired RAWs" = "将配对 RAW 移到废纸篓";
+"Trash Paired RAWs…" = "将配对 RAW 移到废纸篓…";
+"Trash Selected" = "将所选项目移到废纸篓";
+"Trash Selected…" = "将所选项目移到废纸篓…";
 "Move media into folders built from review and capture metadata." = "将媒体移入根据审阅和拍摄元数据创建的文件夹。";
 "Move requires the same storage volume. Use Copy for another drive or card to protect originals during interruption." = "移动必须在同一存储卷内进行。复制到其他驱动器或存储卡时，请使用复制，以在中断时保护原始文件。";
 "Move requires the source and destination to be on the same storage volume" = "移动要求源位置和目标位置在同一存储卷上";
-"Move selected items to Trash; ⌘Z restores them" = "将所选项目移到废纸篓；⌘Z 可恢复";
-"Move the {0} to the Trash?" = "将 {0} 移到废纸篓？";
-"Move to Trash" = "移到废纸篓";
+"Trash selected items; ⌘Z restores them" = "将所选项目移到废纸篓；⌘Z 可恢复";
+"Trash the {0}?" = "将 {0} 移到废纸篓？";
+"Trash" = "移到废纸篓";
 "Move to the item in the row above" = "移到上一行的项目";
 "Move to the item in the row below" = "移到下一行的项目";
 "Move with XMP" = "移动并包含 XMP";
 "Move works on the same drive only; use Copy for another drive or card. Moved items leave this session and cannot be undone in Louppe." = "移动只能在同一驱动器内进行；传输到其他驱动器或存储卡请使用复制。移出的项目会离开此会话，且无法在 Louppe 中撤销。";
-"Move {0} Selected to Trash…" = "将所选 {0} 个项目移到废纸篓…";
+"Trash {0} Selected…" = "将所选 {0} 个项目移到废纸篓…";
 "Move {0} earlier" = "将 {0} 前移";
 "Move {0} files?" = "移动 {0} 个文件？";
 "Move {0} later" = "将 {0} 后移";
-"Move {0} marked “No” to the Trash?" = "将标为“否”的 {0} 个项目移到废纸篓？";
-"Move {0} not marked “Yes” to the Trash?" = "将未标为“是”的 {0} 个项目移到废纸篓？";
-"Move {0} to the Trash?" = "将 {0} 移到废纸篓？";
-"Move “No” to Trash" = "将“否”移到废纸篓";
-"Move “No” to Trash…" = "将“否”移到废纸篓…";
+"Trash {0} marked No?" = "将标为“否”的 {0} 个项目移到废纸篓？";
+"Trash {0} marked No or Undecided?" = "将标为“否”或“未决定”的 {0} 移到废纸篓？";
+"Trash {0}?" = "将 {0} 移到废纸篓？";
+"Trash No" = "将“否”移到废纸篓";
+"Trash No…" = "将“否”移到废纸篓…";
 "Moved files: {0}. Destination folders: {1}." = "已移动文件：{0}。目标文件夹：{1}。";
 "Moved files: {0}. Destination: {1}" = "已移动文件：{0}。目标位置：{1}";
 "Moving files to the Trash…" = "正在将文件移到废纸篓…";
@@ -656,13 +655,12 @@
 "Only {0} visible items are considered; {1} hidden items stay untouched." = "只考虑 {0} 个可见项目；{1} 个隐藏项目不会被修改。";
 "Open Anyway" = "仍然打开";
 "Open Command Palette" = "打开命令面板";
-"Open Different Folder…" = "打开其他文件夹…";
+"Open Folder…" = "打开文件夹…";
 "Open Export" = "打开导出";
 "Open Filter and focus Search" = "打开筛选并聚焦搜索框";
 "Open Folder" = "打开文件夹";
 "Open Folder and Forget Missing Item" = "打开文件夹并忘记缺失项目";
 "Open Folder and Forget Missing Items" = "打开文件夹并忘记缺失项目";
-"Open Folder…" = "打开文件夹…";
 "Open Recent Folder “{0}”" = "打开最近文件夹“{0}”";
 "Open a media folder" = "打开媒体文件夹";
 "Open another folder" = "打开另一个文件夹";
@@ -680,7 +678,7 @@
 "Organize Source Folder" = "整理源文件夹";
 "Organize Source Folder…" = "整理源文件夹…";
 "Organize by Date Taken Only…" = "仅按拍摄日期整理…";
-"Organize with Full date only" = "仅使用完整日期整理";
+"Preview folders named by date taken" = "预览按拍摄日期命名的文件夹";
 "Organized" = "已整理";
 "Organizing source folder…" = "正在整理源文件夹…";
 "Original name" = "原名称";
@@ -772,7 +770,6 @@
 "Rename File" = "重命名文件";
 "Rename Files" = "重命名文件";
 "Rename Files Anyway" = "仍然重命名文件";
-"Rename Files from Metadata…" = "根据元数据重命名文件…";
 "Rename Files…" = "重命名文件…";
 "Rename finished with problems" = "重命名已完成，但有问题";
 "Rename {0} files?" = "重命名 {0} 个文件？";
@@ -833,8 +830,8 @@
 "Review progress and decision totals" = "审阅进度和决定总数";
 "Review the current video or audio recording at double speed" = "以 2 倍速审阅当前视频或录音";
 "Review the current video or audio recording at normal speed" = "以正常速度审阅当前视频或录音";
-"Review the current video or audio recording at one and a half speed" = "以 1.5 倍速审阅当前视频或录音";
-"Review the current video or audio recording at two and a half speed" = "以 2.5 倍速审阅当前视频或录音";
+"Play the current video or audio recording at 1.5× speed" = "以 1.5× 速度播放当前视频或音频";
+"Play the current video or audio recording at 2.5× speed" = "以 2.5× 速度播放当前视频或音频";
 "Review the exact source-folder change before Louppe renames anything." = "Louppe 重命名任何文件前，请审阅源文件夹的确切更改。";
 "Route Copies" = "多路径复制";
 "Route copies to multiple folders" = "按路径复制到多个文件夹";
@@ -917,7 +914,7 @@
 "Show Details" = "显示详情";
 "Show First Folder" = "显示第一个文件夹";
 "Show Item" = "显示项目";
-"Show Media Information" = "显示媒体信息";
+"Show Info" = "显示信息";
 "Show Preview Clipping Overlay" = "显示预览剪切叠层";
 "Show Videos Only" = "只显示视频";
 "Show exact values and sources" = "显示准确的值和来源";
@@ -1110,7 +1107,6 @@
 "Total size" = "总大小";
 "Trash No + Undecided" = "将“否”和“未决定”移到废纸篓";
 "Trash No + Undecided…" = "将“否”和“未决定”移到废纸篓…";
-"Trash No…" = "将“否”移到废纸篓…";
 "Treat matching RAW + JPEG as one photo" = "将匹配的 RAW + JPEG 作为一张照片";
 "Treat matching RAW and JPEG as one photo" = "将匹配的 RAW 和 JPEG 作为一张照片";
 "Try a different search term." = "请尝试其他搜索词。";
@@ -1165,7 +1161,7 @@
 "Use actions to show, open, change decision, stars, or color label, or select this item." = "使用操作来显示、打开或选择此项目，或更改其决定、星级或颜色标签。";
 "Use actions to show, open, or select this item." = "使用操作来显示、打开或选择此项目。";
 "Use m:ss or h:mm:ss" = "使用 m:ss 或 h:mm:ss";
-"Use the current Clean Up scope and ask for confirmation" = "使用当前清理范围并请求确认";
+"Confirm which items to trash in the current Clean Up scope" = "确认当前清理范围内要移到废纸篓的项目";
 "Version History" = "版本历史";
 "Video and audio files do not support XMP publication." = "视频和音频文件不支持写入 XMP。";
 "Video and audio media export without XMP." = "视频和音频媒体不带 XMP 导出。";
@@ -1793,7 +1789,7 @@
 "Search filters" = "搜索筛选条件";
 "Command palette" = "命令面板";
 "Rescan folder" = "重新扫描文件夹";
-"Move selected files to Trash" = "将所选文件移到废纸篓";
+"Trash selected items" = "将所选文件移到废纸篓";
 "Select all filtered items" = "选择筛选出的所有项目";
 "Resize Grid thumbnails" = "调整网格缩略图大小";
 "Playback speed; previous / next item for other media" = "播放速度；其他媒体切换到上一个／下一个项目";
@@ -1810,7 +1806,7 @@
 "Settings" = "设置";
 
 /* Help: renaming keepers. */
-"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "要重命名保留的照片，请筛选“是”，打开命令面板 (⌘K) → 根据元数据重命名文件…，然后选择“筛选结果”。确认前预览名称；⌘Z 可恢复原名称。";
+"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "要重命名保留的照片，请筛选“是”，打开命令面板 (⌘K) → 重命名文件…，然后选择“筛选结果”。确认前预览名称；⌘Z 可恢复原名称。";
 
 /* Command shortcut discovery and customization */
 "Quit Louppe" = "退出 Louppe";
@@ -1823,7 +1819,7 @@
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing." = "在筛选或命令面板中，可选择一起或分别审阅匹配的 RAW + JPEG 文件。搜索 RAW、JPEG 或配对。";
 "Command Palette" = "命令面板";
 "Command Palette ({0})" = "命令面板（{0}）";
-"To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "要重命名保留的照片，请筛选“是”，打开{0} → 根据元数据重命名文件…，然后选择“筛选结果”。确认前预览名称；⌘Z 可恢复原名称。";
+"To rename keepers, filter to Yes, open {0} → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "要重命名保留的照片，请筛选“是”，打开{0} → 重命名文件…，然后选择“筛选结果”。确认前预览名称；⌘Z 可恢复原名称。";
 "Shift" = "Shift";
 "Command" = "Command";
 "A default shortcut is already assigned to another action." = "默认快捷键已分配给其他操作。";
@@ -1838,3 +1834,4 @@
 "Restore review shortcuts for this mode and all Command shortcuts." = "恢复此模式的审阅快捷键以及所有 Command 快捷键。";
 
 "RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "RAW 9 需要 macOS 27、受支持的文件和 Apple 的模型资源。请重试，或在设置中选择 Apple Default。";
+"Clear All Decisions…" = "清除所有决定…";

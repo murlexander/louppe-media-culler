@@ -175,10 +175,10 @@
 "Checking sidecars…" = "فحص الملفات المصاحبة…";
 "Checking the selected photos for existing XMP sidecars…" = "فحص ملفات XMP المصاحبة الموجودة للصور المحددة…";
 "Choose Destination…" = "اختيار الوجهة…";
-"Choose Faster Playback Speed" = "اختيار سرعة تشغيل أعلى";
+"Faster Playback" = "تسريع التشغيل";
 "Choose Folder…" = "اختيار المجلد…";
 "Choose Media Folder…" = "اختيار مجلد وسائط…";
-"Choose Slower Playback Speed" = "اختيار سرعة تشغيل أقل";
+"Slower Playback" = "إبطاء التشغيل";
 "Choose a destination folder for every route before reviewing the copy plan." = "اختر مجلد وجهة لكل مسار قبل مراجعة خطة النسخ.";
 "Choose a destination folder for every route." = "اختر مجلد وجهة لكل مسار.";
 "Choose a destination outside the folder you are reviewing." = "اختر وجهة خارج المجلد الذي تراجعه.";
@@ -194,7 +194,7 @@
 "Choose date, stars, color, camera, video details, and more" = "اختر التاريخ والنجوم واللون والكاميرا وتفاصيل الفيديو والمزيد";
 "Choose destination for {0}" = "اختيار وجهة {0}";
 "Choose folder levels and drag enabled rows into order. The top row comes first." = "اختر مستويات المجلد واسحب الصفوف المفعّلة لترتيبها. يأتي الصف العلوي أولًا.";
-"Choose items to move to the Trash" = "اختيار العناصر لنقلها إلى سلة المهملات";
+"Choose items to trash" = "اختيار العناصر لنقلها إلى سلة المهملات";
 "Choose media for each destination. Unmatched items stay in the source folder." = "اختر الوسائط لكل وجهة. تبقى العناصر غير المطابقة في المجلد المصدر.";
 "Choose one visible folder name. Dot-prefixed names and macOS packages such as .app cannot be scanned." = "اختر اسم مجلد ظاهر. لا يمكن فحص الأسماء التي تبدأ بنقطة أو حزم macOS مثل .app.";
 "Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid." = "اختر مجلد وسائط أو أفلته. يفحص Louppe مجلداته الفرعية ويفتح المعرض أو الشبكة.";
@@ -230,7 +230,6 @@
 "Close" = "إغلاق";
 "Close Folder" = "إغلاق المجلد";
 "Close Picture in Picture" = "إغلاق صورة داخل صورة";
-"Close Session" = "إغلاق الجلسة";
 "Codec" = "برنامج الترميز";
 "Collapsed" = "مطوي";
 "Color" = "اللون";
@@ -411,7 +410,7 @@
 "Groups similar small local previews; review every match yourself." = "يجمع المعاينات المحلية الصغيرة المتشابهة؛ راجع كل تطابق بنفسك.";
 "Hide Browser" = "إخفاء متصفح الصور";
 "Hide Details" = "إخفاء التفاصيل";
-"Hide Media Information" = "إخفاء معلومات الوسائط";
+"Hide Info" = "إخفاء المعلومات";
 "Hide Preview Clipping Overlay" = "إخفاء تراكب فقدان التفاصيل في المعاينة";
 "Hide this tip. See Help > Louppe Help for shortcuts." = "إخفاء هذه النصيحة. للاختصارات، راجع المساعدة > مساعدة Louppe.";
 "High ISO" = "ISO مرتفع";
@@ -556,31 +555,31 @@
 "Move" = "نقل";
 "Move 1 file?" = "نقل ملف واحد؟";
 "Move Files" = "نقل الملفات";
-"Move Paired JPEGs to Trash" = "نقل ملفات JPEG المقترنة إلى سلة المهملات";
-"Move Paired JPEGs to Trash…" = "نقل ملفات JPEG المقترنة إلى سلة المهملات…";
-"Move Paired RAWs to Trash" = "نقل ملفات RAW المقترنة إلى سلة المهملات";
-"Move Paired RAWs to Trash…" = "نقل ملفات RAW المقترنة إلى سلة المهملات…";
-"Move Selected to Trash" = "نقل العناصر المحددة إلى سلة المهملات";
-"Move Selected to Trash…" = "نقل العناصر المحددة إلى سلة المهملات…";
+"Trash Paired JPEGs" = "نقل ملفات JPEG المقترنة إلى سلة المهملات";
+"Trash Paired JPEGs…" = "نقل ملفات JPEG المقترنة إلى سلة المهملات…";
+"Trash Paired RAWs" = "نقل ملفات RAW المقترنة إلى سلة المهملات";
+"Trash Paired RAWs…" = "نقل ملفات RAW المقترنة إلى سلة المهملات…";
+"Trash Selected" = "نقل العناصر المحددة إلى سلة المهملات";
+"Trash Selected…" = "نقل العناصر المحددة إلى سلة المهملات…";
 "Move media into folders built from review and capture metadata." = "نقل الوسائط إلى مجلدات تُنشأ من بيانات المراجعة والالتقاط الوصفية.";
 "Move requires the same storage volume. Use Copy for another drive or card to protect originals during interruption." = "يتطلب النقل وحدة التخزين نفسها. استخدم النسخ لقرص أو بطاقة أخرى لحماية الملفات الأصلية عند الانقطاع.";
 "Move requires the source and destination to be on the same storage volume" = "يتطلب النقل وجود المصدر والوجهة على وحدة التخزين نفسها";
-"Move selected items to Trash; ⌘Z restores them" = "نقل العناصر المحددة إلى سلة المهملات؛ يستعيدها ⌘Z";
-"Move the {0} to the Trash?" = "نقل {0} إلى سلة المهملات؟";
-"Move to Trash" = "نقل إلى سلة المهملات";
+"Trash selected items; ⌘Z restores them" = "نقل العناصر المحددة إلى سلة المهملات؛ يستعيدها ⌘Z";
+"Trash the {0}?" = "نقل {0} إلى سلة المهملات؟";
+"Trash" = "نقل إلى سلة المهملات";
 "Move to the item in the row above" = "الانتقال إلى عنصر الصف السابق";
 "Move to the item in the row below" = "الانتقال إلى عنصر الصف التالي";
 "Move with XMP" = "نقل مع XMP";
 "Move works on the same drive only; use Copy for another drive or card. Moved items leave this session and cannot be undone in Louppe." = "يعمل النقل على القرص نفسه فقط؛ استخدم النسخ لقرص أو بطاقة أخرى. تغادر العناصر المنقولة هذه الجلسة ولا يمكن التراجع عن نقلها في Louppe.";
-"Move {0} Selected to Trash…" = "نقل {0} عناصر محددة إلى سلة المهملات…";
+"Trash {0} Selected…" = "نقل {0} عناصر محددة إلى سلة المهملات…";
 "Move {0} earlier" = "تقديم {0}";
 "Move {0} files?" = "نقل {0} ملفات؟";
 "Move {0} later" = "تأخير {0}";
-"Move {0} marked “No” to the Trash?" = "نقل {0} عناصر بقرار «لا» إلى سلة المهملات؟";
-"Move {0} not marked “Yes” to the Trash?" = "نقل {0} عناصر غير محددة بقرار «نعم» إلى سلة المهملات؟";
-"Move {0} to the Trash?" = "نقل {0} إلى سلة المهملات؟";
-"Move “No” to Trash" = "نقل عناصر «لا» إلى سلة المهملات";
-"Move “No” to Trash…" = "نقل عناصر «لا» إلى سلة المهملات…";
+"Trash {0} marked No?" = "نقل {0} عناصر بقرار «لا» إلى سلة المهملات؟";
+"Trash {0} marked No or Undecided?" = "نقل {0} بقرار «لا» أو غير المحسومة إلى سلة المهملات؟";
+"Trash {0}?" = "نقل {0} إلى سلة المهملات؟";
+"Trash No" = "نقل عناصر «لا» إلى سلة المهملات";
+"Trash No…" = "نقل عناصر لا إلى سلة المهملات…";
 "Moved files: {0}. Destination folders: {1}." = "الملفات المنقولة: {0}. مجلدات الوجهة: {1}.";
 "Moved files: {0}. Destination: {1}" = "الملفات المنقولة: {0}. الوجهة: {1}";
 "Moving files to the Trash…" = "نقل الملفات إلى سلة المهملات…";
@@ -656,13 +655,12 @@
 "Only {0} visible items are considered; {1} hidden items stay untouched." = "تُؤخذ {0} عناصر ظاهرة فقط في الحسبان؛ لا تتغير العناصر المخفية ({1}).";
 "Open Anyway" = "فتح على أي حال";
 "Open Command Palette" = "فتح لوحة الأوامر";
-"Open Different Folder…" = "فتح مجلد آخر…";
+"Open Folder…" = "فتح المجلد…";
 "Open Export" = "فتح التصدير";
 "Open Filter and focus Search" = "فتح التصفية والتركيز على البحث";
 "Open Folder" = "فتح المجلد";
 "Open Folder and Forget Missing Item" = "فتح المجلد وتجاهل العنصر المفقود";
 "Open Folder and Forget Missing Items" = "فتح المجلد وتجاهل العناصر المفقودة";
-"Open Folder…" = "فتح المجلد…";
 "Open Recent Folder “{0}”" = "فتح المجلد الأخير «{0}»";
 "Open a media folder" = "فتح مجلد وسائط";
 "Open another folder" = "فتح مجلد آخر";
@@ -680,7 +678,7 @@
 "Organize Source Folder" = "تنظيم المجلد المصدر";
 "Organize Source Folder…" = "تنظيم المجلد المصدر…";
 "Organize by Date Taken Only…" = "تنظيم حسب تاريخ الالتقاط فقط…";
-"Organize with Full date only" = "تنظيم بالتاريخ الكامل فقط";
+"Preview folders named by date taken" = "معاينة مجلدات مسماة بتاريخ الالتقاط";
 "Organized" = "منظّم";
 "Organizing source folder…" = "تنظيم المجلد المصدر…";
 "Original name" = "الاسم الأصلي";
@@ -772,7 +770,6 @@
 "Rename File" = "إعادة تسمية الملف";
 "Rename Files" = "إعادة تسمية الملفات";
 "Rename Files Anyway" = "إعادة تسمية الملفات على أي حال";
-"Rename Files from Metadata…" = "إعادة تسمية الملفات بالبيانات الوصفية…";
 "Rename Files…" = "إعادة تسمية الملفات…";
 "Rename finished with problems" = "اكتملت إعادة التسمية مع مشكلات";
 "Rename {0} files?" = "إعادة تسمية {0} ملفات؟";
@@ -833,8 +830,8 @@
 "Review progress and decision totals" = "استعراض التقدم المحرز ومجاميع القرارات";
 "Review the current video or audio recording at double speed" = "مراجعة الفيديو أو التسجيل الصوتي الحالي بسرعة 2×";
 "Review the current video or audio recording at normal speed" = "مراجعة الفيديو أو التسجيل الصوتي الحالي بالسرعة العادية";
-"Review the current video or audio recording at one and a half speed" = "مراجعة الفيديو أو التسجيل الصوتي الحالي بسرعة 1.5×";
-"Review the current video or audio recording at two and a half speed" = "مراجعة الفيديو أو التسجيل الصوتي الحالي بسرعة 2.5×";
+"Play the current video or audio recording at 1.5× speed" = "تشغيل الفيديو أو التسجيل الصوتي الحالي بسرعة 1.5×";
+"Play the current video or audio recording at 2.5× speed" = "تشغيل الفيديو أو التسجيل الصوتي الحالي بسرعة 2.5×";
 "Review the exact source-folder change before Louppe renames anything." = "راجع التغيير الدقيق في المجلد المصدر قبل أن يعيد Louppe تسمية أي شيء.";
 "Route Copies" = "نسخ حسب المسارات";
 "Route copies to multiple folders" = "توجيه النسخ إلى مجلدات متعددة";
@@ -917,7 +914,7 @@
 "Show Details" = "إظهار التفاصيل";
 "Show First Folder" = "إظهار المجلد الأول";
 "Show Item" = "إظهار العنصر";
-"Show Media Information" = "إظهار معلومات الوسائط";
+"Show Info" = "إظهار المعلومات";
 "Show Preview Clipping Overlay" = "إظهار تراكب فقدان التفاصيل في المعاينة";
 "Show Videos Only" = "إظهار الفيديوهات فقط";
 "Show exact values and sources" = "إظهار القيم والمصادر بدقة";
@@ -1110,7 +1107,6 @@
 "Total size" = "الحجم الإجمالي";
 "Trash No + Undecided" = "نقل عناصر لا وغير المحسومة إلى سلة المهملات";
 "Trash No + Undecided…" = "نقل عناصر لا وغير المحسومة إلى سلة المهملات…";
-"Trash No…" = "نقل عناصر لا إلى سلة المهملات…";
 "Treat matching RAW + JPEG as one photo" = "معالجة مطابقة RAW + JPEG كصورة واحدة";
 "Treat matching RAW and JPEG as one photo" = "معالجة مطابقة RAW و JPEG كصورة واحدة";
 "Try a different search term." = "جرّب عبارة بحث أخرى.";
@@ -1165,7 +1161,7 @@
 "Use actions to show, open, change decision, stars, or color label, or select this item." = "استخدم الإجراءات لإظهار هذا العنصر أو فتحه أو تحديده، أو لتغيير القرار أو النجوم أو التصنيف اللوني.";
 "Use actions to show, open, or select this item." = "استخدم الإجراءات لإظهار هذا العنصر أو فتحه أو تحديده.";
 "Use m:ss or h:mm:ss" = "استخدم m:ss أو h:mm:ss";
-"Use the current Clean Up scope and ask for confirmation" = "استخدام نطاق التنظيف الحالي وطلب التأكيد";
+"Confirm which items to trash in the current Clean Up scope" = "تأكيد العناصر التي ستُنقل إلى سلة المهملات ضمن نطاق التنظيف الحالي";
 "Version History" = "سجل الإصدارات";
 "Video and audio files do not support XMP publication." = "لا تدعم ملفات الفيديو والصوت كتابة XMP.";
 "Video and audio media export without XMP." = "تُصدّر وسائط الفيديو والصوت دون XMP.";
@@ -1776,7 +1772,7 @@
 "Search filters" = "البحث في عوامل التصفية";
 "Command palette" = "لوحة الأوامر";
 "Rescan folder" = "إعادة فحص المجلد";
-"Move selected files to Trash" = "نقل الملفات المحددة إلى سلة المهملات";
+"Trash selected items" = "نقل الملفات المحددة إلى سلة المهملات";
 "Select all filtered items" = "تحديد كل العناصر المصفاة";
 "Resize Grid thumbnails" = "تغيير حجم مصغرات الشبكة";
 "Playback speed; previous / next item for other media" = "سرعة التشغيل؛ العنصر السابق / التالي للوسائط الأخرى";
@@ -1793,7 +1789,7 @@
 "Settings" = "الإعدادات";
 
 /* Help: renaming keepers. */
-"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "لإعادة تسمية الصور المحتفظ بها، صفِّ حسب نعم، وافتح لوحة الأوامر (⌘K) ← إعادة تسمية الملفات بالبيانات الوصفية…، ثم اختر العناصر المصفّاة. عاين الأسماء قبل التأكيد؛ يعيد ⌘Z الأسماء السابقة.";
+"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "لإعادة تسمية الصور المحتفظ بها، صفِّ حسب نعم، وافتح لوحة الأوامر (⌘K) ← إعادة تسمية الملفات…، ثم اختر العناصر المصفّاة. عاين الأسماء قبل التأكيد؛ يعيد ⌘Z الأسماء السابقة.";
 
 /* Command shortcut discovery and customization */
 "Quit Louppe" = "إنهاء Louppe";
@@ -1806,7 +1802,7 @@
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing." = "راجع ملفات RAW + JPEG المتطابقة معًا أو بصورة منفصلة في التصفية أو لوحة الأوامر. ابحث عن RAW أو JPEG أو الاقتران.";
 "Command Palette" = "لوحة الأوامر";
 "Command Palette ({0})" = "لوحة الأوامر ({0})";
-"To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "لإعادة تسمية الصور المحتفظ بها، صفِّ حسب نعم، وافتح {0} ← إعادة تسمية الملفات بالبيانات الوصفية…، ثم اختر العناصر المصفّاة. عاين الأسماء قبل التأكيد؛ يعيد ⌘Z الأسماء السابقة.";
+"To rename keepers, filter to Yes, open {0} → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "لإعادة تسمية الصور المحتفظ بها، صفِّ حسب نعم، وافتح {0} ← إعادة تسمية الملفات…، ثم اختر العناصر المصفّاة. عاين الأسماء قبل التأكيد؛ يعيد ⌘Z الأسماء السابقة.";
 "Shift" = "Shift";
 "Command" = "Command";
 "A default shortcut is already assigned to another action." = "أحد الاختصارات الافتراضية مُعيّن بالفعل لإجراء آخر.";
@@ -1821,3 +1817,4 @@
 "Restore review shortcuts for this mode and all Command shortcuts." = "استعادة اختصارات المراجعة لهذا الوضع وجميع اختصارات Command.";
 
 "RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "يتطلب RAW 9 نظام macOS 27 وملفًا مدعومًا وموارد نماذج Apple. أعد المحاولة، أو اختر Apple Default في الإعدادات.";
+"Clear All Decisions…" = "مسح جميع القرارات…";

@@ -196,7 +196,7 @@ final class MenuShortcutColumns {
             entry("Command Palette…", command: .commandPalette),
             entry("Rescan Folder", command: .rescan),
             entry("Undo Louppe Action", action: .undo, command: .undo),
-            entry("Clear All Decisions", action: .clear),
+            entry("Clear All Decisions…", action: .clear),
             entry("Export…", action: .export, command: .export),
             entry("Gallery", action: .grid),
             entry("Grid", action: .grid),

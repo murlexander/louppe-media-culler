@@ -1214,8 +1214,8 @@ final class HotkeyTests: XCTestCase {
         let rawAction = try XCTUnwrap(actions.first {
             $0.id == "trash-paired-raws"
         })
-        XCTAssertEqual(jpegAction.title, "Move Paired JPEGs to Trash…")
-        XCTAssertEqual(rawAction.title, "Move Paired RAWs to Trash…")
+        XCTAssertEqual(jpegAction.title, "Trash Paired JPEGs…")
+        XCTAssertEqual(rawAction.title, "Trash Paired RAWs…")
         XCTAssertTrue(jpegAction.isEnabled)
         XCTAssertTrue(rawAction.isEnabled)
         jpegAction.perform()

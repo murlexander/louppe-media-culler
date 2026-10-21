@@ -77,7 +77,7 @@ enum CommandShortcutAction: String, CaseIterable, Codable, Sendable {
         case .closeWindow: L10n.text("Close")
         case .quit: L10n.text("Quit Louppe")
         case .filterSearch: L10n.text("Search filters")
-        case .trash: L10n.text("Move selected files to Trash")
+        case .trash: L10n.text("Trash selected items")
         case .zoomIn: L10n.text("Zoom In")
         case .zoomOut: L10n.text("Zoom Out")
         case .slower: L10n.text("Slower playback")

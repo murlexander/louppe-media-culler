@@ -175,10 +175,10 @@
 "Checking sidecars…" = "Verificando arquivos auxiliares…";
 "Checking the selected photos for existing XMP sidecars…" = "Verificando arquivos XMP auxiliares existentes das fotos selecionadas…";
 "Choose Destination…" = "Escolher destino…";
-"Choose Faster Playback Speed" = "Aumentar velocidade de reprodução";
+"Faster Playback" = "Reprodução mais rápida";
 "Choose Folder…" = "Escolher pasta…";
 "Choose Media Folder…" = "Escolher pasta de mídia…";
-"Choose Slower Playback Speed" = "Reduzir velocidade de reprodução";
+"Slower Playback" = "Reprodução mais lenta";
 "Choose a destination folder for every route before reviewing the copy plan." = "Escolha uma pasta de destino para cada rota antes de revisar o plano de cópia.";
 "Choose a destination folder for every route." = "Escolha uma pasta de destino para cada rota.";
 "Choose a destination outside the folder you are reviewing." = "Escolha um destino fora da pasta que você está revisando.";
@@ -194,7 +194,7 @@
 "Choose date, stars, color, camera, video details, and more" = "Escolha data, estrelas, cor, câmera, detalhes de vídeo e mais";
 "Choose destination for {0}" = "Escolher destino de {0}";
 "Choose folder levels and drag enabled rows into order. The top row comes first." = "Escolha os níveis de pasta e arraste as linhas ativadas para ordená-las. A linha superior vem primeiro.";
-"Choose items to move to the Trash" = "Escolher itens para a Lixeira";
+"Choose items to trash" = "Escolher itens para a Lixeira";
 "Choose media for each destination. Unmatched items stay in the source folder." = "Escolha a mídia para cada destino. Itens sem correspondência ficam na pasta de origem.";
 "Choose one visible folder name. Dot-prefixed names and macOS packages such as .app cannot be scanned." = "Escolha um nome de pasta visível. Nomes iniciados por ponto e pacotes do macOS como .app não podem ser verificados.";
 "Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid." = "Escolha ou solte uma pasta de mídia. O Louppe verifica suas subpastas e abre a Galeria ou Grade.";
@@ -230,7 +230,6 @@
 "Close" = "Fechar";
 "Close Folder" = "Fechar pasta";
 "Close Picture in Picture" = "Fechar Picture in Picture";
-"Close Session" = "Fechar sessão";
 "Codec" = "Codec";
 "Collapsed" = "Recolhido";
 "Color" = "Cor";
@@ -411,7 +410,7 @@
 "Groups similar small local previews; review every match yourself." = "Agrupa prévias locais reduzidas e semelhantes; revise cada correspondência.";
 "Hide Browser" = "Ocultar navegador";
 "Hide Details" = "Ocultar detalhes";
-"Hide Media Information" = "Ocultar informações de mídia";
+"Hide Info" = "Ocultar informações";
 "Hide Preview Clipping Overlay" = "Ocultar aviso de recorte tonal";
 "Hide this tip. See Help > Louppe Help for shortcuts." = "Ocultar esta dica. Veja Ajuda > Ajuda do Louppe para atalhos.";
 "High ISO" = "ISO alto";
@@ -556,31 +555,31 @@
 "Move" = "Mover";
 "Move 1 file?" = "Mover 1 arquivo?";
 "Move Files" = "Mover arquivos";
-"Move Paired JPEGs to Trash" = "Mover JPEGs dos pares para a Lixeira";
-"Move Paired JPEGs to Trash…" = "Mover JPEGs dos pares para a Lixeira…";
-"Move Paired RAWs to Trash" = "Mover RAWs dos pares para a Lixeira";
-"Move Paired RAWs to Trash…" = "Mover RAWs dos pares para a Lixeira…";
-"Move Selected to Trash" = "Mover seleção para a Lixeira";
-"Move Selected to Trash…" = "Mover seleção para a Lixeira…";
+"Trash Paired JPEGs" = "Mover JPEGs dos pares para a Lixeira";
+"Trash Paired JPEGs…" = "Mover JPEGs dos pares para a Lixeira…";
+"Trash Paired RAWs" = "Mover RAWs dos pares para a Lixeira";
+"Trash Paired RAWs…" = "Mover RAWs dos pares para a Lixeira…";
+"Trash Selected" = "Mover seleção para a Lixeira";
+"Trash Selected…" = "Mover seleção para a Lixeira…";
 "Move media into folders built from review and capture metadata." = "Move a mídia para pastas criadas a partir dos metadados de revisão e captura.";
 "Move requires the same storage volume. Use Copy for another drive or card to protect originals during interruption." = "Mover exige a mesma unidade de armazenamento. Use Copiar para outra unidade ou cartão e proteger os originais em caso de interrupção.";
 "Move requires the source and destination to be on the same storage volume" = "Mover exige que a origem e o destino estejam na mesma unidade de armazenamento";
-"Move selected items to Trash; ⌘Z restores them" = "Move os itens selecionados para a Lixeira; ⌘Z os restaura";
-"Move the {0} to the Trash?" = "Mover {0} para a Lixeira?";
-"Move to Trash" = "Mover para a Lixeira";
+"Trash selected items; ⌘Z restores them" = "Move os itens selecionados para a Lixeira; ⌘Z os restaura";
+"Trash the {0}?" = "Mover {0} para a Lixeira?";
+"Trash" = "Mover para a Lixeira";
 "Move to the item in the row above" = "Ir para o item da linha acima";
 "Move to the item in the row below" = "Ir para o item da linha abaixo";
 "Move with XMP" = "Mover com XMP";
 "Move works on the same drive only; use Copy for another drive or card. Moved items leave this session and cannot be undone in Louppe." = "Mover só funciona na mesma unidade; use Copiar para outra unidade ou cartão. Os itens movidos saem desta sessão e não podem ser desfeitos no Louppe.";
-"Move {0} Selected to Trash…" = "Mover {0} selecionados para a Lixeira…";
+"Trash {0} Selected…" = "Mover {0} selecionados para a Lixeira…";
 "Move {0} earlier" = "Mover {0} para antes";
 "Move {0} files?" = "Mover {0} arquivos?";
 "Move {0} later" = "Mover {0} para depois";
-"Move {0} marked “No” to the Trash?" = "Mover {0} marcados “Não” para a Lixeira?";
-"Move {0} not marked “Yes” to the Trash?" = "Mover {0} que não estão marcados “Sim” para a Lixeira?";
-"Move {0} to the Trash?" = "Mover {0} para a Lixeira?";
-"Move “No” to Trash" = "Mover “Não” para a Lixeira";
-"Move “No” to Trash…" = "Mover “Não” para a Lixeira…";
+"Trash {0} marked No?" = "Mover {0} marcados “Não” para a Lixeira?";
+"Trash {0} marked No or Undecided?" = "Mover {0} marcados Não ou Indecisos para a Lixeira?";
+"Trash {0}?" = "Mover {0} para a Lixeira?";
+"Trash No" = "Mover “Não” para a Lixeira";
+"Trash No…" = "Mover Não para a Lixeira…";
 "Moved files: {0}. Destination folders: {1}." = "Arquivos movidos: {0}. Pastas de destino: {1}.";
 "Moved files: {0}. Destination: {1}" = "Arquivos movidos: {0}. Destino: {1}";
 "Moving files to the Trash…" = "Movendo arquivos para a Lixeira…";
@@ -656,13 +655,12 @@
 "Only {0} visible items are considered; {1} hidden items stay untouched." = "Só {0} itens visíveis são considerados; os {1} ocultos não são alterados.";
 "Open Anyway" = "Abrir mesmo assim";
 "Open Command Palette" = "Abrir paleta de comandos";
-"Open Different Folder…" = "Abrir outra pasta…";
+"Open Folder…" = "Abrir pasta…";
 "Open Export" = "Abrir exportação";
 "Open Filter and focus Search" = "Abrir filtro e focar na busca";
 "Open Folder" = "Abrir pasta";
 "Open Folder and Forget Missing Item" = "Abrir pasta e esquecer item ausente";
 "Open Folder and Forget Missing Items" = "Abrir pasta e esquecer itens ausentes";
-"Open Folder…" = "Abrir pasta…";
 "Open Recent Folder “{0}”" = "Abrir pasta recente “{0}”";
 "Open a media folder" = "Abrir uma pasta de mídia";
 "Open another folder" = "Abrir outra pasta";
@@ -680,7 +678,7 @@
 "Organize Source Folder" = "Organizar pasta de origem";
 "Organize Source Folder…" = "Organizar pasta de origem…";
 "Organize by Date Taken Only…" = "Organizar só por data de captura…";
-"Organize with Full date only" = "Organizar só com data completa";
+"Preview folders named by date taken" = "Veja as pastas nomeadas pela data da captura";
 "Organized" = "Organizado";
 "Organizing source folder…" = "Organizando a pasta de origem…";
 "Original name" = "Nome original";
@@ -772,7 +770,6 @@
 "Rename File" = "Renomear arquivo";
 "Rename Files" = "Renomear arquivos";
 "Rename Files Anyway" = "Renomear arquivos mesmo assim";
-"Rename Files from Metadata…" = "Renomear arquivos com metadados…";
 "Rename Files…" = "Renomear arquivos…";
 "Rename finished with problems" = "Renomeação concluída com problemas";
 "Rename {0} files?" = "Renomear {0} arquivos?";
@@ -833,8 +830,8 @@
 "Review progress and decision totals" = "Progresso da revisão e totais de decisões";
 "Review the current video or audio recording at double speed" = "Revisar o vídeo ou áudio atual a 2×";
 "Review the current video or audio recording at normal speed" = "Revisar o vídeo ou áudio atual à velocidade normal";
-"Review the current video or audio recording at one and a half speed" = "Revisar o vídeo ou áudio atual a 1.5×";
-"Review the current video or audio recording at two and a half speed" = "Revisar o vídeo ou áudio atual a 2.5×";
+"Play the current video or audio recording at 1.5× speed" = "Reproduza o vídeo ou áudio atual na velocidade de 1.5×";
+"Play the current video or audio recording at 2.5× speed" = "Reproduza o vídeo ou áudio atual na velocidade de 2.5×";
 "Review the exact source-folder change before Louppe renames anything." = "Revise a alteração exata na pasta de origem antes de o Louppe renomear qualquer arquivo.";
 "Route Copies" = "Cópias por rotas";
 "Route copies to multiple folders" = "Copiar para várias pastas por rotas";
@@ -917,7 +914,7 @@
 "Show Details" = "Mostrar detalhes";
 "Show First Folder" = "Mostrar primeira pasta";
 "Show Item" = "Mostrar item";
-"Show Media Information" = "Mostrar informações de mídia";
+"Show Info" = "Mostrar informações";
 "Show Preview Clipping Overlay" = "Mostrar aviso de recorte tonal";
 "Show Videos Only" = "Mostrar apenas vídeos";
 "Show exact values and sources" = "Mostrar os valores e fontes exatos";
@@ -1110,7 +1107,6 @@
 "Total size" = "Tamanho total";
 "Trash No + Undecided" = "Mover Não e indecisos para a Lixeira";
 "Trash No + Undecided…" = "Mover Não e indecisos para a Lixeira…";
-"Trash No…" = "Mover Não para a Lixeira…";
 "Treat matching RAW + JPEG as one photo" = "Tratar RAW + JPEG correspondentes como uma única foto";
 "Treat matching RAW and JPEG as one photo" = "Tratar RAW e JPEG correspondentes como uma única foto";
 "Try a different search term." = "Tente um termo de busca diferente.";
@@ -1165,7 +1161,7 @@
 "Use actions to show, open, change decision, stars, or color label, or select this item." = "Use as ações para mostrar, abrir ou selecionar este item, ou mudar sua decisão, estrelas ou etiqueta de cor.";
 "Use actions to show, open, or select this item." = "Use as ações para mostrar, abrir ou selecionar este item.";
 "Use m:ss or h:mm:ss" = "Use m:ss ou h:mm:ss";
-"Use the current Clean Up scope and ask for confirmation" = "Usa o escopo atual de Limpar e pede confirmação";
+"Confirm which items to trash in the current Clean Up scope" = "Confirme quais itens mover para a Lixeira no escopo atual de Limpar";
 "Version History" = "Histórico de versões";
 "Video and audio files do not support XMP publication." = "Arquivos de vídeo e áudio não permitem gravar XMP.";
 "Video and audio media export without XMP." = "Vídeos e áudios são exportados sem XMP.";
@@ -1776,7 +1772,7 @@
 "Search filters" = "Buscar nos filtros";
 "Command palette" = "Paleta de comandos";
 "Rescan folder" = "Examinar pasta novamente";
-"Move selected files to Trash" = "Mover arquivos selecionados para o Lixo";
+"Trash selected items" = "Mover arquivos selecionados para o Lixo";
 "Select all filtered items" = "Selecionar todos os itens filtrados";
 "Resize Grid thumbnails" = "Redimensionar miniaturas da Grade";
 "Playback speed; previous / next item for other media" = "Velocidade de reprodução; item anterior / próximo para outras mídias";
@@ -1793,7 +1789,7 @@
 "Settings" = "Ajustes";
 
 /* Help: renaming keepers. */
-"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "Para renomear as fotos que deseja manter, filtre por Sim, abra Paleta de comandos (⌘K) → Renomear arquivos com metadados… e escolha Filtrado. Confira os nomes antes de confirmar; ⌘Z restaura os anteriores.";
+"To rename keepers, filter to Yes, open Command Palette (⌘K) → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "Para renomear as fotos que deseja manter, filtre por Sim, abra Paleta de comandos (⌘K) → Renomear arquivos… e escolha Filtrado. Confira os nomes antes de confirmar; ⌘Z restaura os anteriores.";
 
 /* Command shortcut discovery and customization */
 "Quit Louppe" = "Sair do Louppe";
@@ -1806,7 +1802,7 @@
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing." = "Revise arquivos RAW + JPEG correspondentes juntos ou separadamente no Filtro ou na Paleta de comandos. Busque RAW, JPEG ou emparelhamento.";
 "Command Palette" = "Paleta de comandos";
 "Command Palette ({0})" = "Paleta de comandos ({0})";
-"To rename keepers, filter to Yes, open {0} → Rename Files from Metadata…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "Para renomear os arquivos mantidos, filtre por Sim, abra {0} → Renomear arquivos pelos metadados… e escolha Filtrados. Confira os nomes antes de confirmar; ⌘Z restaura os nomes anteriores.";
+"To rename keepers, filter to Yes, open {0} → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names." = "Para renomear os arquivos mantidos, filtre por Sim, abra {0} → Renomear arquivos pelos metadados… e escolha Filtrados. Confira os nomes antes de confirmar; ⌘Z restaura os nomes anteriores.";
 "Shift" = "Shift";
 "Command" = "Command";
 "A default shortcut is already assigned to another action." = "Um atalho padrão já está atribuído a outra ação.";
@@ -1821,3 +1817,4 @@
 "Restore review shortcuts for this mode and all Command shortcuts." = "Restaurar os atalhos de revisão deste modo e todos os atalhos com Command.";
 
 "RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "RAW 9 requer macOS 27, um arquivo compatível e os recursos de modelos da Apple. Tente novamente ou escolha Apple Default nos Ajustes.";
+"Clear All Decisions…" = "Limpar todas as decisões…";

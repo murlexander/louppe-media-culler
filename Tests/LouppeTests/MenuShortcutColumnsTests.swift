@@ -302,7 +302,7 @@ final class MenuShortcutColumnsTests: XCTestCase {
         nestedItem.submenu = nested
         file.addItem(nestedItem)
         let target = MenuActionTarget()
-        let clear = NSMenuItem(title: L10n.text("Clear All Decisions"),
+        let clear = NSMenuItem(title: L10n.text("Clear All Decisions…"),
                                action: #selector(MenuActionTarget.performMenuAction(_:)), keyEquivalent: "")
         clear.target = target
         file.autoenablesItems = false

@@ -3799,7 +3799,7 @@ final class SessionStore: ObservableObject {
     /// store so the toolbar menu and the File menu share one source of truth.
     var selectionCleanUpTitle: String {
         let count = effectiveSelection.count
-        return count > 1 ? L10n.text("Move \(count) Selected to Trash…") : L10n.text("Move Selected to Trash…")
+        return count > 1 ? L10n.text("Trash \(count) Selected…") : L10n.text("Trash Selected…")
     }
 
     func presentExport(keepersOnly: Bool = false) {
@@ -4078,11 +4078,11 @@ final class SessionStore: ObservableObject {
         }
         let action: String
         switch mode {
-        case .selection: action = L10n.text("Move Selected to Trash")
-        case .trashNo: action = L10n.text("Move “No” to Trash")
+        case .selection: action = L10n.text("Trash Selected")
+        case .trashNo: action = L10n.text("Trash No")
         case .keepOnlyYes: action = L10n.text("Trash No + Undecided")
-        case .pairedJPEGs: action = L10n.text("Move Paired JPEGs to Trash")
-        case .pairedRAWs: action = L10n.text("Move Paired RAWs to Trash")
+        case .pairedJPEGs: action = L10n.text("Trash Paired JPEGs")
+        case .pairedRAWs: action = L10n.text("Trash Paired RAWs")
         }
         return L10n.text("\(items) changed after this folder was scanned\(names). ")
             + L10n.text("No files were moved. Use Rescan Folder, then choose \(action) and confirm the updated count.")
@@ -5859,7 +5859,7 @@ final class SessionStore: ObservableObject {
     }
 
     /// Retry the newest live snapshot, or the exact snapshot retained after a
-    /// failed Close Session. Success clears the warning automatically.
+    /// failed Close Folder. Success clears the warning automatically.
     func retryPersistence() {
         guard canRetryPersistence else { return }
         cancelScheduledSave()

@@ -237,7 +237,7 @@ private struct FocusedLouppeSessionCommands: Commands {
                     || actionableStore?.isFileOperationRunning != false
             )
 
-            Button(L10n.text("Close Session")) {
+            Button(L10n.text("Close Folder")) {
                 actionableStore?.closeSession()
             }
             .disabled(
@@ -260,7 +260,7 @@ private struct FocusedLouppeSessionCommands: Commands {
             Button {
                 actionableStore?.requestClearAllRatings()
             } label: {
-                Text(L10n.text("Clear All Decisions"))
+                Text(L10n.text("Clear All Decisions…"))
             }
             .disabled(
                 actionableStore?.ratedCount == 0

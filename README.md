@@ -193,7 +193,7 @@ The table below lists the defaults.
 | **⌘← / ⌘→** | Slower / faster playback; previous / next item for photos |
 | **⌘⇧← / ⌘⇧→** | Select from the current item to the first / last |
 | **Esc** | Cancel a scan or clear the current selection |
-| **⌘⌫** | Send the selection to the macOS Trash without a dialog |
+| **⌘⌫** | Trash selected items without a dialog |
 
 ## Local review build
 

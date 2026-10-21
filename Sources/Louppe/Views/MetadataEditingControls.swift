@@ -58,7 +58,9 @@ struct MetadataEditingControls: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(starColor(for: rating, state: stars))
                     .disabled(!store.canRate)
-                    .accessibilityLabel(L10n.text("Set \(rating.count) stars"))
+                    .accessibilityLabel(rating == .one
+                        ? L10n.text("Set 1 Star")
+                        : L10n.text("Set \(rating.count) Stars"))
                 }
             }
 

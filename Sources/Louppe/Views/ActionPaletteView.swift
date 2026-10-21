@@ -250,7 +250,7 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "rename-files-from-metadata",
                 category: L10n.text("Files"),
-                title: L10n.text("Rename Files from Metadata…"),
+                title: L10n.text("Rename Files…"),
                 detail: L10n.text("Preview names built from date, time, camera, lens, and sequence"),
                 symbol: "textformat",
                 keywords: [
@@ -274,7 +274,7 @@ struct ActionPaletteView: View {
                 id: "organize-date-taken-only",
                 category: L10n.text("Files"),
                 title: L10n.text("Organize by Date Taken Only…"),
-                detail: L10n.text("Organize with Full date only"),
+                detail: L10n.text("Preview folders named by date taken"),
                 symbol: "calendar.badge.clock",
                 keywords: [
                     L10n.text("organize by date"), L10n.text("date taken"), L10n.text("capture date"),
@@ -290,7 +290,7 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "open-folder",
                 category: L10n.text("Files"),
-                title: L10n.text("Open Different Folder…"),
+                title: L10n.text("Open Folder…"),
                 detail: L10n.text("Save, then choose another media folder"),
                 symbol: "folder",
                 shortcut: commandShortcut(.openFolder),
@@ -312,7 +312,7 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "close-session",
                 category: L10n.text("Files"),
-                title: L10n.text("Close Session"),
+                title: L10n.text("Close Folder"),
                 detail: L10n.text("Save and return to the folder chooser"),
                 symbol: "folder.badge.minus",
                 keywords: [L10n.text("close folder"), L10n.text("leave folder"), L10n.text("save session")],
@@ -597,7 +597,7 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "decrease-playback-rate",
                 category: L10n.text("Navigate and play"),
-                title: L10n.text("Choose Slower Playback Speed"),
+                title: L10n.text("Slower Playback"),
                 detail: L10n.text("Step down through the available video or audio playback speeds"),
                 symbol: "backward.end",
                 shortcut: commandShortcut(.slower),
@@ -612,7 +612,7 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "increase-playback-rate",
                 category: L10n.text("Navigate and play"),
-                title: L10n.text("Choose Faster Playback Speed"),
+                title: L10n.text("Faster Playback"),
                 detail: L10n.text("Step up through the available video or audio playback speeds"),
                 symbol: "forward.end",
                 shortcut: commandShortcut(.faster),
@@ -694,7 +694,7 @@ struct ActionPaletteView: View {
                 id: "set-playback-rate-1-5x",
                 category: L10n.text("Navigate and play"),
                 title: L10n.text("Set Playback Speed to 1.5×"),
-                detail: L10n.text("Review the current video or audio recording at one and a half speed"),
+                detail: L10n.text("Play the current video or audio recording at 1.5× speed"),
                 symbol: "1.circle",
                 shortcut: nil,
                 keywords: [L10n.text("video"), L10n.text("audio"), "clip", "recording", "playback", "speed", "1.5x"],
@@ -716,7 +716,7 @@ struct ActionPaletteView: View {
                 id: "set-playback-rate-2-5x",
                 category: L10n.text("Navigate and play"),
                 title: L10n.text("Set Playback Speed to 2.5×"),
-                detail: L10n.text("Review the current video or audio recording at two and a half speed"),
+                detail: L10n.text("Play the current video or audio recording at 2.5× speed"),
                 symbol: "2.circle",
                 shortcut: nil,
                 keywords: [L10n.text("video"), L10n.text("audio"), "clip", "recording", "playback", "speed", "2.5x"],
@@ -781,8 +781,8 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "trash-no",
                 category: L10n.text("Selection and clean up"),
-                title: L10n.text("Move “No” to Trash…"),
-                detail: L10n.text("Use the current Clean Up scope and ask for confirmation"),
+                title: L10n.text("Trash No…"),
+                detail: L10n.text("Confirm which items to trash in the current Clean Up scope"),
                 symbol: "trash",
                 keywords: [L10n.text("clean up"), "reject", "delete"],
                 isEnabled: store.canCleanUp && store.hasCleanUpTargets(for: .trashNo),
@@ -792,7 +792,7 @@ struct ActionPaletteView: View {
                 id: "keep-only-yes",
                 category: L10n.text("Selection and clean up"),
                 title: L10n.text("Trash No + Undecided…"),
-                detail: L10n.text("Use the current Clean Up scope and ask for confirmation"),
+                detail: L10n.text("Confirm which items to trash in the current Clean Up scope"),
                 symbol: "trash",
                 keywords: [L10n.text("clean up"), "delete", "reject", L10n.text("keep only yes")],
                 isEnabled: store.canCleanUp && store.hasCleanUpTargets(for: .keepOnlyYes),
@@ -801,7 +801,7 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "trash-paired-jpegs",
                 category: L10n.text("Selection and clean up"),
-                title: L10n.text("Move Paired JPEGs to Trash…"),
+                title: L10n.text("Trash Paired JPEGs…"),
                 detail: L10n.text("Keep the RAW file from each matching RAW + JPEG pair"),
                 symbol: "photo.badge.minus",
                 keywords: [L10n.text("clean up"), "archive", "pair", "raw", "jpeg", "jpg", L10n.text("keep raw"), "delete", "remove"],
@@ -811,7 +811,7 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "trash-paired-raws",
                 category: L10n.text("Selection and clean up"),
-                title: L10n.text("Move Paired RAWs to Trash…"),
+                title: L10n.text("Trash Paired RAWs…"),
                 detail: L10n.text("Keep the JPEG file from each matching RAW + JPEG pair"),
                 symbol: "photo.badge.minus",
                 keywords: [L10n.text("clean up"), "archive", "pair", "raw", "jpeg", "jpg", L10n.text("keep jpeg"), "delete", "remove"],
@@ -832,7 +832,7 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "clear-decisions",
                 category: L10n.text("Selection and clean up"),
-                title: L10n.text("Clear All Decisions"),
+                title: L10n.text("Clear All Decisions…"),
                 detail: L10n.text("Remove Yes and No decisions while keeping stars and color labels"),
                 symbol: "eraser",
                 shortcut: shortcut(.clear),
@@ -922,7 +922,7 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "info",
                 category: L10n.text("View"),
-                title: store.showMetadataPanel ? L10n.text("Hide Media Information") : L10n.text("Show Media Information"),
+                title: store.showMetadataPanel ? L10n.text("Hide Info") : L10n.text("Show Info"),
                 detail: L10n.text("Toggle the camera, histogram, and metadata panel"),
                 symbol: "info.circle",
                 shortcut: shortcut(.info),
