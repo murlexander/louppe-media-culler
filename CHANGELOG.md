@@ -1,6 +1,6 @@
 # Version History
 
-## 1.12.1 (15) — 2026-10-21
+## 1.13.0 (15) — 2026-10-21
 
 - Shorten Trash actions across the Command Palette, Clean Up, menus, and confirmations.
 - Align folder, rename, playback, and Info wording, and mark Clear All Decisions with an ellipsis because it asks for confirmation.
