@@ -1,8 +1,13 @@
 # Louppe Media Culler
 
-[Louppe](https://louppe.eu) is a fast, keyboard-first, open-source media culler
-for macOS. Review photos, video, audio, and text; organize files; clean up
-unwanted media; and export keepers.
+[Louppe](https://louppe.eu) is a free, open-source photo viewer and sorter for
+Mac. Browse JPEG and RAW folders, choose keepers with the keyboard, and copy
+selected files or send rejects to macOS Trash with a separate command. Review
+video, audio, and read-only text alongside your photos.
+
+Photo culling means choosing which photos to keep. Louppe works as a local
+image viewer and photo browser without a library import or subscription.
+Stars and color labels are optional; JPEG-only shoots need no RAW editor.
 
 Requires Apple silicon and macOS 14 or newer. Intel Macs are unsupported.
 

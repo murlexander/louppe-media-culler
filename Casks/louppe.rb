@@ -5,7 +5,7 @@ cask "louppe" do
   url "https://github.com/murlexander/louppe-media-culler/releases/download/v#{version}/Louppe.zip",
       verified: "github.com/murlexander/louppe-media-culler/"
   name "Louppe"
-  desc "Keyboard-first media culler"
+  desc "Photo viewer and culler for local folders"
   homepage "https://louppe.eu/"
 
   livecheck do
