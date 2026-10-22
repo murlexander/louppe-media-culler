@@ -162,10 +162,28 @@ struct XMPConflictResolutionOutcome: Equatable, Sendable {
 @MainActor
 final class SessionStore: ObservableObject {
     @Published var phase: AppPhase = .welcome {
-        didSet { if sourceFolder != nil { startQualityCueAnalysis() } }
+        didSet {
+            if case .ready = phase { prefetchAroundCurrent() }
+            else { cancelNeighbourPrefetch() }
+            if sourceFolder != nil { startQualityCueAnalysis() }
+        }
+    }
+    @Published private(set) var openingProgress: SessionOpeningProgress?
+    private(set) var openingMetrics: SessionOpeningMetrics?
+    @Published private(set) var openingSession: OpeningSessionState?
+    var openingWorkerHooksForTesting = SessionOpeningWorker.Hooks()
+    private var openingViewportReceipts: [OpeningViewportSurface: OpeningViewportReceipt] = [:]
+
+    func pendingOpeningViewportReceipt(for surface: OpeningViewportSurface) -> OpeningViewportReceipt? {
+        openingViewportReceipts[surface]
+    }
+
+    func consumeOpeningViewportReceipt(for surface: OpeningViewportSurface) {
+        openingViewportReceipts.removeValue(forKey: surface)
     }
     @Published var items: [PhotoItem] = [] {
         didSet {
+            cancelNeighbourPrefetch()
             cachedSelectionSummary = nil
             preparedIndex.invalidateItemOrder()
             itemStructureNeedsRebuild = true
@@ -175,15 +193,23 @@ final class SessionStore: ObservableObject {
     @Published var currentIndex: Int = 0 {
         didSet {
             if currentIndex != oldValue {
+                // A dormant surface's opening anchor must never override
+                // navigation performed after the authoritative session mounts.
+                if case .ready = phase { openingViewportReceipts.removeAll() }
+                cancelNeighbourPrefetch()
                 videoPlayback.stop()
                 if needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() }
             }
         }
     }
-    @Published var viewMode: ViewMode = .gallery
+    @Published var viewMode: ViewMode = .gallery {
+        didSet { if viewMode != oldValue { prefetchAroundCurrent() } }
+    }
     @Published var showMetadataPanel = true
     @Published var showBrowser = true
-    @Published var zoomMode: ZoomMode = .fit
+    @Published var zoomMode: ZoomMode = .fit {
+        didSet { if zoomMode != oldValue { prefetchAroundCurrent() } }
+    }
     @Published private(set) var photoZoomScale: CGFloat = 1
     @Published private(set) var fittedPhotoZoomScale: CGFloat?
     private var fittedPhotoZoomRevision: PhotoContentRevision?
@@ -393,6 +419,8 @@ final class SessionStore: ObservableObject {
     /// (days, cameras, subfolders…) for the Grid view. Rebuilt only when
     /// filter/sort/session structure changes, not on selection drag.
     @Published private(set) var visibleGroups: [PhotoGroup] = []
+    /// Stable, already-indexed Grid cells; sections borrow Browser entries.
+    @Published private(set) var gridGroups: [PreparedSessionIndex.VisibleGroup] = []
     /// Item index → header title for the Browser strip, covering every group
     /// start (including the first). Empty when division is off.
     @Published private(set) var visibleGroupTitles: [Int: String] = [:]
@@ -448,9 +476,11 @@ final class SessionStore: ObservableObject {
     @Published private(set) var isSessionTransitioning = false {
         didSet {
             if isSessionTransitioning {
+                cancelNeighbourPrefetch()
                 pauseQualityCueAnalysis()
                 pauseSessionContentChecks()
             } else if sourceFolder != nil {
+                prefetchAroundCurrent()
                 startQualityCueAnalysis()
                 startSessionContentChecks()
             }
@@ -730,6 +760,13 @@ final class SessionStore: ObservableObject {
     }
     private var filterDebounce: DispatchWorkItem?
     private var prefetchDebounce: DispatchWorkItem?
+    private var fullImagePrefetchTask: Task<Void, Never>?
+    private var highResolutionPrefetchTask: Task<Void, Never>?
+    private var prefetchGeneration: UInt64 = 0
+    private var prefetchRawDisplayMode = RawDisplayMode(
+        rawValue: UserDefaults.standard.string(forKey: RawDisplayMode.preferenceKey) ?? ""
+    ) ?? .fast
+    private var prefetchRawDecoder = AppleRawDecoder.load()
     private var scanTask: Task<Void, Never>?
     private var duplicateBurstAnalysisTask: Task<Void, Never>?
     private let duplicateBurstGrouping: @Sendable (DuplicateBurstAnalysis.Result, DuplicateBurstAnalysis.ReviewMode, Int, TimeInterval) async throws -> [DuplicateBurstAnalysis.Group]
@@ -916,7 +953,10 @@ final class SessionStore: ObservableObject {
         qualityCuePreferencesObserver = NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                Task { @MainActor [weak self] in self?.reloadQualityCuePreferences() }
+                Task { @MainActor [weak self] in
+                    self?.reloadQualityCuePreferences()
+                    self?.reloadPrefetchPreferences()
+                }
             }
         loadRecents()
         if automaticallyRecoversInterruptedOperations,
@@ -2047,161 +2087,51 @@ final class SessionStore: ObservableObject {
     private func publishPreparedVisibility() {
         visibleIndices = preparedIndex.visibleIndices
         visibleGroups = preparedIndex.visibleGroups
+        gridGroups = preparedIndex.visibleGridGroups
         visibleGroupTitles = preparedIndex.visibleGroupTitles
     }
 
     /// Rebuild all values derived from session structure in one pass. Ratings
     /// use incremental updates during normal culling; structural operations are
     /// rare enough that a single complete rebuild is clearer and safer.
-    private func rebuildDerivedData() {
-        var tally = (yes: 0, no: 0, undecided: 0)
-        var mixed = 0
-        var stars: [StarRating: Int] = [:]
-        var unratedStars = 0
-        var mixedStars = 0
-        var colors: [PhotoColorLabel: Int] = [:]
-        var noColor = 0
-        var mixedColors = 0
-        var types: [String: Int] = [:]
-        var mediaKinds: [MediaKind: Int] = [:]
-        var cameras: [String: Int] = [:]
-        var lenses: [String: Int] = [:]
-        var filmSimulations: [FujiFilmSimulation: Int] = [:]
-        var hasFujiMetadata = false
-        var videoResolutions: [String: Int] = [:]
-        var videoCodecs: [String: Int] = [:]
-        var subfolders: [String: Int] = [:]
-        var dates: [Date: Int] = [:]
-        var unknownDates = 0
-        var minimumAperture: Double?
-        var maximumAperture: Double?
-        var minimumShutter: Double?
-        var maximumShutter: Double?
-        var minimumISO: Double?
-        var maximumISO: Double?
-        var minimumDuration: Double?
-        var maximumDuration: Double?
-        var minimumVideoFrameRate: Double?
-        var maximumVideoFrameRate: Double?
-        for item in items {
-            let metadata = item.metadataState
-            // Keep the three public counts exhaustive: mixed pairs are
-            // unresolved and therefore included in `undecidedCount`.
-            switch metadata.decision {
-            case .yes:
-                tally.yes += 1
-            case .no:
-                tally.no += 1
-            case .undecided:
-                tally.undecided += 1
-            case .mixed:
-                tally.undecided += 1
-                mixed += 1
-            }
-            switch metadata.stars {
-            case .unrated: unratedStars += 1
-            case .stars(let rating): stars[rating, default: 0] += 1
-            case .mixed: mixedStars += 1
-            }
-            switch metadata.color {
-            case .none: noColor += 1
-            case .label(let label): colors[label, default: 0] += 1
-            case .mixed: mixedColors += 1
-            }
-            types[item.fileTypeLabel, default: 0] += 1
-            mediaKinds[item.mediaKind, default: 0] += 1
-            cameras[item.cameraLabel, default: 0] += 1
-            lenses[item.lensLabel, default: 0] += 1
-            filmSimulations[item.filmSimulationFacet, default: 0] += 1
-            hasFujiMetadata = hasFujiMetadata || item.filmSimulation != nil
-            subfolders[item.subfolderLabel, default: 0] += 1
-            if let day = item.captureDay {
-                dates[day, default: 0] += 1
-            } else {
-                unknownDates += 1
-            }
-            if let aperture = item.aperture {
-                minimumAperture = minimumAperture.map { min($0, aperture) } ?? aperture
-                maximumAperture = maximumAperture.map { max($0, aperture) } ?? aperture
-            }
-            if let shutter = item.shutterSpeed {
-                minimumShutter = minimumShutter.map { min($0, shutter) } ?? shutter
-                maximumShutter = maximumShutter.map { max($0, shutter) } ?? shutter
-            }
-            if let iso = item.iso {
-                minimumISO = minimumISO.map { min($0, iso) } ?? iso
-                maximumISO = maximumISO.map { max($0, iso) } ?? iso
-            }
-            if let duration = item.duration, duration.isFinite, duration >= 0 {
-                minimumDuration = minimumDuration.map { min($0, duration) } ?? duration
-                maximumDuration = maximumDuration.map { max($0, duration) } ?? duration
-            }
-            if item.isVideo {
-                videoResolutions[
-                    item.videoResolutionLabel ?? "Unknown resolution",
-                    default: 0
-                ] += 1
-                videoCodecs[item.videoCodec ?? "Unknown video codec", default: 0] += 1
-                if let frameRate = item.videoFrameRate,
-                   frameRate.isFinite,
-                   frameRate > 0 {
-                    minimumVideoFrameRate = minimumVideoFrameRate.map {
-                        min($0, frameRate)
-                    } ?? frameRate
-                    maximumVideoFrameRate = maximumVideoFrameRate.map {
-                        max($0, frameRate)
-                    } ?? frameRate
-                }
-            }
-        }
-        ratingTally = tally
-        mixedRatingCount = mixed
-        starTally = stars
-        unratedStarCountStorage = unratedStars
-        mixedStarCountStorage = mixedStars
-        colorTally = colors
-        noColorCountStorage = noColor
-        mixedColorCountStorage = mixedColors
-        typeCounts = types
-        mediaKindCounts = mediaKinds
-        cameraCounts = cameras
-        lensCounts = lenses
-        filmSimulationCounts = filmSimulations
-        availableFilmSimulations = hasFujiMetadata ? filmSimulations.keys.sorted {
-            if $0 == .notRecorded { return false }
-            if $1 == .notRecorded { return true }
-            return $0.label.localizedStandardCompare($1.label) == .orderedAscending
-        } : []
-        videoResolutionCounts = videoResolutions
-        videoCodecCounts = videoCodecs
-        subfolderCounts = subfolders
-        availableTypes = types.keys.sorted()
-        availableMediaKinds = [.photo, .video, .audio, .text].filter {
-            mediaKinds[$0] != nil
-        }
-        availableCameras = cameras.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        availableLenses = lenses.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        // "None" (the folder root) always lists last, like the date list's
-        // "Unknown date" entry.
-        var subfolderLabels = subfolders.keys
-            .filter { $0 != "None" }
-            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        if subfolders["None"] != nil { subfolderLabels.append("None") }
-        availableSubfolders = subfolderLabels
-        availableCaptureDates = dates.keys.sorted()
-        captureDateCounts = dates
-        unknownDateCount = unknownDates
-        captureDateRange = availableCaptureDates.first.flatMap { first in
-            availableCaptureDates.last.map { first...$0 }
-        }
-        apertureRange = Self.closedRange(minimum: minimumAperture, maximum: maximumAperture)
-        shutterRange = Self.closedRange(minimum: minimumShutter, maximum: maximumShutter)
-        isoRange = Self.closedRange(minimum: minimumISO, maximum: maximumISO)
-        durationRange = Self.closedRange(minimum: minimumDuration, maximum: maximumDuration)
-        videoFrameRateRange = Self.closedRange(
-            minimum: minimumVideoFrameRate,
-            maximum: maximumVideoFrameRate
-        )
+    private func rebuildDerivedData(
+        physicalPairs: [(raw: PhotoFile, jpeg: PhotoFile)]? = nil,
+        openingFacets: SessionOpeningFacets? = nil,
+        openingIndex: PreparedSessionIndex? = nil,
+        openingSort: PhotoSort? = nil
+    ) {
+        let facets = openingFacets ?? SessionOpeningFacets(items: items)
+        ratingTally = facets.ratingTally
+        mixedRatingCount = facets.mixedRatingCount
+        starTally = facets.starTally
+        unratedStarCountStorage = facets.unratedStarCountStorage
+        mixedStarCountStorage = facets.mixedStarCountStorage
+        colorTally = facets.colorTally
+        noColorCountStorage = facets.noColorCountStorage
+        mixedColorCountStorage = facets.mixedColorCountStorage
+        typeCounts = facets.typeCounts
+        mediaKindCounts = facets.mediaKindCounts
+        cameraCounts = facets.cameraCounts
+        lensCounts = facets.lensCounts
+        filmSimulationCounts = facets.filmSimulationCounts
+        availableFilmSimulations = facets.availableFilmSimulations
+        videoResolutionCounts = facets.videoResolutionCounts
+        videoCodecCounts = facets.videoCodecCounts
+        subfolderCounts = facets.subfolderCounts
+        availableTypes = facets.availableTypes
+        availableMediaKinds = facets.availableMediaKinds
+        availableCameras = facets.availableCameras
+        availableLenses = facets.availableLenses
+        availableSubfolders = facets.availableSubfolders
+        availableCaptureDates = facets.availableCaptureDates
+        captureDateCounts = facets.captureDateCounts
+        unknownDateCount = facets.unknownDateCount
+        captureDateRange = facets.captureDateRange
+        apertureRange = facets.apertureRange
+        shutterRange = facets.shutterRange
+        isoRange = facets.isoRange
+        durationRange = facets.durationRange
+        videoFrameRateRange = facets.videoFrameRateRange
         if let activeID = videoPlayback.itemID,
            let activeItem = items.first(where: { $0.id == activeID }) {
             if !videoPlayback.represents(activeItem) {
@@ -2210,9 +2140,20 @@ final class SessionStore: ObservableObject {
         } else if videoPlayback.itemID != nil {
             videoPlayback.stop()
         }
-        rebuildStructuralIndices()
+        if let openingIndex, openingSort == sort {
+            preparedIndex = openingIndex
+            rebuildFileItemIndex()
+            itemStructureNeedsRebuild = false
+#if DEBUG
+            structuralIndexGenerationForTesting &+= 1
+#endif
+        } else {
+            rebuildStructuralIndices()
+        }
         if sourceFolder != nil { startQualityCueAnalysis() }
-        if let sourceFolder {
+        if let physicalPairs {
+            rawJPEGPairs = physicalPairs
+        } else if let sourceFolder {
             rawJPEGPairs = FolderScanner.rawJPEGPairs(
                 from: items,
                 root: sourceFolder
@@ -2220,11 +2161,6 @@ final class SessionStore: ObservableObject {
         } else {
             rawJPEGPairs = []
         }
-    }
-
-    private static func closedRange(minimum: Double?, maximum: Double?) -> ClosedRange<Double>? {
-        guard let minimum, let maximum else { return nil }
-        return minimum...maximum
     }
 
     /// Folder-wide ranges are the neutral filter state. Existing narrowed
@@ -2569,13 +2505,16 @@ final class SessionStore: ObservableObject {
         scanError = nil
         pairingMetadataError = nil
         phase = .scanning(found: 0)
+        openingProgress = SessionOpeningProgress(stage: .folderIdentity, completed: 0, total: nil)
+        openingMetrics = nil
+        openingSession = nil
+        openingViewportReceipts = [:]
         // visibleIndices must be cleared in the same turn items is emptied —
         // stale indices into a shrunk array crash any view that renders first.
         visibleIndices = []
         filterDebounce?.cancel()
         filterDebounce = nil
-        prefetchDebounce?.cancel()
-        prefetchDebounce = nil
+        cancelNeighbourPrefetch()
         setSelectionIndices([])
         items = []
         emptySessionReason = nil
@@ -2589,73 +2528,89 @@ final class SessionStore: ObservableObject {
         pendingCleanUp = nil
         addToRecents(url)
         let pairingMode = rawJPEGPairingMode
+        let openingSort = sort
+        let openingViewMode = viewMode
+        let openingHooks = openingWorkerHooksForTesting
+        let readAuthority = sourceFolderAccess?.makeReadAuthority()
+        // Retained rescan filters may depend on metadata that is still pending.
+        // The first staged version keeps all same-folder rescans on the existing path.
+        let allowsOpeningPreview = !isSameFolder
 
+        // The cancelled worker may outlive Close or another folder open.
+        // It owns a separate scope until its last persistence/metadata read.
+        let workerAccess = sourceFolderAccess?.makeIndependentAccess()
+        let recorder = SessionOpeningRecorder()
+        let progressTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .milliseconds(100)) }
+                catch { return }
+                guard let self, self.scanGeneration == generation,
+                      self.sourceFolder == standardizedURL,
+                      case .scanning = self.phase else { return }
+                if let progress = recorder.takeProgress() {
+                    self.openingProgress = progress
+                    if progress.stage == .discovery {
+                        self.phase = .scanning(found: progress.completed)
+                    }
+                }
+            }
+        }
         scanTask = Task.detached(priority: .userInitiated) { [weak self] in
+            defer {
+                progressTask.cancel()
+                Task { @MainActor in workerAccess?.stop() }
+            }
             guard let self else { return }
             do {
-                let folderIdentity = try SessionPersistence.SourceFolderIdentity
-                    .capture(at: standardizedURL)
-                // The scan polls cancellation from parallel metadata workers
-                // on GCD threads, where `Task.isCancelled` has no task context
-                // and silently reads false. Bridge this task's cancellation
-                // into a flag that is valid on any thread.
-                let cancelFlag = FolderScanner.CancelFlag()
-                let (scanned, savedSession) = try await withTaskCancellationHandler {
-                    let scanned = try FolderScanner.scan(
-                        standardizedURL,
-                        pairingMode: pairingMode,
-                        isCancelled: { cancelFlag.isSet }
-                    ) { count in
-                        Task { @MainActor [weak self] in
-                            guard let self,
+                let result = try await SessionOpeningWorker.prepare(
+                    folder: standardizedURL, pairingMode: pairingMode,
+                    persistence: self.persistence, sort: openingSort,
+                    legacySidecarRelocationAuthorization: legacySidecarRelocationAuthorization,
+                    replaceSavedSession: replaceSavedSession, recorder: recorder,
+                    allowsPreview: allowsOpeningPreview,
+                    preview: { snapshot in
+                        await MainActor.run {
+                            guard !Task.isCancelled,
                                   self.scanGeneration == generation,
-                                  self.sourceFolder == standardizedURL else { return }
-                            if case .scanning = self.phase {
-                                self.phase = .scanning(found: count)
-                            }
+                                  self.sourceFolder == standardizedURL,
+                                  case .scanning = self.phase else { return }
+                            self.openingSession = OpeningSessionState(
+                                snapshot: snapshot, viewMode: openingViewMode,
+                                sourceAccess: readAuthority
+                            )
                         }
-                    }
-                    try Task.checkCancellation()
-                    guard folderIdentity.matches(folder: standardizedURL) else {
-                        throw FolderScanner.ScanError.filesChangedDuringScan
-                    }
-                    let savedSession = await self.persistence.read(
-                        for: standardizedURL,
-                        folderIdentity: folderIdentity,
-                        legacySidecarRelocationAuthorization:
-                            legacySidecarRelocationAuthorization
-                    )
-                    try Task.checkCancellation()
-                    try FolderScanner.validateScannedIdentities(
-                        scanned,
-                        isCancelled: { cancelFlag.isSet }
-                    )
-                    guard folderIdentity.matches(folder: standardizedURL) else {
-                        throw FolderScanner.ScanError.filesChangedDuringScan
-                    }
-                    try Task.checkCancellation()
-                    return (scanned, savedSession)
-                } onCancel: {
-                    cancelFlag.set()
-                }
+                    }, hooks: openingHooks
+                )
+                try Task.checkCancellation()
                 await MainActor.run {
-                    guard self.scanGeneration == generation else { return }
+                    guard !Task.isCancelled,
+                          self.scanGeneration == generation,
+                          self.sourceFolder == standardizedURL else { return }
                     self.scanTask = nil
-                    self.finishScan(
-                        url: standardizedURL,
-                        generation: generation,
-                        scanned: scanned,
-                        persistenceResult: savedSession,
-                        legacySidecarRelocationAuthorization:
-                            legacySidecarRelocationAuthorization,
-                        replaceSavedSession: replaceSavedSession
-                    )
+                    recorder.measure(.mainPublication) {
+                        self.finishScan(
+                            url: standardizedURL, generation: generation,
+                            restoration: result.restoration, physicalPairs: result.physicalPairs,
+                            facets: result.facets,
+                            openingIndex: result.preparedIndex, openingSort: result.preparedSort,
+                            persistenceResult: result.persistenceResult,
+                            legacySidecarRelocationAuthorization:
+                                legacySidecarRelocationAuthorization,
+                            replaceSavedSession: replaceSavedSession
+                        )
+                    }
+                    self.openingProgress = nil
+                    self.openingMetrics = recorder.snapshot()
                 }
             } catch {
                 await MainActor.run {
                     guard self.scanGeneration == generation,
                           self.sourceFolder == standardizedURL else { return }
                     self.scanTask = nil
+                    self.openingProgress = nil
+                    self.openingMetrics = recorder.snapshot()
+                    self.openingSession = nil
+                    self.openingViewportReceipts = [:]
                     guard !(error is CancellationError) else { return }
                     self.scanError = error.localizedDescription
                     self.phase = .welcome
@@ -2689,6 +2644,7 @@ final class SessionStore: ObservableObject {
         )
         isSessionTransitioning = true
         isChangingRawJPEGPairingMode = true
+        cancelNeighbourPrefetch()
         let requestedMode = mode
         Task.detached(priority: .userInitiated) { [weak self] in
             do {
@@ -2713,6 +2669,7 @@ final class SessionStore: ObservableObject {
                     self.rawJPEGPairingMode = previousMode
                     self.isChangingRawJPEGPairingMode = false
                     self.isSessionTransitioning = false
+                    self.prefetchAroundCurrent()
                     if !(error is CancellationError) {
                         self.pairingMetadataError = error.localizedDescription
                     }
@@ -2760,6 +2717,7 @@ final class SessionStore: ObservableObject {
         prefetchAroundCurrent()
         isChangingRawJPEGPairingMode = false
         isSessionTransitioning = false
+        prefetchAroundCurrent()
         saveSession()
     }
 
@@ -2803,13 +2761,19 @@ final class SessionStore: ObservableObject {
     private func finishScan(
         url: URL,
         generation: UInt64,
-        scanned: [PhotoItem],
+        restoration: SessionOpeningRestoration,
+        physicalPairs: [(raw: PhotoFile, jpeg: PhotoFile)],
+        facets: SessionOpeningFacets,
+        openingIndex: PreparedSessionIndex,
+        openingSort: PhotoSort,
         persistenceResult: SessionPersistence.ReadResult,
         legacySidecarRelocationAuthorization:
             SessionPersistence.LegacySidecarRelocationAuthorization?,
         replaceSavedSession: Bool
     ) {
         guard sourceFolder == url, scanGeneration == generation else { return }
+        let openingHandoff = openingSession?.handoff()
+        openingSession = nil
         if let blockingMessage = persistenceResult.blockingMessage {
             pendingLegacySidecarRelocationAuthorization =
                 persistenceResult.legacySidecarRelocationAuthorization
@@ -2850,109 +2814,11 @@ final class SessionStore: ObservableObject {
         // only later user/session changes advance beyond this generation.
         durableSessionChangeGeneration = 0
         sessionChangeGeneration = 0
-        let loaded = scanned
-        sessionRecoveryEntries = replaceSavedSession ? []
-            : persistenceResult.session?.recoveryEntries ?? []
-        // Restore prior ratings from the sidecar file, if present.
-        var pendingConflictEntries: [SessionEntry] = []
-        var consumedPersistedFileIDs = Set<Data>()
-        var restoredOrganizationOrigins: [String: Data] = [:]
-        var relocatedSessionNeedsIdentityProof = false
-        var relocatedLegacySessionHasNoFilenameMatch = false
-        var unmatchedLegacyPhysicalFileCount = 0
-        var legacySessionNeedsConfirmation = false
-        if !replaceSavedSession, let session = persistenceResult.session {
-            let ratingIndex = SessionRatingIndex(session: session)
-            let savedEntries = Dictionary(uniqueKeysWithValues: session.entries.map {
-                (Data($0.filename.utf8), $0)
-            })
-            for i in loaded.indices {
-                for file in loaded[i].individualFiles {
-                    switch ratingIndex.lookup(for: file) {
-                    case .match(let match):
-                        if let digest = savedEntries[match.persistedFileIDBytes]?.contentSHA256,
-                           let identity = file.scannedIdentity {
-                            sessionContentProofs[file.id] = SessionContentProof(
-                                identity: identity, sha256: digest
-                            )
-                        }
-                        consumedPersistedFileIDs.insert(
-                            match.persistedFileIDBytes
-                        )
-                        loaded[i].restoreMetadata(
-                            PhotoFileMetadataSnapshot(
-                                fileID: file.id,
-                                rating: match.value.rating,
-                                ratedAt: match.value.ratedAt,
-                                starRating: match.value.starRating,
-                                starsChangedAt: match.value.starsChangedAt,
-                                colorLabel: match.value.colorLabel,
-                                colorChangedAt: match.value.colorChangedAt
-                            )
-                        )
-                        if let origin = match.value
-                            .organizationOriginFolderPathBytes {
-                            restoredOrganizationOrigins[file.id] = origin
-                        }
-                    case .identityConflict(let conflict):
-                        if let old = savedEntries[conflict.persistedFileIDBytes] {
-                            pendingConflictEntries.append(old)
-                        }
-                    case .absent:
-                        break
-                    }
-                }
-            }
-            for old in pendingConflictEntries where !consumedPersistedFileIDs.contains(Data(old.filename.utf8)) {
-                consumedPersistedFileIDs.insert(Data(old.filename.utf8))
-                if SessionRecoveryPolicy.hasSavedMetadata(old) {
-                    sessionRecoveryEntries.append(SessionRecoveryEntry(entry: old))
-                }
-            }
-            if session.version >= 4,
-               session.fileIDEncoding == .percentEncodedFileSystemPath {
-                retainedMissingSessionEntries = session.entries.filter {
-                    !consumedPersistedFileIDs.contains(
-                        Data($0.filename.utf8)
-                    )
-                }
-            } else {
-                retainedMissingSessionEntries = []
-                unmatchedLegacyPhysicalFileCount = ratingIndex
-                    .persistedPhysicalFileIDBytes
-                    .subtracting(consumedPersistedFileIDs)
-                    .count
-            }
-            legacySessionNeedsConfirmation = session.version < 4
-                && (unmatchedLegacyPhysicalFileCount > 0
-                    || persistenceResult.requiresPhysicalIdentityProof)
-            let recordedFolder = URL(fileURLWithPath: session.sourcePath)
-                .resolvingSymlinksInPath().standardizedFileURL
-            let openedFolder = url.resolvingSymlinksInPath()
-                .standardizedFileURL
-            relocatedSessionNeedsIdentityProof =
-                (recordedFolder.path != openedFolder.path
-                    || (persistenceResult.requiresPhysicalIdentityProof
-                        && session.version >= 4))
-                && !session.entries.isEmpty
-                && consumedPersistedFileIDs.isEmpty
-            relocatedLegacySessionHasNoFilenameMatch =
-                session.version < 4
-                && recordedFolder.path != openedFolder.path
-                && !session.entries.isEmpty
-                && consumedPersistedFileIDs.isEmpty
-        } else {
-            retainedMissingSessionEntries = []
-        }
-        if relocatedSessionNeedsIdentityProof, let session = persistenceResult.session,
-           session.version >= 4 {
-            sessionRecoveryEntries += retainedMissingSessionEntries
-                .filter(SessionRecoveryPolicy.hasSavedMetadata)
-                .map { SessionRecoveryEntry(entry: $0) }
-            retainedMissingSessionEntries = []
-            relocatedSessionNeedsIdentityProof = false
-        }
-        if relocatedSessionNeedsIdentityProof && sessionRecoveryEntries.isEmpty {
+        let loaded = restoration.items
+        sessionRecoveryEntries = restoration.sessionRecoveryEntries
+        sessionContentProofs = restoration.sessionContentProofs
+        retainedMissingSessionEntries = restoration.retainedMissingSessionEntries
+        if restoration.requiresNewSessionConfirmation {
             items = []
             resetDerivedData()
             visibleIndices = []
@@ -2960,7 +2826,7 @@ final class SessionStore: ObservableObject {
             pendingLegacySidecarRelocationAuthorization =
                 legacySidecarRelocationAuthorization
             canOpenIdentityConflictAsNewSession = true
-            if relocatedLegacySessionHasNoFilenameMatch {
+            if restoration.relocatedLegacySessionHasNoFilenameMatch {
                 scanError = L10n.text("No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated.")
             } else {
                 scanError = L10n.text("This session came from another location; no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated.")
@@ -2969,9 +2835,10 @@ final class SessionStore: ObservableObject {
         }
         items = loaded
         organizationOriginFolderPathBytesByFileID =
-            restoredOrganizationOrigins
+            restoration.restoredOrganizationOrigins
         emptySessionReason = nil
-        rebuildDerivedData()
+        rebuildDerivedData(physicalPairs: physicalPairs, openingFacets: facets,
+                           openingIndex: openingIndex, openingSort: openingSort)
         let firstUndecided =
             loaded.firstIndex(where: { $0.rating == .undecided }) ?? 0
         restoreCurrentItem(
@@ -2982,7 +2849,23 @@ final class SessionStore: ObservableObject {
         // Recompute visibility (a re-scan keeps the active filter; it may
         // also snap currentIndex onto a visible photo).
         if !filterAlreadyApplied { applyFilter() }
-        if let resumeIdentity {
+        if let openingHandoff {
+            // Physical identities own the handoff even when chronology changes.
+            // This maps once at publication, never on metadata/scroll updates.
+            var itemIDByPhysicalID: [String: String] = [:]
+            for item in items {
+                for file in item.individualFiles { itemIDByPhysicalID[file.id] = item.id }
+            }
+            restoreCurrentItem(
+                itemID: openingHandoff.currentPhysicalFileID.flatMap { itemIDByPhysicalID[$0] },
+                fallbackIndex: visibleIndices.first(where: { items[$0].rating == .undecided })
+                    ?? visibleIndices.first ?? firstUndecided
+            )
+            restoreSelection(itemIDs: Set(openingHandoff.selectedPhysicalFileIDs.compactMap { itemIDByPhysicalID[$0] }),
+                             visibleOnly: true)
+            viewMode = openingHandoff.viewMode
+            openingViewportReceipts = openingHandoff.viewportReceipts
+        } else if let resumeIdentity {
             restoreSelection(
                 itemIDs: resumeIdentity.selectedItemIDs,
                 visibleOnly: true
@@ -3010,10 +2893,10 @@ final class SessionStore: ObservableObject {
             persistenceWarning = nil
             markSessionChanged()
             saveSession()
-        } else if legacySessionNeedsConfirmation {
+        } else if restoration.legacySessionNeedsConfirmation {
             persistenceWarning = persistenceResult.recoveryMessage
             legacySessionMigrationMissingFileCount =
-                unmatchedLegacyPhysicalFileCount
+                restoration.unmatchedLegacyPhysicalFileCount
             legacySessionMigrationUsesUnownedBackup =
                 persistenceResult.requiresPhysicalIdentityProof
             isLegacySessionMigrationConfirmationPresented = true
@@ -5396,24 +5279,56 @@ final class SessionStore: ObservableObject {
         gridThumbSize = min(max(next, 90), 400)
     }
 
-    private func prefetchAroundCurrent() {
+    private func cancelNeighbourPrefetch() {
+        prefetchGeneration &+= 1
         prefetchDebounce?.cancel()
         prefetchDebounce = nil
-        // Prefetch the neighbouring *visible* photos, so filtered-out files
-        // in between don't waste the warm-up window.
-        guard let pos = preparedIndex.location(forItemIndex: currentIndex)?.position else { return }
+        fullImagePrefetchTask?.cancel()
+        fullImagePrefetchTask = nil
+        highResolutionPrefetchTask?.cancel()
+        highResolutionPrefetchTask = nil
+    }
+
+    private func reloadPrefetchPreferences() {
+        let mode = RawDisplayMode(rawValue: UserDefaults.standard.string(forKey: RawDisplayMode.preferenceKey) ?? "") ?? .fast
+        let decoder = AppleRawDecoder.load()
+        guard mode != prefetchRawDisplayMode || decoder != prefetchRawDecoder else { return }
+        prefetchRawDisplayMode = mode
+        prefetchRawDecoder = decoder
+        prefetchAroundCurrent()
+    }
+
+    private func prefetchAroundCurrent() {
+        // Admitted tasks own individual coalesced waiters. Retire those
+        // waiters as well as the debounce; foreground requests stay alive.
+        cancelNeighbourPrefetch()
+        guard case .ready = phase, viewMode == .gallery,
+              !isPreparingForTermination, !isSessionTransitioning,
+              !isChangingRawJPEGPairingMode,
+              let pos = preparedIndex.location(forItemIndex: currentIndex)?.position else { return }
         let windowOffsets = [1, 2, 3, -1]
         let photos = windowOffsets.compactMap { offset -> PhotoItem? in
             let p = pos + offset
-            guard visibleIndices.indices.contains(p) else { return nil }
+            guard visibleIndices.indices.contains(p), items.indices.contains(visibleIndices[p]) else { return nil }
             let item = items[visibleIndices[p]]
             return item.mediaKind == .photo && item.isSupported ? item : nil
         }
-        // Collapse repeated navigation/filter updates into one neighbourhood
-        // warm-up. The visible image itself still starts immediately.
-        let work = DispatchWorkItem {
-            ImagePipeline.shared.prefetchFullImages(items: photos)
-            HighResolutionImagePipeline.shared.prefetchSources(items: photos)
+        guard !photos.isEmpty else { return }
+        let generation = prefetchGeneration
+        let mode = RawDisplayMode(rawValue: UserDefaults.standard.string(forKey: RawDisplayMode.preferenceKey) ?? "") ?? .fast
+        let decoder = AppleRawDecoder.load()
+        prefetchRawDisplayMode = mode
+        prefetchRawDecoder = decoder
+        let preparesHighResolution = zoomMode == .actual
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.prefetchGeneration == generation,
+                  case .ready = self.phase, self.viewMode == .gallery,
+                  !self.isPreparingForTermination, !self.isSessionTransitioning else { return }
+            self.prefetchDebounce = nil
+            self.fullImagePrefetchTask = ImagePipeline.shared.prefetchFullImages(items: photos, mode: mode, decoder: decoder)
+            if preparesHighResolution {
+                self.highResolutionPrefetchTask = HighResolutionImagePipeline.shared.prefetchSources(items: photos, decoder: decoder)
+            }
         }
         prefetchDebounce = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.06, execute: work)
@@ -5849,11 +5764,13 @@ final class SessionStore: ObservableObject {
         pauseQualityCueAnalysis()
         pauseSessionContentChecks()
         isPreparingForTermination = true
+        cancelNeighbourPrefetch()
     }
 
     /// Called only when the photographer cancels Quit after a failed save.
     func cancelTerminationPreparation() {
         isPreparingForTermination = false
+        prefetchAroundCurrent()
         startQualityCueAnalysis()
         startSessionContentChecks()
     }
@@ -6169,6 +6086,14 @@ final class SessionStore: ObservableObject {
             return
         }
         guard !isFileOperationRunning else { return }
+        if case .scanning = phase {
+            // No authoritative items or persistence access exist during opening.
+            // Retire the generation synchronously so queued preview/final callbacks
+            // cannot publish between Cancel/Close and an asynchronous save barrier.
+            isSessionTransitioning = false
+            finishClosingSession()
+            return
+        }
         if isLegacySessionMigrationConfirmationPresented {
             closeLegacySessionWithoutMigrating()
             return
@@ -6196,12 +6121,14 @@ final class SessionStore: ObservableObject {
         actualSizeViewport.reset()
         scanTask?.cancel()
         scanTask = nil
+        openingProgress = nil
+        openingSession = nil
+        openingViewportReceipts = [:]
         scanGeneration &+= 1
         cleanUpGeneration &+= 1
         filterDebounce?.cancel()
         filterDebounce = nil
-        prefetchDebounce?.cancel()
-        prefetchDebounce = nil
+        cancelNeighbourPrefetch()
         scanResumeIdentity = nil
         retainedMissingSessionEntries = []
         pendingLegacySidecarRelocationAuthorization = nil

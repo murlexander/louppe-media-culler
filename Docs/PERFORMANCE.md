@@ -145,12 +145,42 @@ persistence reads and final identity checks.
 - Video first frames share thumbnail queues, caches, and coalescing.
   `AVAssetImageGenerator` runs asynchronously in background with exact zero-time
   tolerances; never generate frames from SwiftUI bodies or the main actor.
-- `FolderScanner` uses `DispatchQueue.concurrentPerform` with up to 8 metadata
-  chunks. Lock-protected `ChunkResults` concatenates chunks in index order;
-  chronological sorting matches serial output, verified by order-hash benchmark.
+- `FolderScanner` completes discovery and global pairing before bounded metadata
+  preparation. Up to 8 long-lived `DispatchQueue.concurrentPerform` workers claim
+  deterministic result slots; completion order cannot alter physical membership
+  or chronological ties. The synchronous `scan` wrapper uses the same stages.
   Workers poll the `@Sendable` `isCancelled` closure. `{ Task.isCancelled }` reads false on
   GCD threads, so `SessionStore.openFolder` bridges task cancellation through
   `FolderScanner.CancelFlag` and `withTaskCancellationHandler`.
+
+`SessionOpeningWorker` restores saved decisions and prepares facets, exact physical
+pairs and the initial sort index before main-actor publication. Separate opening
+stage metrics cover discovery, pairing, metadata, identity checks, persistence,
+restoration, derived preparation and publication. Progress uses one coalesced slot
+and one 100 ms publication task rather than a UI task per file batch.
+
+After complete inventory, pairing, saved-decision restoration and preview identity
+validation, a separate `OpeningSessionState` can mount read-only Gallery/Grid.
+`SessionStore.items` remains empty and phase remains scanning. Navigation and
+selection belong to the opening state; ratings, file operations and saves wait
+for the final validated publication. Inventory order stays fixed during metadata
+work. Conflicts, migration confirmation and retained rescan filters suppress this
+preview. Final publication transfers current/selected physical IDs and a separate
+physical viewport anchor with its top offset. Consume the receipt only after native
+restoration succeeds. Automatic preview positioning does not override the final
+default sort's initial photo. Native user scroll receipts are distinct from
+programmatic follow/layout; a manual viewport can survive without selecting a photo.
+Each executing media read holds independent source access
+through worker exit, including cancelled waiters. See the
+[large-folder record](LARGE_FOLDERS_2026-10-22.md).
+
+Gallery retains cancellation ownership for four unique neighboring full previews;
+actual-size mode also retains source-recipe interest. Grid cancels full prefetch.
+Changing the neighborhood removes only its waiters, preserving foreground joins
+and occupied lanes until worker exit. Thumbnail cells keep valid same-revision
+pixels after NSCache eviction. Optional disk writes coalesce keys and retain at
+most 8 MiB/32 images including the active write; excess writes are skipped while
+visible pixels remain available. These bounds supplement the cache budgets below.
 
 Unreadable subfolders fail visibly; incomplete traversal cannot become a saved
 session. Final identity checks iterate physical files without a flattened copy,
@@ -426,9 +456,21 @@ current at Grid's distant tail. Await its scroll view and tail thumbnail, then
 run five warm Gallery/Grid cycles. Preserve render barriers; enum-write timing
 cannot verify visible transitions.
 
-Use day sections in one `LazyVGrid`. Nested day grids in `LazyVStack` estimate
-offscreen heights, then jump on upward scroll or resize. `gridColumnCount` is
-unpublished navigation state; publishing triggers a second full redraw.
+Browser, Grid and read-only opening share `ReviewCollection`: one native vertical
+document with arithmetic section/row geometry and reusable `NSHostingView` cells.
+Only viewport cells plus one row of overscan are realized. Retired hosts receive
+an empty root before entering a viewport-sized reuse pool, releasing media tasks
+and store observations. Header/caption heights come from the same SwiftUI font
+templates as their visible content. Immutable projections change only with their
+source presentation; current and selection update observed cells directly.
+`gridColumnCount` remains unpublished navigation state.
+
+Follow-navigation resolves the target directly, without realizing intervening
+rows. Manual scrolling stays idle. Physical-ID viewport receipts preserve the
+browsed offset independently of the current photo through projection changes.
+The document opts out of AppKit responsive scrolling: main-actor cell realization
+does not promise the worker's extra overdraw region. Native wheel, momentum and
+scroller handling remain active.
 
 `GridImmediateClickSurface` commits first mouse-up synchronously; only the second
 click has `clickCount == 2`. Exclusive single/double SwiftUI `TapGesture` delays
@@ -441,11 +483,9 @@ column calculations. Keep native `NSScroller`; the former hand-drawn thumb stepp
 under lazy-cell load. Resolve mounted scroll views synchronously; queue/coalesce
 only the initial unresolved lookup. `configure` returns early once configured,
 avoiding redundant `tile()` on every keystroke/drag.
-Both Browser and Grid retain a one-point minimum-height guard for short
-documents. Both also need a flexible outer document around their gutter-excluding,
-physically left-aligned content; otherwise SwiftUI can shrink the native
-pane to the content width and subtract the legacy gutter twice. Only an empty
-tail extends outside the clip. The bridge also
+Both Browser and Grid retain a viewport-height guard for short documents and
+gutter-excluding, physically left-aligned content inside a flexible native document.
+Only an empty tail may extend outside the clip. The bridge also
 pins only the horizontal clip origin synchronously when it changes. Ordinary
 vertical bounds notifications return immediately; no tiles/layout are rebuilt,
 no per-scroll task is queued, and no scroll position is published to SwiftUI.

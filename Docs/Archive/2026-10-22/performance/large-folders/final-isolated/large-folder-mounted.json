@@ -1,0 +1,428 @@
+{
+  "generatedAt" : "2026-10-22T02:30:08Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 123.23225,
+      "medianMS" : 123.102542,
+      "minMS" : 119.020708,
+      "name" : "grid.jump-cycle.middle.including-reset",
+      "p95MS" : 123.23225,
+      "samplesMS" : [
+        119.020708,
+        123.23225,
+        123.102542
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 74.777708,
+      "medianMS" : 72.779875,
+      "minMS" : 69.929333,
+      "name" : "grid.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 74.777708,
+      "samplesMS" : [
+        69.929333,
+        74.777708,
+        72.779875
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 103.740542,
+      "medianMS" : 101.300708,
+      "minMS" : 99.631208,
+      "name" : "grid.jump-cycle.tail.including-reset",
+      "p95MS" : 103.740542,
+      "samplesMS" : [
+        101.300708,
+        103.740542,
+        99.631208
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 55.061083,
+      "medianMS" : 53.32125,
+      "minMS" : 52.759958,
+      "name" : "grid.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 55.061083,
+      "samplesMS" : [
+        53.32125,
+        55.061083,
+        52.759958
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 129.843042,
+      "medianMS" : 129.569583,
+      "minMS" : 127.167917,
+      "name" : "grid.jump-cycle.reverse.including-reset",
+      "p95MS" : 129.843042,
+      "samplesMS" : [
+        129.569583,
+        127.167917,
+        129.843042
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 78.363125,
+      "medianMS" : 77.30175,
+      "minMS" : 74.548625,
+      "name" : "grid.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 78.363125,
+      "samplesMS" : [
+        77.30175,
+        74.548625,
+        78.363125
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 123.181875,
+      "medianMS" : 107.943875,
+      "minMS" : 102.744958,
+      "name" : "grid.jump-cycle.head.including-reset",
+      "p95MS" : 123.181875,
+      "samplesMS" : [
+        123.181875,
+        107.943875,
+        102.744958
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 63.128125,
+      "medianMS" : 50.093958,
+      "minMS" : 44.334,
+      "name" : "grid.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 63.128125,
+      "samplesMS" : [
+        63.128125,
+        50.093958,
+        44.334
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 23.501625,
+      "medianMS" : 22.395834,
+      "minMS" : 20.980459,
+      "name" : "browser.jump-cycle.middle.including-reset",
+      "p95MS" : 23.501625,
+      "samplesMS" : [
+        20.980459,
+        22.395834,
+        23.501625
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 12.406083,
+      "medianMS" : 10.782042,
+      "minMS" : 10.487958,
+      "name" : "browser.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 12.406083,
+      "samplesMS" : [
+        10.487958,
+        12.406083,
+        10.782042
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 20.859958,
+      "medianMS" : 20.625208,
+      "minMS" : 19.758625,
+      "name" : "browser.jump-cycle.tail.including-reset",
+      "p95MS" : 20.859958,
+      "samplesMS" : [
+        20.859958,
+        19.758625,
+        20.625208
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 10.063792,
+      "medianMS" : 9.606917,
+      "minMS" : 9.524709,
+      "name" : "browser.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 10.063792,
+      "samplesMS" : [
+        9.606917,
+        9.524709,
+        10.063792
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 24.774292,
+      "medianMS" : 23.933584,
+      "minMS" : 23.658459,
+      "name" : "browser.jump-cycle.reverse.including-reset",
+      "p95MS" : 24.774292,
+      "samplesMS" : [
+        23.933584,
+        24.774292,
+        23.658459
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 12.668334,
+      "medianMS" : 12.400875,
+      "minMS" : 11.307375,
+      "name" : "browser.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 12.668334,
+      "samplesMS" : [
+        12.668334,
+        12.400875,
+        11.307375
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 20.768584,
+      "medianMS" : 20.37,
+      "minMS" : 19.573125,
+      "name" : "browser.jump-cycle.head.including-reset",
+      "p95MS" : 20.768584,
+      "samplesMS" : [
+        20.768584,
+        19.573125,
+        20.37
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 10.941083,
+      "medianMS" : 10.673125,
+      "minMS" : 9.65125,
+      "name" : "browser.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 10.941083,
+      "samplesMS" : [
+        10.673125,
+        9.65125,
+        10.941083
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 132.500459,
+      "medianMS" : 123.516042,
+      "minMS" : 123.456791,
+      "name" : "grid.jump-cycle.middle.including-reset",
+      "p95MS" : 132.500459,
+      "samplesMS" : [
+        123.516042,
+        123.456791,
+        132.500459
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 80.218542,
+      "medianMS" : 74.597209,
+      "minMS" : 72.028458,
+      "name" : "grid.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 80.218542,
+      "samplesMS" : [
+        74.597209,
+        72.028458,
+        80.218542
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 105.456875,
+      "medianMS" : 101.947042,
+      "minMS" : 101.672208,
+      "name" : "grid.jump-cycle.tail.including-reset",
+      "p95MS" : 105.456875,
+      "samplesMS" : [
+        101.672208,
+        105.456875,
+        101.947042
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 57.056125,
+      "medianMS" : 55.990542,
+      "minMS" : 55.432042,
+      "name" : "grid.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 57.056125,
+      "samplesMS" : [
+        55.990542,
+        57.056125,
+        55.432042
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 128.009125,
+      "medianMS" : 126.527917,
+      "minMS" : 119.648334,
+      "name" : "grid.jump-cycle.reverse.including-reset",
+      "p95MS" : 128.009125,
+      "samplesMS" : [
+        128.009125,
+        119.648334,
+        126.527917
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 73.084125,
+      "medianMS" : 71.952375,
+      "minMS" : 68.9765,
+      "name" : "grid.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 73.084125,
+      "samplesMS" : [
+        71.952375,
+        68.9765,
+        73.084125
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 105.056208,
+      "medianMS" : 103.355208,
+      "minMS" : 100.836167,
+      "name" : "grid.jump-cycle.head.including-reset",
+      "p95MS" : 105.056208,
+      "samplesMS" : [
+        103.355208,
+        100.836167,
+        105.056208
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 52.501875,
+      "medianMS" : 48.020708,
+      "minMS" : 45.775625,
+      "name" : "grid.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 52.501875,
+      "samplesMS" : [
+        48.020708,
+        45.775625,
+        52.501875
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 24.134959,
+      "medianMS" : 23.90175,
+      "minMS" : 22.410542,
+      "name" : "browser.jump-cycle.middle.including-reset",
+      "p95MS" : 24.134959,
+      "samplesMS" : [
+        22.410542,
+        24.134959,
+        23.90175
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 12.546708,
+      "medianMS" : 11.012833,
+      "minMS" : 10.839209,
+      "name" : "browser.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 12.546708,
+      "samplesMS" : [
+        10.839209,
+        11.012833,
+        12.546708
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 25.170667,
+      "medianMS" : 24.153666,
+      "minMS" : 22.646917,
+      "name" : "browser.jump-cycle.tail.including-reset",
+      "p95MS" : 25.170667,
+      "samplesMS" : [
+        22.646917,
+        24.153666,
+        25.170667
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 13.22225,
+      "medianMS" : 11.786,
+      "minMS" : 10.609666,
+      "name" : "browser.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 13.22225,
+      "samplesMS" : [
+        10.609666,
+        13.22225,
+        11.786
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 27.365167,
+      "medianMS" : 27.324417,
+      "minMS" : 20.989875,
+      "name" : "browser.jump-cycle.reverse.including-reset",
+      "p95MS" : 27.365167,
+      "samplesMS" : [
+        27.324417,
+        27.365167,
+        20.989875
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 12.791875,
+      "medianMS" : 12.657958,
+      "minMS" : 10.759167,
+      "name" : "browser.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 12.791875,
+      "samplesMS" : [
+        12.791875,
+        12.657958,
+        10.759167
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 23.290125,
+      "medianMS" : 20.573458,
+      "minMS" : 19.381541,
+      "name" : "browser.jump-cycle.head.including-reset",
+      "p95MS" : 23.290125,
+      "samplesMS" : [
+        23.290125,
+        20.573458,
+        19.381541
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 12.776833,
+      "medianMS" : 9.659792,
+      "minMS" : 9.55975,
+      "name" : "browser.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 12.776833,
+      "samplesMS" : [
+        12.776833,
+        9.55975,
+        9.659792
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "large-folder-mounted",
+  "warmups" : 1
+}

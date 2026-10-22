@@ -1,0 +1,109 @@
+2026-10-22T02:29:03Z
+87370f681d1bd3723bcc3176646db8afa94d9d8c
+ M BACKLOG.md
+ M CHANGELOG.md
+ M Docs/DEVELOPMENT_DETAILS.md
+ M Docs/PERFORMANCE.md
+ M Docs/SPEED_TESTS.md
+ M Sources/Louppe/FileOperationJournal.swift
+ M Sources/Louppe/FolderScanner.swift
+ M Sources/Louppe/HighResolutionImagePipeline.swift
+ M Sources/Louppe/ImagePipeline.swift
+ M Sources/Louppe/Models.swift
+ M Sources/Louppe/PreparedSessionIndex.swift
+ M Sources/Louppe/Resources/ar.lproj/Localizable.strings
+ M Sources/Louppe/Resources/en.lproj/Localizable.strings
+ M Sources/Louppe/Resources/es.lproj/Localizable.strings
+ M Sources/Louppe/Resources/hi.lproj/Localizable.strings
+ M Sources/Louppe/Resources/pt.lproj/Localizable.strings
+ M Sources/Louppe/Resources/zh-Hans.lproj/Localizable.strings
+ M Sources/Louppe/SecurityScopedAccess.swift
+ M Sources/Louppe/SessionStore.swift
+ M Sources/Louppe/Views/BrowserView.swift
+ M Sources/Louppe/Views/GalleryView.swift
+ M Sources/Louppe/Views/GridView.swift
+ M Sources/Louppe/Views/RootView.swift
+ M Sources/Louppe/Views/SessionView.swift
+ M Sources/Louppe/Views/ThumbnailView.swift
+ M Tests/LouppeTests/MainWindowLayoutTests.swift
+ M Tests/compare_speed_results.py
+ M Tests/run_performance_checks.sh
+ M Tests/run_speed_tests.sh
+?? Docs/Archive/2026-10-22/
+?? Docs/LARGE_FOLDERS_2026-10-22.md
+?? Sources/Louppe/MediaReadAccess.swift
+?? Sources/Louppe/OpeningSessionState.swift
+?? Sources/Louppe/SessionOpeningFacets.swift
+?? Sources/Louppe/SessionOpeningMetrics.swift
+?? Sources/Louppe/SessionOpeningRestoration.swift
+?? Sources/Louppe/SessionOpeningWorker.swift
+?? Sources/Louppe/Views/OpeningSessionView.swift
+?? Sources/Louppe/Views/ReviewCollection.swift
+?? Sources/Louppe/Views/ReviewCollectionGeometry.swift
+?? Tests/LouppeTests/LargeFolderOpeningTests.swift
+?? Tests/LouppeTests/LouppeSpeedContentionTests.swift
+?? Tests/LouppeTests/LouppeSpeedFirstUseTests.swift
+?? Tests/LouppeTests/LouppeSpeedLargeFolderTests.swift
+?? Tests/LouppeTests/LouppeSpeedLargeProjectionTests.swift
+?? Tests/LouppeTests/LouppeSpeedOpeningTests.swift
+?? Tests/LouppeTests/MountedLargeListInvalidationTests.swift
+?? Tests/LouppeTests/NeighbourMediaOwnershipTests.swift
+?? Tests/LouppeTests/OpeningMediaAccessTests.swift
+?? Tests/LouppeTests/PreparedSessionLargeFolderTests.swift
+?? Tests/LouppeTests/ReviewCollectionTests.swift
+?? Tests/LouppeTests/StagedBrowseTests.swift
+?? Tests/LouppeTests/StagedViewportHandoffTests.swift
+ BACKLOG.md                                         |   5 +
+ CHANGELOG.md                                       |   5 +-
+ Docs/DEVELOPMENT_DETAILS.md                        |  43 +-
+ Docs/PERFORMANCE.md                                |  62 ++-
+ Docs/SPEED_TESTS.md                                |  16 +-
+ Sources/Louppe/FileOperationJournal.swift          |  16 +-
+ Sources/Louppe/FolderScanner.swift                 | 283 ++++++----
+ Sources/Louppe/HighResolutionImagePipeline.swift   | 154 ++++--
+ Sources/Louppe/ImagePipeline.swift                 | 168 +++++-
+ Sources/Louppe/Models.swift                        |   5 +-
+ Sources/Louppe/PreparedSessionIndex.swift          | 173 +++++-
+ .../Louppe/Resources/ar.lproj/Localizable.strings  |   4 +
+ .../Louppe/Resources/en.lproj/Localizable.strings  |   4 +
+ .../Louppe/Resources/es.lproj/Localizable.strings  |   4 +
+ .../Louppe/Resources/hi.lproj/Localizable.strings  |   4 +
+ .../Louppe/Resources/pt.lproj/Localizable.strings  |   4 +
+ .../Resources/zh-Hans.lproj/Localizable.strings    |   4 +
+ Sources/Louppe/SecurityScopedAccess.swift          |   4 +
+ Sources/Louppe/SessionStore.swift                  | 603 +++++++++------------
+ Sources/Louppe/Views/BrowserView.swift             | 194 +++----
+ Sources/Louppe/Views/GalleryView.swift             |   6 +-
+ Sources/Louppe/Views/GridView.swift                | 361 +++++-------
+ Sources/Louppe/Views/RootView.swift                |  70 ++-
+ Sources/Louppe/Views/SessionView.swift             |   6 +-
+ Sources/Louppe/Views/ThumbnailView.swift           | 101 +++-
+ Tests/LouppeTests/MainWindowLayoutTests.swift      |  95 +++-
+ Tests/compare_speed_results.py                     |   2 +-
+ Tests/run_performance_checks.sh                    |   6 +
+ Tests/run_speed_tests.sh                           |   3 +
+ 29 files changed, 1478 insertions(+), 927 deletions(-)
+e7d5b65844e97ec6cc69e81059dbeb2159958f39a9c808e6526575b40da56721  -
+f7e31b9eb71fabe2291a9351de86c9a40f93121f4a092951949eb660dcfddb52  Tests/LouppeTests/LouppeSpeedClippingFilterTests.swift
+db888cbd3078b99be5db89edd30b679279f272286f10ad31a2b26fcfb136113d  Tests/LouppeTests/LouppeSpeedContentionTests.swift
+9cbea2894914567c300e3bfbc9eae15f1cfd804f5f31e34d0ff8b5676f2386d1  Tests/LouppeTests/LouppeSpeedCueFilterTests.swift
+514f3489d3afb0642720341231c57f68ba9f6af432bbeb72808294f38e84efa2  Tests/LouppeTests/LouppeSpeedFirstUseTests.swift
+db1687b755e1f32607283b789d05bc14c042a3d7468be180d39f754e05d2151d  Tests/LouppeTests/LouppeSpeedIOTests.swift
+1a07a6da0f6c74acdc4c583b02b24be9b044b0f9bf8e44d99ffcb84f5f50f9b8  Tests/LouppeTests/LouppeSpeedLargeFolderTests.swift
+9a680111f99b2969108d16f807c5414613f91624e708adb011678082663f199c  Tests/LouppeTests/LouppeSpeedLargeProjectionTests.swift
+11cbe5ae11d4b8e4fd5ac52e80688e42b61b1f40221f77421112f6fb264463cf  Tests/LouppeTests/LouppeSpeedMediaTests.swift
+c547dd5b34f2923c475bc3e99b9ba5b6783ad7516744c02cc99afd46108bafe0  Tests/LouppeTests/LouppeSpeedOpeningTests.swift
+8d0fc7bba7a4551932347d6429397ed8d35a361e93d188327432393daf7ae24d  Tests/LouppeTests/LouppeSpeedPersistenceTests.swift
+48f419210ba703e3a031b660c9d05be2b352c269465b957632740cabba1f3de4  Tests/LouppeTests/LouppeSpeedQualityResourceTests.swift
+e40597464097de144ee328c03b02d56eec0bd0fff1d2fc9f381b765f2294e67c  Tests/LouppeTests/LouppeSpeedRAWTests.swift
+e4185743d87ed8cbfad111fb81ce27890a91c757e3e81659108cc80b09603e5d  Tests/LouppeTests/LouppeSpeedScanTests.swift
+6f709cd24709f5fbcd6be806a7ab5711903721d5f4da5b4aa4005dfd9de3f8ae  Tests/LouppeTests/LouppeSpeedSessionTests.swift
+ccfbad575ea3e2ad6eb9fb0fd6ab22e79e97ab141e196306f9eb02b6e69f9833  Tests/LouppeTests/SpeedBenchmarkSupport.swift
+Sizes: 1000,10000,100000
+Repetitions: 3; warmups: 1
+Filter: LouppeSpeed(LargeFolder|Scan|Session|Opening)Tests
+Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)
+Target: arm64-apple-macosx27.0.0
+Xcode 27.1
+Build version 27A9275
+arm64

@@ -23,6 +23,7 @@ it to every view.
 | `Sources/Louppe/FileOperationJournal.swift` | Per-file durable Copy/Move/Rename/Organize/Trash/undo checkpoints, stable file identity, and launch recovery |
 | `Sources/Louppe/CleanUpWorker.swift` | Background Trash/restore file loops, progress throttling, pair rollback, O(n+k) restoration merge |
 | `Sources/Louppe/FolderScanner.swift` | Recursive scans, deterministic volume-aware RAW+JPEG pairing, lazy JPEG metadata, pairing projection, chronological sort |
+| `Sources/Louppe/SessionOpeningWorker.swift` and `SessionOpening*` helpers | Cancellable complete inventory/metadata preparation, saved-decision restoration, facets/index preparation, and opening-stage measurements before session publication |
 | `Sources/Louppe/ImagePipeline.swift` | ImageIO decoding, AVFoundation first frames, thumbnail memory/disk caches, prefetch |
 | `Sources/Louppe/HistogramPipeline.swift` | Bounded photo-only luminance analysis plus cached Fit/phone-size clipping-warning previews |
 | `Sources/Louppe/CameraQualityWarnings.swift` | Pure independent ISO/shutter/near-white/near-black rules and exact evidence text |
@@ -211,6 +212,15 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   bytes, removes the absent RAW, and preserves Undo.
 - The bridged scan cancellation flag spans persistence reads and final identity
   validation. Cancelled results cannot return Ready or save a sidecar.
+- Opening restores decisions and prepares facets, physical pairs and the initial
+  sort index off-main. One generation-checked result becomes authoritative;
+  incomplete inventory or metadata never enters the session's save authority.
+  A worker-owned folder lease survives cancellation until I/O exits. Opening
+  progress coalesces into one latest value, published at most every 100 ms.
+  A complete, restored inventory may mount a separate read-only opening state;
+  phase stays scanning and authoritative items stay empty until final validation.
+  Its physical viewport receipts are consumed after native restoration and expire
+  on later Ready navigation, including receipts for a dormant view mode.
 - Reset/recompute `visibleIndices` in the same turn as replacing/emptying
   `items` (see `openFolder`). Stale indices previously crashed rescan; retain
   `visibleItems` bounds checks.
@@ -272,6 +282,13 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   operation identity. Running lanes remain occupied until worker exit. Gallery's
   full preview publishes independently of thumbnail stand-in work. Background RAW
   quality requests bypass Info's 700 ms dwell on the same single utility lane.
+- Gallery owns one replaceable four-photo prefetch neighborhood. Navigation,
+  view/zoom/decoder changes, folder changes and Close cancel its admitted waiters
+  as well as its debounce. Grid does not warm full previews; high-resolution
+  sources warm only in actual-size Gallery. Executing workers retain their lanes.
+  Matching-revision thumbnail pixels survive shared-cache eviction while retained
+  by a cell. Optional disk writes coalesce keys and retain at most 8 MiB/32 entries,
+  including the active write; saturation drops optional writes without delaying pixels.
 - Fitted photo representation distinguishes a thumbnail stand-in from a ready
   full preview. The revision-bound loading state shows a small progress indicator
   within the existing zoom control until detail is ready or decoding fails.
@@ -544,16 +561,21 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   Show five recents and all drives in aligned columns, adding columns as needed.
   Measured content, banners, and toolbar space determine minimum size. Cap it at
   usable display height and enable native vertical scrolling only on overflow.
-  Remeasure on display/toolbar changes. Open at that minimum; new content
-  grows the window, removed content lowers its minimum without shrinking it.
+  Remeasure on display/toolbar changes. Every Welcome presentation fits that
+  minimum, including after Back or native frame restoration. A native edge drag
+  retains the user's larger size for that presentation; content still sets its
+  minimum. Without a drag, added/removed content refits the window.
   Review performs no device discovery, polling, or whole-volume scanning.
 - `SessionView.toolbarContent` uses the owner's arrangement and native fixed
   `ToolbarSpacer`. The owner prefers macOS 26's small `.navigation` separation
   and wider trailing gaps. Do not add custom equal-width spacers.
-- `BrowserRow` observes `SessionStore` through its own `@ObservedObject` because
-  macOS `LazyVStack` can leave realized value rows stale. Preserve `.id(item.id)`
-  for follow-scroll and state reset after Clean Up remaps indices. See
-  `Docs/PERFORMANCE.md`.
+- Browser/Grid share `ReviewCollection`, a native vertical document with indexed
+  section geometry and a bounded set of reusable SwiftUI hosts. Stable entry and
+  physical-file identities drive direct follow and viewport restoration.
+  `BrowserRow` and `GridCell` observe `SessionStore` directly so badges/current
+  frames update without rebuilding the collection projection. Reuse clears old
+  roots before assigning new entries. Read-only opening supplies the same native
+  bridge from its separate state owner. See `Docs/PERFORMANCE.md`.
 - Grid control drags use existing tile frames and fixed Rating/Play regions;
   avoid per-control `GeometryReader`. Every native multi-click Button activation
   cycles rating once. `GridImmediateClickSurface` commits the first mouse-up
@@ -573,7 +595,7 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   the viewport height. Preserve both this viewport guard and the flexible wrapper:
   a short native viewport can otherwise shrink to the content width, subtract
   the legacy gutter again, and leave 17 points of sideways travel.
-  This preserves lazy content and adds at most one layout point of vertical
+  This preserves bounded content and adds at most one layout point of vertical
   range when content fits. Empty/filter messages stay outside the tile scroller.
   Native configuration repairs horizontal-scroller/elasticity drift too. Those
   flags alone do not lock the axis: the mounted bridge observes clip bounds
@@ -589,9 +611,10 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 - View → Gallery/Grid uses an inline native picker bound to the focused
   session’s view mode, with the existing presentation gate and no duplicate
   key equivalents. Toolbar, menu, and G/Tab stay synchronized.
-- `RootView` owns `WindowContentLayout`: first Welcome uses its measured minimum
-  and first Ready expands to the usable display frame. Later phase transitions
-  preserve the chosen window frame, including Back and replacement-folder scans.
+- `RootView` owns `WindowContentLayout`: Welcome uses its measured minimum
+  and first Ready expands to the usable display frame. Back opens compact
+  Welcome while retaining the review frame for the next Ready presentation.
+  Replacement-folder scans preserve the chosen review frame.
   Welcome/Scanning use
   `.fullSizeContentView`; Ready restores session minimum and removes full-size
   content so photos stay below the toolbar. Manual session size persists until

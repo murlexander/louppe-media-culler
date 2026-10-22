@@ -1,0 +1,15 @@
+{
+  "generated_fixture": true,
+  "source": "programmatically drawn geometric JPEGs; no private/camera media",
+  "counts": [
+    1000,
+    10000
+  ],
+  "dimensions": [
+    1024,
+    768
+  ],
+  "unique_pixel_patterns": 64,
+  "bytes_per_64": 3583044,
+  "created_at": 1792631723.761634
+}

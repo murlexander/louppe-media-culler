@@ -6,6 +6,9 @@ export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Develope
 export LOUPPE_SPEED_TESTS=1
 export LOUPPE_SPEED_OUTPUT="${LOUPPE_SPEED_OUTPUT:-$(mktemp -d /private/tmp/louppe-speed-results.XXXXXX)}"
 mkdir -p "$LOUPPE_SPEED_OUTPUT"
+# Include untracked implementation/test files while profiling a working tree.
+rg --files -0 Sources Tests/LouppeTests -g '*.swift' | \
+    xargs -0 shasum -a 256 > "$LOUPPE_SPEED_OUTPUT/source-sha256.txt"
 {
     date -u +%Y-%m-%dT%H:%M:%SZ
     git rev-parse HEAD

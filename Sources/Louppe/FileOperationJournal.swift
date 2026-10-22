@@ -2097,10 +2097,18 @@ enum FileOperationJournal {
             guard let path else { return Int32(-1) }
             return Darwin.lstat(path, &info)
         }
-        let resourceValues = try? url.resourceValues(forKeys: [
-            .volumeURLKey,
-            .volumeUUIDStringKey,
-        ])
+        // Scanner enumeration already prefetched both facts. Do not repeat
+        // the resource query on the common path; retain the fresh lookup for
+        // callers without complete prefetched evidence.
+        let resourceValues: URLResourceValues?
+        if knownVolumeRoot != nil, knownVolumeUUIDString != nil {
+            resourceValues = nil
+        } else {
+            resourceValues = try? url.resourceValues(forKeys: [
+                .volumeURLKey,
+                .volumeUUIDStringKey,
+            ])
+        }
         guard status == 0,
               let volume = knownVolumeRoot
                 ?? resourceValues?.volume

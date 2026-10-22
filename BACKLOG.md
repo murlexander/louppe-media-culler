@@ -49,6 +49,16 @@ measurements before choosing a fix. Later ideas remain deferred.
     fast reverse scrolling, long jumps, Info, resizing, and cancellation in the
     actual mounted Grid/Browser. Reuse AUD-06/AUD-28 measurements and the existing
     scroll regression gates; a faster loading screen alone is not completion.
+  - **22 October implementation:** installed locally in 1.13 (15): safe read-only
+    early browsing, worker-owned opening preparation, bounded native Grid/Browser,
+    cached projection/sorts and owned media work. Full suite: 913 tests, 42 skips,
+    zero failures; safety: 75/75. Warm 10k Grid tail: 961→56 ms; 10k RAW+JPEG-pair
+    first pixels: 6.73→2.97 s, with slower full readiness (6.73→8.17 s).
+    [Implementation and acceptance record](Docs/LARGE_FOLDERS_2026-10-22.md).
+    Keep this item open for unresolved RawCamera stress stall/crash evidence,
+    varied RAW/mixed and SD-card acceptance, physical diagonal/momentum/Welcome
+    edge dragging, and remaining main-actor/readiness costs. Failed stress runners
+    are recorded separately from completed samples; no general RAW reliability claim.
 - [ ] **Photo location lookup — Aymeric feedback, 20 October 2026.** Add an
   explicit Open in Maps action to valid GPS coordinates in Info. Do not look up
   locations before the click. Carry this forward from the deferred 1.12 work;

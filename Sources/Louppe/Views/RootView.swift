@@ -23,8 +23,6 @@ struct RootView: View {
     @State private var welcomeContentSize: CGSize = .zero
     @State private var warningHeight: CGFloat = 0
     @State private var availableContentSize: CGSize?
-    @State private var currentContentSize: CGSize?
-    @State private var hasPresentedSession = false
 
     init(store: SessionStore, folderOpening: FolderOpening? = nil) {
         self.store = store
@@ -46,7 +44,11 @@ struct RootView: View {
                     isFolderDropTarget: isFolderDropTarget
                 )
             case .scanning(let found):
-                ScanningView(store: store, found: found)
+                if let opening = store.openingSession {
+                    OpeningSessionView(state: opening, cancel: store.cancelScan)
+                } else {
+                    ScanningView(store: store, found: found)
+                }
             case .ready:
                 SessionView(store: store)
             }
@@ -143,9 +145,7 @@ struct RootView: View {
             minHeight: minimumContentSize.height
         )
         .onChange(of: windowLayout, initial: true) { _, layout in
-            if layout == .session { hasPresentedSession = true }
-            // Do not reuse a wide launch measurement on the first Back layout
-            // pass, before Welcome can measure its new, narrower columns.
+            // Let Welcome measure its current sources again on Back.
             if layout != .welcome { welcomeContentSize = .zero }
         }
         .onPreferenceChange(WelcomeContentSizeKey.self) { welcomeContentSize = $0 }
@@ -171,17 +171,13 @@ struct RootView: View {
         .background(WindowContentLayout(
             layout: windowLayout,
             minimumContentSize: minimumContentSize,
-            onAvailableContentSizeChange: { availableContentSize = $0 },
-            onCurrentContentSizeChange: { currentContentSize = $0 }
+            onAvailableContentSizeChange: { availableContentSize = $0 }
         ))
     }
 
     private var welcomeLayoutWidth: CGFloat {
-        // On Back, drive columns must fit the review window the photographer
-        // chose. A fresh launch may still use the display for its source list.
-        if hasPresentedSession, let currentContentSize {
-            return currentContentSize.width
-        }
+        // Use the display for source-column layout on both launch and Back.
+        // The previous review frame must not set Welcome's opening size.
         return availableContentSize?.width ?? NSScreen.main?.visibleFrame.width ?? 1280
     }
 
@@ -203,7 +199,7 @@ struct RootView: View {
         case .welcome:
             return .welcome
         case .scanning:
-            return .scanning
+            return store.openingSession == nil ? .scanning : .session
         case .ready:
             return .session
         }
@@ -450,6 +446,8 @@ struct WindowContentLayout: NSViewRepresentable {
         var minimumContentSize = MainWindowLayout.welcome.minimumContentSize
         private var appliedLayout: MainWindowLayout?
         private var hasPresentedSession = false
+        private var sessionFrame: CGRect?
+        private var hasManuallyResizedWelcome = false
         var onAvailableContentSizeChange: (CGSize) -> Void = { _ in }
         var onCurrentContentSizeChange: (CGSize) -> Void = { _ in }
         private var reportedCurrentContentSize: CGSize?
@@ -467,6 +465,9 @@ struct WindowContentLayout: NSViewRepresentable {
             NotificationCenter.default.removeObserver(
                 self, name: NSApplication.didChangeScreenParametersNotification, object: nil
             )
+            NotificationCenter.default.removeObserver(
+                self, name: NSWindow.willStartLiveResizeNotification, object: nil
+            )
             if let window {
                 NotificationCenter.default.addObserver(
                     self, selector: #selector(screenChanged),
@@ -477,6 +478,10 @@ struct WindowContentLayout: NSViewRepresentable {
                 NotificationCenter.default.addObserver(
                     self, selector: #selector(screenChanged),
                     name: NSApplication.didChangeScreenParametersNotification, object: nil
+                )
+                NotificationCenter.default.addObserver(
+                    self, selector: #selector(liveResizeStarted),
+                    name: NSWindow.willStartLiveResizeNotification, object: window
                 )
             }
             apply()
@@ -493,6 +498,11 @@ struct WindowContentLayout: NSViewRepresentable {
         @objc private func screenChanged() {
             shouldFitToCurrentScreen = true
             apply()
+        }
+
+        @objc private func liveResizeStarted() {
+            guard windowLayout == .welcome, appliedLayout == .welcome else { return }
+            hasManuallyResizedWelcome = true
         }
 
         private func reportAvailableContentSize(_ size: CGSize) {
@@ -529,7 +539,14 @@ struct WindowContentLayout: NSViewRepresentable {
                 return
             }
             let previousFrame = window.frame
-            let preservesPreviousOrigin = hasPresentedSession && appliedLayout != windowLayout
+            let changedPhase = appliedLayout != windowLayout
+            if changedPhase {
+                if appliedLayout == .session { sessionFrame = previousFrame }
+                if windowLayout == .welcome { hasManuallyResizedWelcome = false }
+            }
+            let preservedFrame: CGRect? = hasPresentedSession && changedPhase
+                ? (windowLayout == .session ? sessionFrame ?? previousFrame : previousFrame)
+                : nil
             if window.styleMask.contains(.fullSizeContentView) != windowLayout.usesFullSizeContent {
                 if windowLayout.usesFullSizeContent {
                     window.styleMask.insert(.fullSizeContentView)
@@ -571,8 +588,6 @@ struct WindowContentLayout: NSViewRepresentable {
             )
             window.contentMinSize = nativeMinimum
 
-            let changedPhase = appliedLayout != windowLayout
-            let isInitialLayout = appliedLayout == nil
             appliedLayout = windowLayout
             var target = current
             if changedPhase {
@@ -580,17 +595,22 @@ struct WindowContentLayout: NSViewRepresentable {
                     width: windowLayout.preferredContentSize.width + covered.width,
                     height: windowLayout.preferredContentSize.height + covered.height
                 )
-                if isInitialLayout && windowLayout == .welcome {
-                    target = nativeMinimum
-                } else if windowLayout == .session && !hasPresentedSession {
+                if windowLayout == .session && !hasPresentedSession {
                     target = available ?? preferred
                     hasPresentedSession = true
                 } else {
                     // Switching full-size content changes the content rect.
                     // Convert the old frame using the new style to preserve
-                    // the user's outer window size across Back and new folders.
-                    target = window.contentRect(forFrameRect: previousFrame).size
+                    // the chosen review frame across new folders, even after
+                    // Welcome temporarily uses a smaller window.
+                    target = window.contentRect(forFrameRect: preservedFrame ?? previousFrame).size
                 }
+            }
+            if windowLayout == .welcome && !hasManuallyResizedWelcome && !window.inLiveResize {
+                // Keep fitting through deferred content measurement, toolbar
+                // installation and native frame restoration. Only a real edge
+                // drag opts out, for this presentation of Welcome.
+                target = nativeMinimum
             }
             target.width = max(target.width, nativeMinimum.width)
             target.height = max(target.height, nativeMinimum.height)
@@ -608,13 +628,13 @@ struct WindowContentLayout: NSViewRepresentable {
                     shouldFitToCurrentScreen = false
                 }
             }
-            guard target != current || preservesPreviousOrigin else { return }
+            guard target != current || preservedFrame != nil else { return }
             if target != current { window.setContentSize(target) }
             // AppKit can shift the origin when toggling full-size content or
             // resizing content around a new titlebar. Restore the chosen
             // position even if the final content size already matches.
-            if preservesPreviousOrigin {
-                window.setFrameOrigin(previousFrame.origin)
+            if let preservedFrame {
+                window.setFrameOrigin(preservedFrame.origin)
             }
             keepWindowOnScreen(window)
         }

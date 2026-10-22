@@ -9,7 +9,11 @@ struct GalleryView: View {
     var body: some View {
         HStack(spacing: 0) {
             if store.showBrowser {
-                BrowserView(store: store)
+                BrowserView(store: store,
+                    initialViewportReceipt: store.pendingOpeningViewportReceipt(for: .browser).map {
+                        ReviewCollectionViewportReceipt(physicalFileID: $0.physicalFileID, topOffset: CGFloat($0.topOffset))
+                    },
+                    onViewportRestored: { _ in store.consumeOpeningViewportReceipt(for: .browser) })
                     .frame(width: BrowserView.width)
                     .background(Color.appBackground)
                     .transition(.move(edge: .leading))

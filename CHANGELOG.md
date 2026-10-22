@@ -1,9 +1,12 @@
 # Version History
 
-## 1.13.0 (15) — 2026-10-21
+## 1.13.0 (15) — 2026-10-22
 
 - Shorten Trash actions across the Command Palette, Clean Up, menus, and confirmations.
 - Align folder, rename, playback, and Info wording, and mark Clear All Decisions with an ellipsis because it asks for confirmation.
+- Open Welcome at the smallest size that fits its contents; keep a larger size only after dragging a window edge, and restore the chosen review window size when reopening photos.
+- Browse photos while large folders finish reading metadata, preserving the browsed position when review becomes ready. Ratings and file actions wait for complete validation.
+- Keep large Grid and Browser collections bounded to the visible area, speed up camera/lens sorting, and cancel obsolete neighboring previews.
 
 ## 1.12.0 (14) — 2026-10-21
 

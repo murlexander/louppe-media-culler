@@ -1,0 +1,25 @@
+{
+  "generatedAt" : "2026-10-22T02:25:05Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 32,
+      "maxMS" : 0.651,
+      "medianMS" : 0.603667,
+      "minMS" : 0.581208,
+      "name" : "already_cancelled_32_unique_thumbnails_including_disk_drain",
+      "p95MS" : 0.651,
+      "samplesMS" : [
+        0.581208,
+        0.651,
+        0.603667
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-cancellation",
+  "warmups" : 1
+}

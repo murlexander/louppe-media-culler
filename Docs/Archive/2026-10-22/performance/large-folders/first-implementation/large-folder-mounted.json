@@ -1,0 +1,428 @@
+{
+  "generatedAt" : "2026-10-22T01:26:57Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 157.861208,
+      "medianMS" : 138.831333,
+      "minMS" : 137.827291,
+      "name" : "grid.jump-cycle.middle.including-reset",
+      "p95MS" : 157.861208,
+      "samplesMS" : [
+        157.861208,
+        138.831333,
+        137.827291
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 84.763209,
+      "medianMS" : 75.373834,
+      "minMS" : 70.10425,
+      "name" : "grid.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 84.763209,
+      "samplesMS" : [
+        84.763209,
+        70.10425,
+        75.373834
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 234.631083,
+      "medianMS" : 224.11775,
+      "minMS" : 215.051417,
+      "name" : "grid.jump-cycle.tail.including-reset",
+      "p95MS" : 234.631083,
+      "samplesMS" : [
+        234.631083,
+        215.051417,
+        224.11775
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 134.795416,
+      "medianMS" : 114.855833,
+      "minMS" : 112.76725,
+      "name" : "grid.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 134.795416,
+      "samplesMS" : [
+        134.795416,
+        112.76725,
+        114.855833
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 158.362791,
+      "medianMS" : 125.524666,
+      "minMS" : 121.75975,
+      "name" : "grid.jump-cycle.reverse.including-reset",
+      "p95MS" : 158.362791,
+      "samplesMS" : [
+        158.362791,
+        125.524666,
+        121.75975
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 73.684917,
+      "medianMS" : 64.19775,
+      "minMS" : 62.017583,
+      "name" : "grid.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 73.684917,
+      "samplesMS" : [
+        73.684917,
+        64.19775,
+        62.017583
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 381.548625,
+      "medianMS" : 298.769625,
+      "minMS" : 237.640417,
+      "name" : "grid.jump-cycle.head.including-reset",
+      "p95MS" : 381.548625,
+      "samplesMS" : [
+        381.548625,
+        298.769625,
+        237.640417
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 167.210291,
+      "medianMS" : 165.809292,
+      "minMS" : 112.828708,
+      "name" : "grid.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 167.210291,
+      "samplesMS" : [
+        167.210291,
+        165.809292,
+        112.828708
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 65.860833,
+      "medianMS" : 63.778125,
+      "minMS" : 63.378917,
+      "name" : "browser.jump-cycle.middle.including-reset",
+      "p95MS" : 65.860833,
+      "samplesMS" : [
+        63.378917,
+        65.860833,
+        63.778125
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 34.555333,
+      "medianMS" : 33.142208,
+      "minMS" : 32.682084,
+      "name" : "browser.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 34.555333,
+      "samplesMS" : [
+        33.142208,
+        34.555333,
+        32.682084
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 125.279833,
+      "medianMS" : 118.462041,
+      "minMS" : 117.341,
+      "name" : "browser.jump-cycle.tail.including-reset",
+      "p95MS" : 125.279833,
+      "samplesMS" : [
+        118.462041,
+        125.279833,
+        117.341
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 68.165667,
+      "medianMS" : 65.335958,
+      "minMS" : 60.498459,
+      "name" : "browser.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 68.165667,
+      "samplesMS" : [
+        65.335958,
+        68.165667,
+        60.498459
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 66.182584,
+      "medianMS" : 48.2345,
+      "minMS" : 46.9225,
+      "name" : "browser.jump-cycle.reverse.including-reset",
+      "p95MS" : 66.182584,
+      "samplesMS" : [
+        66.182584,
+        46.9225,
+        48.2345
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 27.422292,
+      "medianMS" : 25.0545,
+      "minMS" : 23.581833,
+      "name" : "browser.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 27.422292,
+      "samplesMS" : [
+        27.422292,
+        23.581833,
+        25.0545
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 120.002709,
+      "medianMS" : 112.76475,
+      "minMS" : 108.825,
+      "name" : "browser.jump-cycle.head.including-reset",
+      "p95MS" : 120.002709,
+      "samplesMS" : [
+        120.002709,
+        112.76475,
+        108.825
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 56.361584,
+      "medianMS" : 52.439834,
+      "minMS" : 51.463917,
+      "name" : "browser.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 56.361584,
+      "samplesMS" : [
+        56.361584,
+        52.439834,
+        51.463917
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 935.179583,
+      "medianMS" : 872.684709,
+      "minMS" : 868.13425,
+      "name" : "grid.jump-cycle.middle.including-reset",
+      "p95MS" : 935.179583,
+      "samplesMS" : [
+        935.179583,
+        872.684709,
+        868.13425
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 487.982708,
+      "medianMS" : 447.391709,
+      "minMS" : 438.117833,
+      "name" : "grid.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 487.982708,
+      "samplesMS" : [
+        487.982708,
+        447.391709,
+        438.117833
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1879.292875,
+      "medianMS" : 1809.004459,
+      "minMS" : 1794.625458,
+      "name" : "grid.jump-cycle.tail.including-reset",
+      "p95MS" : 1879.292875,
+      "samplesMS" : [
+        1879.292875,
+        1809.004459,
+        1794.625458
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 963.679625,
+      "medianMS" : 961.262167,
+      "minMS" : 953.847083,
+      "name" : "grid.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 963.679625,
+      "samplesMS" : [
+        963.679625,
+        961.262167,
+        953.847083
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1777.744625,
+      "medianMS" : 1614.216375,
+      "minMS" : 1315.598125,
+      "name" : "grid.jump-cycle.reverse.including-reset",
+      "p95MS" : 1777.744625,
+      "samplesMS" : [
+        1777.744625,
+        1614.216375,
+        1315.598125
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 952.260417,
+      "medianMS" : 814.713042,
+      "minMS" : 695.796834,
+      "name" : "grid.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 952.260417,
+      "samplesMS" : [
+        952.260417,
+        814.713042,
+        695.796834
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1869.393916,
+      "medianMS" : 1853.011917,
+      "minMS" : 1852.522875,
+      "name" : "grid.jump-cycle.head.including-reset",
+      "p95MS" : 1869.393916,
+      "samplesMS" : [
+        1852.522875,
+        1869.393916,
+        1853.011917
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 908.391209,
+      "medianMS" : 875.2085,
+      "minMS" : 856.629417,
+      "name" : "grid.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 908.391209,
+      "samplesMS" : [
+        856.629417,
+        908.391209,
+        875.2085
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 565.158916,
+      "medianMS" : 546.248375,
+      "minMS" : 543.955625,
+      "name" : "browser.jump-cycle.middle.including-reset",
+      "p95MS" : 565.158916,
+      "samplesMS" : [
+        546.248375,
+        565.158916,
+        543.955625
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 292.780625,
+      "medianMS" : 282.338167,
+      "minMS" : 277.712208,
+      "name" : "browser.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 292.780625,
+      "samplesMS" : [
+        282.338167,
+        292.780625,
+        277.712208
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1230.0835,
+      "medianMS" : 1215.0115,
+      "minMS" : 1193.366042,
+      "name" : "browser.jump-cycle.tail.including-reset",
+      "p95MS" : 1230.0835,
+      "samplesMS" : [
+        1193.366042,
+        1230.0835,
+        1215.0115
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 660.240917,
+      "medianMS" : 655.054542,
+      "minMS" : 645.486417,
+      "name" : "browser.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 660.240917,
+      "samplesMS" : [
+        645.486417,
+        655.054542,
+        660.240917
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1073.8944999999999,
+      "medianMS" : 981.696375,
+      "minMS" : 813.271208,
+      "name" : "browser.jump-cycle.reverse.including-reset",
+      "p95MS" : 1073.8944999999999,
+      "samplesMS" : [
+        1073.8944999999999,
+        981.696375,
+        813.271208
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 557.65175,
+      "medianMS" : 492.565959,
+      "minMS" : 421.295167,
+      "name" : "browser.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 557.65175,
+      "samplesMS" : [
+        557.65175,
+        492.565959,
+        421.295167
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1235.627375,
+      "medianMS" : 1220.220208,
+      "minMS" : 1216.742333,
+      "name" : "browser.jump-cycle.head.including-reset",
+      "p95MS" : 1235.627375,
+      "samplesMS" : [
+        1235.627375,
+        1220.220208,
+        1216.742333
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 559.513,
+      "medianMS" : 556.197542,
+      "minMS" : 548.679,
+      "name" : "browser.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 559.513,
+      "samplesMS" : [
+        559.513,
+        548.679,
+        556.197542
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "large-folder-mounted",
+  "warmups" : 1
+}

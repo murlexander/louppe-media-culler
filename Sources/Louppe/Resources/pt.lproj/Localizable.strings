@@ -1818,3 +1818,7 @@
 
 "RAW 9 needs macOS 27, a supported file, and Apple’s model resources. Retry, or choose Apple Default in Settings." = "RAW 9 requer macOS 27, um arquivo compatível e os recursos de modelos da Apple. Tente novamente ou escolha Apple Default nos Ajustes.";
 "Clear All Decisions…" = "Limpar todas as decisões…";
+
+"Loading photo details…" = "Carregando detalhes das fotos…";
+
+"Preview unavailable" = "Prévia indisponível";

@@ -7,13 +7,13 @@ import OSLog
 /// structure-dependent lookup work here so sorting, filtering, grouping, and
 /// navigation maps can be tested without creating a window or observable
 /// object. The item array itself stays owned by `SessionStore`.
-struct PreparedSessionIndex {
+struct PreparedSessionIndex: Sendable {
     private static let signposter = OSSignposter(
         subsystem: "com.alexandermarkin.louppe",
         category: "Session Index"
     )
 
-    struct VisibleLocation: Equatable {
+    struct VisibleLocation: Equatable, Sendable {
         let position: Int
         let groupIndex: Int
         let positionInGroup: Int
@@ -22,18 +22,37 @@ struct PreparedSessionIndex {
     /// Stable Browser identity prepared only when visibility changes. Keeping
     /// this beside `visibleIndices` avoids rebuilding an O(N) id/index array
     /// every time a rating or loading indicator publishes the store.
-    struct VisibleEntry: Identifiable, Equatable {
+    struct VisibleEntry: Identifiable, Equatable, Sendable {
         let id: String
         let index: Int
+    }
+
+    /// Grid sections borrow the Browser's prepared entries. Slices preserve
+    /// stable photo identity without allocating another entry for every tile.
+    struct VisibleGroup: Identifiable, Equatable, Sendable {
+        let id: PhotoGroup.ID
+        let title: String?
+        let entries: ArraySlice<VisibleEntry>
+    }
+
+    private struct StringSortRanks: Sendable {
+        let itemRanks: [Int]
+        /// The final bucket is always the missing-value bucket.
+        let counts: [Int]
     }
 
     private(set) var sortedIndices: [Int] = []
     /// Immutable capture-date/name/ID order for the current item structure.
     /// Review metadata mutations share small stores and cannot change this order.
     private var chronologicalIndices: [Int]?
+    private var cameraRanks: StringSortRanks?
+    private var lensRanks: StringSortRanks?
+    private var hasPreparedPresentation = false
+    private var preparedGroupingKey: PhotoSort.Key?
     private(set) var itemIndexByID: [String: Int] = [:]
     private(set) var visibleIndices: [Int] = []
     private(set) var visibleEntries: [VisibleEntry] = []
+    private(set) var visibleGridGroups: [VisibleGroup] = []
     private(set) var visibleGroups: [PhotoGroup] = []
     private(set) var visibleGroupTitles: [Int: String] = [:]
     private(set) var visibleLocations: [Int: VisibleLocation] = [:]
@@ -52,6 +71,7 @@ struct PreparedSessionIndex {
             indicesByID[item.id] = index
         }
         itemIndexByID = indicesByID
+        invalidateItemOrder()
         chronologicalIndices = Self.chronologicalOrder(for: items)
         rebuildPreparedSort(items, sort: sort)
     }
@@ -70,6 +90,9 @@ struct PreparedSessionIndex {
     /// structural owner still rebuilds ID/maps through `rebuildItems` as usual.
     mutating func invalidateItemOrder() {
         chronologicalIndices = nil
+        cameraRanks = nil
+        lensRanks = nil
+        hasPreparedPresentation = false
     }
 
     /// Sort-only entry point for the item structure prepared by `rebuildItems`.
@@ -92,6 +115,8 @@ struct PreparedSessionIndex {
             rebuildFolderHierarchySort(items, ascending: sort.ascending)
         case .decision, .starRating, .colorLabel:
             rebuildMetadataSort(items, sort: sort)
+        case .camera, .lens:
+            rebuildStringSort(items, sort: sort)
         default:
             sortedIndices = items.indices.sorted {
                 sort.areInOrder(items[$0], items[$1])
@@ -106,6 +131,87 @@ struct PreparedSessionIndex {
         let order = Self.chronologicalOrder(for: items)
         chronologicalIndices = order
         return order
+    }
+
+    /// Localized comparisons scale with distinct models, not photo pairs.
+    /// Equal localized values share a rank, including different spellings;
+    /// their final order must come solely from canonical chronology/name/ID.
+    private static func stringSortRanks(
+        for items: [PhotoItem], key: PhotoSort.Key
+    ) -> StringSortRanks {
+        // Swift String equality merges canonical Unicode spellings, whereas
+        // localizedStandardCompare can distinguish their exact encodings.
+        // Deduplicate bytes first; merge only actual comparator-equal ranks.
+        var valueIndices: [Data: Int] = [:]
+        var values: [String] = []
+        let itemValues = items.map { item -> Int? in
+            guard let value = key == .camera ? item.cameraModel : item.lensModel else { return nil }
+            let identity = Data(value.utf8)
+            if let index = valueIndices[identity] { return index }
+            let index = values.count
+            values.append(value)
+            valueIndices[identity] = index
+            return index
+        }
+        let orderedValues = values.indices.sorted {
+            values[$0].localizedStandardCompare(values[$1]) == .orderedAscending
+        }
+        var valueRanks = Array(repeating: 0, count: values.count)
+        var rank = -1
+        var previous: String?
+        for index in orderedValues {
+            let value = values[index]
+            if previous == nil || previous!.localizedStandardCompare(value) != .orderedSame {
+                rank += 1
+            }
+            valueRanks[index] = rank
+            previous = value
+        }
+        let missingRank = rank + 1
+        var counts = Array(repeating: 0, count: missingRank + 1)
+        let itemRanks = itemValues.map { valueIndex in
+            let itemRank = valueIndex.map { valueRanks[$0] } ?? missingRank
+            counts[itemRank] += 1
+            return itemRank
+        }
+        return StringSortRanks(itemRanks: itemRanks, counts: counts)
+    }
+
+    private mutating func rebuildStringSort(_ items: [PhotoItem], sort: PhotoSort) {
+        let ranks: StringSortRanks
+        if sort.key == .camera {
+            if cameraRanks?.itemRanks.count != items.count {
+                cameraRanks = Self.stringSortRanks(for: items, key: .camera)
+            }
+            ranks = cameraRanks!
+        } else {
+            if lensRanks?.itemRanks.count != items.count {
+                lensRanks = Self.stringSortRanks(for: items, key: .lens)
+            }
+            ranks = lensRanks!
+        }
+        let missingRank = ranks.counts.count - 1
+        var positions = Array(repeating: 0, count: ranks.counts.count)
+        var offset = 0
+        if sort.ascending {
+            for rank in 0..<missingRank {
+                positions[rank] = offset
+                offset += ranks.counts[rank]
+            }
+        } else {
+            for rank in (0..<missingRank).reversed() {
+                positions[rank] = offset
+                offset += ranks.counts[rank]
+            }
+        }
+        positions[missingRank] = offset
+        var result = Array(repeating: 0, count: items.count)
+        for index in preparedChronologicalOrder(for: items) {
+            let rank = ranks.itemRanks[index]
+            result[positions[rank]] = index
+            positions[rank] += 1
+        }
+        sortedIndices = result
     }
 
     /// Scans normally arrive canonical, so verify once in O(N). Exceptional
@@ -217,14 +323,23 @@ struct PreparedSessionIndex {
             Self.signposter.endInterval("Filter Session", interval)
         }
         let prepared = PreparedPhotoFilter(filter)
+        let unrestricted = prepared.isUnrestricted
+        let matches: [Int]
         if let qualityCueMatches, !filter.selectedQualityCues.isEmpty {
             precondition(qualityCueMatches.count == items.count, "Cue matches must follow the item structure")
             let selected = QualityCueMatch(filter.selectedQualityCues)
-            visibleIndices = sortedIndices.filter {
-                !qualityCueMatches[$0].intersection(selected).isEmpty && prepared.matches(items[$0])
+            matches = sortedIndices.filter {
+                !qualityCueMatches[$0].intersection(selected).isEmpty
+                    && (unrestricted || prepared.matches(items[$0]))
             }
+        } else if unrestricted {
+            matches = sortedIndices
         } else {
-            visibleIndices = sortedIndices.filter { prepared.matches(items[$0]) }
+            matches = sortedIndices.filter { prepared.matches(items[$0]) }
+        }
+        if matches != visibleIndices {
+            visibleIndices = matches
+            hasPreparedPresentation = false
         }
         rebuildGroups(
             for: items,
@@ -238,6 +353,11 @@ struct PreparedSessionIndex {
         sort: PhotoSort,
         isGroupingEnabled: Bool
     ) {
+        let groupingKey = isGroupingEnabled && sort.key != .name ? sort.key : nil
+        if hasPreparedPresentation, groupingKey == preparedGroupingKey,
+           mutableGroupsAreUnchanged(for: items, key: groupingKey) {
+            return
+        }
         let interval = Self.signposter.beginInterval("Build Visible Groups")
         defer {
             Self.signposter.endInterval("Build Visible Groups", interval)
@@ -248,6 +368,20 @@ struct PreparedSessionIndex {
             isGroupingEnabled: isGroupingEnabled
         )
         rebuildVisiblePresentation(for: items)
+        preparedGroupingKey = groupingKey
+        hasPreparedPresentation = true
+    }
+
+    /// Review values can change even when sorting yields identical indices
+    /// (for example, rating every visible photo Yes). Verify their actual
+    /// values before reusing group identities, titles and position maps.
+    private func mutableGroupsAreUnchanged(for items: [PhotoItem], key: PhotoSort.Key?) -> Bool {
+        guard let key, key == .decision || key == .starRating || key == .colorLabel else {
+            return true
+        }
+        return visibleGroups.allSatisfy { group in
+            group.indices.allSatisfy { key.groupID(for: items[$0]) == group.id }
+        }
     }
 
     /// Projects one already-filtered session into a review-only group layout.
@@ -260,6 +394,9 @@ struct PreparedSessionIndex {
         _ reviewGroups: [DuplicateBurstAnalysis.Group],
         to items: [PhotoItem]
     ) {
+        // Review groups replace the normal layout, even when all items survive.
+        // The next ordinary filter/group rebuild must restore normal sections.
+        hasPreparedPresentation = false
         guard !reviewGroups.isEmpty, !visibleIndices.isEmpty else {
             visibleIndices = []
             visibleGroups = []
@@ -310,6 +447,14 @@ struct PreparedSessionIndex {
         visibleEntries = visibleIndices.compactMap { index in
             guard items.indices.contains(index) else { return nil }
             return VisibleEntry(id: items[index].id, index: index)
+        }
+
+        var entryPosition = 0
+        visibleGridGroups = visibleGroups.map { group in
+            let end = entryPosition + group.indices.count
+            defer { entryPosition = end }
+            return VisibleGroup(id: group.id, title: group.title,
+                                entries: visibleEntries[entryPosition..<end])
         }
 
         var titles: [Int: String] = [:]
@@ -389,5 +534,21 @@ struct PreparedSessionIndex {
         }
         closeRun()
         return groups
+    }
+}
+
+private extension PreparedPhotoFilter {
+    /// Inspect the prepared predicate rather than UI flags: invalid ranges,
+    /// whitespace-only queries and untouched specific-date sets are neutral.
+    var isUnrestricted: Bool {
+        excludedMediaKinds.isEmpty && excludedTypes.isEmpty
+            && excludedCameras.isEmpty && excludedLenses.isEmpty
+            && excludedFilmSimulations.isEmpty && excludedVideoResolutions.isEmpty
+            && excludedVideoCodecs.isEmpty && excludedSubfolders.isEmpty
+            && excludedDecisionStates.isEmpty && excludedStarStates.isEmpty
+            && excludedColorStates.isEmpty && dateRange == nil
+            && (!usesSpecificDates || (excludedDates.isEmpty && !excludesUnknownDate))
+            && apertureRange == nil && shutterRange == nil && isoRange == nil
+            && durationRange == nil && videoFrameRateRange == nil && searchTokens.isEmpty
     }
 }

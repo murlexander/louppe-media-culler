@@ -32,6 +32,10 @@ final class SecurityScopedFolderAccess {
         didStartAccess = started
     }
 
+    func makeReadAuthority() -> MediaReadAccess {
+        MediaReadAccess(authorizedURL: resourceURL, resourceAccess: resourceAccess)
+    }
+
     /// A detached task owns its own start/stop pair after the UI lease ends.
     func makeIndependentAccess() -> SecurityScopedFolderAccess {
         SecurityScopedFolderAccess(url: resourceURL, resourceAccess: resourceAccess)

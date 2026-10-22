@@ -1,0 +1,90 @@
+{
+  "generatedAt" : "2026-10-22T01:26:07Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 100,
+      "maxMS" : 10.537625,
+      "medianMS" : 9.919041,
+      "minMS" : 9.852,
+      "name" : "scan.jpeg.warm-filesystem",
+      "p95MS" : 10.537625,
+      "samplesMS" : [
+        10.537625,
+        9.919041,
+        9.852
+      ]
+    },
+    {
+      "count" : 100,
+      "maxMS" : 13.908125,
+      "medianMS" : 11.915,
+      "minMS" : 9.105542,
+      "name" : "save.durable-sidecar-and-backup",
+      "p95MS" : 13.908125,
+      "samplesMS" : [
+        13.908125,
+        9.105542,
+        11.915
+      ]
+    },
+    {
+      "count" : 100,
+      "maxMS" : 2.681791,
+      "medianMS" : 2.660583,
+      "minMS" : 2.649209,
+      "name" : "reopen.durable-session",
+      "p95MS" : 2.681791,
+      "samplesMS" : [
+        2.649209,
+        2.660583,
+        2.681791
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 100.429792,
+      "medianMS" : 98.144875,
+      "minMS" : 96.489458,
+      "name" : "scan.jpeg.warm-filesystem",
+      "p95MS" : 100.429792,
+      "samplesMS" : [
+        98.144875,
+        100.429792,
+        96.489458
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 23.849875,
+      "medianMS" : 22.454208,
+      "minMS" : 21.617583,
+      "name" : "save.durable-sidecar-and-backup",
+      "p95MS" : 23.849875,
+      "samplesMS" : [
+        22.454208,
+        21.617583,
+        23.849875
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 20.719416,
+      "medianMS" : 20.292166,
+      "minMS" : 20.089084,
+      "name" : "reopen.durable-session",
+      "p95MS" : 20.719416,
+      "samplesMS" : [
+        20.292166,
+        20.719416,
+        20.089084
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "io-scan-save",
+  "warmups" : 1
+}

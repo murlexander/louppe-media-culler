@@ -344,8 +344,9 @@ struct PhotoFile: Identifiable, Sendable {
         identityStorage.snapshot()
     }
     let searchableText: String
-    /// False only for a hidden JPEG partner whose filesystem facts are known
-    /// but whose EXIF has deliberately not been opened yet.
+    /// False for an inventory file awaiting metadata or a hidden JPEG partner
+    /// whose EXIF is deferred until separate review. Filesystem identity and
+    /// media kind are already authoritative in either case.
     let metadataIsLoaded: Bool
     private let metadataStorage: PhotoFileMetadataStorage
 

@@ -1,0 +1,34 @@
+Sources/Louppe/VideoPlaybackController.swift:358:23: warning: 'AVPlayerItemDidPlayToEndTime' was deprecated in macOS 27.0: Use AVPlayerItem.didPlayToEndTimeNotification instead. [#DeprecatedDeclaration]
+356 |         removeObservers()
+357 |         endObserver.replace(with: NotificationCenter.default.addObserver(
+358 |             forName: .AVPlayerItemDidPlayToEndTime,
+    |                       `- warning: 'AVPlayerItemDidPlayToEndTime' was deprecated in macOS 27.0: Use AVPlayerItem.didPlayToEndTimeNotification instead. [#DeprecatedDeclaration]
+359 |             object: playerItem,
+360 |             queue: .main
+
+Sources/Louppe/VideoPlaybackController.swift:371:23: warning: 'AVPlayerItemFailedToPlayToEndTime' was deprecated in macOS 27.0: Use AVPlayerItem.failedToPlayToEndTimeNotification instead. [#DeprecatedDeclaration]
+369 |         })
+370 |         failureObserver.replace(with: NotificationCenter.default.addObserver(
+371 |             forName: .AVPlayerItemFailedToPlayToEndTime,
+    |                       `- warning: 'AVPlayerItemFailedToPlayToEndTime' was deprecated in macOS 27.0: Use AVPlayerItem.failedToPlayToEndTimeNotification instead. [#DeprecatedDeclaration]
+372 |             object: playerItem,
+373 |             queue: .main
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+Sources/Louppe/SessionStore.swift:2570:39: warning: reference to captured var 'self' in concurrently-executing code; this is an error in the Swift 6 language mode [#SendableClosureCaptures]
+2568 |                     preview: { [weak self] snapshot in
+2569 |                         await MainActor.run {
+2570 |                             guard let self, !Task.isCancelled,
+     |                                       `- warning: reference to captured var 'self' in concurrently-executing code; this is an error in the Swift 6 language mode [#SendableClosureCaptures]
+2571 |                                   self.scanGeneration == generation,
+2572 |                                   self.sourceFolder == standardizedURL,
+
+[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
+RAW+JPEG initial scan 250 pairs: separate 0.107871583 seconds, grouped 0.104361583 seconds
+Prepared index 1000 items: rebuild 4.0 ms, default reuse 3.0 ms, filter/group 2.4 ms
+Prepared index 10000 items: rebuild 35.2 ms, default reuse 24.3 ms, filter/group 19.0 ms
+Prepared index 100000 items: rebuild 338.8 ms, default reuse 244.8 ms, filter/group 219.2 ms
+Metadata index 100000 items: filter 128.9 ms, sort 312.1 ms, export selection 96.2 ms
+Rating one of 100000 items: 0.3 ms
+Save snapshot 100000 files: main capture 117.7 ms, background build 113.6 ms
+Performance checks passed (75/75)

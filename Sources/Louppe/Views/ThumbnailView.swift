@@ -13,6 +13,66 @@ enum TileBadgeLayout {
     static let maximumCueRowWidth: CGFloat = 4 * height + 3 * spacing
 }
 
+/// A realized cell owns validated pixels even after the shared NSCache evicts
+/// its entry. Only a content revision change retires those retained pixels.
+struct ThumbnailImageState {
+    private(set) var revision: PhotoContentRevision
+    private(set) var image: NSImage?
+
+    /// Returns whether a decode is needed. Cache misses never erase matching
+    /// retained pixels, including when a lazy cell's task restarts on re-entry.
+    mutating func prepare(revision: PhotoContentRevision, cached: NSImage?, hasVisualPreview: Bool) -> Bool {
+        if self.revision != revision {
+            self.revision = revision
+            image = cached
+        } else if let cached {
+            image = cached
+        }
+        if !hasVisualPreview { image = nil }
+        return hasVisualPreview && image == nil
+    }
+
+    mutating func accept(_ image: NSImage?, revision: PhotoContentRevision) {
+        guard self.revision == revision else { return }
+        self.image = image
+    }
+}
+
+#if DEBUG
+/// Mounted-pixel evidence for the large-folder benchmark; no release view or
+/// per-render counters. Background geometry follows the actual thumbnail tile.
+struct ThumbnailRenderMarker: NSViewRepresentable {
+    let revision: PhotoContentRevision
+    let hasImage: Bool
+
+    func makeNSView(context: Context) -> MarkerView {
+        MarkerView(revision: revision, hasImage: hasImage)
+    }
+
+    func updateNSView(_ nsView: MarkerView, context: Context) {
+        nsView.revision = revision
+        nsView.hasImage = hasImage
+    }
+
+    final class MarkerView: NSView {
+        var revision: PhotoContentRevision
+        var hasImage: Bool
+
+        init(revision: PhotoContentRevision, hasImage: Bool) {
+            self.revision = revision
+            self.hasImage = hasImage
+            super.init(frame: .zero)
+            setAccessibilityElement(false)
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    }
+}
+#endif
+
 /// Async-loading thumbnail tile with a yes/no/undecided badge overlay.
 /// The whole photo fits inside the tile (letterboxed, never cropped).
 struct ThumbnailView: View {
@@ -29,8 +89,7 @@ struct ThumbnailView: View {
     private let starRatingState: PhotoItemStarRatingState
     private let colorLabelState: PhotoItemColorLabelState
 
-    @State private var image: NSImage?
-    @State private var imageRevision: PhotoContentRevision
+    @State private var retainedImage: ThumbnailImageState
 
     init(
         item: PhotoItem,
@@ -48,21 +107,23 @@ struct ThumbnailView: View {
         self.starRatingState = item.starRatingState
         self.colorLabelState = item.colorLabelState
         let revision = item.contentRevision
-        self._imageRevision = State(initialValue: revision)
         // Reappearing lazy cells should render their memory-cached image on
         // their first frame instead of flashing a placeholder and scheduling
         // an otherwise unnecessary state update.
-        self._image = State(
-            initialValue: item.hasVisualPreview
-                ? ImagePipeline.shared.cachedThumbnail(for: item)
-                : nil
+        self._retainedImage = State(
+            initialValue: ThumbnailImageState(
+                revision: revision,
+                image: item.hasVisualPreview
+                    ? ImagePipeline.shared.cachedThumbnail(for: item)
+                    : nil
+            )
         )
     }
 
     var body: some View {
         let revision = item.contentRevision
-        let displayedImage = imageRevision == revision
-            ? image
+        let displayedImage = retainedImage.revision == revision
+            ? retainedImage.image
             : ImagePipeline.shared.cachedThumbnail(for: item)
         ZStack {
             Group {
@@ -134,21 +195,31 @@ struct ThumbnailView: View {
             )
                 .padding(TileBadgeLayout.inset)
         }
+        #if DEBUG
+        .background {
+            ThumbnailRenderMarker(revision: revision, hasImage: displayedImage != nil)
+                .accessibilityHidden(true)
+                .allowsHitTesting(false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        #endif
         .task(id: revision) {
             let requestedItem = item
             let requestedRevision = requestedItem.contentRevision
             let cached = requestedItem.hasVisualPreview
                 ? ImagePipeline.shared.cachedThumbnail(for: requestedItem)
                 : nil
-            image = cached
-            imageRevision = requestedRevision
-            guard requestedItem.hasVisualPreview, cached == nil else { return }
+            guard !Task.isCancelled else { return }
+            guard retainedImage.prepare(
+                revision: requestedRevision,
+                cached: cached,
+                hasVisualPreview: requestedItem.hasVisualPreview
+            ) else { return }
             let loaded = await ImagePipeline.shared.thumbnail(
                 for: requestedItem
             )
-            guard !Task.isCancelled,
-                  imageRevision == requestedRevision else { return }
-            image = loaded
+            guard !Task.isCancelled else { return }
+            retainedImage.accept(loaded, revision: requestedRevision)
         }
     }
 

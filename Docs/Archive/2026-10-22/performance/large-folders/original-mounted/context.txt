@@ -1,0 +1,5 @@
+Original production source: git archive 87370f681d1bd3723bcc3176646db8afa94d9d8c.
+Only production-source difference verified across the complete Sources archive: inert DEBUG ThumbnailRenderMarker in ThumbnailView.swift for matching-revision visible-pixel barrier.
+Current mounted benchmark copied identically except native-implementation-only host-count metrics removed. Both variants set store.viewMode to match mounted Grid/Gallery Browser.
+Full Xcode, SwiftPM native backend, release -DDEBUG, one warmup +3 measured repetitions, 1000/10000 generated JPEGs, warm filesystem.
+Pixel publication is not a physical display frame; RSS is process-wide.

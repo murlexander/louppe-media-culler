@@ -9,7 +9,7 @@ def read_rows(directory):
     rows = {}
     for file in sorted(directory.glob("*.json")):
         document = json.loads(file.read_text())
-        if document.get("schemaVersion") != 1 or "rows" not in document:
+        if not isinstance(document, dict) or document.get("schemaVersion") != 1 or "rows" not in document:
             continue
         for row in document["rows"]:
             key = (document["suite"], row["name"], row["count"])

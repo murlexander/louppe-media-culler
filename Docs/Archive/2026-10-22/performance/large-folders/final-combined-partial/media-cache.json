@@ -1,0 +1,90 @@
+{
+  "generatedAt" : "2026-10-22T02:25:13Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 17.538958,
+      "medianMS" : 17.323416,
+      "minMS" : 17.168459,
+      "name" : "jpeg_source_decode_320px_os_cache_warm",
+      "p95MS" : 17.538958,
+      "samplesMS" : [
+        17.323416,
+        17.168459,
+        17.538958
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 42.012458,
+      "medianMS" : 41.804209,
+      "minMS" : 39.074084,
+      "name" : "jpeg_source_decode_4096px_os_cache_warm",
+      "p95MS" : 42.012458,
+      "samplesMS" : [
+        39.074084,
+        42.012458,
+        41.804209
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 2.361125,
+      "medianMS" : 2.357208,
+      "minMS" : 2.357041,
+      "name" : "thumbnail_memory_hit_1000",
+      "p95MS" : 2.361125,
+      "samplesMS" : [
+        2.361125,
+        2.357208,
+        2.357041
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 2.355459,
+      "medianMS" : 2.33475,
+      "minMS" : 2.30375,
+      "name" : "full_memory_hit_1000",
+      "p95MS" : 2.355459,
+      "samplesMS" : [
+        2.30375,
+        2.33475,
+        2.355459
+      ]
+    },
+    {
+      "count" : 16,
+      "maxMS" : 11.432084,
+      "medianMS" : 10.852292,
+      "minMS" : 10.714834,
+      "name" : "thumbnail_disk_hit_16_including_pipeline_init",
+      "p95MS" : 11.432084,
+      "samplesMS" : [
+        11.432084,
+        10.852292,
+        10.714834
+      ]
+    },
+    {
+      "count" : 16,
+      "maxMS" : 279.034542,
+      "medianMS" : 278.662791,
+      "minMS" : 278.40125,
+      "name" : "thumbnail_source_16_including_pipeline_init_and_disk_drain",
+      "p95MS" : 279.034542,
+      "samplesMS" : [
+        278.662791,
+        278.40125,
+        279.034542
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-cache",
+  "warmups" : 1
+}

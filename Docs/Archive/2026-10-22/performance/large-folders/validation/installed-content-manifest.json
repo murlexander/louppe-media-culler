@@ -1,0 +1,747 @@
+{
+  "Frameworks": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Autoupdate": [
+    "link",
+    "Versions/Current/Autoupdate"
+  ],
+  "Frameworks/Sparkle.framework/Headers": [
+    "link",
+    "Versions/Current/Headers"
+  ],
+  "Frameworks/Sparkle.framework/Modules": [
+    "link",
+    "Versions/Current/Modules"
+  ],
+  "Frameworks/Sparkle.framework/PrivateHeaders": [
+    "link",
+    "Versions/Current/PrivateHeaders"
+  ],
+  "Frameworks/Sparkle.framework/Resources": [
+    "link",
+    "Versions/Current/Resources"
+  ],
+  "Frameworks/Sparkle.framework/Sparkle": [
+    "link",
+    "Versions/Current/Sparkle"
+  ],
+  "Frameworks/Sparkle.framework/Updater.app": [
+    "link",
+    "Versions/Current/Updater.app"
+  ],
+  "Frameworks/Sparkle.framework/Versions": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Autoupdate": [
+    "file",
+    493,
+    "abce46954cc1fdbd72bdf6bc786ca44590735bc842b3f713a2c948bbae86da3e"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUAppcastSigningValidationStatus.h": [
+    "file",
+    420,
+    "513d4607ac9ba03c2203b03df307f404216c3ce7f3436784fbbef1842c742749"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUDownloadData.h": [
+    "file",
+    420,
+    "58184c2c068a8d43b1ee85651f9edd30a6a9e5899ac936baf4a5f15a6081d7b7"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUStandardUpdaterController.h": [
+    "file",
+    420,
+    "f45dfdf2315664c5891b97ad0d7ffce9ab09d067effbd2921b10b58b4831ef0f"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUStandardUserDriver.h": [
+    "file",
+    420,
+    "0a0e476b61932196027dd7b94e78d187f810f80c7900168eb4a5956b63d54a77"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUStandardUserDriverDelegate.h": [
+    "file",
+    420,
+    "d906e549f7b108979727fa56f13c029906fe48c5602538513a4b480bb45a8c2d"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUUpdateCheck.h": [
+    "file",
+    420,
+    "1f7d05da2e466263aefe3e09130e56b2e65b8862579e07b9829c9bf5ed921c03"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUUpdatePermissionRequest.h": [
+    "file",
+    420,
+    "8c227246c2ea7461741db8bd7274936c3cbcbc7375fe814654d479b2650cd6bd"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUUpdater.h": [
+    "file",
+    420,
+    "a30b876dc722a2861fb8f271a0bf0c95bd664db4cf2af57d216d190f2e010ee7"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUUpdaterDelegate.h": [
+    "file",
+    420,
+    "20ea4bf5273eaa6560160941d680acec6565965162737f50ea4240845a7dde24"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUUpdaterSettings.h": [
+    "file",
+    420,
+    "ad7bdfc719775fe4cdf1490f45ef902ded4dcb3756402e64884397bee425edff"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUUserDriver.h": [
+    "file",
+    420,
+    "db9fe6cf78aca0f2f79a99898d38daff566f96c823de2bb2b985511ad77017dc"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SPUUserUpdateState.h": [
+    "file",
+    420,
+    "59f95e933f8b5b2b39c1e7c465aa39af021a2c88820b4b09dbcfc55b1dd19c30"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SUAppcast.h": [
+    "file",
+    420,
+    "251d6ffa7cbc890999ddda3406834f45396cf887a71e5be9ff581883559df0a0"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SUAppcastItem.h": [
+    "file",
+    420,
+    "21df22d4f0ebd4eaba530f77f520a29451a057b70093efec3104ce0253026cf9"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SUErrors.h": [
+    "file",
+    420,
+    "e7e84fa6ef85b549810682ec883593f560d79b776ebec5fb11d9558a6f1f78e5"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SUExport.h": [
+    "file",
+    420,
+    "5cef024266c54e12db620f78f4d106860de0fa2a2e230dffdfe04208bb447451"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SUStandardVersionComparator.h": [
+    "file",
+    420,
+    "7d407b9ce721d5c650e741ecb692e77f12ef3b5e18ea8136f72448e8d7208c6c"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SUUpdatePermissionResponse.h": [
+    "file",
+    420,
+    "f9355c8044c7dc168bdaefa37ac2e986002ec328895f17119293e084dad96f21"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SUUpdater.h": [
+    "file",
+    420,
+    "96f6f598d582ca87c9d17f3ccd7bccb0ae4f057ac6e8fafb854ad8d04de336f6"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SUUpdaterDelegate.h": [
+    "file",
+    420,
+    "a1a08c33fd41ebdd105916d8181d222417f9feda01cdc42afa6a3151106cde36"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SUVersionComparisonProtocol.h": [
+    "file",
+    420,
+    "28bbb424ac7ab81e2b93f61e359fefa3ed09d6a38d0b265004d2103c0f46bdb4"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/SUVersionDisplayProtocol.h": [
+    "file",
+    420,
+    "3f23c4fb9bbdbc19714580ee4dd7f73ffc31436ea733c9bb308c3f74e7ab512c"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Headers/Sparkle.h": [
+    "file",
+    420,
+    "3a442a32eb22a77bb5a08e61ac678daffdf6c697d33020b82a683baf40228e0c"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Modules": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Modules/module.modulemap": [
+    "file",
+    420,
+    "2bcae1eb66d55dc49f58acfe856375a5bbc91c6e83bdb298d19442ae6264cfa6"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Modules/module.private.modulemap": [
+    "file",
+    420,
+    "db1d60f57b43a9eb17f3550f5720ac53466d4385368670fb5148da5b71f43f3a"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/PrivateHeaders": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/PrivateHeaders/SPUAppcastItemStateResolver.h": [
+    "file",
+    420,
+    "1c3be298008c19757ae3b27083622a005bce809a01f06d2c74f6dea16f3214ee"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/PrivateHeaders/SPUGentleUserDriverReminders.h": [
+    "file",
+    420,
+    "f56d9d277f16417d79d66a484b4afcfc47c2a9957a8c487adb5c709dad895402"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/PrivateHeaders/SPUInstallationType.h": [
+    "file",
+    420,
+    "52a1a445f58e7c6de94ac558c23913f8081647a499262affe9ac38ff790971d4"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/PrivateHeaders/SPUStandardUserDriver+Private.h": [
+    "file",
+    420,
+    "acc764e731fe9e6d307fe32dea4d06b451964225c2b2a9745a23f035a9cdeaad"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/PrivateHeaders/SPUUserAgent+Private.h": [
+    "file",
+    420,
+    "0c3ea7c6aabab32840e41c56bb22cfab4dee4dde3302603b6f4aba9ac1b5850c"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/PrivateHeaders/SUAppcastItem+Private.h": [
+    "file",
+    420,
+    "642ecbeecb323f7201a732b5953d60fefefa13cf894af28936dd0d7d001a101a"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/PrivateHeaders/SUInstallerLauncher+Private.h": [
+    "file",
+    420,
+    "cb2e9c465f08ab0309c2bf3a4d2f7c35d9c76ff5a4480694700a22298520dd94"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/Base.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/Base.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "bf93bdde8ad020f2ba210ecfa0e84b5365d0342355a3ca39d88fec0acb1e4a40"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/Info.plist": [
+    "file",
+    420,
+    "5fa024aa416c13614fb5588d378aa6c16371737d9980c57fcb3e32f8208f1b86"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ReleaseNotesColorStyle.css": [
+    "file",
+    420,
+    "76bd6999758fd8e51d17e6b482db434f9b4768c02b037af6bd2e3a000ce8cbc1"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/SUUpdateAlert.nib": [
+    "file",
+    420,
+    "3987a333da7c2728ef2cb9656e5eeaf0832884873cabf78353fcb9099c5d8fbe"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/SUUpdatePermissionPrompt.nib": [
+    "file",
+    420,
+    "2e62b9d5a736d53b1eaf217432c4d0ad05217e897787cf1bdf1071ff22308d46"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ar.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ar.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "441182787471a3998908044515fe13e92230edaa7e2730638e72a49610f56cba"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ca.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ca.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "7ed0d5ca300649a7f13304015008f2dede98ad743a625c17d5a5fedacc1a3b1a"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/cs.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/cs.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "99e66decf9bc46cf5622eead4e65b3b502e3775a4e8e0f03ef1b41683ea8d518"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/da.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/da.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "8d0ff69b79460185f941372655433bad3934f49e63bef0b4171bd66da71e55f0"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/de.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/de.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "311035a15227fb12e85eba2a46f3f6198d98ac5590d1d38c43c4ff7430d06599"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/el.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/el.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "638981a4f095d8b1dabb6230d452e470359711b81803bc5df8c21e1211fd3757"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/es.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/es.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "047b9affd0e995039072c24b8d7aa830624d03c89c524e4f58d7d6f13eca8352"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/fa.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/fa.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "ed9dda9e271f7a97b8a7f327e71a1b6d06e5e061b367e7da3d153e47dc319263"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/fi.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/fi.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "c14af9bac3fce436222a4ea277a7a6c0f9b42b2d84aceea75e758ce7538acae2"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/fr.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/fr.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "3d554dcd167b085e25a75248533f21f389593aeace912ab9952c825ffe141ce1"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/he.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/he.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "1d795bd7329d04b7ce84b6bdc845f917369e858b2b292f117b89a6666a185723"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/hr.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/hr.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "920041380a08b3ba50d44e8a83f59de551139845a72748d58f2387c65920b33a"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/hu.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/hu.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "cc2a16e4d487c6fab357b4f7d0fbbf7ec882371b2130413ffcb1b69cd540d2cf"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/is.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/is.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "403feba503410e9455cd0eaafe592a2576eedb24130ccf2cdb13dda4b101f87e"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/it.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/it.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "56a7445c1b68d76849ac59b98aa5c20c9002d5e07e9f0a2720486160f85b7366"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ja.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ja.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "e404910028af70579cfa208bb4fadd9e3592505fc89af208f4071f2309553fb2"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ko.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ko.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "a6269eb3f5a07d0c4f5d7467d5065372085aef7484c518a9d784ffd6c8f5aae4"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/nb.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/nb.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "ef6f0dcae90c440b47ece09909e9cdf35f3383f34e72a614c8c5c0752ecbffe0"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/nl.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/nl.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "ca9adf34fb93fe3f394ccc92114bf6a6b1f8a128bb5f362cb9f3247d7c26c77d"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/nn.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/nn.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "1db8c6853a550aa25382da2d55431a1c1d308d6a37676c4f8593cc1633f8a5ae"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/pl.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/pl.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "5c54b3f8e1eb3026e142e710e2167f2f839b73ab5ad7f18719230f33ae682aa9"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/pt-BR.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/pt-BR.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "0292cadc2acfc34875c1e0b54e2d50de3833cd5e20c8660c8effe2b859aac84c"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/pt-PT.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/pt-PT.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "31b28f3e5b5f9fe3d7abf71a779751d51ff632f3190155ef3cd97d2791a40fb1"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ro.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ro.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "b2bf064222c38a3672b01fe09406f799718cb0fc4e715121662639d6fdfea6ed"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ru.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/ru.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "7193af28eb2a09b9fe7119cf6065a2150c6590971b22f98c56f356cd90851923"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/sk.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/sk.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "e158daaa4f3f91b57cee05ab896f2c1bc467317932cc53bb7c01e7daee9e5238"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/sl.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/sl.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "c62770c604a6c8c89e283357c8b322d8ce6a85f4d85c09002048331f65f8d980"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/sv.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/sv.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "4a21ad5bcf8d836d265710c2e4a0a64f07c9551f1c49694d6734a931d23efd39"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/th.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/th.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "4b6c8dc2ab69a0425de3aa9dc386c6539348e3983e47aa10f94c17e345a157a5"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/tr.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/tr.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "b040d3f02d341eba047c15dfcafb60406d0847096a94466ecab512dcfb16abb5"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/uk.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/uk.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "ff44d58635b3e8409d54b42b72c876a43e17fa98f6ea96b32583b9e88c747ab6"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/vi.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/vi.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "2b3b4acbadf534cd0e812b97e589f80a4e1655b07c8907e98cc31df458ffd8b7"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/zh_CN.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/zh_CN.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "e7f543b92977e9abc907241c411d8db0f59c4fee480859b3e88e4b495e0976c8"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/zh_HK.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/zh_HK.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "3fc210132f33d89af3d25d27c7ea19426cf6d304be50254538456e0ec4fb7858"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/zh_TW.lproj": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Resources/zh_TW.lproj/Sparkle.strings": [
+    "file",
+    420,
+    "76321e1dd844c9b6568cb4af7c63bb57d9d1b700109aeedd7e5721d78727b12d"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Sparkle": [
+    "file",
+    493,
+    "b57162032b569fce26c8ba162a54c55740da362822f80eac72dbad41d6edc374"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Updater.app": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/Info.plist": [
+    "file",
+    420,
+    "59ccb021c4e784681a2042e96feaf7c47eaa7c2a6468ce5c73d6f38274385c40"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/MacOS": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/MacOS/Updater": [
+    "file",
+    493,
+    "3566cf061983c184e00c5ec0a779bbec86bb0214004ad63e46b42133f27d908c"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/PkgInfo": [
+    "file",
+    420,
+    "82502191c9484b04d685374f9879a0066069c49b8acae7a04b01d38d07e8eca0"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/_CodeSignature": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/_CodeSignature/CodeResources": [
+    "file",
+    420,
+    "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/Info.plist": [
+    "file",
+    420,
+    "098634fc77fd96310eff2a63d6080b76139e3b2138dade393cf1cd0ef9a4dd93"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS/Downloader": [
+    "file",
+    493,
+    "fc87a756d391f1955c9ecc0ee8eb8af4b8fa5e550bb4db3e9cd6204d33cc5bcc"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/_CodeSignature": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/_CodeSignature/CodeResources": [
+    "file",
+    420,
+    "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/Info.plist": [
+    "file",
+    420,
+    "c382d031b287e64e0d4e6e7eec4208600e8b2abbe100f348c3b12f8baf4a348d"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/MacOS": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/MacOS/Installer": [
+    "file",
+    493,
+    "d20923c1c76857721c934fb6b709f1081064db1169fc98a7a307b676bbcc08a8"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/_CodeSignature": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/_CodeSignature/CodeResources": [
+    "file",
+    420,
+    "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/_CodeSignature": [
+    "directory"
+  ],
+  "Frameworks/Sparkle.framework/Versions/B/_CodeSignature/CodeResources": [
+    "file",
+    420,
+    "4cfd23802c1f46cb0e8f44ebbe4625184ffa866eeaf8e524d8f88ce2a0b4ee60"
+  ],
+  "Frameworks/Sparkle.framework/Versions/Current": [
+    "link",
+    "B"
+  ],
+  "Frameworks/Sparkle.framework/XPCServices": [
+    "link",
+    "Versions/Current/XPCServices"
+  ],
+  "Info.plist": [
+    "file",
+    420,
+    "e3822e2b74f276178883faaa227a4db85a6f29958f2563f178bd8f908290226c"
+  ],
+  "MacOS": [
+    "directory"
+  ],
+  "MacOS/Louppe": [
+    "file",
+    493,
+    "46220b4ff8cbac46fdac77efe89381002a856b012d92199153eb9360c7b2972c"
+  ],
+  "Resources": [
+    "directory"
+  ],
+  "Resources/AppIcon.icns": [
+    "file",
+    420,
+    "511662b4ba125cc271ae6f3313c5174d44f7a3ab9ba91e338504bb2baad46680"
+  ],
+  "Resources/Assets.car": [
+    "file",
+    420,
+    "ed149300053b91e414b8301559ae9dfc6023957812618d271958bcbdd79f7470"
+  ],
+  "Resources/Expat License.txt": [
+    "file",
+    420,
+    "31b15de82aa19a845156169a17a5488bf597e561b2c318d159ed583139b25e87"
+  ],
+  "Resources/Louppe_Louppe.bundle": [
+    "directory"
+  ],
+  "Resources/Louppe_Louppe.bundle/Info.plist": [
+    "file",
+    420,
+    "fe412354692d9eec18305c4bbe1c73cc4109528abaaaa44426032851e98d124b"
+  ],
+  "Resources/Louppe_Louppe.bundle/ar.lproj": [
+    "directory"
+  ],
+  "Resources/Louppe_Louppe.bundle/ar.lproj/Localizable.strings": [
+    "file",
+    420,
+    "42ffb381fed0d607524cd5b6a6c08f5855316f28e4eee933aeb957f94260598f"
+  ],
+  "Resources/Louppe_Louppe.bundle/en.lproj": [
+    "directory"
+  ],
+  "Resources/Louppe_Louppe.bundle/en.lproj/Localizable.strings": [
+    "file",
+    420,
+    "f2bd81aa60f2e87c7f39b24731a0ed51a51121958a6e3f133a526514e77b6867"
+  ],
+  "Resources/Louppe_Louppe.bundle/es.lproj": [
+    "directory"
+  ],
+  "Resources/Louppe_Louppe.bundle/es.lproj/Localizable.strings": [
+    "file",
+    420,
+    "53fb10b12c2dcce50fa3ff2d58d8cc27e030306fd7177158460d799cb9f2347d"
+  ],
+  "Resources/Louppe_Louppe.bundle/hi.lproj": [
+    "directory"
+  ],
+  "Resources/Louppe_Louppe.bundle/hi.lproj/Localizable.strings": [
+    "file",
+    420,
+    "28b80a5e558124088b0c6d0801f050dc60d29ea53c34a36ce2c2dfaee7c6f395"
+  ],
+  "Resources/Louppe_Louppe.bundle/pt.lproj": [
+    "directory"
+  ],
+  "Resources/Louppe_Louppe.bundle/pt.lproj/Localizable.strings": [
+    "file",
+    420,
+    "acccdbe00ed5a2454ab9509b1d9f27871e973f3f7d83cdf61e2943f0e3c2bbbb"
+  ],
+  "Resources/Louppe_Louppe.bundle/zh-hans.lproj": [
+    "directory"
+  ],
+  "Resources/Louppe_Louppe.bundle/zh-hans.lproj/Localizable.strings": [
+    "file",
+    420,
+    "0e060019b2988dd99dea69468b96f84bd284d21e7293da50693427b628cf3519"
+  ],
+  "Resources/PrivacyInfo.xcprivacy": [
+    "file",
+    420,
+    "d6e3404ce2cdf4dd3ba12a881387c17df03fa919063565d7b017bbc2edca089d"
+  ],
+  "Resources/Version History.md": [
+    "file",
+    420,
+    "a9e922849114f4bd06823352853a2d9ce019b73994d8bef09a36b4fe5e4c7f0a"
+  ],
+  "Resources/XMPCore License.txt": [
+    "file",
+    420,
+    "99678ec755c91c9400a989fef7c6e1bd2907aff40eef4cf855c111bbd282c1d4"
+  ],
+  "_CodeSignature": [
+    "directory"
+  ],
+  "_CodeSignature/CodeResources": [
+    "file",
+    420,
+    "e554654d44f5ce47c415a39163a5d10dc0c719fddc6a8f0e32982c9eb3d360d6"
+  ]
+}

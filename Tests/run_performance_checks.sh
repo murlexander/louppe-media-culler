@@ -22,6 +22,7 @@ swiftc \
     Sources/Louppe/FujiFilmSimulation.swift \
     Sources/Louppe/VideoSupport.swift \
     Sources/Louppe/RawDisplay.swift \
+    Sources/Louppe/MediaReadAccess.swift \
     Sources/Louppe/ImagePipeline.swift \
     Sources/Louppe/HistogramPipeline.swift \
     Sources/Louppe/CameraQualityWarnings.swift \
@@ -46,6 +47,11 @@ swiftc \
     Tests/PerformanceChecks/XMPPublicationStubs.swift \
     Sources/Louppe/XMP/XMPSidecarResolver.swift \
     Sources/Louppe/ReviewPreferences.swift \
+    Sources/Louppe/SessionOpeningMetrics.swift \
+    Sources/Louppe/OpeningSessionState.swift \
+    Sources/Louppe/SessionOpeningFacets.swift \
+    Sources/Louppe/SessionOpeningRestoration.swift \
+    Sources/Louppe/SessionOpeningWorker.swift \
     Sources/Louppe/SessionStore.swift \
     Tests/PerformanceChecks/main.swift \
     -o .build/performance-checks/LouppePerformanceChecks

@@ -1,0 +1,191 @@
+[0/1] Planning build
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/15] Compiling LouppeTests ModernImageFormatTests.swift
+[4/15] Compiling LouppeTests NeighbourMediaOwnershipTests.swift
+[5/16] Compiling LouppeTests MediaNumericSafetyTests.swift
+[6/16] Compiling LouppeTests MediaPerformanceTests.swift
+[7/16] Compiling LouppeTests PairComponentCleanUpScopeTests.swift
+[8/16] Compiling LouppeTests MultiDestinationExportTests.swift
+[9/16] Compiling LouppeTests NumericFilterDraftTests.swift
+[10/16] Compiling LouppeTests MenuShortcutColumnsTests.swift
+[11/16] Compiling LouppeTests MountedLargeListInvalidationTests.swift
+[12/16] Compiling LouppeTests OpeningMediaAccessTests.swift
+[13/16] Compiling LouppeTests MediaRevisionTests.swift
+[14/16] Emitting module LouppeTests
+[14/16] Write Objects.LinkFileList
+[15/16] Linking LouppePackageTests
+Build complete! (3.51s)
+Test Suite 'Selected tests' started at 2026-10-22 4:00:59.677 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-22 4:00:59.684 AM.
+Test Suite 'BrowserScrollTests' started at 2026-10-22 4:00:59.684 AM.
+Test Case '-[LouppeTests.BrowserScrollTests testBrowserStaysVerticalDuringScrollingAndFollowNavigation]' started.
+Test Case '-[LouppeTests.BrowserScrollTests testBrowserStaysVerticalDuringScrollingAndFollowNavigation]' passed (1.293 seconds).
+Test Case '-[LouppeTests.BrowserScrollTests testShortBrowserCannotScrollSideways]' started.
+Test Case '-[LouppeTests.BrowserScrollTests testShortBrowserCannotScrollSideways]' passed (3.627 seconds).
+Test Case '-[LouppeTests.BrowserScrollTests testShortBrowserKeepsItsColumnAfterInfoResizeAndViewSwitches]' started.
+Test Case '-[LouppeTests.BrowserScrollTests testShortBrowserKeepsItsColumnAfterInfoResizeAndViewSwitches]' passed (3.066 seconds).
+Test Suite 'BrowserScrollTests' passed at 2026-10-22 4:01:07.672 AM.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 7.987 (7.987) seconds
+Test Suite 'BrowserSelectionTests' started at 2026-10-22 4:01:07.672 AM.
+Test Case '-[LouppeTests.BrowserSelectionTests testDeletingCurrentItemSelectsSuccessorAtSameIndex]' started.
+Test Case '-[LouppeTests.BrowserSelectionTests testDeletingCurrentItemSelectsSuccessorAtSameIndex]' passed (0.005 seconds).
+Test Suite 'BrowserSelectionTests' passed at 2026-10-22 4:01:07.677 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+Test Suite 'GridControlGestureTests' started at 2026-10-22 4:01:07.677 AM.
+Test Case '-[LouppeTests.GridControlGestureTests testEmbeddedControlDragDoesNotStartAncestorRubberBand]' started.
+Test Case '-[LouppeTests.GridControlGestureTests testEmbeddedControlDragDoesNotStartAncestorRubberBand]' passed (0.130 seconds).
+Test Case '-[LouppeTests.GridControlGestureTests testGridPhotoClickSelectsImmediatelyAndSecondClickOpensGallery]' started.
+Test Case '-[LouppeTests.GridControlGestureTests testGridPhotoClickSelectsImmediatelyAndSecondClickOpensGallery]' passed (0.075 seconds).
+Test Case '-[LouppeTests.GridControlGestureTests testNativeRatingButtonCountsEveryClickInMultiClickSequence]' started.
+Test Case '-[LouppeTests.GridControlGestureTests testNativeRatingButtonCountsEveryClickInMultiClickSequence]' passed (0.124 seconds).
+Test Suite 'GridControlGestureTests' passed at 2026-10-22 4:01:08.006 AM.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.329 (0.329) seconds
+Test Suite 'GridScrollTests' started at 2026-10-22 4:01:08.006 AM.
+Test Case '-[LouppeTests.GridScrollTests testEmptyAndNoMatchingGridStayInsideVerticalViewport]' started.
+Test Case '-[LouppeTests.GridScrollTests testEmptyAndNoMatchingGridStayInsideVerticalViewport]' passed (0.599 seconds).
+Test Case '-[LouppeTests.GridScrollTests testGridFitsItsVerticalViewportAfterResizeThumbnailChangesAndNavigation]' started.
+Test Case '-[LouppeTests.GridScrollTests testGridFitsItsVerticalViewportAfterResizeThumbnailChangesAndNavigation]' passed (5.256 seconds).
+Test Case '-[LouppeTests.GridScrollTests testNativeScrollerRepairsHorizontalConfigurationDrift]' started.
+Test Case '-[LouppeTests.GridScrollTests testNativeScrollerRepairsHorizontalConfigurationDrift]' passed (0.001 seconds).
+Test Case '-[LouppeTests.GridScrollTests testShortGridFitsWithInfoPanelAndLargeThumbnails]' started.
+Test Case '-[LouppeTests.GridScrollTests testShortGridFitsWithInfoPanelAndLargeThumbnails]' passed (47.771 seconds).
+Test Suite 'GridScrollTests' passed at 2026-10-22 4:02:01.634 AM.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 53.627 (53.628) seconds
+Test Suite 'HotkeyTests' started at 2026-10-22 4:02:01.634 AM.
+Test Case '-[LouppeTests.HotkeyTests testAppCommandsRemainAvailableFromNonTextControlFocus]' started.
+Test Case '-[LouppeTests.HotkeyTests testAppCommandsRemainAvailableFromNonTextControlFocus]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testArrowKeysNavigateGridEvenWhenCurrentItemIsVideo]' started.
+Test Case '-[LouppeTests.HotkeyTests testArrowKeysNavigateGridEvenWhenCurrentItemIsVideo]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandArrowsAdjustMediaSpeedAndNavigatePhotos]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandArrowsAdjustMediaSpeedAndNavigatePhotos]' passed (0.004 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandFFocusesFilterSearchThroughFocusedSessionGate]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandFFocusesFilterSearchThroughFocusedSessionGate]' passed (0.001 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesPairedComponentCleanUpActions]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesPairedComponentCleanUpActions]' passed (0.022 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesWorkingMediaAndAdjacentItemActions]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteIncludesWorkingMediaAndAdjacentItemActions]' passed (0.033 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteKeepsBatchRenameButNotSingleFileRename]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteKeepsBatchRenameButNotSingleFileRename]' passed (0.016 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteRanksSpecificActionsAndNormalizesSearch]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteRanksSpecificActionsAndNormalizesSearch]' passed (0.026 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteShowsHotkeysAndNewActions]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteShowsHotkeysAndNewActions]' passed (0.016 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFilterWordingForRAWJPEGPairing]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFilterWordingForRAWJPEGPairing]' passed (0.008 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFocusedSessionGateAndRunsAfterDismissal]' started.
+Test Case '-[LouppeTests.HotkeyTests testCommandPaletteUsesFocusedSessionGateAndRunsAfterDismissal]' passed (0.001 seconds).
+Test Case '-[LouppeTests.HotkeyTests testCustomAndPhysicalReviewBindingsUseExistingOwnershipGates]' started.
+Test Case '-[LouppeTests.HotkeyTests testCustomAndPhysicalReviewBindingsUseExistingOwnershipGates]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testDestructiveShortcutPassesThroughOutsideUnobstructedSessionContext]' started.
+Test Case '-[LouppeTests.HotkeyTests testDestructiveShortcutPassesThroughOutsideUnobstructedSessionContext]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testEditedCommandAliasesRespectOwnershipCapsLockAndRemoval]' started.
+Test Case '-[LouppeTests.HotkeyTests testEditedCommandAliasesRespectOwnershipCapsLockAndRemoval]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testEmptySessionCannotPresentExportFromToolbarOrHotkeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testEmptySessionCannotPresentExportFromToolbarOrHotkeys]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testFeedbackPromptOwnsKeysUntilDismissed]' started.
+Test Case '-[LouppeTests.HotkeyTests testFeedbackPromptOwnsKeysUntilDismissed]' passed (0.001 seconds).
+Test Case '-[LouppeTests.HotkeyTests testFileOperationPassesThroughModifiersSheetsAndUnknownKeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testFileOperationPassesThroughModifiersSheetsAndUnknownKeys]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testHorizontalReviewKeysKeepJLForItemsAndArrowsForVideoSeeking]' started.
+Test Case '-[LouppeTests.HotkeyTests testHorizontalReviewKeysKeepJLForItemsAndArrowsForVideoSeeking]' passed (0.004 seconds).
+Test Case '-[LouppeTests.HotkeyTests testHostedSwiftUIButtonFocusStillAllowsCullingHotkeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testHostedSwiftUIButtonFocusStillAllowsCullingHotkeys]' passed (0.064 seconds).
+Test Case '-[LouppeTests.HotkeyTests testInstalledMonitorRoutesWindowEventsAndIsRemovedWithSessionView]' started.
+Test Case '-[LouppeTests.HotkeyTests testInstalledMonitorRoutesWindowEventsAndIsRemovedWithSessionView]' passed (0.263 seconds).
+Test Case '-[LouppeTests.HotkeyTests testInstalledMonitorUsesSavedCommandAliasesAndLeavesOldDefaultInactive]' started.
+Test Case '-[LouppeTests.HotkeyTests testInstalledMonitorUsesSavedCommandAliasesAndLeavesOldDefaultInactive]' passed (0.655 seconds).
+Test Case '-[LouppeTests.HotkeyTests testKTogglesPlayableMediaWithoutChangingPhotoNavigation]' started.
+Test Case '-[LouppeTests.HotkeyTests testKTogglesPlayableMediaWithoutChangingPhotoNavigation]' passed (0.005 seconds).
+Test Case '-[LouppeTests.HotkeyTests testLegacyMigrationConfirmationBlocksSessionHotkeys]' started.
+Test Case '-[LouppeTests.HotkeyTests testLegacyMigrationConfirmationBlocksSessionHotkeys]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testMenuEquivalentKeysUseTheSameFocusedSessionGate]' started.
+Test Case '-[LouppeTests.HotkeyTests testMenuEquivalentKeysUseTheSameFocusedSessionGate]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testMultipleAliasesRouteSharedKeyOnlyWithinItsMediaContext]' started.
+Test Case '-[LouppeTests.HotkeyTests testMultipleAliasesRouteSharedKeyOnlyWithinItsMediaContext]' passed (0.004 seconds).
+Test Case '-[LouppeTests.HotkeyTests testNumericHotkeysSetStarsWithoutChangingDecisionOrAdvancing]' started.
+Test Case '-[LouppeTests.HotkeyTests testNumericHotkeysSetStarsWithoutChangingDecisionOrAdvancing]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testOnlyExactDocumentedModifiersReachSessionCommands]' started.
+Test Case '-[LouppeTests.HotkeyTests testOnlyExactDocumentedModifiersReachSessionCommands]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testPresentedSessionUIPassesThroughBeforeCommandShortcuts]' started.
+Test Case '-[LouppeTests.HotkeyTests testPresentedSessionUIPassesThroughBeforeCommandShortcuts]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testRemovingNavigationAliasKeepsItsDisjointVideoMeaningAndNativeFocus]' started.
+Test Case '-[LouppeTests.HotkeyTests testRemovingNavigationAliasKeepsItsDisjointVideoMeaningAndNativeFocus]' passed (0.003 seconds).
+Test Case '-[LouppeTests.HotkeyTests testResponderRolesSeparateTextFromNativeControlNavigation]' started.
+Test Case '-[LouppeTests.HotkeyTests testResponderRolesSeparateTextFromNativeControlNavigation]' passed (0.004 seconds).
+Test Case '-[LouppeTests.HotkeyTests testReviewHotkeysStillRateAndAdvance]' started.
+Test Case '-[LouppeTests.HotkeyTests testReviewHotkeysStillRateAndAdvance]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testRootPhaseTransitionReinstallsLiveSessionMonitor]' started.
+Test Case '-[LouppeTests.HotkeyTests testRootPhaseTransitionReinstallsLiveSessionMonitor]' passed (2.023 seconds).
+Test Case '-[LouppeTests.HotkeyTests testSelectableTextRetainsEverySessionCommand]' started.
+Test Case '-[LouppeTests.HotkeyTests testSelectableTextRetainsEverySessionCommand]' passed (0.010 seconds).
+Test Case '-[LouppeTests.HotkeyTests testSessionEventSurvivesTransientMissingKeyWindow]' started.
+Test Case '-[LouppeTests.HotkeyTests testSessionEventSurvivesTransientMissingKeyWindow]' passed (0.006 seconds).
+Test Case '-[LouppeTests.HotkeyTests testSpaceTogglesPlayableMediaButAdvancesFromPhoto]' started.
+Test Case '-[LouppeTests.HotkeyTests testSpaceTogglesPlayableMediaButAdvancesFromPhoto]' passed (0.006 seconds).
+Test Case '-[LouppeTests.HotkeyTests testTextEditingRetainsStandardCommandShortcuts]' started.
+Test Case '-[LouppeTests.HotkeyTests testTextEditingRetainsStandardCommandShortcuts]' passed (0.001 seconds).
+Test Case '-[LouppeTests.HotkeyTests testTextEditorBlocksUntilEditingFocusEnds]' started.
+Test Case '-[LouppeTests.HotkeyTests testTextEditorBlocksUntilEditingFocusEnds]' passed (0.009 seconds).
+Test Case '-[LouppeTests.HotkeyTests testToolbarHintsShowOnlyAliasesThatRouteInTheCurrentContext]' started.
+Test Case '-[LouppeTests.HotkeyTests testToolbarHintsShowOnlyAliasesThatRouteInTheCurrentContext]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testWindowRootFocusDoesNotInheritNestedSelectableText]' started.
+Test Case '-[LouppeTests.HotkeyTests testWindowRootFocusDoesNotInheritNestedSelectableText]' passed (0.063 seconds).
+Test Case '-[LouppeTests.HotkeyTests testXDoesNotToggleClippingWarningsForVideo]' started.
+Test Case '-[LouppeTests.HotkeyTests testXDoesNotToggleClippingWarningsForVideo]' passed (0.002 seconds).
+Test Case '-[LouppeTests.HotkeyTests testXTogglesClippingWarningsOnlyForSingleGalleryPhoto]' started.
+Test Case '-[LouppeTests.HotkeyTests testXTogglesClippingWarningsOnlyForSingleGalleryPhoto]' passed (0.002 seconds).
+Test Suite 'HotkeyTests' passed at 2026-10-22 4:02:04.920 AM.
+	 Executed 41 tests, with 0 failures (0 unexpected) in 3.283 (3.286) seconds
+Test Suite 'MountedLargeListInvalidationTests' started at 2026-10-22 4:02:04.920 AM.
+Test Case '-[LouppeTests.MountedLargeListInvalidationTests testCollectionEqualityRetainsLocaleAndStoreIdentity]' started.
+Test Case '-[LouppeTests.MountedLargeListInvalidationTests testCollectionEqualityRetainsLocaleAndStoreIdentity]' passed (0.074 seconds).
+Test Case '-[LouppeTests.MountedLargeListInvalidationTests testMountedBrowserDoesNotReconstructCollectionForCurrentOrSelection]' started.
+Test Case '-[LouppeTests.MountedLargeListInvalidationTests testMountedBrowserDoesNotReconstructCollectionForCurrentOrSelection]' passed (1.748 seconds).
+Test Case '-[LouppeTests.MountedLargeListInvalidationTests testMountedGridDoesNotReconstructCollectionForCurrentOrSelection]' started.
+Test Case '-[LouppeTests.MountedLargeListInvalidationTests testMountedGridDoesNotReconstructCollectionForCurrentOrSelection]' passed (2.927 seconds).
+Test Suite 'MountedLargeListInvalidationTests' passed at 2026-10-22 4:02:09.668 AM.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 4.748 (4.748) seconds
+Test Suite 'PersistentVerticalScrollerTests' started at 2026-10-22 4:02:09.668 AM.
+Test Case '-[LouppeTests.PersistentVerticalScrollerTests testAxisLockDetachesAndRebindsWithoutOwningOldClip]' started.
+Test Case '-[LouppeTests.PersistentVerticalScrollerTests testAxisLockDetachesAndRebindsWithoutOwningOldClip]' passed (0.001 seconds).
+Test Case '-[LouppeTests.PersistentVerticalScrollerTests testAxisLockRebindsWhenNativeClipIsReplaced]' started.
+Test Case '-[LouppeTests.PersistentVerticalScrollerTests testAxisLockRebindsWhenNativeClipIsReplaced]' passed (0.001 seconds).
+Test Case '-[LouppeTests.PersistentVerticalScrollerTests testAxisLockRepairsDocumentDriftAndPreservesNativeVerticalScrolling]' started.
+Test Case '-[LouppeTests.PersistentVerticalScrollerTests testAxisLockRepairsDocumentDriftAndPreservesNativeVerticalScrolling]' passed (0.128 seconds).
+Test Suite 'PersistentVerticalScrollerTests' passed at 2026-10-22 4:02:09.798 AM.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.130 (0.130) seconds
+Test Suite 'ReviewCollectionTests' started at 2026-10-22 4:02:09.798 AM.
+Test Case '-[LouppeTests.ReviewCollectionTests testBrowserEqualityIncludesGroupsWhenItemOrderDoesNotChange]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testBrowserEqualityIncludesGroupsWhenItemOrderDoesNotChange]' passed (0.004 seconds).
+Test Case '-[LouppeTests.ReviewCollectionTests testDistantGeometryRealizesOnlyIntersectingRowsAcrossManyGroups]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testDistantGeometryRealizesOnlyIntersectingRowsAcrossManyGroups]' passed (0.019 seconds).
+Test Case '-[LouppeTests.ReviewCollectionTests testGridMirrorsPhysicalColumnsAndControlExclusion]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testGridMirrorsPhysicalColumnsAndControlExclusion]' passed (0.001 seconds).
+Test Case '-[LouppeTests.ReviewCollectionTests testMountedDistantFollowIsBoundedAndManualScrollDoesNotRefollow]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testMountedDistantFollowIsBoundedAndManualScrollDoesNotRefollow]' passed (0.303 seconds).
+Test Case '-[LouppeTests.ReviewCollectionTests testNativeDocumentRebindsAxisGuardAndCannotRestartAfterDismantle]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testNativeDocumentRebindsAxisGuardAndCannotRestartAfterDismantle]' passed (0.116 seconds).
+Test Case '-[LouppeTewarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+sts.ReviewCollectionTests testOneShotPhysicalViewportRestoresThroughReorderAndThenAllowsNavigation]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testOneShotPhysicalViewportRestoresThroughReorderAndThenAllowsNavigation]' passed (0.174 seconds).
+Test Suite 'ReviewCollectionTests' passed at 2026-10-22 4:02:10.415 AM.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.616 (0.617) seconds
+Test Suite 'StagedViewportHandoffTests' started at 2026-10-22 4:02:10.416 AM.
+Test Case '-[LouppeTests.StagedViewportHandoffTests testMountedOpeningHandsOffManualAnchorSeparatelyFromCurrentAfterFinalReorder]' started.
+Test Case '-[LouppeTests.StagedViewportHandoffTests testMountedOpeningHandsOffManualAnchorSeparatelyFromCurrentAfterFinalReorder]' passed (0.994 seconds).
+Test Suite 'StagedViewportHandoffTests' passed at 2026-10-22 4:02:11.409 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.994 (0.994) seconds
+Test Suite 'ViewSwitchTests' started at 2026-10-22 4:02:11.409 AM.
+Test Case '-[LouppeTests.ViewSwitchTests testRepeatedGalleryGridSwitchesRenderTailMediaAndStayInteractive]' started.
+Test Case '-[LouppeTests.ViewSwitchTests testRepeatedGalleryGridSwitchesRenderTailMediaAndStayInteractive]' passed (1.149 seconds).
+Test Suite 'ViewSwitchTests' passed at 2026-10-22 4:02:12.559 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.149 (1.149) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-22 4:02:12.559 AM.
+	 Executed 66 tests, with 0 failures (0 unexpected) in 72.867 (72.875) seconds
+Test Suite 'Selected tests' passed at 2026-10-22 4:02:12.559 AM.
+	 Executed 66 tests, with 0 failures (0 unexpected) in 72.867 (72.882) seconds
+Browser geometry before scroll: clip=(0.0, 0.0, 122.0, 500.0), document=(0.0, 0.0, 122.0, 3279.0), content=(122.0, 500.0)
+Browser geometry after scroll: clip=(0.0, 100.0, 122.0, 500.0), document=(0.0, 0.0, 122.0, 3279.0)
+Browser geometry after follow: clip=(0.0, 2779.0, 122.0, 500.0), document=(0.0, 0.0, 122.0, 3279.0)

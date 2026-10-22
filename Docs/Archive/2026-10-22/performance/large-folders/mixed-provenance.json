@@ -1,0 +1,22 @@
+{
+  "generated_mixed": {
+    "1000": {
+      "jpeg": 970,
+      "raw": 190,
+      "video": 10,
+      "audio": 10,
+      "text": 10
+    },
+    "10000": {
+      "jpeg": 9700,
+      "raw": 1900,
+      "video": 100,
+      "audio": 100,
+      "text": 100
+    }
+  },
+  "photo_source": "generated geometric JPEG and APFS clones of one existing demo RAF",
+  "video_source": "ffmpeg testsrc2 640x360 12fps1s H264",
+  "audio_source": "generated mono 8kHz silence",
+  "files_are_disposable": true
+}

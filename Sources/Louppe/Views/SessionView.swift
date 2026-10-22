@@ -402,7 +402,11 @@ struct SessionView: View {
                     case .gallery:
                         GalleryView(store: store)
                     case .grid:
-                        GridView(store: store)
+                        GridView(store: store,
+                            initialViewportReceipt: store.pendingOpeningViewportReceipt(for: .grid).map {
+                                ReviewCollectionViewportReceipt(physicalFileID: $0.physicalFileID, topOffset: CGFloat($0.topOffset))
+                            },
+                            onViewportRestored: { _ in store.consumeOpeningViewportReceipt(for: .grid) })
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

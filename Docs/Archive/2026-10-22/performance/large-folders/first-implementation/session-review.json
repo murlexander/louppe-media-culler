@@ -1,0 +1,363 @@
+{
+  "generatedAt" : "2026-10-22T01:29:21Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 0.034667,
+      "medianMS" : 0.031291,
+      "minMS" : 0.024,
+      "name" : "review.rating.default-sort",
+      "p95MS" : 0.034667,
+      "samplesMS" : [
+        0.031291,
+        0.034667,
+        0.024
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 1.08675,
+      "medianMS" : 1.05025,
+      "minMS" : 1.049917,
+      "name" : "review.rating.decision-sort",
+      "p95MS" : 1.08675,
+      "samplesMS" : [
+        1.049917,
+        1.08675,
+        1.05025
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 1.197833,
+      "medianMS" : 1.125708,
+      "minMS" : 1.016,
+      "name" : "review.stars.star-sort",
+      "p95MS" : 1.197833,
+      "samplesMS" : [
+        1.197833,
+        1.125708,
+        1.016
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.183375,
+      "medianMS" : 0.174375,
+      "minMS" : 0.173709,
+      "name" : "filter.decision.projection-and-groups",
+      "p95MS" : 0.183375,
+      "samplesMS" : [
+        0.183375,
+        0.174375,
+        0.173709
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.838375,
+      "medianMS" : 0.7015,
+      "minMS" : 0.65475,
+      "name" : "sort-menu.camera.full-store",
+      "p95MS" : 0.838375,
+      "samplesMS" : [
+        0.7015,
+        0.65475,
+        0.838375
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.866333,
+      "medianMS" : 0.791167,
+      "minMS" : 0.779167,
+      "name" : "sort-menu.camera.prepared-only-hypothesis",
+      "p95MS" : 0.866333,
+      "samplesMS" : [
+        0.866333,
+        0.791167,
+        0.779167
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.0175,
+      "medianMS" : 0.016583,
+      "minMS" : 0.016166,
+      "name" : "quality.coverage.unmeasured-read",
+      "p95MS" : 0.0175,
+      "samplesMS" : [
+        0.0175,
+        0.016583,
+        0.016166
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.367875,
+      "medianMS" : 0.020959,
+      "minMS" : 0.019792,
+      "name" : "filter.quality.switch-metadata-cue",
+      "p95MS" : 0.367875,
+      "samplesMS" : [
+        0.020959,
+        0.367875,
+        0.019792
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 5.241667,
+      "medianMS" : 4.988208,
+      "minMS" : 4.938583,
+      "name" : "navigation.100-steps",
+      "p95MS" : 5.241667,
+      "samplesMS" : [
+        5.241667,
+        4.988208,
+        4.938583
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.029417,
+      "medianMS" : 0.029083,
+      "minMS" : 0.027958,
+      "name" : "review.rating.default-sort",
+      "p95MS" : 0.029417,
+      "samplesMS" : [
+        0.029417,
+        0.029083,
+        0.027958
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 11.642417,
+      "medianMS" : 11.02975,
+      "minMS" : 10.89875,
+      "name" : "review.rating.decision-sort",
+      "p95MS" : 11.642417,
+      "samplesMS" : [
+        11.642417,
+        10.89875,
+        11.02975
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 12.498625,
+      "medianMS" : 12.052291,
+      "minMS" : 11.55075,
+      "name" : "review.stars.star-sort",
+      "p95MS" : 12.498625,
+      "samplesMS" : [
+        11.55075,
+        12.498625,
+        12.052291
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 2.141875,
+      "medianMS" : 1.858292,
+      "minMS" : 1.691417,
+      "name" : "filter.decision.projection-and-groups",
+      "p95MS" : 2.141875,
+      "samplesMS" : [
+        2.141875,
+        1.858292,
+        1.691417
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 8.984958,
+      "medianMS" : 8.798416,
+      "minMS" : 8.75675,
+      "name" : "sort-menu.camera.full-store",
+      "p95MS" : 8.984958,
+      "samplesMS" : [
+        8.984958,
+        8.798416,
+        8.75675
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 11.16725,
+      "medianMS" : 10.999875,
+      "minMS" : 10.472666,
+      "name" : "sort-menu.camera.prepared-only-hypothesis",
+      "p95MS" : 11.16725,
+      "samplesMS" : [
+        10.999875,
+        11.16725,
+        10.472666
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.018541,
+      "medianMS" : 0.016042,
+      "minMS" : 0.01575,
+      "name" : "quality.coverage.unmeasured-read",
+      "p95MS" : 0.018541,
+      "samplesMS" : [
+        0.018541,
+        0.016042,
+        0.01575
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 3.740916,
+      "medianMS" : 0.070708,
+      "minMS" : 0.064333,
+      "name" : "filter.quality.switch-metadata-cue",
+      "p95MS" : 3.740916,
+      "samplesMS" : [
+        0.064333,
+        3.740916,
+        0.070708
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 5.247792,
+      "medianMS" : 5.019542,
+      "minMS" : 4.767333,
+      "name" : "navigation.100-steps",
+      "p95MS" : 5.247792,
+      "samplesMS" : [
+        5.019542,
+        5.247792,
+        4.767333
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 0.027208,
+      "medianMS" : 0.024958,
+      "minMS" : 0.024834,
+      "name" : "review.rating.default-sort",
+      "p95MS" : 0.027208,
+      "samplesMS" : [
+        0.027208,
+        0.024958,
+        0.024834
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 127.531583,
+      "medianMS" : 125.824209,
+      "minMS" : 124.970333,
+      "name" : "review.rating.decision-sort",
+      "p95MS" : 127.531583,
+      "samplesMS" : [
+        127.531583,
+        125.824209,
+        124.970333
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 120.492334,
+      "medianMS" : 119.799791,
+      "minMS" : 119.176583,
+      "name" : "review.stars.star-sort",
+      "p95MS" : 120.492334,
+      "samplesMS" : [
+        119.799791,
+        119.176583,
+        120.492334
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 27.218375,
+      "medianMS" : 27.164291,
+      "minMS" : 26.897709,
+      "name" : "filter.decision.projection-and-groups",
+      "p95MS" : 27.218375,
+      "samplesMS" : [
+        26.897709,
+        27.164291,
+        27.218375
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 128.78225,
+      "medianMS" : 126.394042,
+      "minMS" : 122.716792,
+      "name" : "sort-menu.camera.full-store",
+      "p95MS" : 128.78225,
+      "samplesMS" : [
+        122.716792,
+        126.394042,
+        128.78225
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 162.436959,
+      "medianMS" : 158.938375,
+      "minMS" : 153.870292,
+      "name" : "sort-menu.camera.prepared-only-hypothesis",
+      "p95MS" : 162.436959,
+      "samplesMS" : [
+        153.870292,
+        162.436959,
+        158.938375
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 0.019542,
+      "medianMS" : 0.017042,
+      "minMS" : 0.016583,
+      "name" : "quality.coverage.unmeasured-read",
+      "p95MS" : 0.019542,
+      "samplesMS" : [
+        0.019542,
+        0.017042,
+        0.016583
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 39.547958,
+      "medianMS" : 0.730125,
+      "minMS" : 0.490875,
+      "name" : "filter.quality.switch-metadata-cue",
+      "p95MS" : 39.547958,
+      "samplesMS" : [
+        0.490875,
+        39.547958,
+        0.730125
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 5.055583,
+      "medianMS" : 5.03325,
+      "minMS" : 4.9045,
+      "name" : "navigation.100-steps",
+      "p95MS" : 5.055583,
+      "samplesMS" : [
+        5.055583,
+        5.03325,
+        4.9045
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "session-review",
+  "warmups" : 1
+}

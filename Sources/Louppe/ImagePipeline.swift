@@ -34,6 +34,16 @@ final class ImagePipeline: @unchecked Sendable {
     }()
     private let diskQueue = DispatchQueue(label: "louppe.thumbnail-disk-cache", qos: .utility)
     private let diskCacheRoot: URL
+    // Optional writes retain at most 1/32 of the thumbnail cache's byte budget.
+    // Count also bounds tiny images/queue bookkeeping; the active write counts.
+    static let pendingDiskWriteByteLimit = 8 * 1024 * 1024
+    static let pendingDiskWriteCountLimit = 32
+    static let neighbourPrefetchLimit = 4 // Existing [+1, +2, +3, -1] window.
+    private let diskWriteLock = NSLock()
+    private var diskWrites: [URL: CGImage] = [:]
+    private var diskWriteOrder: [URL] = []
+    private var diskWriteBytes = 0
+    private var diskDrainScheduled = false
 
     private enum DecodeKind: Hashable { case thumbnail, full }
     private struct DecodeRequest: Hashable {
@@ -61,6 +71,7 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
     private let testingDecoder: (@Sendable (URL, CGFloat) -> CGImage?)?
+    private let testingDiskWriter: (@Sendable (CGImage, URL) -> Void)?
 
     private final class GeneratedImageBox: @unchecked Sendable {
         private let lock = NSLock()
@@ -113,6 +124,27 @@ final class ImagePipeline: @unchecked Sendable {
             schedulesMaintenance: false,
             testingDecoder: decoder
         )
+        if let thumbnailConcurrency {
+            thumbnailDecodeQueue.maxConcurrentOperationCount = max(1, thumbnailConcurrency)
+        }
+        if let fullConcurrency {
+            fullDecodeQueue.maxConcurrentOperationCount = max(1, fullConcurrency)
+        }
+    }
+
+    convenience init(
+        testingDiskCacheRoot: URL,
+        thumbnailConcurrency: Int? = nil,
+        fullConcurrency: Int? = nil,
+        testingDiskWriter: @escaping @Sendable (CGImage, URL) -> Void,
+        decoder: (@Sendable (URL, CGFloat) -> CGImage?)? = nil
+    ) {
+        self.init(
+            diskCacheRoot: testingDiskCacheRoot,
+            schedulesMaintenance: false,
+            testingDiskWriter: testingDiskWriter,
+            testingDecoder: decoder
+        )
         if let thumbnailConcurrency { thumbnailDecodeQueue.maxConcurrentOperationCount = max(1, thumbnailConcurrency) }
         if let fullConcurrency { fullDecodeQueue.maxConcurrentOperationCount = max(1, fullConcurrency) }
     }
@@ -120,10 +152,12 @@ final class ImagePipeline: @unchecked Sendable {
     private init(
         diskCacheRoot: URL,
         schedulesMaintenance: Bool,
+        testingDiskWriter: (@Sendable (CGImage, URL) -> Void)? = nil,
         testingDecoder: (@Sendable (URL, CGFloat) -> CGImage?)? = nil
     ) {
         self.diskCacheRoot = diskCacheRoot
         self.testingDecoder = testingDecoder
+        self.testingDiskWriter = testingDiskWriter
         thumbCache.countLimit = 1200
         thumbCache.totalCostLimit = 256 * 1024 * 1024
         fullCache.countLimit = 8
@@ -174,7 +208,7 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
 
-    func thumbnail(for item: PhotoItem) async -> NSImage? {
+    func thumbnail(for item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> NSImage? {
         guard !item.isAudio && !item.isText, !Task.isCancelled else { return nil }
         let key = Self.cacheKey(for: item)
         if let cached = thumbCache.object(forKey: key as NSString) { return cached }
@@ -183,13 +217,14 @@ final class ImagePipeline: @unchecked Sendable {
             kind: .thumbnail,
             key: key,
             qualityOfService: .userInitiated,
-            queuePriority: .normal
+            queuePriority: .normal,
+            sourceAccess: sourceAccess
         ) { [self] in
             loadThumbnailSync(item: item, revision: revision, key: key)
         }
     }
 
-    func fullImage(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault) async -> NSImage? {
+    func fullImage(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault, sourceAccess: MediaReadAccess? = nil) async -> NSImage? {
         guard !item.isAudio && !item.isText, !Task.isCancelled else { return nil }
         let key = Self.fullCacheKey(for: item, mode: mode, decoder: decoder)
         if let cached = fullCache.object(forKey: key as NSString) { return cached }
@@ -199,7 +234,8 @@ final class ImagePipeline: @unchecked Sendable {
             qualityOfService: .userInitiated,
             queuePriority: .veryHigh,
             rendersRAW: mode.rendersRAW(for: item),
-            decoder: decoder
+            decoder: decoder,
+            sourceAccess: sourceAccess
         )
     }
 
@@ -209,31 +245,54 @@ final class ImagePipeline: @unchecked Sendable {
         qualityOfService: QualityOfService,
         queuePriority: Operation.QueuePriority,
         rendersRAW: Bool = false,
-        decoder: AppleRawDecoder = .appleDefault
+        decoder: AppleRawDecoder = .appleDefault,
+        sourceAccess: MediaReadAccess? = nil
     ) async -> NSImage? {
         guard !Task.isCancelled else { return nil }
         return await decodeOnce(
             kind: .full,
             key: key,
             qualityOfService: qualityOfService,
-            queuePriority: queuePriority
+            queuePriority: queuePriority,
+            sourceAccess: sourceAccess
         ) { [self] in
             loadFullSync(revision: revision, key: key, rendersRAW: rendersRAW, decoder: decoder)
         }
     }
 
-    /// Warm the full-size cache for the next few photos so navigation feels instant.
-    func prefetchFullImages(items: [PhotoItem]) {
-        for item in items where !item.isText {
-            let key = Self.cacheKey(for: item)
-            if fullCache.object(forKey: key as NSString) != nil { continue }
-            Task.detached(priority: .utility) { [weak self] in
-                _ = await self?.fullImage(
-                    for: MediaSourceRevision(item),
-                    key: key,
-                    qualityOfService: .utility,
-                    queuePriority: .low
-                )
+    /// The session retains this handle and cancels it on navigation, folder,
+    /// projection or decoder changes. Cancellation propagates to each neighbour
+    /// waiter without cancelling a foreground caller sharing the same decode.
+    @discardableResult
+    func prefetchFullImages(
+        items: [PhotoItem],
+        mode: RawDisplayMode = .fast,
+        decoder: AppleRawDecoder = .appleDefault
+    ) -> Task<Void, Never> {
+        guard !Task.isCancelled else { return Task {} }
+        var keys = Set<String>()
+        var neighbours: [PhotoItem] = []
+        for item in items where item.mediaKind == .photo && item.isSupported {
+            let key = Self.fullCacheKey(for: item, mode: mode, decoder: decoder)
+            guard keys.insert(key).inserted else { continue }
+            if fullCache.object(forKey: key as NSString) == nil { neighbours.append(item) }
+            if keys.count == Self.neighbourPrefetchLimit { break }
+        }
+        return Task.detached(priority: .utility) { [self, neighbours] in
+            await withTaskGroup(of: Void.self) { group in
+                for item in neighbours {
+                    guard !Task.isCancelled else { break }
+                    group.addTask { [self] in
+                        _ = await fullImage(
+                            for: MediaSourceRevision(item),
+                            key: Self.fullCacheKey(for: item, mode: mode, decoder: decoder),
+                            qualityOfService: .utility,
+                            queuePriority: .low,
+                            rendersRAW: mode.rendersRAW(for: item),
+                            decoder: decoder
+                        )
+                    }
+                }
             }
         }
     }
@@ -246,6 +305,7 @@ final class ImagePipeline: @unchecked Sendable {
         key: String,
         qualityOfService: QualityOfService,
         queuePriority: Operation.QueuePriority,
+        sourceAccess: MediaReadAccess? = nil,
         work: @escaping @Sendable () -> DecodedImage?
     ) async -> NSImage? {
         let request = DecodeRequest(kind: kind, key: key)
@@ -282,6 +342,10 @@ final class ImagePipeline: @unchecked Sendable {
                 let operation = BlockOperation()
                 operation.addExecutionBlock { [weak self, weak operation] in
                     guard let self, let operation, !operation.isCancelled else { return }
+                    // Waiter cancellation can return before native decoding.
+                    // The executing block, rather than its view/task, owns I/O.
+                    let access = sourceAccess?.begin()
+                    defer { withExtendedLifetime(access) {} }
                     let result = autoreleasepool { work() }
                     self.finish(request, operation: operation, result: result)
                 }
@@ -333,12 +397,7 @@ final class ImagePipeline: @unchecked Sendable {
             }
             if let write = result.diskWrite {
                 // Only a live operation may warm memory or schedule disk I/O.
-                diskQueue.async {
-                    let rep = NSBitmapImageRep(cgImage: write.image)
-                    if let jpeg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.8]) {
-                        try? jpeg.write(to: write.url, options: .atomic)
-                    }
-                }
+                enqueueDiskWrite(image: write.image, url: write.url)
             }
         }
         let waiters = Array(pending.waiters.values)
@@ -346,7 +405,72 @@ final class ImagePipeline: @unchecked Sendable {
         for waiter in waiters { waiter.resume(returning: result?.image) }
     }
 
+    private func enqueueDiskWrite(image: CGImage, url: URL) {
+        diskWriteLock.lock()
+        let cost = Self.cost(of: image)
+        guard diskWrites[url] == nil,
+              diskWrites.count < Self.pendingDiskWriteCountLimit,
+              cost <= Self.pendingDiskWriteByteLimit - diskWriteBytes else {
+            diskWriteLock.unlock()
+            return // Cache output is optional; visible pixels have priority.
+        }
+        let startsDrain = !diskDrainScheduled
+        diskDrainScheduled = true
+        diskWrites[url] = image
+        diskWriteOrder.append(url)
+        diskWriteBytes += cost
+        diskWriteLock.unlock()
+        if startsDrain {
+            // One closure owns the drain; queued closures never capture pixels.
+            diskQueue.async { [self] in drainDiskWrites() }
+        }
+    }
+
+    private func drainDiskWrites() {
+        while true {
+            let write: (url: URL, image: CGImage)? = diskWriteLock.withLock {
+                guard let url = diskWriteOrder.first, let image = diskWrites[url] else {
+                    diskDrainScheduled = false
+                    return nil
+                }
+                return (url, image)
+            }
+            guard let write else { return }
+            autoreleasepool {
+                if let testingDiskWriter {
+                    testingDiskWriter(write.image, write.url)
+                } else {
+                    let rep = NSBitmapImageRep(cgImage: write.image)
+                    if let jpeg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.8]) {
+                        try? jpeg.write(to: write.url, options: .atomic)
+                    }
+                }
+            }
+            diskWriteLock.withLock {
+                diskWriteBytes -= Self.cost(of: write.image)
+                diskWrites.removeValue(forKey: write.url)
+                diskWriteOrder.removeFirst()
+            }
+        }
+    }
+
     #if DEBUG
+    var pendingDiskWritesForTesting: (count: Int, bytes: Int) {
+        diskWriteLock.withLock { (diskWrites.count, diskWriteBytes) }
+    }
+
+    func evictThumbnailForTesting(for item: PhotoItem) {
+        thumbCache.removeObject(forKey: Self.cacheKey(for: item) as NSString)
+    }
+
+    func waitForFullWorkForTesting() async {
+        await withCheckedContinuation { continuation in
+            let barrier = BlockOperation { continuation.resume() }
+            for operation in fullDecodeQueue.operations { barrier.addDependency(operation) }
+            fullDecodeQueue.addOperation(barrier)
+        }
+    }
+
     func decodeWaiterCountForTesting(for item: PhotoItem, full: Bool = false) -> Int {
         let request = DecodeRequest(kind: full ? .full : .thumbnail, key: Self.cacheKey(for: item))
         return inFlightLock.withLock { inFlight[request]?.waiters.count ?? 0 }

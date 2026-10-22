@@ -133,11 +133,35 @@ enum FolderScanner {
             || isAudioExtension(ext)
     }
 
-    private struct FileFacts: Sendable {
+    fileprivate struct FileFacts: Sendable {
         let size: Int64
         let creationDate: Date?
         let modificationDate: Date?
         let identity: FileOperationJournal.FileIdentity
+    }
+
+    /// Complete traversal and globally resolved pairing, before metadata I/O.
+    /// The same physical pairs are reused by the opening projection and UI
+    /// commands; ambiguous stems never acquire a provisional partner.
+    struct Inventory: Sendable {
+        let root: URL
+        let items: [PhotoItem]
+        let rawJPEGFileIDs: [(raw: String, jpeg: String)]
+        var physicalFileCount: Int {
+            items.reduce(0) { $0 + $1.individualFiles.count }
+        }
+
+        func physicalPairs(in preparedItems: [PhotoItem]) -> [(raw: PhotoFile, jpeg: PhotoFile)] {
+            var files: [String: PhotoFile] = [:]
+            files.reserveCapacity(physicalFileCount)
+            for item in preparedItems {
+                for file in item.individualFiles { files[file.id] = file }
+            }
+            return rawJPEGFileIDs.compactMap { pair in
+                guard let raw = files[pair.raw], let jpeg = files[pair.jpeg] else { return nil }
+                return (raw, jpeg)
+            }
+        }
     }
 
     /// Thread-safe cancellation signal for a scan. `Task.isCancelled` only
@@ -246,6 +270,30 @@ enum FolderScanner {
         beforeFinalIdentityValidation: () throws -> Void = {},
         progress: (Int) -> Void
     ) throws -> [PhotoItem] {
+        let recorder = SessionOpeningRecorder()
+        let inventory = try discoverInventory(
+            root, pairingMode: pairingMode, isCancelled: isCancelled,
+            recorder: recorder, progress: progress
+        )
+        return try prepareMetadata(
+            in: inventory, isCancelled: isCancelled,
+            beforeFinalIdentityValidation: beforeFinalIdentityValidation,
+            recorder: recorder
+        )
+    }
+
+    static func discoverInventory(
+        _ root: URL,
+        pairingMode: RawJPEGPairingMode = .separate,
+        isCancelled: @Sendable () -> Bool = { false },
+        recorder: SessionOpeningRecorder? = nil,
+        beforeEnumeratingURLForTesting: ((URL) throws -> Void)? = nil,
+        stageWillBegin: (SessionOpeningStage) throws -> Void = { _ in },
+        progress: (Int) -> Void = { _ in }
+    ) throws -> Inventory {
+        try stageWillBegin(.discovery)
+        let discoveryStart = ProcessInfo.processInfo.systemUptime
+        recorder?.progress(.discovery, completed: 0)
         let fm = FileManager.default
         var enumerationError: ScanError?
         guard let enumerator = fm.enumerator(
@@ -274,6 +322,7 @@ enum FolderScanner {
         var factsByURL: [URL: FileFacts] = [:]
         for case let url as URL in enumerator {
             if isCancelled() { throw CancellationError() }
+            try beforeEnumeratingURLForTesting?(url)
             let navigationValues = try? url.resourceValues(forKeys: [
                 .isDirectoryKey,
                 .isSymbolicLinkKey,
@@ -314,31 +363,82 @@ enum FolderScanner {
                 modificationDate: values.contentModificationDate,
                 identity: identity
             )
-            if files.count % 25 == 0 { progress(files.count) }
+            if files.count % 25 == 0 {
+                progress(files.count)
+                recorder?.progress(.discovery, completed: files.count)
+            }
         }
         if isCancelled() { throw CancellationError() }
         if let enumerationError { throw enumerationError }
 
+        try stageWillBegin(.pairing)
+        recorder?.progress(.pairing, completed: files.count, total: files.count)
+        recorder?.record(.discovery, seconds: ProcessInfo.processInfo.systemUptime - discoveryStart)
+        let pairingStart = ProcessInfo.processInfo.systemUptime
         let filenamePolicy = pairingFilenamePolicy(at: root)
 
         // Pair building is cheap; collect every (primary, paired) pair first
         // so the expensive per-file metadata reads can run in parallel below.
+        var pairIDs: [(raw: String, jpeg: String)] = []
         let pairs = pairFiles(
             files,
             pairingMode: pairingMode,
-            filenamePolicy: filenamePolicy
+            filenamePolicy: filenamePolicy,
+            physicalPair: { raw, jpeg in
+                pairIDs.append((relativeFileIdentity(of: raw, under: root),
+                                relativeFileIdentity(of: jpeg, under: root)))
+            }
         )
         if isCancelled() { throw CancellationError() }
 
-        let result = try makeItems(
-            for: pairs,
-            factsByURL: factsByURL,
-            root: root,
-            isCancelled: isCancelled
-        )
+        var items: [PhotoItem] = []
+        items.reserveCapacity(pairs.count)
+        for pair in pairs {
+            if isCancelled() { throw CancellationError() }
+            items.append(PhotoItem(
+                primaryFile: lightweightFile(at: pair.primary, facts: factsByURL[pair.primary], root: root),
+                pairedFile: pair.paired.map { lightweightFile(at: $0, facts: factsByURL[$0], root: root) }
+            ))
+        }
+        recorder?.record(.pairing, seconds: ProcessInfo.processInfo.systemUptime - pairingStart)
+        recorder?.setCounts(physical: files.count, items: items.count)
+        progress(files.count)
+        if isCancelled() { throw CancellationError() }
+        return Inventory(root: root, items: items, rawJPEGFileIDs: pairIDs)
+    }
+
+    /// Bounded long-lived workers claim deterministic slots. Cancellation
+    /// stops new reads; results remain private until both identity barriers.
+    static func prepareMetadata(
+        in inventory: Inventory,
+        isCancelled: @Sendable () -> Bool = { false },
+        beforeFinalIdentityValidation: () throws -> Void = {},
+        recorder: SessionOpeningRecorder? = nil,
+        stageWillBegin: (SessionOpeningStage) throws -> Void = { _ in },
+        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)? = nil
+    ) throws -> [PhotoItem] {
+        try stageWillBegin(.metadata)
+        let result: [PhotoItem]
+        if let recorder {
+            result = try recorder.measure(.metadata) {
+                try makeItems(for: inventory.items, isCancelled: isCancelled,
+                              recorder: recorder, metadataReaderForTesting: metadataReaderForTesting)
+            }
+        } else {
+            result = try makeItems(for: inventory.items, isCancelled: isCancelled,
+                                   recorder: nil, metadataReaderForTesting: metadataReaderForTesting)
+        }
         try beforeFinalIdentityValidation()
-        try validateScannedIdentities(result, isCancelled: isCancelled)
-        let sorted = sortItems(result)
+        try stageWillBegin(.metadataIdentityValidation)
+        if let recorder {
+            try recorder.measure(.metadataIdentityValidation) {
+                try validateScannedIdentities(result, isCancelled: isCancelled)
+            }
+        } else {
+            try validateScannedIdentities(result, isCancelled: isCancelled)
+        }
+        try stageWillBegin(.chronologicalSort)
+        let sorted = recorder.map { $0.measure(.chronologicalSort) { sortItems(result) } } ?? sortItems(result)
         if isCancelled() { throw CancellationError() }
         return sorted
     }
@@ -392,7 +492,8 @@ enum FolderScanner {
     static func pairFiles(
         _ files: [URL],
         pairingMode: RawJPEGPairingMode,
-        filenamePolicy: PairingFilenamePolicy
+        filenamePolicy: PairingFilenamePolicy,
+        physicalPair: ((URL, URL) -> Void)? = nil
     ) -> [(primary: URL, paired: URL?)] {
         var groups: [PairingFilenamePolicy.Key: [URL]] = [:]
         // Sorted stem keys and per-group paths completely determine output.
@@ -428,6 +529,10 @@ enum FolderScanner {
             }
             let jpegs = images.filter {
                 ["jpg", "jpeg"].contains($0.pathExtension.lowercased())
+            }
+
+            if raws.count == 1, jpegs.count == 1, let raw = raws.first, let jpeg = jpegs.first {
+                physicalPair?(raw, jpeg)
             }
 
             // A shared stem is not enough evidence when more than one file
@@ -571,93 +676,40 @@ enum FolderScanner {
     /// competing with the rest of the system.
     private static let maxMetadataConcurrency = min(8, max(1, ProcessInfo.processInfo.activeProcessorCount))
 
-    /// Reading EXIF opens every file and dominates scan time, so the pair
-    /// list is split into contiguous chunks processed concurrently. Each
-    /// chunk fills its own result slot (a single writer per slot) and the
-    /// slots are concatenated in order, making the outcome identical to a
-    /// serial pass; the caller's chronological sort settles the final order
-    /// either way.
+    /// Each long-lived worker claims the next inventory slot, avoiding slow
+    /// chunks on mixed-media folders. One writer fills each slot; chronological
+    /// sorting sees the same deterministic input as a serial metadata pass.
     private static func makeItems(
-        for pairs: [(primary: URL, paired: URL?)],
-        factsByURL: [URL: FileFacts],
-        root: URL,
-        isCancelled: @Sendable () -> Bool
+        for inventoryItems: [PhotoItem],
+        isCancelled: @Sendable () -> Bool,
+        recorder: SessionOpeningRecorder?,
+        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)?
     ) throws -> [PhotoItem] {
-        guard !pairs.isEmpty else { return [] }
-        let chunkSize = max(1, (pairs.count + maxMetadataConcurrency - 1) / maxMetadataConcurrency)
-        let chunkStarts = Array(stride(from: 0, to: pairs.count, by: chunkSize))
-        let chunkResults = ChunkResults(count: chunkStarts.count)
-        DispatchQueue.concurrentPerform(iterations: chunkStarts.count) { chunkIndex in
-            let start = chunkStarts[chunkIndex]
-            let end = min(start + chunkSize, pairs.count)
-            var items: [PhotoItem] = []
-            items.reserveCapacity(end - start)
-            for (primary, paired) in pairs[start..<end] {
-                // A cancelled scan's partial chunk is discarded by the
-                // throw below, so stopping mid-chunk is safe.
-                if isCancelled() { return }
-                let primaryFile = scannedFile(
-                    at: primary,
-                    facts: factsByURL[primary],
-                    root: root
-                )
-                let pairedFile = paired.map {
-                    lightweightFile(
-                        at: $0,
-                        facts: factsByURL[$0],
-                        root: root
+        if isCancelled() { throw CancellationError() }
+        guard !inventoryItems.isEmpty else { return [] }
+        let results = MetadataSlots(count: inventoryItems.count)
+        recorder?.progress(.metadata, completed: 0, total: inventoryItems.count)
+        DispatchQueue.concurrentPerform(iterations: min(maxMetadataConcurrency, inventoryItems.count)) { _ in
+            while !isCancelled(), let slot = results.claim() {
+                do {
+                    let source = inventoryItems[slot]
+                    let file = try autoreleasepool {
+                        try enrichMetadata(for: source.primaryFile, metadataReaderForTesting: metadataReaderForTesting)
+                    }
+                    let completed = results.store(
+                        PhotoItem(primaryFile: file, pairedFile: source.pairedFile), at: slot
                     )
+                    if completed % 25 == 0 || completed == inventoryItems.count {
+                        recorder?.progress(.metadata, completed: completed, total: inventoryItems.count)
+                    }
+                } catch {
+                    results.record(error)
+                    return
                 }
-                items.append(
-                    PhotoItem(primaryFile: primaryFile, pairedFile: pairedFile)
-                )
             }
-            chunkResults.store(items, at: chunkIndex)
         }
         if isCancelled() { throw CancellationError() }
-        return chunkResults.flattened()
-    }
-
-    private static func scannedFile(
-        at url: URL,
-        facts: FileFacts?,
-        root: URL
-    ) -> PhotoFile {
-        let isVideo = isVideoExtension(url.pathExtension)
-        let isAudio = isAudioExtension(url.pathExtension)
-        let isText = isTextExtension(url.pathExtension)
-        let info = isVideo || isAudio || isText
-            ? MetadataExtractor.ScanInfo()
-            : MetadataExtractor.scanInfo(for: url)
-        let videoInfo = isVideo ? VideoMetadataExtractor.scanInfo(for: url) : nil
-        let audioInfo = isAudio ? AudioMetadataExtractor.scanInfo(for: url) : nil
-        return PhotoFile(
-            id: relativeFileIdentity(of: url, under: root),
-            url: url,
-            displayRelativePath: relativeDisplayPath(of: url, under: root),
-            captureDate: info.captureDate ?? facts?.creationDate,
-            captureDateEvidence: info.captureDateEvidence
-                ?? (info.captureDate == nil ? facts?.creationDate.map {
-                    CaptureDateEvidence(date: $0, source: .fileCreation)
-                } : nil),
-            cameraModel: info.cameraModel,
-            lensModel: info.lensModel,
-            filmSimulation: info.filmSimulation,
-            aperture: info.aperture,
-            shutterSpeed: info.shutterSpeed,
-            iso: info.iso,
-            mediaKind: isText ? .text : (isVideo ? .video : (isAudio ? .audio : .photo)),
-            duration: videoInfo?.duration ?? audioInfo?.duration,
-            videoDimensions: videoInfo?.dimensions,
-            videoCodec: videoInfo?.codec,
-            videoFrameRate: videoInfo?.frameRate,
-            videoIsPlayable: videoInfo?.isPlayable ?? false,
-            audioCodec: audioInfo?.codec,
-            audioIsPlayable: audioInfo?.isPlayable ?? false,
-            modificationDate: facts?.modificationDate,
-            fileSize: facts?.size ?? 0,
-            scannedIdentity: facts?.identity
-        )
+        return try results.finished()
     }
 
     /// A hidden JPEG needs only facts already returned by folder enumeration.
@@ -678,6 +730,9 @@ enum FolderScanner {
             },
             cameraModel: nil,
             lensModel: nil,
+            mediaKind: isTextExtension(url.pathExtension) ? .text
+                : (isVideoExtension(url.pathExtension) ? .video
+                    : (isAudioExtension(url.pathExtension) ? .audio : .photo)),
             modificationDate: facts?.modificationDate,
             fileSize: facts?.size ?? 0,
             scannedIdentity: facts?.identity,
@@ -820,29 +875,45 @@ enum FolderScanner {
         )
     }
 
-    /// `DispatchQueue.concurrentPerform` requires a Sendable capture. The
-    /// previous unsafe mutable-buffer capture had one writer per slot but was
-    /// rejected by Swift 6's concurrency model. This box keeps the same
-    /// bounded parallelism and deterministic chunk order while synchronizing
-    /// only the tiny per-chunk assignment.
-    private final class ChunkResults: @unchecked Sendable {
+    /// Fixed slots and at most eight workers, with no task per photo and no
+    /// chunk imbalance when videos/RAWs take longer than JPEG headers.
+    private final class MetadataSlots: @unchecked Sendable {
         private let lock = NSLock()
-        private var values: [[PhotoItem]]
+        private var values: [PhotoItem?]
+        private var next = 0
+        private var completed = 0
+        private var firstError: Error?
 
-        init(count: Int) {
-            values = [[PhotoItem]](repeating: [], count: count)
-        }
+        init(count: Int) { values = Array(repeating: nil, count: count) }
 
-        func store(_ items: [PhotoItem], at index: Int) {
-            lock.lock()
-            values[index] = items
-            lock.unlock()
-        }
-
-        func flattened() -> [PhotoItem] {
+        func claim() -> Int? {
             lock.lock()
             defer { lock.unlock() }
-            return values.flatMap { $0 }
+            guard firstError == nil, next < values.count else { return nil }
+            defer { next += 1 }
+            return next
+        }
+
+        func store(_ item: PhotoItem, at index: Int) -> Int {
+            lock.lock()
+            defer { lock.unlock() }
+            values[index] = item
+            completed += 1
+            return completed
+        }
+
+        func record(_ error: Error) {
+            lock.lock()
+            defer { lock.unlock() }
+            if firstError == nil { firstError = error }
+        }
+
+        func finished() throws -> [PhotoItem] {
+            lock.lock()
+            defer { lock.unlock() }
+            if let firstError { throw firstError }
+            guard completed == values.count else { throw CancellationError() }
+            return values.compactMap { $0 }
         }
     }
 

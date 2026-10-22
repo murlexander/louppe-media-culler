@@ -33,6 +33,7 @@ final class MainWindowLayoutTests: XCTestCase {
             window.orderFront(nil)
             // Let SwiftUI mount the real toolbar and the window bridge.
             try await Task.sleep(for: .milliseconds(100))
+            NotificationCenter.default.post(name: NSWindow.willStartLiveResizeNotification, object: window)
             for width in [layout.minimumContentSize.width, 1100] {
                 window.setContentSize(CGSize(width: width, height: 520))
                 host.layoutSubtreeIfNeeded()
@@ -94,7 +95,7 @@ final class MainWindowLayoutTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(window.contentLayoutRect.height, fittedHeight)
     }
 
-    func testAddedContentGrowsWindowAndRemovingContentOnlyLowersMinimum() {
+    func testWelcomeTracksMeasuredMinimumAsContentArrivesAndLeaves() {
         let (window, controller) = makeWindow()
         defer { window.close() }
         controller.minimumContentSize = CGSize(width: 961, height: 690)
@@ -103,12 +104,12 @@ final class MainWindowLayoutTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(
             window.contentLayoutRect.height, fittingWelcomeHeight(690, in: window)
         )
-        let grownFrame = window.frame.size
         let grownMinimum = window.contentMinSize
 
         controller.minimumContentSize = MainWindowLayout.welcome.minimumContentSize
         controller.apply()
-        XCTAssertEqual(window.frame.size, grownFrame, "removing a drive should not make the window jump smaller")
+        XCTAssertEqual(window.contentLayoutRect.width, controller.minimumContentSize.width, accuracy: 1)
+        XCTAssertEqual(window.contentLayoutRect.height, controller.minimumContentSize.height, accuracy: 1)
         XCTAssertLessThan(window.contentMinSize.width, grownMinimum.width)
         XCTAssertLessThan(window.contentMinSize.height, grownMinimum.height)
     }
@@ -120,6 +121,58 @@ final class MainWindowLayoutTests: XCTestCase {
         controller.apply()
         XCTAssertEqual(window.contentLayoutRect.width, required.width, accuracy: 1)
         XCTAssertEqual(window.contentLayoutRect.height, required.height, accuracy: 1)
+    }
+
+    func testLateRestoredFrameCannotEnlargeWelcome() {
+        let required = CGSize(width: 644, height: 320)
+        let (window, controller) = makeWindow(minimum: required)
+        defer { window.close() }
+        window.setContentSize(CGSize(width: 1200, height: 800))
+        controller.apply()
+        XCTAssertEqual(window.contentLayoutRect.width, required.width, accuracy: 1)
+        XCTAssertEqual(window.contentLayoutRect.height, required.height, accuracy: 1)
+
+        controller.minimumContentSize = CGSize(width: 456, height: 250)
+        controller.apply()
+        XCTAssertEqual(window.contentLayoutRect.width, 456, accuracy: 1)
+        XCTAssertEqual(window.contentLayoutRect.height, 250, accuracy: 1)
+    }
+
+    func testWelcomeKeepsEdgeDragSizeThroughRemeasurement() {
+        let (window, controller) = makeWindow()
+        defer { window.close() }
+        NotificationCenter.default.post(name: NSWindow.willStartLiveResizeNotification, object: window)
+        window.setContentSize(CGSize(width: 1000, height: 520))
+        let chosenFrame = window.frame
+        controller.apply()
+        controller.minimumContentSize = CGSize(width: 644, height: 300)
+        controller.apply()
+        controller.minimumContentSize = MainWindowLayout.welcome.minimumContentSize
+        controller.apply()
+        XCTAssertEqual(window.frame, chosenFrame, "content updates must retain a size chosen by edge dragging")
+
+        controller.windowLayout = .scanning
+        controller.minimumContentSize = MainWindowLayout.scanning.minimumContentSize
+        controller.apply()
+        controller.windowLayout = .welcome
+        controller.minimumContentSize = MainWindowLayout.welcome.minimumContentSize
+        controller.apply()
+        XCTAssertEqual(window.contentLayoutRect.width, 456, accuracy: 1,
+                       "each new Welcome presentation starts compact")
+        XCTAssertEqual(window.contentLayoutRect.height, 180, accuracy: 1)
+    }
+
+    func testDetachedWelcomeDoesNotObserveEdgeDrags() {
+        let (window, controller) = makeWindow()
+        defer { window.close() }
+        let content = window.contentView!
+        controller.removeFromSuperview()
+        NotificationCenter.default.post(name: NSWindow.willStartLiveResizeNotification, object: window)
+        window.setContentSize(CGSize(width: 1000, height: 520))
+        content.addSubview(controller)
+        controller.apply()
+        XCTAssertEqual(window.contentLayoutRect.width, 456, accuracy: 1)
+        XCTAssertEqual(window.contentLayoutRect.height, 180, accuracy: 1)
     }
 
     func testLateToolbarInstallationRechecksUsableSpace() {
@@ -165,7 +218,15 @@ final class MainWindowLayoutTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(window.contentLayoutRect.width, 961)
         let fittedHeight = fittingWelcomeHeight(650, in: window)
         XCTAssertGreaterThanOrEqual(window.contentLayoutRect.height, fittedHeight)
-        XCTAssertEqual(window.frame, sessionFrame, "Back keeps the review window's size and position")
+        XCTAssertEqual(window.contentLayoutRect.width, 961, accuracy: 1)
+        XCTAssertEqual(window.contentLayoutRect.height, fittedHeight, accuracy: 1)
+        XCTAssertLessThanOrEqual(window.frame.height, sessionFrame.height,
+                                 "Back opens Welcome at its own minimum, capped to the display")
+
+        controller.windowLayout = .session
+        controller.minimumContentSize = MainWindowLayout.session.minimumContentSize
+        controller.apply()
+        XCTAssertEqual(window.frame, sessionFrame, "returning to review restores its previous frame")
     }
 
     func testReplacementAndBackPreserveManuallyResizedSessionFrame() throws {
@@ -193,15 +254,26 @@ final class MainWindowLayoutTests: XCTestCase {
         let chosenFrame = window.frame
         XCTAssertLessThanOrEqual(chosenFrame.width, visible.width)
         XCTAssertLessThanOrEqual(chosenFrame.height, visible.height)
-        for layout in [MainWindowLayout.scanning, .session, .welcome, .scanning, .session] {
+        for layout in [MainWindowLayout.scanning, .session] {
             controller.windowLayout = layout
             controller.minimumContentSize = layout.minimumContentSize
             controller.apply()
             XCTAssertEqual(window.frame, chosenFrame, "\(layout) must keep the chosen frame")
         }
+        controller.windowLayout = .welcome
+        controller.minimumContentSize = MainWindowLayout.welcome.minimumContentSize
+        controller.apply()
+        XCTAssertEqual(window.contentLayoutRect.width, 456, accuracy: 1)
+        XCTAssertEqual(window.contentLayoutRect.height, 180, accuracy: 1)
+        for layout in [MainWindowLayout.scanning, .session] {
+            controller.windowLayout = layout
+            controller.minimumContentSize = layout.minimumContentSize
+            controller.apply()
+        }
+        XCTAssertEqual(window.frame, chosenFrame, "review restores the chosen frame after compact Welcome")
     }
 
-    func testBackFitsOversizedSessionFrameToVisibleDisplayHeight() throws {
+    func testBackDiscardsOversizedSessionFrameForCompactWelcome() throws {
         let (window, controller) = makeWindow()
         defer { window.close() }
         controller.windowLayout = .session
@@ -216,12 +288,11 @@ final class MainWindowLayoutTests: XCTestCase {
         controller.minimumContentSize = MainWindowLayout.welcome.minimumContentSize
         controller.apply()
 
-        XCTAssertEqual(window.frame.height, visible.height, accuracy: 1,
-                       "Back caps oversized geometry so Welcome remains reachable")
-        XCTAssertEqual(window.frame.width, oversizedFrame.width, accuracy: 1)
+        XCTAssertEqual(window.contentLayoutRect.height, 180, accuracy: 1)
+        XCTAssertEqual(window.contentLayoutRect.width, 456, accuracy: 1)
     }
 
-    func testManyDrivesFitRetainedWindowWidthOnBack() async throws {
+    func testManyDrivesDetermineCompactWelcomeWidthOnBack() async throws {
         let (window, controller) = makeWindow()
         defer { window.close() }
         controller.windowLayout = .session
@@ -270,7 +341,8 @@ final class MainWindowLayoutTests: XCTestCase {
             measuredWelcome: measured, warningHeight: 0
         )
         controller.apply()
-        XCTAssertEqual(window.frame.width, frameBeforeBack.width, accuracy: 1)
+        XCTAssertEqual(window.contentLayoutRect.width, ceil(measured.width), accuracy: 1)
+        XCTAssertLessThanOrEqual(window.frame.width, frameBeforeBack.width)
     }
 
     func testSessionKeepsManualResizeUntilDisplayChanges() throws {
@@ -327,6 +399,7 @@ final class MainWindowLayoutTests: XCTestCase {
             width: screen.visibleFrame.width + 200,
             height: window.contentMinSize.height
         )
+        NotificationCenter.default.post(name: NSWindow.willStartLiveResizeNotification, object: window)
         window.setContentSize(oversized)
         controller.apply()
         XCTAssertGreaterThan(window.frame.width, screen.visibleFrame.width)

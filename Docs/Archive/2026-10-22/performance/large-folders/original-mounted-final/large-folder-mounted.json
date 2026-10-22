@@ -1,0 +1,428 @@
+{
+  "generatedAt" : "2026-10-22T02:33:31Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 139.121125,
+      "medianMS" : 137.601417,
+      "minMS" : 132.77175,
+      "name" : "grid.jump-cycle.middle.including-reset",
+      "p95MS" : 139.121125,
+      "samplesMS" : [
+        137.601417,
+        139.121125,
+        132.77175
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 70.233542,
+      "medianMS" : 67.934791,
+      "minMS" : 64.519792,
+      "name" : "grid.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 70.233542,
+      "samplesMS" : [
+        64.519792,
+        70.233542,
+        67.934791
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 254.482167,
+      "medianMS" : 241.439209,
+      "minMS" : 236.656542,
+      "name" : "grid.jump-cycle.tail.including-reset",
+      "p95MS" : 254.482167,
+      "samplesMS" : [
+        254.482167,
+        241.439209,
+        236.656542
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 135.276625,
+      "medianMS" : 130.125041,
+      "minMS" : 116.945667,
+      "name" : "grid.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 135.276625,
+      "samplesMS" : [
+        116.945667,
+        135.276625,
+        130.125041
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 173.198625,
+      "medianMS" : 106.397625,
+      "minMS" : 99.701417,
+      "name" : "grid.jump-cycle.reverse.including-reset",
+      "p95MS" : 173.198625,
+      "samplesMS" : [
+        173.198625,
+        99.701417,
+        106.397625
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 64.45575,
+      "medianMS" : 53.965125,
+      "minMS" : 50.871625,
+      "name" : "grid.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 64.45575,
+      "samplesMS" : [
+        64.45575,
+        50.871625,
+        53.965125
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 292.542125,
+      "medianMS" : 291.291958,
+      "minMS" : 228.820208,
+      "name" : "grid.jump-cycle.head.including-reset",
+      "p95MS" : 292.542125,
+      "samplesMS" : [
+        291.291958,
+        292.542125,
+        228.820208
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 166.149125,
+      "medianMS" : 114.219833,
+      "minMS" : 108.531208,
+      "name" : "grid.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 166.149125,
+      "samplesMS" : [
+        114.219833,
+        166.149125,
+        108.531208
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 69.783292,
+      "medianMS" : 67.509083,
+      "minMS" : 65.338375,
+      "name" : "browser.jump-cycle.middle.including-reset",
+      "p95MS" : 69.783292,
+      "samplesMS" : [
+        67.509083,
+        69.783292,
+        65.338375
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 35.531,
+      "medianMS" : 32.890833,
+      "minMS" : 31.453292,
+      "name" : "browser.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 35.531,
+      "samplesMS" : [
+        35.531,
+        32.890833,
+        31.453292
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 126.607125,
+      "medianMS" : 120.938,
+      "minMS" : 115.023916,
+      "name" : "browser.jump-cycle.tail.including-reset",
+      "p95MS" : 126.607125,
+      "samplesMS" : [
+        126.607125,
+        120.938,
+        115.023916
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 69.852292,
+      "medianMS" : 65.292417,
+      "minMS" : 58.370834,
+      "name" : "browser.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 69.852292,
+      "samplesMS" : [
+        69.852292,
+        65.292417,
+        58.370834
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 70.312917,
+      "medianMS" : 50.690792,
+      "minMS" : 49.869083,
+      "name" : "browser.jump-cycle.reverse.including-reset",
+      "p95MS" : 70.312917,
+      "samplesMS" : [
+        70.312917,
+        49.869083,
+        50.690792
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 26.975375,
+      "medianMS" : 26.293334,
+      "minMS" : 25.297042,
+      "name" : "browser.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 26.975375,
+      "samplesMS" : [
+        26.975375,
+        26.293334,
+        25.297042
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 127.099209,
+      "medianMS" : 119.67475,
+      "minMS" : 114.478167,
+      "name" : "browser.jump-cycle.head.including-reset",
+      "p95MS" : 127.099209,
+      "samplesMS" : [
+        127.099209,
+        114.478167,
+        119.67475
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 58.9225,
+      "medianMS" : 56.731833,
+      "minMS" : 53.866792,
+      "name" : "browser.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 58.9225,
+      "samplesMS" : [
+        56.731833,
+        53.866792,
+        58.9225
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 924.931167,
+      "medianMS" : 914.273625,
+      "minMS" : 864.096583,
+      "name" : "grid.jump-cycle.middle.including-reset",
+      "p95MS" : 924.931167,
+      "samplesMS" : [
+        914.273625,
+        864.096583,
+        924.931167
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 508.831459,
+      "medianMS" : 451.142083,
+      "minMS" : 449.446625,
+      "name" : "grid.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 508.831459,
+      "samplesMS" : [
+        451.142083,
+        449.446625,
+        508.831459
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1883.337583,
+      "medianMS" : 1805.529166,
+      "minMS" : 1794.4585,
+      "name" : "grid.jump-cycle.tail.including-reset",
+      "p95MS" : 1883.337583,
+      "samplesMS" : [
+        1883.337583,
+        1794.4585,
+        1805.529166
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 969.991333,
+      "medianMS" : 961.419875,
+      "minMS" : 945.385333,
+      "name" : "grid.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 969.991333,
+      "samplesMS" : [
+        969.991333,
+        945.385333,
+        961.419875
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1747.938875,
+      "medianMS" : 1534.980083,
+      "minMS" : 1339.537959,
+      "name" : "grid.jump-cycle.reverse.including-reset",
+      "p95MS" : 1747.938875,
+      "samplesMS" : [
+        1747.938875,
+        1534.980083,
+        1339.537959
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 834.809541,
+      "medianMS" : 764.949166,
+      "minMS" : 677.094584,
+      "name" : "grid.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 834.809541,
+      "samplesMS" : [
+        834.809541,
+        764.949166,
+        677.094584
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1884.162458,
+      "medianMS" : 1824.211708,
+      "minMS" : 1772.715209,
+      "name" : "grid.jump-cycle.head.including-reset",
+      "p95MS" : 1884.162458,
+      "samplesMS" : [
+        1884.162458,
+        1824.211708,
+        1772.715209
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 890.973208,
+      "medianMS" : 853.369792,
+      "minMS" : 843.541709,
+      "name" : "grid.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 890.973208,
+      "samplesMS" : [
+        890.973208,
+        853.369792,
+        843.541709
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 529.033125,
+      "medianMS" : 524.621584,
+      "minMS" : 519.754708,
+      "name" : "browser.jump-cycle.middle.including-reset",
+      "p95MS" : 529.033125,
+      "samplesMS" : [
+        524.621584,
+        519.754708,
+        529.033125
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 275.645042,
+      "medianMS" : 266.747667,
+      "minMS" : 263.409125,
+      "name" : "browser.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 275.645042,
+      "samplesMS" : [
+        266.747667,
+        263.409125,
+        275.645042
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1169.385333,
+      "medianMS" : 1146.411583,
+      "minMS" : 1108.908667,
+      "name" : "browser.jump-cycle.tail.including-reset",
+      "p95MS" : 1169.385333,
+      "samplesMS" : [
+        1146.411583,
+        1108.908667,
+        1169.385333
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 626.0025,
+      "medianMS" : 611.240333,
+      "minMS" : 602.734666,
+      "name" : "browser.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 626.0025,
+      "samplesMS" : [
+        611.240333,
+        602.734666,
+        626.0025
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1033.72075,
+      "medianMS" : 935.2025,
+      "minMS" : 758.9485,
+      "name" : "browser.jump-cycle.reverse.including-reset",
+      "p95MS" : 1033.72075,
+      "samplesMS" : [
+        1033.72075,
+        935.2025,
+        758.9485
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 490.656792,
+      "medianMS" : 465.523584,
+      "minMS" : 374.819,
+      "name" : "browser.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 490.656792,
+      "samplesMS" : [
+        490.656792,
+        465.523584,
+        374.819
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1504.9475419999999,
+      "medianMS" : 1279.811791,
+      "minMS" : 1201.9045,
+      "name" : "browser.jump-cycle.head.including-reset",
+      "p95MS" : 1504.9475419999999,
+      "samplesMS" : [
+        1504.9475419999999,
+        1279.811791,
+        1201.9045
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 700.161375,
+      "medianMS" : 572.761375,
+      "minMS" : 533.591125,
+      "name" : "browser.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 700.161375,
+      "samplesMS" : [
+        700.161375,
+        572.761375,
+        533.591125
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "large-folder-mounted",
+  "warmups" : 1
+}

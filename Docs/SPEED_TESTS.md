@@ -30,6 +30,7 @@ prints missing workloads and does not count them as passes or zero-duration work
 | `LOUPPE_SPEED_OUTPUT` | Unique `/private/tmp` directory | JSON, console log and provenance |
 | `LOUPPE_SPEED_FILTER` | `LouppeSpeed` | XCTest name regular expression |
 | `LOUPPE_SPEED_RAW_FILE` | Unset; RAW test skips | Local RAW copied into a disposable directory before decoding |
+| `LOUPPE_OPENING_FOLDERS` | Unset; opening-stage test skips | Colon-separated disposable folders for read-only complete opening-stage profiles |
 
 For a quick run:
 
@@ -65,7 +66,10 @@ No private media or source filenames enter the JSON reports.
   and disposable cache cleanup.
 - Source decode means bypassing Louppe's memory/disk cache. Filesystem and OS
   decoder/resource caches are warm. No global cache flush or cold-storage claim.
-  Real scans use 100/1,000 generated JPEGs; 100k cases use synthetic metadata.
+  The legacy I/O scan uses 100/1,000 generated JPEGs; mounted opening/browsing
+  extends to 10,000 files. 100k cases use synthetic metadata. Optional RAW+JPEG
+  first-use fixtures clone a disposable copy of one camera RAW; these are warm
+  local storage measurements, not independent captures or cold SD-card evidence.
 - Gallery backlog diagnostics use the real isolated pipeline and mirror the
   view's completion dependency. They do not measure a mounted SwiftUI frame.
   Task-start admission does not guarantee private queue order. JSON latency
@@ -86,6 +90,11 @@ No private media or source filenames enter the JSON reports.
 | Cue filtering | Cold/warm metadata and populated clipping switches, selection/grouping, controlled accepted-pair projection |
 | Quality resource | Actual SessionStore evidence accumulation with Select All; process CPU and wall samples, linear probes and batched publications asserted |
 | Optional RAW | Apple Default preview and histogram on a copied camera RAW, with source integrity checks |
+| Opening | Complete discovery/pairing, metadata, identity checks, saved decisions and worker-derived preparation on supplied disposable folders |
+| Large projection | Camera/lens distinct ranks, comparator equivalence, unrestricted and unchanged presentation reuse |
+| Mounted large folders | Real 1k/10k generated JPEGs, Grid/Browser jumps to matching-revision pixels, native vertical wheel gates, process RSS and main-actor scheduling gaps |
+| First use | Real RootView opening through matching-revision visible pixels, complete readiness and final current pixels; saved decisions and original bytes verified |
+| Contention | Mounted navigation during production cues, fingerprint work and save activity; injected fingerprint delay is labelled separately |
 
 Independent candidate implementations remain in tests for equivalence checks.
 Production rows now exercise cached finite sorting, physical-pair preparation,
@@ -96,6 +105,11 @@ The legacy mirrored Gallery rows retain the former await dependency for baseline
 comparison; production-mounted rows measure realized surface/loading settlement,
 not physical screen frames. New rows without saved baselines are measurements,
 not before/after claims.
+
+Mounted RSS is process-wide, sampled during the workload and after drain; it does
+not isolate NSCache from view-owned images. Main-actor gaps measure scheduling
+delay of a periodic task, not a frame-rate trace. Preserve raw samples and source
+hashes when comparing candidates, including untracked production Swift files.
 
 The first investigation and implementation acceptance list are in
 [the performance review](Archive/2026-10-12/PERFORMANCE_REVIEW_2026-10-12.md). This suite complements
