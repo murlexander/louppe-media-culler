@@ -17,11 +17,14 @@ swiftc \
     Sources/Louppe/Localization.swift \
     Sources/Louppe/Models.swift \
     Sources/Louppe/AppDateFormat.swift \
+    Sources/Louppe/SessionOpeningMetrics.swift \
     Sources/Louppe/FolderScanner.swift \
     Sources/Louppe/MetadataExtractor.swift \
     Sources/Louppe/FujiFilmSimulation.swift \
     Sources/Louppe/VideoSupport.swift \
     Sources/Louppe/RawDisplay.swift \
+    Sources/Louppe/SecurityScopedAccess.swift \
+    Sources/Louppe/MediaReadAccess.swift \
     Sources/Louppe/ImagePipeline.swift \
     Sources/Louppe/VideoPlaybackController.swift \
     Tests/VideoChecks/main.swift \

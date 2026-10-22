@@ -7,6 +7,7 @@
 - Open Welcome at the smallest size that fits its contents; keep a larger size only after dragging a window edge, and restore the chosen review window size when reopening photos.
 - Browse photos while large folders finish reading metadata, preserving the browsed position when review becomes ready. Ratings and file actions wait for complete validation.
 - Keep large Grid and Browser collections bounded to the visible area, speed up camera/lens sorting, and cancel obsolete neighboring previews.
+- Restore the standalone video/audio checks with the source dependencies added by the folder-opening improvements.
 
 ## 1.12.0 (14) — 2026-10-21
 
