@@ -89,11 +89,12 @@ verify_signed_app() {
     entitlements="$STAGING_ROOT/signed-entitlements.plist"
     codesign -d --entitlements - --xml "$bundle" 2>/dev/null > "$entitlements"
     plutil -lint "$entitlements" >/dev/null
-    [[ "$(xmllint --xpath 'count(/plist/dict/key)' "$entitlements")" == "3" ]] \
+    [[ "$(xmllint --xpath 'count(/plist/dict/key)' "$entitlements")" == "4" ]] \
         || fail "The signed app has unexpected entitlements."
     for key in com.apple.security.app-sandbox \
         com.apple.security.files.user-selected.read-write \
-        com.apple.security.files.bookmarks.app-scope; do
+        com.apple.security.files.bookmarks.app-scope \
+        com.apple.security.personal-information.photos-library; do
         [[ "$(/usr/libexec/PlistBuddy -c "Print :$key" "$entitlements")" == "true" ]] \
             || fail "The signed app is missing $key."
     done

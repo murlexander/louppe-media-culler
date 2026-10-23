@@ -1839,3 +1839,120 @@
 "Loading photo details…" = "正在载入照片详情…";
 
 "Preview unavailable" = "预览不可用";
+
+"Open Apple Photos…" = "打开 Apple Photos…";
+
+"Apple Photos" = "Apple 照片";
+
+"Apple Photos capture date" = "Apple 照片拍摄日期";
+
+"Album" = "相簿";
+
+"Photo" = "照片";
+
+"Allow Louppe to access Photos in System Settings → Privacy & Security → Photos, then retry." = "请在“系统设置”→“隐私与安全性”→“照片”中允许 Louppe 访问照片，然后重试。";
+
+"The Photos selection changed. Choose the library or album again." = "照片选择已更改。请重新选择图库或相簿。";
+
+"No photos or videos match this selection." = "没有符合此选择的照片或视频。";
+
+"Photos couldn't provide a file for “{0}”. Try another batch or check it in Photos." = "照片无法提供“{0}”的文件。请尝试其他批次，或在照片中检查。";
+
+"This batch exceeds the 5 GB review limit. Choose a smaller batch or a narrower date range." = "此批次超出 5 GB 审阅限制。请选择更小的批次或更窄的日期范围。";
+
+"Open Batch" = "打开批次";
+
+"Source" = "来源";
+
+"All Photos and Videos" = "所有照片和视频";
+
+"Date range" = "日期范围";
+
+"Through" = "至";
+
+"Batch size" = "批次大小";
+
+"Batch {0} of {1}" = "第 {0} 批，共 {1} 批";
+
+"Reading Photos selection…" = "正在读取照片选择…";
+
+"{0} items match this selection." = "有 {0} 个项目符合此选择。";
+
+"Download originals from iCloud if needed" = "需要时从 iCloud 下载原片";
+
+"Only this batch is copied for review. Decisions save in Louppe; your Photos library stays unchanged. Live Photos use their still image." = "仅复制此批次用于审阅。决定保存在 Louppe 中，照片图库保持不变。实况照片使用其静态图像。";
+
+"Preparing {0} of {1} items…" = "正在准备 {0}/{1} 个项目…";
+
+"Saving decisions before opening Photos…" = "正在保存决定，随后打开照片…";
+
+"Originals stored in iCloud may take longer to download." = "下载储存在 iCloud 中的原片可能需要更长时间。";
+
+"Apple Photos · {0}–{1} of {2}" = "Apple 照片 · {0}–{1}，共 {2} 项";
+
+"Decisions saved in Louppe" = "决定保存在 Louppe 中";
+
+"Choose Photos…" = "选择照片…";
+
+"Previous Batch" = "上一批";
+
+"Next Batch" = "下一批";
+
+"Close Photos review" = "关闭照片审阅";
+
+"Batch" = "批次";
+
+"This original is stored in iCloud. Enable downloads above, then open the batch again." = "此原片储存在 iCloud 中。请启用上方的下载选项，然后重新打开批次。";
+
+"Recent Dates" = "近期日期";
+
+"Last Week" = "上周";
+
+"Last 7 Days" = "最近 7 天";
+
+"Download and Open Batch" = "下载并打开批次";
+
+"This original is stored in iCloud. Download it to open this batch." = "此原片储存在 iCloud 中。下载后即可打开此批次。";
+
+"Copy selected Photos originals to another folder ({0})" = "将选中的照片原片复制到其他文件夹（{0}）";
+
+
+/* Progressive Photos review */
+"Photos originals use one-destination Copy. Choose Copy and a destination folder." = "照片原片只能拷贝到一个目标文件夹。请选择“拷贝”和目标文件夹。";
+"Photos review supports Copy of exact originals without XMP." = "照片审阅支持拷贝完全相同的原片，不包含 XMP。";
+"Original EXIF, size and quality checks unavailable during preview review." = "预览审阅时无法获取原片 EXIF、大小和质量检查。";
+"This original needs iCloud access. Allow original downloads, then retry this item." = "此原片需要访问 iCloud。请允许下载原片，然后重试此项目。";
+"Original staging exceeds the 5 GB limit. Close original detail or choose a smaller item, then retry." = "原片暂存超出 5 GB 上限。请关闭原片细节或选择较小的项目，然后重试。";
+"Review image is in iCloud. Allow review downloads or retry when online." = "审阅图像位于 iCloud。请允许下载审阅图像，或联网后重试。";
+"Photos couldn't provide this review image. Check access or retry." = "“照片”无法提供此审阅图像。请检查访问权限或重试。";
+"Photos is busy. Retry this item." = "“照片”正忙。请重试此项目。";
+"This Photos batch is closed. Open it again." = "此照片批次已关闭。请重新打开。";
+"Capture grouping uses Photos dates. Exact and similar-file analysis require local originals." = "拍摄分组使用“照片”的日期。完全相同和相似文件分析需要本地原片。";
+"Original quality checks are unavailable during Photos preview review." = "照片预览审阅时无法检查原片质量。";
+"Allow iCloud Originals" = "允许下载 iCloud 原片";
+"Copy downloads exact primary originals one at a time. Review previews are never exported. Total bytes are unknown until originals load; destination space is checked for each file." = "拷贝会逐个下载完全相同的主要原片，绝不导出审阅预览。原片载入前无法得知总大小；每个文件均会检查目标空间。";
+"Downloading and copying originals…" = "正在下载并拷贝原片…";
+"Progress counts original files. iCloud downloads may take longer." = "进度按原片文件计数。iCloud 下载可能需要较长时间。";
+"Unavailable until originals load" = "原片载入前不可用";
+"Allow iCloud Review Images" = "允许下载 iCloud 审阅图像";
+"Review images load as you browse. Photos may download source data to make a preview. Originals are requested separately for original detail and Copy. Decisions save in Louppe; your library stays unchanged. Live Photos use their still image." = "审阅图像在浏览时载入。“照片”可能会下载源数据来生成预览。原片细节和拷贝另行请求原片。审阅决定保存在 Louppe，图库保持不变。实况照片使用静态图像。";
+"Opening the selection does not download its originals." = "打开所选内容不会下载其原片。";
+"Preview review · decisions saved in Louppe" = "预览审阅 · 决定保存在 Louppe";
+"Photos may download source data to make a review image." = "“照片”可能会下载源数据来生成审阅图像。";
+"iCloud Access" = "iCloud 访问";
+"Loading review image" = "正在载入审阅图像";
+"Original file" = "原始文件";
+"Use Review Preview" = "使用审阅预览";
+"Load Original Video" = "载入原始视频";
+"Open Original Detail" = "打开原片细节";
+"Loading original detail…" = "正在载入原片细节…";
+"Original detail unavailable" = "原片细节不可用";
+"Downloading review image: {0}%" = "正在下载审阅图像：{0}%";
+"Review image unavailable" = "审阅图像不可用";
+"Retry Original" = "重试原片";
+"Original detail requested · review preview hidden" = "已请求原片细节 · 审阅预览已隐藏";
+"Unadjusted review preview · {0} × {1} pixels · not original detail" = "未调整的审阅预览 · {0} × {1} 像素 · 非原片细节";
+"Unadjusted review preview · not original detail" = "未调整的审阅预览 · 非原片细节";
+"Availability" = "可用性";
+/* Settings pages. */
+"General" = "通用";

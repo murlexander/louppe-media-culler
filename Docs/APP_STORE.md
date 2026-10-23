@@ -12,11 +12,14 @@ Store approval. See [direct releases](UPDATES.md) for that handoff. Both builds
 remain free; their update and tipping routes stay separate as described below.
 
 Store updates come through Apple; the app cannot add code after review.
-The app requests read/write access only to selected folders. Recent folders
+The app requests read/write file access only to selected folders. Recent folders
 use security-scoped bookmarks. Export destinations retain access while a
 recovery journal needs it; completing or retiring that record releases access.
-It requests no broad Pictures, Movies, Music, Full Disk Access, network,
-camera, microphone, contacts, or accessibility permissions.
+Opening Apple Photos requests Photos library permission. The Photos entitlement
+and usage description are required; review never issues library change requests.
+Optional iCloud downloads use PhotoKit after the person enables them. The app
+requests no broad Pictures, Movies, Music, Full Disk Access, camera, microphone,
+contacts, or accessibility permissions.
 
 ## Release-note copy
 

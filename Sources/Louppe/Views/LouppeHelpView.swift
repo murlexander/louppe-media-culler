@@ -96,9 +96,12 @@ struct LouppeHelpView: View {
                     Text(L10n.text("Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    TextField(L10n.text("Search shortcuts or actions"), text: $shortcutSearch)
-                        .textFieldStyle(.roundedBorder)
-                        .accessibilityLabel(L10n.text("Search keyboard shortcuts"))
+                    NativeSearchField(
+                        text: $shortcutSearch,
+                        placeholder: L10n.text("Search shortcuts or actions"),
+                        accessibilityLabel: L10n.text("Search keyboard shortcuts"),
+                        accessibilityIdentifier: "louppe.helpSearch"
+                    )
 
                     if matchingShortcuts.isEmpty {
                         ContentUnavailableView.search(text: shortcutSearch)
@@ -131,6 +134,7 @@ struct LouppeHelpView: View {
             .padding(24)
         }
         .background(Color.appBackground)
+        .tint(Color.louppeAccent)
     }
 }
 

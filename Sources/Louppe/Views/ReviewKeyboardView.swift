@@ -38,6 +38,7 @@ struct ReviewKeyboardMap {
     let layoutCharacters: [UInt16: String]
     var layer: ReviewKeyboardLayer = .base
     var modifiedCharacters: [UInt16: String] = [:]
+    var modifiedCharactersByLayer: [ReviewKeyboardLayer: [UInt16: String]] = [:]
 
     static let rows: [[UInt16]] = [
         [50, 18, 19, 20, 21, 23, 22, 26, 28, 25, 29, 27, 24],
@@ -84,14 +85,24 @@ struct ReviewKeyboardMap {
     }
 
     func commandActions(for keyCode: UInt16, preferences: CommandShortcutPreferences) -> [CommandShortcutAction] {
-        guard let modifiers = layer.modifiers else { return [] }
-        return CommandShortcutAction.allCases.filter { action in
-            preferences.bindings(for: action).contains { binding in
-                guard binding.modifiers == modifiers else { return false }
+        let matches = commandBindings(for: keyCode, preferences: preferences)
+        return CommandShortcutAction.allCases.filter { action in matches.contains { $0.action == action } }
+    }
+
+    /// The base keyboard is an overview of every used key. Modifier layers
+    /// narrow that overview using their actual input-source translations.
+    func commandBindings(for keyCode: UInt16, preferences: CommandShortcutPreferences)
+        -> [(action: CommandShortcutAction, binding: CommandShortcutBinding)] {
+        CommandShortcutAction.allCases.flatMap { action in
+            preferences.bindings(for: action).compactMap { binding in
+                guard layer == .base || binding.modifiers == layer.modifiers else { return nil }
                 if ReviewShortcutBinding.specialLabels[keyCode] != nil || keyCode == 51 {
-                    return binding.keyCode == keyCode
+                    return binding.keyCode == keyCode ? (action, binding) : nil
                 }
-                return binding.character == character(for: keyCode)
+                let bindingLayer = ReviewKeyboardLayer(command: binding.modifiers != .shift,
+                                                       shift: binding.modifiers != .command)
+                let characters = layer == .base ? modifiedCharactersByLayer[bindingLayer] ?? [:] : modifiedCharacters
+                return binding.character == characters[keyCode] ? (action, binding) : nil
             }
         }
     }
@@ -124,6 +135,7 @@ struct ReviewKeyboardMap {
 }
 
 struct ReviewKeyboardView: View {
+    private static let rowHeight: CGFloat = 27
     let map: ReviewKeyboardMap
     let preferences: ReviewShortcutPreferences
     var commandPreferences = CommandShortcutPreferences()
@@ -139,18 +151,18 @@ struct ReviewKeyboardView: View {
             let unit = max(0, (geometry.size.width - 13.5 * 3) / 14.5)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 3) {
-                    fixedKey("esc", units: 1.5, unit: unit, height: 23)
+                    fixedKey("esc", units: 1.5, unit: unit)
                     ForEach(Array(functionSymbols.enumerated()), id: \.offset) { index, symbol in
                         VStack(spacing: 1) {
                             Image(systemName: symbol).font(.system(size: 8))
                             Text("F\(index + 1)").font(.system(size: 6))
                         }
                         .foregroundStyle(.secondary)
-                        .frame(width: unit, height: 23)
+                        .frame(width: unit, height: Self.rowHeight)
                         .overlay(keyOutline())
                         .accessibilityHidden(true)
                     }
-                    fixedKey("⏻", units: 1, unit: unit, height: 23)
+                    fixedKey("⏻", units: 1, unit: unit)
                 }
                 HStack(spacing: 3) {
                     ForEach(ReviewKeyboardMap.rows[0], id: \.self) { code in
@@ -183,7 +195,7 @@ struct ReviewKeyboardView: View {
                     Image(systemName: "globe")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
-                        .frame(width: unit, height: 27)
+                        .frame(width: unit, height: Self.rowHeight)
                         .overlay(keyOutline())
                         .accessibilityHidden(true)
                     fixedKey("⌃", units: 1, unit: unit)
@@ -205,7 +217,7 @@ struct ReviewKeyboardView: View {
             }
         }
         .padding(6)
-        .frame(height: 185)
+        .frame(height: 6 * Self.rowHeight + 5 * 3 + 12)
         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.primary.opacity(0.12)))
         .environment(\.layoutDirection, .leftToRight)
         .accessibilityElement(children: .contain)
@@ -226,19 +238,19 @@ struct ReviewKeyboardView: View {
         RoundedRectangle(cornerRadius: 4).strokeBorder(Color.primary.opacity(0.22), lineWidth: 1)
     }
 
-    private func fixedKey(_ label: String, units: CGFloat, unit: CGFloat, height: CGFloat = 27) -> some View {
+    private func fixedKey(_ label: String, units: CGFloat, unit: CGFloat) -> some View {
         Text(label)
             .font(.system(size: 11))
             .foregroundStyle(.secondary)
-            .frame(width: width(units, unit: unit), height: height)
+            .frame(width: width(units, unit: unit), height: Self.rowHeight)
             .overlay(keyOutline())
             .accessibilityHidden(true)
     }
 
-    private func key(_ code: UInt16, height: CGFloat = 27) -> some View {
+    private func key(_ code: UInt16, height: CGFloat = ReviewKeyboardView.rowHeight) -> some View {
         let actions = map.actions(for: code, preferences: preferences)
-        let commandActions = map.commandActions(for: code, preferences: commandPreferences)
-        let titles = actions.map(\.title) + commandActions.map(\.title)
+        let commands = map.commandBindings(for: code, preferences: commandPreferences)
+        let titles = actions.map(\.title) + commands.map { $0.binding.display + " — " + $0.action.title }
         let label = map.label(for: code)
         let selected = selectedKey == code
         let assigned = !titles.isEmpty
@@ -257,7 +269,7 @@ struct ReviewKeyboardView: View {
                 .contentShape(RoundedRectangle(cornerRadius: 4))
         }
         .buttonStyle(.plain)
-        .disabled(map.character(for: code) == nil)
+        .disabled(map.character(for: code) == nil && !assigned)
         .accessibilityLabel(map.layer.prefix + (code == 48 ? L10n.text("Tab") : label))
         .accessibilityValue(titles.isEmpty ? L10n.text("No shortcut assigned") : titles.joined(separator: ", "))
         .accessibilityAddTraits(selected ? [.isSelected] : [])
@@ -268,10 +280,12 @@ struct ReviewKeyboardView: View {
     private func modifierKey(_ symbol: String, title: String, active: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(symbol).font(.system(size: 12))
-                .frame(maxWidth: .infinity).frame(height: 27)
+                .frame(maxWidth: .infinity).frame(height: Self.rowHeight)
                 .foregroundStyle(active ? Color.white : Color.primary)
                 .background(active ? Color.louppeAccent : Color.clear, in: RoundedRectangle(cornerRadius: 4))
-                .overlay(keyOutline()).contentShape(RoundedRectangle(cornerRadius: 4))
+                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(
+                    modifierIsAssigned(symbol) ? Color.louppeAccent : Color.primary.opacity(0.22), lineWidth: 1))
+                .contentShape(RoundedRectangle(cornerRadius: 4))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -279,5 +293,20 @@ struct ReviewKeyboardView: View {
         .accessibilityAddTraits(active ? [.isSelected] : [])
         .help(title)
         .accessibilityIdentifier("louppe.shortcutModifier.\(symbol)")
+    }
+
+    private func modifierIsAssigned(_ symbol: String) -> Bool {
+        if CommandShortcutAction.allCases.contains(where: { action in
+            commandPreferences.bindings(for: action).contains {
+                symbol == "⌘" ? $0.modifiers != .shift : $0.modifiers != .command
+            }
+        }) { return true }
+        guard symbol == "⇧" else { return false }
+        var shiftedMap = map
+        shiftedMap.layer = .shift
+        shiftedMap.modifiedCharacters = map.modifiedCharactersByLayer[.shift] ?? [:]
+        return ReviewKeyboardMap.rows.flatMap { $0 }.contains {
+            !shiftedMap.actions(for: $0, preferences: preferences).isEmpty
+        }
     }
 }

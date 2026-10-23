@@ -3,6 +3,7 @@ import SwiftUI
 struct RenameFilesView: View {
     @ObservedObject var store: SessionStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.layoutDirection) private var layoutDirection
 
     @State private var scope: SourceOrganizationScope = .selected
     @State private var metadataConfiguration = FileRenamingConfiguration.initial
@@ -56,6 +57,7 @@ struct RenameFilesView: View {
         .frame(width: isSingle ? 540 : 680, height: isSingle ? 460 : 650)
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
+        .controlSize(.regular)
         .interactiveDismissDisabled(store.isFileOperationRunning)
         .onAppear {
             refreshPlan()
@@ -73,36 +75,26 @@ struct RenameFilesView: View {
     }
 
     private var singleSetup: some View {
-        VStack(spacing: 0) {
-            header(L10n.text("Rename File"))
-            Divider()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(L10n.text("Name"))
-                            .font(.subheadline.weight(.semibold))
-                        HStack(spacing: 6) {
-                            TextField(L10n.text("New base name"), text: $customBaseName)
-                                .textFieldStyle(.roundedBorder)
-                                .focused($customNameIsFocused)
-                                .onSubmit { runSingleRename() }
-                                .accessibilityLabel(L10n.text("New base name"))
-                                .accessibilityHint(singleFamilyExplanation)
-                            Text(extensionSummary)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
+        SheetForm(title: L10n.text("Rename File"), layout: .grouped) {
+            Section(L10n.text("Name")) {
+                LabeledContent(L10n.text("New base name")) {
+                    HStack(spacing: 6) {
+                        TextField(L10n.text("New base name"), text: $customBaseName)
+                            .labelsHidden()
+                            .focused($customNameIsFocused)
+                            .onSubmit { runSingleRename() }
+                            .accessibilityLabel(L10n.text("New base name"))
+                            .accessibilityHint(singleFamilyExplanation)
+                        Text(extensionSummary)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
-
-                    Divider()
-                    preview
                 }
-                .padding(24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            Divider()
-            HStack {
+
+            Section(L10n.text("Preview")) { preview }
+        } actions: {
+            HStack(spacing: 12) {
                 planningIndicator
                 Spacer()
                 Button(L10n.text("Cancel"), role: .cancel) {
@@ -115,59 +107,30 @@ struct RenameFilesView: View {
                     .tint(Color.louppeAccent)
                     .disabled(plan?.canExecute != true || isPlanning)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 14)
         }
     }
 
     private var metadataSetup: some View {
-        VStack(spacing: 0) {
-            header(L10n.text("Rename Files"))
-            Divider()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    section(L10n.text("Apply to")) {
-                        Picker(L10n.text("Apply to"), selection: $scope) {
-                            ForEach(SourceOrganizationScope.allCases, id: \.self) {
-                                value in
-                                Text("\(value.label) (\(store.organizationScopeCount(for: value)))")
-                                    .tag(value)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
+        SheetForm(title: L10n.text("Rename Files"), layout: .grouped) {
+            Section {
+                Picker(L10n.text("Apply to"), selection: $scope) {
+                    ForEach(SourceOrganizationScope.allCases, id: \.self) {
+                        value in
+                        Text("\(value.label) (\(store.organizationScopeCount(for: value)))")
+                            .tag(value)
                     }
-
-                    Divider()
-                    section(L10n.text("Filename parts")) {
-                        VStack(spacing: 0) {
-                            ForEach(metadataConfiguration.parts) { part in
-                                filenamePartRow(part)
-                                if part.id != metadataConfiguration.parts.last?.id {
-                                    Divider().padding(.leading, 40)
-                                }
-                            }
-                        }
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 10)
-                                .strokeBorder(
-                                    Color(nsColor: .separatorColor),
-                                    lineWidth: 1
-                                )
-                        }
-                    }
-
-                    Divider()
-                    section(L10n.text("Preview")) { preview }
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 18)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            Divider()
-            HStack {
+            Section(L10n.text("Filename parts")) {
+                ForEach(metadataConfiguration.parts) { part in
+                    filenamePartRow(part)
+                }
+            }
+
+            Section(L10n.text("Preview")) { preview }
+        } actions: {
+            HStack(spacing: 12) {
                 planningIndicator
                 Spacer()
                 Button(L10n.text("Cancel"), role: .cancel) {
@@ -180,13 +143,15 @@ struct RenameFilesView: View {
                     .tint(Color.louppeAccent)
                     .disabled(plan?.canExecute != true || isPlanning)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 14)
         }
     }
 
     private func filenamePartRow(_ part: FileRenamingPart) -> some View {
         HStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.secondary)
+                .frame(width: 14)
+                .accessibilityHidden(true)
             Toggle(part.kind.label, isOn: partBinding(part.kind))
                 .toggleStyle(.checkbox)
                 .accessibilityIdentifier("rename.part.\(part.kind.rawValue)")
@@ -197,13 +162,7 @@ struct RenameFilesView: View {
                     movePart(part.kind, offset: 1)
                 }
             Spacer()
-            Image(systemName: "line.3.horizontal")
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
-        .frame(minHeight: 42)
         .contentShape(Rectangle())
         .opacity(part.isEnabled ? 1 : 0.62)
         .overlay {
@@ -277,7 +236,7 @@ struct RenameFilesView: View {
                             Text(mapping.source.lastPathComponent)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
-                            Image(systemName: "arrow.right")
+                            Image(systemName: layoutDirection == .rightToLeft ? "arrow.left" : "arrow.right")
                                 .foregroundStyle(.secondary)
                                 .accessibilityHidden(true)
                             Text(mapping.destination.lastPathComponent)
@@ -329,28 +288,21 @@ struct RenameFilesView: View {
     }
 
     private func confirmationView(_ plan: SourceOrganizationPlan) -> some View {
-        VStack(spacing: 0) {
-            header(L10n.text("Rename \(plan.movingFileCount) files?"))
+        SheetForm(title: L10n.text("Rename \(plan.movingFileCount) files?")) {
+            preview
             Divider()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    preview
-                    Divider()
-                    Text(L10n.text("Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session."))
-                        .fixedSize(horizontal: false, vertical: true)
-                    if plan.storageSafety.usesReducedDirectoryDurability {
-                        Label(
-                            L10n.text("This ExFAT card has reduced crash protection. Do not eject it or close the Mac until renaming finishes."),
-                            systemImage: "exclamationmark.triangle"
-                        )
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(24)
+            Text(L10n.text("Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session."))
+                .fixedSize(horizontal: false, vertical: true)
+            if plan.storageSafety.usesReducedDirectoryDurability {
+                Label(
+                    L10n.text("This ExFAT card has reduced crash protection. Do not eject it or close the Mac until renaming finishes."),
+                    systemImage: "exclamationmark.triangle"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
-            Divider()
-            HStack {
+        } actions: {
+            HStack(spacing: 12) {
                 Button(L10n.text("Back")) { isReviewing = false }
                 Spacer()
                 Button(L10n.text("Cancel"), role: .cancel) {
@@ -368,8 +320,6 @@ struct RenameFilesView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(Color.louppeAccent)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 14)
         }
     }
 
@@ -397,22 +347,13 @@ struct RenameFilesView: View {
     }
 
     private func outcomeView(_ outcome: SourceOrganizationOutcome) -> some View {
-        VStack(spacing: 16) {
-            Image(systemName: outcome.succeeded
-                ? "checkmark.circle.fill"
-                : "exclamationmark.triangle.fill")
-                .font(.system(size: 38))
-                .foregroundStyle(outcome.succeeded
-                    ? Color.louppeAccent
-                    : Color.secondary)
-            Text(outcome.title(for: .rename))
-                .font(.title2.weight(.semibold))
+        SheetForm(title: outcome.title(for: .rename)) {
             Text(outcome.fileCountDescription(for: .rename))
                 .foregroundStyle(.secondary)
             if let message = store.organizationError ?? outcome.message {
                 Text(message)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 460)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
             } else if !outcome.wasUndo {
                 Text(L10n.text("Restore previous filenames with ⌘Z before closing this session."))
                     .foregroundStyle(.secondary)
@@ -420,29 +361,14 @@ struct RenameFilesView: View {
             if case .scanning = store.phase {
                 ProgressView(L10n.text("Refreshing the session…"))
             }
-            Button(L10n.text("Done")) { store.isRenamePresented = false }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .disabled(store.isFileOperationRunning)
-        }
-        .padding(30)
-    }
-
-    private func header(_ title: String) -> some View {
-        Text(title).font(.title2.weight(.semibold))
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 24)
-        .padding(.top, 22)
-        .padding(.bottom, 18)
-    }
-
-    private func section<Content: View>(
-        _ title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.subheadline.weight(.semibold))
-            content()
+        } actions: {
+            HStack(spacing: 12) {
+                Spacer()
+                Button(L10n.text("Done")) { store.isRenamePresented = false }
+                    .keyboardShortcut(.defaultAction)
+                    .buttonStyle(.borderedProminent)
+                    .disabled(store.isFileOperationRunning)
+            }
         }
     }
 

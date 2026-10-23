@@ -41,7 +41,9 @@ struct GalleryView: View {
                         Button(L10n.text("Clear Filters")) { store.resetFilter() }
                     }
                 } else if let item = store.currentItem {
-                    if item.isText {
+                    if let reference = item.primaryFile.photosMedia {
+                        PhotosGalleryView(store: store, item: item, reference: reference)
+                    } else if item.isText {
                         TextPreviewView(item: item)
                             .id(item.contentRevision)
                     } else if item.isVideo {

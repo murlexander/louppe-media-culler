@@ -29,7 +29,7 @@ REVIEW_PLIST="$REVIEW_APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :SUEnableAutomaticChecks false' "$REVIEW_PLIST"
 /usr/libexec/PlistBuddy -c 'Set :SUAutomaticallyUpdate false' "$REVIEW_PLIST"
 xattr -cr "$REVIEW_APP"
-codesign --force --sign - "$REVIEW_APP"
+codesign --force --sign - --entitlements "$PWD/Louppe.direct.entitlements" "$REVIEW_APP"
 codesign --verify --deep --strict "$REVIEW_APP"
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$REVIEW_PLIST")" == "$REVIEW_BUNDLE_ID" ]]
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :SUEnableAutomaticChecks' "$REVIEW_PLIST")" == false ]]

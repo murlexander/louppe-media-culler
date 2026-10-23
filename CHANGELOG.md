@@ -1,6 +1,16 @@
 # Version History
 
-## 1.13.0 (15) — 2026-10-22
+## 1.13.0 (15) — 2026-10-23
+
+- Split Settings into native General and Keyboard shortcuts pages. Keep shortcut groups collapsed until opened or searched, activate search on click, and refresh the equal-height keyboard’s purple highlights as bindings change. Align scope controls beside removal.
+
+- Use native Sort pickers, search fields, shortcut Add menus, and the system Help button. Adapt floating video controls to current macOS glass with older-system and accessibility fallbacks.
+- Use the current native macOS grouped-form presentation for Photos, Export, Rename, and Organize options, matching Settings while keeping actions and multiselection controls distinct.
+- Unify dialog headings, scrolling content, and fixed action rows across Photos, Export, Rename, Organize, and saved-decision recovery. Align source buttons, small editing controls, color-label indicators, and accessibility feedback.
+
+- Browse Apple Photos selections of up to 1,000 items without staging every original. Load unadjusted review images on demand with bounded caches, local/offline fallbacks, and separate iCloud choices for previews and originals.
+- Open original detail or copy exact primary originals one at a time, with cancellable downloads and the existing 5 GB staging limit. Keep preview quality, unavailable metadata, and per-item retry explicit.
+- Choose last week or the last seven days from Photos’ Recent Dates menu. Save decisions by asset ID across overlapping batches; Photos library contents remain unchanged.
 
 - Shorten Trash actions across the Command Palette, Clean Up, menus, and confirmations.
 - Align folder, rename, playback, and Info wording, and mark Clear All Decisions with an ellipsis because it asks for confirmation.

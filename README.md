@@ -60,6 +60,43 @@ Move transfers originals, and Metadata (XMP) writes ratings to sidecars for
 other apps. **Clean Up** sends files to macOS Trash. **Organize Source Folder**
 builds folders from decisions, dates, ratings, and other metadata.
 
+## Apple Photos
+
+Choose **File → Open Apple Photos…** and grant Photos access. Select your
+library or an album, narrow the dates manually or with **Recent Dates → Last
+Week / Last 7 Days**, and open a batch of 50, 100, 200, 500, or 1,000 items
+in the usual Gallery or Grid. **Previous Batch** and **Next Batch** save decisions
+before switching. The chooser remembers the last range and batch; new library
+items can shift batch numbers after reopening.
+
+The selection opens without downloading every original. Review images load as
+you browse. Enable **Allow iCloud Review Images** when a needed image is not
+on the Mac. Photos may download source data to make that image; Louppe cannot
+guarantee thumbnail-only network transfers. Cached local representations can
+work offline. Cloud/unavailable items have Retry; Gallery shows preview pixel
+dimensions and never treats a preview as 100% original detail.
+
+**Open Original Detail**, original video playback and Copy request primary
+original files separately. **Allow iCloud Originals** is a separate choice.
+Requests show progress and can be canceled. Original staging remains limited
+to 5 GB, including any open original detail. Copy downloads, validates and
+copies one exact original at a time, then releases its temporary file. Total
+export size is unknown until originals load; space is checked for each file.
+Temporary files retire when released or when switching/closing the batch.
+
+Yes/No, stars, and colors save locally by Photos asset ID across overlapping
+batches. One-destination Copy is available; Photos routing Copy, Rename,
+Organize, Move, XMP and Trash are unavailable. Decisions never change Photos
+albums, favorites or library contents. EXIF, original byte sizes and original
+quality/exact/similarity checks are unavailable during preview review. Capture
+groups use known Photos dates without downloading originals.
+
+This uses the System Photo Library. Review previews are unadjusted, excluding
+Photos edits; original detail and Copy use the primary original resource.
+Live Photos use their still image; RAW+JPEG assets remain one primary-original
+review item. Hidden items are excluded. Libraries on unmounted drives and
+unavailable originals must be made accessible in Photos first.
+
 ## Review and file handling
 
 - Filter and sort by decisions, stars, colors, dates, folders, camera details,

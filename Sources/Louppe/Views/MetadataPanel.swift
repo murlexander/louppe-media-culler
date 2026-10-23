@@ -159,7 +159,7 @@ struct MetadataPanel: View {
     }
 
     private var showsHistogram: Bool {
-        store.selectedIndices.count <= 1
+        item.primaryFile.photosMedia == nil && store.selectedIndices.count <= 1
             && item.mediaKind == .photo
             && item.isSupported
     }
@@ -387,10 +387,13 @@ struct MetadataPanel: View {
                         cancelFilenameEditing()
                     } label: {
                         Image(systemName: "xmark")
+                            .frame(width: 22, height: 22)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
                     .accessibilityLabel(L10n.text("Cancel filename editing"))
+                    .help(L10n.text("Cancel filename editing"))
                 }
 
                 if isPlanningFilename {
@@ -583,7 +586,8 @@ struct MetadataPanel: View {
         selectionSummaryField(L10n.text("Captured"), value: captureDateText(for: summary))
         selectionSummaryField(
             L10n.text("Total size"),
-            value: ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file)
+            value: store.photosBatch?.mediaSession != nil ? L10n.text("Unavailable until originals load")
+                : ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file)
         )
         selectionSummaryField(L10n.text("Types"), value: summary.fileTypes.joined(separator: ", "))
     }

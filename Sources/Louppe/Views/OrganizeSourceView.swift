@@ -42,6 +42,7 @@ struct OrganizeSourceView: View {
         .frame(width: 680, height: confirmationSheetHeight)
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
+        .controlSize(.regular)
         .interactiveDismissDisabled(store.isFileOperationRunning)
         .onAppear { refreshPlan() }
         .onDisappear {
@@ -55,92 +56,55 @@ struct OrganizeSourceView: View {
     }
 
     private var setupView: some View {
-        VStack(spacing: 0) {
-            sheetHeader(
-                title: L10n.text("Organize Source Folder"),
-                subtitle: L10n.text("Move media into folders built from review and capture metadata.")
-            )
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 24)
-            .padding(.top, 22)
-            .padding(.bottom, 18)
-
-            Divider()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    section(L10n.text("Apply to")) {
-                        Picker(L10n.text("Apply to"), selection: $scope) {
-                            ForEach(SourceOrganizationScope.allCases, id: \.self) {
-                                value in
-                                Text("\(value.label) (\(store.organizationScopeCount(for: value)))")
-                                    .tag(value)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
+        SheetForm(
+            title: L10n.text("Organize Source Folder"),
+            subtitle: L10n.text("Move media into folders built from review and capture metadata."),
+            layout: .grouped
+        ) {
+            Section {
+                Picker(L10n.text("Apply to"), selection: $scope) {
+                    ForEach(SourceOrganizationScope.allCases, id: \.self) {
+                        value in
+                        Text("\(value.label) (\(store.organizationScopeCount(for: value)))")
+                            .tag(value)
                     }
-
-                    Divider()
-
-                    section(L10n.text("Folder order")) {
-                        Text(L10n.text("Choose folder levels and drag enabled rows into order. The top row comes first."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        VStack(spacing: 0) {
-                            ForEach(configuration.levels) { level in
-                                levelRow(level)
-                                if level.id != configuration.levels.last?.id {
-                                    Divider().padding(.leading, 44)
-                                }
-                            }
-                        }
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 10)
-                                .strokeBorder(
-                                    Color(nsColor: .separatorColor),
-                                    lineWidth: 1
-                                )
-                        }
-
-                        additionalMetadataMenu
-
-                        if !levelBinding(.existingFolder).wrappedValue {
-                            Label(
-                                L10n.text("Existing folder is off: files use only the new levels. Previous folders remain, even when empty."),
-                                systemImage: "info.circle"
-                            )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-
-                    Divider()
-
-                    section(L10n.text("Place inside source folder")) {
-                        TextField(L10n.text("Folder name"), text: $configuration.containerName)
-                            .textFieldStyle(.roundedBorder)
-                        Text(L10n.text("Previous folders and unrelated files stay untouched."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Divider()
-
-                    previewSection
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 18)
             }
 
-            Divider()
+            Section(L10n.text("Folder order")) {
+                Text(L10n.text("Choose folder levels and drag enabled rows into order. The top row comes first."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            HStack {
+                ForEach(configuration.levels) { level in
+                    levelRow(level)
+                }
+
+                additionalMetadataMenu
+
+                if !levelBinding(.existingFolder).wrappedValue {
+                    Label(
+                        L10n.text("Existing folder is off: files use only the new levels. Previous folders remain, even when empty."),
+                        systemImage: "info.circle"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Section(L10n.text("Place inside source folder")) {
+                TextField(L10n.text("Folder name"), text: $configuration.containerName)
+                Text(L10n.text("Previous folders and unrelated files stay untouched."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            previewSection
+        } actions: {
+            HStack(spacing: 12) {
                 if isPlanning {
                     ProgressView()
                         .controlSize(.small)
@@ -160,8 +124,6 @@ struct OrganizeSourceView: View {
                 .tint(Color.louppeAccent)
                 .disabled(!canReviewMove)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 14)
         }
     }
 
@@ -194,6 +156,8 @@ struct OrganizeSourceView: View {
                         Text(value.label).tag(value)
                     }
                 }
+                .pickerStyle(.menu)
+                .buttonStyle(.borderless)
                 .labelsHidden()
                 .frame(width: 120)
             }
@@ -210,6 +174,8 @@ struct OrganizeSourceView: View {
                         Text(dateGranularityLabel(value)).tag(value)
                     }
                 }
+                .pickerStyle(.menu)
+                .buttonStyle(.borderless)
                 .labelsHidden()
                 .frame(width: 210)
             }
@@ -220,14 +186,14 @@ struct OrganizeSourceView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)
+                        .frame(width: 22, height: 22)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .help(L10n.text("Remove \(level.kind.label)"))
                 .accessibilityLabel(L10n.text("Remove \(level.kind.label)"))
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
-        .frame(minHeight: 44)
         .contentShape(Rectangle())
         .onDrag {
             guard level.isEnabled else { return NSItemProvider() }
@@ -250,6 +216,29 @@ struct OrganizeSourceView: View {
                 ? L10n.text("Drag to change folder priority")
                 : L10n.text("Enable this level before reordering it")
         )
+        .accessibilityAction(named: L10n.text("Move \(level.kind.label) earlier")) {
+            moveLevel(level.kind, offset: -1)
+        }
+        .accessibilityAction(named: L10n.text("Move \(level.kind.label) later")) {
+            moveLevel(level.kind, offset: 1)
+        }
+    }
+
+    private func moveLevel(_ kind: SourceOrganizationLevelKind, offset: Int) {
+        guard let from = configuration.levels.firstIndex(where: { $0.kind == kind }),
+              configuration.levels[from].isEnabled else { return }
+        let enabledIndices = configuration.levels.indices.filter {
+            configuration.levels[$0].isEnabled
+        }
+        guard let position = enabledIndices.firstIndex(of: from),
+              enabledIndices.indices.contains(position + offset) else { return }
+        let to = enabledIndices[position + offset]
+        withAnimation(reduceMotion ? nil : .default) {
+            configuration.levels.move(
+                fromOffsets: IndexSet(integer: from),
+                toOffset: to > from ? to + 1 : to
+            )
+        }
     }
 
     private var additionalMetadataMenu: some View {
@@ -277,7 +266,7 @@ struct OrganizeSourceView: View {
 
     @ViewBuilder
     private var previewSection: some View {
-        section(L10n.text("Preview")) {
+        Section(L10n.text("Preview")) {
             if let planningError {
                 Label(planningError, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.secondary)
@@ -367,51 +356,36 @@ struct OrganizeSourceView: View {
         _ plan: SourceOrganizationPlan
     ) -> some View {
 
-        return VStack(spacing: 0) {
-            sheetHeader(
-                title: plan.movingFileCount == 1 ? L10n.text("Move 1 file?") : L10n.text("Move \(plan.movingFileCount) files?"),
-                subtitle: plan.previewGroups.count == 1
-                    ? L10n.text("Into 1 folder inside “\(plan.configuration.containerName)”")
-                    : L10n.text("Into \(plan.previewGroups.count) folders inside “\(plan.configuration.containerName)”")
-            )
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 24)
-            .padding(.top, 22)
-            .padding(.bottom, 18)
+        return SheetForm(
+            title: plan.movingFileCount == 1 ? L10n.text("Move 1 file?") : L10n.text("Move \(plan.movingFileCount) files?"),
+            subtitle: plan.previewGroups.count == 1
+                ? L10n.text("Into 1 folder inside “\(plan.configuration.containerName)”")
+                : L10n.text("Into \(plan.previewGroups.count) folders inside “\(plan.configuration.containerName)”")
+        ) {
+            Text(L10n.text("Names and contents stay unchanged. Existing files are never overwritten."))
+                .fixedSize(horizontal: false, vertical: true)
 
-            Divider()
+            Text(L10n.text("Other files and folders stay where they are. Undo with ⌘Z before closing this session."))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    Text(L10n.text("Names and contents stay unchanged. Existing files are never overwritten."))
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(L10n.text("Other files and folders stay where they are. Undo with ⌘Z before closing this session."))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    if plan.storageSafety.usesReducedDirectoryDurability {
-                        Divider()
-                        HStack(alignment: .top, spacing: 10) {
-                            Image(systemName: "exclamationmark.triangle")
-                                .font(.title3)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(L10n.text("ExFAT card — keep it connected"))
-                                    .font(.headline)
-                                Text(L10n.text("An interruption may leave folders partly organized. Keep the card connected and Mac on until Louppe finishes."))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
+            if plan.storageSafety.usesReducedDirectoryDurability {
+                Divider()
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(L10n.text("ExFAT card — keep it connected"))
+                            .font(.headline)
+                        Text(L10n.text("An interruption may leave folders partly organized. Keep the card connected and Mac on until Louppe finishes."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .padding(24)
             }
-
-            Divider()
-
-            HStack {
+        } actions: {
+            HStack(spacing: 12) {
                 Button(L10n.text("Back")) { isReviewingMove = false }
                 Spacer()
                 Button(L10n.text("Cancel"), role: .cancel) {
@@ -424,8 +398,6 @@ struct OrganizeSourceView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(Color.louppeAccent)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 14)
         }
     }
 
@@ -465,22 +437,13 @@ struct OrganizeSourceView: View {
     private func outcomeView(
         _ outcome: SourceOrganizationOutcome
     ) -> some View {
-        VStack(spacing: 16) {
-            Image(systemName: outcome.succeeded
-                ? "checkmark.circle.fill"
-                : "exclamationmark.triangle.fill")
-                .font(.system(size: 38))
-                .foregroundStyle(outcome.succeeded
-                    ? Color.louppeAccent
-                    : Color.secondary)
-            Text(outcome.title(for: .organization))
-                .font(.title2.weight(.semibold))
+        SheetForm(title: outcome.title(for: .organization)) {
             Text(outcome.fileCountDescription(for: .organization))
                 .foregroundStyle(.secondary)
             if let message = store.organizationError ?? outcome.message {
                 Text(message)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 460)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
             } else if !outcome.wasUndo {
                 Text(L10n.text("Restore the previous layout with ⌘Z before closing this session."))
                     .foregroundStyle(.secondary)
@@ -489,34 +452,16 @@ struct OrganizeSourceView: View {
                 ProgressView(L10n.text("Refreshing the session…"))
                     .padding(.top, 8)
             }
-            Button(L10n.text("Done")) {
-                store.isOrganizePresented = false
+        } actions: {
+            HStack(spacing: 12) {
+                Spacer()
+                Button(L10n.text("Done")) {
+                    store.isOrganizePresented = false
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .disabled(store.isFileOperationRunning)
             }
-            .keyboardShortcut(.defaultAction)
-            .buttonStyle(.borderedProminent)
-            .disabled(store.isFileOperationRunning)
-        }
-        .padding(30)
-    }
-
-    private func sheetHeader(title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.title2.weight(.semibold))
-            Text(subtitle)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private func section<Content: View>(
-        _ title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-            content()
         }
     }
 

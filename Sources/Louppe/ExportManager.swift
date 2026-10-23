@@ -69,9 +69,11 @@ final class ExportManager: ObservableObject {
     }
 
     @Published var state: State = .summary
+    @Published private(set) var photosOriginalProgress: Double = 0
     @Published private(set) var isCancellingCopy = false
     @Published private(set) var isCopyStopConfirmationPresented = false
     private var copyCancelFlag: ExportWorker.CancelFlag?
+    private var photosCopyTask: Task<ExportWorker.CopyResult, Never>?
     private var copyOperationID: UUID?
     private var xmpPreparationTask: Task<XMPPreparationResult, Never>?
     private var xmpPreparationID = UUID()
@@ -167,6 +169,10 @@ final class ExportManager: ObservableObject {
             _ interruptionMessage: String?
         ) -> Void
     ) {
+        guard !items.contains(where: { $0.primaryFile.photosMedia != nil }) else {
+            state = .failed(L10n.text("Photos originals use one-destination Copy. Choose Copy and a destination folder."))
+            return
+        }
         multiDestinationPreparationTask?.cancel()
         let preparationAccesses = routes.compactMap(\.destination).map(makeFolderAccess)
         let prepareRoutingWork = self.prepareRoutingWork
@@ -347,6 +353,10 @@ final class ExportManager: ObservableObject {
             _ interruptionMessage: String?
         ) -> Void
     ) {
+        guard !selected.contains(where: { $0.primaryFile.photosMedia != nil }) || (mode == .copy && !includeXMP) else {
+            state = .failed(L10n.text("Photos review supports Copy of exact originals without XMP."))
+            return
+        }
         guard mode != .metadataXMP else {
             state = .failed(L10n.text("Metadata (XMP) writes beside the originals and does not use a destination."))
             return
@@ -652,8 +662,31 @@ final class ExportManager: ObservableObject {
         }
 
         let operationAccesses = destinationFolderAccesses.map { $0.makeIndependentAccess() }
+        let photosProgress = PhotosBatchProgressRecorder()
+        photosOriginalProgress = 0
+        let photosSource = selected.first?.primaryFile.photosMedia
+        let photosWorker: Task<ExportWorker.CopyResult, Never>?
+        if let photosSource, mode == .copy, let cancelFlag,
+           let destinationBinding {
+            // One shared operation/sleep authority spans all sparse downloads
+            // and per-original journaled copies, including cloud waits.
+            let folder = photosSource.session.folder
+            state = .working(mode: .copy, completedBytes: 0, totalBytes: Int64(selected.count))
+            photosWorker = Task.detached(priority: .userInitiated) {
+                return await PhotosCopyWorker.copy(selected, sourceFolder: folder,
+                    destination: destination, binding: destinationBinding, cancelFlag: cancelFlag,
+                    downloadProgress: { done, total, fraction in
+                        photosProgress.update(PhotosBatchProgress(completed: done, total: total, downloadFraction: fraction))
+                    }) { done, total in
+                        photosProgress.update(PhotosBatchProgress(completed: done, total: total, downloadFraction: 0))
+                        byteProgress(Int64(done), Int64(total))
+                    }
+            }
+            photosCopyTask = photosWorker
+        } else { photosWorker = nil }
         let worker = Task.detached(priority: .userInitiated) {
             () -> WorkerResult in
+            if let photosWorker { return .copy(await photosWorker.value) }
             if mode == .copy {
                 return .copy(ExportWorker.copy(
                     selected,
@@ -679,12 +712,23 @@ final class ExportManager: ObservableObject {
         }
 
         Task { @MainActor in
+            let sampling = Task { @MainActor in
+                guard photosWorker != nil else { return }
+                while !Task.isCancelled {
+                    do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
+                    if let progress = photosProgress.take() {
+                        self.photosOriginalProgress = progress.downloadFraction
+                    }
+                }
+            }
             let result = await worker.value
             defer {
+                sampling.cancel()
                 operationAccesses.forEach { $0.stop() }
                 self.isCopyStopConfirmationPresented = false
                 self.copyOperationID = nil
             }
+            photosCopyTask = nil
             copyCancelFlag = nil
             isCancellingCopy = false
             switch result {
@@ -776,6 +820,7 @@ final class ExportManager: ObservableObject {
             return
         }
         guard copyCancelFlag.request(.userConfirmed) else { return }
+        photosCopyTask?.cancel()
         isCancellingCopy = true
         isCopyStopConfirmationPresented = false
         let operation = copyOperationID?.uuidString ?? "unknown"

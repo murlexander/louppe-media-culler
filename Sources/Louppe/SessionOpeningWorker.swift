@@ -27,6 +27,7 @@ enum SessionOpeningWorker {
         replaceSavedSession: Bool = false,
         recorder: SessionOpeningRecorder,
         allowsPreview: Bool = true,
+        photosBatch: PhotosReviewBatch? = nil,
         preview: (@Sendable (OpeningSessionSnapshot) async -> Void)? = nil,
         hooks: Hooks = Hooks()
     ) async throws -> SessionOpeningPreparation {
@@ -41,6 +42,24 @@ enum SessionOpeningWorker {
             try checkpoint(.folderIdentity)
             let identity = try recorder.measure(.folderIdentity) {
                 try SessionPersistence.SourceFolderIdentity.capture(at: folder)
+            }
+            if let reviewItems = photosBatch?.reviewItems {
+                // Membership is complete even when every image is cloud-only.
+                // No folder scan, EXIF read, physical identity or original request.
+                let saved = await persistence.read(for: folder, folderIdentity: identity,
+                    legacySidecarRelocationAuthorization: nil)
+                let restoration = try SessionOpeningRestoration.prepare(scanned: reviewItems,
+                    url: folder, persistenceResult: saved, replaceSavedSession: false,
+                    isCancelled: { cancelFlag.isSet })
+                let facets = SessionOpeningFacets(items: reviewItems, isCancelled: { cancelFlag.isSet })
+                var index = PreparedSessionIndex()
+                index.rebuildItems(reviewItems, sort: sort)
+                try Task.checkCancellation()
+                guard !cancelFlag.isSet, identity.matches(folder: folder) else {
+                    throw CancellationError()
+                }
+                return SessionOpeningPreparation(restoration: restoration, physicalPairs: [],
+                    facets: facets, persistenceResult: saved, preparedIndex: index, preparedSort: sort)
             }
             let inventory = try FolderScanner.discoverInventory(
                 folder, pairingMode: pairingMode, isCancelled: { cancelFlag.isSet },
@@ -88,7 +107,14 @@ enum SessionOpeningWorker {
                 in: restoredInventory, isCancelled: { cancelFlag.isSet }, recorder: recorder,
                 stageWillBegin: checkpoint, metadataReaderForTesting: hooks.metadataReader
             )
-            let restoration = pendingRestoration.replacingItems(scanned)
+            let reviewItems: [PhotoItem]
+            if let photosBatch {
+                reviewItems = FolderScanner.sortItems(scanned.map { item in
+                    PhotoItem(primaryFile: item.primaryFile.forPhotosReview(in: photosBatch),
+                              pairedFile: item.pairedFile?.forPhotosReview(in: photosBatch))
+                })
+            } else { reviewItems = scanned }
+            let restoration = pendingRestoration.replacingItems(reviewItems)
             try checkpoint(.derivedPreparation)
             let (pairs, facets, index) = recorder.measure(.derivedPreparation) {
                 let pairs = inventory.physicalPairs(in: restoration.items)

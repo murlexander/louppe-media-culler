@@ -16,7 +16,7 @@ struct PhotoZoomControl: View {
         controls
             .padding(.horizontal, 12)
             .frame(height: 36) // Match the native macOS toolbar glass groups.
-            .modifier(ZoomControlSurface(reduceTransparency: reduceTransparency, contrast: contrast))
+            .modifier(FloatingControlSurface(shape: Capsule(), reduceTransparency: reduceTransparency, contrast: contrast))
             .contentShape(Capsule())
             .background(ZoomFitDoubleClickSurface { store.zoomToFit() })
             .help(L10n.text("Double-click to fit"))
@@ -114,37 +114,6 @@ struct PhotoZoomControl: View {
                 store.setPhotoZoomScale(CGFloat(scale))
             }
         )
-    }
-}
-
-/// One surface for the whole control; native controls retain their own input
-/// and focus behavior. Older macOS versions use a standard material fallback.
-private struct ZoomControlSurface: ViewModifier {
-    let reduceTransparency: Bool
-    let contrast: ColorSchemeContrast
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if reduceTransparency {
-            content
-                .background(Color.appBackground, in: Capsule())
-                .overlay { border }
-        } else if #available(macOS 26.0, *) {
-            content.glassEffect(.regular, in: Capsule())
-        } else {
-            content
-                .background(.regularMaterial, in: Capsule())
-                .overlay { border }
-        }
-    }
-
-    private var border: some View {
-        Capsule()
-            .strokeBorder(
-                Color.primary.opacity(contrast == .increased ? 1 : 0.25),
-                lineWidth: contrast == .increased ? 2 : 1
-            )
-            .allowsHitTesting(false)
     }
 }
 

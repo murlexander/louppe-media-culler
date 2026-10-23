@@ -241,6 +241,7 @@ struct CaptureDateEvidence: Equatable, Sendable {
         case exifDigitized
         case tiff
         case fileCreation
+        case photosLibrary
         case unspecified
     }
 
@@ -273,6 +274,7 @@ struct CaptureDateEvidence: Equatable, Sendable {
         case .exifDigitized: return L10n.text("EXIF digitized time")
         case .tiff: return L10n.text("TIFF date/time")
         case .fileCreation: return L10n.text("File creation date · inferred capture time")
+        case .photosLibrary: return L10n.text("Apple Photos capture date")
         case .unspecified: return L10n.text("Date source unverified")
         }
     }
@@ -282,7 +284,7 @@ struct CaptureDateEvidence: Equatable, Sendable {
     }
 
     var precisionDescription: String? {
-        guard !isInferred else { return nil }
+        guard !isInferred, source != .photosLibrary else { return nil }
         return subsecondDigits.map { L10n.text("Subseconds: 0.\($0) s") }
             ?? L10n.text("Whole seconds only; equal-time order uses filename identity")
     }
@@ -348,6 +350,7 @@ struct PhotoFile: Identifiable, Sendable {
     /// whose EXIF is deferred until separate review. Filesystem identity and
     /// media kind are already authoritative in either case.
     let metadataIsLoaded: Bool
+    let photosMedia: PhotosMediaReference?
     private let metadataStorage: PhotoFileMetadataStorage
 
     var rating: Rating {
@@ -402,7 +405,8 @@ struct PhotoFile: Identifiable, Sendable {
         starRating: StarRating? = nil,
         starsChangedAt: Date? = nil,
         colorLabel: PhotoColorLabel? = nil,
-        colorChangedAt: Date? = nil
+        colorChangedAt: Date? = nil,
+        photosMedia: PhotosMediaReference? = nil
     ) {
         let displayName = url.lastPathComponent
         let fileTypeLabel = Self.makeFileTypeLabel(url: url, mediaKind: mediaKind)
@@ -439,6 +443,7 @@ struct PhotoFile: Identifiable, Sendable {
         self.fileSize = fileSize
         self.identityStorage = PhotoFileIdentityStorage(scannedIdentity)
         self.metadataIsLoaded = metadataIsLoaded
+        self.photosMedia = photosMedia
         self.metadataStorage = PhotoFileMetadataStorage(
             rating: rating,
             ratedAt: ratedAt,

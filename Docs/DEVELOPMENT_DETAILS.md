@@ -65,6 +65,80 @@ it to every view.
 
 Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Clean Up.
 
+## Apple Photos sources
+
+`PhotosLibraryService` owns PhotoKit off-main. One lazy `PHFetchResult` holds
+the chooser selection, and one pinned result retains the active batch's stable
+membership while the chooser changes. Only the selected `IndexSet` (50–1,000
+assets) becomes Swift objects. Albums and inclusive calendar dates narrow the
+query; Last Week and Last 7 Days use the Mac’s calendar/time zone, including
+DST boundaries. Batch controls preserve Gallery/Grid and review sorting.
+
+`prepare` now returns a complete stable asset inventory, with resource names,
+Photos dates and restored decisions, before requesting any image bytes.
+`PhotosReviewBatch.reviewItems` bypasses folder discovery, EXIF enrichment and
+file-identity validation in `SessionOpeningWorker`. Its synthetic URLs are
+cache/display keys, never evidence that a local original exists. The normal
+save-before-switch and publication generation barriers still own transitions.
+Legacy fully staged test batches continue through the folder worker.
+
+`PhotosMediaSession` owns the batch's representation requests, a strict 96 MiB
+pixel LRU, four image lanes and 64 pending waiters. Gallery requests a
+viewport-sized image capped at 2,048 pixels; realized thumbnails request their
+rendered size, capped at 1,024 pixels (384 for small tiles). A replaceable neighborhood preheats at most eight local thumbnails.
+Requests use `.unadjusted`/`.aspectFit`, exact target sizing and asynchronous
+cancellation, including callbacks before request-ID assignment. A local
+high-quality attempt precedes authorized network access; a smaller local fast
+representation can still work offline. Gallery labels its actual dimensions
+and hides preview pixels while original detail is requested. No review preview
+is presented as 100% original detail. The image cache and all view state belong
+to this batch/revision, not an asset ID alone.
+
+Review-image and original iCloud consent are separate, initially off. Choosing
+review downloads does not authorize resource streaming. PhotoKit may itself
+fetch source bytes to make an uncached representation: target size bounds
+requested pixels, not network-transfer bytes. Per-item loading, cloud/error,
+retry and original progress remain visible. Failed/cancelled preparation keeps
+the outgoing review; closed batches cancel admitted media work.
+
+Original detail/RAW rendering and original video playback acquire a private
+file lease. `PhotosResourceTransfer` streams the primary `.photo`/`.video`
+resource, one request at a time, within the unchanged 5 GB aggregate staging
+ceiling. Resource requests have separate network consent and real cancellation.
+Leases retain files through rendering/Copy and remove them on release. Live
+Photos use their still resource; RAW+JPEG assets use Photos' primary original.
+Preview review is unadjusted; no edited rendition silently replaces it. Hidden
+assets retain PhotoKit's exclusion default. Original-only EXIF/size/quality
+checks report unavailable, and exact/similarity analysis cannot sweep the chunk.
+Capture grouping can use Photos dates without original I/O.
+
+`PhotosReviewDecisions` persists Yes/No, stars, colors, and their timestamps in
+Application Support, keyed by Photos local identifiers. Saves share the existing
+coalescing, generations, Retry, Close, and Quit authority; a failed decision
+checkpoint blocks discard. A bounded read, cross-process lock, fresh merge, and
+durable atomic replacement preserve other batches and refuse corrupt/unknown
+schemas. Writer/access sequences reject late older checkpoints. Cache physical
+identities and fingerprints do not own Photos decisions.
+File hashing for folder-decision recovery is skipped in Photos mode.
+
+One-destination Copy remains available. `PhotosCopyWorker` stages, validates,
+passes one leased exact original to the journaled `ExportWorker`, then releases
+it before the next asset. Existing names are collision-suffixed, completed
+copies survive later failure/cancellation, and progress counts originals with
+per-item download progress. Total bytes are unknown upfront; capacity is checked
+again for each staged original. Photos routing Copy and XMP generation are
+unavailable; representation pixels can never enter an export plan.
+The central capabilities and execution gates
+refuse Trash, Move, Rename, Organize, and XMP publication for Photos batches.
+No Photos library change request is issued. Previously active cache media is
+retired only after the outgoing decision barrier; abandoned marked UUID cache
+folders are removed at the next preparation. At most the active and preparing
+batch are retained during normal operation; failed filesystem cleanup remains
+best effort. Permissions require `NSPhotoLibraryUsageDescription` and the Photos entitlement
+in every bundle, including the hardened-runtime Developer ID product. Direct
+builds use `Louppe.direct.entitlements`; Store builds retain their sandbox and
+selected-folder entitlements in `Louppe.entitlements`.
+
 ## File operations and recovery
 
 - Export preflight and worker preparation read exclusive-rename capability from
@@ -333,13 +407,47 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 
 ## Native UI
 
-- Settings uses one grouped, scrolling form in a 620 × 600-point content area.
+- `NativeSearchField` embeds `NSSearchField` for Filter, Command Palette, Help,
+  and shortcut Settings. Keep immediate binding updates, native editing and IME
+  ownership, one-shot focus requests scoped to the attached key window, and
+  palette commands in its field delegate. Do not add a second key monitor.
+  Sort uses grouped native Pickers; shortcut Add uses a native Menu and mounts
+  its recorder after menu tracking ends. Welcome uses the system `HelpLink`.
+  `FloatingControlSurface` shares macOS 26+ glass between photo zoom and floating
+  video transport, regular material on older systems, and an opaque bordered
+  surface for Reduce Transparency. Inline audio controls keep their reading layout.
+
+- `SheetForm` owns the shared dialog title/subtitle, 24-point side margins,
+  regular native controls, scrolling body, and fixed action row. Setup screens
+  use `layout: .grouped`, sharing `LouppeSettingsForm` with Settings: one native
+  Form owns scrolling, picker values align trailing, and standalone toggles use
+  the system presentation. Supply direct rows and Sections, with no nested
+  ScrollView/Form or custom card imitation. Reading, confirmation, progress,
+  and result bodies retain the default scrolling layout. Photos and
+  saved-decision recovery follow the same structure as Export, Rename, and
+  Organize, including setup and result states. Keep primary actions at the
+  trailing edge and preserve each operation's warnings and confirmation gates.
+  Welcome uses matching source buttons and the File menu's Open Folder wording.
+  Help and independently presented controls retain the app's purple tint.
+  `UIConsistencyVisualTests` provides opt-in, unordered native captures with
+  disposable media: set `LOUPPE_UI_SNAPSHOTS` to an output directory. It includes
+  populated recovery, completed file tools, and a scrolling Grid beside Info;
+  run the test bundle with `-AppleLanguages '(ar)'` for actual Arabic/RTL text.
+
+- Settings uses a native two-page TabView in the Settings scene, with General
+  (gear) and Keyboard shortcuts (keyboard) tabs. macOS owns the toolbar tabs and
+  selected-page title; the expanded native toolbar centers the title without the
+  app name. The packaged LouppeAccent color and NSAccentColorName keep native
+  toolbar selection and focus rings consistent with the existing purple tint,
+  respecting a user's explicit system accent override.
+  Both pages share a 620 × 600-point content area and each owns one
+  grouped scrolling form. General contains Review, new-folder defaults, RAW
+  display, Quality Cues, Capture bursts, Updates, Louppe Help, and Louppe info in
+  that order. Keyboard shortcuts contains the virtual keyboard and shortcut editor.
   RAW display and decoder preferences appear only in Settings; the Gallery zoom
-  bar contains Fit, magnification and its loading indicator.
-  Review, new-folder defaults, RAW display, Quality Cues, Capture bursts,
-  Louppe Help, Updates, and Louppe info share margins and regular native control
-  sizing. Never embed
-  separate forms or scroll views inside its section views. Get started opens
+  bar contains Fit, magnification and its loading indicator. All sections share
+  margins and regular native control sizing. Never embed separate forms or scroll
+  views inside section views. Get started opens
   the existing Help window; its guide lives only in Help. Settings retains the
   quick-start tips preference in its own Louppe Help section, without an inline
   disclosure or grouping under Capture bursts. Filter disclosure
@@ -351,6 +459,9 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   open the App Store, and review builds keep updates disabled. Support reuses
   the Store tip window or direct tip URL and states that Louppe stays free and
   open source. Settings does not start purchases.
+  Shortcut subsections start collapsed. Searching or selecting a keyboard key
+  reveals matching actions. The shortcut search field does not take focus when
+  Settings opens or scrolls; click it to edit. VoiceOver can explicitly focus it.
 
 - Saved-decision recovery uses a nonblocking review banner and native preview
   sheet, joined to the existing keyboard/menu presentation gate. Selection plus
@@ -477,7 +588,12 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
   Input-source notifications refresh the map, without polling. Key geometry stays
   LTR in all interface languages and native buttons expose assigned actions.
   The compact ANSI Mac silhouette includes the function row, Delete, Caps Lock,
-  Return and modifier keys, with wide Space and split-height up/down arrows.
+  Return and modifier keys, with equal-height rows, wide Space and split-height
+  up/down arrows. The base overview accents every used key across review and
+  modified shortcuts; modifier layers narrow it to their matching bindings.
+  Highlights and key-filter results follow live adds, edits, removals and resets,
+  using each modifier layer's input-source translation. Each scope chooser sits
+  beside its binding's remove button.
   Function keys, Caps Lock, Return, Control and Option are decorative and excluded
   from accessibility navigation. Review keys and supported modified keys filter
   actions; Command and Shift keycaps preview layers.

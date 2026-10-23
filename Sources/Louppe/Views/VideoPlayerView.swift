@@ -106,17 +106,24 @@ struct GalleryVideoPlayerView: View {
         .onChange(of: item.contentRevision) { playback.prepare(item) }
     }
 
+    @ViewBuilder
     private func controlButton(
         systemName: String,
         help: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        let button = Button(action: action) {
             Image(systemName: systemName)
                 .frame(width: 20, height: 20)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        Group {
+            if #available(macOS 26.0, *) {
+                button.buttonStyle(.glass).buttonBorderShape(.circle)
+            } else {
+                button.buttonStyle(.bordered).buttonBorderShape(.circle)
+            }
+        }
         .help(help)
         .accessibilityLabel(help)
     }
@@ -141,7 +148,7 @@ struct GalleryVideoPlayerView: View {
 
 /// One AVPlayer-backed transport for Gallery video and audio. Audio uses two
 /// rows so the controls remain usable when the Gallery pane is narrow.
-private struct GalleryMediaTransportView: View {
+struct GalleryMediaTransportView: View {
     let item: PhotoItem
     @ObservedObject var playback: VideoPlaybackController
     @Binding var isScrubbing: Bool
@@ -149,6 +156,8 @@ private struct GalleryMediaTransportView: View {
     @Binding var volume: Double
     @Binding var isMuted: Bool
     let compact: Bool
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
         Group {
@@ -159,10 +168,10 @@ private struct GalleryMediaTransportView: View {
                     wideTransport
                         .frame(minWidth: 460)
                     stackedTransport
-                        .background(
-                            Color.appBackground,
-                            in: RoundedRectangle(cornerRadius: 14)
-                        )
+                        .modifier(FloatingControlSurface(
+                            shape: RoundedRectangle(cornerRadius: 14),
+                            reduceTransparency: reduceTransparency, contrast: contrast
+                        ))
                 }
             }
         }
@@ -176,7 +185,9 @@ private struct GalleryMediaTransportView: View {
         }
         .padding(.horizontal, 14)
         .frame(height: 48)
-        .background(Color.appBackground, in: Capsule())
+        .modifier(FloatingControlSurface(
+            shape: Capsule(), reduceTransparency: reduceTransparency, contrast: contrast
+        ))
     }
 
     private var stackedTransport: some View {

@@ -8,7 +8,104 @@ import Sparkle
 
 @MainActor
 final class SettingsLayoutTests: XCTestCase {
-    func testAllSettingsShareOneScrollableForm() throws {
+    func testPackagedNativeAccentMatchesTheSettingsTint() throws {
+        let repository = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let data = try Data(contentsOf: repository.appendingPathComponent(
+            "AppIcon/Appearance.xcassets/LouppeAccent.colorset/Contents.json"))
+        let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let colors = try XCTUnwrap(catalog["colors"] as? [[String: Any]])
+        let color = try XCTUnwrap(colors.first?["color"] as? [String: Any])
+        let components = try XCTUnwrap(color["components"] as? [String: String])
+        let tint = try XCTUnwrap(NSColor(Color.louppeAccent).usingColorSpace(.sRGB))
+        for (name, actual) in [("red", tint.redComponent), ("green", tint.greenComponent), ("blue", tint.blueComponent)] {
+            let hex = try XCTUnwrap(components[name]?.dropFirst(2))
+            let byte = try XCTUnwrap(UInt8(hex, radix: 16))
+            XCTAssertEqual(CGFloat(byte) / 255, actual, accuracy: 0.0001, name)
+        }
+    }
+
+    func testRecordingAReviewShortcutPersistsAndRefreshesTheKeyboardInPlace() throws {
+        let suite = "SettingsLayoutTests.Keyboard.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(ReviewShortcutPreferences().encoded, forKey: ReviewShortcutPreferences.preferenceKey)
+        let host = NSHostingView(rootView: LouppeSettingsForm {
+            ReviewShortcutsSettingsView()
+        }.defaultAppStorage(defaults).preferredColorScheme(.dark))
+        let window = mountedWindow(host, width: 620, height: 600)
+        defer { window.close() }
+        settle(host)
+        let search = try XCTUnwrap(descendants(host).compactMap { $0 as? NativeSearchField.SearchField }.first)
+        search.stringValue = ReviewShortcutAction.oneStar.title
+        search.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: search))
+        settle(host)
+        try snapshot(host, name: "keyboard-before-remap")
+
+        let recorder = try XCTUnwrap(descendants(host).compactMap { $0 as? ReviewShortcutRecorderButton }
+            .first { $0.actionTitle == ReviewShortcutAction.oneStar.title })
+        recorder.startRecording()
+        recorder.keyDown(with: try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero,
+            modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+            windowNumber: window.windowNumber, context: nil, characters: "t",
+            charactersIgnoringModifiers: "t", isARepeat: false, keyCode: 17)))
+        settle(host)
+        let saved = ReviewShortcutPreferences.decode(defaults.string(forKey: ReviewShortcutPreferences.preferenceKey) ?? "")
+        XCTAssertEqual(saved.binding(for: .oneStar).keyCode, 17)
+        XCTAssertFalse(recorder.isRecording)
+        XCTAssertEqual(recorder.shortcutTitle, saved.display(for: saved.binding(for: .oneStar)))
+        try snapshot(host, name: "keyboard-after-remap")
+    }
+
+    func testSettingsUsesTwoNativePagesAndKeepsShortcutsOnTheirOwnPage() throws {
+        let store = SessionStore()
+        #if APP_STORE
+        let settings = LouppeSettingsView(store: store)
+        #else
+        let controller = SPUStandardUpdaterController(
+            startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil
+        )
+        let settings = LouppeSettingsView(store: store, updater: controller.updater)
+        #endif
+        let host = NSHostingController(rootView: settings.preferredColorScheme(.dark))
+        let window = NSWindow(contentViewController: host)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.isReleasedWhenClosed = false
+        window.orderBack(nil)
+        window.makeKey()
+        defer { window.close() }
+        settle(host.view)
+
+        let tabs = try XCTUnwrap(descendants(host.view).compactMap { $0 as? NSTabView }.first)
+        try snapshot(try XCTUnwrap(window.contentView?.superview), name: "pages-general")
+        XCTAssertEqual(tabs.tabViewItems.map(\.label), [L10n.text("General"), L10n.text("Keyboard shortcuts")])
+        XCTAssertFalse(descendants(host.view).contains { $0 is NativeSearchField.SearchField },
+                       "General must not include the shortcut editor")
+        XCTAssertEqual(descendants(host.view).filter { $0 is NSScrollView }.count, 1)
+
+        tabs.selectTabViewItem(at: 1)
+        settle(host.view)
+        let search = try XCTUnwrap(descendants(host.view).compactMap { $0 as? NativeSearchField.SearchField }.first)
+        XCTAssertNil(search.currentEditor(), "Opening the shortcuts page must not activate search")
+        XCTAssertFalse(descendants(host.view).contains { $0 is ReviewShortcutRecorderButton },
+                       "Shortcut subsections must start collapsed")
+        XCTAssertEqual(descendants(host.view).filter { $0 is NSScrollView }.count, 1,
+                       "Each page must own its scrolling form")
+        try snapshot(try XCTUnwrap(window.contentView?.superview), name: "pages-shortcuts")
+
+        search.setAccessibilityFocused(true)
+        XCTAssertNotNil(search.currentEditor(), "Explicit accessibility focus must still edit search")
+        tabs.selectTabViewItem(at: 0)
+        settle(host.view)
+        XCTAssertFalse(descendants(host.view).contains { $0 is NativeSearchField.SearchField })
+
+        tabs.selectTabViewItem(at: 1)
+        settle(host.view)
+        let returnedSearch = try XCTUnwrap(descendants(host.view).compactMap { $0 as? NativeSearchField.SearchField }.first)
+        XCTAssertNil(returnedSearch.currentEditor(), "Returning to shortcuts must not restore text-editing focus")
+    }
+
+    func testGeneralSettingsShareOneScrollableForm() throws {
         let store = SessionStore()
         #if APP_STORE
         let settings = LouppeSettingsView(store: store)
@@ -20,12 +117,13 @@ final class SettingsLayoutTests: XCTestCase {
         #endif
         let host = NSHostingView(rootView: settings.preferredColorScheme(.dark))
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 620, height: 600),
+            contentRect: NSRect(x: -20_000, y: -20_000, width: 620, height: 600),
             styleMask: [.titled], backing: .buffered, defer: false
         )
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        window.orderBack(nil)
+        window.makeKey()
         defer { window.close() }
         settle(host)
 
@@ -141,11 +239,13 @@ final class SettingsLayoutTests: XCTestCase {
 
     private func mountedWindow(_ host: NSView, width: CGFloat, height: CGFloat) -> NSWindow {
         _ = NSApplication.shared
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: height),
+        let window = NSWindow(contentRect: NSRect(x: -20_000, y: -20_000, width: width, height: height),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        // App-local key status supports native routing without activating the app.
+        window.orderBack(nil)
+        window.makeKey()
         return window
     }
 

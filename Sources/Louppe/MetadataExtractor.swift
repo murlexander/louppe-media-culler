@@ -102,6 +102,16 @@ enum MetadataExtractor {
 #if DEBUG
         MetadataExtractorTestProbe.shared.record(item.contentRevision)
 #endif
+        if item.primaryFile.photosMedia != nil {
+            var fields = [MetadataField(id: "Filename", label: "Filename", value: item.displayName),
+                MetadataField(id: "Type", label: "Type", value: item.fileTypeLabel),
+                MetadataField(id: "Availability", label: "Availability",
+                    value: L10n.text("Original EXIF, size and quality checks unavailable during preview review."))]
+            if let date = item.captureDate {
+                fields.append(MetadataField(id: "Captured", label: "Captured", value: AppDateFormat.dayAndTime(date)))
+            }
+            return fields
+        }
         if item.isText {
             return [
                 MetadataField(id: "Filename", label: "Filename", value: item.displayName),
@@ -136,6 +146,7 @@ enum MetadataExtractor {
         if let date = item.captureDate {
             let formattedDate = AppDateFormat.dayAndTime(date)
             let isEstimated = item.captureDateEvidence?.source != .exifOriginal
+                && item.captureDateEvidence?.source != .photosLibrary
             add("Captured", isEstimated ? L10n.text("\(formattedDate) · estimated") : formattedDate)
         }
         if let evidence = item.captureDateEvidence {

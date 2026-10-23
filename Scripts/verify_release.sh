@@ -49,6 +49,13 @@ verify_app_bundle() {
     local label="$2"
 
     codesign --verify --deep --strict "$bundle"
+    local entitlements
+    entitlements="$(mktemp "$CHECK_DIR/Louppe-entitlements.XXXXXX")"
+    codesign -d --entitlements :- "$bundle" 2>/dev/null > "$entitlements"
+    [[ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.personal-information.photos-library' "$entitlements")" == "true" ]] \
+        || fail "$label cannot request Photos library access."
+    [[ -n "$(plist_value "$bundle" NSPhotoLibraryUsageDescription)" ]] \
+        || fail "$label has no Photos permission explanation."
     [[ "$(plist_value "$bundle" CFBundleIdentifier)" == "com.alexandermarkin.louppe" ]] \
         || fail "$label bundle identifier changed."
     [[ "$(plist_value "$bundle" CFBundleShortVersionString)" == "$MARKETING_VERSION" ]] \
@@ -63,6 +70,11 @@ verify_app_bundle() {
         || fail "$label has no legacy app-icon fallback."
     [[ -f "$bundle/Contents/Resources/Assets.car" ]] \
         || fail "$label has no native appearance-aware app icon."
+    [[ "$(plist_value "$bundle" NSAccentColorName)" == "LouppeAccent" ]] \
+        || fail "$label does not declare Louppe's native accent color."
+    xcrun assetutil --info "$bundle/Contents/Resources/Assets.car" | \
+        python3 -c 'import json,sys; sys.exit(not any(a.get("Name") == "LouppeAccent" and a.get("AssetType") == "Color" for a in json.load(sys.stdin)))' \
+        || fail "$label has no compiled Louppe accent color."
     [[ "$(plist_value "$bundle" LSMultipleInstancesProhibited)" == "true" ]] \
         || fail "$label must prohibit a second app instance during file operations."
     cmp -s ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt \
@@ -157,9 +169,6 @@ verify_app_bundle() {
     if $APP_STORE; then
         [[ "$(plist_value "$bundle" LSApplicationCategoryType)" == "public.app-category.photography" ]] \
             || fail "$label App Store category must be Photography."
-        local entitlements
-        entitlements="$(mktemp "$CHECK_DIR/Louppe-entitlements.XXXXXX")"
-        codesign -d --entitlements :- "$bundle" 2>/dev/null > "$entitlements"
         [[ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.app-sandbox' "$entitlements")" == "true" ]] \
             || fail "$label is not sandboxed."
         [[ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.files.user-selected.read-write' "$entitlements")" == "true" ]] \

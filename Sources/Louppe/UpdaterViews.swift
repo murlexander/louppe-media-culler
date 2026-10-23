@@ -78,7 +78,7 @@ struct UpdaterSettingsView: View {
 }
 #endif
 
-/// One scrolling home for preferences, onboarding, updates, and support.
+/// Native macOS settings pages, with one scrolling form per page.
 struct LouppeSettingsView: View {
     @ObservedObject var store: SessionStore
     @Environment(\.openWindow) private var openWindow
@@ -86,7 +86,46 @@ struct LouppeSettingsView: View {
     let updater: SPUUpdater
     #endif
 
+    @State private var selectedPage: SettingsPage = .general
+
     var body: some View {
+        pages
+            .frame(width: 620, height: 600)
+            .tint(Color.louppeAccent)
+            .navigationTitle(selectedPage.title)
+    }
+
+    @ViewBuilder
+    private var pages: some View {
+        if #available(macOS 15.0, *) {
+            TabView(selection: $selectedPage) {
+                Tab(L10n.text("General"), systemImage: "gearshape", value: SettingsPage.general) {
+                    generalSettings
+                }
+                Tab(L10n.text("Keyboard shortcuts"), systemImage: "keyboard", value: SettingsPage.shortcuts) {
+                    shortcutSettings
+                }
+            }
+        } else {
+            TabView(selection: $selectedPage) {
+                generalSettings
+                    .tabItem { Label(L10n.text("General"), systemImage: "gearshape") }
+                    .tag(SettingsPage.general)
+                shortcutSettings
+                    .tabItem { Label(L10n.text("Keyboard shortcuts"), systemImage: "keyboard") }
+                    .tag(SettingsPage.shortcuts)
+            }
+        }
+    }
+
+    private var shortcutSettings: some View {
+        LouppeSettingsForm {
+            ReviewShortcutsSettingsView()
+        }
+        .accessibilityIdentifier("louppe.settings.shortcuts")
+    }
+
+    private var generalSettings: some View {
         LouppeSettingsForm {
             ReviewPreferencesSettingsView()
             CameraQualityWarningsSettingsView()
@@ -102,10 +141,6 @@ struct LouppeSettingsView: View {
                 .help(L10n.text("0.5–10 seconds between photos. Separate shutter presses or cameras may be grouped together."))
             } header: {
                 Text(L10n.text("Capture bursts"))
-            }
-
-            LouppeGetStartedSettingsView { id in
-                openWindow(id: id)
             }
 
             Section {
@@ -131,6 +166,10 @@ struct LouppeSettingsView: View {
                     .foregroundStyle(Color.louppeAccent)
             } header: {
                 Text(L10n.text("Updates"))
+            }
+
+            LouppeGetStartedSettingsView { id in
+                openWindow(id: id)
             }
 
             Section {
@@ -162,8 +201,18 @@ struct LouppeSettingsView: View {
                 Text(L10n.text("Louppe info"))
             }
         }
-        .frame(width: 620, height: 600)
-        .tint(Color.louppeAccent)
+        .accessibilityIdentifier("louppe.settings.general")
+    }
+}
+
+private enum SettingsPage: Hashable {
+    case general, shortcuts
+
+    var title: String {
+        switch self {
+        case .general: L10n.text("General")
+        case .shortcuts: L10n.text("Keyboard shortcuts")
+        }
     }
 }
 

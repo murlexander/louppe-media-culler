@@ -41,6 +41,57 @@ final class ReviewKeyboardTests: XCTestCase {
         XCTAssertEqual(preferences.binding(for: .yes).character, "t")
     }
 
+    func testOverviewIncludesEveryCommandLayerAndTracksAliasReplacementRemovalAndReset() {
+        var commands = CommandShortcutPreferences()
+        let map = ReviewKeyboardMap(interpretation: .physicalPosition, layoutCharacters: [:],
+            modifiedCharactersByLayer: [.command: [40: "k", 17: "t", 24: "="],
+                                        .commandShift: [16: "y", 24: "+"]])
+        XCTAssertEqual(map.commandActions(for: 40, preferences: commands), [.commandPalette])
+        XCTAssertEqual(map.commandBindings(for: 24, preferences: commands).map(\.binding.display), ["⌘+", "⇧⌘+"])
+        XCTAssertTrue(map.commandActions(for: 51, preferences: commands).contains(.trash))
+        XCTAssertEqual(Set(map.commandActions(for: 123, preferences: commands)), [.slower, .seekBackward, .selectFirst])
+
+        let original = commands.bindings(for: .commandPalette)[0]
+        let replacement = CommandShortcutBinding(character: "t", keyCode: 17, modifiers: .command)
+        XCTAssertTrue(commands.replace(original, with: replacement, for: .commandPalette))
+        XCTAssertTrue(map.commandActions(for: 40, preferences: commands).isEmpty)
+        XCTAssertEqual(map.commandActions(for: 17, preferences: commands), [.commandPalette])
+        let alias = CommandShortcutBinding(character: "y", keyCode: 16, modifiers: .commandShift)
+        XCTAssertTrue(commands.add(alias, for: .commandPalette))
+        XCTAssertEqual(map.commandActions(for: 16, preferences: commands), [.commandPalette])
+        XCTAssertTrue(commands.remove(replacement, for: .commandPalette))
+        XCTAssertTrue(map.commandActions(for: 17, preferences: commands).isEmpty)
+        XCTAssertTrue(commands.reset(for: .commandPalette))
+        XCTAssertTrue(map.commandActions(for: 16, preferences: commands).isEmpty)
+        XCTAssertEqual(map.commandActions(for: 40, preferences: commands), [.commandPalette])
+    }
+
+    func testOverviewUsesEachCommandsInputLayoutEvenWhenReviewUsesPhysicalPositions() {
+        let map = ReviewKeyboardMap(interpretation: .physicalPosition, layoutCharacters: [2: "e", 14: "."],
+            modifiedCharactersByLayer: [.command: [14: "e", 2: "d"], .commandShift: [24: "+"]])
+        XCTAssertEqual(map.commandActions(for: 14, preferences: CommandShortcutPreferences()), [.export])
+        XCTAssertTrue(map.commandActions(for: 2, preferences: CommandShortcutPreferences()).isEmpty)
+        XCTAssertEqual(map.commandActions(for: 24, preferences: CommandShortcutPreferences()), [.zoomIn])
+    }
+
+    func testReviewOverviewTracksRemovalAndResetWhileOtherShortcutsKeepSharedKeysUsed() {
+        var review = ReviewShortcutPreferences()
+        let map = ReviewKeyboardMap(interpretation: .physicalPosition, layoutCharacters: [:],
+                                   modifiedCharactersByLayer: [.command: [3: "f"]])
+        XCTAssertTrue(review.set(.init(character: "t", keyCode: 17), for: .oneStar))
+        XCTAssertTrue(map.actions(for: 18, preferences: review).isEmpty)
+        XCTAssertEqual(map.actions(for: 17, preferences: review), [.oneStar])
+        XCTAssertTrue(review.remove(review.assignments(for: .oneStar)[0].id, for: .oneStar))
+        XCTAssertTrue(map.actions(for: 17, preferences: review).isEmpty)
+        XCTAssertTrue(review.reset(for: .oneStar))
+        XCTAssertEqual(map.actions(for: 18, preferences: review), [.oneStar])
+
+        XCTAssertTrue(review.set(.init(character: "t", keyCode: 17), for: .yes))
+        XCTAssertTrue(map.actions(for: 3, preferences: review).isEmpty)
+        XCTAssertEqual(map.commandActions(for: 3, preferences: CommandShortcutPreferences()), [.filterSearch],
+                       "F stays lit because Command-F is still assigned")
+    }
+
     func testUnavailableLayoutCharacterDoesNotPretendToBeQwerty() {
         let map = ReviewKeyboardMap(interpretation: .keyboardLayout, layoutCharacters: [:])
         XCTAssertNil(map.character(for: 3))

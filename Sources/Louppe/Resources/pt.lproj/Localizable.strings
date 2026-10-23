@@ -1822,3 +1822,120 @@
 "Loading photo details…" = "Carregando detalhes das fotos…";
 
 "Preview unavailable" = "Prévia indisponível";
+
+"Open Apple Photos…" = "Abrir Apple Photos…";
+
+"Apple Photos" = "Fotos da Apple";
+
+"Apple Photos capture date" = "Data de captura do Fotos da Apple";
+
+"Album" = "Álbum";
+
+"Photo" = "Foto";
+
+"Allow Louppe to access Photos in System Settings → Privacy & Security → Photos, then retry." = "Permita que o Louppe acesse o Fotos em Ajustes do Sistema → Privacidade e Segurança → Fotos e tente novamente.";
+
+"The Photos selection changed. Choose the library or album again." = "A seleção do Fotos mudou. Escolha a fototeca ou o álbum novamente.";
+
+"No photos or videos match this selection." = "Nenhuma foto ou vídeo corresponde a esta seleção.";
+
+"Photos couldn't provide a file for “{0}”. Try another batch or check it in Photos." = "O Fotos não forneceu um arquivo para “{0}”. Tente outro lote ou verifique no Fotos.";
+
+"This batch exceeds the 5 GB review limit. Choose a smaller batch or a narrower date range." = "Este lote excede o limite de revisão de 5 GB. Escolha um lote menor ou um intervalo de datas mais curto.";
+
+"Open Batch" = "Abrir lote";
+
+"Source" = "Origem";
+
+"All Photos and Videos" = "Todas as fotos e vídeos";
+
+"Date range" = "Intervalo de datas";
+
+"Through" = "Até";
+
+"Batch size" = "Tamanho do lote";
+
+"Batch {0} of {1}" = "Lote {0} de {1}";
+
+"Reading Photos selection…" = "Lendo a seleção do Fotos…";
+
+"{0} items match this selection." = "{0} itens correspondem a esta seleção.";
+
+"Download originals from iCloud if needed" = "Baixar originais do iCloud se necessário";
+
+"Only this batch is copied for review. Decisions save in Louppe; your Photos library stays unchanged. Live Photos use their still image." = "Apenas este lote é copiado para revisão. As decisões são salvas no Louppe; sua fototeca do Fotos não muda. Live Photos usam a imagem estática.";
+
+"Preparing {0} of {1} items…" = "Preparando {0} de {1} itens…";
+
+"Saving decisions before opening Photos…" = "Salvando decisões antes de abrir o Fotos…";
+
+"Originals stored in iCloud may take longer to download." = "Os originais armazenados no iCloud podem demorar mais para baixar.";
+
+"Apple Photos · {0}–{1} of {2}" = "Fotos da Apple · {0}–{1} de {2}";
+
+"Decisions saved in Louppe" = "Decisões salvas no Louppe";
+
+"Choose Photos…" = "Escolher fotos…";
+
+"Previous Batch" = "Lote anterior";
+
+"Next Batch" = "Próximo lote";
+
+"Close Photos review" = "Fechar revisão do Fotos";
+
+"Batch" = "Lote";
+
+"This original is stored in iCloud. Enable downloads above, then open the batch again." = "Este original está no iCloud. Ative os downloads acima e abra o lote novamente.";
+
+"Recent Dates" = "Datas recentes";
+
+"Last Week" = "Semana passada";
+
+"Last 7 Days" = "Últimos 7 dias";
+
+"Download and Open Batch" = "Baixar e abrir lote";
+
+"This original is stored in iCloud. Download it to open this batch." = "Este original está no iCloud. Baixe-o para abrir este lote.";
+
+"Copy selected Photos originals to another folder ({0})" = "Copiar os originais selecionados do Fotos para outra pasta ({0})";
+
+
+/* Progressive Photos review */
+"Photos originals use one-destination Copy. Choose Copy and a destination folder." = "Os originais de Fotografias são copiados para uma pasta. Escolha Copiar e uma pasta de destino.";
+"Photos review supports Copy of exact originals without XMP." = "A revisão de Fotografias permite copiar originais exatos sem XMP.";
+"Original EXIF, size and quality checks unavailable during preview review." = "EXIF, tamanho e verificações de qualidade do original indisponíveis na revisão de pré-visualizações.";
+"This original needs iCloud access. Allow original downloads, then retry this item." = "Este original precisa de acesso ao iCloud. Permita transferir originais e tente este item novamente.";
+"Original staging exceeds the 5 GB limit. Close original detail or choose a smaller item, then retry." = "Os originais temporários excedem o limite de 5 GB. Feche o detalhe original ou escolha um item menor e tente novamente.";
+"Review image is in iCloud. Allow review downloads or retry when online." = "A imagem de revisão está no iCloud. Permita a transferência ou tente novamente com ligação.";
+"Photos couldn't provide this review image. Check access or retry." = "Fotografias não conseguiu fornecer esta imagem. Verifique o acesso ou tente novamente.";
+"Photos is busy. Retry this item." = "Fotografias está ocupado. Tente este item novamente.";
+"This Photos batch is closed. Open it again." = "Este lote de Fotografias está fechado. Abra-o novamente.";
+"Capture grouping uses Photos dates. Exact and similar-file analysis require local originals." = "O agrupamento usa as datas de Fotografias. A análise de ficheiros idênticos e semelhantes requer originais locais.";
+"Original quality checks are unavailable during Photos preview review." = "As verificações de qualidade do original estão indisponíveis durante a revisão de pré-visualizações.";
+"Allow iCloud Originals" = "Permitir originais do iCloud";
+"Copy downloads exact primary originals one at a time. Review previews are never exported. Total bytes are unknown until originals load; destination space is checked for each file." = "Copiar transfere os originais principais exatos um a um. As pré-visualizações nunca são exportadas. O tamanho total é desconhecido até carregar os originais; o espaço é verificado por ficheiro.";
+"Downloading and copying originals…" = "A transferir e copiar originais…";
+"Progress counts original files. iCloud downloads may take longer." = "O progresso conta ficheiros originais. As transferências do iCloud podem demorar mais.";
+"Unavailable until originals load" = "Indisponível até carregar os originais";
+"Allow iCloud Review Images" = "Permitir imagens de revisão do iCloud";
+"Review images load as you browse. Photos may download source data to make a preview. Originals are requested separately for original detail and Copy. Decisions save in Louppe; your library stays unchanged. Live Photos use their still image." = "As imagens carregam ao navegar. Fotografias pode transferir dados de origem para criar uma pré-visualização. Os originais são pedidos à parte para detalhe e cópia. As decisões ficam no Louppe; a fototeca não muda. Live Photos usa a imagem fixa.";
+"Opening the selection does not download its originals." = "Abrir a seleção não transfere os originais.";
+"Preview review · decisions saved in Louppe" = "Revisão de pré-visualizações · decisões guardadas no Louppe";
+"Photos may download source data to make a review image." = "Fotografias pode transferir dados de origem para criar uma imagem de revisão.";
+"iCloud Access" = "Acesso ao iCloud";
+"Loading review image" = "A carregar imagem de revisão";
+"Original file" = "Ficheiro original";
+"Use Review Preview" = "Usar pré-visualização de revisão";
+"Load Original Video" = "Carregar vídeo original";
+"Open Original Detail" = "Abrir detalhe original";
+"Loading original detail…" = "A carregar detalhe original…";
+"Original detail unavailable" = "Detalhe original indisponível";
+"Downloading review image: {0}%" = "A transferir imagem de revisão: {0}%";
+"Review image unavailable" = "Imagem de revisão indisponível";
+"Retry Original" = "Tentar original novamente";
+"Original detail requested · review preview hidden" = "Detalhe original pedido · pré-visualização oculta";
+"Unadjusted review preview · {0} × {1} pixels · not original detail" = "Pré-visualização sem ajustes · {0} × {1} píxeis · sem detalhe original";
+"Unadjusted review preview · not original detail" = "Pré-visualização sem ajustes · sem detalhe original";
+"Availability" = "Disponibilidade";
+/* Settings pages. */
+"General" = "Geral";

@@ -448,6 +448,26 @@ final class SessionStore: ObservableObject {
     private var selectionState = SelectionState()
 
     private(set) var sourceFolder: URL?
+    let photosBrowser: PhotosLibraryBrowser
+    private let photosLibrary: any PhotosLibraryClient
+    @Published var isPhotosLibraryPresented = false
+    @Published private(set) var photosBatch: PhotosReviewBatch?
+    @Published var photosReviewNetwork = false {
+        didSet {
+            guard let session = photosBatch?.mediaSession else { return }
+            Task { await session.setImageNetwork(photosReviewNetwork); photosReviewGeneration &+= 1 }
+        }
+    }
+    @Published var photosOriginalNetwork = false {
+        didSet {
+            guard let session = photosBatch?.mediaSession else { return }
+            Task { await session.setOriginalNetwork(photosOriginalNetwork); photosReviewGeneration &+= 1 }
+        }
+    }
+    @Published private(set) var photosReviewGeneration: UInt64 = 0
+    private var photosOpeningTask: Task<Void, Never>?
+    private var photosOpeningGeneration = UUID()
+
     private let reviewDefaults: UserDefaults
     @Published private(set) var activeFileOperation: FileOperationKind? {
         didSet {
@@ -579,7 +599,8 @@ final class SessionStore: ObservableObject {
     /// input until it is dismissed. All session command surfaces share this
     /// definition so one route cannot mutate state behind another.
     var isSessionCommandPresentationActive: Bool {
-        isExportPresented
+        isPhotosLibraryPresented
+            || isExportPresented
             || isOrganizePresented
             || isRenamePresented
             || isActionPalettePresented
@@ -642,12 +663,12 @@ final class SessionStore: ObservableObject {
             && !isLegacySessionMigrationConfirmationPresented
     }
     var canCleanUp: Bool {
-        !items.isEmpty
+        photosBatch == nil && !items.isEmpty
             && !isNewFileOperationBlocked
             && !isLegacySessionMigrationConfirmationPresented
     }
     var canOrganizeSource: Bool {
-        !items.isEmpty
+        photosBatch == nil && !items.isEmpty
             && !isNewFileOperationBlocked
             && !isLegacySessionMigrationConfirmationPresented
     }
@@ -788,6 +809,7 @@ final class SessionStore: ObservableObject {
     /// projection change, even if its detached task reaches completion late.
     private var duplicateBurstAnalysisRevisions: [String: PhotoContentRevision] = [:]
     private let persistence: any SessionPersistenceClient
+    private let photosDecisions: PhotosReviewDecisions
     private let saveTrailingDelay: TimeInterval
     private let saveMaximumDelay: TimeInterval
     /// Nil selects the production Application Support journal directory.
@@ -905,6 +927,8 @@ final class SessionStore: ObservableObject {
 
     init(
         persistence: any SessionPersistenceClient = SessionPersistence(),
+        photosDecisions: PhotosReviewDecisions = .shared,
+        photosLibrary: any PhotosLibraryClient = PhotosLibraryService.shared,
         saveTrailingDelay: TimeInterval = 0.5,
         saveMaximumDelay: TimeInterval = 5,
         operationJournalDirectory: URL? = nil,
@@ -927,6 +951,9 @@ final class SessionStore: ObservableObject {
         }
     ) {
         self.persistence = persistence
+        self.photosDecisions = photosDecisions
+        self.photosLibrary = photosLibrary
+        self.photosBrowser = PhotosLibraryBrowser(defaults: reviewDefaults, service: photosLibrary)
         self.sessionContentVerification = sessionContentVerification
         self.qualityCueMeasurement = qualityCueMeasurement
         self.qualityCueResources = qualityCueResources
@@ -1300,6 +1327,9 @@ final class SessionStore: ObservableObject {
     }
 
     var duplicateBurstAnalysisSummary: String {
+        if photosBatch?.mediaSession != nil {
+            return L10n.text("Capture grouping uses Photos dates. Exact and similar-file analysis require local originals.")
+        }
         guard let result = duplicateBurstAnalysisResult else {
             return L10n.text("Analyze this folder locally to find exact duplicates, likely similar photos, and capture bursts.")
         }
@@ -1441,6 +1471,9 @@ final class SessionStore: ObservableObject {
     }
 
     var qualityCueCoverageSummary: String {
+        if photosBatch?.mediaSession != nil {
+            return L10n.text("Original quality checks are unavailable during Photos preview review.")
+        }
         return L10n.text("Image checks: \(qualityCueMeasuredCount) of \(qualityCuePhotoCount) photos. Some cues may be unavailable.")
     }
 
@@ -1527,7 +1560,7 @@ final class SessionStore: ObservableObject {
     /// priority has a retained frontier; Select All never restarts an O(N) walk
     /// for each pair. New current/tile/selection interest can interrupt rest.
     func startQualityCueAnalysis() {
-        guard case .ready = phase, !isFileOperationRunning,
+        guard photosBatch?.mediaSession == nil, case .ready = phase, !isFileOperationRunning,
               qualityCuePreferences.needsHistogram, !qualityCueUserPaused else { return }
         if let task = qualityCueTask {
             if task.isCancelled { qualityCueRestartRequested = true }
@@ -1929,6 +1962,9 @@ final class SessionStore: ObservableObject {
     private func beginDuplicateBurstAnalysis(
         entering requestedMode: DuplicateBurstAnalysis.ReviewMode?
     ) {
+        // Exact/similarity analysis needs original bytes. Capture grouping uses
+        // known Photos dates and remains available without a download sweep.
+        guard photosBatch?.mediaSession == nil || requestedMode == .captureBursts else { return }
         duplicateBurstAnalysisTask?.cancel()
         duplicateBurstAnalysisGeneration &+= 1
         let generation = duplicateBurstAnalysisGeneration
@@ -2379,6 +2415,91 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    func presentPhotosLibrary() {
+        guard !isFileOperationRunning, !isSessionCommandPresentationActive else { return }
+        isPhotosLibraryPresented = true
+    }
+
+    func cancelPhotosOpening() {
+        photosOpeningTask?.cancel()
+    }
+
+    func openPhotosBatch(page: Int, continuing: Bool = false) {
+        let snapshot = continuing ? photosBatch?.snapshot : photosBrowser.snapshot
+        guard !isFileOperationRunning, let snapshot,
+              continuing || !photosBrowser.isLoading else { return }
+        photosOpeningTask?.cancel()
+        let generation = UUID()
+        photosOpeningGeneration = generation
+        photosBrowser.isOpening = true
+        photosBrowser.failure = nil
+        photosBrowser.progress = nil
+        let size = continuing ? (photosBatch?.range.size ?? photosBrowser.batchSize) : photosBrowser.batchSize
+        photosBrowser.stageOpening(snapshot: snapshot, page: page, size: size)
+        isPhotosLibraryPresented = true
+        isSessionTransitioning = true
+        let allowNetwork = photosBrowser.allowNetwork
+        let recorder = PhotosBatchProgressRecorder()
+        photosOpeningTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let progressTask = Task { @MainActor [weak self] in
+                while !Task.isCancelled {
+                    do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
+                    guard let self, self.photosOpeningGeneration == generation else { return }
+                    if let value = recorder.take() { self.photosBrowser.progress = value }
+                }
+            }
+            defer {
+                progressTask.cancel()
+                if self.photosOpeningGeneration == generation {
+                    self.photosBrowser.isOpening = false
+                    self.photosBrowser.progress = nil
+                    self.isSessionTransitioning = false
+                    self.photosOpeningTask = nil
+                }
+            }
+            do {
+                await self.cancelAndAwaitXMPPublication()
+                let result = await self.persistCurrentSessionIfNeededBeforeDiscard()
+                guard result?.canDiscardInMemoryState != false else {
+                    self.photosBrowser.failure = .preparation(self.persistenceWarning ?? L10n.text("Your latest ratings are not saved. Retry before closing Louppe."))
+                    return
+                }
+                try Task.checkCancellation()
+                let batch = try await self.photosLibrary.prepare(
+                    snapshot: snapshot, page: page, size: size, allowNetwork: allowNetwork, recorder: recorder)
+                guard !Task.isCancelled, self.photosOpeningGeneration == generation else {
+                    await self.photosLibrary.remove(batch)
+                    return
+                }
+                self.adoptPhotosBatch(batch)
+            } catch is CancellationError {
+                self.photosBrowser.failure = nil
+            } catch PhotosLibraryError.iCloudDownloadRequired {
+                self.photosBrowser.failure = .iCloudDownloadRequired
+            } catch {
+                self.photosBrowser.failure = .preparation(error.localizedDescription)
+            }
+        }
+    }
+
+    private func adoptPhotosBatch(_ batch: PhotosReviewBatch) {
+        let previous = photosBatch
+        photosBatch = batch
+        photosReviewNetwork = photosBrowser.allowNetwork
+        photosOriginalNetwork = false
+        photosBrowser.query = batch.snapshot.query
+        photosBrowser.batchSize = batch.range.size
+        photosBrowser.page = batch.range.page
+        photosBrowser.remember()
+        isPhotosLibraryPresented = false
+        if previous?.snapshot.id != batch.snapshot.id {
+            sort = PhotoSort(key: .captureDate, ascending: !batch.snapshot.query.newestFirst)
+        }
+        beginOpeningFolder(batch.folder, preservesReviewPreferences: true)
+        if let previous { Task { await self.photosLibrary.remove(previous) } }
+    }
+
     func openFolder(_ url: URL) {
         if isRecoveringInterruptedOperations {
             deferredFolderOpen = url
@@ -2422,11 +2543,16 @@ final class SessionStore: ObservableObject {
 
     private func beginOpeningFolder(
         _ url: URL,
+        preservesReviewPreferences: Bool = false,
         legacySidecarRelocationAuthorization:
             SessionPersistence.LegacySidecarRelocationAuthorization? = nil,
         replaceSavedSession: Bool = false
     ) {
         let standardizedURL = url.standardizedFileURL
+        if let batch = photosBatch, batch.folder.standardizedFileURL != standardizedURL {
+            photosBatch = nil
+            Task { await self.photosLibrary.remove(batch) }
+        }
         if sourceFolderAccess?.url != standardizedURL {
             let nextAccess = SecurityScopedFolderAccess(url: url)
             sourceFolderAccess?.stop()
@@ -2521,12 +2647,12 @@ final class SessionStore: ObservableObject {
         resetDerivedData()
         if !preservesCurrentFilter {
             filter = PhotoFilter()
-            applyReviewDefaults()
+            if !preservesReviewPreferences { applyReviewDefaults() }
         }
         undoStack = []
         isClearAllRatingsConfirmationPresented = false
         pendingCleanUp = nil
-        addToRecents(url)
+        if photosBatch == nil { addToRecents(url) }
         let pairingMode = rawJPEGPairingMode
         let openingSort = sort
         let openingViewMode = viewMode
@@ -2534,7 +2660,8 @@ final class SessionStore: ObservableObject {
         let readAuthority = sourceFolderAccess?.makeReadAuthority()
         // Retained rescan filters may depend on metadata that is still pending.
         // The first staged version keeps all same-folder rescans on the existing path.
-        let allowsOpeningPreview = !isSameFolder
+        let allowsOpeningPreview = !isSameFolder && photosBatch == nil
+        let openingPhotosBatch = photosBatch
 
         // The cancelled worker may outlive Close or another folder open.
         // It owns a separate scope until its last persistence/metadata read.
@@ -2568,6 +2695,7 @@ final class SessionStore: ObservableObject {
                     legacySidecarRelocationAuthorization: legacySidecarRelocationAuthorization,
                     replaceSavedSession: replaceSavedSession, recorder: recorder,
                     allowsPreview: allowsOpeningPreview,
+                    photosBatch: openingPhotosBatch,
                     preview: { snapshot in
                         await MainActor.run {
                             guard !Task.isCancelled,
@@ -2623,6 +2751,7 @@ final class SessionStore: ObservableObject {
         guard mode != rawJPEGPairingMode,
               !isFileOperationRunning,
               !isXMPPublicationRunning else { return }
+        if photosBatch?.mediaSession != nil { rawJPEGPairingMode = mode; return }
         invalidateDuplicateBurstAnalysis(rebuildLayout: false)
         let previousMode = rawJPEGPairingMode
         pairingMetadataError = nil
@@ -2943,6 +3072,10 @@ final class SessionStore: ObservableObject {
     /// Existing ratings survive: they're saved to the sidecar first,
     /// and the scan restores them by filename.
     func rescan() {
+        if let batch = photosBatch {
+            openPhotosBatch(page: batch.range.page, continuing: true)
+            return
+        }
         if hasXMPPublicationSessionState {
             guard !isSessionTransitioning,
                   activeFileOperation == nil,
@@ -3767,7 +3900,7 @@ final class SessionStore: ObservableObject {
     /// partial failure its already-trashed files are put back. If that
     /// rollback also fails, the app reports the inconsistent pair explicitly.
     func performCleanUp(_ mode: CleanUpMode) {
-        guard !isNewFileOperationBlocked else { return }
+        guard photosBatch == nil, !isNewFileOperationBlocked else { return }
         flushPendingFilter()
         // Resolve targets first — .selection reads the live selection —
         // then drop it: indices are about to shift.
@@ -4738,7 +4871,7 @@ final class SessionStore: ObservableObject {
         visibleDecisionKeywords: Bool,
         allowExternalLabelReplacement: Bool = false
     ) {
-        guard !selected.isEmpty,
+        guard photosBatch == nil, !selected.isEmpty,
               !isNewFileOperationBlocked,
               case .idle = xmpPublicationState,
               case .ready = phase else { return }
@@ -4906,6 +5039,7 @@ final class SessionStore: ObservableObject {
     /// destination. Copy now receives the same Quit/update/folder-switch
     /// protection as operations that move originals.
     func exportWillStart(mode: ExportMode) -> Bool {
+        guard photosBatch == nil || mode == .copy else { return false }
         guard !isNewFileOperationBlocked else { return false }
         guard mode != .metadataXMP else { return false }
         videoPlayback.stop()
@@ -5307,6 +5441,17 @@ final class SessionStore: ObservableObject {
               !isChangingRawJPEGPairingMode,
               let pos = preparedIndex.location(forItemIndex: currentIndex)?.position else { return }
         let windowOffsets = [1, 2, 3, -1]
+        if let session = photosBatch?.mediaSession {
+            let ids = windowOffsets.compactMap { offset -> String? in
+                let position = pos + offset
+                guard visibleIndices.indices.contains(position) else { return nil }
+                let index = visibleIndices[position]
+                guard items.indices.contains(index) else { return nil }
+                return items[index].primaryFile.photosMedia?.assetID
+            }
+            fullImagePrefetchTask = Task { await session.preheat(assetIDs: ids) }
+            return
+        }
         let photos = windowOffsets.compactMap { offset -> PhotoItem? in
             let p = pos + offset
             guard visibleIndices.indices.contains(p), items.indices.contains(visibleIndices[p]) else { return nil }
@@ -5444,7 +5589,8 @@ final class SessionStore: ObservableObject {
     }
 
     func startSessionContentChecks() {
-        guard case .ready = phase, !isFileOperationRunning,
+        // Photos decisions follow asset IDs, not disposable review-file hashes.
+        guard photosBatch == nil, case .ready = phase, !isFileOperationRunning,
               !isPreparingForTermination, !sessionContentChecksPaused,
               !isLegacySessionMigrationConfirmationPresented,
               sessionContentTask == nil else { return }
@@ -5761,6 +5907,7 @@ final class SessionStore: ObservableObject {
     /// Hold this barrier before the final snapshot so no rating can arrive
     /// after the snapshot that authorizes Quit.
     func beginTerminationPreparation() {
+        photosOpeningTask?.cancel()
         pauseQualityCueAnalysis()
         pauseSessionContentChecks()
         isPreparingForTermination = true
@@ -5793,6 +5940,7 @@ final class SessionStore: ObservableObject {
         let sequence: UInt64
         let access: SessionPersistence.AccessContext
         let changeGeneration: UInt64
+        let photosDecisions: [String: PhotosReviewDecision]?
 
         func materialized() -> SaveRequest {
             guard case .capture(let capture) = payload else { return self }
@@ -5801,7 +5949,8 @@ final class SessionStore: ObservableObject {
                 payload: .session(capture.makeSession()),
                 sequence: sequence,
                 access: access,
-                changeGeneration: changeGeneration
+                changeGeneration: changeGeneration,
+                photosDecisions: photosDecisions
             )
         }
     }
@@ -5826,17 +5975,24 @@ final class SessionStore: ObservableObject {
         // after Open, Close, or Quit has already crossed its save barrier.
         saveRequestedWhilePersistenceBusy = false
         activePersistenceSaveCount += 1
-        let task = Task.detached { [persistence] in
+        let task = Task.detached { [persistence, photosDecisions] in
             let prepared = request.materialized()
             guard case .session(let session) = prepared.payload else {
                 preconditionFailure("materialized save request has no session")
             }
-            let result = await persistence.save(
-                session,
-                for: request.folder,
-                sequence: request.sequence,
-                access: request.access
-            )
+            let result: SessionPersistence.SaveResult
+            if let decisions = request.photosDecisions {
+                do {
+                    let saved = try await photosDecisions.save(decisions,
+                        writerID: request.access.id, sequence: request.sequence)
+                    result = saved ? .savedToSidecar : .superseded
+                } catch {
+                    result = .failed(.init(sidecar: .other, backup: .other))
+                }
+            } else {
+                result = await persistence.save(
+                    session, for: request.folder, sequence: request.sequence, access: request.access)
+            }
             return SaveOutcome(request: prepared, result: result)
         }
         pendingPersistenceTask = task
@@ -6021,7 +6177,8 @@ final class SessionStore: ObservableObject {
             payload: .session(session),
             sequence: saveSequence,
             access: request.access,
-            changeGeneration: request.changeGeneration
+            changeGeneration: request.changeGeneration,
+            photosDecisions: request.photosDecisions
         )
     }
 
@@ -6049,14 +6206,25 @@ final class SessionStore: ObservableObject {
             payload: .capture(capture),
             sequence: saveSequence,
             access: access,
-            changeGeneration: sessionChangeGeneration
+            changeGeneration: sessionChangeGeneration,
+            photosDecisions: photosBatch.map { batch in
+                var decisions: [String: PhotosReviewDecision] = [:]
+                for item in items {
+                    for file in item.individualFiles {
+                        if let id = batch.assetIDsByPath[file.url.path] {
+                            decisions[id] = PhotosReviewDecision(file.metadataSnapshot)
+                        }
+                    }
+                }
+                return decisions
+            }
         )
     }
 
     // MARK: - Recent folders
 
     private func loadRecents() {
-        recentFolders = SecurityScopedFolderBookmarks.load()
+        recentFolders = SecurityScopedFolderBookmarks.load(from: reviewDefaults)
     }
 
     private func addToRecents(_ url: URL) {
@@ -6064,7 +6232,7 @@ final class SessionStore: ObservableObject {
         folders.removeAll { $0.standardizedFileURL == url.standardizedFileURL }
         folders.insert(url, at: 0)
         if folders.count > 8 { folders = Array(folders.prefix(8)) }
-        SecurityScopedFolderBookmarks.save(folders)
+        SecurityScopedFolderBookmarks.save(folders, to: reviewDefaults)
         recentFolders = folders
     }
 
@@ -6151,6 +6319,10 @@ final class SessionStore: ObservableObject {
         sourceFolderAccess?.stop()
         sourceFolderAccess = nil
         sourceFolder = nil
+        if let batch = photosBatch {
+            photosBatch = nil
+            Task { await self.photosLibrary.remove(batch) }
+        }
         undoStack = []
         setSelectionIndices([])
         isClearAllRatingsConfirmationPresented = false

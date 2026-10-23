@@ -36,7 +36,6 @@ enum NumericFilterRangeDraft {
 /// control below only filters in-memory `PhotoItem` values.
 struct FilterView: View {
     @ObservedObject var store: SessionStore
-    @Environment(\.colorSchemeContrast) private var contrast
 
     @State private var qualityExpanded = false
     @State private var burstsExpanded = false
@@ -66,7 +65,7 @@ struct FilterView: View {
     @State private var videoFrameRateToText = ""
     @State private var settingCommitTask: Task<Void, Never>?
     @State private var editedSettingFields: Set<SettingField> = []
-    @FocusState private var isSearchFocused: Bool
+    @State private var isSearchFocusRequested = false
     @FocusState private var focusedSettingField: SettingField?
 
     private enum SettingField: Hashable {
@@ -112,7 +111,7 @@ struct FilterView: View {
         .onAppear {
             syncAllSettingDrafts()
             if store.takeFilterSearchFocusRequest() {
-                isSearchFocused = true
+                isSearchFocusRequested = true
             }
         }
         .onDisappear {
@@ -288,7 +287,7 @@ struct FilterView: View {
         .tint(store.filter.excludedDecisionStates == exclusions
             ? Color.louppeAccent : Color.primary)
         .controlSize(.small)
-        .accessibilityLabel(included == nil ? L10n.text("All decisions") : "\(title) decisions")
+        .accessibilityLabel(included == nil ? L10n.text("All decisions") : title)
         .accessibilityAddTraits(store.filter.excludedDecisionStates == exclusions ? .isSelected : [])
     }
 
@@ -396,30 +395,14 @@ struct FilterView: View {
     }
 
     private var searchField: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-            TextField(L10n.text("Search name, type, camera, lens…"), text: $store.filter.searchText)
-                .textFieldStyle(.plain)
-                .focused($isSearchFocused)
-                .accessibilityLabel(L10n.text("Search media"))
-            if !store.filter.searchText.isEmpty {
-                Button {
-                    store.filter.searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.text("Clear Search"))
-            }
-        }
-        .padding(6)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 7))
-        .overlay {
-            RoundedRectangle(cornerRadius: 7)
-                .strokeBorder(contrast == .increased ? Color.primary : Color.clear, lineWidth: 1)
-        }
+        NativeSearchField(
+            text: $store.filter.searchText,
+            placeholder: L10n.text("Search name, type, camera, lens…"),
+            accessibilityLabel: L10n.text("Search media"),
+            accessibilityIdentifier: "louppe.filterSearch",
+            clearAccessibilityLabel: L10n.text("Clear Search"),
+            focusRequested: $isSearchFocusRequested
+        )
     }
 
     // MARK: - Date
@@ -462,7 +445,7 @@ struct FilterView: View {
                             Button(L10n.text("Clear"), action: clearAllDates)
                             Spacer()
                         }
-                        .buttonStyle(.link)
+                        .buttonStyle(.borderless)
                         .controlSize(.small)
 
                         LazyVStack(alignment: .leading, spacing: 7) {
@@ -809,7 +792,8 @@ struct FilterView: View {
                     }
                     Spacer()
                 }
-                .buttonStyle(.link)
+                .buttonStyle(.borderless)
+                .controlSize(.small)
                 ForEach(store.availableFilmSimulations, id: \.self) { simulation in
                     Toggle(isOn: Binding(
                         get: { !store.filter.excludedFilmSimulations.contains(simulation) },
@@ -1413,6 +1397,7 @@ struct FilterDisclosureSection<Content: View>: View {
     let title: String
     @Binding var isExpanded: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.layoutDirection) private var layoutDirection
     private let content: Content
 
     init(
@@ -1431,11 +1416,12 @@ struct FilterDisclosureSection<Content: View>: View {
                 isExpanded.toggle()
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "chevron.right")
+                    Image(systemName: layoutDirection == .rightToLeft ? "chevron.left" : "chevron.right")
                         .font(.caption.weight(.semibold))
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .rotationEffect(.degrees(isExpanded ? (layoutDirection == .rightToLeft ? -90 : 90) : 0))
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: isExpanded)
                         .frame(width: 12)
+                        .accessibilityHidden(true)
                     Text(title)
                         .font(.subheadline.weight(.semibold))
                     Spacer(minLength: 0)

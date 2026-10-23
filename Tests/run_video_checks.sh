@@ -16,6 +16,7 @@ swiftc \
     Sources/Louppe/FileOperationJournal.swift \
     Sources/Louppe/Localization.swift \
     Sources/Louppe/Models.swift \
+    Tests/VideoChecks/PhotosMediaStub.swift \
     Sources/Louppe/AppDateFormat.swift \
     Sources/Louppe/SessionOpeningMetrics.swift \
     Sources/Louppe/FolderScanner.swift \

@@ -75,6 +75,9 @@ struct RootView: View {
                     .accessibilityHidden(true)
             }
         }
+        .sheet(isPresented: $store.isPhotosLibraryPresented) {
+            PhotosLibraryView(store: store, browser: store.photosBrowser)
+        }
         .sheet(isPresented: $store.isEarlyUserFeedbackPresented) {
             EarlyUserFeedbackView()
                 .onAppear { hasShownEarlyUserFeedback = true }
@@ -109,6 +112,9 @@ struct RootView: View {
                     .padding(.vertical, 9)
                     .background(Color.appBackground)
                     .overlay(alignment: .bottom) { Divider() }
+                }
+                if case .ready = store.phase, let batch = store.photosBatch {
+                    PhotosBatchBar(store: store, batch: batch)
                 }
                 if store.recoveryNeedsAttention {
                     RecoveryWarningBanner(

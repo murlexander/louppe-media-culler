@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// One grouped, scrolling form owns settings margins and native control sizing.
+/// Shared native configuration presentation for Settings and setup sheets.
+/// The Form is the only scrolling owner; its controls adapt to current macOS.
 struct LouppeSettingsForm<Content: View>: View {
     @ViewBuilder let content: Content
 
@@ -12,5 +13,6 @@ struct LouppeSettingsForm<Content: View>: View {
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(Color.appBackground)
+            .tint(Color.louppeAccent)
     }
 }

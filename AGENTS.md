@@ -18,6 +18,14 @@ There is no separate support team. The sole contact is Alex Markin at
 
 - Use compact native controls, direct editing, and minimal UI. Add abstractions
   only for concrete needs; reuse existing state owners and documented bridges.
+- Always prefer the most modern native macOS controls and presentation available
+  on the running system. Use system containers and adaptive styles instead of
+  recreating or freezing older appearances. Configuration forms use the native
+  grouped Form presentation shared with Settings: leading labels, trailing
+  values, and automatic picker/toggle styling. Keep semantic differences such
+  as multi-selection checkboxes and action menus. Build with the current SDK,
+  preserve supported older macOS versions with availability-gated fallbacks,
+  and respect accessibility settings.
 - Write short, direct UI, website, and documentation text. Remove filler and
   repetition; retain safety conditions, limits, and remedies.
 - Use enums for exclusive states and existing typed identities/plans at
@@ -121,7 +129,8 @@ session state and is passed to every view. Slow I/O stays off the main actor.
   AppKit bridge attached to the live session window; do not move it back into
   SwiftUI `@State` with independent `onAppear`/`onDisappear` callbacks.
 - One background gray everywhere: `Color.appBackground`. Don't introduce
-  other panel shades; use `Divider()` lines to separate regions.
+  other panel shades; use `Divider()` lines to separate regions. Native grouped
+  form sections retain their system-provided surfaces.
 - One accent color everywhere: `Color.louppeAccent`, the brand purple
   #9853A6 (defined in RootView.swift, applied as a global `.tint` and used
   for the app-icon glyph). Green/red stay reserved for yes/no ratings; don't

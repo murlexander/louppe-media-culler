@@ -1822,3 +1822,120 @@
 "Loading photo details…" = "Loading photo details…";
 
 "Preview unavailable" = "Preview unavailable";
+
+"Open Apple Photos…" = "Open Apple Photos…";
+
+"Apple Photos" = "Apple Photos";
+
+"Apple Photos capture date" = "Apple Photos capture date";
+
+"Album" = "Album";
+
+"Photo" = "Photo";
+
+"Allow Louppe to access Photos in System Settings → Privacy & Security → Photos, then retry." = "Allow Louppe to access Photos in System Settings → Privacy & Security → Photos, then retry.";
+
+"The Photos selection changed. Choose the library or album again." = "The Photos selection changed. Choose the library or album again.";
+
+"No photos or videos match this selection." = "No photos or videos match this selection.";
+
+"Photos couldn't provide a file for “{0}”. Try another batch or check it in Photos." = "Photos couldn't provide a file for “{0}”. Try another batch or check it in Photos.";
+
+"This batch exceeds the 5 GB review limit. Choose a smaller batch or a narrower date range." = "This batch exceeds the 5 GB review limit. Choose a smaller batch or a narrower date range.";
+
+"Open Batch" = "Open Batch";
+
+"Source" = "Source";
+
+"All Photos and Videos" = "All Photos and Videos";
+
+"Date range" = "Date range";
+
+"Through" = "Through";
+
+"Batch size" = "Batch size";
+
+"Batch {0} of {1}" = "Batch {0} of {1}";
+
+"Reading Photos selection…" = "Reading Photos selection…";
+
+"{0} items match this selection." = "{0} items match this selection.";
+
+"Download originals from iCloud if needed" = "Download originals from iCloud if needed";
+
+"Only this batch is copied for review. Decisions save in Louppe; your Photos library stays unchanged. Live Photos use their still image." = "Only this batch is copied for review. Decisions save in Louppe; your Photos library stays unchanged. Live Photos use their still image.";
+
+"Preparing {0} of {1} items…" = "Preparing {0} of {1} items…";
+
+"Saving decisions before opening Photos…" = "Saving decisions before opening Photos…";
+
+"Originals stored in iCloud may take longer to download." = "Originals stored in iCloud may take longer to download.";
+
+"Apple Photos · {0}–{1} of {2}" = "Apple Photos · {0}–{1} of {2}";
+
+"Decisions saved in Louppe" = "Decisions saved in Louppe";
+
+"Choose Photos…" = "Choose Photos…";
+
+"Previous Batch" = "Previous Batch";
+
+"Next Batch" = "Next Batch";
+
+"Close Photos review" = "Close Photos review";
+
+"Batch" = "Batch";
+
+"This original is stored in iCloud. Enable downloads above, then open the batch again." = "This original is stored in iCloud. Enable downloads above, then open the batch again.";
+
+"Recent Dates" = "Recent Dates";
+
+"Last Week" = "Last Week";
+
+"Last 7 Days" = "Last 7 Days";
+
+"Download and Open Batch" = "Download and Open Batch";
+
+"This original is stored in iCloud. Download it to open this batch." = "This original is stored in iCloud. Download it to open this batch.";
+
+"Copy selected Photos originals to another folder ({0})" = "Copy selected Photos originals to another folder ({0})";
+
+
+/* Progressive Photos review */
+"Photos originals use one-destination Copy. Choose Copy and a destination folder." = "Photos originals use one-destination Copy. Choose Copy and a destination folder.";
+"Photos review supports Copy of exact originals without XMP." = "Photos review supports Copy of exact originals without XMP.";
+"Original EXIF, size and quality checks unavailable during preview review." = "Original EXIF, size and quality checks unavailable during preview review.";
+"This original needs iCloud access. Allow original downloads, then retry this item." = "This original needs iCloud access. Allow original downloads, then retry this item.";
+"Original staging exceeds the 5 GB limit. Close original detail or choose a smaller item, then retry." = "Original staging exceeds the 5 GB limit. Close original detail or choose a smaller item, then retry.";
+"Review image is in iCloud. Allow review downloads or retry when online." = "Review image is in iCloud. Allow review downloads or retry when online.";
+"Photos couldn't provide this review image. Check access or retry." = "Photos couldn't provide this review image. Check access or retry.";
+"Photos is busy. Retry this item." = "Photos is busy. Retry this item.";
+"This Photos batch is closed. Open it again." = "This Photos batch is closed. Open it again.";
+"Capture grouping uses Photos dates. Exact and similar-file analysis require local originals." = "Capture grouping uses Photos dates. Exact and similar-file analysis require local originals.";
+"Original quality checks are unavailable during Photos preview review." = "Original quality checks are unavailable during Photos preview review.";
+"Allow iCloud Originals" = "Allow iCloud Originals";
+"Copy downloads exact primary originals one at a time. Review previews are never exported. Total bytes are unknown until originals load; destination space is checked for each file." = "Copy downloads exact primary originals one at a time. Review previews are never exported. Total bytes are unknown until originals load; destination space is checked for each file.";
+"Downloading and copying originals…" = "Downloading and copying originals…";
+"Progress counts original files. iCloud downloads may take longer." = "Progress counts original files. iCloud downloads may take longer.";
+"Unavailable until originals load" = "Unavailable until originals load";
+"Allow iCloud Review Images" = "Allow iCloud Review Images";
+"Review images load as you browse. Photos may download source data to make a preview. Originals are requested separately for original detail and Copy. Decisions save in Louppe; your library stays unchanged. Live Photos use their still image." = "Review images load as you browse. Photos may download source data to make a preview. Originals are requested separately for original detail and Copy. Decisions save in Louppe; your library stays unchanged. Live Photos use their still image.";
+"Opening the selection does not download its originals." = "Opening the selection does not download its originals.";
+"Preview review · decisions saved in Louppe" = "Preview review · decisions saved in Louppe";
+"Photos may download source data to make a review image." = "Photos may download source data to make a review image.";
+"iCloud Access" = "iCloud Access";
+"Loading review image" = "Loading review image";
+"Original file" = "Original file";
+"Use Review Preview" = "Use Review Preview";
+"Load Original Video" = "Load Original Video";
+"Open Original Detail" = "Open Original Detail";
+"Loading original detail…" = "Loading original detail…";
+"Original detail unavailable" = "Original detail unavailable";
+"Downloading review image: {0}%" = "Downloading review image: {0}%";
+"Review image unavailable" = "Review image unavailable";
+"Retry Original" = "Retry Original";
+"Original detail requested · review preview hidden" = "Original detail requested · review preview hidden";
+"Unadjusted review preview · {0} × {1} pixels · not original detail" = "Unadjusted review preview · {0} × {1} pixels · not original detail";
+"Unadjusted review preview · not original detail" = "Unadjusted review preview · not original detail";
+"Availability" = "Availability";
+/* Settings pages. */
+"General" = "General";

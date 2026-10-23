@@ -44,15 +44,16 @@ struct SessionRecoveryView: View {
     @State private var confirmsSamePhotos = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(L10n.text("Check Saved Decisions")).font(.title2).bold()
+        SheetForm(title: L10n.text("Check Saved Decisions")) {
             Text(L10n.text("Identical copies restore automatically. Older sessions need your confirmation. Current decisions are kept, and previous decisions remain in recovery history."))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             checkProgress
             Divider()
             HStack {
-                Text(L10n.text("Previous decisions")).font(.headline)
+                Text(L10n.text("Previous decisions"))
+                    .font(.subheadline.weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
                 Spacer()
                 Button(L10n.text("Select All")) {
                     selected = Set(store.pendingSessionRecoveryEntries.map(\.id))
@@ -60,85 +61,84 @@ struct SessionRecoveryView: View {
                 }
                 .disabled(store.pendingSessionRecoveryEntries.isEmpty)
             }
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(store.pendingSessionRecoveryEntries) { record in
-                        HStack(alignment: .top, spacing: 12) {
-                            Toggle(isOn: Binding(
-                                get: { selected.contains(record.id) },
-                                set: { value in
-                                    if value { selected.insert(record.id) }
-                                    else { selected.remove(record.id) }
-                                    confirmsSamePhotos = false
-                                }
-                            )) {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(store.pendingSessionRecoveryEntries) { record in
+                    HStack(alignment: .top, spacing: 12) {
+                        Toggle(isOn: Binding(
+                            get: { selected.contains(record.id) },
+                            set: { value in
+                                if value { selected.insert(record.id) }
+                                else { selected.remove(record.id) }
+                                confirmsSamePhotos = false
+                            }
+                        )) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(displayName(record)).lineLimit(2).textSelection(.enabled)
+                                Text(previousMetadata(record.entry))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        .toggleStyle(.checkbox)
+                        Spacer(minLength: 12)
+                        Text(store.sessionRecoveryStatus(record))
+                            .font(.caption).foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: 200, alignment: .trailing)
+                    }
+                    .padding(.vertical, 9)
+                    Divider()
+                }
+                if store.pendingSessionRecoveryEntries.isEmpty {
+                    Text(L10n.text("No saved decisions need attention."))
+                        .foregroundStyle(.secondary).padding(.vertical, 24)
+                }
+                let history = store.sessionRecoveryEntries.filter { $0.resolvedFileID != nil }
+                if !history.isEmpty {
+                    DisclosureGroup(L10n.text("Recovery History")) {
+                        ForEach(history) { record in
+                            HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(displayName(record)).lineLimit(2).textSelection(.enabled)
-                                    Text(previousMetadata(record.entry))
-                                        .font(.caption).foregroundStyle(.secondary)
+                                    Text(displayName(record))
+                                    Text(previousMetadata(record.entry)).font(.caption)
                                 }
+                                Spacer()
+                                Text(L10n.text("Restored or kept in history")).font(.caption)
                             }
-                            .toggleStyle(.checkbox)
-                            Spacer(minLength: 12)
-                            Text(store.sessionRecoveryStatus(record))
-                                .font(.caption).foregroundStyle(.secondary)
-                                .multilineTextAlignment(.trailing)
-                                .frame(maxWidth: 200, alignment: .trailing)
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 6)
                         }
-                        .padding(.vertical, 9)
-                        Divider()
                     }
-                    if store.pendingSessionRecoveryEntries.isEmpty {
-                        Text(L10n.text("No saved decisions need attention."))
-                            .foregroundStyle(.secondary).padding(.vertical, 24)
-                    }
-                    let history = store.sessionRecoveryEntries.filter { $0.resolvedFileID != nil }
-                    if !history.isEmpty {
-                        DisclosureGroup(L10n.text("Recovery History")) {
-                            ForEach(history) { record in
-                                HStack(alignment: .top) {
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(displayName(record))
-                                        Text(previousMetadata(record.entry)).font(.caption)
-                                    }
-                                    Spacer()
-                                    Text(L10n.text("Restored or kept in history")).font(.caption)
-                                }
-                                .foregroundStyle(.secondary)
-                                .padding(.vertical, 6)
-                            }
-                        }
-                        .padding(.top, 10)
-                    }
+                    .padding(.top, 10)
                 }
             }
-            .frame(minHeight: 160, maxHeight: 360)
-            Toggle(L10n.text("I confirm the selected files are the same photos or videos."),
-                   isOn: $confirmsSamePhotos)
-                .disabled(selected.isEmpty)
-            Text(L10n.text("Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files."))
-                .font(.caption).foregroundStyle(.secondary)
-            HStack {
-                Button(L10n.text("Keep Current Decisions")) {
-                    store.keepCurrentSessionDecisions(selected)
-                    selected = []
-                    confirmsSamePhotos = false
+        } actions: {
+            VStack(alignment: .leading, spacing: 12) {
+                Toggle(L10n.text("I confirm the selected files are the same photos or videos."),
+                       isOn: $confirmsSamePhotos)
+                    .toggleStyle(.checkbox)
+                    .disabled(selected.isEmpty)
+                Text(L10n.text("Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files."))
+                    .font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    Button(L10n.text("Keep Current Decisions")) {
+                        store.keepCurrentSessionDecisions(selected)
+                        selected = []
+                        confirmsSamePhotos = false
+                    }
+                    .disabled(selected.isEmpty || store.isFileOperationRunning)
+                    Spacer()
+                    Button(L10n.text("Done")) { dismiss() }.keyboardShortcut(.cancelAction)
+                    Button(L10n.text("Restore Selected Decisions")) {
+                        store.restoreSessionRecoveryEntries(selected)
+                        selected = []
+                        confirmsSamePhotos = false
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!hasRestorableSelection || !confirmsSamePhotos || store.isFileOperationRunning)
                 }
-                .disabled(selected.isEmpty || store.isFileOperationRunning)
-                Spacer()
-                Button(L10n.text("Done")) { dismiss() }.keyboardShortcut(.cancelAction)
-                Button(L10n.text("Restore Selected Decisions")) {
-                    store.restoreSessionRecoveryEntries(selected)
-                    selected = []
-                    confirmsSamePhotos = false
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!hasRestorableSelection || !confirmsSamePhotos || store.isFileOperationRunning)
             }
         }
-        .padding(24)
-        .frame(width: 660)
-        .background(Color.appBackground)
+        .frame(width: 660, height: 620)
     }
 
     private var hasRestorableSelection: Bool {
@@ -152,7 +152,9 @@ struct SessionRecoveryView: View {
         HStack(spacing: 12) {
             switch store.sessionContentCheck {
             case .checking(let done, let total):
-                ProgressView(value: Double(done), total: Double(max(1, total))).frame(width: 100)
+                ProgressView(value: Double(done), total: Double(max(1, total)))
+                    .frame(width: 100)
+                    .accessibilityLabel(L10n.text("Checking file contents: \(done) of \(total)"))
                 Text(L10n.text("Checking file contents: \(done) of \(total)"))
                 Spacer()
                 Button(L10n.text("Pause")) { store.toggleSessionContentChecks() }

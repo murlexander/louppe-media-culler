@@ -195,6 +195,38 @@ Info, search, filter changes and cached facet counts do not trigger another Fuji
 read. A paired item's primary file remains authoritative; hidden JPEG metadata
 is loaded only through the existing Separate projection path.
 
+## Apple Photos batches
+
+Photos queries retain lazy fetch results; only 50–1,000 selected descriptors
+become review items. Mounting membership performs no image, original, EXIF or
+fingerprint read. See [the acceptance list](PHOTOS_LAZY_REVIEW.md).
+
+`PhotosMediaSession` bounds image work to four executing requests plus 64
+pending waiters, viewport-sized thumbnails capped at 1,024 pixels (384 for
+small tiles) / 2,048-pixel Gallery previews,
+and a strict 96 MiB pixel LRU. Realized thumbnail views drop retained pixels on
+disappearance. PhotoKit may return larger pixels; the adapter normalizes them
+before cache admission. A local-only preheat window holds at most eight
+thumbnail requests. PhotoKit's private internal cache has no public byte-limit
+API; these bounds constrain Louppe's pixels, requests and preheat membership.
+
+Originals stream only on explicit detail/playback or Copy, with one original
+lane, eight pending original waiters and the unchanged 5 GB aggregate staging
+budget, including held renderer leases. Copy requests/copies/releases one
+asset before the next; it never stages the whole export. Separate original
+consent prevents representation access authorizing full-resource transfers.
+Original download progress coalesces into a slot sampled every 100 ms. Images
+and originals receive actual PhotoKit cancellation; late callbacks cannot
+publish to retired views/batches. Failures do not mount partial inventories.
+
+Decisions remain independent of cache identity and bounded to 64 MiB on disk.
+The decision actor reads/merges under a finite file lock and durably replaces
+the JSON document. Only the selected batch's decisions join UI state. Folder
+fingerprints and original-only quality/exact/similarity sweeps are skipped.
+Cache media retires after saving outgoing decisions; marked startup leftovers
+are pruned at the next preparation. Failed cleanup keeps its staging bytes
+charged until batch retirement; disk failures remain actionable.
+
 ## Portable saved decisions
 
 One serial utility actor hashes full file contents in 1 MiB chunks. Only reviewed

@@ -53,7 +53,10 @@ struct LouppeApp: App {
                     // Initialize the listener even when the tip window stays closed.
                     _ = tipStore
                     #endif
-                    NSApp.activate(ignoringOtherApps: true)
+                    // Background smoke launches must leave the user's focus alone.
+                    if ProcessInfo.processInfo.environment["LOUPPE_BACKGROUND_LAUNCH"] != "1" {
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
                     // Optional launch argument for testing:
                     //   open Louppe.app --args -openFolder /path/to/photos
                     // Keep test launches explicit. Dock/Finder document-open
@@ -108,6 +111,10 @@ struct LouppeApp: App {
                         || store.isSessionCommandPresentationActive
                 )
             }
+            CommandGroup(after: .newItem) {
+                Button(L10n.text("Open Apple Photos…")) { store.presentPhotosLibrary() }
+                    .disabled(store.isFileOperationRunning || store.isSessionCommandPresentationActive)
+            }
             FocusedLouppeSessionCommands(store: store)
             CommandGroup(replacing: .help) {
                 Button(L10n.text("Louppe Help")) {
@@ -142,6 +149,7 @@ struct LouppeApp: App {
             .localizedInterface()
         }
         .windowResizability(.contentSize)
+        .windowToolbarStyle(.expanded)
     }
 
     /// Credits block for the About panel. Links are clickable.
@@ -237,7 +245,7 @@ private struct FocusedLouppeSessionCommands: Commands {
                     || actionableStore?.isFileOperationRunning != false
             )
 
-            Button(L10n.text("Close Folder")) {
+            Button(store.photosBatch == nil ? L10n.text("Close Folder") : L10n.text("Close Photos review")) {
                 actionableStore?.closeSession()
             }
             .disabled(
@@ -281,6 +289,11 @@ private struct FocusedLouppeSessionCommands: Commands {
             .disabled(
                 actionableStore?.canOrganizeSource != true
             )
+
+            Button(L10n.text("Rename Files…")) {
+                actionableStore?.presentMetadataFileRenaming()
+            }
+            .disabled(actionableStore?.canRenameSource != true)
 
             Button {
                 actionableStore?.presentExport()

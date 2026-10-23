@@ -27,7 +27,7 @@ struct ActionPaletteView: View {
     @State private var query = ""
     @State private var selectedActionID: String?
     @State private var selectionRevealGeneration = 0
-    @FocusState private var isSearchFocused: Bool
+    @State private var isSearchFocusRequested = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,11 +39,10 @@ struct ActionPaletteView: View {
         }
         .frame(width: 560, height: 480)
         .background(Color.appBackground)
+        .tint(Color.louppeAccent)
         .onAppear {
             chooseFirstEnabledAction()
-            DispatchQueue.main.async {
-                isSearchFocused = true
-            }
+            isSearchFocusRequested = true
         }
         .onChange(of: query) {
             chooseFirstEnabledAction()
@@ -52,36 +51,17 @@ struct ActionPaletteView: View {
     }
 
     private var searchField: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-            TextField(L10n.text("Search actions"), text: $query)
-                .textFieldStyle(.plain)
-                .font(.title3)
-                .focused($isSearchFocused)
-                .onSubmit { runSelectedAction() }
-                .onKeyPress(.downArrow) {
-                    moveSelection(by: 1)
-                    return .handled
-                }
-                .onKeyPress(.upArrow) {
-                    moveSelection(by: -1)
-                    return .handled
-                }
-                .onKeyPress(.escape) {
-                    store.dismissActionPalette()
-                    return .handled
-                }
-            if !query.isEmpty {
-                Button(L10n.text("Clear"), systemImage: "xmark.circle.fill") {
-                    query = ""
-                }
-                .labelStyle(.iconOnly)
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel(L10n.text("Clear action search"))
-            }
-        }
+        NativeSearchField(
+            text: $query,
+            placeholder: L10n.text("Search actions"),
+            accessibilityLabel: L10n.text("Search actions"),
+            accessibilityIdentifier: "louppe.actionSearch",
+            clearAccessibilityLabel: L10n.text("Clear action search"),
+            focusRequested: $isSearchFocusRequested,
+            onMove: { moveSelection(by: $0) },
+            onSubmit: { runSelectedAction() },
+            onCancel: { store.dismissActionPalette() }
+        )
         .padding(.horizontal, 18)
         .frame(height: 56)
     }
@@ -145,6 +125,7 @@ struct ActionPaletteView: View {
                     Text(shortcut)
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
+                        .environment(\.layoutDirection, .leftToRight)
                 }
             }
             .padding(.horizontal, 18)
@@ -167,6 +148,7 @@ struct ActionPaletteView: View {
             }
         }
         .accessibilityLabel(action.title)
+        .accessibilityAddTraits(selectedActionID == action.id ? .isSelected : [])
         .accessibilityHint([
             action.isEnabled ? action.detail : unavailableReason(for: action),
             action.shortcut ?? "",

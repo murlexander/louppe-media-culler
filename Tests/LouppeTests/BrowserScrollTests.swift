@@ -26,7 +26,9 @@ final class BrowserScrollTests: XCTestCase {
                                           styleMask: [.titled, .resizable], backing: .buffered, defer: false)
                     window.isReleasedWhenClosed = false
                     window.contentView = host
-                    window.makeKeyAndOrderFront(nil)
+                    window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+                    window.orderBack(nil)
+                    window.makeKey()
                     defer { window.close() }
                     try await settle(host)
                     let scroll = try XCTUnwrap(descendants(host).compactMap { $0 as? NSScrollView }.first)
@@ -54,7 +56,9 @@ final class BrowserScrollTests: XCTestCase {
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         defer { window.close() }
         try await settle(host)
         let scroll = try XCTUnwrap(descendants(host).compactMap { $0 as? NSScrollView }.first)
@@ -100,7 +104,9 @@ final class BrowserScrollTests: XCTestCase {
                               styleMask: [.titled, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         defer { window.close() }
         for info in [false, true] {
             store.showMetadataPanel = info

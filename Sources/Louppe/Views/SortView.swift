@@ -1,161 +1,127 @@
 import SwiftUI
 
-/// The toolbar sort popover, styled after FilterView: pick a sort key and a
-/// direction, and choose whether the visible list divides into groups.
+/// Native sort and grouping settings with separate grouped-review commands.
 /// It only reorders what's shown and never touches ratings.
 struct SortView: View {
     @ObservedObject var store: SessionStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             Text(L10n.text("Sort"))
                 .font(.headline)
-            Divider()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    section(L10n.text("Sort by"), spacing: 2) {
-                        keyRow(L10n.text("Date taken"), .captureDate)
-                        keyRow(L10n.text("Name"), .name)
-                        keyRow(L10n.text("Decision"), .decision)
-                        keyRow(L10n.text("Star rating"), .starRating)
-                        keyRow(L10n.text("Color label"), .colorLabel)
-                        keyRow(L10n.text("Subfolder"), .subfolder, disabled: store.availableSubfolders.count <= 1)
-                        keyRow(L10n.text("Folder hierarchy"), .folderHierarchy)
+                .padding(.horizontal, 14)
+                .padding(.top, 14)
+
+            LouppeSettingsForm {
+                Section {
+                    Picker(L10n.text("Sort by"), selection: $store.sort.key) {
+                        sortOption(L10n.text("Date taken"), .captureDate)
+                        sortOption(L10n.text("Name"), .name)
+                        sortOption(L10n.text("Decision"), .decision)
+                        sortOption(L10n.text("Star rating"), .starRating)
+                        sortOption(L10n.text("Color label"), .colorLabel)
+                        sortOption(L10n.text("Subfolder"), .subfolder, disabled: store.availableSubfolders.count <= 1)
+                        sortOption(L10n.text("Folder hierarchy"), .folderHierarchy)
                             .help(L10n.text("Review folders before their subfolders; files stay chronological."))
-                        keyRow(L10n.text("File type"), .fileType)
-                        keyRow(L10n.text("Media type"), .mediaKind, disabled: store.availableMediaKinds.count <= 1)
-                        keyRow(L10n.text("Camera"), .camera)
-                        keyRow(L10n.text("Lens"), .lens)
-                        keyRow(L10n.text("Aperture"), .aperture, disabled: store.apertureRange == nil)
-                        keyRow(L10n.text("Shutter speed"), .shutterSpeed, disabled: store.shutterRange == nil)
-                        keyRow("ISO", .iso, disabled: store.isoRange == nil)
-                        keyRow(L10n.text("Media duration"), .duration, disabled: store.durationRange == nil)
-                        keyRow(
-                            L10n.text("Video resolution"),
-                            .videoResolution,
-                            disabled: store.availableVideoResolutions.count <= 1
-                        )
-                        keyRow(
-                            L10n.text("Video frame rate"),
-                            .videoFrameRate,
-                            disabled: store.videoFrameRateRange == nil
-                        )
-                        keyRow(
-                            L10n.text("Video codec"),
-                            .videoCodec,
-                            disabled: store.availableVideoCodecs.count <= 1
-                        )
+                        sortOption(L10n.text("File type"), .fileType)
+                        sortOption(L10n.text("Media type"), .mediaKind, disabled: store.availableMediaKinds.count <= 1)
+                        sortOption(L10n.text("Camera"), .camera)
+                        sortOption(L10n.text("Lens"), .lens)
+                        sortOption(L10n.text("Aperture"), .aperture, disabled: store.apertureRange == nil)
+                        sortOption(L10n.text("Shutter speed"), .shutterSpeed, disabled: store.shutterRange == nil)
+                        sortOption("ISO", .iso, disabled: store.isoRange == nil)
+                        sortOption(L10n.text("Media duration"), .duration, disabled: store.durationRange == nil)
+                        sortOption(L10n.text("Video resolution"), .videoResolution,
+                                   disabled: store.availableVideoResolutions.count <= 1)
+                        sortOption(L10n.text("Video frame rate"), .videoFrameRate,
+                                   disabled: store.videoFrameRateRange == nil)
+                        sortOption(L10n.text("Video codec"), .videoCodec,
+                                   disabled: store.availableVideoCodecs.count <= 1)
                     }
+                    .accessibilityIdentifier("louppe.sortKey")
 
-                    Divider()
-
-                    section(L10n.text("Order")) {
-                        orderRow(store.sort.key.ascendingLabel, ascending: true)
-                        orderRow(store.sort.key.descendingLabel, ascending: false)
+                    Picker(L10n.text("Order"), selection: $store.sort.ascending) {
+                        Text(store.sort.key.ascendingLabel).tag(true)
+                        Text(store.sort.key.descendingLabel).tag(false)
                     }
+                    .accessibilityIdentifier("louppe.sortOrder")
 
-                    Divider()
-
-                    section(L10n.text("Groups")) {
-                        Toggle(L10n.text("Divide into groups"), isOn: $store.isGroupingEnabled)
-                            .toggleStyle(.checkbox)
-                            // Name sorting never divides: every file name is unique.
-                            .disabled(store.sort.key == .name)
-                    }
-
-                    Divider()
-
-                    section(L10n.text("Review groups")) {
-                        if store.isDuplicateBurstAnalysisRunning {
-                            HStack(spacing: 8) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text(L10n.text("Analyzing locally…"))
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Button(L10n.text("Cancel")) {
-                                    store.cancelDuplicateBurstAnalysis()
-                                }
-                                .buttonStyle(.borderless)
-                            }
-                        } else {
-                            Button(
-                                store.duplicateBurstAnalysisState == .ready
-                                    ? L10n.text("Refresh Local Analysis")
-                                    : L10n.text("Analyze Folder Locally")
-                            ) {
-                                store.analyzeDuplicateAndBurstGroups()
-                            }
-                            .disabled(store.items.isEmpty || store.isFileOperationRunning)
-                        }
-
-                        reviewModeRow(.exactDuplicates)
-                        reviewModeRow(.likelySimilarPhotos)
-
-                        if store.isGroupedReviewActive {
-                            Button(L10n.text("Return to Normal Review")) {
-                                store.exitGroupedReview()
-                            }
-                            .buttonStyle(.borderless)
-                        }
-
-                        if store.groupedReviewMode == .likelySimilarPhotos {
-                            similarityControl
-                        }
-
-                        Text(store.duplicateBurstAnalysisSummary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(L10n.text("Grouping never changes ratings, originals, Clean Up, or Export."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    Toggle(L10n.text("Divide into groups"), isOn: $store.isGroupingEnabled)
+                        // Name sorting never divides: every file name is unique.
+                        .disabled(store.sort.key == .name)
                 }
-                .padding(.trailing, 5)
+
+                Section {
+                    // Entering a group may first run asynchronous analysis, so
+                    // these are explicit commands rather than an optimistic selection.
+                    reviewModeButton(.exactDuplicates)
+                    reviewModeButton(.likelySimilarPhotos)
+
+                    if store.isGroupedReviewActive {
+                        Button(L10n.text("Return to Normal Review")) {
+                            store.exitGroupedReview()
+                        }
+                    }
+                    if store.groupedReviewMode == .likelySimilarPhotos {
+                        similarityControl
+                    }
+                } header: {
+                    Text(L10n.text("Review groups"))
+                } footer: {
+                    Text(L10n.text("Grouping never changes ratings, originals, Clean Up, or Export."))
+                }
+
+                Section {
+                    if store.isDuplicateBurstAnalysisRunning {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text(L10n.text("Analyzing locally…"))
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Button(L10n.text("Cancel")) {
+                                store.cancelDuplicateBurstAnalysis()
+                            }
+                        }
+                    } else {
+                        Button(
+                            store.duplicateBurstAnalysisState == .ready
+                                ? L10n.text("Refresh Local Analysis")
+                                : L10n.text("Analyze Folder Locally")
+                        ) {
+                            store.analyzeDuplicateAndBurstGroups()
+                        }
+                        .disabled(store.items.isEmpty || store.isFileOperationRunning || store.photosBatch?.mediaSession != nil)
+                    }
+                } footer: {
+                    Text(store.duplicateBurstAnalysisSummary)
+                }
             }
+
             Divider()
             HStack {
                 Spacer()
                 Button(L10n.text("Done")) { store.isSortPresented = false }
                     .keyboardShortcut(.cancelAction)
             }
+            .padding(14)
         }
-        .padding(14)
-        .frame(width: 340, height: 560)
+        .frame(width: 380, height: 560)
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
     }
 
-    private func section(_ title: String, spacing: CGFloat = 8, @ViewBuilder content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: spacing) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-            content()
-        }
+    private func sortOption(_ label: String, _ key: PhotoSort.Key, disabled: Bool = false) -> some View {
+        Text(label).tag(key).disabled(disabled)
     }
 
-    private func keyRow(_ label: String, _ key: PhotoSort.Key, disabled: Bool = false) -> some View {
-        checkRow(label, isSelected: store.sort.key == key, disabled: disabled) {
-            store.sort.key = key
-        }
-    }
-
-    private func orderRow(_ label: String, ascending: Bool) -> some View {
-        checkRow(label, isSelected: store.sort.ascending == ascending, disabled: false) {
-            store.sort.ascending = ascending
-        }
-    }
-
-    private func reviewModeRow(_ mode: DuplicateBurstAnalysis.ReviewMode) -> some View {
-        checkRow(
-            mode.displayName,
-            isSelected: store.groupedReviewMode == mode,
-            disabled: store.items.isEmpty || store.isFileOperationRunning
-        ) {
+    private func reviewModeButton(_ mode: DuplicateBurstAnalysis.ReviewMode) -> some View {
+        Button(mode.displayName) {
             store.enterGroupedReview(mode)
         }
+        .disabled(store.items.isEmpty || store.isFileOperationRunning || store.photosBatch?.mediaSession != nil)
+        .help(mode.shortDescription)
+        .accessibilityAddTraits(store.groupedReviewMode == mode ? .isSelected : [])
     }
 
     private var similarityControl: some View {
@@ -189,33 +155,5 @@ struct SortView: View {
         case 6...10: return L10n.text("Balanced")
         default: return L10n.text("Broad")
         }
-    }
-
-    /// A menu-like row: reserved checkmark column so labels stay aligned,
-    /// whole width clickable.
-    private func checkRow(
-        _ label: String,
-        isSelected: Bool,
-        disabled: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: "checkmark")
-                    .font(.caption.weight(.semibold))
-                    .frame(width: 14, alignment: .leading)
-                    .opacity(isSelected ? 1 : 0)
-                Text(label)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-            }
-            .frame(minHeight: 24)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(disabled)
-        .opacity(disabled ? 0.4 : 1)
-        .accessibilityValue(isSelected ? L10n.text("Selected") : L10n.text("Not selected"))
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

@@ -113,7 +113,7 @@ final class LocalizationTests: XCTestCase {
                                       // Labels and values are already localized; only punctuation is shared.
                                       "{0}: {1}", "{0} · {1}"]
         let shared: [String: Set<String>] = [
-            "es": ["Audio", "Color", "Color: {0}", "Manual", "Mono", "No", "OK", "audio", "{0} s", "s"],
+            "es": ["Audio", "Color", "Color: {0}", "General", "Manual", "Mono", "No", "OK", "audio", "{0} s", "s"],
             "pt": ["Codec", "Manual", "Mono", "OK", "Picture in Picture", "Volume", "item", "{0} s", "s"]
         ]
         for language in L10n.supportedLanguages where language != "en" {

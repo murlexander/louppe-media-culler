@@ -65,11 +65,11 @@ struct QualityCueTileIcons: View {
                 .help(cues.map { "\($0.title): \($0.compactValue)" }.joined(separator: "\n"))
                 .accessibilityLabel(L10n.text("Quality cues for \(item.displayName)"))
                 .accessibilityValue(cues.map { "\($0.title): \($0.compactValue)" }.joined(separator: ", "))
-                .accessibilityHint(L10n.text("Inspect in Info"))
                 .popover(isPresented: $showsDetails) {
                     QualityCueDetailsView(store: store, item: item, showsInspectionAction: true)
                         .padding(12).frame(width: 300)
                         .background(Color.appBackground)
+                        .tint(Color.louppeAccent)
                 }
             }
         }
@@ -178,15 +178,12 @@ struct CameraQualityWarningsSettingsView: View {
     }
 
     private func resetButton(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: "arrow.counterclockwise")
-                .frame(width: 22, height: 22)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.borderless)
-        .foregroundStyle(Color.louppeAccent)
+        ShortcutAccessoryButton(
+            symbol: "arrow.counterclockwise",
+            title: L10n.text("Restore defaults for \(title)"),
+            action: action
+        )
         .help(L10n.text("Restore defaults for \(title)"))
-        .accessibilityLabel(L10n.text("Restore defaults for \(title)"))
     }
 
     private func cueDetail(_ text: String) -> some View {

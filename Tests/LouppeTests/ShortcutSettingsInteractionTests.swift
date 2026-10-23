@@ -13,6 +13,54 @@ final class ShortcutSettingsInteractionTests: XCTestCase {
                        ["review", "navigation", "playback", "view", "stars"])
     }
 
+    func testSearchDoesNotAcceptAutomaticFocusAndEditsAfterClick() throws {
+        var query = ""
+        let host = NSHostingView(rootView: NativeSearchField(text: Binding(
+            get: { query }, set: { query = $0 }
+        ), placeholder: L10n.text("Find a shortcut"),
+           accessibilityLabel: L10n.text("Find a shortcut"),
+           accessibilityIdentifier: "louppe.shortcutSearch", requiresExplicitFocus: true).frame(width: 400, height: 26))
+        let window = mount(host)
+        defer { window.close() }
+        let field = try XCTUnwrap(descendants(host).compactMap { $0 as? NativeSearchField.SearchField }.first)
+
+        XCTAssertNil(field.currentEditor(), "Mounting the field must not start editing")
+        XCTAssertFalse(field.acceptsFirstResponder, "Automatic focus must leave search inactive")
+        XCTAssertNil(field.currentEditor())
+
+        try click(host, window: window, x: 100, fromTop: 13)
+        let editor = try XCTUnwrap(field.currentEditor(), "Clicking must activate the native text editor")
+        editor.insertText("Export")
+        settle(host)
+        XCTAssertEqual(query, "Export", "Native edits must reach the production search binding")
+
+        window.makeFirstResponder(nil)
+        XCTAssertFalse(field.acceptsFirstResponder, "Ending an edit must restore the automatic-focus guard")
+        field.setAccessibilityFocused(true)
+        XCTAssertNotNil(field.currentEditor(), "VoiceOver must still be able to explicitly activate search")
+    }
+
+    func testShortcutGroupsStartCollapsedAndSearchRevealsMatches() throws {
+        let host = NSHostingView(rootView: LouppeSettingsForm {
+            ReviewShortcutsSettingsView()
+        }.frame(width: 620, height: 600))
+        let window = mount(host)
+        defer { window.close() }
+        XCTAssertFalse(descendants(host).contains { $0 is ReviewShortcutRecorderButton },
+                       "Every shortcut group must start collapsed")
+        let field = try XCTUnwrap(descendants(host).compactMap { $0 as? NativeSearchField.SearchField }.first)
+        field.stringValue = L10n.text("Export")
+        field.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: field))
+        settle(host)
+        XCTAssertTrue(descendants(host).contains { $0 is ReviewShortcutRecorderButton },
+                      "Searching must reveal matching shortcut editors without manually opening a group")
+        field.stringValue = ""
+        field.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: field))
+        settle(host)
+        XCTAssertFalse(descendants(host).contains { $0 is ReviewShortcutRecorderButton },
+                       "Clearing search must return to the collapsed groups")
+    }
+
     func testEntireDisclosureHeaderTogglesInBothDirectionsAndKeepsChildrenSeparate() throws {
         for direction in [LayoutDirection.leftToRight, .rightToLeft] {
             let state = ShortcutHitState()
@@ -142,11 +190,14 @@ final class ShortcutSettingsInteractionTests: XCTestCase {
         _ = NSApplication.shared
         host.layoutSubtreeIfNeeded()
         let size = host.fittingSize
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
+        let window = NSWindow(contentRect: NSRect(origin: NSPoint(x: -20_000, y: -20_000), size: size),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        // Keep the test window behind the user's apps, offscreen. App-local key
+        // status enables native event routing without activating this process.
+        window.orderBack(nil)
+        window.makeKey()
         settle(host)
         return window
     }
@@ -176,6 +227,10 @@ final class ShortcutSettingsInteractionTests: XCTestCase {
         view.layoutSubtreeIfNeeded()
         RunLoop.current.run(until: Date().addingTimeInterval(0.2))
         view.layoutSubtreeIfNeeded()
+    }
+
+    private func descendants(_ view: NSView) -> [NSView] {
+        [view] + view.subviews.flatMap(descendants)
     }
 }
 

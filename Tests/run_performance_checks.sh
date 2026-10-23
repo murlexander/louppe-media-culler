@@ -51,6 +51,10 @@ swiftc \
     Sources/Louppe/OpeningSessionState.swift \
     Sources/Louppe/SessionOpeningFacets.swift \
     Sources/Louppe/SessionOpeningRestoration.swift \
+    Sources/Louppe/PhotosReviewDecisions.swift \
+    Sources/Louppe/PhotosLibrary.swift \
+    Sources/Louppe/PhotosMedia.swift \
+    Sources/Louppe/PhotosLibraryBrowser.swift \
     Sources/Louppe/SessionOpeningWorker.swift \
     Sources/Louppe/SessionStore.swift \
     Tests/PerformanceChecks/main.swift \

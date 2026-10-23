@@ -30,16 +30,15 @@ struct XMPConflictResolverView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
 
-            Group {
-                LazyVStack(alignment: .leading, spacing: 16) {
-                    ForEach(conflicts) { conflict in
-                        conflictRow(conflict)
-                        if conflict.id != conflicts.last?.id { Divider() }
-                    }
+            LazyVStack(alignment: .leading, spacing: 16) {
+                ForEach(conflicts) { conflict in
+                    conflictRow(conflict)
+                    if conflict.id != conflicts.last?.id { Divider() }
                 }
-                .padding(.vertical, 2)
             }
+            .padding(.vertical, 2)
 
             HStack {
                 Text(L10n.text("Apply the same choice to all conflicts"))
@@ -57,9 +56,10 @@ struct XMPConflictResolverView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
 
         } actions: {
-            HStack {
+            HStack(spacing: 12) {
                 Spacer()
                 Button(L10n.text("Cancel")) { onCancel() }
                     .keyboardShortcut(.cancelAction)
@@ -90,6 +90,7 @@ struct XMPConflictResolverView: View {
                 .lineLimit(2)
                 .truncationMode(.middle)
                 .help(conflictTitle(conflict))
+                .accessibilityAddTraits(.isHeader)
 
             metadataHeader
             if let raw {
@@ -250,10 +251,10 @@ struct XMPConflictResolverView: View {
 
     private func starsLabel(_ rating: StarRating?) -> String {
         guard let rating else { return L10n.text("Unrated") }
-        return rating == .one ? L10n.text("1 star") : "\(rating.count) stars"
+        return rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count.formatted()) stars")
     }
 
     private func colorLabel(_ label: PhotoColorLabel?) -> String {
-        label?.displayName ?? L10n.text("None")
+        label?.localizedDisplayName ?? L10n.text("None")
     }
 }

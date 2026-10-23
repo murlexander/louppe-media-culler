@@ -9,10 +9,8 @@ struct ReviewShortcutsSettingsView: View {
     @State private var commandPreferences = CommandShortcutPreferences.load()
     @State private var layers = ReviewKeyboardLayerState()
     @State private var search = ""
-    @State private var expandedGroups: Set<String> = ["review", "navigation"]
+    @State private var expandedGroups: Set<String> = []
     @State private var draftAction: ReviewShortcutAction?
-    @State private var addChoiceAction: ReviewShortcutAction?
-    @State private var pendingAddChoice: (action: ReviewShortcutAction, command: Bool)?
     @State private var draftCommand: CommandShortcutAction?
     @State private var commandErrorAction: CommandShortcutAction?
     @State private var commandError: String?
@@ -64,12 +62,13 @@ struct ReviewShortcutsSettingsView: View {
                     .accessibilityLabel(L10n.text("Clear selection"))
                 }
             }
-            TextField(text: $search, prompt: Text(L10n.text("Find a shortcut"))) {
-                Text(L10n.text("Find a shortcut"))
-            }
-                .labelsHidden()
-                .textFieldStyle(.roundedBorder)
-                .accessibilityIdentifier("louppe.shortcutSearch")
+            NativeSearchField(
+                text: $search,
+                placeholder: L10n.text("Find a shortcut"),
+                accessibilityLabel: L10n.text("Find a shortcut"),
+                accessibilityIdentifier: "louppe.shortcutSearch",
+                requiresExplicitFocus: true
+            )
 
             ForEach(ReviewShortcutGroup.allCases, id: \.self) { group in
                 let actions = matchingActions(in: group)
@@ -183,6 +182,7 @@ struct ReviewShortcutsSettingsView: View {
                         onInvalid: { invalidKey(for: action) }
                     )
                     .frame(width: 132, height: 26)
+                    Spacer(minLength: 0)
                     scopePicker(for: action, selection: Binding(
                         get: { assignment.scope },
                         set: { _ = replace(assignment, with: assignment.binding, action: action, scope: $0) }
@@ -208,6 +208,7 @@ struct ReviewShortcutsSettingsView: View {
                         onCancel: cancelDraft
                     )
                     .frame(width: 132, height: 26)
+                    Spacer(minLength: 0)
                     scopePicker(for: action, selection: $draftScope)
                     ShortcutAccessoryButton(symbol: "xmark", title: L10n.text("Cancel new shortcut"), action: cancelDraft)
                     .help(L10n.text("Cancel new shortcut"))
@@ -231,45 +232,28 @@ struct ReviewShortcutsSettingsView: View {
     @ViewBuilder
     private func addShortcutControl(for action: ReviewShortcutAction) -> some View {
         if let command = linkedCommand(for: action), command.isEditable {
-            ShortcutAccessoryButton(symbol: "plus", title: L10n.text("Add shortcut for \(action.title)")) {
-                addChoiceAction = action
-            }
-            .popover(isPresented: Binding(
-                get: { addChoiceAction == action },
-                set: { if !$0 { addChoiceAction = nil } }
-            ), arrowEdge: .bottom) {
-                VStack(alignment: .leading, spacing: 4) {
-                    addChoiceButton("Single key", action: action, command: false)
-                    addChoiceButton("Command shortcut", action: action, command: true)
-                }
-                .padding(8)
-                .background(Color.appBackground)
-                .onDisappear {
-                    guard let choice = pendingAddChoice else { return }
-                    pendingAddChoice = nil
-                    // Return focus after the chooser's window has dismissed.
-                    Task { @MainActor in
-                        await Task.yield()
-                        if choice.command { beginCommandDraft(command) }
-                        else { beginDraft(choice.action) }
+            Menu {
+                ShortcutAddMenuItems { choice in
+                    switch choice {
+                    case .singleKey: beginDraft(action)
+                    case .command: beginCommandDraft(command)
                     }
                 }
+            } label: {
+                Image(systemName: "plus")
+                    .font(.body)
+                    .frame(width: 16, height: 16)
             }
+            .menuStyle(.borderedButton)
+            .buttonStyle(.bordered)
+            .menuIndicator(.hidden)
+            .buttonBorderShape(.circle)
+            .controlSize(.regular)
+            .fixedSize()
+            .accessibilityLabel(L10n.text("Add shortcut for \(action.title)"))
         } else {
             ShortcutAccessoryButton(symbol: "plus", title: L10n.text("Add shortcut for \(action.title)")) { beginDraft(action) }
         }
-    }
-
-    private func addChoiceButton(_ title: L10n.Message, action: ReviewShortcutAction, command: Bool) -> some View {
-        Button {
-            pendingAddChoice = (action, command)
-            addChoiceAction = nil
-        } label: {
-            Text(L10n.text(title))
-                .frame(width: 160, height: 26, alignment: .leading)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     private func beginDraft(_ action: ReviewShortcutAction) {
@@ -401,7 +385,7 @@ struct ReviewShortcutsSettingsView: View {
             }
         }
         .labelsHidden()
-        .frame(maxWidth: .infinity)
+        .fixedSize(horizontal: true, vertical: false)
         .accessibilityLabel(L10n.text("When \(action.title) applies"))
         .accessibilityValue(selection.wrappedValue.title)
         .help(selection.wrappedValue.title)
@@ -432,7 +416,8 @@ struct ReviewShortcutsSettingsView: View {
 
     private var keyboardMap: ReviewKeyboardMap {
         ReviewKeyboardMap(interpretation: preferences.interpretation, layoutCharacters: layoutCharacters,
-                          layer: layers.displayed, modifiedCharacters: modifiedCharacters[layers.displayed] ?? [:])
+                          layer: layers.displayed, modifiedCharacters: modifiedCharacters[layers.displayed] ?? [:],
+                          modifiedCharactersByLayer: modifiedCharacters)
     }
 
     private func linkedCommand(for action: ReviewShortcutAction) -> CommandShortcutAction? {
@@ -547,41 +532,69 @@ struct ReviewShortcutsSettingsView: View {
     private func cancelDraft() {
         draftAction = nil
         draftCommand = nil
-        addChoiceAction = nil
     }
 }
 
-/// Only this focused control receives recording events. It never installs a
-/// monitor or routes keys through the session's shortcut handler.
-/// Keep the header's entire layout rectangle interactive without allowing
-/// clicks on the expanded editor to toggle its parent section.
+/// Render the native disclosure indicator while the header button owns its
+/// entire padded rectangle. Expanded editors remain outside that button.
 struct ShortcutDisclosureStyle: DisclosureGroupStyle {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     func makeBody(configuration: Configuration) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button {
-                configuration.isExpanded.toggle()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.right")
-                        .accessibilityHidden(true)
-                        .font(.caption.weight(.semibold))
-                        .rotationEffect(.degrees(configuration.isExpanded ? 90 : 0))
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: configuration.isExpanded)
-                        .frame(width: 12)
+            Button { configuration.isExpanded.toggle() } label: {
+                DisclosureGroup(isExpanded: .constant(configuration.isExpanded)) {
+                    EmptyView()
+                } label: {
                     configuration.label
-                    Spacer(minLength: 0)
                 }
+                .disclosureGroupStyle(.automatic)
+                .allowsHitTesting(false)
                 .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityValue(configuration.isExpanded ? L10n.text("Expanded") : L10n.text("Collapsed"))
-
+            .accessibilityRepresentation {
+                DisclosureGroup(isExpanded: configuration.$isExpanded) {
+                    EmptyView()
+                } label: {
+                    configuration.label
+                }
+                .disclosureGroupStyle(.automatic)
+            }
             if configuration.isExpanded { configuration.content }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Shared by the real native Menu and unordered native visual fixtures.
+/// Draft recorders must mount after AppKit leaves its menu-tracking run loop.
+struct ShortcutAddMenuItems: View {
+    enum Choice: CaseIterable, Hashable, Sendable {
+        case singleKey, command
+
+        var title: String {
+            switch self {
+            case .singleKey: return L10n.text("Single key")
+            case .command: return L10n.text("Command shortcut")
+            }
+        }
+    }
+
+    let onSelect: @MainActor (Choice) -> Void
+
+    var body: some View {
+        ForEach(Choice.allCases, id: \.self) { choice in
+            Button(choice.title) { select(choice) }
+        }
+    }
+
+    func select(_ choice: Choice) {
+        // Default mode excludes eventTracking. A Task/yield or a main-queue
+        // dispatch can run while the menu still owns focus.
+        let action = onSelect
+        RunLoop.main.perform(inModes: [.default]) {
+            MainActor.assumeIsolated { action(choice) }
+        }
     }
 }
 

@@ -72,15 +72,10 @@ struct WelcomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .overlay(alignment: .bottomTrailing) {
-            Button {
+            HelpLink {
                 openWindow(id: LouppeHelpWindow.id)
-            } label: {
-                Image(systemName: "questionmark.circle")
-                    .font(.title3)
-                    .frame(width: 28, height: 28)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.louppeAccent)
+            .frame(width: 28, height: 28)
             .accessibilityLabel(L10n.text("Quick Start and supported formats"))
             .help(L10n.text("Quick Start and supported formats"))
             .padding(24)
@@ -111,12 +106,19 @@ struct WelcomeView: View {
                 Button {
                     store.promptForSourceFolder()
                 } label: {
-                    Label(L10n.text("Choose Media Folder…"), systemImage: "folder")
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
+                    Label(L10n.text("Open Folder…"), systemImage: "folder")
+                        .frame(maxWidth: .infinity)
                 }
                 .controlSize(.large)
+                .frame(maxWidth: 320)
                 .keyboardShortcut("o")
+
+                Button { store.presentPhotosLibrary() } label: {
+                    Label(L10n.text("Open Apple Photos…"), systemImage: "photo.on.rectangle")
+                        .frame(maxWidth: .infinity)
+                }
+                .controlSize(.large)
+                .frame(maxWidth: 320)
 
                 Label(
                     isFolderDropTarget
@@ -133,8 +135,7 @@ struct WelcomeView: View {
             }
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .contain)
-            .accessibilityLabel(L10n.text("Open a media folder"))
-            .accessibilityHint(L10n.text("Choose a folder or drop one anywhere in this window"))
+            .accessibilityLabel(L10n.text("Source"))
 
             if let error = store.scanError {
                 VStack(spacing: 8) {

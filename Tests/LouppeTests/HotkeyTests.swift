@@ -75,7 +75,9 @@ final class HotkeyTests: XCTestCase {
         let window = NSWindow(contentRect: frame, styleMask: [.titled], backing: .buffered, defer: false)
         let baseline = SessionKeyMonitorTestProbe.activeMonitorCount
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         SessionKeyMonitorTestProbe.overrideKeyWindow(with: window)
         defer {
             store.isExportPresented = false
@@ -503,7 +505,9 @@ final class HotkeyTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
 
         let focusedControlProxy = try XCTUnwrap(hostingView.nextKeyView)
@@ -571,8 +575,9 @@ final class HotkeyTests: XCTestCase {
             defer: false
         )
         window.contentView = contentView
-        NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
 
         XCTAssertTrue(window.makeFirstResponder(selectableText))
         let context = SessionKeyRoutingContext(
@@ -628,7 +633,9 @@ final class HotkeyTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
 
         XCTAssertTrue(window.makeFirstResponder(hostingView))
@@ -676,7 +683,9 @@ final class HotkeyTests: XCTestCase {
             defer: false
         )
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         SessionKeyMonitorTestProbe.overrideKeyWindow(with: window)
         defer {
             window.contentView = nil
@@ -756,7 +765,9 @@ final class HotkeyTests: XCTestCase {
             defer: false
         )
         window.contentView = container
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         // XCTest bundles cannot become the process's active app, so AppKit
         // never assigns their otherwise-real test window to NSApp.keyWindow.
         // The debug-only override supplies only that unavailable fact; event
@@ -848,7 +859,9 @@ final class HotkeyTests: XCTestCase {
         )
         window.contentView = NSView(frame: window.frame)
         window.contentView?.addSubview(editor)
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         XCTAssertTrue(window.makeFirstResponder(editor))
         let editingContext = SessionKeyRoutingContext(
             eventWindow: window,

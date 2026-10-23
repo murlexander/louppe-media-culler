@@ -41,26 +41,34 @@ struct MetadataEditingControls: View {
                     store.setStarRating(nil)
                 } label: {
                     Image(systemName: "xmark")
-                        .frame(width: 18, height: 22)
+                        .frame(width: 22, height: 22)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
                 .disabled(!store.canRate)
                 .accessibilityLabel(L10n.text("Clear stars"))
+                .accessibilityValue(MediaTileAccessibility.starDescription(for: stars))
+                .help(L10n.text("Clear stars"))
 
                 ForEach(StarRating.allCases, id: \.self) { rating in
+                    let title = rating == .one
+                        ? L10n.text("Set 1 Star")
+                        : L10n.text("Set \(rating.count) Stars")
                     Button {
                         store.setStarRating(rating)
                     } label: {
                         Image(systemName: starSymbol(for: rating, state: stars))
-                            .frame(width: 18, height: 22)
+                            .frame(width: 22, height: 22)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(starColor(for: rating, state: stars))
                     .disabled(!store.canRate)
-                    .accessibilityLabel(rating == .one
-                        ? L10n.text("Set 1 Star")
-                        : L10n.text("Set \(rating.count) Stars"))
+                    .accessibilityLabel(title)
+                    .accessibilityValue(MediaTileAccessibility.starDescription(for: stars))
+                    .accessibilityAddTraits(stars == .stars(rating) ? .isSelected : [])
+                    .help(title)
                 }
             }
 
@@ -69,6 +77,7 @@ struct MetadataEditingControls: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                ColorLabelMark(state: color)
                 Menu {
                     Button(L10n.text("None")) { store.setColorLabel(nil) }
                     Divider()
@@ -79,11 +88,11 @@ struct MetadataEditingControls: View {
                     }
                 } label: {
                     Text(colorLabelText(for: color))
-                        .foregroundStyle(colorLabelTint(for: color))
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                 }
                 .menuStyle(.borderlessButton)
-                .tint(colorLabelTint(for: color))
+                .tint(Color.louppeAccent)
                 .fixedSize()
                 .disabled(!store.canRate)
                 .accessibilityLabel(L10n.text("Color label"))
@@ -117,14 +126,6 @@ struct MetadataEditingControls: View {
         case .none: return L10n.text("None")
         case .label(let label): return label.localizedDisplayName
         case .mixed: return L10n.text("Mixed")
-        }
-    }
-
-    private func colorLabelTint(for state: PhotoItemColorLabelState) -> Color {
-        switch state {
-        case .none: return .secondary
-        case .label(let label): return label.swatchColor
-        case .mixed: return .louppeAccent
         }
     }
 }

@@ -515,15 +515,16 @@ struct SessionView: View {
             Button {
                 store.closeSession()
             } label: {
-                Label(store.sourceFolder?.lastPathComponent ?? L10n.text("Folder"), systemImage: "folder")
+                Label(store.photosBatch?.snapshot.title ?? store.sourceFolder?.lastPathComponent ?? L10n.text("Folder"),
+                      systemImage: store.photosBatch == nil ? "folder" : "photo.on.rectangle")
                     .labelStyle(.titleAndIcon)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: 220)
             }
             .disabled(store.isFileOperationRunning)
-            .accessibilityLabel(L10n.text("Current folder: \(store.sourceFolder?.path ?? "none")"))
-            .help(store.sourceFolder?.path ?? L10n.text("Choose another media folder (⌘O)"))
+            .accessibilityLabel(store.photosBatch?.snapshot.title ?? L10n.text("Current folder: \(store.sourceFolder?.path ?? "none")"))
+            .help(store.photosBatch == nil ? (store.sourceFolder?.path ?? L10n.text("Choose another media folder (⌘O)")) : L10n.text("Close Photos review"))
         }
 
         if #available(macOS 26.0, *) {
@@ -676,7 +677,9 @@ struct SessionView: View {
             .buttonBorderShape(.circle)
             .tint(Color.louppeAccent)
             .accessibilityLabel(L10n.text("Export"))
-            .help(L10n.text("Copy or move selected media, or write Metadata (XMP) sidecars (\(toolbarShortcutHint(for: .export, command: .export)))"))
+            .help(store.photosBatch == nil
+                  ? L10n.text("Copy or move selected media, or write Metadata (XMP) sidecars (\(toolbarShortcutHint(for: .export, command: .export)))")
+                  : L10n.text("Copy selected Photos originals to another folder (\(toolbarShortcutHint(for: .export, command: .export)))"))
         }
     }
 

@@ -119,6 +119,7 @@ fi
 # Dark, Clear, and Tinted appearances. Shipping only the legacy .icns makes
 # Tahoe place the transparent glyph on its generic gray compatibility tile.
 ICON_SOURCE="$STAGING_ROOT/AppIcon.icon"
+ACCENT_SOURCE="$STAGING_ROOT/Appearance.xcassets"
 ICON_OUTPUT="$STAGING_ROOT/icon-output"
 ACTOOL="/Applications/Xcode.app/Contents/Developer/usr/bin/actool"
 [[ -x "$ACTOOL" ]] || {
@@ -126,11 +127,14 @@ ACTOOL="/Applications/Xcode.app/Contents/Developer/usr/bin/actool"
     exit 1
 }
 ditto --noextattr --noqtn AppIcon/AppIcon.icon "$ICON_SOURCE"
+ditto --noextattr --noqtn AppIcon/Appearance.xcassets "$ACCENT_SOURCE"
 xattr -cr "$ICON_SOURCE"
+xattr -cr "$ACCENT_SOURCE"
 mkdir -p "$ICON_OUTPUT"
-"$ACTOOL" "$ICON_SOURCE" \
+"$ACTOOL" "$ICON_SOURCE" "$ACCENT_SOURCE" \
     --compile "$ICON_OUTPUT" \
     --app-icon AppIcon \
+    --accent-color LouppeAccent \
     --enable-on-demand-resources NO \
     --development-region en \
     --target-device mac \
@@ -174,6 +178,8 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
         <string>en</string><string>es</string><string>zh-Hans</string>
         <string>hi</string><string>pt</string><string>ar</string>
     </array>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Review your Photos library in manageable batches. Your decisions stay in Louppe.</string>
     <key>CFBundleName</key>
     <string>Louppe</string>
     <key>CFBundleDisplayName</key>
@@ -190,6 +196,8 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
     <string>AppIcon</string>
     <key>CFBundleIconName</key>
     <string>AppIcon</string>
+    <key>NSAccentColorName</key>
+    <string>LouppeAccent</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSApplicationCategoryType</key>
@@ -291,9 +299,10 @@ elif [[ -n "$DEVELOPER_IDENTITY" ]]; then
         --sign "$DEVELOPER_IDENTITY" \
         "$APP_DIR/Contents/Frameworks/Sparkle.framework"
     codesign --force --options runtime --timestamp \
+        --entitlements "$PWD/Louppe.direct.entitlements" \
         --sign "$DEVELOPER_IDENTITY" "$APP_DIR"
 else
-    codesign --force --sign - "$APP_DIR"
+    codesign --force --sign - --entitlements "$PWD/Louppe.direct.entitlements" "$APP_DIR"
 fi
 codesign --verify --deep --strict "$APP_DIR"
 

@@ -127,7 +127,9 @@ struct ThumbnailView: View {
             : ImagePipeline.shared.cachedThumbnail(for: item)
         ZStack {
             Group {
-                if item.isText {
+                if let reference = item.primaryFile.photosMedia {
+                    PhotosThumbnailView(reference: reference)
+                } else if item.isText {
                     VStack(spacing: 8) {
                         Image(systemName: "doc.text")
                             .font(.system(size: 28, weight: .light))
@@ -204,6 +206,7 @@ struct ThumbnailView: View {
         }
         #endif
         .task(id: revision) {
+            guard item.primaryFile.photosMedia == nil else { return }
             let requestedItem = item
             let requestedRevision = requestedItem.contentRevision
             let cached = requestedItem.hasVisualPreview

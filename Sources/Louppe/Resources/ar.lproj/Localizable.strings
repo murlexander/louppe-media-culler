@@ -1822,3 +1822,120 @@
 "Loading photo details…" = "جارٍ تحميل تفاصيل الصور…";
 
 "Preview unavailable" = "المعاينة غير متاحة";
+
+"Open Apple Photos…" = "فتح Apple Photos…";
+
+"Apple Photos" = "صور Apple";
+
+"Apple Photos capture date" = "تاريخ الالتقاط في صور Apple";
+
+"Album" = "ألبوم";
+
+"Photo" = "صورة";
+
+"Allow Louppe to access Photos in System Settings → Privacy & Security → Photos, then retry." = "اسمح لـ Louppe بالوصول إلى الصور في إعدادات النظام ← الخصوصية والأمن ← الصور، ثم أعد المحاولة.";
+
+"The Photos selection changed. Choose the library or album again." = "تغيّر تحديد الصور. اختر المكتبة أو الألبوم مجددًا.";
+
+"No photos or videos match this selection." = "لا توجد صور أو فيديوهات تطابق هذا التحديد.";
+
+"Photos couldn't provide a file for “{0}”. Try another batch or check it in Photos." = "تعذّر على الصور توفير ملف لـ «{0}». جرّب دفعة أخرى أو تحقّق منه في الصور.";
+
+"This batch exceeds the 5 GB review limit. Choose a smaller batch or a narrower date range." = "تتجاوز هذه الدفعة حد المراجعة البالغ 5 GB. اختر دفعة أصغر أو نطاقًا زمنيًا أضيق.";
+
+"Open Batch" = "فتح الدفعة";
+
+"Source" = "المصدر";
+
+"All Photos and Videos" = "كل الصور والفيديوهات";
+
+"Date range" = "النطاق الزمني";
+
+"Through" = "حتى";
+
+"Batch size" = "حجم الدفعة";
+
+"Batch {0} of {1}" = "الدفعة {0} من {1}";
+
+"Reading Photos selection…" = "جارٍ قراءة تحديد الصور…";
+
+"{0} items match this selection." = "يطابق {0} عنصر هذا التحديد.";
+
+"Download originals from iCloud if needed" = "تنزيل النسخ الأصلية من iCloud عند الحاجة";
+
+"Only this batch is copied for review. Decisions save in Louppe; your Photos library stays unchanged. Live Photos use their still image." = "تُنسخ هذه الدفعة فقط للمراجعة. تُحفظ القرارات في Louppe؛ وتبقى مكتبة الصور دون تغيير. تُعرض Live Photos كصور ثابتة.";
+
+"Preparing {0} of {1} items…" = "جارٍ تجهيز {0} من {1} عنصر…";
+
+"Saving decisions before opening Photos…" = "جارٍ حفظ القرارات قبل فتح الصور…";
+
+"Originals stored in iCloud may take longer to download." = "قد يستغرق تنزيل النسخ الأصلية المخزنة في iCloud وقتًا أطول.";
+
+"Apple Photos · {0}–{1} of {2}" = "صور Apple · من {0} إلى {1} من أصل {2}";
+
+"Decisions saved in Louppe" = "تُحفظ القرارات في Louppe";
+
+"Choose Photos…" = "اختيار الصور…";
+
+"Previous Batch" = "الدفعة السابقة";
+
+"Next Batch" = "الدفعة التالية";
+
+"Close Photos review" = "إغلاق مراجعة الصور";
+
+"Batch" = "الدفعة";
+
+"This original is stored in iCloud. Enable downloads above, then open the batch again." = "هذه النسخة الأصلية مخزنة في iCloud. فعّل التنزيلات أعلاه، ثم افتح الدفعة مجددًا.";
+
+"Recent Dates" = "تواريخ حديثة";
+
+"Last Week" = "الأسبوع الماضي";
+
+"Last 7 Days" = "آخر 7 أيام";
+
+"Download and Open Batch" = "تنزيل الدفعة وفتحها";
+
+"This original is stored in iCloud. Download it to open this batch." = "هذه النسخة الأصلية مخزنة في iCloud. نزّلها لفتح هذه الدفعة.";
+
+"Copy selected Photos originals to another folder ({0})" = "نسخ النسخ الأصلية المحددة من الصور إلى مجلد آخر ({0})";
+
+
+/* Progressive Photos review */
+"Photos originals use one-destination Copy. Choose Copy and a destination folder." = "تُنسخ أصول الصور إلى مجلد واحد. اختر النسخ ومجلد الوجهة.";
+"Photos review supports Copy of exact originals without XMP." = "تتيح مراجعة الصور نسخ الأصول المطابقة دون XMP.";
+"Original EXIF, size and quality checks unavailable during preview review." = "لا تتوفر بيانات EXIF الأصلية والحجم وفحوص الجودة أثناء مراجعة المعاينات.";
+"This original needs iCloud access. Allow original downloads, then retry this item." = "يتطلب هذا الأصل الوصول إلى iCloud. اسمح بتنزيل الأصول ثم أعد محاولة هذا العنصر.";
+"Original staging exceeds the 5 GB limit. Close original detail or choose a smaller item, then retry." = "تتجاوز الأصول المؤقتة حد 5 غيغابايت. أغلق تفاصيل الأصل أو اختر عنصراً أصغر ثم أعد المحاولة.";
+"Review image is in iCloud. Allow review downloads or retry when online." = "صورة المراجعة في iCloud. اسمح بتنزيل صور المراجعة أو أعد المحاولة عند الاتصال.";
+"Photos couldn't provide this review image. Check access or retry." = "تعذر على الصور توفير صورة المراجعة. تحقق من الوصول أو أعد المحاولة.";
+"Photos is busy. Retry this item." = "الصور مشغول. أعد محاولة هذا العنصر.";
+"This Photos batch is closed. Open it again." = "دفعة الصور هذه مغلقة. افتحها مجدداً.";
+"Capture grouping uses Photos dates. Exact and similar-file analysis require local originals." = "يستخدم تجميع الالتقاط تواريخ الصور. يتطلب تحليل الملفات المتطابقة والمتشابهة أصولاً محلية.";
+"Original quality checks are unavailable during Photos preview review." = "لا تتوفر فحوص جودة الأصل أثناء مراجعة معاينات الصور.";
+"Allow iCloud Originals" = "السماح بأصول iCloud";
+"Copy downloads exact primary originals one at a time. Review previews are never exported. Total bytes are unknown until originals load; destination space is checked for each file." = "ينزّل النسخ الأصول الأساسية المطابقة واحداً تلو الآخر. لا تُصدّر المعاينات مطلقاً. يُعرف الحجم عند تحميل الأصول، وتُفحص مساحة الوجهة لكل ملف.";
+"Downloading and copying originals…" = "جارٍ تنزيل الأصول ونسخها…";
+"Progress counts original files. iCloud downloads may take longer." = "يحسب التقدم الملفات الأصلية. قد يستغرق تنزيل iCloud وقتاً أطول.";
+"Unavailable until originals load" = "غير متوفر حتى تحميل الأصول";
+"Allow iCloud Review Images" = "السماح بصور المراجعة من iCloud";
+"Review images load as you browse. Photos may download source data to make a preview. Originals are requested separately for original detail and Copy. Decisions save in Louppe; your library stays unchanged. Live Photos use their still image." = "تُحمّل صور المراجعة أثناء التصفح. قد ينزّل الصور بيانات المصدر لإنشاء معاينة. تُطلب الأصول منفصلة للتفاصيل والنسخ. تُحفظ القرارات في Louppe وتبقى المكتبة كما هي. تستخدم Live Photos الصورة الثابتة.";
+"Opening the selection does not download its originals." = "فتح التحديد لا ينزّل أصوله.";
+"Preview review · decisions saved in Louppe" = "مراجعة المعاينات · القرارات محفوظة في Louppe";
+"Photos may download source data to make a review image." = "قد ينزّل الصور بيانات المصدر لإنشاء صورة مراجعة.";
+"iCloud Access" = "الوصول إلى iCloud";
+"Loading review image" = "جارٍ تحميل صورة المراجعة";
+"Original file" = "الملف الأصلي";
+"Use Review Preview" = "استخدام معاينة المراجعة";
+"Load Original Video" = "تحميل الفيديو الأصلي";
+"Open Original Detail" = "فتح تفاصيل الأصل";
+"Loading original detail…" = "جارٍ تحميل تفاصيل الأصل…";
+"Original detail unavailable" = "تفاصيل الأصل غير متوفرة";
+"Downloading review image: {0}%" = "جارٍ تنزيل صورة المراجعة: {0}%";
+"Review image unavailable" = "صورة المراجعة غير متوفرة";
+"Retry Original" = "إعادة محاولة الأصل";
+"Original detail requested · review preview hidden" = "طُلبت تفاصيل الأصل · معاينة المراجعة مخفية";
+"Unadjusted review preview · {0} × {1} pixels · not original detail" = "معاينة مراجعة دون تعديلات · {0} × {1} بكسل · ليست تفاصيل الأصل";
+"Unadjusted review preview · not original detail" = "معاينة مراجعة دون تعديلات · ليست تفاصيل الأصل";
+"Availability" = "التوفر";
+/* Settings pages. */
+"General" = "عام";
