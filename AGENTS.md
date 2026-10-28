@@ -115,7 +115,9 @@ session state and is passed to every view. Slow I/O stays off the main actor.
 - Shortcut actions, aliases and view/media contexts live in `ReviewShortcuts`;
   `CommandShortcuts` owns editable Command aliases and the standard inventory.
   `SessionView.handleKey` owns routing and focus/operation gates. Keep their
-  defaults in sync with README's shortcut table when changing keys.
+  defaults in sync with [the user guide's shortcut table](Docs/USER_GUIDE.md#keyboard-shortcuts) when changing keys.
+  Keep workflow instructions in that guide and localized in-app Help aligned;
+  Help links to the full guide and derives current shortcuts from the registries.
 - `SessionView`'s local monitor is the sole owner of session Command shortcuts;
   do not add duplicate menu `.keyboardShortcut` equivalents that bypass its
   window/focus gates. `MenuShortcutColumns` may temporarily use native

@@ -10,7 +10,7 @@ The next planned release is **1.13.0 (15)**. Implemented changes belong in
 [Performance](#performance) · [People and access](#people-and-access) ·
 [Release acceptance](#release-acceptance) · [Later and research](#later-and-research)
 
-[App guide](README.md#development-and-release) · [Website backlog](../website/BACKLOG.md)
+[App guide](Docs/DEVELOPMENT.md) · [Website backlog](../website/BACKLOG.md)
 
 Keep audit IDs stable and each task in one list. Check current code and reproduce
 suspected bugs before changing behavior. Implementation alone does not close

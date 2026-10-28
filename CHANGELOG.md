@@ -1,6 +1,8 @@
 # Version History
 
-## 1.13.0 (15) — 2026-10-23
+## 1.13.0 (15) — 2026-10-29
+
+- Keep the README focused on installation and compatibility; move usage and development instructions into dedicated guides. Align localized Help with Photos review, file safety, recovery, and text previews, and link the full user guide.
 
 - Split Settings into native General and Keyboard shortcuts pages. Keep shortcut groups collapsed until opened or searched, activate search on click, and refresh the equal-height keyboard’s purple highlights as bindings change. Align scope controls beside removal.
 

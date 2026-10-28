@@ -1747,7 +1747,7 @@
 "Change playback speed; previous / next item without playback" = "تغيير سرعة التشغيل؛ العنصر السابق / التالي للوسائط غير القابلة للتشغيل";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "كبّر باستخدام شريط التمرير أو إيماءة القرص؛ حرّك بالتمرير بإصبعين أو بالسحب. انقر مرتين على نقطة لفحصها بنسبة 100%. استخدم عناصر حجم الصورة للعودة إلى الملاءمة أو 100% أو حجم الهاتف.";
 "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "يوضح كل مفتاح أدناه متى يُستخدم. لا تؤدي المفاتيح المشتركة إجراءات مختلفة إلا في طرق عرض أو سياقات وسائط منفصلة.";
-"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "ضع علامة نعم أو لا باستخدام الأزرار أو الاختصارات المعيّنة. ينتقل كلاهما افتراضيًا إلى العنصر التالي غير المحسوم (الإعدادات ← المراجعة). النجوم وتسميات الألوان مستقلة.";
+"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent." = "ضع علامة نعم أو لا باستخدام الأزرار أو الاختصارات المعيّنة. ينتقل كلاهما افتراضيًا إلى العنصر التالي غير المحسوم (الإعدادات ← عام ← المراجعة). النجوم وتسميات الألوان مستقلة.";
 "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "أضف عدة مفاتيح لإجراء واحد. يمكن مشاركة مفتاح فقط عندما لا تتداخل سياقات العرض والوسائط الخاصة به.";
 "Find a shortcut" = "البحث عن اختصار";
 "No matching shortcuts." = "لا توجد اختصارات مطابقة.";
@@ -1939,3 +1939,13 @@
 "Availability" = "التوفر";
 /* Settings pages. */
 "General" = "عام";
+
+// User guide and Help
+"User guide (English)" = "دليل المستخدم (بالإنجليزية)";
+"File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits." = "يفتح «ملف ← فتح صور Apple…» مكتبة صور النظام أو ألبومًا، مع نطاق تواريخ اختياري. تُحمَّل صور المراجعة أثناء التصفح ولا تتضمن تعديلات تطبيق الصور.";
+"Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "تبقى التقييمات محلية. يصدّر «نسخ» الأصول الأساسية؛ ولا تتوفر خيارات النقل وإعادة التسمية والتنظيم وXMP وسلة المهملات لعناصر تطبيق الصور.";
+"File safety and saved decisions" = "سلامة الملفات والقرارات المحفوظة";
+"Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation." = "ينسخ التصدير الملفات افتراضيًا. ينقل «نقل» الأصول ولا يمكن التراجع عنه. لا تغيّر إعادة التسمية والتنظيم أسماء الملفات أو مواقعها إلا بعد التأكيد.";
+"Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "يطلب «تنظيف» التأكيد قبل نقل الملفات إلى سلة المهملات. ينقل ⌘⌫ التحديد إلى السلة دون مربع حوار. يستعيد ⌘Z الملفات أثناء الجلسة المفتوحة ما دامت في سلة المهملات.";
+"Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID." = "تُحفَظ تقييمات المجلد في .louppe_session.json؛ ويوفر «ملف ← التحقق من القرارات المحفوظة…» الاسترداد. تُحفَظ تقييمات تطبيق الصور محليًا حسب معرّف الأصل.";
+"Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file." = "معاينات النص للقراءة فقط ويمكن تحديدها: نص عادي وMarkdown وJSON وXML وCSV وTSV وسجلات وYAML، حتى 1 MiB لكل ملف.";

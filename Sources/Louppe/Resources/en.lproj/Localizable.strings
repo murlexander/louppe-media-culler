@@ -1747,7 +1747,7 @@
 "Change playback speed; previous / next item without playback" = "Change playback speed; previous / next item without playback";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size.";
 "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts.";
-"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent.";
+"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent." = "Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent.";
 "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap.";
 "Find a shortcut" = "Find a shortcut";
 "No matching shortcuts." = "No matching shortcuts.";
@@ -1939,3 +1939,13 @@
 "Availability" = "Availability";
 /* Settings pages. */
 "General" = "General";
+
+// User guide and Help
+"User guide (English)" = "User guide (English)";
+"File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits." = "File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits.";
+"Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos.";
+"File safety and saved decisions" = "File safety and saved decisions";
+"Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation." = "Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation.";
+"Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash.";
+"Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID." = "Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID.";
+"Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file." = "Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file.";

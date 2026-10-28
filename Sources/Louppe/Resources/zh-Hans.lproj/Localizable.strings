@@ -1764,7 +1764,7 @@
 "Change playback speed; previous / next item without playback" = "更改播放速度；无播放功能时切换到上一个／下一个项目";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "使用滑块或捏合缩放；双指滚动或拖移以平移。双击某一点以按 100% 查看。使用照片大小控件切换到适应窗口、100% 或手机大小。";
 "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "下方每个快捷键都会标明适用情境。只有在不同视图或媒体情境中，同一个键才能执行不同操作。";
-"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "使用按钮或已分配的快捷键标记“是”或“否”。默认情况下，两者都会前进到下一个未决定的项目（设置 → 审阅）。星级和颜色标签独立保存。";
+"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent." = "使用按钮或已分配的快捷键标记“是”或“否”。默认情况下，两者都会前进到下一个未决定的项目（设置 → 通用 → 审阅）。星级和颜色标签独立保存。";
 "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "可为一个操作添加多个键。只有适用的视图和媒体情境不重叠时，才能共用同一个键。";
 "Find a shortcut" = "查找快捷键";
 "No matching shortcuts." = "没有匹配的快捷键。";
@@ -1956,3 +1956,13 @@
 "Availability" = "可用性";
 /* Settings pages. */
 "General" = "通用";
+
+// User guide and Help
+"User guide (English)" = "用户指南（英文）";
+"File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits." = "“文件 → 打开 Apple 照片…”可打开系统照片图库或相簿，并可选择日期范围。浏览时按需加载图像，不包含在“照片”中所做的编辑。";
+"Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "评分保存在本机。“复制”导出主要原始文件；“照片”不支持移动、重命名、整理、XMP 和移到废纸篓。";
+"File safety and saved decisions" = "文件安全与已保存的决定";
+"Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation." = "导出默认复制文件。移动会转移原始文件，且无法撤销。重命名和整理仅在确认后更改文件名或位置。";
+"Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "清理会先询问，再将文件移到废纸篓。⌘⌫ 无需对话框便会将所选项目移到废纸篓。在会话仍打开且文件仍在废纸篓中时，⌘Z 可将其恢复。";
+"Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID." = "文件夹评分保存在 .louppe_session.json 中；“文件 → 检查已保存的决定…”提供恢复功能。“照片”的评分按资源 ID 保存在本机。";
+"Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file." = "文本预览为只读且可选择：纯文本、Markdown、JSON、XML、CSV、TSV、日志和 YAML，每个文件最大 1 MiB。";

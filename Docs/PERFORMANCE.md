@@ -923,7 +923,7 @@ same encoder used by durable saves. Exact-byte CAS, schema/history validation,
 ## Historical evidence
 
 Dated measurements, failed attempts, and validation records are under
-[Docs/Archive](Archive/). See the [README](../README.md#historical-records) for
+[Docs/Archive](Archive/). See the [development guide](DEVELOPMENT.md#historical-records) for
 the layout and the [backlog](../BACKLOG.md#performance) for open work.
 Source digest manifests with `schema: source-sha256-v1` use a `files` array of
 `path`/`sha256` records. These explicit fields preserve the original digests

@@ -104,6 +104,6 @@ These are dated results, not validation of subsequent changes.
 
 - [Release preparation and remaining acceptance](RELEASE_1.11_READINESS_2026-10-14.md)
 - [Current open work](../BACKLOG.md)
-- [Dated implementation reviews](../README.md#historical-records)
+- [Dated implementation reviews](DEVELOPMENT.md#historical-records)
 - [Complete review history](Archive/2026-10-14/REVIEW_BUILD_HISTORY.md)
 - [Installed-review manifest](Archive/2026-10-14/performance/cue-filter/installed-review.json)

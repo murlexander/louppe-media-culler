@@ -1747,7 +1747,7 @@
 "Change playback speed; previous / next item without playback" = "Cambiar la velocidad de reproducción; elemento anterior / siguiente sin reproducción";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "Amplía con el regulador o pellizcando; desplázate con dos dedos o arrastrando. Haz doble clic en un punto para inspeccionarlo al 100%. Usa los controles de tamaño para volver a Ajustar, 100% o tamaño Teléfono.";
 "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "Cada tecla indica cuándo se aplica. Las teclas compartidas realizan acciones distintas solo en vistas o tipos de archivo separados.";
-"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "Marca Sí o No con los botones o tus atajos asignados. Ambos avanzan al siguiente elemento sin decidir de forma predeterminada (Ajustes → Revisión). Las estrellas y las etiquetas de color son independientes.";
+"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent." = "Marca Sí o No con los botones o tus atajos asignados. Ambos avanzan al siguiente elemento sin decidir de forma predeterminada (Ajustes → General → Revisión). Las estrellas y las etiquetas de color son independientes.";
 "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "Añade varias teclas a una acción. Una tecla solo puede compartirse si sus vistas y tipos de archivo no se solapan.";
 "Find a shortcut" = "Buscar un atajo";
 "No matching shortcuts." = "No hay atajos coincidentes.";
@@ -1939,3 +1939,13 @@
 "Availability" = "Disponibilidad";
 /* Settings pages. */
 "General" = "General";
+
+// User guide and Help
+"User guide (English)" = "Guía de usuario (en inglés)";
+"File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits." = "Archivo → Abrir Fotos de Apple… abre la fototeca del sistema o un álbum, con un intervalo de fechas opcional. Las imágenes se cargan al explorar y no incluyen las ediciones de Fotos.";
+"Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "Las valoraciones se guardan localmente. Copiar exporta los originales principales; Mover, Renombrar, Organizar, XMP y Papelera no están disponibles para Fotos.";
+"File safety and saved decisions" = "Seguridad de archivos y decisiones guardadas";
+"Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation." = "Exportar copia de forma predeterminada. Mover transfiere los originales y no se puede deshacer. Renombrar y Organizar cambian nombres o ubicaciones solo tras la confirmación.";
+"Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "Limpiar pide confirmación antes de mover archivos a la Papelera. ⌘⌫ envía la selección a la Papelera sin diálogo. ⌘Z restaura los archivos durante la sesión abierta mientras sigan en la Papelera.";
+"Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID." = "Las valoraciones de carpetas se guardan en .louppe_session.json; Archivo → Comprobar decisiones guardadas… permite recuperarlas. Las valoraciones de Fotos se guardan localmente por identificador del recurso.";
+"Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file." = "Las vistas de texto son de solo lectura y permiten seleccionar: texto sin formato, Markdown, JSON, XML, CSV, TSV, registros y YAML, hasta 1 MiB por archivo.";

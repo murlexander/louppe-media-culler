@@ -2,6 +2,7 @@ import Foundation
 
 enum AppBuildInfo {
     static let sourceCodeURL = URL(string: "https://github.com/murlexander/louppe-media-culler")!
+    static let userGuideURL = sourceCodeURL.appendingPathComponent("blob/main/Docs/USER_GUIDE.md")
     static let releaseHistoryURL = sourceCodeURL.appendingPathComponent("releases")
     static let privacyPolicyURL = URL(string: "https://louppe.eu/privacy/")!
     #if !APP_STORE
