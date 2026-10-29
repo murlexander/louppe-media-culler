@@ -23,6 +23,7 @@ enum GalleryVideoControlsTestProbe {
 /// an unavoidable whole-video hover scrim, so Gallery uses AVPlayerLayer.
 /// Keeping the transport visible also preserves keyboard and VoiceOver access.
 struct GalleryVideoPlayerView: View {
+    @Environment(\.mediaReadAccess) private var sourceAccess
     let item: PhotoItem
     @ObservedObject var playback: VideoPlaybackController
     @StateObject private var presentation = GalleryVideoPresentationController()
@@ -99,11 +100,11 @@ struct GalleryVideoPlayerView: View {
             }
         }
         .onAppear {
-            playback.prepare(item)
+            playback.prepare(item, sourceAccess: sourceAccess)
             volume = Double(playback.player.volume)
             isMuted = playback.player.isMuted
         }
-        .onChange(of: item.contentRevision) { playback.prepare(item) }
+        .onChange(of: item.contentRevision) { playback.prepare(item, sourceAccess: sourceAccess) }
     }
 
     @ViewBuilder
@@ -308,7 +309,7 @@ struct GalleryMediaTransportView: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .frame(width: 20, height: 20)
+                .frame(width: 36, height: 36)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -319,6 +320,7 @@ struct GalleryMediaTransportView: View {
 
 /// Waveform and controls share AVPlayer with Gallery video and Grid playback.
 struct GalleryAudioPlayerView: View {
+    @Environment(\.mediaReadAccess) private var sourceAccess
     let item: PhotoItem
     @ObservedObject var playback: VideoPlaybackController
     @State private var waveform: AudioLevelAnalysis?
@@ -399,17 +401,17 @@ struct GalleryAudioPlayerView: View {
             }
         }
         .onAppear {
-            playback.prepare(item)
+            playback.prepare(item, sourceAccess: sourceAccess)
             volume = Double(playback.player.volume)
             isMuted = playback.player.isMuted
         }
-        .onChange(of: item.contentRevision) { playback.prepare(item) }
+        .onChange(of: item.contentRevision) { playback.prepare(item, sourceAccess: sourceAccess) }
         .task(id: item.contentRevision) {
             let requestedRevision = item.contentRevision
             waveform = nil
             waveformLoadFailed = false
             waveformRevision = requestedRevision
-            let loaded = await AudioLevelPipeline.shared.analysis(for: item)
+            let loaded = await AudioLevelPipeline.shared.analysis(for: item, sourceAccess: sourceAccess)
             guard !Task.isCancelled,
                   waveformRevision == requestedRevision else { return }
             waveform = loaded

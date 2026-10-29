@@ -108,7 +108,7 @@ struct GalleryView: View {
             .overlay(alignment: .bottom) {
                 if !store.visibleIndices.isEmpty,
                    let item = store.currentItem,
-                   item.mediaKind == .photo && item.isSupported {
+                   item.supportsPhotoInspection {
                     PhotoZoomControl(store: store)
                         .padding(.horizontal, 12)
                         .padding(.bottom, 16)

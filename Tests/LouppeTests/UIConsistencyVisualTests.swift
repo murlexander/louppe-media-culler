@@ -174,12 +174,16 @@ final class UIConsistencyVisualTests: XCTestCase {
                               scheme: scheme, defaults: defaults, output: output)
             store.photosBrowser.progress = nil
             store.photosBrowser.isOpening = false
-            let snapshot = try XCTUnwrap(store.photosBrowser.snapshot)
-            let batch = PhotosReviewBatch(folder: media, snapshot: snapshot,
-                range: PhotosBatchRange(total: snapshot.count, page: 1, size: 100),
-                assetIDsByPath: [:], decisions: [:], captureDatesByPath: [:])
-            try await capture(PhotosBatchBar(store: store, batch: batch),
-                              name: "photos-batch-bar-narrow-\(suffix)", size: CGSize(width: 900, height: 100),
+            let organization = PhotosOrganizationReviewModel(hierarchy: [
+                .init(id: "folder", title: "Archive", parentIdentifier: nil,
+                      kind: .folder, canAddAssets: false, canCreateAlbum: true),
+                .init(id: "album", title: "Disposable review album", parentIdentifier: "folder",
+                      kind: .album, canAddAssets: true, canCreateAlbum: false)],
+                scopeCounts: [.all: 8_013, .filtered: 100, .selected: 1], phase: .choosing)
+            organization.choices = try PhotosOrganizationChoices.prepare(organization.hierarchy)
+            try await capture(PhotosOrganizationView(model: organization, onConfirm: { _ in },
+                              onCancelWork: {}, onDismiss: {}, onReload: {}),
+                              name: "photos-album-organization-\(suffix)", size: CGSize(width: 560, height: 510),
                               scheme: scheme, defaults: defaults, output: output)
             await client.setAuthorizationDenied(true)
             await store.photosBrowser.load()

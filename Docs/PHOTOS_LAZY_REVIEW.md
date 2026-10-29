@@ -42,7 +42,11 @@ primary `.photo`/`.video` resource through PHAssetResourceManager.
 PhotoKit owns its private caches and may need source data to render an uncached
 representation; target size bounds requested pixels, not iCloud transfer bytes.
 Louppe cannot promise that enabling representation downloads downloads only
-thumbnail bytes. No maximum-size image requests or library change requests.
+thumbnail bytes. Review does not issue maximum-size image requests.
+The separate, confirmed File → Add to Album command changes only album
+membership or creates an album in a chosen folder. It uses bounded metadata-only
+PhotoKit transactions, no original/image requests. See DEVELOPMENT_DETAILS.md
+for its save, cancellation, verification and partial-result boundaries.
 
 Milestone: stable browsable inventory and mocked large-batch opening first;
 then bounded representation/original loading and integrated export/UI validation.
@@ -101,3 +105,17 @@ Live iCloud/Photos permission flows remain untested against a personal library.
 Native control startup failed twice in the shared thread; active glass,
 open-menu compositing and VoiceOver were not live-verified. Offscreen fixtures
 and background process/sidecar evidence do not replace those remaining checks.
+
+## Full-library follow-up — 25 October 2026
+
+Normal UI now opens the complete library/album/date selection, including the
+80,708-item live library used for acceptance. The pinned lazy fetch result and
+asset-ID decisions remain; off-main preparation walks only lightweight metadata
+with cancellation and coalesced progress. Media/original limits remain unchanged.
+Initial ordinal Photo/Video labels avoid a resource sweep; original filename/type
+resolve only for explicit detail/playback/Copy. Unknown formats remain unknown,
+while original-inspection controls and meaningful format facets remain available.
+
+See [the live SSD/Photos record](SSD_PHOTOS_2026-10-25.md) for final runtime
+measurements, real permission/network acceptance, reviews and installation. The
+older batch checkpoints above retain their historical scope.

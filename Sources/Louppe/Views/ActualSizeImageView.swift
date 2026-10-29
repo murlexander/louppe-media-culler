@@ -5,6 +5,7 @@ import AppKit
 /// navigation, so its normalized inspection position can be restored for the
 /// next photo instead of every new SwiftUI ScrollView centering itself.
 struct ActualSizeImageView: NSViewRepresentable {
+    @Environment(\.mediaReadAccess) private var mediaReadAccess
     let item: PhotoItem
     let preview: NSImage?
     let showsClippingWarnings: Bool
@@ -40,7 +41,8 @@ struct ActualSizeImageView: NSViewRepresentable {
             decoder: decoder,
             retryGeneration: retryGeneration,
             onRenderingFailure: onRenderingFailure,
-            onRepresentation: onRepresentation
+            onRepresentation: onRepresentation,
+            sourceAccess: mediaReadAccess
         )
     }
 
@@ -55,9 +57,7 @@ struct ActualSizeImageView: NSViewRepresentable {
 @MainActor
 final class ActualSizeScrollView: NSScrollView {
     private let canvas = ActualSizeCanvasView()
-    private var sourceLoader: @MainActor (PhotoItem, AppleRawDecoder) async -> ZoomImageSource? = {
-        await HighResolutionImagePipeline.shared.source(for: $0, decoder: $1)
-    }
+    private var sourceLoader: (@MainActor (PhotoItem, AppleRawDecoder) async -> ZoomImageSource?)?
     var displayedSourceKey: String? { canvas.source?.key }
 
     convenience init(sourceLoader: @escaping @MainActor (PhotoItem, AppleRawDecoder) async -> ZoomImageSource?) {
@@ -143,7 +143,8 @@ final class ActualSizeScrollView: NSScrollView {
         decoder: AppleRawDecoder = .appleDefault,
         retryGeneration: UInt64 = 0,
         onRenderingFailure: @escaping (Bool) -> Void = { _ in },
-        onRepresentation: @escaping (PhotoRepresentation) -> Void = { _ in }
+        onRepresentation: @escaping (PhotoRepresentation) -> Void = { _ in },
+        sourceAccess: MediaReadAccess? = nil
     ) {
         self.viewport = viewport
         self.onLoading = onLoading
@@ -210,7 +211,14 @@ final class ActualSizeScrollView: NSScrollView {
             )
             sourceTask = Task { @MainActor [weak self] in
                 guard let self else { return }
-                let source = await self.sourceLoader(item, decoder)
+                let source: ZoomImageSource?
+                if let sourceLoader = self.sourceLoader {
+                    source = await sourceLoader(item, decoder)?.retainingSourceAccess(sourceAccess)
+                } else {
+                    source = await HighResolutionImagePipeline.shared.source(
+                        for: item, decoder: decoder, sourceAccess: sourceAccess
+                    )
+                }
                 guard !Task.isCancelled,
                       self.sourceGeneration == generation,
                       self.currentContentRevision == requestedRevision
@@ -609,6 +617,21 @@ private final class ActualSizeCanvasView: NSView {
     var onPanMove: (CGPoint) -> Void = { _ in }
     var onPanEnd: () -> Void = {}
     private var isPhotoPanning = false
+    private let touchActions = DirectTouchClickActions()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        // NSScrollView owns direct-touch panning and magnification. Only the
+        // photo's double-tap action needs a bridge from its pointer handler.
+        touchActions.doubleTap = { [weak self] point in
+            guard let self else { return }
+            let displayedFrame = self.source == nil ? self.fittedPreviewFrame() : self.imageFrame
+            if displayedFrame.contains(point) { self.onDoubleClick() }
+        }
+        touchActions.install(on: self)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     var previewIsRAW = false
     var onRepresentation: (PhotoRepresentation) -> Void = { _ in }
     var onRenderingFailure: (Bool) -> Void = { _ in }

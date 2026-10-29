@@ -75,6 +75,15 @@ struct SessionView: View {
             .sheet(isPresented: $store.isExportPresented) {
                 ExportView(store: store)
             }
+            .sheet(isPresented: $store.isPhotosOrganizationPresented,
+                   onDismiss: { store.dismissPhotosOrganization() }) {
+                PhotosOrganizationView(
+                    model: store.photosOrganizationModel,
+                    onConfirm: { store.confirmPhotosOrganization($0) },
+                    onCancelWork: { store.cancelPhotosOrganization() },
+                    onDismiss: { store.dismissPhotosOrganization() },
+                    onReload: { store.reloadPhotosOrganization() })
+            }
             .sheet(isPresented: $store.isOrganizePresented) {
                 OrganizeSourceView(store: store)
             }
@@ -131,6 +140,7 @@ struct SessionView: View {
             } message: { mode in
                 Text(cleanUpMessage(for: mode))
             }
+            .environment(\.mediaReadAccess, store.mediaReadAccess)
             .alert("RAW + JPEG", isPresented: isPairingMetadataErrorPresented) {
                 Button(L10n.text("Rescan Folder")) {
                     store.pairingMetadataError = nil
@@ -525,6 +535,7 @@ struct SessionView: View {
             .disabled(store.isFileOperationRunning)
             .accessibilityLabel(store.photosBatch?.snapshot.title ?? L10n.text("Current folder: \(store.sourceFolder?.path ?? "none")"))
             .help(store.photosBatch == nil ? (store.sourceFolder?.path ?? L10n.text("Choose another media folder (⌘O)")) : L10n.text("Close Photos review"))
+
         }
 
         if #available(macOS 26.0, *) {

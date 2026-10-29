@@ -26,6 +26,15 @@ There is no separate support team. The sole contact is Alex Markin at
   as multi-selection checkboxes and action menus. Build with the current SDK,
   preserve supported older macOS versions with availability-gated fallbacks,
   and respect accessibility settings.
+- For direct touch, follow [macOS input guidance](Docs/MACOS_INPUT.md). Keep
+  native control sizing and menus; custom action targets should reach 36 × 36
+  points without enlarging their glyphs. Touch reaches AppKit gesture
+  recognizers, not mouse responder overrides or event monitors. Add touch-only
+  recognizers when preserving immediate pointer behavior, yield tile taps to
+  native scrolling, and expose modifier-only actions through native menus.
+  Keep Browser/Grid one-finger scrolling and keyboard/VoiceOver alternatives.
+  Verify SDK availability and report missing hardware checks before claiming
+  touch-native readiness or changing `NSIsTouchNative`.
 - Write short, direct UI, website, and documentation text. Remove filler and
   repetition; retain safety conditions, limits, and remedies.
 - Use enums for exclusive states and existing typed identities/plans at

@@ -19,6 +19,9 @@ struct PhotosLibraryView: View {
                         if failure.isSelectionFailure {
                             Button(L10n.text("Retry")) { Task { await browser.load() } }
                         }
+                        if failure.requiresDownload {
+                            SettingsLink { Text(L10n.text("Open Settings…")) }
+                        }
                     }
                 }
                 selection
@@ -32,14 +35,13 @@ struct PhotosLibraryView: View {
                 }
                 .keyboardShortcut(.cancelAction)
                 if !browser.isOpening {
-                    Button(browser.failure?.requiresDownload == true
-                           ? L10n.text("Download and Open Batch") : L10n.text("Open Batch")) {
-                        if browser.failure?.requiresDownload == true { browser.allowNetwork = true }
-                        store.openPhotosBatch(page: browser.page)
+                    Button(L10n.text("Open")) {
+                        store.openPhotosSelection()
                     }
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.borderedProminent)
-                        .disabled(browser.isLoading || browser.snapshot?.count == nil || browser.range.total == 0)
+                        .disabled(browser.isLoading || browser.snapshot?.count == nil || browser.snapshot?.count == 0
+                                  || browser.snapshot?.query != browser.query)
                 }
             }
         }
@@ -87,39 +89,13 @@ struct PhotosLibraryView: View {
                 }
             }
             Section {
-                Picker(L10n.text("Batch size"), selection: Binding(
-                    get: { browser.batchSize },
-                    set: { browser.batchSize = $0; browser.page = 0; browser.remember() }
-                )) {
-                    ForEach(PhotosBatchRange.sizes, id: \.self) { size in Text(size.formatted()).tag(size) }
-                }
-                if browser.range.pageCount > 0 {
-                    LabeledContent(L10n.text("Batch")) {
-                        HStack(spacing: 6) {
-                            TextField("", value: Binding(
-                                get: { browser.range.page + 1 },
-                                set: { browser.page = min(max(1, $0), browser.range.pageCount) - 1 }
-                            ), format: .number.grouping(.never))
-                            .frame(width: 56)
-                            .accessibilityLabel(L10n.text("Batch \((browser.range.page + 1).formatted()) of \(browser.range.pageCount.formatted())"))
-                            Text(verbatim: "/ \(browser.range.pageCount.formatted())")
-                            Stepper("", value: $browser.page, in: 0...(browser.range.pageCount - 1))
-                                .labelsHidden()
-                                .accessibilityLabel(L10n.text("Batch"))
-                        }
-                    }
-                }
-            } footer: {
                 if browser.isLoading {
                     HStack { ProgressView().controlSize(.small); Text(L10n.text("Reading Photos selection…")) }
                 } else if let snapshot = browser.snapshot {
                     Text(L10n.text("\(snapshot.count.formatted()) items match this selection."))
                 }
-            }
-            Section {
-                Toggle(L10n.text("Allow iCloud Review Images"), isOn: $browser.allowNetwork)
             } footer: {
-                Text(L10n.text("Review images load as you browse. Photos may download source data to make a preview. Originals are requested separately for original detail and Copy. Decisions save in Louppe; your library stays unchanged. Live Photos use their still image."))
+                Text(L10n.text("Review images load as you browse. Photos may download source data for previews. Original detail and Copy request originals separately. Decisions stay in Louppe. Add to Album requires confirmation. Live Photos use their still image."))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -157,46 +133,5 @@ struct PhotosLibraryView: View {
         through = interval.end.addingTimeInterval(-1)
         useDates = true
         updateDates()
-    }
-}
-
-struct PhotosBatchBar: View {
-    @ObservedObject var store: SessionStore
-    @Environment(\.layoutDirection) private var layoutDirection
-    let batch: PhotosReviewBatch
-    var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.text("Apple Photos · \((batch.range.start + 1).formatted())–\(batch.range.end.formatted()) of \(batch.range.total.formatted())"))
-                    .font(.callout)
-                Text(batch.mediaSession == nil ? L10n.text("Decisions saved in Louppe")
-                     : L10n.text("Preview review · decisions saved in Louppe"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Menu {
-                Toggle(L10n.text("Allow iCloud Review Images"), isOn: $store.photosReviewNetwork)
-                Toggle(L10n.text("Allow iCloud Originals"), isOn: $store.photosOriginalNetwork)
-                Text(L10n.text("Photos may download source data to make a review image."))
-            } label: { Label(L10n.text("iCloud Access"), systemImage: "icloud") }
-            .fixedSize()
-            Button(L10n.text("Choose Photos…")) { store.presentPhotosLibrary() }
-                .fixedSize()
-            Button { store.openPhotosBatch(page: batch.range.page - 1, continuing: true) } label: {
-                Label(L10n.text("Previous Batch"), systemImage: layoutDirection == .rightToLeft ? "chevron.right" : "chevron.left")
-            }
-            .fixedSize()
-            .disabled(!batch.range.hasPrevious)
-            Button { store.openPhotosBatch(page: batch.range.page + 1, continuing: true) } label: {
-                Label(L10n.text("Next Batch"), systemImage: layoutDirection == .rightToLeft ? "chevron.left" : "chevron.right")
-            }
-            .fixedSize()
-            .disabled(!batch.range.hasNext)
-        }
-        .disabled(store.isFileOperationRunning || store.isSessionCommandPresentationActive)
-        .padding(.horizontal, 14).padding(.vertical, 8)
-        .background(Color.appBackground)
-        .overlay(alignment: .bottom) { Divider() }
     }
 }

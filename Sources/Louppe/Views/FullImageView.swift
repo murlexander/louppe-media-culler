@@ -3,6 +3,7 @@ import AppKit
 
 /// The big central image in the Gallery view, with fit / 100% / phone-size zoom.
 struct FullImageView: View {
+    @Environment(\.mediaReadAccess) private var mediaReadAccess
     private static let navigationDebounceNanoseconds: UInt64 = 40_000_000
     @Environment(\.openWindow) private var openWindow
     @AppStorage(RawDisplayMode.preferenceKey) private var rawDisplayMode = RawDisplayMode.fast
@@ -341,7 +342,7 @@ struct FullImageView: View {
             onLoading(true)
             defer { onLoading(false) }
             let loaded = await imagePipeline.fullImage(
-                for: requestedItem, mode: mode, decoder: decoder
+                for: requestedItem, mode: mode, decoder: decoder, sourceAccess: mediaReadAccess
             )
             guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode, imageRevision == requestedRevision
             else { return }
@@ -371,7 +372,7 @@ struct FullImageView: View {
             guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode,
                   loadedDecoder == decoder, imageRevision == requestedRevision, image == nil
             else { return }
-            let thumb = await imagePipeline.thumbnail(for: requestedItem)
+            let thumb = await imagePipeline.thumbnail(for: requestedItem, sourceAccess: mediaReadAccess)
             guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode,
                   loadedDecoder == decoder, imageRevision == requestedRevision, image == nil
             else { return }
@@ -411,7 +412,7 @@ struct FullImageView: View {
             onLoading(true)
             defer { onLoading(false) }
             let loaded = await ClippingPreviewPipeline.shared.image(
-                for: requestedItem, mode: mode, decoder: decoder
+                for: requestedItem, mode: mode, decoder: decoder, sourceAccess: mediaReadAccess
             )
             guard !Task.isCancelled, rawDecoder == decoder, clippingDisplayMode == mode,
                   clippingRevision == requestedRevision else { return }
@@ -448,7 +449,7 @@ struct FullImageView: View {
         let revision = item.contentRevision
         let decoder = rawDecoder
         Task { @MainActor in
-            let source = await HighResolutionImagePipeline.shared.source(for: requestedItem, decoder: decoder)
+            let source = await HighResolutionImagePipeline.shared.source(for: requestedItem, decoder: decoder, sourceAccess: mediaReadAccess)
             guard generation == fittedPinchGeneration,
                   rawDecoder == decoder,
                   revision == item.contentRevision,
@@ -477,6 +478,7 @@ struct FullImageView: View {
 /// Displays exactly the fitted image rectangle so only the photo—not its
 /// letterboxed surroundings—owns the location-aware double-click gesture.
 private struct ZoomableFittedImage: View {
+    @Environment(\.mediaReadAccess) private var mediaReadAccess
     @Environment(\.displayScale) private var displayScale
     let item: PhotoItem
     let mode: ZoomMode
@@ -552,7 +554,7 @@ private struct ZoomableFittedImage: View {
         }
         .task(id: HighResolutionImagePipeline.sourceKey(for: item, decoder: decoder)) {
             let revision = item.contentRevision
-            let source = await HighResolutionImagePipeline.shared.source(for: item, decoder: decoder)
+            let source = await HighResolutionImagePipeline.shared.source(for: item, decoder: decoder, sourceAccess: mediaReadAccess)
             guard !Task.isCancelled else { return }
             measuredRevision = revision
             sourcePixelSize = source?.pixelSize
@@ -623,6 +625,7 @@ final class FittedImageDoubleClickView: NSView {
     private var magnificationFactor: CGFloat = 1
     private var lastPinchPosition: NormalizedImagePosition?
     private var pinchIsActive = false
+    private let touchActions = DirectTouchClickActions()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -635,6 +638,12 @@ final class FittedImageDoubleClickView: NSView {
     }
 
     private func installMagnificationRecognizer() {
+        touchActions.doubleTap = { [weak self] point in
+            guard let self, let position = FittedImageGeometry.normalizedPosition(at: point, in: self.bounds)
+            else { return }
+            self.onDoubleClick(position)
+        }
+        touchActions.install(on: self)
         // NSResponder's begin/endGesture callbacks are no longer delivered.
         // The recognizer owns the complete native pinch lifecycle, including
         // cancelled gestures, without replacing this view mid-gesture.

@@ -1940,10 +1940,122 @@
 /* Settings pages. */
 "General" = "Geral";
 
+/* Pinned folders. */
+"Available" = "Disponível";
+"Unavailable — reconnect the drive or locate the folder" = "Indisponível — reconecte a unidade ou localize a pasta";
+"Access needed — locate the folder" = "Acesso necessário — localize a pasta";
+"This is a different folder or drive. Locate the original pinned folder." = "Esta é outra pasta ou unidade. Localize a pasta fixada original.";
+"Folder access could not be saved. Locate the folder and try again." = "Não foi possível salvar o acesso à pasta. Localize a pasta e tente novamente.";
+"Pinned-folder storage is full. Unpin a folder and try again." = "O armazenamento de pastas fixadas está cheio. Desafixe uma pasta e tente novamente.";
+"Pinned folders could not be read. Previous records are retained. Try again." = "Não foi possível ler as pastas fixadas. Os registros anteriores foram mantidos. Tente novamente.";
+"The browsing position could not be saved. Previous positions are retained." = "Não foi possível salvar a posição de navegação. As posições anteriores foram mantidas.";
+"Locate the original pinned folder. Louppe will verify its identity." = "Localize a pasta fixada original. O Louppe verificará sua identidade.";
+"Reconnect" = "Reconectar";
+"Pin This Folder" = "Fixar esta pasta";
+"Unpin This Folder" = "Desafixar esta pasta";
+"Locate Folder…" = "Localizar pasta…";
+"Unpin Folder" = "Desafixar pasta";
+"Pinned folders" = "Pastas fixadas";
+"Current folder is not pinned" = "A pasta atual não está fixada";
+"Current folder is pinned" = "A pasta atual está fixada";
+"Pin this folder or open a pinned folder" = "Fixe esta pasta ou abra uma pasta fixada";
+"Updating pinned folders" = "Atualizando pastas fixadas";
+"Pin a folder from its toolbar while reviewing." = "Fixe uma pasta pela barra de ferramentas durante a revisão.";
+"Locate {0}…" = "Localizar {0}…";
+"Actions for {0}" = "Ações para {0}";
+"Open, locate, or unpin this folder" = "Abra, localize ou desafixe esta pasta";
+
+/* Welcome pinning. */
+"Pin Folder…" = "Fixar pasta…";
+"Pin Folder" = "Fixar pasta";
+"Choose a folder to pin without opening it." = "Escolha uma pasta para fixar sem a abrir.";
+"Choose Pin Folder… to add a shortcut." = "Escolha Fixar pasta… para adicionar um atalho.";
+
+/* Photos selection. */
+"Open" = "Abrir";
+"Video" = "Vídeo";
+
+/* Whole Photos review. */
+"Photos couldn't provide a file for “{0}”. Check it in Photos, then retry." = "O Fotos não conseguiu fornecer um ficheiro para “{0}”. Verifique no Fotos e tente novamente.";
+"This Photos selection is closed. Open it again." = "Esta seleção do Fotos está fechada. Abra-a novamente.";
+
+"Apple Photos · {0} items" = "Fotos da Apple · {0} itens";
+
+/* Persistent iCloud settings. */
+"Open Settings…" = "Abrir Definições…";
+"Review images load as you browse. Photos may fetch source data to render a preview. Originals stream only when you request original detail, playback, or Copy. Each choice is remembered independently." = "As imagens de revisão são carregadas à medida que navega. O Fotos pode obter dados de origem para criar uma pré-visualização. Os originais só são transferidos quando pede detalhes do original, reprodução ou Copiar. Cada opção é memorizada separadamente.";
+
+/* Photos album organization. */
+"Reading Photos albums and folders…" = "A ler álbuns e pastas do Fotos…";
+"Add to Album" = "Adicionar ao álbum";
+"Review Album Addition" = "Rever adição ao álbum";
+"Adding to Album" = "A adicionar ao álbum";
+"Existing album" = "Álbum existente";
+"New album" = "Novo álbum";
+"Choose an album…" = "Escolha um álbum…";
+"No writable albums. Create a new album instead." = "Não há álbuns editáveis. Crie um novo álbum.";
+"Album name" = "Nome do álbum";
+"Parent folder" = "Pasta principal";
+"Photos Library" = "Fototeca";
+"Choose a folder…" = "Escolha uma pasta…";
+"Photos folders contain albums. Additions keep existing album memberships and leave originals in your library." = "As pastas do Fotos contêm álbuns. Ao adicionar itens, as associações a álbuns existentes são mantidas e os originais permanecem na fototeca.";
+"Reload albums and folders" = "Recarregar álbuns e pastas";
+"No items in this scope." = "Não há itens neste âmbito.";
+"Items" = "Itens";
+"A new album will be created at this location." = "Será criado um novo álbum neste local.";
+"Add these items to this album? Existing album memberships and originals stay unchanged." = "Adicionar estes itens a este álbum? As associações a álbuns existentes e os originais permanecem inalterados.";
+"The scope or destination changed. Go back and review again." = "O âmbito ou o destino mudou. Volte atrás e reveja novamente.";
+"Album update progress" = "Progresso da atualização do álbum";
+"{0} of {1} items processed" = "{0} de {1} itens processados";
+"Finishing and checking the current update…" = "A concluir e verificar a atualização atual…";
+"Cancel finishes and checks the current update. Completed additions remain in Photos." = "Cancelar conclui e verifica a atualização atual. As adições concluídas permanecem no Fotos.";
+"Requested destination: {0}" = "Destino pedido: {0}";
+"Requested" = "Pedidos";
+"Verified in album" = "Verificados no álbum";
+"Already in album (included above)" = "Já no álbum (incluídos acima)";
+"Unavailable items" = "Itens indisponíveis";
+"Uncertain memberships" = "Associações incertas";
+"Not processed" = "Não processados";
+"Some additions could not be verified. Check the album in Photos before trying again." = "Não foi possível verificar algumas adições. Verifique o álbum no Fotos antes de tentar novamente.";
+"Verified memberships include items already in the album. Completed additions remain in Photos." = "As associações verificadas incluem itens já presentes no álbum. As adições concluídas permanecem no Fotos.";
+"Cancelling…" = "A cancelar…";
+"{0} (ID: {1})" = "{0} (identificador: {1})";
+"Album Addition Incomplete" = "Adição ao álbum incompleta";
+"Album Addition Complete" = "Adição ao álbum concluída";
+"Album Addition Cancelled" = "Adição ao álbum cancelada";
+"Album Addition Failed" = "Falha na adição ao álbum";
+"Membership could not be verified for {0} items." = "Não foi possível verificar a associação de {0} itens ao álbum.";
+"A new album may have been created. Its location could not be verified. Check Photos before trying again." = "Pode ter sido criado um novo álbum. Não foi possível verificar a sua localização. Verifique no Fotos antes de tentar novamente.";
+"The destination album or its location could not be verified." = "Não foi possível verificar o álbum de destino ou a sua localização.";
+"Checking Photos items and destination…" = "A verificar itens do Fotos e destino…";
+"Updating album membership…" = "A atualizar associações ao álbum…";
+"Checking album membership…" = "A verificar associações ao álbum…";
+"Finishing album update…" = "A concluir atualização do álbum…";
+"Choose photos to add to an album." = "Escolha fotografias para adicionar a um álbum.";
+"The Photos selection could not be validated." = "Não foi possível validar a seleção do Fotos.";
+"Enter a name for the new album." = "Introduza um nome para o novo álbum.";
+"Another Photos organization operation is still running." = "Ainda está em curso outra operação de organização do Fotos.";
+"Allow read and write access to the Photos library, then try again." = "Permita o acesso de leitura e escrita à fototeca e tente novamente.";
+"The selected Photos album or folder is no longer available." = "O álbum ou a pasta do Fotos selecionados já não estão disponíveis.";
+"The selected Photos album or folder cannot be edited." = "Não é possível editar o álbum ou a pasta do Fotos selecionados.";
+"Some selected photos cannot be added to an album." = "Não é possível adicionar algumas fotografias selecionadas a um álbum.";
+"Some selected photos are no longer available." = "Algumas fotografias selecionadas já não estão disponíveis.";
+"Photos could not prepare the album change." = "O Fotos não conseguiu preparar a alteração do álbum.";
+"Photos did not confirm all requested album memberships or the album’s folder." = "O Fotos não confirmou todas as associações pedidas ao álbum ou a pasta do álbum.";
+"The Photos album and folder list exceeds the supported limit." = "A lista de álbuns e pastas do Fotos excede o limite suportado.";
+"The Photos review changed. Close this window and choose the items again." = "A revisão do Fotos mudou. Feche esta janela e escolha os itens novamente.";
+"Saving review decisions…" = "A guardar decisões de revisão…";
+"Add to Album…" = "Adicionar ao álbum…";
+"Photos albums are still being updated" = "Os álbuns do Fotos ainda estão a ser atualizados";
+"Cancel the album update or wait for verification to finish, then quit." = "Cancele a atualização do álbum ou aguarde a conclusão da verificação e depois saia.";
+
+"Review images load as you browse. Photos may download source data for previews. Original detail and Copy request originals separately. Decisions stay in Louppe. Add to Album requires confirmation. Live Photos use their still image." = "As imagens de revisão carregam ao navegar. Fotografias pode transferir dados de origem para pré-visualizações. O detalhe original e Copiar pedem os originais à parte. As decisões ficam no Louppe. Adicionar ao álbum exige confirmação. Live Photos usa a imagem fixa.";
+
 // User guide and Help
 "User guide (English)" = "Guia do usuário (em inglês)";
 "File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits." = "Arquivo → Abrir Fotos da Apple… abre a Fototeca do Sistema ou um álbum, com um intervalo de datas opcional. As imagens carregam conforme você navega e não incluem as edições do Fotos.";
-"Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "As avaliações ficam no Mac. Copiar exporta os originais principais; Mover, Renomear, Organizar, XMP e Lixeira não estão disponíveis para o Fotos.";
+"Settings → General → iCloud Access has separate choices for review images and originals. Photos may download source data for a review image. Open Original Detail, video playback, and Copy request originals separately." = "Ajustes → Geral → Acesso ao iCloud tem opções separadas para imagens de revisão e originais. O Fotos pode baixar dados de origem para uma imagem de revisão. Abrir detalhe original, reproduzir vídeo e Copiar solicitam originais separadamente.";
+"Ratings stay local. File → Add to Album… adds items only after confirmation and preserves existing memberships. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "As avaliações ficam no Mac. Arquivo → Adicionar ao Álbum… só adiciona itens após confirmação e preserva os álbuns existentes. Copiar exporta os originais principais; Mover, Renomear, Organizar, XMP e Lixeira não estão disponíveis para o Fotos.";
 "File safety and saved decisions" = "Segurança dos arquivos e decisões salvas";
 "Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation." = "Exportar copia por padrão. Mover transfere os originais e não pode ser desfeito. Renomear e Organizar alteram nomes ou locais dos arquivos somente após confirmação.";
 "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "Limpar pede confirmação antes de mover arquivos para a Lixeira. ⌘⌫ envia a seleção para a Lixeira sem diálogo. ⌘Z restaura os arquivos durante a sessão aberta, enquanto ainda estiverem na Lixeira.";

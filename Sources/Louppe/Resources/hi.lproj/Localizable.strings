@@ -1940,10 +1940,122 @@
 /* Settings pages. */
 "General" = "सामान्य";
 
+/* Pinned folders. */
+"Available" = "उपलब्ध";
+"Unavailable — reconnect the drive or locate the folder" = "उपलब्ध नहीं है — ड्राइव फिर से कनेक्ट करें या फ़ोल्डर ढूँढें";
+"Access needed — locate the folder" = "पहुँच चाहिए — फ़ोल्डर ढूँढें";
+"This is a different folder or drive. Locate the original pinned folder." = "यह कोई दूसरा फ़ोल्डर या ड्राइव है। मूल पिन किया गया फ़ोल्डर ढूँढें।";
+"Folder access could not be saved. Locate the folder and try again." = "फ़ोल्डर की पहुँच सहेजी नहीं जा सकी। फ़ोल्डर ढूँढकर फिर कोशिश करें।";
+"Pinned-folder storage is full. Unpin a folder and try again." = "पिन किए गए फ़ोल्डरों का संग्रहण भर गया है। किसी फ़ोल्डर को अनपिन करके फिर कोशिश करें।";
+"Pinned folders could not be read. Previous records are retained. Try again." = "पिन किए गए फ़ोल्डर पढ़े नहीं जा सके। पिछले रिकॉर्ड सुरक्षित हैं। फिर कोशिश करें।";
+"The browsing position could not be saved. Previous positions are retained." = "ब्राउज़िंग की स्थिति सहेजी नहीं जा सकी। पिछली स्थितियाँ सुरक्षित हैं।";
+"Locate the original pinned folder. Louppe will verify its identity." = "मूल पिन किया गया फ़ोल्डर ढूँढें। Louppe उसकी पहचान सत्यापित करेगा।";
+"Reconnect" = "फिर से कनेक्ट करें";
+"Pin This Folder" = "यह फ़ोल्डर पिन करें";
+"Unpin This Folder" = "यह फ़ोल्डर अनपिन करें";
+"Locate Folder…" = "फ़ोल्डर ढूँढें…";
+"Unpin Folder" = "फ़ोल्डर अनपिन करें";
+"Pinned folders" = "पिन किए गए फ़ोल्डर";
+"Current folder is not pinned" = "मौजूदा फ़ोल्डर पिन नहीं किया गया है";
+"Current folder is pinned" = "मौजूदा फ़ोल्डर पिन किया गया है";
+"Pin this folder or open a pinned folder" = "यह फ़ोल्डर पिन करें या कोई पिन किया गया फ़ोल्डर खोलें";
+"Updating pinned folders" = "पिन किए गए फ़ोल्डर अपडेट हो रहे हैं";
+"Pin a folder from its toolbar while reviewing." = "समीक्षा करते समय फ़ोल्डर के टूलबार से उसे पिन करें।";
+"Locate {0}…" = "{0} ढूँढें…";
+"Actions for {0}" = "{0} के लिए कार्रवाइयाँ";
+"Open, locate, or unpin this folder" = "यह फ़ोल्डर खोलें, ढूँढें या अनपिन करें";
+
+/* Welcome pinning. */
+"Pin Folder…" = "फ़ोल्डर पिन करें…";
+"Pin Folder" = "फ़ोल्डर पिन करें";
+"Choose a folder to pin without opening it." = "फ़ोल्डर खोले बिना पिन करने के लिए उसे चुनें।";
+"Choose Pin Folder… to add a shortcut." = "शॉर्टकट जोड़ने के लिए फ़ोल्डर पिन करें… चुनें।";
+
+/* Photos selection. */
+"Open" = "खोलें";
+"Video" = "वीडियो";
+
+/* Whole Photos review. */
+"Photos couldn't provide a file for “{0}”. Check it in Photos, then retry." = "Photos “{0}” की फ़ाइल उपलब्ध नहीं करा सका। Photos में जाँचें, फिर दोबारा कोशिश करें।";
+"This Photos selection is closed. Open it again." = "यह Photos चयन बंद है। इसे फिर से खोलें।";
+
+"Apple Photos · {0} items" = "Apple Photos · {0} आइटम";
+
+/* Persistent iCloud settings. */
+"Open Settings…" = "सेटिंग्ज़ खोलें…";
+"Review images load as you browse. Photos may fetch source data to render a preview. Originals stream only when you request original detail, playback, or Copy. Each choice is remembered independently." = "ब्राउज़ करते समय समीक्षा की छवियाँ लोड होती हैं। पूर्वावलोकन बनाने के लिए Photos स्रोत डेटा डाउनलोड कर सकता है। मूल फ़ाइल का विवरण, प्लेबैक या कॉपी करने का अनुरोध करने पर ही मूल फ़ाइलें डाउनलोड होती हैं। दोनों विकल्प अलग-अलग याद रखे जाते हैं।";
+
+/* Photos album organization. */
+"Reading Photos albums and folders…" = "Photos के ऐल्बम और फ़ोल्डर पढ़े जा रहे हैं…";
+"Add to Album" = "ऐल्बम में जोड़ें";
+"Review Album Addition" = "ऐल्बम में जोड़ने की समीक्षा करें";
+"Adding to Album" = "ऐल्बम में जोड़ा जा रहा है";
+"Existing album" = "मौजूदा ऐल्बम";
+"New album" = "नया ऐल्बम";
+"Choose an album…" = "ऐल्बम चुनें…";
+"No writable albums. Create a new album instead." = "कोई संपादन योग्य ऐल्बम नहीं है। नया ऐल्बम बनाएँ।";
+"Album name" = "ऐल्बम का नाम";
+"Parent folder" = "मूल फ़ोल्डर";
+"Photos Library" = "Photos लाइब्रेरी";
+"Choose a folder…" = "फ़ोल्डर चुनें…";
+"Photos folders contain albums. Additions keep existing album memberships and leave originals in your library." = "Photos के फ़ोल्डर में ऐल्बम होते हैं। आइटम जोड़ने पर वे मौजूदा ऐल्बम में भी रहते हैं और मूल फ़ाइलें लाइब्रेरी में बनी रहती हैं।";
+"Reload albums and folders" = "ऐल्बम और फ़ोल्डर फिर से लोड करें";
+"No items in this scope." = "इस दायरे में कोई आइटम नहीं है।";
+"Items" = "आइटम";
+"A new album will be created at this location." = "इस स्थान पर नया ऐल्बम बनाया जाएगा।";
+"Add these items to this album? Existing album memberships and originals stay unchanged." = "इन आइटम को इस ऐल्बम में जोड़ें? मौजूदा ऐल्बम सदस्यताएँ और मूल फ़ाइलें अपरिवर्तित रहेंगी।";
+"The scope or destination changed. Go back and review again." = "दायरा या गंतव्य बदल गया है। वापस जाकर फिर से समीक्षा करें।";
+"Album update progress" = "ऐल्बम अपडेट की प्रगति";
+"{0} of {1} items processed" = "{1} में से {0} आइटम संसाधित";
+"Finishing and checking the current update…" = "वर्तमान अपडेट पूरा करके जाँच की जा रही है…";
+"Cancel finishes and checks the current update. Completed additions remain in Photos." = "रद्द करने पर वर्तमान अपडेट पूरा करके जाँचा जाता है। जोड़े गए आइटम Photos में रहते हैं।";
+"Requested destination: {0}" = "अनुरोधित गंतव्य: {0}";
+"Requested" = "अनुरोधित";
+"Verified in album" = "ऐल्बम में सत्यापित";
+"Already in album (included above)" = "पहले से ऐल्बम में (ऊपर शामिल)";
+"Unavailable items" = "अनुपलब्ध आइटम";
+"Uncertain memberships" = "अनिश्चित सदस्यताएँ";
+"Not processed" = "संसाधित नहीं हुए";
+"Some additions could not be verified. Check the album in Photos before trying again." = "कुछ आइटम जोड़े जाने की पुष्टि नहीं हो सकी। दोबारा कोशिश करने से पहले Photos में ऐल्बम जाँचें।";
+"Verified memberships include items already in the album. Completed additions remain in Photos." = "सत्यापित सदस्यताओं में पहले से ऐल्बम में मौजूद आइटम भी शामिल हैं। जोड़े गए आइटम Photos में रहते हैं।";
+"Cancelling…" = "रद्द किया जा रहा है…";
+"{0} (ID: {1})" = "{0} (पहचान: {1})";
+"Album Addition Incomplete" = "ऐल्बम में जोड़ना अधूरा रहा";
+"Album Addition Complete" = "ऐल्बम में जोड़ना पूरा हुआ";
+"Album Addition Cancelled" = "ऐल्बम में जोड़ना रद्द हुआ";
+"Album Addition Failed" = "ऐल्बम में जोड़ना विफल हुआ";
+"Membership could not be verified for {0} items." = "{0} आइटम की ऐल्बम सदस्यता सत्यापित नहीं हो सकी।";
+"A new album may have been created. Its location could not be verified. Check Photos before trying again." = "नया ऐल्बम बन गया हो सकता है। उसका स्थान सत्यापित नहीं हो सका। दोबारा कोशिश करने से पहले Photos जाँचें।";
+"The destination album or its location could not be verified." = "गंतव्य ऐल्बम या उसका स्थान सत्यापित नहीं हो सका।";
+"Checking Photos items and destination…" = "Photos के आइटम और गंतव्य की जाँच हो रही है…";
+"Updating album membership…" = "ऐल्बम सदस्यता अपडेट हो रही है…";
+"Checking album membership…" = "ऐल्बम सदस्यता की जाँच हो रही है…";
+"Finishing album update…" = "ऐल्बम अपडेट पूरा हो रहा है…";
+"Choose photos to add to an album." = "ऐल्बम में जोड़ने के लिए फ़ोटो चुनें।";
+"The Photos selection could not be validated." = "Photos चयन सत्यापित नहीं हो सका।";
+"Enter a name for the new album." = "नए ऐल्बम का नाम दर्ज करें।";
+"Another Photos organization operation is still running." = "Photos को व्यवस्थित करने की एक और प्रक्रिया अभी चल रही है।";
+"Allow read and write access to the Photos library, then try again." = "Photos लाइब्रेरी को पढ़ने और उसमें लिखने की अनुमति दें, फिर दोबारा कोशिश करें।";
+"The selected Photos album or folder is no longer available." = "चुना गया Photos ऐल्बम या फ़ोल्डर अब उपलब्ध नहीं है।";
+"The selected Photos album or folder cannot be edited." = "चुने गए Photos ऐल्बम या फ़ोल्डर को संपादित नहीं किया जा सकता।";
+"Some selected photos cannot be added to an album." = "कुछ चुनी गई फ़ोटो ऐल्बम में नहीं जोड़ी जा सकतीं।";
+"Some selected photos are no longer available." = "कुछ चुनी गई फ़ोटो अब उपलब्ध नहीं हैं।";
+"Photos could not prepare the album change." = "Photos ऐल्बम में बदलाव की तैयारी नहीं कर सका।";
+"Photos did not confirm all requested album memberships or the album’s folder." = "Photos ने सभी अनुरोधित ऐल्बम सदस्यताओं या ऐल्बम के फ़ोल्डर की पुष्टि नहीं की।";
+"The Photos album and folder list exceeds the supported limit." = "Photos के ऐल्बम और फ़ोल्डर की सूची समर्थित सीमा से अधिक है।";
+"The Photos review changed. Close this window and choose the items again." = "Photos समीक्षा बदल गई है। यह विंडो बंद करके आइटम फिर से चुनें।";
+"Saving review decisions…" = "समीक्षा के निर्णय सहेजे जा रहे हैं…";
+"Add to Album…" = "ऐल्बम में जोड़ें…";
+"Photos albums are still being updated" = "Photos के ऐल्बम अभी अपडेट हो रहे हैं";
+"Cancel the album update or wait for verification to finish, then quit." = "ऐल्बम अपडेट रद्द करें या सत्यापन पूरा होने तक प्रतीक्षा करें, फिर ऐप बंद करें।";
+
+"Review images load as you browse. Photos may download source data for previews. Original detail and Copy request originals separately. Decisions stay in Louppe. Add to Album requires confirmation. Live Photos use their still image." = "ब्राउज़ करते समय समीक्षा छवियाँ लोड होती हैं। पूर्वावलोकन के लिए Photos स्रोत डेटा डाउनलोड कर सकता है। मूल विवरण और कॉपी के लिए मूल अलग से माँगे जाते हैं। निर्णय Louppe में रहते हैं। एल्बम में जोड़ने के लिए पुष्टि ज़रूरी है। Live Photos की स्थिर छवि उपयोग होती है।";
+
 // User guide and Help
 "User guide (English)" = "उपयोगकर्ता गाइड (अंग्रेज़ी)";
 "File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits." = "फ़ाइल → Apple Photos खोलें… से सिस्टम फ़ोटो लाइब्रेरी या कोई ऐल्बम खोलें और चाहें तो तारीख़ों की सीमा चुनें। ब्राउज़ करते समय तस्वीरें लोड होती हैं; Photos में किए गए संपादन शामिल नहीं होते।";
-"Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "रेटिंग स्थानीय रहती हैं। कॉपी प्राथमिक मूल फ़ाइलें निर्यात करता है; Photos के लिए मूव, नाम बदलें, व्यवस्थित करें, XMP और ट्रैश उपलब्ध नहीं हैं।";
+"Settings → General → iCloud Access has separate choices for review images and originals. Photos may download source data for a review image. Open Original Detail, video playback, and Copy request originals separately." = "सेटिंग्स → सामान्य → iCloud ऐक्सेस में समीक्षा की तस्वीरों और मूल फ़ाइलों के लिए अलग विकल्प हैं। समीक्षा की तस्वीर बनाने के लिए Photos स्रोत डेटा डाउनलोड कर सकता है। मूल विवरण खोलें, वीडियो प्लेबैक और कॉपी अलग से मूल फ़ाइलें माँगते हैं।";
+"Ratings stay local. File → Add to Album… adds items only after confirmation and preserves existing memberships. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "रेटिंग स्थानीय रहती हैं। फ़ाइल → ऐल्बम में जोड़ें… पुष्टि के बाद ही आइटम जोड़ता है और मौजूदा ऐल्बम सदस्यताएँ बनाए रखता है। कॉपी प्राथमिक मूल फ़ाइलें निर्यात करता है; Photos के लिए मूव, नाम बदलें, व्यवस्थित करें, XMP और ट्रैश उपलब्ध नहीं हैं।";
 "File safety and saved decisions" = "फ़ाइल सुरक्षा और सहेजे गए निर्णय";
 "Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation." = "निर्यात डिफ़ॉल्ट रूप से कॉपी करता है। मूव मूल फ़ाइलें स्थानांतरित करता है और इसे पूर्ववत नहीं किया जा सकता। नाम बदलें और व्यवस्थित करें केवल पुष्टि के बाद फ़ाइलों के नाम या स्थान बदलते हैं।";
 "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "साफ़ करें फ़ाइलें ट्रैश में भेजने से पहले पूछता है। ⌘⌫ चयन को बिना संवाद के ट्रैश में भेजता है। सत्र खुला रहने पर, जब तक फ़ाइलें ट्रैश में हैं, ⌘Z उन्हें बहाल करता है।";

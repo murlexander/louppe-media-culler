@@ -3,6 +3,7 @@ import SwiftUI
 /// One adaptive surface for controls floating above photo or video content.
 /// Input remains owned by the native buttons and sliders inside the surface.
 struct FloatingControlSurface<Surface: InsettableShape>: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let shape: Surface
     let reduceTransparency: Bool
     let contrast: ColorSchemeContrast
@@ -13,7 +14,7 @@ struct FloatingControlSurface<Surface: InsettableShape>: ViewModifier {
             content.background(Color.appBackground, in: shape)
                 .overlay { border }
         } else if #available(macOS 26.0, *) {
-            content.glassEffect(.regular, in: shape)
+            content.glassEffect(.regular.interactive(!reduceMotion), in: shape)
         } else {
             content.background(.regularMaterial, in: shape)
                 .overlay { border }

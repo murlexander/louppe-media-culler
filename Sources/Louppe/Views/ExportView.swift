@@ -318,7 +318,7 @@ struct ExportView: View {
                     }
                 } else if store.photosBatch?.mediaSession != nil {
                     Section {
-                        Toggle(L10n.text("Allow iCloud Originals"), isOn: $store.photosOriginalNetwork)
+                        SettingsLink { Text(L10n.text("Open Settings…")) }
                         Text(L10n.text("Copy downloads exact primary originals one at a time. Review previews are never exported. Total bytes are unknown until originals load; destination space is checked for each file."))
                             .font(.caption).foregroundStyle(.secondary)
                     }

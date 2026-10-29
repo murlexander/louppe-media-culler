@@ -283,19 +283,25 @@ final class HistogramPipeline: @unchecked Sendable {
     private final class PendingAnalysis {
         var waiters: [UUID: HistogramAnalysisWaiter]
         let operation: BlockOperation
+        let readAccess: MediaOperationReadAccess
         let completionID: UUID
+        var admissionTask: Task<Void, Never>?
+        var submitted = false
 
         init(
             waiters: [UUID: HistogramAnalysisWaiter],
             operation: BlockOperation,
+            readAccess: MediaOperationReadAccess,
             completionID: UUID
         ) {
             self.waiters = waiters
             self.operation = operation
+            self.readAccess = readAccess
             self.completionID = completionID
         }
     }
 
+    private let foregroundWork: ForegroundWorkCoordinator
     private let queue: OperationQueue
     private let decoder: Decoder
     private let lock = NSLock()
@@ -312,8 +318,10 @@ final class HistogramPipeline: @unchecked Sendable {
             ImagePipeline.decodeImage(url: url, maxPixel: HistogramPipeline.analysisPixelSize)
                 .flatMap(ClippingWarningProcessor.analyze)
         },
-        operationQueue: OperationQueue? = nil
+        operationQueue: OperationQueue? = nil,
+        foregroundWork: ForegroundWorkCoordinator = .shared
     ) {
+        self.foregroundWork = foregroundWork
         self.decoder = decoder
         let queue = operationQueue ?? OperationQueue()
         queue.name = "louppe.histogram"
@@ -322,7 +330,7 @@ final class HistogramPipeline: @unchecked Sendable {
         self.queue = queue
     }
 
-    func analysis(for item: PhotoItem, purpose: RequestPurpose = .info) async -> HistogramAnalysis? {
+    func analysis(for item: PhotoItem, purpose: RequestPurpose = .info, sourceAccess: MediaReadAccess? = nil) async -> HistogramAnalysis? {
         guard item.mediaKind == .photo, item.isSupported else { return nil }
         let key = ImagePipeline.cacheKey(for: item) + "|histogram-v1-srgb-1024"
         let revision = MediaSourceRevision(item)
@@ -342,6 +350,7 @@ final class HistogramPipeline: @unchecked Sendable {
                     return
                 }
                 if let pending = inFlight[key] {
+                    pending.readAccess.retainIfNeeded(sourceAccess)
                     pending.waiters[requestID] = HistogramAnalysisWaiter(
                         continuation: continuation,
                         waitsForWorkerExit: purpose == .backgroundQuality
@@ -349,19 +358,26 @@ final class HistogramPipeline: @unchecked Sendable {
                     if purpose == .info {
                         pending.operation.queuePriority = .high
                         pending.operation.qualityOfService = .userInitiated
+                        pending.admissionTask?.cancel()
+                        pending.admissionTask = nil
                     }
+                    let operation = pending.operation
                     lock.unlock()
+                    if purpose == .info { submit(key: key, operation: operation) }
                     return
                 }
 
                 let completionID = UUID()
+                let readAccess = MediaOperationReadAccess(sourceAccess)
                 let operation = BlockOperation()
                 operation.completionBlock = { [weak self] in
+                    readAccess.finish()
                     self?.completeOperation(completionID)
                 }
                 operation.addExecutionBlock { [weak self, weak operation] in
                     guard let self, let operation, !operation.isCancelled
                     else { return }
+                    defer { readAccess.finish() }
                     let result = autoreleasepool {
                         revision.read { self.decoder(revision.url) }
                     }
@@ -369,21 +385,48 @@ final class HistogramPipeline: @unchecked Sendable {
                 }
                 operation.qualityOfService = purpose.qualityOfService
                 operation.queuePriority = purpose.queuePriority
-                inFlight[key] = PendingAnalysis(
+                let pending = PendingAnalysis(
                     waiters: [requestID: HistogramAnalysisWaiter(
                         continuation: continuation,
                         waitsForWorkerExit: purpose == .backgroundQuality
                     )],
                     operation: operation,
+                    readAccess: readAccess,
                     completionID: completionID
                 )
+                inFlight[key] = pending
+                if purpose == .backgroundQuality {
+                    pending.admissionTask = Task.detached(priority: .utility) { [weak self, weak operation, foregroundWork] in
+                        guard await foregroundWork.waitForBackgroundAdmission(), !Task.isCancelled,
+                              let self, let operation else { return }
+                        self.submit(key: key, operation: operation)
+                    }
+                }
                 lock.unlock()
-                queue.addOperation(operation)
+                if purpose == .info { submit(key: key, operation: operation) }
             }
         } onCancel: { [weak self] in
             self?.cancelWaiter(requestID, for: key)
         }
     }
+
+    private func submit(key: String, operation: BlockOperation) {
+        let admitted = lock.withLock {
+            guard let pending = inFlight[key], pending.operation === operation,
+                  !pending.submitted, !operation.isCancelled else { return false }
+            pending.submitted = true
+            pending.admissionTask = nil
+            return true
+        }
+        if admitted { queue.addOperation(operation) }
+    }
+
+    #if DEBUG
+    func waiterCountForTesting(for item: PhotoItem) -> Int {
+        let key = ImagePipeline.cacheKey(for: item) + "|histogram-v1-srgb-1024"
+        return lock.withLock { inFlight[key]?.waiters.count ?? 0 }
+    }
+    #endif
 
     private func finish(key: String, operation: BlockOperation, result: HistogramAnalysis?) {
         lock.lock()
@@ -422,9 +465,11 @@ final class HistogramPipeline: @unchecked Sendable {
         }
         if pending.waiters.isEmpty {
             inFlight.removeValue(forKey: key)
+            pending.admissionTask?.cancel()
             // Cancel before checking execution: a queued operation that starts
             // concurrently must either skip its block or own the running lane.
             pending.operation.cancel()
+            if !pending.submitted { pending.readAccess.finish() }
         }
         if waiter.waitsForWorkerExit, pending.operation.isExecuting {
             retiredWaiters[pending.completionID, default: []].append(waiter.continuation)
@@ -615,19 +660,25 @@ final class RawHistogramPipeline: @unchecked Sendable {
     private final class PendingAnalysis {
         var waiters: [UUID: HistogramAnalysisWaiter]
         let operation: BlockOperation
+        let readAccess: MediaOperationReadAccess
         let completionID: UUID
+        var admissionTask: Task<Void, Never>?
+        var submitted = false
 
         init(
             waiters: [UUID: HistogramAnalysisWaiter],
             operation: BlockOperation,
+            readAccess: MediaOperationReadAccess,
             completionID: UUID
         ) {
             self.waiters = waiters
             self.operation = operation
+            self.readAccess = readAccess
             self.completionID = completionID
         }
     }
 
+    private let foregroundWork: ForegroundWorkCoordinator
     private let queue: OperationQueue
     private let delayNanoseconds: UInt64
     private let cacheLimit: Int
@@ -642,10 +693,12 @@ final class RawHistogramPipeline: @unchecked Sendable {
     init(
         delayNanoseconds: UInt64 = analysisDelayNanoseconds,
         resultCacheLimit: Int = resultCacheLimit,
+        foregroundWork: ForegroundWorkCoordinator = .shared,
         decoder: @escaping Decoder = { url in
             RawHistogramProcessor.analyze(url: url)
         }
     ) {
+        self.foregroundWork = foregroundWork
         self.delayNanoseconds = delayNanoseconds
         self.cacheLimit = max(resultCacheLimit, 1)
         self.decoder = decoder
@@ -670,7 +723,7 @@ final class RawHistogramPipeline: @unchecked Sendable {
         return result
     }
 
-    func analysis(for item: PhotoItem, purpose: RequestPurpose = .info) async -> HistogramAnalysis? {
+    func analysis(for item: PhotoItem, purpose: RequestPurpose = .info, sourceAccess: MediaReadAccess? = nil) async -> HistogramAnalysis? {
         guard Self.supportsAnalysis(for: item), !Task.isCancelled else {
             return nil
         }
@@ -706,44 +759,83 @@ final class RawHistogramPipeline: @unchecked Sendable {
                     return
                 }
                 if let pending = inFlight[key] {
+                    pending.readAccess.retainIfNeeded(sourceAccess)
                     pending.waiters[requestID] = HistogramAnalysisWaiter(
                         continuation: continuation,
                         waitsForWorkerExit: purpose == .backgroundQuality
                     )
+                    if purpose == .info {
+                        pending.operation.queuePriority = .high
+                        pending.operation.qualityOfService = .userInitiated
+                        pending.admissionTask?.cancel()
+                        pending.admissionTask = nil
+                    }
+                    let operation = pending.operation
                     lock.unlock()
+                    if purpose == .info { submit(key: key, operation: operation) }
                     return
                 }
 
                 let completionID = UUID()
+                let readAccess = MediaOperationReadAccess(sourceAccess)
                 let operation = BlockOperation()
                 operation.completionBlock = { [weak self] in
+                    readAccess.finish()
                     self?.completeOperation(completionID)
                 }
                 operation.addExecutionBlock { [weak self, weak operation] in
                     guard let self, let operation, !operation.isCancelled
                     else { return }
+                    defer { readAccess.finish() }
                     let result = autoreleasepool {
                         revision.read { self.decoder(revision.url) }
                     }
                     self.finish(key: key, operation: operation, result: result)
                 }
-                operation.qualityOfService = .utility
-                operation.queuePriority = .low
-                inFlight[key] = PendingAnalysis(
+                operation.qualityOfService = purpose == .info ? .userInitiated : .utility
+                operation.queuePriority = purpose == .info ? .high : .low
+                let pending = PendingAnalysis(
                     waiters: [requestID: HistogramAnalysisWaiter(
                         continuation: continuation,
                         waitsForWorkerExit: purpose == .backgroundQuality
                     )],
                     operation: operation,
+                    readAccess: readAccess,
                     completionID: completionID
                 )
+                inFlight[key] = pending
+                if purpose == .backgroundQuality {
+                    pending.admissionTask = Task.detached(priority: .utility) { [weak self, weak operation, foregroundWork] in
+                        guard await foregroundWork.waitForBackgroundAdmission(), !Task.isCancelled,
+                              let self, let operation else { return }
+                        self.submit(key: key, operation: operation)
+                    }
+                }
                 lock.unlock()
-                queue.addOperation(operation)
+                if purpose == .info { submit(key: key, operation: operation) }
             }
         } onCancel: { [weak self] in
             self?.cancelWaiter(requestID, for: key)
         }
     }
+
+    private func submit(key: String, operation: BlockOperation) {
+        let admitted = lock.withLock {
+            guard let pending = inFlight[key], pending.operation === operation,
+                  !pending.submitted, !operation.isCancelled else { return false }
+            pending.submitted = true
+            pending.admissionTask = nil
+            return true
+        }
+        if admitted { queue.addOperation(operation) }
+    }
+
+    #if DEBUG
+    func waiterCountForTesting(for item: PhotoItem) -> Int {
+        let key = ImagePipeline.cacheKey(for: item) + "|raw-histogram-v1-appleDefault-linear-1024"
+        return lock.withLock { inFlight[key]?.waiters.count ?? 0 }
+    }
+    #endif
 
     private func finish(key: String, operation: BlockOperation, result: HistogramAnalysis?) {
         lock.lock()
@@ -777,9 +869,11 @@ final class RawHistogramPipeline: @unchecked Sendable {
         }
         if pending.waiters.isEmpty {
             inFlight.removeValue(forKey: key)
+            pending.admissionTask?.cancel()
             // Cancel before checking execution: a queued operation that starts
             // concurrently must either skip its block or own the running lane.
             pending.operation.cancel()
+            if !pending.submitted { pending.readAccess.finish() }
         }
         if waiter.waitsForWorkerExit, pending.operation.isExecuting {
             retiredWaiters[pending.completionID, default: []].append(waiter.continuation)
@@ -845,13 +939,13 @@ final class ClippingPreviewPipeline: @unchecked Sendable {
         )
     }
 
-    func image(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault) async -> NSImage? {
+    func image(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault, sourceAccess: MediaReadAccess? = nil) async -> NSImage? {
         guard item.mediaKind == .photo, item.isSupported else { return nil }
         let key = ImagePipeline.fullCacheKey(for: item, mode: mode, decoder: decoder)
         if let cached = cache.object(forKey: key as NSString) {
             return cached
         }
-        guard let source = await ImagePipeline.shared.fullImage(for: item, mode: mode, decoder: decoder),
+        guard let source = await ImagePipeline.shared.fullImage(for: item, mode: mode, decoder: decoder, sourceAccess: sourceAccess),
               let cgImage = source.cgImage(
                 forProposedRect: nil,
                 context: nil,

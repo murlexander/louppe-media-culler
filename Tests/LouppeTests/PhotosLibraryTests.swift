@@ -93,13 +93,22 @@ final class PhotosLibraryTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: try XCTUnwrap(store.sourceFolder).appendingPathComponent(SessionConstants.sidecarName).path))
         store.viewMode = .grid
         store.openPhotosBatch(page: 799, continuing: true)
-        try await wait { store.photosBatch?.range.page == 799 && store.items.count == 100 && !store.isFileOperationRunning }
+        try await wait {
+            guard case .ready = store.phase else { return false }
+            return store.photosBatch?.range.page == 799 && store.items.count == 100 && !store.isFileOperationRunning
+        }
         XCTAssertEqual(store.viewMode, .grid, "Next/Previous must preserve the review layout.")
         // A differently sized, overlapping selection recovers by Photos ID,
         // even though every temporary pathname and physical file has changed.
         store.photosBrowser.batchSize = 50
         store.openPhotosBatch(page: 1600)
-        try await wait { store.photosBatch?.range.size == 50 && store.photosBatch?.range.page == 1600 && !store.isFileOperationRunning }
+        try await wait {
+            // The requested batch changes before its inventory becomes authoritative.
+            // Await actual publication before inspecting/restoring its members.
+            guard case .ready = store.phase else { return false }
+            return store.photosBatch?.range.size == 50 && store.photosBatch?.range.page == 1600
+                && store.items.count == 5 && !store.isFileOperationRunning
+        }
         let matching = try XCTUnwrap(store.items.first { item in
             store.photosBatch?.assetIDsByPath[item.primaryURL.path] == assetID
         })
@@ -181,7 +190,7 @@ final class PhotosLibraryTests: XCTestCase {
         XCTAssertFalse(store.photosBrowser.allowNetwork)
         XCTAssertEqual(store.photosBrowser.snapshot?.id, snapshotID)
         await fixture.library.setMode(.normal)
-        store.photosBrowser.allowNetwork = true
+        store.photosReviewNetwork = true
         store.openPhotosBatch(page: 0)
         try await wait { if case .ready = store.phase { return true }; return false }
         XCTAssertNil(store.photosBrowser.failure)
@@ -211,7 +220,7 @@ final class PhotosLibraryTests: XCTestCase {
         XCTAssertEqual(store.photosBrowser.query, activeSnapshot.query)
         XCTAssertEqual(store.photosBrowser.range.indices, 100..<102)
         await fixture.library.setMode(.normal)
-        store.photosBrowser.allowNetwork = true
+        store.photosReviewNetwork = true
         store.openPhotosBatch(page: store.photosBrowser.page)
         try await wait { store.photosBatch?.range.page == 1 && store.items.count == 2 && !store.isFileOperationRunning }
         XCTAssertEqual(store.photosBatch?.snapshot.id, activeSnapshot.id)
@@ -298,10 +307,7 @@ final class PhotosLibraryTests: XCTestCase {
         store.openPhotosBatch(page: 800)
         try await wait { if case .ready = store.phase { return true }; return false }
         window.setContentSize(CGSize(width: 1150, height: 760))
-        host.rootView = AnyView(VStack(spacing: 0) {
-            if let batch = store.photosBatch { PhotosBatchBar(store: store, batch: batch) }
-            SessionView(store: store)
-        }.frame(width: 1150, height: 760))
+        host.rootView = AnyView(SessionView(store: store).frame(width: 1150, height: 760))
         try await Task.sleep(for: .milliseconds(250))
         host.layoutSubtreeIfNeeded()
         try capture(host, name: "gallery")

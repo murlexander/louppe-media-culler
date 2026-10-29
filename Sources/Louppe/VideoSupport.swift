@@ -10,6 +10,7 @@ struct VideoScanInfo: Sendable {
     let codec: String?
     let frameRate: Double?
     let isPlayable: Bool
+    var extractionSucceeded: Bool = true
 }
 
 enum VideoMetadataExtractor {
@@ -55,6 +56,7 @@ enum VideoMetadataExtractor {
             let tracks = try await asset.loadTracks(withMediaType: .video)
             let durationSeconds = try await loadedDuration.seconds
             let duration = sanitizedDuration(durationSeconds)
+            let playable = try await loadedPlayable
             guard let track = tracks.first else {
                 return VideoScanInfo(
                     duration: duration,
@@ -90,7 +92,7 @@ enum VideoMetadataExtractor {
                 dimensions: dimensions,
                 codec: codec,
                 frameRate: frameRate,
-                isPlayable: try await loadedPlayable
+                isPlayable: playable
             )
         } catch {
             return unavailable
@@ -117,7 +119,8 @@ enum VideoMetadataExtractor {
         dimensions: nil,
         codec: nil,
         frameRate: nil,
-        isPlayable: false
+        isPlayable: false,
+        extractionSucceeded: false
     )
 
     private static func codecLabel(_ description: CMFormatDescription) -> String {
@@ -150,6 +153,7 @@ struct AudioScanInfo: Sendable {
     let duration: TimeInterval?
     let codec: String?
     let isPlayable: Bool
+    var extractionSucceeded: Bool = true
 }
 
 enum AudioMetadataExtractor {
@@ -194,12 +198,17 @@ enum AudioMetadataExtractor {
             let duration = VideoMetadataExtractor.sanitizedDuration(
                 durationSeconds
             )
-            guard let track = tracks.first else { return unavailable }
+            let playable = try await loadedPlayable
+            guard let track = tracks.first else {
+                // A completed inspection without an audio track is a stable
+                // unsupported result, unlike a throwing/timed-out asset load.
+                return AudioScanInfo(duration: duration, codec: nil, isPlayable: false)
+            }
             let formatDescriptions = try await track.load(.formatDescriptions)
             return AudioScanInfo(
                 duration: duration,
                 codec: formatDescriptions.first.map(codecLabel),
-                isPlayable: try await loadedPlayable
+                isPlayable: playable
             )
         } catch {
             return unavailable
@@ -209,7 +218,8 @@ enum AudioMetadataExtractor {
     private static let unavailable = AudioScanInfo(
         duration: nil,
         codec: nil,
-        isPlayable: false
+        isPlayable: false,
+        extractionSucceeded: false
     )
 
     private static func codecLabel(_ description: CMFormatDescription) -> String {

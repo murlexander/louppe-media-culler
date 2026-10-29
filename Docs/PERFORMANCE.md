@@ -195,11 +195,15 @@ Info, search, filter changes and cached facet counts do not trigger another Fuji
 read. A paired item's primary file remains authoritative; hidden JPEG metadata
 is loaded only through the existing Separate projection path.
 
-## Apple Photos batches
+## Apple Photos selections
 
-Photos queries retain lazy fetch results; only 50–1,000 selected descriptors
-become review items. Mounting membership performs no image, original, EXIF or
-fingerprint read. See [the acceptance list](PHOTOS_LAZY_REVIEW.md).
+Photos queries retain lazy fetch results. Opening prepares complete lightweight
+membership off-main, with cancellation between records and coalesced progress;
+there is no user-facing batch limit. The provider retains the fetch result and
+an asset-ID/index map, rather than every PHAsset. Initial Photo/Video labels
+avoid querying every resource for filenames/codecs. Explicit original access
+resolves the actual primary filename/type. Mounting membership performs no image,
+original, EXIF or fingerprint read. See [the acceptance list](PHOTOS_LAZY_REVIEW.md).
 
 `PhotosMediaSession` bounds image work to four executing requests plus 64
 pending waiters, viewport-sized thumbnails capped at 1,024 pixels (384 for
@@ -215,17 +219,30 @@ lane, eight pending original waiters and the unchanged 5 GB aggregate staging
 budget, including held renderer leases. Copy requests/copies/releases one
 asset before the next; it never stages the whole export. Separate original
 consent prevents representation access authorizing full-resource transfers.
+Both permissions persist in General Settings; updates target the captured active
+media actor and latest revision. A permission change never retries an original.
 Original download progress coalesces into a slot sampled every 100 ms. Images
 and originals receive actual PhotoKit cancellation; late callbacks cannot
 publish to retired views/batches. Failures do not mount partial inventories.
 
 Decisions remain independent of cache identity and bounded to 64 MiB on disk.
 The decision actor reads/merges under a finite file lock and durably replaces
-the JSON document. Only the selected batch's decisions join UI state. Folder
+the JSON document. Only the selected membership's decisions join UI state. Folder
 fingerprints and original-only quality/exact/similarity sweeps are skipped.
 Cache media retires after saving outgoing decisions; marked startup leftovers
 are pruned at the next preparation. Failed cleanup keeps its staging bytes
 charged until batch retirement; disk failures remain actionable.
+
+Explicit **Add to Album** uses serial metadata-only PhotoKit transactions of
+at most 200 assets, with fresh exact-ID/capability checks and callback-following
+verification. It requests no media or resources. SessionStore saves first and
+holds the shared operation gate until verification/cancellation settles, pausing
+analysis and conflicting operations. Scope/ID/result storage is O(selected items);
+selected native PHAsset materialization is limited to one batch. Progress uses
+one replaceable value sampled at 100 ms. Album/folder options prepare off-main
+once per hierarchy revision, with cached UI arrays/ID lookups, at most 50,000
+collections and 8 MiB of derived paths. Native Picker realization at extreme
+collection counts is unmeasured. See [acceptance](PHOTOS_ORGANIZATION_2026-10-25.md).
 
 ## Portable saved decisions
 
@@ -303,6 +320,38 @@ reading. Cap reads at 1 MiB, reject non-regular files, and check scan identity
 before/after I/O. Decode UTF-8 or BOM-marked UTF-16/32 explicitly. Cancellation
 and content revision reject late results. Keep only the current bounded native
 text layout; no text cache or remote fetch.
+
+## Remembered archives and interaction admission
+
+`ForegroundWorkCoordinator` shares interaction/visible-demand hints across media,
+metadata, quality checks, fingerprints, optional disk writes and trailing autosave.
+Its single timer holds at most 128 admissions; cancellation retires each waiter.
+A 180 ms quiet window yields to navigation, with a fixed 750 ms per-wait deadline
+for eventual progress. Overflow bypasses the hint while existing queues retain
+resource bounds. Required save deadlines, transitions and Quit bypass admission.
+Executing native decodes keep their lanes/access through exit and cannot be
+preempted. This is pacing, not a hard CPU/storage cap.
+
+`ArchiveMetadataIndex` adds rebuildable scan observations to existing v5 thumbnail
+reuse. Exact percent-encoded paths, fresh physical identities/revisions, extractor
+schema, time zone and OS interpretation context own hits. Decisions, recovery,
+fingerprints and save lineage are excluded. Fresh complete discovery/pairing and
+all validation barriers still run. Renames/replacements conservatively reread;
+missing/corrupt/oversized caches rebuild. Snapshots cap at 40k entries/32 MiB;
+maintenance caps 32 folders/256 MiB. Uncached excess files still complete normally.
+Extraction failures/timeouts are not reusable negative observations; extractor
+context 2 invalidates earlier failed entries. Comparison/encoding prepares before
+the original final identity barrier. Only changed snapshots do optional cache I/O,
+followed by another complete source barrier even if that I/O fails. Cache failure
+cannot fail source opening. Warm unchanged snapshots skip encoding and I/O. Optional cache work and
+its extra identity pass remain included in opening measurements.
+
+Opening observations coalesce in one per-generation buffer and publish at 100 ms.
+The inventory/order/geometry remain immutable while a separate ready-details overlay
+accepts exact matching membership, revisions and restored decisions. A locked current
+interest promotes the next unclaimed metadata slot after already-running units.
+Only the final prepared session owns ratings, save and mutation capabilities.
+See [archive acceptance](ARCHIVES_2026-10-25.md) for current evidence and limits.
 
 ## Image cache budgets
 

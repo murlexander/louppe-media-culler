@@ -1940,10 +1940,122 @@
 /* Settings pages. */
 "General" = "عام";
 
+/* Pinned folders. */
+"Available" = "متاح";
+"Unavailable — reconnect the drive or locate the folder" = "غير متاح — أعد توصيل محرك الأقراص أو حدد موقع المجلد";
+"Access needed — locate the folder" = "يلزم الوصول — حدد موقع المجلد";
+"This is a different folder or drive. Locate the original pinned folder." = "هذا مجلد أو محرك أقراص مختلف. حدد موقع المجلد المثبت الأصلي.";
+"Folder access could not be saved. Locate the folder and try again." = "تعذر حفظ إذن الوصول إلى المجلد. حدد موقع المجلد وحاول مجددًا.";
+"Pinned-folder storage is full. Unpin a folder and try again." = "مساحة تخزين المجلدات المثبتة ممتلئة. ألغِ تثبيت مجلد وحاول مجددًا.";
+"Pinned folders could not be read. Previous records are retained. Try again." = "تعذرت قراءة المجلدات المثبتة. تم الاحتفاظ بالسجلات السابقة. حاول مجددًا.";
+"The browsing position could not be saved. Previous positions are retained." = "تعذر حفظ موضع التصفح. تم الاحتفاظ بالمواضع السابقة.";
+"Locate the original pinned folder. Louppe will verify its identity." = "حدد موقع المجلد المثبت الأصلي. سيتحقق Louppe من هويته.";
+"Reconnect" = "إعادة الاتصال";
+"Pin This Folder" = "تثبيت هذا المجلد";
+"Unpin This Folder" = "إلغاء تثبيت هذا المجلد";
+"Locate Folder…" = "تحديد موقع المجلد…";
+"Unpin Folder" = "إلغاء تثبيت المجلد";
+"Pinned folders" = "المجلدات المثبتة";
+"Current folder is not pinned" = "المجلد الحالي غير مثبت";
+"Current folder is pinned" = "المجلد الحالي مثبت";
+"Pin this folder or open a pinned folder" = "ثبّت هذا المجلد أو افتح مجلدًا مثبتًا";
+"Updating pinned folders" = "جارٍ تحديث المجلدات المثبتة";
+"Pin a folder from its toolbar while reviewing." = "ثبّت مجلدًا من شريط أدواته أثناء المراجعة.";
+"Locate {0}…" = "تحديد موقع {0}…";
+"Actions for {0}" = "إجراءات {0}";
+"Open, locate, or unpin this folder" = "افتح هذا المجلد أو حدد موقعه أو ألغِ تثبيته";
+
+/* Welcome pinning. */
+"Pin Folder…" = "تثبيت مجلد…";
+"Pin Folder" = "تثبيت مجلد";
+"Choose a folder to pin without opening it." = "اختر مجلدًا لتثبيته دون فتحه.";
+"Choose Pin Folder… to add a shortcut." = "اختر تثبيت مجلد… لإضافة اختصار.";
+
+/* Photos selection. */
+"Open" = "فتح";
+"Video" = "فيديو";
+
+/* Whole Photos review. */
+"Photos couldn't provide a file for “{0}”. Check it in Photos, then retry." = "تعذّر على الصور توفير ملف لـ «{0}». تحقّق منه في الصور، ثم أعد المحاولة.";
+"This Photos selection is closed. Open it again." = "مجموعة الصور هذه مغلقة. افتحها مجددًا.";
+
+"Apple Photos · {0} items" = "صور Apple · {0} عنصر";
+
+/* Persistent iCloud settings. */
+"Open Settings…" = "فتح الإعدادات…";
+"Review images load as you browse. Photos may fetch source data to render a preview. Originals stream only when you request original detail, playback, or Copy. Each choice is remembered independently." = "تُحمّل صور المراجعة أثناء التصفح. قد يجلب تطبيق الصور بيانات المصدر لإنشاء معاينة. لا تُنقل الملفات الأصلية إلا عند طلب تفاصيل الأصل أو التشغيل أو النسخ. يُحفظ كل خيار بشكل مستقل.";
+
+/* Photos album organization. */
+"Reading Photos albums and folders…" = "جارٍ قراءة ألبومات الصور ومجلداتها…";
+"Add to Album" = "إضافة إلى ألبوم";
+"Review Album Addition" = "مراجعة الإضافة إلى الألبوم";
+"Adding to Album" = "جارٍ الإضافة إلى الألبوم";
+"Existing album" = "ألبوم موجود";
+"New album" = "ألبوم جديد";
+"Choose an album…" = "اختر ألبومًا…";
+"No writable albums. Create a new album instead." = "لا توجد ألبومات قابلة للتعديل. أنشئ ألبومًا جديدًا.";
+"Album name" = "اسم الألبوم";
+"Parent folder" = "المجلد الرئيسي";
+"Photos Library" = "مكتبة الصور";
+"Choose a folder…" = "اختر مجلدًا…";
+"Photos folders contain albums. Additions keep existing album memberships and leave originals in your library." = "تحتوي مجلدات الصور على ألبومات. تحتفظ العناصر المضافة بعضويتها في الألبومات الحالية، وتبقى الملفات الأصلية في المكتبة.";
+"Reload albums and folders" = "إعادة تحميل الألبومات والمجلدات";
+"No items in this scope." = "لا توجد عناصر في هذا النطاق.";
+"Items" = "العناصر";
+"A new album will be created at this location." = "سيُنشأ ألبوم جديد في هذا الموقع.";
+"Add these items to this album? Existing album memberships and originals stay unchanged." = "هل تريد إضافة هذه العناصر إلى هذا الألبوم؟ تبقى عضويتها في الألبومات الحالية والملفات الأصلية دون تغيير.";
+"The scope or destination changed. Go back and review again." = "تغيّر النطاق أو الوجهة. ارجع وراجع الاختيارات مجددًا.";
+"Album update progress" = "تقدم تحديث الألبوم";
+"{0} of {1} items processed" = "تمت معالجة {0} من {1} عنصر";
+"Finishing and checking the current update…" = "جارٍ إكمال التحديث الحالي والتحقق منه…";
+"Cancel finishes and checks the current update. Completed additions remain in Photos." = "يؤدي الإلغاء إلى إكمال التحديث الحالي والتحقق منه. تبقى الإضافات المكتملة في الصور.";
+"Requested destination: {0}" = "الوجهة المطلوبة: {0}";
+"Requested" = "المطلوب";
+"Verified in album" = "تم التحقق من وجودها في الألبوم";
+"Already in album (included above)" = "موجودة بالفعل في الألبوم (مشمولة أعلاه)";
+"Unavailable items" = "عناصر غير متاحة";
+"Uncertain memberships" = "عضويات غير مؤكدة";
+"Not processed" = "لم تُعالج";
+"Some additions could not be verified. Check the album in Photos before trying again." = "تعذّر التحقق من بعض الإضافات. تحقّق من الألبوم في الصور قبل إعادة المحاولة.";
+"Verified memberships include items already in the album. Completed additions remain in Photos." = "تشمل العضويات التي تم التحقق منها العناصر الموجودة بالفعل في الألبوم. تبقى الإضافات المكتملة في الصور.";
+"Cancelling…" = "جارٍ الإلغاء…";
+"{0} (ID: {1})" = "{0} (المعرّف: {1})";
+"Album Addition Incomplete" = "الإضافة إلى الألبوم غير مكتملة";
+"Album Addition Complete" = "اكتملت الإضافة إلى الألبوم";
+"Album Addition Cancelled" = "أُلغيت الإضافة إلى الألبوم";
+"Album Addition Failed" = "فشلت الإضافة إلى الألبوم";
+"Membership could not be verified for {0} items." = "تعذّر التحقق من عضوية {0} عنصر في الألبوم.";
+"A new album may have been created. Its location could not be verified. Check Photos before trying again." = "ربما تم إنشاء ألبوم جديد. تعذّر التحقق من موقعه. تحقّق من الصور قبل إعادة المحاولة.";
+"The destination album or its location could not be verified." = "تعذّر التحقق من ألبوم الوجهة أو موقعه.";
+"Checking Photos items and destination…" = "جارٍ التحقق من عناصر الصور والوجهة…";
+"Updating album membership…" = "جارٍ تحديث عضوية الألبوم…";
+"Checking album membership…" = "جارٍ التحقق من عضوية الألبوم…";
+"Finishing album update…" = "جارٍ إنهاء تحديث الألبوم…";
+"Choose photos to add to an album." = "اختر صورًا لإضافتها إلى ألبوم.";
+"The Photos selection could not be validated." = "تعذّر التحقق من صحة مجموعة الصور المختارة.";
+"Enter a name for the new album." = "أدخل اسمًا للألبوم الجديد.";
+"Another Photos organization operation is still running." = "لا تزال هناك عملية أخرى لتنظيم الصور قيد التشغيل.";
+"Allow read and write access to the Photos library, then try again." = "اسمح بالقراءة والكتابة في مكتبة الصور، ثم أعد المحاولة.";
+"The selected Photos album or folder is no longer available." = "لم يعد ألبوم الصور أو المجلد المحدد متاحًا.";
+"The selected Photos album or folder cannot be edited." = "لا يمكن تعديل ألبوم الصور أو المجلد المحدد.";
+"Some selected photos cannot be added to an album." = "لا يمكن إضافة بعض الصور المحددة إلى ألبوم.";
+"Some selected photos are no longer available." = "لم تعد بعض الصور المحددة متاحة.";
+"Photos could not prepare the album change." = "تعذّر على الصور إعداد تغيير الألبوم.";
+"Photos did not confirm all requested album memberships or the album’s folder." = "لم يؤكد تطبيق الصور جميع عضويات الألبوم المطلوبة أو مجلد الألبوم.";
+"The Photos album and folder list exceeds the supported limit." = "تتجاوز قائمة ألبومات الصور ومجلداتها الحد المدعوم.";
+"The Photos review changed. Close this window and choose the items again." = "تغيّرت مراجعة الصور. أغلق هذه النافذة واختر العناصر مجددًا.";
+"Saving review decisions…" = "جارٍ حفظ قرارات المراجعة…";
+"Add to Album…" = "إضافة إلى ألبوم…";
+"Photos albums are still being updated" = "لا يزال تحديث ألبومات الصور جاريًا";
+"Cancel the album update or wait for verification to finish, then quit." = "ألغِ تحديث الألبوم أو انتظر اكتمال التحقق، ثم اخرج.";
+
+"Review images load as you browse. Photos may download source data for previews. Original detail and Copy request originals separately. Decisions stay in Louppe. Add to Album requires confirmation. Live Photos use their still image." = "تُحمّل صور المراجعة أثناء التصفح. قد ينزّل تطبيق الصور بيانات المصدر لإنشاء معاينات. يطلب عرض التفاصيل الأصلية والنسخ الملفات الأصلية بشكل منفصل. تبقى القرارات في Louppe. تتطلب الإضافة إلى ألبوم تأكيدًا. تستخدم Live Photos الصورة الثابتة.";
+
 // User guide and Help
 "User guide (English)" = "دليل المستخدم (بالإنجليزية)";
 "File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits." = "يفتح «ملف ← فتح صور Apple…» مكتبة صور النظام أو ألبومًا، مع نطاق تواريخ اختياري. تُحمَّل صور المراجعة أثناء التصفح ولا تتضمن تعديلات تطبيق الصور.";
-"Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "تبقى التقييمات محلية. يصدّر «نسخ» الأصول الأساسية؛ ولا تتوفر خيارات النقل وإعادة التسمية والتنظيم وXMP وسلة المهملات لعناصر تطبيق الصور.";
+"Settings → General → iCloud Access has separate choices for review images and originals. Photos may download source data for a review image. Open Original Detail, video playback, and Copy request originals separately." = "تحتوي «الإعدادات ← عام ← الوصول إلى iCloud» على خيارات منفصلة لصور المراجعة والأصول. قد ينزّل تطبيق الصور بيانات المصدر لإنشاء صورة مراجعة. يطلب كل من «فتح التفاصيل الأصلية» وتشغيل الفيديو و«نسخ» الأصول بشكل منفصل.";
+"Ratings stay local. File → Add to Album… adds items only after confirmation and preserves existing memberships. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "تبقى التقييمات محلية. يضيف «ملف ← إضافة إلى ألبوم…» العناصر بعد التأكيد فقط ويحافظ على عضويتها في الألبومات الحالية. يصدّر «نسخ» الأصول الأساسية؛ ولا تتوفر خيارات النقل وإعادة التسمية والتنظيم وXMP وسلة المهملات لعناصر تطبيق الصور.";
 "File safety and saved decisions" = "سلامة الملفات والقرارات المحفوظة";
 "Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation." = "ينسخ التصدير الملفات افتراضيًا. ينقل «نقل» الأصول ولا يمكن التراجع عنه. لا تغيّر إعادة التسمية والتنظيم أسماء الملفات أو مواقعها إلا بعد التأكيد.";
 "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "يطلب «تنظيف» التأكيد قبل نقل الملفات إلى سلة المهملات. ينقل ⌘⌫ التحديد إلى السلة دون مربع حوار. يستعيد ⌘Z الملفات أثناء الجلسة المفتوحة ما دامت في سلة المهملات.";

@@ -23,6 +23,7 @@ struct PhotosThumbnailView: View {
                     VStack(spacing: 4) {
                         Image(systemName: "icloud.slash").foregroundStyle(.secondary)
                         Button(L10n.text("Retry")) { retry &+= 1 }.controlSize(.mini)
+                        SettingsLink { Text(L10n.text("Open Settings…")) }.controlSize(.mini)
                     }
                     .help(failure)
                     .accessibilityLabel(failure)
@@ -108,9 +109,7 @@ struct PhotosGalleryView: View {
                                 Label(L10n.text("Review image unavailable"), systemImage: "icloud.slash")
                             } description: { Text(imageFailure) } actions: {
                                 Button(L10n.text("Retry")) { retry &+= 1 }
-                                if !store.photosReviewNetwork {
-                                    Button(L10n.text("Allow iCloud Review Images")) { store.photosReviewNetwork = true }
-                                }
+                                SettingsLink { Text(L10n.text("Open Settings…")) }
                             }
                         }
                     }
@@ -121,9 +120,7 @@ struct PhotosGalleryView: View {
                     HStack {
                         Text(originalFailure).font(.callout).foregroundStyle(.secondary)
                         Button(L10n.text("Retry Original")) { requestedOriginal = true; retry &+= 1 }
-                        if !store.photosOriginalNetwork {
-                            Button(L10n.text("Allow iCloud Originals")) { store.photosOriginalNetwork = true }
-                        }
+                        SettingsLink { Text(L10n.text("Open Settings…")) }
                     }
                     .padding(.horizontal, 12)
                 }
@@ -149,7 +146,9 @@ struct PhotosGalleryView: View {
                     image = result.image; imagePixels = result.pixels
                 } catch is CancellationError {} catch { if !Task.isCancelled { imageFailure = error.localizedDescription } }
             }
-            .task(id: "\(item.id)|\(wantsOriginal)|\(retry)|\(store.photosReviewGeneration)") {
+            // Consent changes update the session, but only an explicit action
+            // retries original detail/playback after a failure.
+            .task(id: "\(item.id)|\(wantsOriginal)|\(retry)") {
                 originalFailure = nil
                 guard wantsOriginal, original == nil else { return }
                 loadingOriginal = true; fraction = 0

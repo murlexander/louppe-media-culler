@@ -7,6 +7,7 @@ struct MetadataPanel: View {
     /// A short dwell prevents key repeat from opening every transient file.
     private static let inspectionDebounceNanoseconds: UInt64 = 80_000_000
 
+    @Environment(\.mediaReadAccess) private var sourceAccess
     @ObservedObject var store: SessionStore
     let item: PhotoItem
 
@@ -199,8 +200,11 @@ struct MetadataPanel: View {
             )
             guard !Task.isCancelled else { return }
             let current = item
+            let authority = sourceAccess
             let loaded = await Task.detached(priority: .userInitiated) {
-                MetadataExtractor.fields(for: current)
+                let lease = authority?.begin()
+                defer { withExtendedLifetime(lease) {} }
+                return MetadataExtractor.fields(for: current)
             }.value
             guard !Task.isCancelled,
                   fieldsRevision == requestedRevision else { return }
@@ -218,7 +222,7 @@ struct MetadataPanel: View {
             guard !Task.isCancelled else { return }
             let requestedItem = item
             let loaded = await HistogramPipeline.shared.analysis(
-                for: requestedItem
+                for: requestedItem, sourceAccess: sourceAccess
             )
             guard !Task.isCancelled,
                   histogramRevision == requestedRevision else { return }
@@ -238,7 +242,7 @@ struct MetadataPanel: View {
             guard rawHistogramIsPending else { return }
 
             let loaded = await RawHistogramPipeline.shared.analysis(
-                for: requestedItem
+                for: requestedItem, sourceAccess: sourceAccess
             )
             guard !Task.isCancelled,
                   rawHistogramRevision == requestedRevision else { return }
@@ -256,7 +260,7 @@ struct MetadataPanel: View {
             )
             guard !Task.isCancelled else { return }
             let requestedItem = item
-            let loaded = await AudioLevelPipeline.shared.analysis(for: requestedItem)
+            let loaded = await AudioLevelPipeline.shared.analysis(for: requestedItem, sourceAccess: sourceAccess)
             guard !Task.isCancelled,
                   audioLevelsRevision == requestedRevision else { return }
             audioLevels = loaded

@@ -95,6 +95,21 @@ struct FilterView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L10n.text("Filter"))
                 .font(.headline)
+            if let batch = store.photosBatch {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(L10n.text("Apple Photos · \(batch.range.total.formatted()) items"))
+                            .font(.callout)
+                        Spacer(minLength: 6)
+                        Button(L10n.text("Choose Photos…")) { store.requestPhotosLibraryFromFilter() }
+                            .disabled(store.isFileOperationRunning)
+                            .fixedSize()
+                    }
+                    Text(L10n.text("Preview review · decisions saved in Louppe"))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Divider()
+            }
             searchField
             quickDecisionFilter
             if store.rawJPEGPairCount > 0 {
@@ -118,6 +133,7 @@ struct FilterView: View {
             settingCommitTask?.cancel()
             settingCommitTask = nil
             commitAllSettingDrafts()
+            store.finishFilterDismissal()
         }
         .onChange(of: focusedSettingField) { previous, current in
             if let previous, previous != current {

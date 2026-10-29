@@ -409,7 +409,8 @@ struct PhotoFile: Identifiable, Sendable {
         photosMedia: PhotosMediaReference? = nil
     ) {
         let displayName = url.lastPathComponent
-        let fileTypeLabel = Self.makeFileTypeLabel(url: url, mediaKind: mediaKind)
+        let format = Self.makeFileTypeLabel(url: url, mediaKind: mediaKind)
+        let fileTypeLabel = format.isEmpty && photosMedia != nil ? mediaKind.label : format
         let legacyPersistenceID = displayRelativePath ?? id
         let subfolderPath =
             (legacyPersistenceID as NSString).deletingLastPathComponent
@@ -940,6 +941,13 @@ struct PhotoItem: Identifiable, Sendable {
         if isText { return true }
         if isVideo || isAudio { return isPlayableMedia }
         return FolderScanner.supportedExtensions.contains(primaryURL.pathExtension.lowercased())
+    }
+
+    /// Photos can request an original for inspection before its format is known.
+    /// This enables inspection controls, not local decoding or quality analysis
+    /// of a synthetic review URL. The leased original owns those capabilities.
+    var supportsPhotoInspection: Bool {
+        mediaKind == .photo && (primaryFile.photosMedia != nil || isSupported)
     }
 
     /// Labels the camera/lens filter toggles group by. Files without EXIF

@@ -28,10 +28,10 @@ struct PhotoZoomControl: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Button { store.zoomToFit() } label: {
                 Text(L10n.text("Fit"))
-                    .frame(minWidth: 30, minHeight: 28)
+                    .frame(minWidth: 36, minHeight: 36)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.borderless)
@@ -63,7 +63,7 @@ struct PhotoZoomControl: View {
                         .accessibilityIdentifier("photoDetailLoading")
                 }
             }
-            .frame(minWidth: 38)
+            .frame(minWidth: 36)
             .fixedSize()
         }
         .controlSize(.small)

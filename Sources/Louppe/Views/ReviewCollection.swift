@@ -13,6 +13,7 @@ final class ReviewCollectionController {
     var onViewportRestored: ((ReviewCollectionViewportReceipt) -> Void)?
 
     func follow(id: String) {
+        ForegroundWorkCoordinator.shared.noteInteraction()
         pendingReceipt = nil
         pendingFollowID = id
         document?.applyPendingPosition()
@@ -74,6 +75,7 @@ struct ReviewCollection: NSViewRepresentable {
 
 final class ReviewCollectionScrollView: NSScrollView {
     override func scrollWheel(with event: NSEvent) {
+        ForegroundWorkCoordinator.shared.noteInteraction()
         super.scrollWheel(with: event)
         // Distinguish native input from programmatic follow/layout without
         // changing AppKit's wheel or momentum handling.
@@ -120,12 +122,18 @@ final class ReviewCollectionDocument: NSView {
     private var isDismantled = false
     private var needsCellRebind = false
     private var measurement = NSHostingView(rootView: AnyView(EmptyView()))
+    private var measuredTemplates: (width: CGFloat, style: ReviewCollectionStyle, caption: CGFloat, header: CGFloat)?
+    private var realizedViewport: CGRect?
+    private var realizedElements: [ReviewCollectionGeometry.Element] = []
 
     // Small deterministic receipts for mounted regression tests and profiling.
     private(set) var geometryGeneration = 0
     private(set) var projectionGeneration = 0
     private(set) var createdHostCount = 0
     private(set) var realizedItemCount = 0
+    private(set) var viewportRealizationCount = 0
+    private(set) var templateMeasurementCount = 0
+    private(set) var contentBindCount = 0
     var retainedHostCount: Int { hosts.count + reusePool.count }
 
     override init(frame frameRect: NSRect) {
@@ -162,6 +170,7 @@ final class ReviewCollectionDocument: NSView {
         self.environment = environment
         self.cell = cell
         self.rubberBand = rubberBand
+        if environmentChanged { measuredTemplates = nil }
         if changed || environmentChanged {
             geometry = nil
             needsCellRebind = true
@@ -250,7 +259,9 @@ final class ReviewCollectionDocument: NSView {
     }
 
     @objc fileprivate func userDidScroll() {
-        guard !isDismantled, let receipt = snapshotViewport() else { return }
+        guard !isDismantled else { return }
+        ForegroundWorkCoordinator.shared.noteInteraction()
+        guard let receipt = snapshotViewport() else { return }
         controller?.onUserViewportChange?(receipt)
     }
 
@@ -263,11 +274,19 @@ final class ReviewCollectionDocument: NSView {
         defer { updating = false }
         let oldReceipt = size != viewportSize ? snapshotViewport() : nil
         if geometry == nil || size.width != viewportSize.width {
-            let captionHeight = measure(AnyView(ReviewGridCaption(title: "Ag")), width: max(1, size.width - 18))
-            let headerHeight = measure(AnyView(ReviewGroupHeader(title: "Ag", style: style)),
-                                       width: style == .browser ? 102 : max(1, size.width - 18))
+            // Projection changes do not change the font templates. Avoid two
+            // synchronous SwiftUI fitting/layout passes on each new inventory.
+            if measuredTemplates?.width != size.width || measuredTemplates?.style != style {
+                measuredTemplates = (size.width, style,
+                    measure(AnyView(ReviewGridCaption(title: "Ag")), width: max(1, size.width - 18)),
+                    measure(AnyView(ReviewGroupHeader(title: "Ag", style: style)),
+                            width: style == .browser ? 102 : max(1, size.width - 18)))
+            }
+            guard let templates = measuredTemplates else { return }
+            realizedViewport = nil
+            realizedElements = []
             geometry = ReviewCollectionGeometry(projection: projection, style: style, width: size.width,
-                                                captionHeight: captionHeight, headerHeight: headerHeight,
+                                                captionHeight: templates.caption, headerHeight: templates.header,
                                                 rightToLeft: environment.layoutDirection == .rightToLeft)
             geometryGeneration += 1
         }
@@ -285,6 +304,7 @@ final class ReviewCollectionDocument: NSView {
     }
 
     private func measure(_ view: AnyView, width: CGFloat) -> CGFloat {
+        templateMeasurementCount += 1
         measurement.rootView = AnyView(view.environment(\.self, environment)
             .frame(width: width).fixedSize(horizontal: false, vertical: true))
         measurement.invalidateIntrinsicContentSize()
@@ -298,8 +318,16 @@ final class ReviewCollectionDocument: NSView {
     private func realizeViewport(projection: ReviewCollectionProjection, geometry: ReviewCollectionGeometry) {
         guard let clip = enclosingScrollView?.contentView else { return }
         let visible = CGRect(origin: CGPoint(x: 0, y: clip.bounds.minY), size: viewportSize)
+        // AppKit can call layout repeatedly for the same bounds, including
+        // after a hosted thumbnail publishes pixels. Reuse the mounted result.
+        guard visible != realizedViewport || needsCellRebind else { return }
+        ForegroundWorkCoordinator.shared.noteInteraction()
+        realizedViewport = visible
         let overscan = visible.insetBy(dx: 0, dy: -(geometry.itemHeight + geometry.spacing))
         let elements = geometry.elements(in: overscan, projection: projection)
+        guard elements != realizedElements || needsCellRebind else { return }
+        realizedElements = elements
+        viewportRealizationCount += 1
         let needed = Set(elements.map(\.key))
         for key in Array(hosts.keys) where !needed.contains(key) {
             if let host = hosts.removeValue(forKey: key) { recycle(host) }
@@ -336,6 +364,7 @@ final class ReviewCollectionDocument: NSView {
 
     private func bindContent(_ host: NSHostingView<AnyView>, key: ReviewCollectionGeometry.Element.Key,
                              projection: ReviewCollectionProjection) {
+        contentBindCount += 1
         let content: AnyView
         switch key {
         case .item(let position):
@@ -358,6 +387,8 @@ final class ReviewCollectionDocument: NSView {
     private func recycleAll() {
         for host in hosts.values { recycle(host) }
         hosts.removeAll()
+        realizedViewport = nil
+        realizedElements = []
         realizedItemCount = 0
     }
 
@@ -424,6 +455,7 @@ final class ReviewCollectionDocument: NSView {
         guard !isDismantled, event.window === window, window != nil,
               !isHiddenOrHasHiddenAncestor, let rubberBand else { return }
         let point = convert(event.locationInWindow, from: nil)
+        if visibleRect.contains(point) { ForegroundWorkCoordinator.shared.noteInteraction() }
         switch event.type {
         case .leftMouseDown:
             guard visibleRect.contains(point),

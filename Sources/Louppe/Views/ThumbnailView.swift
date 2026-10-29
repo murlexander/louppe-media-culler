@@ -10,6 +10,7 @@ enum TileBadgeLayout {
     static let spacing: CGFloat = 3
     static let iconSize: CGFloat = 11
     static let decisionTargetSize: CGFloat = 40
+    static let cueTargetHeight: CGFloat = 36
     static let maximumCueRowWidth: CGFloat = 4 * height + 3 * spacing
 }
 
@@ -76,6 +77,7 @@ struct ThumbnailRenderMarker: NSViewRepresentable {
 /// Async-loading thumbnail tile with a yes/no/undecided badge overlay.
 /// The whole photo fits inside the tile (letterboxed, never cropped).
 struct ThumbnailView: View {
+    @Environment(\.mediaReadAccess) private var mediaReadAccess
     let item: PhotoItem
     var isCurrent: Bool
     /// Part of a multi-selection: same accent as the current photo, dimmed.
@@ -209,6 +211,10 @@ struct ThumbnailView: View {
             guard item.primaryFile.photosMedia == nil else { return }
             let requestedItem = item
             let requestedRevision = requestedItem.contentRevision
+            // A remounted same-revision cell already owns its pixels. Avoid a
+            // cache-key rebuild and a no-op @State mutation on task re-entry.
+            if retainedImage.revision == requestedRevision, retainedImage.image != nil,
+               requestedItem.hasVisualPreview { return }
             let cached = requestedItem.hasVisualPreview
                 ? ImagePipeline.shared.cachedThumbnail(for: requestedItem)
                 : nil
@@ -219,7 +225,7 @@ struct ThumbnailView: View {
                 hasVisualPreview: requestedItem.hasVisualPreview
             ) else { return }
             let loaded = await ImagePipeline.shared.thumbnail(
-                for: requestedItem
+                for: requestedItem, sourceAccess: mediaReadAccess
             )
             guard !Task.isCancelled else { return }
             retainedImage.accept(loaded, revision: requestedRevision)

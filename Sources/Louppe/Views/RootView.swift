@@ -113,9 +113,6 @@ struct RootView: View {
                     .background(Color.appBackground)
                     .overlay(alignment: .bottom) { Divider() }
                 }
-                if case .ready = store.phase, let batch = store.photosBatch {
-                    PhotosBatchBar(store: store, batch: batch)
-                }
                 if store.recoveryNeedsAttention {
                     RecoveryWarningBanner(
                         message: store.recoveryAttentionMessage
@@ -475,6 +472,7 @@ struct WindowContentLayout: NSViewRepresentable {
                 self, name: NSWindow.willStartLiveResizeNotification, object: nil
             )
             if let window {
+                window.autorecalculatesKeyViewLoop = true
                 NotificationCenter.default.addObserver(
                     self, selector: #selector(screenChanged),
                     name: NSWindow.didChangeScreenNotification, object: window

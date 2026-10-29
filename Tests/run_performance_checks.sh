@@ -17,6 +17,10 @@ swiftc \
     Sources/Louppe/PreparedSessionIndex.swift \
     Sources/Louppe/SelectionState.swift \
     Sources/Louppe/AppDateFormat.swift \
+    Sources/Louppe/ForegroundWorkCoordinator.swift \
+    Sources/Louppe/ArchiveMetadataIndex.swift \
+    Sources/Louppe/PinnedFolders.swift \
+    Sources/Louppe/SessionOpeningMetadata.swift \
     Sources/Louppe/FolderScanner.swift \
     Sources/Louppe/MetadataExtractor.swift \
     Sources/Louppe/FujiFilmSimulation.swift \
@@ -54,7 +58,10 @@ swiftc \
     Sources/Louppe/PhotosReviewDecisions.swift \
     Sources/Louppe/PhotosLibrary.swift \
     Sources/Louppe/PhotosMedia.swift \
+    Sources/Louppe/PhotosNetworkPreferences.swift \
     Sources/Louppe/PhotosLibraryBrowser.swift \
+    Sources/Louppe/PhotosLibraryOrganization.swift \
+    Sources/Louppe/PhotosOrganizationPresentation.swift \
     Sources/Louppe/SessionOpeningWorker.swift \
     Sources/Louppe/SessionStore.swift \
     Tests/PerformanceChecks/main.swift \

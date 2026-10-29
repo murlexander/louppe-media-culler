@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The start screen: pick a folder (or a recent one) to begin a session.
@@ -81,6 +82,7 @@ struct WelcomeView: View {
             .padding(24)
         }
         .onAppear { connectedDrives.start() }
+        .task { await store.pinnedFolders.refresh() }
         .onDisappear { connectedDrives.stop() }
         .contentShape(Rectangle())
         .alert(
@@ -166,6 +168,13 @@ struct WelcomeView: View {
                 }
             }
 
+            Divider()
+            PinnedFoldersSection(
+                pins: store.pinnedFolders,
+                open: store.openPinnedFolder,
+                reconnect: store.reconnectPinnedFolder
+            )
+
             if !store.recentFolders.isEmpty || hasConnectedDrives {
                 Divider()
                 HStack(alignment: .top, spacing: 20) {
@@ -218,6 +227,99 @@ struct WelcomeView: View {
     }
 
 
+}
+
+/// The bookmark, availability and error publications belong to the pins owner,
+/// rather than depending on SessionStore to forward nested object changes.
+private struct PinnedFoldersSection: View {
+    @ObservedObject var pins: PinnedFoldersStore
+    let open: (PinnedFolder) -> Void
+    let reconnect: (PinnedFolder) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text(L10n.text("Pinned folders"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                if pins.isWorking {
+                    ProgressView().controlSize(.mini)
+                        .accessibilityLabel(L10n.text("Updating pinned folders"))
+                }
+                Spacer(minLength: 0)
+                Button(action: chooseFolderToPin) {
+                    Label(L10n.text("Pin Folder…"), systemImage: "pin")
+                }
+                .controlSize(.small)
+                .help(L10n.text("Choose a folder to pin without opening it."))
+            }
+            if pins.folders.isEmpty {
+                Text(L10n.text("Choose Pin Folder… to add a shortcut."))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(pins.folders) { pin in
+                HStack(spacing: 8) {
+                    Button {
+                        if pin.availability == .available { open(pin) }
+                        else { reconnect(pin) }
+                    } label: {
+                        WelcomeSourceRow(
+                            name: pin.name,
+                            detail: pin.availability == .available ? pin.path : pin.availability.status,
+                            symbol: pin.availability == .available ? "pin.fill" : "externaldrive.badge.exclamationmark"
+                        )
+                        .opacity(pin.availability == .available ? 1 : 0.65)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(pin.availability == .available
+                        ? L10n.text("Open \(pin.name)") : L10n.text("Locate \(pin.name)…"))
+                    .accessibilityValue(pin.availability.status)
+                    .help(pin.path + "\n" + pin.availability.status)
+
+                    Menu {
+                        if pin.availability == .available {
+                            Button(L10n.text("Open Folder")) { open(pin) }
+                        }
+                        Button(L10n.text("Locate Folder…")) { reconnect(pin) }
+                        Divider()
+                        Button(L10n.text("Unpin Folder")) {
+                            Task { await pins.unpin(id: pin.id) }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .accessibilityLabel(L10n.text("Actions for \(pin.name)"))
+                    .help(L10n.text("Open, locate, or unpin this folder"))
+                }
+            }
+            if let message = pins.statusMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .disabled(pins.isWorking)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L10n.text("Pinned folders"))
+    }
+
+    private func chooseFolderToPin() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = false
+        panel.message = L10n.text("Choose a folder to pin without opening it.")
+        panel.prompt = L10n.text("Pin Folder")
+        if panel.runModal() == .OK, let url = panel.url {
+            Task { await pins.pinSelectedFolder(url: url) }
+        }
+    }
 }
 
 /// A compact source shortcut, shown only while physical drives are connected.

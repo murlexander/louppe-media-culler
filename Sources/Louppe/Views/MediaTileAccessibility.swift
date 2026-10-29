@@ -1,5 +1,36 @@
 import SwiftUI
 
+/// Native menus expose modifier-click and review actions to touch and pointer
+/// users without requiring a keyboard or relying on hover.
+struct MediaTileContextMenu: View {
+    @ObservedObject var store: SessionStore
+    let index: Int
+    let revision: PhotoContentRevision
+    let open: () -> Void
+
+    private var isCurrentItem: Bool {
+        store.items.indices.contains(index) && store.items[index].contentRevision == revision
+    }
+
+    var body: some View {
+        Button(L10n.text("Show in Gallery")) {
+            if isCurrentItem { open() }
+        }
+        Button(store.selectedIndices.contains(index)
+               ? L10n.text("Remove from Selection") : L10n.text("Add to Selection")) {
+            if isCurrentItem { store.toggleSelection(of: index) }
+        }
+        Divider()
+        ForEach(MediaTileAccessibility.RatingAction.allCases, id: \.self) { action in
+            Button(L10n.label(action.rawValue)) {
+                if isCurrentItem { store.rate(action.rating, at: index) }
+            }
+                .disabled(!store.canRate)
+        }
+        .disabled(!isCurrentItem)
+    }
+}
+
 /// One consistent VoiceOver description for Browser and Grid media tiles.
 ///
 /// The visual tile communicates several states with borders, badge shapes,

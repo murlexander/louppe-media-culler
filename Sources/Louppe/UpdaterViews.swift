@@ -128,6 +128,17 @@ struct LouppeSettingsView: View {
     private var generalSettings: some View {
         LouppeSettingsForm {
             ReviewPreferencesSettingsView()
+
+            Section {
+                Toggle(L10n.text("Allow iCloud Review Images"), isOn: $store.photosReviewNetwork)
+                Toggle(L10n.text("Allow iCloud Originals"), isOn: $store.photosOriginalNetwork)
+            } header: {
+                Text(L10n.text("iCloud Access"))
+            } footer: {
+                Text(L10n.text("Review images load as you browse. Photos may fetch source data to render a preview. Originals stream only when you request original detail, playback, or Copy. Each choice is remembered independently."))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             CameraQualityWarningsSettingsView()
 
             Section {

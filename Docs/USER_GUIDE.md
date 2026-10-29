@@ -29,6 +29,10 @@ You can also drop one folder onto the Dock icon or anywhere in the main window,
 including while reviewing another folder. Louppe saves current decisions before
 switching and keeps your chosen review-window size.
 
+On Welcome, choose **Pin Folder…** to keep a folder shortcut without opening it.
+Pinned folders remember the current photo and browsing position. Disconnected
+folders stay visible; their menu offers Locate and Unpin.
+
 ![Louppe Grid comparing street scenes, architecture, reflections and still life, with a photo selected in purple](Media/2026-09-26/grid-overview.png)
 
 *Grid for comparing and selecting frames.*
@@ -56,31 +60,37 @@ and other metadata.
 ## Apple Photos
 
 Choose **File → Open Apple Photos…** and grant Photos access. Select your
-library or an album, narrow the dates manually or with **Recent Dates → Last
-Week / Last 7 Days**, and open a batch of 50, 100, 200, 500, or 1,000 items
-in the usual Gallery or Grid. **Previous Batch** and **Next Batch** save decisions
-before switching. The chooser remembers the last range and batch; new library
-items can shift batch numbers after reopening.
+library or an album, optionally narrow the dates manually or with **Recent Dates →
+Last Week / Last 7 Days**, and open the complete selection in Gallery or Grid.
+There is no batch size or page to choose. The chooser remembers the source,
+dates and order; reopening refreshes library membership.
 
 The selection opens without downloading every original. Review images load as
-you browse. Enable **Allow iCloud Review Images** when a needed image is not
-on the Mac. Photos may download source data to make that image; Louppe cannot
-guarantee thumbnail-only network transfers. Cached local representations can
+you browse. In **Settings → General → iCloud Access**, enable **Allow iCloud
+Review Images** when a needed image is not on the Mac. Photos may download
+source data to make that image; Louppe cannot guarantee thumbnail-only network transfers. Cached local representations can
 work offline. Cloud/unavailable items have Retry; Gallery shows preview pixel
 dimensions and never treats a preview as 100% original detail.
 
 **Open Original Detail**, original video playback and Copy request primary
-original files separately. **Allow iCloud Originals** is a separate choice.
+original files separately. **Allow iCloud Originals** is a separate choice in
+Settings. Both choices are remembered across launches.
 Requests show progress and can be canceled. Original staging remains limited
 to 5 GB, including any open original detail. Copy downloads, validates and
 copies one exact original at a time, then releases its temporary file. Total
 export size is unknown until originals load; space is checked for each file.
-Temporary files retire when released or when switching/closing the batch.
+Temporary files retire when released or when switching/closing the review.
 
+Choose a different Photos selection from **Filter → Choose Photos…**.
 Yes/No, stars, and colors save locally by Photos asset ID across overlapping
-batches. One-destination Copy is available; Photos routing Copy, Rename,
-Organize, Move, XMP and Trash are unavailable. Decisions never change Photos
-albums, favorites or library contents. EXIF, original byte sizes and original
+selections. **File → Add to Album…** adds current, selected, filtered, or all
+reviewed items to an existing album, or a new album inside a Photos folder.
+Confirm the exact scope and destination first. Existing memberships and originals
+stay intact; local ratings do not change Favorites. Cancel stops remaining
+additions; completed additions stay. Album additions have no Louppe Undo.
+One-destination Copy is
+available; Photos routing Copy, file Rename/Move/Organize, XMP and Trash are
+unavailable. EXIF, original byte sizes and original
 quality/exact/similarity checks are unavailable during preview review. Capture
 groups use known Photos dates without downloading originals.
 

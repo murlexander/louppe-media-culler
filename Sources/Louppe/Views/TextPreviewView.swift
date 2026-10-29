@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 
 struct TextPreviewView: View {
+    @Environment(\.mediaReadAccess) private var sourceAccess
     let item: PhotoItem
     @State private var state: LoadState = .loading
     @State private var retry = 0
@@ -44,7 +45,7 @@ struct TextPreviewView: View {
             state = .loading
             do {
                 try await Task.sleep(for: .milliseconds(40))
-                let text = try await TextPreviewLoader.shared.load(item: item)
+                let text = try await TextPreviewLoader.shared.load(item: item, sourceAccess: sourceAccess)
                 try Task.checkCancellation()
                 state = .loaded(text)
             } catch is CancellationError {

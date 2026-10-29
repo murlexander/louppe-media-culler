@@ -53,9 +53,12 @@ struct MediaSourceRevision: Sendable {
 
 
 enum MetadataExtractor {
+    /// Bump when scan/Fuji/movie/audio interpretation changes. Old observations
+    /// then rebuild without affecting sidecar or preview cache schemas.
+    static let archiveSchemaVersion = 2
 
     /// The metadata read once per file during the folder scan.
-    struct ScanInfo {
+    struct ScanInfo: Sendable {
         var captureDate: Date? = nil
         var captureDateEvidence: CaptureDateEvidence? = nil
         var cameraModel: String? = nil
@@ -64,6 +67,42 @@ enum MetadataExtractor {
         var shutterSpeed: Double? = nil
         var iso: Double? = nil
         var filmSimulation: FujiFilmSimulation? = nil
+        /// Missing tags after a successful header read are reusable. An I/O or
+        /// decoder failure is only an attempted observation and must be retried.
+        var extractionSucceeded: Bool = true
+    }
+
+    /// Read-only opening details use already prepared observations. Never
+    /// reopen ImageIO/AVAsset here or wait for unrelated metadata workers.
+    static func openingFields(for item: PhotoItem) -> [MetadataField] {
+        if item.isText || item.isVideo || item.isAudio { return fields(for: item) }
+        var result: [MetadataField] = []
+        func add(_ label: String, _ value: String?) {
+            guard let value, !value.isEmpty else { return }
+            result.append(MetadataField(id: label, label: label, value: value))
+        }
+        add("Filename", item.displayName)
+        add("Paired file", item.pairedURL?.lastPathComponent)
+        if let date = item.captureDate {
+            let formatted = AppDateFormat.dayAndTime(date)
+            let estimated = item.captureDateEvidence?.source != .exifOriginal
+                && item.captureDateEvidence?.source != .photosLibrary
+            add("Captured", estimated ? L10n.text("\(formatted) · estimated") : formatted)
+        }
+        add("Time zone", item.captureDateEvidence?.timeZoneDescription)
+        add("Camera", item.cameraModel)
+        add("Lens", item.lensModel)
+        add("Film simulation", item.filmSimulation?.label)
+        add("Aperture", MediaNumeric.aperture(item.aperture).map { String(format: "f/%.1f", $0) })
+        add("Shutter", MediaNumeric.shutterSpeed(item.shutterSpeed).map(formatShutter))
+        add("ISO", MediaNumeric.iso(item.iso).map { String(format: "%.0f", $0) })
+        if item.pairedURL != nil {
+            add("Primary size", formattedFileSize(item.fileSize))
+            add("Paired size", formattedFileSize(item.pairedFileSize))
+            add("Total size", formattedFileSize(item.totalFileSize))
+        } else { add("File size", formattedFileSize(item.fileSize)) }
+        add("Type", item.fileTypeLabel)
+        return result
     }
 
     /// Reads the metadata used by filtering and sorting in a single pass during
@@ -71,7 +110,7 @@ enum MetadataExtractor {
     static func scanInfo(for url: URL) -> ScanInfo {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
               let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
-            return ScanInfo()
+            return ScanInfo(extractionSucceeded: false)
         }
         let exif = props[kCGImagePropertyExifDictionary] as? [CFString: Any]
         let tiff = props[kCGImagePropertyTIFFDictionary] as? [CFString: Any]

@@ -27,7 +27,9 @@ actor TextPreviewLoader {
         }
     }
 
-    func load(item: PhotoItem) throws -> AttributedString {
+    func load(item: PhotoItem, sourceAccess: MediaReadAccess? = nil) throws -> AttributedString {
+        let lease = sourceAccess?.begin()
+        defer { withExtendedLifetime(lease) {} }
         try Task.checkCancellation()
         let before = try FileOperationJournal.captureIdentity(at: item.primaryURL)
         if let expected = item.primaryFile.scannedIdentity, before != expected {

@@ -4,15 +4,21 @@
 
 - Keep the README focused on installation and compatibility; move usage and development instructions into dedicated guides. Align localized Help with Photos review, file safety, recovery, and text previews, and link the full user guide.
 
+- Add direct-touch Grid selection and photo double-tap actions, native tile menus for selection and decisions, and larger Fit, playback and quality-cue targets. Keep native scrolling and immediate mouse response; update Tab order automatically and respect Reduce Motion in floating glass controls.
+
 - Split Settings into native General and Keyboard shortcuts pages. Keep shortcut groups collapsed until opened or searched, activate search on click, and refresh the equal-height keyboard’s purple highlights as bindings change. Align scope controls beside removal.
 
 - Use native Sort pickers, search fields, shortcut Add menus, and the system Help button. Adapt floating video controls to current macOS glass with older-system and accessibility fallbacks.
 - Use the current native macOS grouped-form presentation for Photos, Export, Rename, and Organize options, matching Settings while keeping actions and multiselection controls distinct.
 - Unify dialog headings, scrolling content, and fixed action rows across Photos, Export, Rename, Organize, and saved-decision recovery. Align source buttons, small editing controls, color-label indicators, and accessibility feedback.
 
-- Browse Apple Photos selections of up to 1,000 items without staging every original. Load unadjusted review images on demand with bounded caches, local/offline fallbacks, and separate iCloud choices for previews and originals.
+- Browse complete Apple Photos libraries or selections without staging every original. Load unadjusted review images on demand with bounded caches, local/offline fallbacks, and separate iCloud choices for previews and originals.
 - Open original detail or copy exact primary originals one at a time, with cancellable downloads and the existing 5 GB staging limit. Keep preview quality, unavailable metadata, and per-item retry explicit.
-- Choose last week or the last seven days from Photos’ Recent Dates menu. Save decisions by asset ID across overlapping batches; Photos library contents remain unchanged.
+- Keep separate, remembered iCloud review-image and original permissions in General Settings, with direct Settings links when an item needs access.
+- Choose last week or the last seven days from Photos’ Recent Dates menu. Save decisions by asset ID across overlapping selections; Review decisions stay local.
+
+- Add reviewed Photos items to an existing album or a new album inside a Photos folder, with exact scope/destination confirmation and verified partial results. Preserve existing memberships and originals.
+- Move Choose Photos into Filter and remove the extra review header.
 
 - Shorten Trash actions across the Command Palette, Clean Up, menus, and confirmations.
 - Align folder, rename, playback, and Info wording, and mark Clear All Decisions with an ellipsis because it asks for confirmation.
@@ -20,6 +26,9 @@
 - Browse photos while large folders finish reading metadata, preserving the browsed position when review becomes ready. Ratings and file actions wait for complete validation.
 - Keep large Grid and Browser collections bounded to the visible area, speed up camera/lens sorting, and cancel obsolete neighboring previews.
 - Restore the standalone video/audio checks with the source dependencies added by the folder-opening improvements.
+- Pin folders directly from Welcome without opening them, and remember their current photo and browsing position. Keep disconnected folders visible, and verify the original source when reconnecting.
+- Reuse validated metadata and previews when reopening archives. Show individual photo details as they become ready while complete validation still protects decisions and file actions.
+- Yield optional background work during interaction and avoid repeated native layout work while browsing.
 
 ## 1.12.0 (14) — 2026-10-21
 

@@ -10,13 +10,24 @@ final class ZoomImageSource: @unchecked Sendable {
     let pixelSize: CGSize
     let sourceRevision: MediaSourceRevision?
     let decoder: AppleRawDecoder
+    let sourceAccess: MediaReadAccess?
 
-    init(key: String, image: CIImage, pixelSize: CGSize, sourceRevision: MediaSourceRevision? = nil, decoder: AppleRawDecoder = .appleDefault) {
+    init(key: String, image: CIImage, pixelSize: CGSize, sourceRevision: MediaSourceRevision? = nil, decoder: AppleRawDecoder = .appleDefault, sourceAccess: MediaReadAccess? = nil) {
         self.key = key
         self.image = image
         self.pixelSize = pixelSize
         self.sourceRevision = sourceRevision
         self.decoder = decoder
+        self.sourceAccess = sourceAccess
+    }
+
+    /// Cache recipes hold a capability, never a permanently open scope. Each
+    /// later tile starts its own operation lease from this exact authority.
+    func retainingSourceAccess(_ authority: MediaReadAccess?) -> ZoomImageSource {
+        guard let authority else { return self }
+        return ZoomImageSource(key: key, image: image, pixelSize: pixelSize,
+                               sourceRevision: sourceRevision, decoder: decoder,
+                               sourceAccess: authority)
     }
 }
 
@@ -66,26 +77,32 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     private final class PendingSource {
         var waiters: [UUID: CheckedContinuation<ZoomImageSource?, Never>]
         let operation: BlockOperation
+        let readAccess: MediaOperationReadAccess
 
         init(
             waiters: [UUID: CheckedContinuation<ZoomImageSource?, Never>],
-            operation: BlockOperation
+            operation: BlockOperation,
+            readAccess: MediaOperationReadAccess
         ) {
             self.waiters = waiters
             self.operation = operation
+            self.readAccess = readAccess
         }
     }
 
     private final class PendingTile {
         var waiters: [CheckedContinuation<ZoomImageTile?, Never>]
         let operation: BlockOperation
+        let readAccess: MediaOperationReadAccess
 
         init(
             waiters: [CheckedContinuation<ZoomImageTile?, Never>],
-            operation: BlockOperation
+            operation: BlockOperation,
+            readAccess: MediaOperationReadAccess
         ) {
             self.waiters = waiters
             self.operation = operation
+            self.readAccess = readAccess
         }
     }
 
@@ -122,32 +139,41 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     private var tileInFlight: [TileKey: PendingTile] = [:]
     private let testingSource: (@Sendable (MediaSourceRevision, String, AppleRawDecoder) -> ZoomImageSource?)?
 
-    private init() { testingSource = nil }
+    private let testingTile: (@Sendable (ZoomImageSource, ZoomTileCoordinate) -> ZoomImageTile?)?
+
+    private init() { testingSource = nil; testingTile = nil }
 
     /// Fault-injected source construction still passes through revision checks,
     /// waiter ownership and the real operation queue (shared with tile work).
     init(
         testingSourceConcurrency: Int,
+        tileRenderer: (@Sendable (ZoomImageSource, ZoomTileCoordinate) -> ZoomImageTile?)? = nil,
         source: @escaping @Sendable (MediaSourceRevision, String, AppleRawDecoder) -> ZoomImageSource?
     ) {
         testingSource = source
+        testingTile = tileRenderer
         renderQueue.maxConcurrentOperationCount = max(1, testingSourceConcurrency)
     }
 
-    func source(for item: PhotoItem, decoder: AppleRawDecoder = .appleDefault) async -> ZoomImageSource? {
-        await source(
+    func source(for item: PhotoItem, decoder: AppleRawDecoder = .appleDefault, sourceAccess: MediaReadAccess? = nil) async -> ZoomImageSource? {
+        let result = await source(
             for: item,
             decoder: decoder,
             qualityOfService: .userInitiated,
-            queuePriority: .veryHigh
+            queuePriority: .veryHigh,
+            sourceAccess: sourceAccess
         )
+        // A reconnect may provide a fresh exact grant for the same revision.
+        // Rewrap immutably; existing readers retain their original authority.
+        return result?.retainingSourceAccess(sourceAccess)
     }
 
     private func source(
         for item: PhotoItem,
         decoder: AppleRawDecoder,
         qualityOfService: QualityOfService,
-        queuePriority: Operation.QueuePriority
+        queuePriority: Operation.QueuePriority,
+        sourceAccess: MediaReadAccess?
     ) async -> ZoomImageSource? {
         guard !Task.isCancelled else { return nil }
         let key = Self.sourceKey(for: item, decoder: decoder)
@@ -162,12 +188,15 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
                     return
                 }
                 if let cached = sourceCache[key] {
+                    let cached = cached.retainingSourceAccess(sourceAccess)
+                    sourceCache[key] = cached
                     touchSource(key)
                     lock.unlock()
                     continuation.resume(returning: cached)
                     return
                 }
                 if let pending = sourceInFlight[key] {
+                    pending.readAccess.retainIfNeeded(sourceAccess)
                     pending.waiters[waiterID] = continuation
                     if queuePriority == .veryHigh {
                         pending.operation.queuePriority = .veryHigh
@@ -177,9 +206,12 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
                     return
                 }
 
+                let readAccess = MediaOperationReadAccess(sourceAccess)
                 let operation = BlockOperation()
+                operation.completionBlock = { readAccess.finish() }
                 operation.addExecutionBlock { [weak self, weak operation] in
                     guard let self, let operation, !operation.isCancelled else { return }
+                    defer { readAccess.finish() }
                     let source = autoreleasepool {
                         revision.read {
                             if let testingSource = self.testingSource {
@@ -192,7 +224,7 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
                 }
                 operation.qualityOfService = qualityOfService
                 operation.queuePriority = queuePriority
-                sourceInFlight[key] = PendingSource(waiters: [waiterID: continuation], operation: operation)
+                sourceInFlight[key] = PendingSource(waiters: [waiterID: continuation], operation: operation, readAccess: readAccess)
                 lock.unlock()
                 renderQueue.addOperation(operation)
             }
@@ -204,7 +236,7 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     /// Retain and replace this handle with the session's neighbour window.
     /// Four recipes match the existing source cache; each child owns one waiter.
     @discardableResult
-    func prefetchSources(items: [PhotoItem], decoder: AppleRawDecoder = AppleRawDecoder.load()) -> Task<Void, Never> {
+    func prefetchSources(items: [PhotoItem], decoder: AppleRawDecoder = AppleRawDecoder.load(), sourceAccess: MediaReadAccess? = nil) -> Task<Void, Never> {
         guard !Task.isCancelled else { return Task {} }
         var keys = Set<String>()
         var neighbours: [PhotoItem] = []
@@ -218,7 +250,7 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
                 for item in neighbours {
                     guard !Task.isCancelled else { break }
                     group.addTask { [self] in
-                        _ = await source(for: item, decoder: decoder, qualityOfService: .utility, queuePriority: .low)
+                        _ = await source(for: item, decoder: decoder, qualityOfService: .utility, queuePriority: .low, sourceAccess: sourceAccess)
                     }
                 }
             }
@@ -282,14 +314,19 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
                 return
             }
             if let pending = tileInFlight[key] {
+                pending.readAccess.retainIfNeeded(source.sourceAccess)
                 pending.waiters.append(continuation)
                 pending.operation.queuePriority = .veryHigh
                 lock.unlock()
                 return
             }
 
-            let operation = BlockOperation { [weak self] in
-                guard let self else { return }
+            let readAccess = MediaOperationReadAccess(source.sourceAccess)
+            let operation = BlockOperation()
+            operation.completionBlock = { readAccess.finish() }
+            operation.addExecutionBlock { [weak self, weak operation] in
+                guard let self, let operation, !operation.isCancelled else { return }
+                defer { readAccess.finish() }
                 let tile = autoreleasepool {
                     self.validatedTile(
                         source: source,
@@ -297,13 +334,14 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
                         showsClippingWarnings: showsClippingWarnings
                     )
                 }
-                self.finishTile(key: key, tile: tile)
+                self.finishTile(key: key, operation: operation, tile: tile)
             }
             operation.qualityOfService = .userInitiated
             operation.queuePriority = .veryHigh
             tileInFlight[key] = PendingTile(
                 waiters: [continuation],
-                operation: operation
+                operation: operation,
+                readAccess: readAccess
             )
             lock.unlock()
             renderQueue.addOperation(operation)
@@ -392,8 +430,9 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
         // A cached CIImage recipe can open the URL lazily on its first render.
         // Validate each new tile, not just the original recipe construction.
         let render = {
-            self.renderTile(source: source, coordinate: coordinate,
-                            showsClippingWarnings: showsClippingWarnings)
+            if let testingTile = self.testingTile { return testingTile(source, coordinate) }
+            return self.renderTile(source: source, coordinate: coordinate,
+                                   showsClippingWarnings: showsClippingWarnings)
         }
         if let revision = source.sourceRevision { return revision.read(render) }
         return render()
@@ -456,7 +495,8 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
             return
         }
         sourceInFlight.removeValue(forKey: key)
-        if let source {
+        let source = source?.retainingSourceAccess(pending.readAccess.sourceAccess)
+        if let source, !operation.isCancelled {
             sourceCache[key] = source
             touchSource(key)
             while sourceCacheOrder.count > 4 {
@@ -473,14 +513,16 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
 
     private func finishTile(
         key: TileKey,
+        operation: BlockOperation,
         tile: ZoomImageTile?
     ) {
         lock.lock()
-        guard let pending = tileInFlight.removeValue(forKey: key) else {
+        guard let pending = tileInFlight[key], pending.operation === operation else {
             lock.unlock()
             return
         }
-        if let tile {
+        tileInFlight.removeValue(forKey: key)
+        if let tile, !operation.isCancelled {
             tileAccessCounter &+= 1
             let cost = tile.image.bytesPerRow * tile.image.height
             tileCache[key] = TileCacheEntry(

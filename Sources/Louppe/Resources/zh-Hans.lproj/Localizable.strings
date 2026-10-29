@@ -1957,10 +1957,122 @@
 /* Settings pages. */
 "General" = "通用";
 
+/* Pinned folders. */
+"Available" = "可用";
+"Unavailable — reconnect the drive or locate the folder" = "不可用 — 请重新连接驱动器或定位文件夹";
+"Access needed — locate the folder" = "需要访问权限 — 请定位文件夹";
+"This is a different folder or drive. Locate the original pinned folder." = "这不是原来的文件夹或驱动器。请定位原来固定的文件夹。";
+"Folder access could not be saved. Locate the folder and try again." = "无法保存文件夹访问权限。请定位文件夹后重试。";
+"Pinned-folder storage is full. Unpin a folder and try again." = "固定文件夹的存储空间已满。请取消固定一个文件夹后重试。";
+"Pinned folders could not be read. Previous records are retained. Try again." = "无法读取固定的文件夹。已保留之前的记录。请重试。";
+"The browsing position could not be saved. Previous positions are retained." = "无法保存浏览位置。已保留之前的位置。";
+"Locate the original pinned folder. Louppe will verify its identity." = "请定位原来固定的文件夹。Louppe 将验证其身份。";
+"Reconnect" = "重新连接";
+"Pin This Folder" = "固定此文件夹";
+"Unpin This Folder" = "取消固定此文件夹";
+"Locate Folder…" = "定位文件夹…";
+"Unpin Folder" = "取消固定文件夹";
+"Pinned folders" = "固定的文件夹";
+"Current folder is not pinned" = "当前文件夹未固定";
+"Current folder is pinned" = "当前文件夹已固定";
+"Pin this folder or open a pinned folder" = "固定此文件夹或打开已固定的文件夹";
+"Updating pinned folders" = "正在更新固定的文件夹";
+"Pin a folder from its toolbar while reviewing." = "审阅时，可在文件夹的工具栏中将其固定。";
+"Locate {0}…" = "定位 {0}…";
+"Actions for {0}" = "{0} 的操作";
+"Open, locate, or unpin this folder" = "打开、定位或取消固定此文件夹";
+
+/* Welcome pinning. */
+"Pin Folder…" = "固定文件夹…";
+"Pin Folder" = "固定文件夹";
+"Choose a folder to pin without opening it." = "选择要固定的文件夹，无需打开。";
+"Choose Pin Folder… to add a shortcut." = "选择“固定文件夹…”以添加快捷方式。";
+
+/* Photos selection. */
+"Open" = "打开";
+"Video" = "视频";
+
+/* Whole Photos review. */
+"Photos couldn't provide a file for “{0}”. Check it in Photos, then retry." = "照片无法提供“{0}”的文件。请在照片中检查后重试。";
+"This Photos selection is closed. Open it again." = "此照片选择已关闭。请重新打开。";
+
+"Apple Photos · {0} items" = "Apple 照片 · {0} 项";
+
+/* Persistent iCloud settings. */
+"Open Settings…" = "打开设置…";
+"Review images load as you browse. Photos may fetch source data to render a preview. Originals stream only when you request original detail, playback, or Copy. Each choice is remembered independently." = "浏览时按需加载预览图像。照片可能需要获取源数据来生成预览。只有在您请求原始文件详情、播放或拷贝时才传输原始文件。两个选项会分别记住。";
+
+/* Photos album organization. */
+"Reading Photos albums and folders…" = "正在读取照片相簿和文件夹…";
+"Add to Album" = "添加到相簿";
+"Review Album Addition" = "检查相簿添加操作";
+"Adding to Album" = "正在添加到相簿";
+"Existing album" = "现有相簿";
+"New album" = "新建相簿";
+"Choose an album…" = "选择相簿…";
+"No writable albums. Create a new album instead." = "没有可编辑的相簿。请创建新相簿。";
+"Album name" = "相簿名称";
+"Parent folder" = "上级文件夹";
+"Photos Library" = "照片图库";
+"Choose a folder…" = "选择文件夹…";
+"Photos folders contain albums. Additions keep existing album memberships and leave originals in your library." = "照片文件夹用于存放相簿。添加后，项目仍会保留在原有相簿中，原始文件也会保留在图库中。";
+"Reload albums and folders" = "重新加载相簿和文件夹";
+"No items in this scope." = "此范围内没有项目。";
+"Items" = "项目";
+"A new album will be created at this location." = "将在此位置创建新相簿。";
+"Add these items to this album? Existing album memberships and originals stay unchanged." = "将这些项目添加到此相簿？现有相簿归属和原始文件均保持不变。";
+"The scope or destination changed. Go back and review again." = "范围或目标已更改。请返回并重新检查。";
+"Album update progress" = "相簿更新进度";
+"{0} of {1} items processed" = "已处理 {0} 项，共 {1} 项";
+"Finishing and checking the current update…" = "正在完成并检查当前更新…";
+"Cancel finishes and checks the current update. Completed additions remain in Photos." = "取消时会先完成并检查当前更新。已添加的项目会保留在照片中。";
+"Requested destination: {0}" = "请求的目标：{0}";
+"Requested" = "请求的项目";
+"Verified in album" = "已验证在相簿中";
+"Already in album (included above)" = "已在相簿中（包含在上方计数中）";
+"Unavailable items" = "不可用的项目";
+"Uncertain memberships" = "归属不确定的项目";
+"Not processed" = "未处理";
+"Some additions could not be verified. Check the album in Photos before trying again." = "部分添加操作无法验证。重试前请在照片中检查相簿。";
+"Verified memberships include items already in the album. Completed additions remain in Photos." = "已验证的项目包括原本就在相簿中的项目。已添加的项目会保留在照片中。";
+"Cancelling…" = "正在取消…";
+"{0} (ID: {1})" = "{0}（ID：{1}）";
+"Album Addition Incomplete" = "相簿添加未完成";
+"Album Addition Complete" = "相簿添加已完成";
+"Album Addition Cancelled" = "相簿添加已取消";
+"Album Addition Failed" = "相簿添加失败";
+"Membership could not be verified for {0} items." = "无法验证 {0} 个项目是否在相簿中。";
+"A new album may have been created. Its location could not be verified. Check Photos before trying again." = "可能已创建新相簿，但无法验证其位置。重试前请检查照片。";
+"The destination album or its location could not be verified." = "无法验证目标相簿或其位置。";
+"Checking Photos items and destination…" = "正在检查照片项目和目标…";
+"Updating album membership…" = "正在更新相簿归属…";
+"Checking album membership…" = "正在检查相簿归属…";
+"Finishing album update…" = "正在完成相簿更新…";
+"Choose photos to add to an album." = "请选择要添加到相簿的照片。";
+"The Photos selection could not be validated." = "无法验证所选照片。";
+"Enter a name for the new album." = "请输入新相簿的名称。";
+"Another Photos organization operation is still running." = "另一个照片整理操作仍在进行中。";
+"Allow read and write access to the Photos library, then try again." = "请允许读取和写入照片图库，然后重试。";
+"The selected Photos album or folder is no longer available." = "所选照片相簿或文件夹已不可用。";
+"The selected Photos album or folder cannot be edited." = "无法编辑所选照片相簿或文件夹。";
+"Some selected photos cannot be added to an album." = "部分所选照片无法添加到相簿。";
+"Some selected photos are no longer available." = "部分所选照片已不可用。";
+"Photos could not prepare the album change." = "照片无法准备相簿更改。";
+"Photos did not confirm all requested album memberships or the album’s folder." = "照片未确认所有请求的相簿归属或相簿所在文件夹。";
+"The Photos album and folder list exceeds the supported limit." = "照片相簿和文件夹列表超出支持的上限。";
+"The Photos review changed. Close this window and choose the items again." = "照片审阅已更改。请关闭此窗口并重新选择项目。";
+"Saving review decisions…" = "正在保存审阅决定…";
+"Add to Album…" = "添加到相簿…";
+"Photos albums are still being updated" = "照片相簿仍在更新";
+"Cancel the album update or wait for verification to finish, then quit." = "请取消相簿更新或等待验证完成，然后退出。";
+
+"Review images load as you browse. Photos may download source data for previews. Original detail and Copy request originals separately. Decisions stay in Louppe. Add to Album requires confirmation. Live Photos use their still image." = "浏览时会加载审阅图像。照片可能下载源数据来生成预览。原始细节和复制会单独请求原件。决定保存在 Louppe 中。添加到相簿需要确认。实况照片使用静态图像。";
+
 // User guide and Help
 "User guide (English)" = "用户指南（英文）";
 "File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits." = "“文件 → 打开 Apple 照片…”可打开系统照片图库或相簿，并可选择日期范围。浏览时按需加载图像，不包含在“照片”中所做的编辑。";
-"Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "评分保存在本机。“复制”导出主要原始文件；“照片”不支持移动、重命名、整理、XMP 和移到废纸篓。";
+"Settings → General → iCloud Access has separate choices for review images and originals. Photos may download source data for a review image. Open Original Detail, video playback, and Copy request originals separately." = "“设置 → 通用 → iCloud 访问”分别控制浏览图像和原始文件的下载。“照片”可能需要下载源数据来生成浏览图像。“打开原始细节”、视频播放和“复制”会单独请求原始文件。";
+"Ratings stay local. File → Add to Album… adds items only after confirmation and preserves existing memberships. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "评分保存在本机。“文件 → 添加到相簿…”仅在确认后添加项目，且保留现有相簿归属。“复制”导出主要原始文件；“照片”不支持移动、重命名、整理、XMP 和移到废纸篓。";
 "File safety and saved decisions" = "文件安全与已保存的决定";
 "Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation." = "导出默认复制文件。移动会转移原始文件，且无法撤销。重命名和整理仅在确认后更改文件名或位置。";
 "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "清理会先询问，再将文件移到废纸篓。⌘⌫ 无需对话框便会将所选项目移到废纸篓。在会话仍打开且文件仍在废纸篓中时，⌘Z 可将其恢复。";

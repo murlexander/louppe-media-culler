@@ -179,7 +179,7 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
         <string>hi</string><string>pt</string><string>ar</string>
     </array>
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>Review your Photos library in manageable batches. Your decisions stay in Louppe.</string>
+    <string>Review your Photos library and add confirmed selections to albums. Your review decisions stay in Louppe.</string>
     <key>CFBundleName</key>
     <string>Louppe</string>
     <key>CFBundleDisplayName</key>

@@ -2,6 +2,7 @@ import Foundation
 import Photos
 import UniformTypeIdentifiers
 import Darwin
+import OSLog
 
 struct PhotosLibraryQuery: Codable, Equatable, Sendable {
     var albumID: String?
@@ -55,19 +56,41 @@ struct PhotosBatchRange: Equatable, Sendable {
     let end: Int
     let total: Int
     let size: Int
+    let isEntireSelection: Bool
     var page: Int { start / size }
     var pageCount: Int { total == 0 ? 0 : (total - 1) / size + 1 }
     var hasPrevious: Bool { start > 0 }
     var hasNext: Bool { end < total }
 
     init(total: Int, page: Int, size: Int) {
+        isEntireSelection = false
         self.total = max(0, total)
         self.size = Self.sizes.contains(size) ? size : 100
         let last = self.total == 0 ? 0 : (self.total - 1) / self.size
         self.start = min(max(0, page), last) * self.size
         self.end = self.start + min(self.size, self.total - self.start)
     }
+    init(entireSelection total: Int) {
+        self.total = max(0, total)
+        start = 0
+        end = self.total
+        size = max(1, self.total)
+        isEntireSelection = true
+    }
     var indices: Range<Int> { start..<end }
+}
+
+enum PhotosReviewSelection: Equatable, Sendable {
+    case entireSelection
+    /// Compatibility for existing callers; normal review always opens everything.
+    case batch(page: Int, size: Int)
+
+    func range(total: Int) -> PhotosBatchRange {
+        switch self {
+        case .entireSelection: return PhotosBatchRange(entireSelection: total)
+        case .batch(let page, let size): return PhotosBatchRange(total: total, page: page, size: size)
+        }
+    }
 }
 
 struct PhotosBatchProgress: Sendable {
@@ -108,7 +131,7 @@ enum PhotosLibraryError: LocalizedError {
         case .empty:
             return L10n.text("No photos or videos match this selection.")
         case .noResource(let name):
-            return L10n.text("Photos couldn't provide a file for “\(name)”. Try another batch or check it in Photos.")
+            return L10n.text("Photos couldn't provide a file for “\(name)”. Check it in Photos, then retry.")
         case .iCloudDownloadRequired:
             return L10n.text("This original needs iCloud access. Allow original downloads, then retry this item.")
         case .batchTooLarge:
@@ -123,17 +146,31 @@ protocol PhotosLibraryClient: Sendable {
     func select(_ query: PhotosLibraryQuery) async throws -> PhotosLibrarySnapshot
     func prepare(snapshot: PhotosLibrarySnapshot, page: Int, size: Int, allowNetwork: Bool,
                  recorder: PhotosBatchProgressRecorder) async throws -> PhotosReviewBatch
+    func prepareSelection(snapshot: PhotosLibrarySnapshot, allowNetwork: Bool,
+                          recorder: PhotosBatchProgressRecorder) async throws -> PhotosReviewBatch
     func remove(_ batch: PhotosReviewBatch) async
 }
 
-/// PhotoKit fetch results load assets lazily. Retain ONE snapshot and visit only
-/// the requested index range; never enumerate the 80,000-item library into Swift.
+extension PhotosLibraryClient {
+    /// Older staged fixtures cannot safely implement full membership by passing
+    /// an oversized batch size: that API intentionally clamps to 50–1,000.
+    func prepareSelection(snapshot: PhotosLibrarySnapshot, allowNetwork: Bool,
+                          recorder: PhotosBatchProgressRecorder) async throws -> PhotosReviewBatch {
+        throw CocoaError(.featureUnsupported)
+    }
+}
+
+/// Retain lazy PhotoKit snapshots and lightweight review membership. Never
+/// retain a Swift array/dictionary of every PHAsset or inspect every resource.
 actor PhotosLibraryService: PhotosLibraryClient {
     static let shared = PhotosLibraryService()
     static let maximumBatchBytes: Int64 = 5_000_000_000
+    private static let logger = Logger(subsystem: "com.alexandermarkin.louppe", category: "PhotosOpening")
     private var result: PHFetchResult<PHAsset>?
     private var snapshotID: UUID?
-    private var pinned: (id: UUID, result: PHFetchResult<PHAsset>)?
+    // Cache-folder ownership pins both the active and preparing snapshots.
+    // A cancelled new selection cannot evict the outgoing review's snapshot.
+    private var retainedSnapshots: [URL: (id: UUID, result: PHFetchResult<PHAsset>)] = [:]
     private let cacheRoot: URL
     private let decisionsStore: PhotosReviewDecisions
     private var retainedFolders: Set<URL> = []
@@ -191,40 +228,56 @@ actor PhotosLibraryService: PhotosLibraryClient {
 
     func prepare(snapshot: PhotosLibrarySnapshot, page: Int, size: Int, allowNetwork: Bool,
                  recorder: PhotosBatchProgressRecorder) async throws -> PhotosReviewBatch {
-        try requireAuthorization()
-        let selectedResult = snapshotID == snapshot.id ? result : (pinned?.id == snapshot.id ? pinned?.result : nil)
-        guard let result = selectedResult else { throw PhotosLibraryError.staleSelection }
-        let range = PhotosBatchRange(total: result.count, page: page, size: size)
-        guard !range.indices.isEmpty else { throw PhotosLibraryError.empty }
-        let assets = result.objects(at: IndexSet(integersIn: range.indices))
-        let saved = try await decisionsStore.load(assetIDs: Set(assets.map(\.localIdentifier)))
+        try await prepare(snapshot: snapshot, selection: .batch(page: page, size: size),
+                          allowNetwork: allowNetwork, recorder: recorder)
+    }
+
+    func prepareSelection(snapshot: PhotosLibrarySnapshot, allowNetwork: Bool,
+                          recorder: PhotosBatchProgressRecorder) async throws -> PhotosReviewBatch {
+        try await prepare(snapshot: snapshot, selection: .entireSelection,
+                          allowNetwork: allowNetwork, recorder: recorder)
+    }
+
+    private func prepare(snapshot: PhotosLibrarySnapshot, selection: PhotosReviewSelection,
+                         allowNetwork: Bool, recorder: PhotosBatchProgressRecorder) async throws -> PhotosReviewBatch {
+        let preparationStart = ProcessInfo.processInfo.systemUptime
         try Task.checkCancellation()
-        pruneAbandonedBatches()
+        try requireAuthorization()
+        let selectedResult = snapshotID == snapshot.id ? result
+            : retainedSnapshots.values.first(where: { $0.id == snapshot.id })?.result
+        guard let result = selectedResult, result.count == snapshot.count else { throw PhotosLibraryError.staleSelection }
+        let range = selection.range(total: result.count)
+        guard !range.indices.isEmpty else { throw PhotosLibraryError.empty }
+        recorder.update(PhotosBatchProgress(completed: 0, total: range.indices.count, downloadFraction: 0))
+        let decisionsStart = ProcessInfo.processInfo.systemUptime
+        let saved = try await decisionsStore.load()
+        let decisionsMilliseconds = (ProcessInfo.processInfo.systemUptime - decisionsStart) * 1_000
+        try Task.checkCancellation()
+        try pruneAbandonedBatches()
         let folder = cacheRoot.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
-        try Data("louppe-photos-review-v1".utf8).write(to: folder.appendingPathComponent(".louppe-photos-batch"))
         var completed = false
         defer { if !completed { try? FileManager.default.removeItem(at: folder) } }
-        let mediaSession = PhotosMediaSession(provider: ApplePhotosMediaProvider(assets: assets),
-                                              folder: folder, allowNetwork: allowNetwork)
-        let summaries = try assets.map { asset -> PhotosReviewAsset in
-            try Task.checkCancellation()
-            let resources = PHAssetResource.assetResources(for: asset)
-            let resource = resources.first { $0.type == (asset.mediaType == .video ? .video : .photo) }
-            let name = resource.map { Self.safeFilename($0.originalFilename, type: $0.uniformTypeIdentifier) }
-                ?? (asset.mediaType == .video ? "Video.mov" : "Photo.heic")
-            return PhotosReviewAsset(id: asset.localIdentifier, filename: name,
-                captureDate: asset.creationDate, modificationDate: asset.modificationDate,
-                mediaKind: asset.mediaType == .video ? .video : .photo,
-                duration: asset.mediaType == .video ? asset.duration : nil)
-        }
-        let batch = PhotosReviewBatch.lazy(folder: folder, snapshot: snapshot, range: range,
-                                           assets: summaries, decisions: saved, mediaSession: mediaSession)
-        recorder.update(PhotosBatchProgress(completed: summaries.count, total: summaries.count, downloadFraction: 0))
+        try Data("louppe-photos-review-v1".utf8).write(to: folder.appendingPathComponent(".louppe-photos-batch"))
+        let inventory = ApplePhotosReviewInventory(result: result)
+        let membershipStart = ProcessInfo.processInfo.systemUptime
+        let membership = try PhotosReviewMembership.read(inventory: inventory, range: range, recorder: recorder)
+        let membershipMilliseconds = (ProcessInfo.processInfo.systemUptime - membershipStart) * 1_000
+        let mediaSession = PhotosMediaSession(provider: ApplePhotosMediaProvider(
+            inventory: inventory, indicesByAssetID: membership.indicesByAssetID), folder: folder, allowNetwork: allowNetwork)
+        let itemsStart = ProcessInfo.processInfo.systemUptime
+        let batch = try PhotosReviewBatch.prepared(folder: folder, snapshot: snapshot, range: range,
+            assets: membership.assets, decisions: saved, mediaSession: mediaSession)
+        let itemsMilliseconds = (ProcessInfo.processInfo.systemUptime - itemsStart) * 1_000
         try Task.checkCancellation()
-        pinned = (snapshot.id, result)
+        try requireAuthorization()
+        retainedSnapshots[folder] = (snapshot.id, result)
         retainedFolders.insert(folder)
+        recorder.update(PhotosBatchProgress(completed: membership.assets.count,
+                                           total: membership.assets.count, downloadFraction: 0))
+        let totalMilliseconds = (ProcessInfo.processInfo.systemUptime - preparationStart) * 1_000
+        Self.logger.notice("Photos preparation: membership=\(membership.assets.count, privacy: .public) decisionsReadMs=\(decisionsMilliseconds, privacy: .public) membershipMs=\(membershipMilliseconds, privacy: .public) reviewItemsMs=\(itemsMilliseconds, privacy: .public) totalPreparationMs=\(totalMilliseconds, privacy: .public)")
         completed = true
         return batch
     }
@@ -235,13 +288,15 @@ actor PhotosLibraryService: PhotosLibraryClient {
               UUID(uuidString: batch.folder.lastPathComponent) != nil else { return }
         // This is disposable app-owned media. Decisions live in Application Support.
         retainedFolders.remove(batch.folder)
+        retainedSnapshots[batch.folder] = nil
         try? FileManager.default.removeItem(at: batch.folder)
     }
 
-    private func pruneAbandonedBatches() {
+    private func pruneAbandonedBatches() throws {
         guard let folders = try? FileManager.default.contentsOfDirectory(at: cacheRoot,
             includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey]) else { return }
         for folder in folders where !retainedFolders.contains(folder) {
+            try Task.checkCancellation()
             guard UUID(uuidString: folder.lastPathComponent) != nil,
                   let values = try? folder.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
                   values.isDirectory == true, values.isSymbolicLink != true,

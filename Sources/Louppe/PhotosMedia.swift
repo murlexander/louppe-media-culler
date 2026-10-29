@@ -22,7 +22,7 @@ enum PhotosRepresentationError: LocalizedError {
         case .cloud: return L10n.text("Review image is in iCloud. Allow review downloads or retry when online.")
         case .unavailable: return L10n.text("Photos couldn't provide this review image. Check access or retry.")
         case .busy: return L10n.text("Photos is busy. Retry this item.")
-        case .retired: return L10n.text("This Photos batch is closed. Open it again.")
+        case .retired: return L10n.text("This Photos selection is closed. Open it again.")
         }
     }
 }
@@ -33,8 +33,14 @@ protocol PhotosMediaProvider: Sendable {
                progress: @escaping @Sendable (Double) -> Void) async throws -> PhotosReviewImage
     func original(assetID: String, destination: URL, maximumBytes: Int64, network: Bool,
                   progress: @escaping @Sendable (Double) -> Void) async throws -> Int64
+    /// Resource metadata is resolved only on an explicit original request.
+    func originalFilename(assetID: String) async throws -> String?
     func preheat(assetIDs: [String]) async
     func stop() async
+}
+
+extension PhotosMediaProvider {
+    func originalFilename(assetID: String) async throws -> String? { nil }
 }
 
 /// Cancellation-aware admission, including a bounded pending queue. A cancelled
@@ -171,7 +177,7 @@ actor PhotosMediaSession {
     }
 
     /// Preheat is always local-only and limited to eight thumbnails, regardless
-    /// of the selected chunk size or representation-network choice.
+    /// of the selection size or representation-network choice.
     func preheat(assetIDs: [String]) async {
         guard !stopped else { return }
         await provider.preheat(assetIDs: Array(assetIDs.prefix(8)))
@@ -202,8 +208,16 @@ actor PhotosMediaSession {
         let directory = folder.appendingPathComponent("Originals/\(UUID())", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
-        let url = directory.appendingPathComponent(item.displayName)
         do {
+            let filename = try await provider.originalFilename(assetID: assetID) ?? item.displayName
+            try Task.checkCancellation()
+            guard !stopped else { throw PhotosRepresentationError.retired }
+            // A provider cannot redirect staging outside its private directory.
+            guard !filename.isEmpty, filename != ".", filename != "..",
+                  !filename.contains("/"), !filename.contains("\0") else {
+                throw PhotosRepresentationError.unavailable
+            }
+            let url = directory.appendingPathComponent(filename)
             let bytes = try await provider.original(assetID: assetID, destination: url,
                 maximumBytes: PhotosLibraryService.maximumBatchBytes - originalBytes,
                 network: network, progress: progress)
@@ -211,7 +225,7 @@ actor PhotosMediaSession {
             guard !stopped else { throw PhotosRepresentationError.retired }
             let identity = try FileOperationJournal.captureIdentity(at: url)
             let metadata = item.primaryFile.metadataSnapshot
-            let file = PhotoFile(id: item.id, url: url, displayRelativePath: item.displayName,
+            let file = PhotoFile(id: item.id, url: url, displayRelativePath: filename,
                 captureDate: item.captureDate, captureDateEvidence: item.captureDateEvidence,
                 cameraModel: nil, lensModel: nil, mediaKind: item.mediaKind, duration: item.duration,
                 videoIsPlayable: item.isVideo, fileSize: bytes, scannedIdentity: identity,
@@ -235,14 +249,20 @@ actor PhotosMediaSession {
     }
 }
 
-/// Immutable bounded asset map. This is the only production PhotoKit media
-/// adapter; retain one per active batch rather than refetching an entire library.
+/// PhotoKit owns the lazy, immutable fetch cache. Louppe retains only an ID →
+/// index map and resolves assets from that exact snapshot as views request them.
 final class ApplePhotosMediaProvider: PhotosMediaProvider, @unchecked Sendable {
-    private let assets: [String: PHAsset]
+    private let inventory: ApplePhotosReviewInventory
+    private let indicesByAssetID: [String: Int]
     private let manager = PHCachingImageManager()
-    init(assets: [PHAsset]) {
-        self.assets = Dictionary(uniqueKeysWithValues: assets.map { ($0.localIdentifier, $0) })
+    init(inventory: ApplePhotosReviewInventory, indicesByAssetID: [String: Int]) {
+        self.inventory = inventory
+        self.indicesByAssetID = indicesByAssetID
         manager.allowsCachingHighQualityImages = false
+    }
+    private func asset(_ assetID: String) throws -> PHAsset {
+        guard let index = indicesByAssetID[assetID] else { throw PhotosLibraryError.staleSelection }
+        return try inventory.asset(at: index, expectedID: assetID)
     }
     static func options(network: Bool) -> PHImageRequestOptions {
         let options = PHImageRequestOptions()
@@ -255,7 +275,7 @@ final class ApplePhotosMediaProvider: PhotosMediaProvider, @unchecked Sendable {
     func image(assetID: String, pixels: Int, network: Bool,
                progress: @escaping @Sendable (Double) -> Void) async throws -> PhotosReviewImage {
         try authorize()
-        guard let asset = assets[assetID] else { throw PhotosLibraryError.staleSelection }
+        let asset = try asset(assetID)
         let image = try await reviewImage(asset: asset, pixels: pixels, network: network, progress: progress)
         // PhotoKit may return a larger cached image. Normalize before admitting
         // it to our explicitly byte-bounded cache.
@@ -310,16 +330,29 @@ final class ApplePhotosMediaProvider: PhotosMediaProvider, @unchecked Sendable {
     func original(assetID: String, destination: URL, maximumBytes: Int64, network: Bool,
                   progress: @escaping @Sendable (Double) -> Void) async throws -> Int64 {
         try authorize()
-        guard let asset = assets[assetID], let resource = PHAssetResource.assetResources(for: asset).first(where: {
-            $0.type == (asset.mediaType == .video ? .video : .photo)
-        }) else { throw PhotosLibraryError.noResource(destination.lastPathComponent) }
+        try Task.checkCancellation()
+        let resource = try originalResource(assetID: assetID)
         let transfer = try PhotosResourceTransfer(destination: destination, maximumBytes: maximumBytes)
         return try await transfer.read(resource: resource, allowNetwork: network, progress: progress)
     }
+    func originalFilename(assetID: String) async throws -> String? {
+        try authorize()
+        try Task.checkCancellation()
+        let resource = try originalResource(assetID: assetID)
+        return PhotosLibraryService.safeFilename(resource.originalFilename, type: resource.uniformTypeIdentifier)
+    }
+    private func originalResource(assetID: String) throws -> PHAssetResource {
+        let asset = try asset(assetID)
+        guard let resource = PHAssetResource.assetResources(for: asset).first(where: {
+            $0.type == (asset.mediaType == .video ? .video : .photo)
+        }) else { throw PhotosLibraryError.noResource(assetID) }
+        return resource
+    }
     func preheat(assetIDs: [String]) async {
+        guard !Task.isCancelled else { return }
         manager.stopCachingImagesForAllAssets()
         let options = Self.options(network: false)
-        manager.startCachingImages(for: assetIDs.prefix(8).compactMap { assets[$0] },
+        manager.startCachingImages(for: assetIDs.prefix(8).compactMap { try? asset($0) },
             targetSize: CGSize(width: PhotosMediaSession.thumbnailPixels, height: PhotosMediaSession.thumbnailPixels),
             contentMode: .aspectFit, options: options)
     }
@@ -349,7 +382,13 @@ final class PhotosImageRequest: @unchecked Sendable {
                 guard shouldStart else { finish(.failure(CancellationError())); return }
                 let id = start { [self] image, info in
                     if (info?[PHImageCancelledKey] as? Bool) == true { finish(.failure(CancellationError())) }
-                    else if let error = info?[PHImageErrorKey] as? any Error { finish(.failure(error)) }
+                    else if let error = info?[PHImageErrorKey] as? any Error {
+                        let failure = error as NSError
+                        if failure.domain == PHPhotosErrorDomain,
+                           failure.code == PHPhotosError.Code.networkAccessRequired.rawValue {
+                            finish(.failure(PhotosRepresentationError.cloud))
+                        } else { finish(.failure(error)) }
+                    }
                     else if (info?[PHImageResultIsDegradedKey] as? Bool) == true && !acceptDegraded { return }
                     else if let image { finish(.success(image)) }
                     else if (info?[PHImageResultIsInCloudKey] as? Bool) == true { finish(.failure(PhotosRepresentationError.cloud)) }
@@ -374,7 +413,7 @@ final class PhotosImageRequest: @unchecked Sendable {
     }
 }
 
-/// Values available from PHAsset and resource descriptors, without media I/O.
+/// Values available without image, original, EXIF, or resource inspection.
 struct PhotosReviewAsset: Sendable {
     let id: String
     let filename: String
@@ -384,31 +423,132 @@ struct PhotosReviewAsset: Sendable {
     var duration: TimeInterval? = nil
 }
 
+/// Synchronous metadata access keeps preparation serial and cancellable without
+/// creating one task per asset. The service invokes it off the main actor.
+protocol PhotosReviewInventory: Sendable {
+    var count: Int { get }
+    func reviewAsset(at index: Int) throws -> PhotosReviewAsset
+}
+
+final class ApplePhotosReviewInventory: PhotosReviewInventory, @unchecked Sendable {
+    private let result: PHFetchResult<PHAsset>
+    private let photoLabel = L10n.text("Photo")
+    private let videoLabel = L10n.text("Video")
+    var count: Int { result.count }
+    init(result: PHFetchResult<PHAsset>) { self.result = result }
+
+    func asset(at index: Int, expectedID: String) throws -> PHAsset {
+        guard (0..<count).contains(index) else { throw PhotosLibraryError.staleSelection }
+        let asset = result.object(at: index)
+        guard asset.localIdentifier == expectedID else { throw PhotosLibraryError.staleSelection }
+        return asset
+    }
+
+    func reviewAsset(at index: Int) throws -> PhotosReviewAsset {
+        guard (0..<count).contains(index) else { throw PhotosLibraryError.staleSelection }
+        return autoreleasepool {
+            let asset = result.object(at: index)
+            let video = asset.mediaType == .video
+            // PHAsset has no public filename. Do not inspect 80,000 resources
+            // just to label review items, or invent a codec/RAW extension. The
+            // primary original's real name is resolved for detail/playback/Copy.
+            let name = video ? videoLabel : photoLabel
+            return PhotosReviewAsset(id: asset.localIdentifier, filename: "\(name) \(index + 1)",
+                captureDate: asset.creationDate, modificationDate: asset.modificationDate,
+                mediaKind: video ? .video : .photo, duration: video ? asset.duration : nil)
+        }
+    }
+}
+
+struct PhotosReviewMembership: Sendable {
+    let assets: [PhotosReviewAsset]
+    let indicesByAssetID: [String: Int]
+
+    static func read(inventory: any PhotosReviewInventory, range: PhotosBatchRange,
+                     recorder: PhotosBatchProgressRecorder) throws -> PhotosReviewMembership {
+        try Task.checkCancellation()
+        guard inventory.count == range.total else { throw PhotosLibraryError.staleSelection }
+        var assets: [PhotosReviewAsset] = []
+        var indices: [String: Int] = [:]
+        assets.reserveCapacity(range.indices.count)
+        indices.reserveCapacity(range.indices.count)
+        for index in range.indices {
+            try Task.checkCancellation()
+            let asset = try inventory.reviewAsset(at: index)
+            guard indices.updateValue(index, forKey: asset.id) == nil else { throw PhotosLibraryError.staleSelection }
+            assets.append(asset)
+            if assets.count.isMultiple(of: 128) {
+                recorder.update(PhotosBatchProgress(completed: assets.count, total: range.indices.count, downloadFraction: 0))
+            }
+        }
+        try Task.checkCancellation()
+        return PhotosReviewMembership(assets: assets, indicesByAssetID: indices)
+    }
+}
+
 extension PhotosReviewBatch {
+    /// Production path checks both metadata enumeration and item projection;
+    /// cancellation can never publish a partial or late complete inventory.
+    static func prepared(folder: URL, snapshot: PhotosLibrarySnapshot, range: PhotosBatchRange,
+                         assets: [PhotosReviewAsset], decisions: [String: PhotosReviewDecision],
+                         mediaSession: PhotosMediaSession) throws -> PhotosReviewBatch {
+        try Task.checkCancellation()
+        guard snapshot.count == range.total, assets.count == range.indices.count else { throw PhotosLibraryError.staleSelection }
+        var builder = PhotosReviewBatchBuilder(folder: folder, decisions: decisions, mediaSession: mediaSession, capacity: assets.count)
+        for asset in assets {
+            try Task.checkCancellation()
+            autoreleasepool { builder.append(asset) }
+        }
+        try Task.checkCancellation()
+        return builder.finish(snapshot: snapshot, range: range)
+    }
+
+    /// Compatibility for existing in-memory fixtures.
     static func lazy(folder: URL, snapshot: PhotosLibrarySnapshot, range: PhotosBatchRange,
                      assets: [PhotosReviewAsset], decisions: [String: PhotosReviewDecision],
                      mediaSession: PhotosMediaSession) -> PhotosReviewBatch {
-        var mapping: [String: String] = [:]
-        var dates: [String: Date] = [:]
-        let items = assets.enumerated().map { offset, asset in
-            let url = folder.appendingPathComponent(String(offset + 1)).appendingPathComponent(asset.filename)
-            mapping[url.path] = asset.id
-            if let date = asset.captureDate { dates[url.path] = date }
-            let metadata = decisions[asset.id]?.metadata(fileID: asset.id)
-            let file = PhotoFile(id: "photos:" + asset.id, url: url, displayRelativePath: asset.filename,
-                captureDate: asset.captureDate,
-                captureDateEvidence: asset.captureDate.map { CaptureDateEvidence(date: $0, source: .photosLibrary) },
-                cameraModel: nil, lensModel: nil, mediaKind: asset.mediaKind, duration: asset.duration,
-                modificationDate: asset.modificationDate, fileSize: 0, metadataIsLoaded: false,
-                rating: metadata?.rating ?? .undecided, ratedAt: metadata?.ratedAt,
-                starRating: metadata?.starRating, starsChangedAt: metadata?.starsChangedAt,
-                colorLabel: metadata?.colorLabel, colorChangedAt: metadata?.colorChangedAt,
-                photosMedia: PhotosMediaReference(assetID: asset.id, session: mediaSession))
-            return PhotoItem(primaryFile: file, pairedFile: nil)
-        }
-        let selected = Set(mapping.values)
+        var builder = PhotosReviewBatchBuilder(folder: folder, decisions: decisions, mediaSession: mediaSession, capacity: assets.count)
+        for asset in assets { builder.append(asset) }
+        return builder.finish(snapshot: snapshot, range: range)
+    }
+}
+
+private struct PhotosReviewBatchBuilder {
+    let folder: URL
+    let decisions: [String: PhotosReviewDecision]
+    let mediaSession: PhotosMediaSession
+    private var mapping: [String: String] = [:]
+    private var dates: [String: Date] = [:]
+    private var selectedDecisions: [String: PhotosReviewDecision] = [:]
+    private var items: [PhotoItem] = []
+
+    init(folder: URL, decisions: [String: PhotosReviewDecision], mediaSession: PhotosMediaSession, capacity: Int) {
+        self.folder = folder; self.decisions = decisions; self.mediaSession = mediaSession
+        items.reserveCapacity(capacity)
+        mapping.reserveCapacity(capacity)
+        dates.reserveCapacity(capacity)
+        selectedDecisions.reserveCapacity(min(capacity, decisions.count))
+    }
+    mutating func append(_ asset: PhotosReviewAsset) {
+        let url = folder.appendingPathComponent(String(items.count + 1)).appendingPathComponent(asset.filename)
+        mapping[url.path] = asset.id
+        if let date = asset.captureDate { dates[url.path] = date }
+        if let decision = decisions[asset.id] { selectedDecisions[asset.id] = decision }
+        let metadata = decisions[asset.id]?.metadata(fileID: asset.id)
+        let file = PhotoFile(id: "photos:" + asset.id, url: url, displayRelativePath: asset.filename,
+            captureDate: asset.captureDate,
+            captureDateEvidence: asset.captureDate.map { CaptureDateEvidence(date: $0, source: .photosLibrary) },
+            cameraModel: nil, lensModel: nil, mediaKind: asset.mediaKind, duration: asset.duration,
+            modificationDate: asset.modificationDate, fileSize: 0, metadataIsLoaded: false,
+            rating: metadata?.rating ?? .undecided, ratedAt: metadata?.ratedAt,
+            starRating: metadata?.starRating, starsChangedAt: metadata?.starsChangedAt,
+            colorLabel: metadata?.colorLabel, colorChangedAt: metadata?.colorChangedAt,
+            photosMedia: PhotosMediaReference(assetID: asset.id, session: mediaSession))
+        items.append(PhotoItem(primaryFile: file, pairedFile: nil))
+    }
+    func finish(snapshot: PhotosLibrarySnapshot, range: PhotosBatchRange) -> PhotosReviewBatch {
         return PhotosReviewBatch(folder: folder, snapshot: snapshot, range: range,
-            assetIDsByPath: mapping, decisions: decisions.filter { selected.contains($0.key) },
+            assetIDsByPath: mapping, decisions: selectedDecisions,
             captureDatesByPath: dates, reviewItems: items, mediaSession: mediaSession)
     }
 }

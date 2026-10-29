@@ -19,6 +19,10 @@ swiftc \
     Tests/VideoChecks/PhotosMediaStub.swift \
     Sources/Louppe/AppDateFormat.swift \
     Sources/Louppe/SessionOpeningMetrics.swift \
+    Sources/Louppe/SessionPersistence.swift \
+    Sources/Louppe/ForegroundWorkCoordinator.swift \
+    Sources/Louppe/ArchiveMetadataIndex.swift \
+    Sources/Louppe/SessionOpeningMetadata.swift \
     Sources/Louppe/FolderScanner.swift \
     Sources/Louppe/MetadataExtractor.swift \
     Sources/Louppe/FujiFilmSimulation.swift \

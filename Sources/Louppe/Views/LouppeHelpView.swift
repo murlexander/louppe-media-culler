@@ -73,8 +73,8 @@ struct LouppeHelpView: View {
                     Text(L10n.text("Apple Photos"))
                         .font(.headline)
                     Text(L10n.text("File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits."))
-                    Text(L10n.text("Review images load as you browse. Photos may download source data to make a preview. Originals are requested separately for original detail and Copy. Decisions save in Louppe; your library stays unchanged. Live Photos use their still image."))
-                    Text(L10n.text("Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos."))
+                    Text(L10n.text("Settings → General → iCloud Access has separate choices for review images and originals. Photos may download source data for a review image. Open Original Detail, video playback, and Copy request originals separately."))
+                    Text(L10n.text("Ratings stay local. File → Add to Album… adds items only after confirmation and preserves existing memberships. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos."))
                 }
 
                 Divider()

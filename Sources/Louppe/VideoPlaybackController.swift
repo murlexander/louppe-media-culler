@@ -1,5 +1,10 @@
 import Foundation
 import AVFoundation
+import ObjectiveC
+
+private enum PlayerSourceAccessKey {
+    nonisolated(unsafe) static var lease: UInt8 = 0
+}
 
 /// NotificationCenter's opaque observer token is not Sendable, while a
 /// main-actor class's deinitializer is nonisolated. Keep each token behind a
@@ -132,7 +137,9 @@ final class VideoPlaybackController: ObservableObject {
         periodicTimeObserver.remove()
     }
 
-    func prepare(_ item: PhotoItem) {
+    var sourceAccess: MediaReadAccess?
+
+    func prepare(_ item: PhotoItem, sourceAccess: MediaReadAccess? = nil) {
         guard item.isVideo || item.isAudio else { return }
         let requestedRevision = item.contentRevision
         if contentRevision == requestedRevision,
@@ -155,7 +162,13 @@ final class VideoPlaybackController: ObservableObject {
             errorMessage = MediaSourceRevision.changedMessage
             return
         }
-        let playerItem = AVPlayerItem(url: item.primaryURL)
+        let asset = AVURLAsset(url: item.primaryURL)
+        // The asset retains its exact grant even if queued native I/O outlives
+        // the session/player's reference during a folder transition.
+        if let lease = (sourceAccess ?? self.sourceAccess)?.begin() {
+            objc_setAssociatedObject(asset, &PlayerSourceAccessKey.lease, lease, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        let playerItem = AVPlayerItem(asset: asset)
         // AVPlayerView's native Play button uses the default rate; speed is
         // one shared review preference for videos and audio recordings.
         player.defaultRate = Float(playbackRate)

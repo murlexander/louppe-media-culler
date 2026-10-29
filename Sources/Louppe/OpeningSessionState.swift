@@ -24,12 +24,14 @@ struct OpeningSessionHandoff {
 }
 
 /// Read-only browse projection. It has no SessionStore reference, persistence
-/// access, rating commands, file operations, metadata refresh or sorting API.
+/// access, rating commands, file operations, source reads or sorting API.
 @MainActor
 final class OpeningSessionState: ObservableObject {
     let items: [PhotoItem]
     let sourceAccess: MediaReadAccess?
     private let indexByID: [String: Int]
+    private var readyItems: [String: PhotoItem] = [:]
+    private(set) var readyMetadataCount = 0
     @Published private(set) var currentIndex: Int
     @Published private(set) var selectedIDs: Set<String> = []
     @Published var viewMode: ViewMode
@@ -44,11 +46,46 @@ final class OpeningSessionState: ObservableObject {
         items = snapshot.items
         indexByID = Dictionary(uniqueKeysWithValues: snapshot.items.enumerated().map { ($0.element.id, $0.offset) })
         currentIndex = snapshot.items.firstIndex { $0.rating == .undecided } ?? 0
+        readyMetadataCount = snapshot.items.count { $0.primaryFile.metadataIsLoaded }
         self.viewMode = viewMode
         self.sourceAccess = sourceAccess
     }
 
-    var currentItem: PhotoItem? { items.indices.contains(currentIndex) ? items[currentIndex] : nil }
+    var currentItem: PhotoItem? {
+        items.indices.contains(currentIndex) ? itemWithReadyMetadata(items[currentIndex]) : nil
+    }
+
+    func itemWithReadyMetadata(_ item: PhotoItem) -> PhotoItem { readyItems[item.id] ?? item }
+
+    func metadataIsReady(for itemID: String) -> Bool {
+        guard let index = indexByID[itemID] else { return false }
+        return readyItems[itemID] != nil || items[index].primaryFile.metadataIsLoaded
+    }
+
+    /// Immutable inventory keeps the native collection's geometry/selection
+    /// stable. Only an observation overlay changes; it cannot grant save access.
+    @discardableResult
+    func applyMetadata(_ updates: [OpeningMetadataUpdate]) -> Int {
+        var accepted = 0
+        for update in updates {
+            let ready = update.item
+            guard ready.primaryFile.metadataIsLoaded,
+                  readyItems[ready.id] == nil, let index = indexByID[ready.id],
+                  !items[index].primaryFile.metadataIsLoaded else { continue }
+            let original = items[index]
+            guard ready.contentRevision == original.contentRevision,
+                  ready.individualFiles.map(\.id) == original.individualFiles.map(\.id),
+                  ready.individualFiles.map(\.scannedIdentity) == original.individualFiles.map(\.scannedIdentity),
+                  ready.individualFiles.map({ FolderScanner.fileSystemIdentityPath(for: $0.url) })
+                    == original.individualFiles.map({ FolderScanner.fileSystemIdentityPath(for: $0.url) }),
+                  ready.metadataSnapshots == original.metadataSnapshots else { continue }
+            if accepted == 0 { objectWillChange.send() }
+            readyItems[ready.id] = ready
+            accepted += 1
+        }
+        readyMetadataCount += accepted
+        return accepted
+    }
 
     func select(_ id: String, extending: Bool = false, toggling: Bool = false) {
         guard let index = indexByID[id] else { return }

@@ -34,6 +34,7 @@ struct SessionOpeningMetrics: Sendable {
 /// One scan owns this recorder. Small locked writes let GCD workers report
 /// completion without allocating a task or retaining a publication per file.
 final class SessionOpeningRecorder: @unchecked Sendable {
+    private static let logger = Logger(subsystem: "com.alexandermarkin.louppe", category: "OpeningReadiness")
     private static let signposter = OSSignposter(
         subsystem: "com.alexandermarkin.louppe", category: "Folder Opening"
     )
@@ -89,5 +90,13 @@ final class SessionOpeningRecorder: @unchecked Sendable {
             itemCount: projectedCount,
             elapsed: ProcessInfo.processInfo.systemUptime - started
         )
+    }
+
+    /// Aggregate local diagnostics contain no paths, filenames or asset IDs.
+    /// Ready describes model authority; it does not claim displayed pixels.
+    func logReadiness() {
+        let metrics = snapshot()
+        let publicationMS = (metrics.secondsByStage[.mainPublication] ?? 0) * 1000
+        Self.logger.notice("Opening ready: items=\(metrics.itemCount, privacy: .public) physicalFiles=\(metrics.physicalFileCount, privacy: .public) workerAndPublicationMs=\(metrics.elapsed * 1000, privacy: .public) mainPublicationMs=\(publicationMS, privacy: .public)")
     }
 }

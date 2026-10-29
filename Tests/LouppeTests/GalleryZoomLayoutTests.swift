@@ -80,13 +80,15 @@ final class GalleryZoomLayoutTests: XCTestCase {
         defer { window.close() }
         settle(host)
 
-        // The intrinsic capsule has 12-point side padding and a 30-point Fit
-        // target, followed by a 10-point gap and the 120-point native slider.
+        // Fit has a 36-point target, followed by an 8-point gap and the native slider.
         try click(host, window: window, x: 27, fromTop: size.height / 2)
         XCTAssertEqual(store.zoomMode, .fit, "Fit must activate through the glass surface")
         try click(host, window: window, x: 80, fromTop: size.height / 2)
         XCTAssertEqual(store.zoomMode, .actual, "The slider must accept input after Fit")
         XCTAssertLessThan(store.photoZoomScale, 2.7)
+        store.setPhotoZoomScale(2.7)
+        try click(host, window: window, x: 45, fromTop: 4)
+        XCTAssertEqual(store.zoomMode, .fit, "The expanded Fit target includes its upper trailing edge")
     }
 
     func testDoubleClickAcrossZoomCapsuleReturnsToFit() throws {

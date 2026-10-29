@@ -69,6 +69,13 @@ final class LouppeSpeedFirstUseTests: XCTestCase {
                     window.isReleasedWhenClosed = false
                     window.contentView = host
                     window.orderFront(nil)
+                    // Fixture preparation scanned these files to create decision evidence.
+                    // Remove only this disposable folder's optional metadata snapshot for
+                    // app-cache-cold runs; the filesystem remains warm in both modes.
+                    let archiveCacheWarm = ProcessInfo.processInfo.environment["LOUPPE_SPEED_ARCHIVE_CACHE"] == "warm"
+                    if !archiveCacheWarm, let index = ArchiveMetadataIndex(folder: folder) {
+                        try? FileManager.default.removeItem(at: index.cacheURL)
+                    }
                     let start = ContinuousClock.now
                     store.openFolder(folder)
                     var pixelsAt: Double?
@@ -119,6 +126,10 @@ final class LouppeSpeedFirstUseTests: XCTestCase {
                     XCTAssertTrue(idle)
                     resources.append(["fixture": paired ? "raw-jpeg-clones" : "jpeg-generated",
                         "count": items.count, "iteration": iteration, "warmup": iteration == 0,
+                        "archiveMetadataCache": ProcessInfo.processInfo.environment["LOUPPE_SPEED_ARCHIVE_CACHE"] == "warm" ? "warm" : "cold",
+                        "filesystem": "warm-local",
+                        "firstUsefulPixelsMS": first, "fullReadinessMS": ready,
+                        "readyCurrentPixelsMS": displayed,
                         "peakResidentBytes": peakRSS,
                         "residentAfterWindowDetachAndSaveDrainBytes": residentBytes(),
                         "mainActorGapSamplesMS": mainActorGapsMS,

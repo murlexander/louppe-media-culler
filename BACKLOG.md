@@ -59,6 +59,76 @@ measurements before choosing a fix. Later ideas remain deferred.
     varied RAW/mixed and SD-card acceptance, physical diagonal/momentum/Welcome
     edge dragging, and remaining main-actor/readiness costs. Failed stress runners
     are recorded separately from completed samples; no general RAW reliability claim.
+- [ ] **Remembered archives and pinned folders — Alex, 25 October 2026.** Include
+  this foundation with the overnight large-folder work, ahead of later archive
+  product ideas. Keep casual folder opening simple; pinning retains a folder
+  across visits without moving originals or introducing a required import mode.
+  - Persist pins and browsing position across relaunch. Unavailable folders stay
+    pinned and slightly dimmed, with an accessible unavailable state and explicit
+    unpin action. Reconnect only to the verified source, not a replacement at the
+    same path; retain existing sandbox/grant recovery behavior.
+  - Retain a rebuildable metadata/preview index with incremental validation of
+    changes, bounded storage and work, and foreground-first scheduling. Keep
+    durable decisions separate from disposable indexes and preview caches.
+  - Make browsing and individual metadata/detail capabilities available as their
+    evidence becomes ready, keeping incomplete results clear and positions stable.
+    Preserve full validation for file operations and safe save authority.
+  - Verify first visit/reopen, relaunch, pin/unpin, unavailable/reconnected source,
+    changed/replaced files and cache loss/corruption on disposable fixtures. Measure
+    repeated-opening benefits without treating cached metadata as current proof.
+  - **25 October local build:** remembered metadata, progressive details, pins and
+    independent current/viewport restoration are implemented with bounded shared
+    interaction admission. The full 1,034-case suite has 46 documented skips and
+    zero failures; safety is 75/75. Live-bookmark APFS detach/remount and focused
+    replacement/cache/grant contracts passed. Installed-app visual/input checks are
+    blocked by macOS screen lock; physical card/TCC/older-system checks remain.
+    [Build, measurements and morning sequence](Docs/ARCHIVES_2026-10-25.md).
+  - **25 October live follow-up:** the real ExFAT SSD's 16,975 media files passed
+    read-only mounted opening/navigation checks; its actual pin survives relaunch.
+    Full Photos review now opens all 80,708 items without batches. Separate iCloud
+    permissions live in General Settings and persist across relaunch. Final suite:
+    1,060 cases, 48 skips, zero failures; safety 75/75. Cold archive discovery and
+    Photos membership/publication remain measured bottlenecks; physical SD/ExFAT
+    reconnect, older-system runtime and physical frame pacing remain unverified.
+    [Live measurements, final installation and limitations](Docs/SSD_PHOTOS_2026-10-25.md).
+- [x] **Photos album organization — Alex, 25 October 2026.** Add confirmed
+  current/selected/filtered/all reviewed items to an exact existing album, or
+  create an album inside an existing Photos folder. Preserve prior memberships,
+  originals and Louppe decisions. Bounded PhotoKit updates retain shared
+  save/operation/Quit gates and verified partial/cancellation results. Move
+  Choose Photos into Filter to keep the review view clear. Installed 1.13.0 (15),
+  full suite 1,096/48 skips/zero failures, safety 75/75. Native hierarchy, exact
+  confirmation and chooser handoff verified. Alex-approved live test created one
+  album inside arts and verified one photo, with separate count/placement readback.
+  Multi-batch/cancellation/revocation runtime gaps remain. Validation and limitations: [acceptance record](Docs/PHOTOS_ORGANIZATION_2026-10-25.md).
+- [ ] **Archive folder navigation — Alex, 25 October 2026.** Show the actual
+  SSD folder hierarchy as a compact collapsible native outline in Gallery and
+  Grid. Design investigated against the current scanner/index/selection code;
+  not implemented in the installed build.
+  - Share the leading navigation pane with Gallery's thumbnail Browser via
+    Folders/Browser modes; retain Info trailing and the existing Browser width.
+    Include All Media, breadcrumbs, prepared item counts, and descendants by
+    default, with direct-folder-only as a small context option.
+  - Keep one archive session/root/save authority. Folder navigation scopes the
+    prepared inventory before metadata filters, without reopening or rescanning.
+    Collect a lightweight directory manifest during existing discovery so empty
+    folders remain truthful; reuse exact encoded identities and native row reuse.
+  - Prepare subtree postings/ranges and sort-rank lookup off-main. Do not rebuild
+    paths/counts/layout per view body, rating, or folder click; ordinary navigation
+    must not walk the entire archive or issue media/metadata requests.
+  - Include a paired review item when either physical constituent belongs to the
+    scope; deduplicate parent counts and retain pair-wide review/action semantics.
+    Confirm scopes clearly as current folder/filtered/selected or entire archive;
+    never let a folder view silently authorize a whole-archive operation.
+  - Remember bounded per-folder current/Browser/Grid anchors and expansion state,
+    scoped to verified root/directory identities. Reject stale viewport callbacks
+    and replaced folders; fall back to a surviving ancestor/root. Keep decision
+    sidecars unchanged. Preserve explicit Pause, permission and reconnect gates.
+  - Cover empty/filter-miss states, prefix siblings, duplicate/Unicode names,
+    cross-folder pairs, selection pruning, rescan/rename/undo, changed source
+    identities, keyboard/accessibility, and both layouts with Info visible.
+    Measure real archive navigation and synthetic large item/folder trees;
+    run required keyboard/scroll/safety gates before installing an implementation.
 - [ ] **Photo location lookup — Aymeric feedback, 20 October 2026.** Add an
   explicit Open in Maps action to valid GPS coordinates in Info. Do not look up
   locations before the click. Carry this forward from the deferred 1.12 work;
@@ -236,6 +306,23 @@ format 7; preserve copies before testing a downgrade to 1.10.
 
 These are deferred ideas, not committed implementation scope for 1.13.
 
+- [ ] **Archive gateway — Alex, 25 October 2026.** Make Louppe a familiar front
+  door to existing media, with culling as one activity. Product ideas below are
+  deferred; large-folder performance and remembered/pinned archives belong to
+  the 1.13 plan above.
+  - **Offline browsing.** Retain budgeted thumbnails/metadata for disconnected
+    archives, clearly distinguish unavailable originals, and identify the drive
+    needed for full detail or export.
+  - **Navigation through time.** Move from years to months to shoots to images;
+    retain folder navigation and stable browsing anchors.
+  - **Return to meaningful places.** Saved searches and shoot shortcuts extend
+    the remembered browsing positions included in the archive foundation.
+  - **Collections across folders.** Gather media for prints, portfolios or other
+    projects without moving or duplicating originals.
+  - **Rediscovery.** Explore older favorites, overlooked shoots and unreviewed
+    media using existing dates/decisions first; semantic search is later research.
+  - **Editor and file handoffs.** Make revealing originals, opening an editor and
+    exporting a rediscovered selection straightforward; reuse existing actions.
 - [ ] **Automatic blur detection.** Experiment with measured relative softness
   within bursts and verified detail crops. Flag uncertainty for human review,
   including low-texture and intentional-blur cases. Early-user feedback,

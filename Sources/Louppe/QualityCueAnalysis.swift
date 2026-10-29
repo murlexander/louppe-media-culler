@@ -41,15 +41,15 @@ struct QualityCueEvidence: Equatable, Sendable {
         return L10n.text("Whole image, scaled to \(dimensions). Near-black / near-white samples: \(counts). \(zones)")
     }
 
-    static func measure(_ item: PhotoItem) async -> Self {
+    static func measure(_ item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> Self {
         if RawHistogramPipeline.supportsAnalysis(for: item),
-           let raw = await RawHistogramPipeline.shared.analysis(for: item, purpose: .backgroundQuality) {
+           let raw = await RawHistogramPipeline.shared.analysis(for: item, purpose: .backgroundQuality, sourceAccess: sourceAccess) {
             return Self(item: item, analysis: raw, source: .rawDecode)
         }
         guard !Task.isCancelled else {
             return Self(item: item, analysis: nil, source: .renderedPreview)
         }
-        let preview = await HistogramPipeline.shared.analysis(for: item, purpose: .backgroundQuality)
+        let preview = await HistogramPipeline.shared.analysis(for: item, purpose: .backgroundQuality, sourceAccess: sourceAccess)
         return Self(item: item, analysis: preview, source: .renderedPreview,
                     rawFallback: item.isRaw)
     }

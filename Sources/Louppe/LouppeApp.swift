@@ -283,6 +283,9 @@ private struct FocusedLouppeSessionCommands: Commands {
             .disabled(actionableStore?.sessionRecoveryEntries.isEmpty != false)
 
             Divider()
+            Button(L10n.text("Add to Album…")) { actionableStore?.presentPhotosOrganization() }
+                .disabled(actionableStore?.canAddToPhotosAlbum != true)
+
             Button(L10n.text("Organize Source Folder…")) {
                 actionableStore?.presentSourceOrganization()
             }
@@ -535,6 +538,9 @@ final class LouppeApplicationDelegate: NSObject, NSApplicationDelegate {
             case .renameSource:
                 alert.messageText = L10n.text("Files are still being renamed")
                 alert.informativeText = L10n.text("Wait for renaming or restoring to finish, then quit.")
+            case .photosOrganization:
+                alert.messageText = L10n.text("Photos albums are still being updated")
+                alert.informativeText = L10n.text("Cancel the album update or wait for verification to finish, then quit.")
             case .cleanUp:
                 alert.messageText = L10n.text("Clean Up is still running")
                 alert.informativeText = L10n.text("Wait for Trash or restore to finish, then quit.")

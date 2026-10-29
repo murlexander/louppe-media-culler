@@ -25,7 +25,7 @@ final class GridControlGestureTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
-        window.makeKeyAndOrderFront(nil)
+        window.orderBack(nil)
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
 
         // The centered native Button stands in for GridCell's Play control.
@@ -76,7 +76,7 @@ final class GridControlGestureTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
-        window.makeKeyAndOrderFront(nil)
+        window.orderBack(nil)
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
 
         // SwiftUI's top-trailing 40-point target maps to the upper-right of
@@ -144,7 +144,7 @@ final class GridControlGestureTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
-        window.makeKeyAndOrderFront(nil)
+        window.orderBack(nil)
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
 
         // A drag remains owned by the Grid's simultaneous rubber-band gesture

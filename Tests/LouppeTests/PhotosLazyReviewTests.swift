@@ -5,6 +5,35 @@ import XCTest
 @testable import Louppe
 
 final class PhotosImageRequestTests: XCTestCase, @unchecked Sendable {
+    func testNetworkRequiredCallbackErrorIsCloudWithoutACloudFlagOrNetworkConsent() async throws {
+        let error = NSError(domain: PHPhotosErrorDomain, code: PHPhotosError.Code.networkAccessRequired.rawValue)
+        XCTAssertEqual(error.code, 3164)
+        let request = PhotosImageRequest(cancel: { _ in })
+        do {
+            _ = try await request.read { reply in
+                reply(nil, [PHImageErrorKey: error])
+                return 16
+            }
+            XCTFail("Local-only PhotoKit network-required failure must offer explicit review consent")
+        } catch PhotosRepresentationError.cloud {}
+        XCTAssertFalse(ApplePhotosMediaProvider.options(network: false).isNetworkAccessAllowed)
+    }
+
+    func testOtherPhotoKitCallbackErrorsKeepTheirActionableFailure() async throws {
+        let expected = NSError(domain: PHPhotosErrorDomain, code: PHPhotosError.Code.accessUserDenied.rawValue)
+        let request = PhotosImageRequest(cancel: { _ in })
+        do {
+            _ = try await request.read { reply in
+                reply(nil, [PHImageErrorKey: expected])
+                return 15
+            }
+            XCTFail("Permission failure must remain visible")
+        } catch {
+            XCTAssertEqual((error as NSError).domain, expected.domain)
+            XCTAssertEqual((error as NSError).code, expected.code)
+        }
+    }
+
     func testDegradedCallbackIsNeverAcceptedAsOriginalOrCompletedPreview() async throws {
         let pixel = try MockPhotosMedia.image(pixels: 32)
         let request = PhotosImageRequest(cancel: { _ in })
@@ -133,11 +162,12 @@ final class PhotosLazyReviewTests: XCTestCase {
     func testRequestConcurrencyCachePreheatAndCancellationAreBounded() async throws {
         let fixture = try LazyPhotosFixture()
         defer { fixture.remove() }
-        let batch = try await fixture.batch(size: 1_000)
+        let batch = try await fixture.selection()
+        XCTAssertEqual(batch.reviewItems?.count, 2_003)
         let session = try XCTUnwrap(batch.mediaSession)
         await session.setImageNetwork(true)
         await withTaskGroup(of: Void.self) { group in
-            for index in 0..<90 {
+            for index in 1_913..<2_003 {
                 group.addTask { _ = try? await session.image(assetID: "asset-\(index)", pixels: 2_048) }
             }
         }
@@ -295,8 +325,8 @@ final class PhotosLazyReviewTests: XCTestCase {
         for scheme in [ColorScheme.light, .dark] {
             store.viewMode = .gallery
             store.setIndex(0)
-            try await capture(PhotosBatchBar(store: store, batch: try XCTUnwrap(store.photosBatch)),
-                name: "batch-bar-\(scheme)", size: CGSize(width: 1200, height: 64), scheme: scheme,
+            try await capture(FilterView(store: store),
+                name: "photos-filter-\(scheme)", size: CGSize(width: 340, height: 560), scheme: scheme,
                 defaults: fixture.defaults, output: output)
             try await capture(SessionView(store: store), name: "gallery-local-\(scheme)",
                 size: CGSize(width: 1512, height: 900), scheme: scheme, defaults: fixture.defaults, output: output)
@@ -376,6 +406,7 @@ actor MockPhotosMedia: PhotosMediaProvider {
         var maximumConcurrentImages = 0
         var maximumConcurrentOriginals = 0
         var preheat: [String] = []
+        var filenames: [String] = []
     }
     private(set) var requests = Requests()
     private var imageCount = 0
@@ -384,10 +415,16 @@ actor MockPhotosMedia: PhotosMediaProvider {
     private var oversize = false
     private var slowOriginals = false
     private var slowOriginalAsset: String?
+    private var resolvedOriginalFilename: String?
     func setOffline(_ value: Bool) { offline = value }
     func setOversize(_ value: Bool) { oversize = value }
     func setSlowOriginals(_ value: Bool) { slowOriginals = value }
     func setSlowOriginalAsset(_ value: String) { slowOriginalAsset = value }
+    func setOriginalFilename(_ value: String) { resolvedOriginalFilename = value }
+    func originalFilename(assetID: String) -> String? {
+        requests.filenames.append(assetID)
+        return resolvedOriginalFilename
+    }
     nonisolated static func originalBytes(_ id: String) -> Data { Data("exact-original-resource:\(id):RAW-not-preview".utf8) }
     nonisolated static func image(pixels: Int) throws -> PhotosReviewImage {
         let context = try XCTUnwrap(CGContext(data: nil, width: pixels, height: pixels, bitsPerComponent: 8,
@@ -459,6 +496,10 @@ final class LazyPhotosFixture {
         try await library.prepare(snapshot: library.select(PhotosLibraryQuery()), page: 0, size: size,
             allowNetwork: false, recorder: PhotosBatchProgressRecorder())
     }
+    func selection() async throws -> PhotosReviewBatch {
+        try await library.prepareSelection(snapshot: library.select(PhotosLibraryQuery()),
+            allowNetwork: false, recorder: PhotosBatchProgressRecorder())
+    }
     func remove() { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: root) }
 }
 
@@ -466,6 +507,11 @@ actor LazyMockPhotosLibrary: PhotosLibraryClient {
     let root: URL
     let provider: MockPhotosMedia
     let decisions: PhotosReviewDecisions
+    private var holdSelection = false
+    private var selectionContinuation: CheckedContinuation<Void, Never>?
+    private var clampSelection = false
+    private(set) var removedFolders: [URL] = []
+    private(set) var selectionRequests = 0
     init(root: URL, provider: MockPhotosMedia, decisions: PhotosReviewDecisions) {
         self.root = root; self.provider = provider; self.decisions = decisions
     }
@@ -477,17 +523,48 @@ actor LazyMockPhotosLibrary: PhotosLibraryClient {
     func prepare(snapshot: PhotosLibrarySnapshot, page: Int, size: Int, allowNetwork: Bool,
                  recorder: PhotosBatchProgressRecorder) async throws -> PhotosReviewBatch {
         let range = PhotosBatchRange(total: snapshot.count, page: page, size: size)
+        return try await prepare(snapshot: snapshot, range: range, allowNetwork: allowNetwork, recorder: recorder)
+    }
+    func holdNextSelection() { holdSelection = true }
+    func returnClampedSelection() { clampSelection = true }
+    var selectionIsHeld: Bool { selectionContinuation != nil }
+    func releaseSelection() { selectionContinuation?.resume(); selectionContinuation = nil }
+    func prepareSelection(snapshot: PhotosLibrarySnapshot, allowNetwork: Bool,
+                          recorder: PhotosBatchProgressRecorder) async throws -> PhotosReviewBatch {
+        selectionRequests += 1
+        let range = clampSelection ? PhotosBatchRange(total: snapshot.count, page: 0, size: 1_000)
+            : PhotosBatchRange(entireSelection: snapshot.count)
+        let batch = try await prepare(snapshot: snapshot, range: range,
+                                      allowNetwork: allowNetwork, recorder: recorder)
+        if holdSelection {
+            holdSelection = false
+            // Deliberately ignore cancellation after completing preparation.
+            // SessionStore must retire this late result rather than adopt it.
+            await withCheckedContinuation { selectionContinuation = $0 }
+        }
+        return batch
+    }
+    private func prepare(snapshot: PhotosLibrarySnapshot, range: PhotosBatchRange, allowNetwork: Bool,
+                         recorder: PhotosBatchProgressRecorder) async throws -> PhotosReviewBatch {
         let folder = root.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let session = PhotosMediaSession(provider: provider, folder: folder, allowNetwork: allowNetwork)
-        let assets = range.indices.map {
-            PhotosReviewAsset(id: "asset-\($0)", filename: "Photo.raw", captureDate: Date(timeIntervalSince1970: Double(2_003 - $0)))
-        }
-        return PhotosReviewBatch.lazy(folder: folder, snapshot: snapshot, range: range,
-            assets: assets, decisions: try await decisions.load(), mediaSession: session)
+        let membership = try PhotosReviewMembership.read(inventory: GeneratedPhotosReviewInventory(count: snapshot.count),
+                                                       range: range, recorder: recorder)
+        return try PhotosReviewBatch.prepared(folder: folder, snapshot: snapshot, range: range,
+            assets: membership.assets, decisions: try await decisions.load(), mediaSession: session)
     }
     func remove(_ batch: PhotosReviewBatch) async {
         await batch.mediaSession?.stop()
         try? FileManager.default.removeItem(at: batch.folder)
+        removedFolders.append(batch.folder)
+    }
+}
+
+struct GeneratedPhotosReviewInventory: PhotosReviewInventory {
+    let count: Int
+    func reviewAsset(at index: Int) -> PhotosReviewAsset {
+        PhotosReviewAsset(id: "asset-\(index)", filename: "Photo.raw",
+                          captureDate: Date(timeIntervalSince1970: Double(count - index)))
     }
 }

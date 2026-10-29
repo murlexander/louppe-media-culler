@@ -13,7 +13,7 @@ struct OpeningSessionView: View {
                 ProgressView().controlSize(.small)
                 Text(L10n.text("Loading photo details…"))
                     .font(.callout)
-                Text("\(state.items.count)").foregroundStyle(.secondary).monospacedDigit()
+                Text("\(state.readyMetadataCount)/\(state.items.count)").foregroundStyle(.secondary).monospacedDigit()
                 Spacer()
                 Picker(L10n.text("View"), selection: $state.viewMode) {
                     Text(L10n.text("Gallery")).tag(ViewMode.gallery)
@@ -25,21 +25,28 @@ struct OpeningSessionView: View {
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
             Divider()
-            if state.viewMode == .grid {
-                OpeningCollection(state: state, surface: .grid)
-            } else {
-                HStack(spacing: 0) {
-                    OpeningCollection(state: state, surface: .browser)
-                        .frame(width: BrowserView.width)
-                    Divider()
-                    if let item = state.currentItem {
-                        VStack(spacing: 8) {
-                            OpeningPhotoView(item: item, sourceAccess: state.sourceAccess, fitted: true)
-                            Text(item.displayName).font(.callout).lineLimit(1)
+            HStack(spacing: 0) {
+                if state.viewMode == .grid {
+                    OpeningCollection(state: state, surface: .grid)
+                } else {
+                    HStack(spacing: 0) {
+                        OpeningCollection(state: state, surface: .browser)
+                            .frame(width: BrowserView.width)
+                        Divider()
+                        if let item = state.currentItem {
+                            VStack(spacing: 8) {
+                                OpeningPhotoView(item: item, sourceAccess: state.sourceAccess, fitted: true)
+                                Text(item.displayName).font(.callout).lineLimit(1)
+                            }
+                            .padding(12)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
+                }
+                if let item = state.currentItem {
+                    Divider()
+                    OpeningDetails(item: item, isReady: state.metadataIsReady(for: item.id))
+                        .frame(width: 250)
                 }
             }
         }
@@ -60,6 +67,35 @@ struct OpeningSessionView: View {
             }
         }
         .accessibilityIdentifier("openingSession")
+    }
+}
+
+private struct OpeningDetails: View {
+    let item: PhotoItem
+    let isReady: Bool
+
+    var body: some View {
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: 12) {
+                if !isReady {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text(L10n.text("Loading photo details…")).font(.callout)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+                ForEach(MetadataExtractor.openingFields(for: item)) { field in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(L10n.label(field.label)).font(.caption).foregroundStyle(.secondary)
+                        Text(verbatim: field.value).font(.callout).textSelection(.enabled)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+        }
+        .accessibilityIdentifier("openingDetails")
     }
 }
 

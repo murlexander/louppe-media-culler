@@ -31,9 +31,14 @@ struct BrowserView: View {
                 groups: store.gridGroups
             )
             .equatable()
+            .environment(\.mediaReadAccess, store.mediaReadAccess)
             .frame(width: geometry.size.width, height: geometry.size.height)
             .onAppear {
-                collectionController.onViewportChange = onViewportChange
+                collectionController.onViewportChange = { receipt in
+                            store.recordPinnedViewport(physicalFileID: receipt.physicalFileID,
+                                                       topOffset: Double(receipt.topOffset), surface: .browser)
+                            onViewportChange?(receipt)
+                        }
                 collectionController.onViewportRestored = onViewportRestored
                 if let initialViewportReceipt {
                     collectionController.restoreViewport(initialViewportReceipt)
@@ -185,6 +190,9 @@ private struct BrowserRow: View {
                 }
                 // Stable ID also retires thumbnail state when a reuse host rebinds.
                 .id(item.id)
+                .contextMenu {
+                    MediaTileContextMenu(store: store, index: index, revision: item.contentRevision, open: onPlainClick)
+                }
         }
     }
 }

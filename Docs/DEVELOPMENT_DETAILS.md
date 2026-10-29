@@ -23,6 +23,9 @@ it to every view.
 | `Sources/Louppe/FileOperationJournal.swift` | Per-file durable Copy/Move/Rename/Organize/Trash/undo checkpoints, stable file identity, and launch recovery |
 | `Sources/Louppe/CleanUpWorker.swift` | Background Trash/restore file loops, progress throttling, pair rollback, O(n+k) restoration merge |
 | `Sources/Louppe/FolderScanner.swift` | Recursive scans, deterministic volume-aware RAW+JPEG pairing, lazy JPEG metadata, pairing projection, chronological sort |
+| `Sources/Louppe/PinnedFolders.swift` | Durable identity-bound pins/bookmarks and bounded independent current/viewport positions, separate from decisions/caches |
+| `Sources/Louppe/ArchiveMetadataIndex.swift` | Disposable revision-bound metadata observations with bounded per-folder/aggregate storage |
+| `Sources/Louppe/ForegroundWorkCoordinator.swift` | Shared cancellable interaction admission between existing bounded worker units |
 | `Sources/Louppe/SessionOpeningWorker.swift` and `SessionOpening*` helpers | Cancellable complete inventory/metadata preparation, saved-decision restoration, facets/index preparation, and opening-stage measurements before session publication |
 | `Sources/Louppe/ImagePipeline.swift` | ImageIO decoding, AVFoundation first frames, thumbnail memory/disk caches, prefetch |
 | `Sources/Louppe/HistogramPipeline.swift` | Bounded photo-only luminance analysis plus cached Fit/phone-size clipping-warning previews |
@@ -68,14 +71,19 @@ Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Cl
 ## Apple Photos sources
 
 `PhotosLibraryService` owns PhotoKit off-main. One lazy `PHFetchResult` holds
-the chooser selection, and one pinned result retains the active batch's stable
-membership while the chooser changes. Only the selected `IndexSet` (50–1,000
-assets) becomes Swift objects. Albums and inclusive calendar dates narrow the
-query; Last Week and Last 7 Days use the Mac’s calendar/time zone, including
-DST boundaries. Batch controls preserve Gallery/Grid and review sorting.
+the chooser selection, and one pinned result retains the active review's stable
+membership while the chooser changes. Full-selection preparation walks lightweight
+metadata serially off-main with cancellation and progress. The media provider
+retains the fetch result plus asset-ID/index bindings, resolving one PHAsset on
+demand. It does not retain every PHAsset or inspect every original resource.
+Initial Photo/Video labels leave original filenames/codecs unavailable until
+explicit original access. Albums and inclusive calendar dates narrow the query;
+Last Week and Last 7 Days use the Mac’s calendar/time zone, including DST boundaries.
+Normal UI opens the complete selection; bounded batch APIs remain for compatibility.
 
-`prepare` now returns a complete stable asset inventory, with resource names,
-Photos dates and restored decisions, before requesting any image bytes.
+`prepareSelection` returns complete stable membership, Photos dates and restored
+decisions before requesting any image bytes. It refuses clamped/incomplete client
+results. `prepare` retains the bounded compatibility path.
 `PhotosReviewBatch.reviewItems` bypasses folder discovery, EXIF enrichment and
 file-identity validation in `SessionOpeningWorker`. Its synthetic URLs are
 cache/display keys, never evidence that a local original exists. The normal
@@ -94,7 +102,12 @@ and hides preview pixels while original detail is requested. No review preview
 is presented as 100% original detail. The image cache and all view state belong
 to this batch/revision, not an asset ID alone.
 
-Review-image and original iCloud consent are separate, initially off. Choosing
+Review-image and original iCloud consent live in General Settings and persist
+independently through injected UserDefaults, initially off. Active-media updates
+serialize captured actor/value/revision snapshots; adoption applies latest consent
+before publication. Changing consent cannot automatically retry an original.
+The chooser, review bar and Copy sheet link to Settings instead of owning consent.
+Choosing
 review downloads does not authorize resource streaming. PhotoKit may itself
 fetch source bytes to make an uncached representation: target size bounds
 requested pixels, not network-transfer bytes. Per-item loading, cloud/error,
@@ -130,7 +143,31 @@ again for each staged original. Photos routing Copy and XMP generation are
 unavailable; representation pixels can never enter an export plan.
 The central capabilities and execution gates
 refuse Trash, Move, Rename, Organize, and XMP publication for Photos batches.
-No Photos library change request is issued. Previously active cache media is
+Review, ratings, and Copy do not issue Photos library change requests.
+`PhotosLibraryOrganizationService` is the explicit **File → Add to Album…**
+exception: it only adds confirmed exact-ID memberships, or creates a new album
+in a selected existing folder/top level. It never removes assets/memberships,
+edits originals, or maps local decisions to Favorites. The read-only chooser
+hierarchy retains actual collection IDs/parents; native change blocks re-fetch
+IDs, authorization and collection capabilities. Transactions admit at most 200
+assets serially, and atomically create/place/add the first nonempty batch.
+Callbacks are followed by fresh membership/placement verification. Cancellation
+waits for the current update and verification; completed additions remain.
+Per-batch observations are not a whole-library snapshot or crash-proof journal.
+Uncertain creation is never retried by title or automatically replayed.
+
+SessionStore captures immutable scope/items plus source, snapshot and media-actor
+identity at presentation, saves decisions before submitting, and holds shared
+`activeFileOperation` through callback/verification. The operation blocks Quit,
+source changes and conflicting operations, retaining the sleep assertion. It
+preserves local selection, grouping, decisions and Undo. Progress uses one
+replaceable recorder value with 100 ms UI publication; errors and partial results
+retain verified/missing/uncertain/unprocessed distinctions. PhotoKit owns these
+metadata transactions; filesystem journals never claim authority over them.
+The Photos source bar is folded into Filter; its Choose Photos action waits
+for popover dismissal before presenting the chooser.
+
+Previously active cache media is
 retired only after the outgoing decision barrier; abandoned marked UUID cache
 folders are removed at the next preparation. At most the active and preparing
 batch are retained during normal operation; failed filesystem cleanup remains
@@ -278,6 +315,16 @@ selected-folder entitlements in `Louppe.entitlements`.
   Items** discards missing entries. Close/Quit preserve both legacy copies
   byte-for-byte.
 
+Welcome's Pin Folder… chooser pins directly without opening/scanning/saving the
+source; reviewing has no pin toolbar button. Pins and positions use their own
+durable Application Support document, never a source sidecar or cache. Bookmark/picker URLs retain exact scope authority. A pin's
+UUID-or-conservative-device plus inode/birth identity is verified before opening
+persistence/discovery and again through existing source barriers. Missing/revoked
+pins remain visible with Locate/Unpin; failed resolution never falls back to path.
+Current/Browser/Grid anchors require a fresh exact physical revision. Opening user
+interaction supersedes saved position; dormant receipts expire on later navigation.
+Position errors remain retryable and never authorize discarding decision state.
+
 ## Session state and selection
 
 - Lazy JPEG enrichment verifies scanned identity before/after metadata I/O.
@@ -407,6 +454,21 @@ selected-folder entitlements in `Louppe.entitlements`.
 
 ## Native UI
 
+- [macOS input guidance](MACOS_INPUT.md) records the Apple touch-design review
+  through macOS 27.2. `DirectTouchClickActions` attaches touch-only click
+  recognizers to Grid's immediate pointer surface and both photo canvases on
+  macOS 27+. Single and double taps can recognize together without delaying
+  initial selection; they yield to scrolling and reject cancelled, hidden,
+  out-of-bounds and modal input. Existing pointer handlers retain their latency
+  and modifier-event semantics. NSScrollView owns one-finger photo panning and
+  pinch zoom; Browser/Grid touch drags scroll rather than rubber-band-select.
+  Native tile context menus expose Gallery, selection and the existing gated
+  rating actions. Their selection/rating behavior matches the shared store;
+  actions reject a changed content revision at the menu's original index.
+  Custom Fit, transport and quality-cue targets reach 36 points; decision targets
+  remain 40 points. Grid's drag exclusion includes the larger cue target.
+  The main window automatically recalculates its Tab order as controls change.
+
 - `NativeSearchField` embeds `NSSearchField` for Filter, Command Palette, Help,
   and shortcut Settings. Keep immediate binding updates, native editing and IME
   ownership, one-shot focus requests scoped to the attached key window, and
@@ -415,7 +477,9 @@ selected-folder entitlements in `Louppe.entitlements`.
   its recorder after menu tracking ends. Welcome uses the system `HelpLink`.
   `FloatingControlSurface` shares macOS 26+ glass between photo zoom and floating
   video transport, regular material on older systems, and an opaque bordered
-  surface for Reduce Transparency. Inline audio controls keep their reading layout.
+  surface for Reduce Transparency. Interactive glass supplies native feedback
+  for these control groups; Reduce Motion disables the extra interaction effect.
+  Inline audio controls keep their reading layout.
 
 - `SheetForm` owns the shared dialog title/subtitle, 24-point side margins,
   regular native controls, scrolling body, and fixed action row. Setup screens

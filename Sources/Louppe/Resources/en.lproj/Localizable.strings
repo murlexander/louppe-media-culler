@@ -1940,10 +1940,122 @@
 /* Settings pages. */
 "General" = "General";
 
+/* Pinned folders. */
+"Available" = "Available";
+"Unavailable — reconnect the drive or locate the folder" = "Unavailable — reconnect the drive or locate the folder";
+"Access needed — locate the folder" = "Access needed — locate the folder";
+"This is a different folder or drive. Locate the original pinned folder." = "This is a different folder or drive. Locate the original pinned folder.";
+"Folder access could not be saved. Locate the folder and try again." = "Folder access could not be saved. Locate the folder and try again.";
+"Pinned-folder storage is full. Unpin a folder and try again." = "Pinned-folder storage is full. Unpin a folder and try again.";
+"Pinned folders could not be read. Previous records are retained. Try again." = "Pinned folders could not be read. Previous records are retained. Try again.";
+"The browsing position could not be saved. Previous positions are retained." = "The browsing position could not be saved. Previous positions are retained.";
+"Locate the original pinned folder. Louppe will verify its identity." = "Locate the original pinned folder. Louppe will verify its identity.";
+"Reconnect" = "Reconnect";
+"Pin This Folder" = "Pin This Folder";
+"Unpin This Folder" = "Unpin This Folder";
+"Locate Folder…" = "Locate Folder…";
+"Unpin Folder" = "Unpin Folder";
+"Pinned folders" = "Pinned folders";
+"Current folder is not pinned" = "Current folder is not pinned";
+"Current folder is pinned" = "Current folder is pinned";
+"Pin this folder or open a pinned folder" = "Pin this folder or open a pinned folder";
+"Updating pinned folders" = "Updating pinned folders";
+"Pin a folder from its toolbar while reviewing." = "Pin a folder from its toolbar while reviewing.";
+"Locate {0}…" = "Locate {0}…";
+"Actions for {0}" = "Actions for {0}";
+"Open, locate, or unpin this folder" = "Open, locate, or unpin this folder";
+
+/* Welcome pinning. */
+"Pin Folder…" = "Pin Folder…";
+"Pin Folder" = "Pin Folder";
+"Choose a folder to pin without opening it." = "Choose a folder to pin without opening it.";
+"Choose Pin Folder… to add a shortcut." = "Choose Pin Folder… to add a shortcut.";
+
+/* Photos selection. */
+"Open" = "Open";
+"Video" = "Video";
+
+/* Whole Photos review. */
+"Photos couldn't provide a file for “{0}”. Check it in Photos, then retry." = "Photos couldn't provide a file for “{0}”. Check it in Photos, then retry.";
+"This Photos selection is closed. Open it again." = "This Photos selection is closed. Open it again.";
+
+"Apple Photos · {0} items" = "Apple Photos · {0} items";
+
+/* Persistent iCloud settings. */
+"Open Settings…" = "Open Settings…";
+"Review images load as you browse. Photos may fetch source data to render a preview. Originals stream only when you request original detail, playback, or Copy. Each choice is remembered independently." = "Review images load as you browse. Photos may fetch source data to render a preview. Originals stream only when you request original detail, playback, or Copy. Each choice is remembered independently.";
+
+/* Photos album organization. */
+"Reading Photos albums and folders…" = "Reading Photos albums and folders…";
+"Add to Album" = "Add to Album";
+"Review Album Addition" = "Review Album Addition";
+"Adding to Album" = "Adding to Album";
+"Existing album" = "Existing album";
+"New album" = "New album";
+"Choose an album…" = "Choose an album…";
+"No writable albums. Create a new album instead." = "No writable albums. Create a new album instead.";
+"Album name" = "Album name";
+"Parent folder" = "Parent folder";
+"Photos Library" = "Photos Library";
+"Choose a folder…" = "Choose a folder…";
+"Photos folders contain albums. Additions keep existing album memberships and leave originals in your library." = "Photos folders contain albums. Additions keep existing album memberships and leave originals in your library.";
+"Reload albums and folders" = "Reload albums and folders";
+"No items in this scope." = "No items in this scope.";
+"Items" = "Items";
+"A new album will be created at this location." = "A new album will be created at this location.";
+"Add these items to this album? Existing album memberships and originals stay unchanged." = "Add these items to this album? Existing album memberships and originals stay unchanged.";
+"The scope or destination changed. Go back and review again." = "The scope or destination changed. Go back and review again.";
+"Album update progress" = "Album update progress";
+"{0} of {1} items processed" = "{0} of {1} items processed";
+"Finishing and checking the current update…" = "Finishing and checking the current update…";
+"Cancel finishes and checks the current update. Completed additions remain in Photos." = "Cancel finishes and checks the current update. Completed additions remain in Photos.";
+"Requested destination: {0}" = "Requested destination: {0}";
+"Requested" = "Requested";
+"Verified in album" = "Verified in album";
+"Already in album (included above)" = "Already in album (included above)";
+"Unavailable items" = "Unavailable items";
+"Uncertain memberships" = "Uncertain memberships";
+"Not processed" = "Not processed";
+"Some additions could not be verified. Check the album in Photos before trying again." = "Some additions could not be verified. Check the album in Photos before trying again.";
+"Verified memberships include items already in the album. Completed additions remain in Photos." = "Verified memberships include items already in the album. Completed additions remain in Photos.";
+"Cancelling…" = "Cancelling…";
+"{0} (ID: {1})" = "{0} (ID: {1})";
+"Album Addition Incomplete" = "Album Addition Incomplete";
+"Album Addition Complete" = "Album Addition Complete";
+"Album Addition Cancelled" = "Album Addition Cancelled";
+"Album Addition Failed" = "Album Addition Failed";
+"Membership could not be verified for {0} items." = "Membership could not be verified for {0} items.";
+"A new album may have been created. Its location could not be verified. Check Photos before trying again." = "A new album may have been created. Its location could not be verified. Check Photos before trying again.";
+"The destination album or its location could not be verified." = "The destination album or its location could not be verified.";
+"Checking Photos items and destination…" = "Checking Photos items and destination…";
+"Updating album membership…" = "Updating album membership…";
+"Checking album membership…" = "Checking album membership…";
+"Finishing album update…" = "Finishing album update…";
+"Choose photos to add to an album." = "Choose photos to add to an album.";
+"The Photos selection could not be validated." = "The Photos selection could not be validated.";
+"Enter a name for the new album." = "Enter a name for the new album.";
+"Another Photos organization operation is still running." = "Another Photos organization operation is still running.";
+"Allow read and write access to the Photos library, then try again." = "Allow read and write access to the Photos library, then try again.";
+"The selected Photos album or folder is no longer available." = "The selected Photos album or folder is no longer available.";
+"The selected Photos album or folder cannot be edited." = "The selected Photos album or folder cannot be edited.";
+"Some selected photos cannot be added to an album." = "Some selected photos cannot be added to an album.";
+"Some selected photos are no longer available." = "Some selected photos are no longer available.";
+"Photos could not prepare the album change." = "Photos could not prepare the album change.";
+"Photos did not confirm all requested album memberships or the album’s folder." = "Photos did not confirm all requested album memberships or the album’s folder.";
+"The Photos album and folder list exceeds the supported limit." = "The Photos album and folder list exceeds the supported limit.";
+"The Photos review changed. Close this window and choose the items again." = "The Photos review changed. Close this window and choose the items again.";
+"Saving review decisions…" = "Saving review decisions…";
+"Add to Album…" = "Add to Album…";
+"Photos albums are still being updated" = "Photos albums are still being updated";
+"Cancel the album update or wait for verification to finish, then quit." = "Cancel the album update or wait for verification to finish, then quit.";
+
+"Review images load as you browse. Photos may download source data for previews. Original detail and Copy request originals separately. Decisions stay in Louppe. Add to Album requires confirmation. Live Photos use their still image." = "Review images load as you browse. Photos may download source data for previews. Original detail and Copy request originals separately. Decisions stay in Louppe. Add to Album requires confirmation. Live Photos use their still image.";
+
 // User guide and Help
 "User guide (English)" = "User guide (English)";
 "File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits." = "File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits.";
-"Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "Ratings stay local. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos.";
+"Settings → General → iCloud Access has separate choices for review images and originals. Photos may download source data for a review image. Open Original Detail, video playback, and Copy request originals separately." = "Settings → General → iCloud Access has separate choices for review images and originals. Photos may download source data for a review image. Open Original Detail, video playback, and Copy request originals separately.";
+"Ratings stay local. File → Add to Album… adds items only after confirmation and preserves existing memberships. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos." = "Ratings stay local. File → Add to Album… adds items only after confirmation and preserves existing memberships. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos.";
 "File safety and saved decisions" = "File safety and saved decisions";
 "Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation." = "Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation.";
 "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash.";

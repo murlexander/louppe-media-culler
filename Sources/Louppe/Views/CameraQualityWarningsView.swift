@@ -57,7 +57,7 @@ struct QualityCueTileIcons: View {
                         }
                     }
                     .font(.system(size: TileBadgeLayout.iconSize, weight: .medium))
-                    .frame(height: TileBadgeLayout.height)
+                    .frame(minWidth: 36, minHeight: TileBadgeLayout.cueTargetHeight, alignment: .bottomLeading)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

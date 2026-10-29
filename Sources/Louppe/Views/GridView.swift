@@ -59,10 +59,15 @@ struct GridView: View {
                         controller: collectionController
                     )
                     .equatable()
+                    .environment(\.mediaReadAccess, store.mediaReadAccess)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .background(Color.appBackground)
                     .onAppear {
-                        collectionController.onViewportChange = onViewportChange
+                        collectionController.onViewportChange = { receipt in
+                            store.recordPinnedViewport(physicalFileID: receipt.physicalFileID,
+                                                       topOffset: Double(receipt.topOffset), surface: .grid)
+                            onViewportChange?(receipt)
+                        }
                         collectionController.onViewportRestored = onViewportRestored
                         updateColumnCount(for: geometry.size.width)
                         if let initialViewportReceipt {
@@ -331,6 +336,9 @@ private struct GridCell: View {
                     }
             }
             .frame(maxWidth: .infinity)
+            .contextMenu {
+                MediaTileContextMenu(store: store, index: index, revision: item.contentRevision, open: actions.openInGallery)
+            }
         }
     }
 }
@@ -363,6 +371,7 @@ struct GridImmediateClickSurface: NSViewRepresentable {
         var onDoubleClick: () -> Void
         private var mouseDownLocation: CGPoint?
         private var exceededDragThreshold = false
+        private let touchActions = DirectTouchClickActions()
 
         init(
             onSingleClick: @escaping (NSEvent.ModifierFlags) -> Void,
@@ -371,6 +380,13 @@ struct GridImmediateClickSurface: NSViewRepresentable {
             self.onSingleClick = onSingleClick
             self.onDoubleClick = onDoubleClick
             super.init(frame: .zero)
+            touchActions.singleTap = { [weak self] _, modifiers in
+                guard let self else { return }
+                self.window?.makeFirstResponder(nil)
+                self.onSingleClick(modifiers)
+            }
+            touchActions.doubleTap = { [weak self] _ in self?.onDoubleClick() }
+            touchActions.install(on: self, includesSingleTap: true)
         }
 
         @available(*, unavailable)
@@ -515,7 +531,7 @@ enum GridRubberBandHitTest {
         )
         if ratingFrame.contains(point) { return false }
         if !playableVideoIndices.contains(index) {
-            let cueRegionHeight = TileBadgeLayout.height + TileBadgeLayout.inset
+            let cueRegionHeight = TileBadgeLayout.cueTargetHeight + TileBadgeLayout.inset
             let cueFrame = CGRect(
                 x: rightToLeft
                     ? mediaFrame.maxX - min(TileBadgeLayout.maximumCueRowWidth + TileBadgeLayout.inset, mediaFrame.width)

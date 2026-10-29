@@ -415,30 +415,46 @@ enum FolderScanner {
         beforeFinalIdentityValidation: () throws -> Void = {},
         recorder: SessionOpeningRecorder? = nil,
         stageWillBegin: (SessionOpeningStage) throws -> Void = { _ in },
-        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)? = nil
+        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)? = nil,
+        metadataIndex: ArchiveMetadataIndex? = nil,
+        commitsMetadataIndex: Bool = true,
+        metadataReady: (@Sendable (OpeningMetadataUpdate) -> Void)? = nil,
+        metadataInterest: OpeningMetadataInterest? = nil
     ) throws -> [PhotoItem] {
         try stageWillBegin(.metadata)
+        // Injected readers stay isolated from application caches by default.
+        let index = metadataIndex ?? (metadataReaderForTesting == nil
+            ? ArchiveMetadataIndex(folder: inventory.root, isCancelled: isCancelled) : nil)
         let result: [PhotoItem]
         if let recorder {
             result = try recorder.measure(.metadata) {
                 try makeItems(for: inventory.items, isCancelled: isCancelled,
-                              recorder: recorder, metadataReaderForTesting: metadataReaderForTesting)
+                              recorder: recorder, metadataReaderForTesting: metadataReaderForTesting,
+                              metadataIndex: index, metadataReady: metadataReady, metadataInterest: metadataInterest)
             }
         } else {
             result = try makeItems(for: inventory.items, isCancelled: isCancelled,
-                                   recorder: nil, metadataReaderForTesting: metadataReaderForTesting)
+                                   recorder: nil, metadataReaderForTesting: metadataReaderForTesting,
+                                   metadataIndex: index, metadataReady: metadataReady, metadataInterest: metadataInterest)
         }
+        try stageWillBegin(.chronologicalSort)
+        let sorted = recorder.map { $0.measure(.chronologicalSort) { sortItems(result) } } ?? sortItems(result)
+        let metadataCommit = commitsMetadataIndex ? index?.prepareCommit(sorted, isCancelled: isCancelled) : nil
         try beforeFinalIdentityValidation()
         try stageWillBegin(.metadataIdentityValidation)
         if let recorder {
             try recorder.measure(.metadataIdentityValidation) {
-                try validateScannedIdentities(result, isCancelled: isCancelled)
+                try validateScannedIdentities(sorted, isCancelled: isCancelled)
             }
         } else {
-            try validateScannedIdentities(result, isCancelled: isCancelled)
+            try validateScannedIdentities(sorted, isCancelled: isCancelled)
         }
-        try stageWillBegin(.chronologicalSort)
-        let sorted = recorder.map { $0.measure(.chronologicalSort) { sortItems(result) } } ?? sortItems(result)
+        if isCancelled() { throw CancellationError() }
+        if metadataCommit?.commit(isCancelled: isCancelled) == true {
+            // Optional cache I/O must not move the publication boundary ahead
+            // of a source replacement that happens while the JSON is written.
+            try validateScannedIdentities(sorted, isCancelled: isCancelled)
+        }
         if isCancelled() { throw CancellationError() }
         return sorted
     }
@@ -606,7 +622,8 @@ enum FolderScanner {
             files = try prepareMissingMetadata(
                 in: files,
                 isCancelled: isCancelled,
-                metadataReaderForTesting: metadataReaderForTesting
+                metadataReaderForTesting: metadataReaderForTesting,
+                metadataIndex: metadataReaderForTesting == nil ? ArchiveMetadataIndex(folder: root, isCancelled: isCancelled) : nil
             )
         } else {
             missingMetadataCount = 0
@@ -683,22 +700,34 @@ enum FolderScanner {
         for inventoryItems: [PhotoItem],
         isCancelled: @Sendable () -> Bool,
         recorder: SessionOpeningRecorder?,
-        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)?
+        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)?,
+        metadataIndex: ArchiveMetadataIndex?,
+        metadataReady: (@Sendable (OpeningMetadataUpdate) -> Void)?,
+        metadataInterest: OpeningMetadataInterest?
     ) throws -> [PhotoItem] {
         if isCancelled() { throw CancellationError() }
         guard !inventoryItems.isEmpty else { return [] }
         let results = MetadataSlots(count: inventoryItems.count)
+        let slotByPhysicalID = metadataInterest.map { _ in
+            Dictionary(uniqueKeysWithValues: inventoryItems.enumerated().flatMap { slot, item in
+                item.individualFiles.map { ($0.id, slot) }
+            })
+        }
         recorder?.progress(.metadata, completed: 0, total: inventoryItems.count)
         DispatchQueue.concurrentPerform(iterations: min(maxMetadataConcurrency, inventoryItems.count)) { _ in
-            while !isCancelled(), let slot = results.claim() {
+            while !isCancelled() {
+                let preferred = metadataInterest?.currentPhysicalFileID.flatMap { slotByPhysicalID?[$0] }
+                guard let slot = results.claim(prioritizing: preferred) else { return }
                 do {
                     let source = inventoryItems[slot]
                     let file = try autoreleasepool {
-                        try enrichMetadata(for: source.primaryFile, metadataReaderForTesting: metadataReaderForTesting)
+                        try enrichMetadata(for: source.primaryFile, metadataReaderForTesting: metadataReaderForTesting,
+                                           metadataIndex: metadataIndex, isCancelled: isCancelled)
                     }
-                    let completed = results.store(
-                        PhotoItem(primaryFile: file, pairedFile: source.pairedFile), at: slot
-                    )
+                    if isCancelled() { return }
+                    let item = PhotoItem(primaryFile: file, pairedFile: source.pairedFile)
+                    let completed = results.store(item, at: slot)
+                    metadataReady?(OpeningMetadataUpdate(item: item))
                     if completed % 25 == 0 || completed == inventoryItems.count {
                         recorder?.progress(.metadata, completed: completed, total: inventoryItems.count)
                     }
@@ -743,7 +772,8 @@ enum FolderScanner {
     private static func prepareMissingMetadata(
         in files: [PhotoFile],
         isCancelled: @Sendable () -> Bool,
-        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)? = nil
+        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)? = nil,
+        metadataIndex: ArchiveMetadataIndex? = nil
     ) throws -> [PhotoFile] {
         guard files.contains(where: { !$0.metadataIsLoaded }) else {
             return files
@@ -765,7 +795,8 @@ enum FolderScanner {
                     prepared.append(
                         file.metadataIsLoaded ? file : try enrichMetadata(
                             for: file,
-                            metadataReaderForTesting: metadataReaderForTesting
+                            metadataReaderForTesting: metadataReaderForTesting,
+                            metadataIndex: metadataIndex, isCancelled: isCancelled
                         )
                     )
                 } catch {
@@ -790,9 +821,30 @@ enum FolderScanner {
 
     private static func enrichMetadata(
         for file: PhotoFile,
-        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)?
+        metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)?,
+        metadataIndex: ArchiveMetadataIndex? = nil,
+        isCancelled: @Sendable () -> Bool = { false }
     ) throws -> PhotoFile {
+        if isCancelled() { throw CancellationError() }
         try validateMetadataSource(file)
+        if let cached = metadataIndex?.metadata(for: file) {
+            let ready = cached.applying(to: file)
+            try validateMetadataSource(file)
+            if isCancelled() { throw CancellationError() }
+            return ready
+        }
+        if metadataReaderForTesting == nil {
+            // Only background workers call this synchronous boundary. Give
+            // interaction a quiet window, with the coordinator's hard deadline
+            // preventing continuous navigation from starving a complete scan.
+            let deferredSince = ContinuousClock.now
+            while !ForegroundWorkCoordinator.shared.shouldAdmitBackgroundWork(deferredSince: deferredSince) {
+                if isCancelled() { throw CancellationError() }
+                Thread.sleep(forTimeInterval: 0.015)
+            }
+            if isCancelled() { throw CancellationError() }
+            try validateMetadataSource(file)
+        }
         let metadata = file.metadataSnapshot
         let isVideo = isVideoExtension(file.url.pathExtension)
         let isAudio = isAudioExtension(file.url.pathExtension)
@@ -812,6 +864,11 @@ enum FolderScanner {
             ? AudioMetadataExtractor.scanInfo(for: file.url)
             : nil
         try validateMetadataSource(file)
+        if isCancelled() { throw CancellationError() }
+        metadataIndex?.recordExtraction(for: file,
+            succeeded: info.extractionSucceeded
+                && (videoInfo?.extractionSucceeded ?? true)
+                && (audioInfo?.extractionSucceeded ?? true))
         return PhotoFile(
             id: file.id,
             url: file.url,
@@ -881,15 +938,26 @@ enum FolderScanner {
         private let lock = NSLock()
         private var values: [PhotoItem?]
         private var next = 0
+        private var claimed: [Bool]
         private var completed = 0
         private var firstError: Error?
 
-        init(count: Int) { values = Array(repeating: nil, count: count) }
+        init(count: Int) {
+            values = Array(repeating: nil, count: count)
+            claimed = Array(repeating: false, count: count)
+        }
 
-        func claim() -> Int? {
+        func claim(prioritizing preferred: Int?) -> Int? {
             lock.lock()
             defer { lock.unlock() }
-            guard firstError == nil, next < values.count else { return nil }
+            guard firstError == nil else { return nil }
+            if let preferred, values.indices.contains(preferred), !claimed[preferred] {
+                claimed[preferred] = true
+                return preferred
+            }
+            while next < values.count, claimed[next] { next += 1 }
+            guard next < values.count else { return nil }
+            claimed[next] = true
             defer { next += 1 }
             return next
         }
