@@ -7,6 +7,21 @@ import XCTest
 final class HotkeyTests: XCTestCase {
     private static var retainedHostingWindows: [NSWindow] = []
 
+    func testKeyboardNavigationKeepsTabAndShiftTabWhileGStillSwitchesViews() {
+        let store = readyStore(itemCount: 3, firstItemIsVideo: false)
+        let view = SessionView(store: store)
+        let context = SessionKeyRoutingContext(sessionOwnsEvent: true, hasModalPresentation: false,
+                                               isKeyboardNavigationEnabled: true)
+        for modifiers: NSEvent.ModifierFlags in [[], .shift] {
+            XCTAssertFalse(view.handleKey(keyEvent(code: 48, characters: "\t", modifiers: modifiers), context: context))
+            XCTAssertEqual(store.viewMode, .gallery)
+        }
+        XCTAssertTrue(view.handleKey(keyEvent(code: 5, characters: "g"), context: context))
+        XCTAssertEqual(store.viewMode, .grid)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 48, characters: "\t"), context: .focusedSession))
+        XCTAssertEqual(store.viewMode, .gallery)
+    }
+
     func testToolbarHintsShowOnlyAliasesThatRouteInTheCurrentContext() {
         var preferences = ReviewShortcutPreferences(interpretation: .keyboardLayout)
         let gridKey = ReviewShortcutBinding(character: "t", keyCode: 17)
@@ -649,6 +664,7 @@ final class HotkeyTests: XCTestCase {
         )
         XCTAssertFalse(context.focusedResponderOwnsText)
         XCTAssertFalse(context.focusedResponderOwnsNavigation)
+        XCTAssertEqual(context.isKeyboardNavigationEnabled, NSApp.isFullKeyboardAccessEnabled)
         XCTAssertTrue(context.acceptsReviewShortcuts)
         XCTAssertTrue(context.acceptsNavigationShortcuts)
 

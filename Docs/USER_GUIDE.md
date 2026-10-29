@@ -156,6 +156,12 @@ Gallery has Fit, Phone size, true 100% zoom, playback, metadata, histogram,
 clipping information, and optional quality cues. VoiceOver and keyboard review
 are supported.
 
+For supported video, **Info → Subtitles** offers caption controls and available
+subtitle tracks. Current macOS also supplies native caption-style options.
+**Audio track** appears when a file has alternative audio; **Automatic** follows
+system preferences, including described audio when provided by the file.
+Manual choices stay with the current item when switching Gallery/Grid.
+
 For RAW photos, **Fast** uses previews below 100% and Apple RAW rendering at
 100% and above. **Settings → General → RAW display** can use RAW at all zoom levels.
 The Gallery zoom bar stays focused on Fit and magnification; **Use Preview**
@@ -185,6 +191,7 @@ Text previews are read-only and selectable. TXT, TEXT, MD/MARKDOWN, XML,
 JSON, CSV, TSV, LOG, YAML, and YML appear alongside media. Markdown supports
 headings, lists, bold, italic, and web/email links; other formats show source
 text. UTF-8 and BOM-marked UTF-16/32 are supported up to 1 MiB per file.
+Enlarge document text to 200% with **Settings → General → Accessibility → Text preview size**.
 
 ## Keyboard shortcuts
 
@@ -250,6 +257,9 @@ assignments and their view/media contexts, including customized keys.
 | **⌘W / ⌘Q** | Close the window / quit Louppe |
 | **Esc** | Cancel a scan or clear the current selection |
 | **⌘⌫** | Trash selected items without a dialog |
+
+When macOS Keyboard Navigation is on, Tab and Shift-Tab move focus between
+controls. Use **G** to switch views.
 
 ## Interface languages
 

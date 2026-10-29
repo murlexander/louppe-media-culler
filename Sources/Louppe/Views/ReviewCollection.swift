@@ -140,7 +140,8 @@ final class ReviewCollectionDocument: NSView {
         super.init(frame: frameRect)
         addSubview(configurator)
         addSubview(selectionOverlay)
-        setAccessibilityElement(false)
+        setAccessibilityElement(true)
+        setAccessibilityRole(.group)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -155,6 +156,10 @@ final class ReviewCollectionDocument: NSView {
             || self.environment.dynamicTypeSize != environment.dynamicTypeSize
             || self.environment.displayScale != environment.displayScale
             || self.environment.colorScheme != environment.colorScheme
+            || self.environment.colorSchemeContrast != environment.colorSchemeContrast
+            || self.environment.legibilityWeight != environment.legibilityWeight
+            || self.environment.accessibilityEnabled != environment.accessibilityEnabled
+            || self.environment.accessibilityVoiceOverEnabled != environment.accessibilityVoiceOverEnabled
             || self.environment.accessibilityReduceMotion != environment.accessibilityReduceMotion
             || self.environment.accessibilityReduceTransparency != environment.accessibilityReduceTransparency
             || self.environment.accessibilityDifferentiateWithoutColor != environment.accessibilityDifferentiateWithoutColor
@@ -167,6 +172,7 @@ final class ReviewCollectionDocument: NSView {
         if self.projection !== projection { projectionGeneration += 1 }
         self.projection = projection
         self.style = style
+        setAccessibilityLabel(style == .browser ? L10n.text("Browser") : L10n.text("Grid"))
         self.environment = environment
         self.cell = cell
         self.rubberBand = rubberBand
@@ -184,6 +190,17 @@ final class ReviewCollectionDocument: NSView {
             restore(receipt)
         }
         applyPendingPosition()
+    }
+
+    override func accessibilityChildren() -> [Any]? {
+        // Hosting views are ignored AX wrappers. Flatten them with AppKit's
+        // public helper so the vended nodes report this group as their parent.
+        // Projection order survives reuse and the Grid's mirrored RTL columns.
+        NSAccessibility.unignoredChildren(from: realizedElements.compactMap { hosts[$0.key] })
+    }
+
+    override func accessibilityChildrenInNavigationOrder() -> [any NSAccessibilityElementProtocol]? {
+        accessibilityChildren()?.compactMap { $0 as? any NSAccessibilityElementProtocol }
     }
 
     override func viewDidMoveToSuperview() {
@@ -305,7 +322,7 @@ final class ReviewCollectionDocument: NSView {
 
     private func measure(_ view: AnyView, width: CGFloat) -> CGFloat {
         templateMeasurementCount += 1
-        measurement.rootView = AnyView(view.environment(\.self, environment)
+        measurement.rootView = AnyView(hostedContent(view)
             .frame(width: width).fixedSize(horizontal: false, vertical: true))
         measurement.invalidateIntrinsicContentSize()
         // The same SwiftUI text/header views produce the measurement and pixels.
@@ -360,6 +377,7 @@ final class ReviewCollectionDocument: NSView {
         // of folder size. Pooled roots are empty, so only visible/reuse cells live.
         let poolLimit = max(1, elements.count)
         if reusePool.count > poolLimit { reusePool.removeLast(reusePool.count - poolLimit) }
+        NSAccessibility.post(element: self, notification: .layoutChanged)
     }
 
     private func bindContent(_ host: NSHostingView<AnyView>, key: ReviewCollectionGeometry.Element.Key,
@@ -374,8 +392,25 @@ final class ReviewCollectionDocument: NSView {
             content = AnyView(ReviewGroupHeader(title: projection.sections[section].title ?? "", style: style)
                 .id(projection.sections[section].id))
         }
-        host.rootView = AnyView(content.environment(\.self, environment)
-            .tint(Color.louppeAccent).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top))
+        host.rootView = AnyView(hostedContent(content)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top))
+    }
+
+    private func hostedContent(_ content: AnyView) -> some View {
+        // Forward app presentation values, not the outer host's private AX
+        // context. Each independent hosting view owns its accessibility tree
+        // and reads system accessibility preferences from its native window.
+        content
+            .environment(\.locale, environment.locale)
+            .environment(\.layoutDirection, environment.layoutDirection)
+            .environment(\.displayScale, environment.displayScale)
+            .environment(\.dynamicTypeSize, environment.dynamicTypeSize)
+            .environment(\.colorScheme, environment.colorScheme)
+            .environment(\.font, environment.font)
+            .environment(\.isEnabled, environment.isEnabled)
+            .environment(\.mediaReadAccess, environment.mediaReadAccess)
+            .environment(\.accessibilityEnabled, true)
+            .tint(Color.louppeAccent)
     }
 
     private func recycle(_ host: NSHostingView<AnyView>) {

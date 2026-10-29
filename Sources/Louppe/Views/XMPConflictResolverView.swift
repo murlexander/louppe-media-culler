@@ -73,6 +73,7 @@ struct XMPConflictResolverView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
                 .disabled(!hasActionableChoice)
             }
         }

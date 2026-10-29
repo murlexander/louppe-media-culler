@@ -72,6 +72,7 @@ struct LouppeHelpView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L10n.text("Apple Photos"))
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     Text(L10n.text("File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits."))
                     Text(L10n.text("Settings → General → iCloud Access has separate choices for review images and originals. Photos may download source data for a review image. Open Original Detail, video playback, and Copy request originals separately."))
                     Text(L10n.text("Ratings stay local. File → Add to Album… adds items only after confirmation and preserves existing memberships. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos."))
@@ -82,6 +83,7 @@ struct LouppeHelpView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L10n.text("File safety and saved decisions"))
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     Text(L10n.text("Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation."))
                     Text(L10n.text("Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash."))
                     Text(L10n.text("Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID."))
@@ -92,6 +94,7 @@ struct LouppeHelpView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L10n.text("Look closer and find similar photos"))
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     Text(L10n.text("Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size."))
                     Text(L10n.text("View → Review Groups finds exact duplicates, similar photos, and capture bursts locally. Ratings and files stay unchanged. Normal Review exits groups."))
                     Text(L10n.text("Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing."))
@@ -102,6 +105,7 @@ struct LouppeHelpView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L10n.text("Supported media"))
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     Text(L10n.text("Photos: RAW, JPEG, HEIC, PNG, TIFF, and other ImageIO formats. Video: MOV, MP4, M4V, and other macOS formats. Audio: MP3, M4A, WAV, FLAC, and more."))
                     Text(L10n.text("Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file."))
                     Text(L10n.text("Files macOS cannot decode appear without a preview."))
@@ -113,7 +117,9 @@ struct LouppeHelpView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(L10n.text("Keyboard shortcuts"))
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     Text(L10n.text("Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts."))
+                    Text(L10n.text("When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text(L10n.text("Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts."))

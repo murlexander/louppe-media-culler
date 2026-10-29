@@ -2,6 +2,8 @@
 
 ## 1.13.0 (15) — 2026-10-29
 
+- Improve accessibility of Browser/Grid collections, photo descriptions, histogram evidence and playback time. Add readable dark-mode and Increase Contrast colors, color-label names with Differentiate Without Color, and text-preview sizes up to 200%. Respect Tab navigation and expose subtitle, caption-style and alternative-audio choices in Info.
+
 - Keep the README focused on installation and compatibility; move usage and development instructions into dedicated guides. Align localized Help with Photos review, file safety, recovery, and text previews, and link the full user guide.
 
 - Add direct-touch Grid selection and photo double-tap actions, native tile menus for selection and decisions, and larger Fit, playback and quality-cue targets. Keep native scrolling and immediate mouse response; update Tab order automatically and respect Reduce Motion in floating glass controls.

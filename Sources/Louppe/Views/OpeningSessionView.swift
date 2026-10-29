@@ -20,6 +20,7 @@ struct OpeningSessionView: View {
                     Text(L10n.text("Grid")).tag(ViewMode.grid)
                 }
                 .pickerStyle(.segmented)
+                .tint(Color.louppeFilledAccent)
                 .frame(width: 150)
                 Button(L10n.text("Cancel"), action: cancel)
             }

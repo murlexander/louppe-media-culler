@@ -443,9 +443,10 @@ Position errors remain retryable and never authorize discarding decision state.
   analysis unchanged. Labels follow completed visible pixels; fallback requires
   **Use Preview**. `AppleRawDecoder` is independent and defaults to Apple Default.
   RAW 9 requires macOS 27 and filter support, including DNG. Worker resource
-  preparation times out after 15 seconds; failures stay visible. The SDK lacks
-  availability annotations: match supported `9`/`9.dng` identifiers instead of
-  strongly linking new symbols in the macOS 14 executable. Preview, clipping,
+  preparation times out after 15 seconds; failures stay visible. The 27.0/27.1
+  SDK headers omitted RAW 9 availability annotations; 27.2 adds them. Match
+  supported `9`/`9.dng` identifiers instead of strongly linking new symbols in
+  the macOS 14 executable. Preview, clipping,
   source, and tile keys include the choice; changes advance generations and
   cancel stale loads before publication.
 - At 100%, one source pixel maps to one backing pixel. Keep the two-operation
@@ -453,6 +454,25 @@ Position errors remain retryable and never authorize discarding decision state.
   bitmap for this view.
 
 ## Native UI
+
+- [Accessibility audit](ACCESSIBILITY.md) records Apple guidance, acceptance
+  states, implemented semantics/settings support and remaining manual checks.
+  The native collection exposes unignored SwiftUI elements with closed
+  parent/child links and projection reading order. Forward app presentation
+  values across hosting boundaries without copying private AX context. Refresh their
+  environment when assistive technology, contrast or legibility settings change.
+  Keep light/dark purple and Increase Contrast variants aligned with the
+  packaged native accent asset. Native filled buttons and segmented/glass
+  controls use `louppeFilledAccent` to retain contrast with their native white
+  ink; foreground accents brighten in dark appearance. General Settings owns
+  document-preview text size.
+  `LouppeToggleStyle` delegates to the original automatic/checkbox/switch style
+  with that fill, preserving native sizing, focus, labels and behavior.
+  Keyboard Navigation retains Tab/Shift-Tab before any control receives focus.
+  Info loads optional track groups from the current player item, preserving its
+  manual choices across Gallery/Grid. macOS 26.4+ uses AVKit's subtitle/style
+  menu, supplementing authored languages when absent; older systems use native
+  pickers. Item identity and cancellation prevent retired media from acting.
 
 - [macOS input guidance](MACOS_INPUT.md) records the Apple touch-design review
   through macOS 27.2. `DirectTouchClickActions` attaches touch-only click

@@ -542,6 +542,10 @@ private struct ZoomableFittedImage: View {
                         x: imageFrame.midX,
                         y: imageFrame.midY
                     )
+                    .accessibilityLabel(item.displayName)
+                    .accessibilityAction(named: Text(L10n.text("View at 100%"))) {
+                        onDoubleClick(.center)
+                    }
                     .accessibilityHint(
                         L10n.text("Double-click to inspect this point at 100 percent.")
                     )

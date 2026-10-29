@@ -301,6 +301,8 @@ struct MetadataPanel: View {
                 playback: store.videoPlayback,
                 isEnabled: store.canSetCurrentPlayableMediaPlaybackRate
             )
+            MediaTrackSelectionControls(item: item, playback: store.videoPlayback)
+                .disabled(!store.canSetCurrentPlayableMediaPlaybackRate)
             Divider()
         }
 
@@ -391,7 +393,7 @@ struct MetadataPanel: View {
                         cancelFilenameEditing()
                     } label: {
                         Image(systemName: "xmark")
-                            .frame(width: 22, height: 22)
+                            .frame(width: 36, height: 36)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -752,6 +754,7 @@ private struct MediaPlaybackSpeedControl: View {
                 }
             }
             .pickerStyle(.segmented)
+            .tint(Color.louppeFilledAccent)
             .labelsHidden()
             .disabled(!isEnabled)
             .accessibilityHint(L10n.text("Applies to video and audio playback."))

@@ -33,6 +33,7 @@ struct EarlyUserFeedbackView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
                 .keyboardShortcut(.defaultAction)
             }
             .padding(.top, 8)

@@ -15,6 +15,9 @@ struct FloatingControlSurface<Surface: InsettableShape>: ViewModifier {
                 .overlay { border }
         } else if #available(macOS 26.0, *) {
             content.glassEffect(.regular.interactive(!reduceMotion), in: shape)
+                .overlay {
+                    if contrast == .increased { border }
+                }
         } else {
             content.background(.regularMaterial, in: shape)
                 .overlay { border }

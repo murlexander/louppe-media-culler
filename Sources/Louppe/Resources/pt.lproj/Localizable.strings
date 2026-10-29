@@ -2061,3 +2061,27 @@
 "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "Limpar pede confirmação antes de mover arquivos para a Lixeira. ⌘⌫ envia a seleção para a Lixeira sem diálogo. ⌘Z restaura os arquivos durante a sessão aberta, enquanto ainda estiverem na Lixeira.";
 "Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID." = "As avaliações de pastas são salvas em .louppe_session.json; Arquivo → Verificar Decisões Salvas… oferece recuperação. As avaliações do Fotos são salvas localmente por ID do recurso.";
 "Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file." = "As prévias de texto são somente leitura e permitem seleção: texto simples, Markdown, JSON, XML, CSV, TSV, logs e YAML, até 1 MiB por arquivo.";
+
+"Browser" = "Navegador";
+
+"Accessibility" = "Acessibilidade";
+
+"Text preview size" = "Tamanho do texto da prévia";
+
+"Loading text preview" = "Carregando prévia do texto";
+
+"{0} of {1}" = "{0} de {1}";
+
+"{0}. Near-black area: {1}. Near-white area: {2}." = "{0}. Área quase preta: {1}. Área quase branca: {2}.";
+
+"Subtitles" = "Legendas";
+
+"Audio track" = "Faixa de áudio";
+
+"Automatic" = "Automático";
+
+"Loading media options" = "Carregando opções de mídia";
+
+"When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "Com a Navegação por Teclado ativada, Tab move o foco entre os controles. Use G para alternar as visualizações.";
+
+"Subtitle tracks" = "Faixas de legendas";

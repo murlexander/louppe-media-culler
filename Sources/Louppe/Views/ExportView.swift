@@ -196,7 +196,7 @@ struct ExportView: View {
 
                     if mode == .copy && store.photosBatch?.mediaSession == nil {
                         Toggle(L10n.text("Route copies to multiple folders"), isOn: $isRoutingCopies)
-                            .toggleStyle(.switch)
+                            .toggleStyle(LouppeToggleStyle(.switchControl))
                             .accessibilityHint(L10n.text("Create Copy routes, each with its own chosen folder"))
                     }
 
@@ -328,7 +328,7 @@ struct ExportView: View {
                             L10n.text("Include XMP sidecars for editing apps"),
                             isOn: includeXMPBinding
                         )
-                        .toggleStyle(.switch)
+                        .toggleStyle(LouppeToggleStyle(.switchControl))
 
                         Text(copyMoveXMPExplanation)
                             .font(.caption)
@@ -384,6 +384,7 @@ struct ExportView: View {
                     }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.louppeFilledAccent)
                     .disabled(
                         selectionSnapshot.itemCount == 0
                             || (mode != .metadataXMP && isCheckingExistingXMP)
@@ -531,13 +532,13 @@ struct ExportView: View {
                     L10n.text("Make decisions visible as keywords"),
                     isOn: $universalDecisionKeywords
                 )
-                .toggleStyle(.switch)
+                .toggleStyle(LouppeToggleStyle(.switchControl))
             }
             Toggle(
                 L10n.text("Allow replacing or removing external color labels"),
                 isOn: $allowExternalLabelReplacement
             )
-            .toggleStyle(.switch)
+            .toggleStyle(LouppeToggleStyle(.switchControl))
             if allowExternalLabelReplacement {
                 Text(L10n.text("Confirmed: conflicting external xmp:Label values may be replaced or removed by the chosen Louppe color."))
                     .font(.caption)
@@ -554,7 +555,7 @@ struct ExportView: View {
                 exportModePicker
 
                 Toggle(L10n.text("Route copies to multiple folders"), isOn: $isRoutingCopies)
-                    .toggleStyle(.switch)
+                    .toggleStyle(LouppeToggleStyle(.switchControl))
                     .accessibilityHint(L10n.text("Turn off to return to normal one-folder Copy"))
 
                 exportScopeRow
@@ -605,7 +606,7 @@ struct ExportView: View {
 
             Section {
                 Toggle(L10n.text("Include XMP sidecars (off by default)"), isOn: $routingIncludesXMP)
-                    .toggleStyle(.switch)
+                    .toggleStyle(LouppeToggleStyle(.switchControl))
                 Text(L10n.text("Sidecars follow media. Files sharing XMP must go to one folder."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -642,6 +643,7 @@ struct ExportView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
                 .disabled(!routingCanReview)
             }
         }
@@ -960,6 +962,7 @@ struct ExportView: View {
                 Button(L10n.text("Start Copy")) { exporter.confirmMultiDestinationExport() }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.louppeFilledAccent)
             }
         }
     }
@@ -1359,6 +1362,7 @@ struct ExportView: View {
                     Button(L10n.text("OK")) { store.resetXMPPublication() }
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.louppeFilledAccent)
                 }
             }
         }
@@ -1478,6 +1482,7 @@ struct ExportView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
                 .disabled(plan.publishableCount == 0)
             }
         }
@@ -1529,6 +1534,7 @@ struct ExportView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
             }
         }
     }
@@ -1738,6 +1744,7 @@ struct ExportView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
             }
         }
     }
@@ -1790,6 +1797,7 @@ struct ExportView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
             }
         }
     }
@@ -1884,6 +1892,7 @@ struct ExportView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
             }
         }
     }

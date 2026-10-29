@@ -15,13 +15,22 @@ final class SettingsLayoutTests: XCTestCase {
             "AppIcon/Appearance.xcassets/LouppeAccent.colorset/Contents.json"))
         let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let colors = try XCTUnwrap(catalog["colors"] as? [[String: Any]])
-        let color = try XCTUnwrap(colors.first?["color"] as? [String: Any])
-        let components = try XCTUnwrap(color["components"] as? [String: String])
-        let tint = try XCTUnwrap(NSColor(Color.louppeAccent).usingColorSpace(.sRGB))
-        for (name, actual) in [("red", tint.redComponent), ("green", tint.greenComponent), ("blue", tint.blueComponent)] {
-            let hex = try XCTUnwrap(components[name]?.dropFirst(2))
-            let byte = try XCTUnwrap(UInt8(hex, radix: 16))
-            XCTAssertEqual(CGFloat(byte) / 255, actual, accuracy: 0.0001, name)
+        XCTAssertEqual(colors.count, 4)
+        for entry in colors {
+            let appearances = entry["appearances"] as? [[String: String]] ?? []
+            let dark = appearances.contains { $0["appearance"] == "luminosity" && $0["value"] == "dark" }
+            let highContrast = appearances.contains { $0["appearance"] == "contrast" && $0["value"] == "high" }
+            let appearance: NSAppearance.Name = highContrast
+                ? (dark ? .accessibilityHighContrastDarkAqua : .accessibilityHighContrastAqua)
+                : (dark ? .darkAqua : .aqua)
+            let color = try XCTUnwrap(entry["color"] as? [String: Any])
+            let components = try XCTUnwrap(color["components"] as? [String: String])
+            let tint = try XCTUnwrap(NSColor.louppeAccentColor(for: appearance).usingColorSpace(.sRGB))
+            for (name, actual) in [("red", tint.redComponent), ("green", tint.greenComponent), ("blue", tint.blueComponent)] {
+                let hex = try XCTUnwrap(components[name]?.dropFirst(2))
+                let byte = try XCTUnwrap(UInt8(hex, radix: 16))
+                XCTAssertEqual(CGFloat(byte) / 255, actual, accuracy: 0.0001, "\(appearance.rawValue): \(name)")
+            }
         }
     }
 

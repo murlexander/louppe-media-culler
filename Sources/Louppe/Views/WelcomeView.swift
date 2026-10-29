@@ -269,7 +269,6 @@ private struct PinnedFoldersSection: View {
                             detail: pin.availability == .available ? pin.path : pin.availability.status,
                             symbol: pin.availability == .available ? "pin.fill" : "externaldrive.badge.exclamationmark"
                         )
-                        .opacity(pin.availability == .available ? 1 : 0.65)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(pin.availability == .available

@@ -77,6 +77,8 @@ struct ThumbnailRenderMarker: NSViewRepresentable {
 /// Async-loading thumbnail tile with a yes/no/undecided badge overlay.
 /// The whole photo fits inside the tile (letterboxed, never cropped).
 struct ThumbnailView: View {
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+    @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.mediaReadAccess) private var mediaReadAccess
     let item: PhotoItem
     var isCurrent: Bool
@@ -171,7 +173,10 @@ struct ThumbnailView: View {
         }
         .overlay {
             RoundedRectangle(cornerRadius: thumbnailCornerRadius)
-                .strokeBorder(borderColor, lineWidth: 3)
+                .strokeBorder(borderColor, style: StrokeStyle(
+                    lineWidth: 3,
+                    dash: differentiateWithoutColor && isSelected && !isCurrent ? [4, 3] : []
+                ))
         }
         .overlay(alignment: .topTrailing) {
             if showsRatingBadge {
@@ -195,7 +200,8 @@ struct ThumbnailView: View {
         .overlay(alignment: .topLeading) {
             MetadataBadgeStrip(
                 starRatingState: starRatingState,
-                colorLabelState: colorLabelState
+                colorLabelState: colorLabelState,
+                showsColorNames: differentiateWithoutColor
             )
                 .padding(TileBadgeLayout.inset)
         }
@@ -234,7 +240,7 @@ struct ThumbnailView: View {
 
     private var borderColor: Color {
         if isCurrent { return .louppeAccent }
-        if isSelected { return .louppeAccent.opacity(0.45) }
+        if isSelected { return .louppeAccent.opacity(contrast == .increased || differentiateWithoutColor ? 1 : 0.45) }
         return .clear
     }
 }
@@ -323,6 +329,11 @@ struct UnsupportedThumbnail: View {
 
 /// The ✓ / ✗ / undecided / Mixed decision shown on thumbnails and in the Info panel.
 struct RatingBadge: View {
+    static let yesSymbolColor = NSColor.black
+    static let yesFillColor = NSColor.systemGreen
+    static let noSymbolColor = NSColor.white
+    static let noFillColor = NSColor.systemRed
+
     let rating: Rating
     var isMixed = false
     var size: CGFloat = 14
@@ -338,11 +349,11 @@ struct RatingBadge: View {
                 case .yes:
                     Image(systemName: "checkmark.circle.fill")
                         .resizable().scaledToFit()
-                        .foregroundStyle(.white, .green)
+                        .foregroundStyle(Color(nsColor: Self.yesSymbolColor), Color(nsColor: Self.yesFillColor))
                 case .no:
                     Image(systemName: "xmark.circle.fill")
                         .resizable().scaledToFit()
-                        .foregroundStyle(.white, .red)
+                        .foregroundStyle(Color(nsColor: Self.noSymbolColor), Color(nsColor: Self.noFillColor))
                 case .undecided:
                     Image(systemName: "circle.fill")
                         .resizable().scaledToFit()

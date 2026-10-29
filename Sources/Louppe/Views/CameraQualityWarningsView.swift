@@ -13,6 +13,7 @@ struct QualityCueDetailsView: View {
                 Text(L10n.text("Quality cues"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .accessibilityAddTraits(.isHeader)
                 ForEach(cues) { cue in
                     HStack(alignment: .firstTextBaseline) {
                         Label(cue.title, systemImage: cue.kind.symbol)
@@ -194,7 +195,7 @@ struct CameraQualityWarningsSettingsView: View {
 
     private func cueToggle(_ title: String, isOn: Binding<Bool>) -> some View {
         Toggle(title, isOn: isOn)
-            .toggleStyle(.checkbox)
+            .toggleStyle(LouppeToggleStyle(.checkbox))
             .fixedSize(horizontal: false, vertical: true)
             .frame(width: 148, alignment: .leading)
     }

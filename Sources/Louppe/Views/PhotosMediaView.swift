@@ -95,6 +95,7 @@ struct PhotosGalleryView: View {
                             }
                         } else if let image {
                             Image(nsImage: image).resizable().aspectRatio(contentMode: .fit)
+                                .accessibilityLabel(item.displayName)
                         } else if imageFailure == nil {
                             VStack(spacing: 8) {
                                 ProgressView().controlSize(.small)

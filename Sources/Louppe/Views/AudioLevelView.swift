@@ -23,6 +23,7 @@ struct AudioLevelsSection: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(L10n.text("Audio levels"))
                 .font(.subheadline.weight(.semibold))
+                .accessibilityAddTraits(.isHeader)
 
             if let analysis {
                 Text(isMetering ? L10n.text("Live playback loudness") : L10n.text("Play media to monitor loudness"))

@@ -2078,3 +2078,27 @@
 "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "清理会先询问，再将文件移到废纸篓。⌘⌫ 无需对话框便会将所选项目移到废纸篓。在会话仍打开且文件仍在废纸篓中时，⌘Z 可将其恢复。";
 "Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID." = "文件夹评分保存在 .louppe_session.json 中；“文件 → 检查已保存的决定…”提供恢复功能。“照片”的评分按资源 ID 保存在本机。";
 "Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file." = "文本预览为只读且可选择：纯文本、Markdown、JSON、XML、CSV、TSV、日志和 YAML，每个文件最大 1 MiB。";
+
+"Browser" = "浏览栏";
+
+"Accessibility" = "辅助功能";
+
+"Text preview size" = "文本预览大小";
+
+"Loading text preview" = "正在载入文本预览";
+
+"{0} of {1}" = "{0}，共 {1}";
+
+"{0}. Near-black area: {1}. Near-white area: {2}." = "{0}。近黑区域：{1}。近白区域：{2}。";
+
+"Subtitles" = "字幕";
+
+"Audio track" = "音轨";
+
+"Automatic" = "自动";
+
+"Loading media options" = "正在载入媒体选项";
+
+"When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "开启键盘导航后，Tab 会在控件之间移动焦点。使用 G 切换视图。";
+
+"Subtitle tracks" = "字幕轨道";

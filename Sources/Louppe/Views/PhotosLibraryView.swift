@@ -40,6 +40,7 @@ struct PhotosLibraryView: View {
                     }
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.louppeFilledAccent)
                         .disabled(browser.isLoading || browser.snapshot?.count == nil || browser.snapshot?.count == 0
                                   || browser.snapshot?.query != browser.query)
                 }

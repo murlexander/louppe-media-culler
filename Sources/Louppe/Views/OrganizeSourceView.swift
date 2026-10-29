@@ -121,6 +121,7 @@ struct OrganizeSourceView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
                 .tint(Color.louppeAccent)
                 .disabled(!canReviewMove)
             }
@@ -140,7 +141,7 @@ struct OrganizeSourceView: View {
                 level.kind.label,
                 isOn: levelBinding(level.kind)
             )
-            .toggleStyle(.checkbox)
+            .toggleStyle(LouppeToggleStyle(.checkbox))
 
             Spacer(minLength: 8)
 
@@ -186,7 +187,7 @@ struct OrganizeSourceView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)
-                        .frame(width: 22, height: 22)
+                        .frame(width: 36, height: 36)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -209,7 +210,6 @@ struct OrganizeSourceView: View {
                 reduceMotion: reduceMotion
             )
         )
-        .opacity(level.isEnabled ? 1 : 0.62)
         .accessibilityElement(children: .contain)
         .accessibilityHint(
             level.isEnabled
@@ -396,6 +396,7 @@ struct OrganizeSourceView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
                 .tint(Color.louppeAccent)
             }
         }
@@ -460,6 +461,7 @@ struct OrganizeSourceView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
                 .disabled(store.isFileOperationRunning)
             }
         }

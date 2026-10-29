@@ -1,5 +1,13 @@
 import SwiftUI
 
+enum HistogramAccessibility {
+    static func value(analysis: HistogramAnalysis, source: HistogramAnalysisSource) -> String {
+        let shadows = (analysis.shadowPercentage / 100).formatted(.percent.precision(.fractionLength(1)))
+        let highlights = (analysis.highlightPercentage / 100).formatted(.percent.precision(.fractionLength(1)))
+        return L10n.text("\(source.detailLabel). Near-black area: \(shadows). Near-white area: \(highlights).")
+    }
+}
+
 /// Compact photo-only luminance inspection for the Info panel.
 struct HistogramSection: View {
     @AppStorage(ReviewShortcutPreferences.preferenceKey) private var shortcutSettings = ""
@@ -58,6 +66,7 @@ struct HistogramSection: View {
                 .accessibilityLabel(
                     L10n.text("Luminance histogram")
                 )
+                .accessibilityValue(HistogramAccessibility.value(analysis: analysis, source: source))
         } else if loadFailed {
             HStack(spacing: 6) {
                 Image(systemName: "exclamationmark.triangle")
@@ -87,7 +96,7 @@ struct HistogramSection: View {
                         ? Color.louppeAccent
                         : Color.secondary
                 )
-                .frame(width: 24, height: 24)
+                .frame(width: 36, height: 36)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

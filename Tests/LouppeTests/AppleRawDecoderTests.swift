@@ -19,6 +19,9 @@ final class AppleRawDecoderTests: XCTestCase {
     }
 
     func testRAW9RequiresBothSystemAndPerFileSupportIncludingDNG() throws {
+        guard #available(macOS 27, *) else {
+            throw XCTSkip("RAW 9 SDK constants require macOS 27")
+        }
         XCTAssertThrowsError(try AppleRawDecoder.raw9.version(supported: [.version9], supportsRAW9: false))
         XCTAssertThrowsError(try AppleRawDecoder.raw9.version(supported: [.version7, .version8], supportsRAW9: true))
         XCTAssertThrowsError(try AppleRawDecoder.raw9.version(supported: [], supportsRAW9: true))

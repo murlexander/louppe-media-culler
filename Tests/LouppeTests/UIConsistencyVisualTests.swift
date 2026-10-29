@@ -77,6 +77,29 @@ final class UIConsistencyVisualTests: XCTestCase {
             try await capture(SessionView(store: store), name: "gallery-info-\(suffix)",
                               size: CGSize(width: 1200, height: 760), scheme: scheme,
                               defaults: defaults, output: output)
+            try await capture(MetadataEditingControls(store: store).padding(12),
+                              name: "accessibility-rating-targets-\(suffix)",
+                              size: CGSize(width: 280, height: 180), scheme: scheme,
+                              defaults: defaults, output: output)
+            try await capture(MetadataBadgeStrip(starRatingState: .stars(.four),
+                                                colorLabelState: .label(.purple), showsColorNames: true).padding(12),
+                              name: "accessibility-differentiate-color-\(suffix)",
+                              size: CGSize(width: 260, height: 140), scheme: scheme,
+                              defaults: defaults, output: output)
+            try await capture(HStack {
+                Button(L10n.text("Fit")) {}.buttonStyle(.borderless)
+                Slider(value: .constant(0.5), in: 0...1).frame(width: 120)
+            }.padding(12).modifier(FloatingControlSurface(shape: Capsule(), reduceTransparency: true, contrast: .increased)),
+                              name: "accessibility-opaque-zoom-\(suffix)",
+                              size: CGSize(width: 340, height: 100), scheme: scheme,
+                              defaults: defaults, output: output)
+            defaults.set(TextPreviewSize.largest.rawValue, forKey: TextPreviewSize.preferenceKey)
+            try await capture(NativeTextPreview(text: AttributedString("Document text at 200%.\nLong lines wrap inside the native text view."),
+                                                filename: "Disposable document.txt"),
+                              name: "accessibility-text-200-percent-\(suffix)",
+                              size: CGSize(width: 500, height: 300), scheme: scheme,
+                              defaults: defaults, output: output)
+            defaults.removeObject(forKey: TextPreviewSize.preferenceKey)
             store.viewMode = .grid
             store.isGroupingEnabled = false
             try await capture(SessionView(store: store), name: "grid-info-wide-\(suffix)",
@@ -303,7 +326,8 @@ final class UIConsistencyVisualTests: XCTestCase {
             .environment(\.layoutDirection, direction ?? (L10n.isRightToLeft ? .rightToLeft : .leftToRight))
             .frame(width: size.width, height: size.height)
             .background(Color.appBackground)
-            .tint(Color.louppeAccent))
+            .tint(Color.louppeAccent)
+            .toggleStyle(LouppeToggleStyle()))
         let window = NSWindow(contentRect: NSRect(origin: CGPoint(x: -20_000, y: -20_000), size: size),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false

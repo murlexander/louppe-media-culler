@@ -104,7 +104,7 @@ struct RenameFilesView: View {
                 Button(L10n.text("Rename")) { runSingleRename() }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
-                    .tint(Color.louppeAccent)
+                    .tint(Color.louppeFilledAccent)
                     .disabled(plan?.canExecute != true || isPlanning)
             }
         }
@@ -140,7 +140,7 @@ struct RenameFilesView: View {
                 Button(L10n.text("Review Rename…")) { isReviewing = true }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
-                    .tint(Color.louppeAccent)
+                    .tint(Color.louppeFilledAccent)
                     .disabled(plan?.canExecute != true || isPlanning)
             }
         }
@@ -153,7 +153,7 @@ struct RenameFilesView: View {
                 .frame(width: 14)
                 .accessibilityHidden(true)
             Toggle(part.kind.label, isOn: partBinding(part.kind))
-                .toggleStyle(.checkbox)
+                .toggleStyle(LouppeToggleStyle(.checkbox))
                 .accessibilityIdentifier("rename.part.\(part.kind.rawValue)")
                 .accessibilityAction(named: L10n.text("Move \(part.kind.label) earlier")) {
                     movePart(part.kind, offset: -1)
@@ -318,7 +318,7 @@ struct RenameFilesView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
-                .tint(Color.louppeAccent)
+                .tint(Color.louppeFilledAccent)
             }
         }
     }
@@ -367,6 +367,7 @@ struct RenameFilesView: View {
                 Button(L10n.text("Done")) { store.isRenamePresented = false }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.louppeFilledAccent)
                     .disabled(store.isFileOperationRunning)
             }
         }

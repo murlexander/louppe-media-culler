@@ -2061,3 +2061,27 @@
 "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "يطلب «تنظيف» التأكيد قبل نقل الملفات إلى سلة المهملات. ينقل ⌘⌫ التحديد إلى السلة دون مربع حوار. يستعيد ⌘Z الملفات أثناء الجلسة المفتوحة ما دامت في سلة المهملات.";
 "Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID." = "تُحفَظ تقييمات المجلد في .louppe_session.json؛ ويوفر «ملف ← التحقق من القرارات المحفوظة…» الاسترداد. تُحفَظ تقييمات تطبيق الصور محليًا حسب معرّف الأصل.";
 "Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file." = "معاينات النص للقراءة فقط ويمكن تحديدها: نص عادي وMarkdown وJSON وXML وCSV وTSV وسجلات وYAML، حتى 1 MiB لكل ملف.";
+
+"Browser" = "المتصفح";
+
+"Accessibility" = "تسهيلات الاستخدام";
+
+"Text preview size" = "حجم نص المعاينة";
+
+"Loading text preview" = "جارٍ تحميل معاينة النص";
+
+"{0} of {1}" = "{0} من {1}";
+
+"{0}. Near-black area: {1}. Near-white area: {2}." = "{0}. المساحة شبه السوداء: {1}. المساحة شبه البيضاء: {2}.";
+
+"Subtitles" = "الترجمة";
+
+"Audio track" = "المسار الصوتي";
+
+"Automatic" = "تلقائي";
+
+"Loading media options" = "جارٍ تحميل خيارات الوسائط";
+
+"When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "عند تفعيل التنقل بلوحة المفاتيح، ينقل Tab التركيز بين عناصر التحكم. استخدم G للتبديل بين طرق العرض.";
+
+"Subtitle tracks" = "مسارات الترجمة";

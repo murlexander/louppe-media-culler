@@ -121,6 +121,7 @@ struct GalleryVideoPlayerView: View {
         Group {
             if #available(macOS 26.0, *) {
                 button.buttonStyle(.glass).buttonBorderShape(.circle)
+                    .tint(Color.louppeFilledAccent)
             } else {
                 button.buttonStyle(.bordered).buttonBorderShape(.circle)
             }
@@ -254,6 +255,7 @@ struct GalleryMediaTransportView: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 42, alignment: .trailing)
+                .accessibilityHidden(true)
             Slider(
                 value: timelineValue,
                 in: 0...1,
@@ -270,10 +272,12 @@ struct GalleryMediaTransportView: View {
             )
             .disabled(duration <= 0)
             .accessibilityLabel(L10n.text("Timeline"))
+            .accessibilityValue(L10n.text("\(MediaDurationFormat.accessibility(displayedTime)) of \(MediaDurationFormat.accessibility(item.duration))"))
             Text(MediaDurationFormat.display(item.duration))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 42, alignment: .leading)
+                .accessibilityHidden(true)
         }
         .frame(maxWidth: .infinity)
         .environment(\.layoutDirection, .leftToRight)

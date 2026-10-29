@@ -216,6 +216,7 @@ struct ReviewGroupHeader: View {
                 .font(style == .browser ? .caption : .caption.weight(.semibold))
                 .foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 .help(title).layoutPriority(1)
+                .accessibilityAddTraits(.isHeader)
             RoundedRectangle(cornerRadius: 1)
                 .fill(.secondary.opacity(style == .browser ? 0.5 : 0.4)).frame(height: 2)
         }

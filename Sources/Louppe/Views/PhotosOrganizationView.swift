@@ -229,11 +229,13 @@ struct PhotosOrganizationView: View {
                     }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.louppeFilledAccent)
                     .disabled(submitted || currentReview != review)
                 } else {
                     Button(L10n.text("Review")) { review = currentReview }
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.louppeFilledAccent)
                         .disabled(currentReview == nil || submitted)
                 }
             case .working:

@@ -277,6 +277,7 @@ private struct GridCell: View {
                                 .frame(width: 18, height: 18)
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.louppeFilledAccent)
                         .buttonBorderShape(.circle)
                         .tint(.black.opacity(0.62))
                         .foregroundStyle(.white)

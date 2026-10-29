@@ -118,7 +118,7 @@ struct FilterView: View {
             filterSections
             footer
         }
-        .toggleStyle(.checkbox)
+        .toggleStyle(LouppeToggleStyle(.checkbox))
         .padding(14)
         .frame(width: 340, height: 560)
         .background(Color.appBackground)
@@ -431,6 +431,7 @@ struct FilterView: View {
                     Text(L10n.text("Specific dates")).tag(DateFilterMode.specificDates)
                 }
                 .pickerStyle(.segmented)
+                .tint(Color.louppeFilledAccent)
                 .labelsHidden()
 
                 if store.filter.dateMode == .range {

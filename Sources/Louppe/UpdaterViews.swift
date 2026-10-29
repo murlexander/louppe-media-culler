@@ -92,6 +92,7 @@ struct LouppeSettingsView: View {
         pages
             .frame(width: 620, height: 600)
             .tint(Color.louppeAccent)
+            .toggleStyle(LouppeToggleStyle())
             .navigationTitle(selectedPage.title)
     }
 

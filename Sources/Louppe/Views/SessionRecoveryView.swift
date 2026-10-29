@@ -22,7 +22,7 @@ struct SessionRecoveryBanner: View {
                 store.dismissSessionRecoveryNotice()
             } label: {
                 Image(systemName: "xmark")
-                    .frame(width: 22, height: 22)
+                    .frame(width: 36, height: 36)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -78,7 +78,7 @@ struct SessionRecoveryView: View {
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                         }
-                        .toggleStyle(.checkbox)
+                        .toggleStyle(LouppeToggleStyle(.checkbox))
                         Spacer(minLength: 12)
                         Text(store.sessionRecoveryStatus(record))
                             .font(.caption).foregroundStyle(.secondary)
@@ -115,7 +115,7 @@ struct SessionRecoveryView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Toggle(L10n.text("I confirm the selected files are the same photos or videos."),
                        isOn: $confirmsSamePhotos)
-                    .toggleStyle(.checkbox)
+                    .toggleStyle(LouppeToggleStyle(.checkbox))
                     .disabled(selected.isEmpty)
                 Text(L10n.text("Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files."))
                     .font(.caption).foregroundStyle(.secondary)
@@ -134,6 +134,7 @@ struct SessionRecoveryView: View {
                         confirmsSamePhotos = false
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.louppeFilledAccent)
                     .disabled(!hasRestorableSelection || !confirmsSamePhotos || store.isFileOperationRunning)
                 }
             }

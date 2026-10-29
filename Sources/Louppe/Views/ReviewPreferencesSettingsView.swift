@@ -4,6 +4,7 @@ struct ReviewPreferencesSettingsView: View {
     @State private var preferences = ReviewPreferences.load()
     @AppStorage(RawDisplayMode.preferenceKey) private var rawDisplayMode = RawDisplayMode.fast
     @AppStorage(AppleRawDecoder.preferenceKey) private var rawDecoder = AppleRawDecoder.appleDefault
+    @AppStorage(TextPreviewSize.preferenceKey) private var textPreviewSize = TextPreviewSize.standard.rawValue
 
     // Save each edit once, even when the other sections are scrolled offscreen.
     private var savedPreferences: Binding<ReviewPreferences> {
@@ -55,6 +56,17 @@ struct ReviewPreferencesSettingsView: View {
                 }
             } header: {
                 Text(L10n.text("RAW display"))
+            }
+
+            Section {
+                Picker(L10n.text("Text preview size"), selection: $textPreviewSize) {
+                    ForEach(TextPreviewSize.allCases, id: \.rawValue) { size in
+                        Text((Double(size.rawValue) / 100).formatted(.percent))
+                            .tag(size.rawValue)
+                    }
+                }
+            } header: {
+                Text(L10n.text("Accessibility"))
             }
 
             Section {

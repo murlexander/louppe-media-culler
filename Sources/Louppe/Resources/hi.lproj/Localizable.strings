@@ -2061,3 +2061,27 @@
 "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "साफ़ करें फ़ाइलें ट्रैश में भेजने से पहले पूछता है। ⌘⌫ चयन को बिना संवाद के ट्रैश में भेजता है। सत्र खुला रहने पर, जब तक फ़ाइलें ट्रैश में हैं, ⌘Z उन्हें बहाल करता है।";
 "Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID." = "फ़ोल्डर की रेटिंग .louppe_session.json में सहेजी जाती हैं; फ़ाइल → सहेजे गए निर्णय जाँचें… से पुनर्प्राप्ति मिलती है। Photos की रेटिंग ऐसेट ID के अनुसार स्थानीय रूप से सहेजी जाती हैं।";
 "Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file." = "टेक्स्ट पूर्वावलोकन केवल पढ़ने और चयन करने के लिए हैं: सादा टेक्स्ट, Markdown, JSON, XML, CSV, TSV, लॉग और YAML, प्रति फ़ाइल अधिकतम 1 MiB।";
+
+"Browser" = "ब्राउज़र";
+
+"Accessibility" = "सुलभता";
+
+"Text preview size" = "पाठ पूर्वावलोकन का आकार";
+
+"Loading text preview" = "पाठ पूर्वावलोकन लोड हो रहा है";
+
+"{0} of {1}" = "{1} में से {0}";
+
+"{0}. Near-black area: {1}. Near-white area: {2}." = "{0}। लगभग काला क्षेत्र: {1}। लगभग सफ़ेद क्षेत्र: {2}।";
+
+"Subtitles" = "उपशीर्षक";
+
+"Audio track" = "ऑडियो ट्रैक";
+
+"Automatic" = "स्वचालित";
+
+"Loading media options" = "मीडिया विकल्प लोड हो रहे हैं";
+
+"When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "कीबोर्ड नेविगेशन चालू होने पर, Tab से नियंत्रणों के बीच फ़ोकस बदलता है। दृश्य बदलने के लिए G का उपयोग करें।";
+
+"Subtitle tracks" = "उपशीर्षक ट्रैक";

@@ -578,6 +578,7 @@ struct SessionView: View {
                     .tag(ViewMode.grid)
             }
             .pickerStyle(.segmented)
+            .tint(Color.louppeFilledAccent)
             .help(L10n.text("Switch between Gallery and Grid views (\(toolbarShortcutHint(for: .grid)))"))
         }
 
@@ -685,6 +686,7 @@ struct SessionView: View {
             }
             .disabled(!store.canExport)
             .buttonStyle(.borderedProminent)
+            .tint(Color.louppeFilledAccent)
             .buttonBorderShape(.circle)
             .tint(Color.louppeAccent)
             .accessibilityLabel(L10n.text("Export"))
@@ -718,6 +720,10 @@ struct SessionView: View {
         else {
             return false
         }
+
+        // With macOS Keyboard Navigation enabled, the first Tab must enter
+        // the native key-view loop even before a control owns focus.
+        if event.keyCode == 48, context.isKeyboardNavigationEnabled { return false }
 
         var modifiers = normalizedShortcutModifiers(for: event)
         // Caps Lock is harmless capitalization during ordinary culling, but
@@ -1006,13 +1012,15 @@ struct SessionKeyRoutingContext: Equatable {
     let focusedResponderOwnsText: Bool
     let focusedResponderOwnsNavigation: Bool
     let isVoiceOverEnabled: Bool
+    let isKeyboardNavigationEnabled: Bool
 
     init(
         sessionOwnsEvent: Bool,
         hasModalPresentation: Bool,
         focusedResponderOwnsText: Bool = false,
         focusedResponderOwnsNavigation: Bool = false,
-        isVoiceOverEnabled: Bool = false
+        isVoiceOverEnabled: Bool = false,
+        isKeyboardNavigationEnabled: Bool = false
     ) {
         self.sessionOwnsEvent = sessionOwnsEvent
         self.hasModalPresentation = hasModalPresentation
@@ -1020,6 +1028,7 @@ struct SessionKeyRoutingContext: Equatable {
         self.focusedResponderOwnsNavigation =
             focusedResponderOwnsNavigation
         self.isVoiceOverEnabled = isVoiceOverEnabled
+        self.isKeyboardNavigationEnabled = isKeyboardNavigationEnabled
     }
 
     var acceptsReviewShortcuts: Bool {
@@ -1103,7 +1112,8 @@ struct SessionKeyRoutingContext: Equatable {
                 Self.responderOwnsText(focusedResponder),
             focusedResponderOwnsNavigation:
                 Self.responderOwnsNavigation(focusedResponder),
-            isVoiceOverEnabled: NSWorkspace.shared.isVoiceOverEnabled
+            isVoiceOverEnabled: NSWorkspace.shared.isVoiceOverEnabled,
+            isKeyboardNavigationEnabled: NSApp.isFullKeyboardAccessEnabled
         )
     }
 

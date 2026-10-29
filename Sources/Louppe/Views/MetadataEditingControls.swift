@@ -32,43 +32,44 @@ struct MetadataEditingControls: View {
                 }
             }
 
-            HStack(spacing: 3) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(L10n.text("Stars"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Spacer(minLength: 4)
-                Button {
-                    store.setStarRating(nil)
-                } label: {
-                    Image(systemName: "xmark")
-                        .frame(width: 22, height: 22)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .disabled(!store.canRate)
-                .accessibilityLabel(L10n.text("Clear stars"))
-                .accessibilityValue(MediaTileAccessibility.starDescription(for: stars))
-                .help(L10n.text("Clear stars"))
-
-                ForEach(StarRating.allCases, id: \.self) { rating in
-                    let title = rating == .one
-                        ? L10n.text("Set 1 Star")
-                        : L10n.text("Set \(rating.count) Stars")
+                HStack(spacing: 3) {
                     Button {
-                        store.setStarRating(rating)
+                        store.setStarRating(nil)
                     } label: {
-                        Image(systemName: starSymbol(for: rating, state: stars))
-                            .frame(width: 22, height: 22)
+                        Image(systemName: "xmark")
+                            .frame(width: 36, height: 36)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(starColor(for: rating, state: stars))
+                    .foregroundStyle(.secondary)
                     .disabled(!store.canRate)
-                    .accessibilityLabel(title)
+                    .accessibilityLabel(L10n.text("Clear stars"))
                     .accessibilityValue(MediaTileAccessibility.starDescription(for: stars))
-                    .accessibilityAddTraits(stars == .stars(rating) ? .isSelected : [])
-                    .help(title)
+                    .help(L10n.text("Clear stars"))
+
+                    ForEach(StarRating.allCases, id: \.self) { rating in
+                        let title = rating == .one
+                            ? L10n.text("Set 1 Star")
+                            : L10n.text("Set \(rating.count) Stars")
+                        Button {
+                            store.setStarRating(rating)
+                        } label: {
+                            Image(systemName: starSymbol(for: rating, state: stars))
+                                .frame(width: 36, height: 36)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(starColor(for: rating, state: stars))
+                        .disabled(!store.canRate)
+                        .accessibilityLabel(title)
+                        .accessibilityValue(MediaTileAccessibility.starDescription(for: stars))
+                        .accessibilityAddTraits(stars == .stars(rating) ? .isSelected : [])
+                        .help(title)
+                    }
                 }
             }
 
@@ -145,7 +146,7 @@ struct MetadataDecisionButton: View {
                 isMixed: decision == .mixed,
                 size: size
             )
-            .frame(width: size + 6, height: size + 6)
+            .frame(width: max(36, size + 6), height: max(36, size + 6))
         }
         .buttonStyle(.plain)
         .disabled(!store.canRate)
@@ -187,6 +188,7 @@ struct ColorLabelMark: View {
 struct MetadataBadgeStrip: View {
     let starRatingState: PhotoItemStarRatingState
     let colorLabelState: PhotoItemColorLabelState
+    var showsColorNames = false
 
     var body: some View {
         if starRatingState != .unrated || colorLabelState != .none {
@@ -195,9 +197,18 @@ struct MetadataBadgeStrip: View {
                     starBadge
                 }
                 if colorLabelState != .none {
-                    ColorLabelMark(state: colorLabelState)
-                        .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
-                        .background(.black.opacity(0.68), in: Circle())
+                    if showsColorNames {
+                        Text(colorTitle)
+                            .font(.caption2.weight(.semibold))
+                            .lineLimit(1)
+                            .padding(.horizontal, 5)
+                            .frame(height: TileBadgeLayout.height)
+                            .background(.black.opacity(0.85), in: Capsule())
+                    } else {
+                        ColorLabelMark(state: colorLabelState)
+                            .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
+                            .background(.black.opacity(0.68), in: Circle())
+                    }
                 }
             }
             .frame(height: TileBadgeLayout.height)
@@ -205,6 +216,14 @@ struct MetadataBadgeStrip: View {
             .shadow(radius: 1)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+        }
+    }
+
+    private var colorTitle: String {
+        switch colorLabelState {
+        case .none: L10n.text("None")
+        case .mixed: L10n.text("Mixed")
+        case .label(let label): label.localizedDisplayName
         }
     }
 

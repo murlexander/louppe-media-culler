@@ -2061,3 +2061,27 @@
 "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash." = "Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash.";
 "Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID." = "Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID.";
 "Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file." = "Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file.";
+
+"Browser" = "Browser";
+
+"Accessibility" = "Accessibility";
+
+"Text preview size" = "Text preview size";
+
+"Loading text preview" = "Loading text preview";
+
+"{0} of {1}" = "{0} of {1}";
+
+"{0}. Near-black area: {1}. Near-white area: {2}." = "{0}. Near-black area: {1}. Near-white area: {2}.";
+
+"Subtitles" = "Subtitles";
+
+"Audio track" = "Audio track";
+
+"Automatic" = "Automatic";
+
+"Loading media options" = "Loading media options";
+
+"When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views.";
+
+"Subtitle tracks" = "Subtitle tracks";

@@ -142,6 +142,8 @@ struct ReviewKeyboardView: View {
     var toggleCommand: () -> Void = {}
     var toggleShift: () -> Void = {}
     @Binding var selectedKey: UInt16?
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         GeometryReader { geometry in
@@ -234,6 +236,10 @@ struct ReviewKeyboardView: View {
         "speaker.slash", "speaker.wave.1", "speaker.wave.3",
     ]
 
+    private var selectedForeground: Color {
+        colorScheme == .dark || contrast == .increased ? .appBackground : .white
+    }
+
     private func keyOutline() -> some View {
         RoundedRectangle(cornerRadius: 4).strokeBorder(Color.primary.opacity(0.22), lineWidth: 1)
     }
@@ -263,7 +269,7 @@ struct ReviewKeyboardView: View {
                 .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity)
                 .frame(height: height)
-                .foregroundStyle(selected ? Color.white : Color.primary)
+                .foregroundStyle(selected ? selectedForeground : Color.primary)
                 .background(selected ? Color.louppeAccent : Color.clear, in: RoundedRectangle(cornerRadius: 4))
                 .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(assigned ? Color.louppeAccent : Color.primary.opacity(0.22), lineWidth: 1))
                 .contentShape(RoundedRectangle(cornerRadius: 4))
@@ -281,7 +287,7 @@ struct ReviewKeyboardView: View {
         Button(action: action) {
             Text(symbol).font(.system(size: 12))
                 .frame(maxWidth: .infinity).frame(height: Self.rowHeight)
-                .foregroundStyle(active ? Color.white : Color.primary)
+                .foregroundStyle(active ? selectedForeground : Color.primary)
                 .background(active ? Color.louppeAccent : Color.clear, in: RoundedRectangle(cornerRadius: 4))
                 .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(
                     modifierIsAssigned(symbol) ? Color.louppeAccent : Color.primary.opacity(0.22), lineWidth: 1))
