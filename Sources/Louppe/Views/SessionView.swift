@@ -165,7 +165,7 @@ struct SessionView: View {
     // MARK: - Clean up confirmation
 
     private var clearAllRatingsMessage: String {
-        let count = store.ratedCount
+        let count = store.archiveRatedCount
         let items = count == 1 ? "1 item" : L10n.text("\(count) items")
         return L10n.text("Clear Yes/No decisions from \(items). Stars and color labels stay unchanged. Undo with ⌘Z.")
     }
@@ -270,6 +270,7 @@ struct SessionView: View {
             case .selected:
                 parts.append(L10n.text("Only paired \(removed) files in the current selection are included."))
             }
+            if let context = store.archiveScopeDescription { parts.append(context) }
             return parts.joined(separator: "\n")
         }
         var parts = [
@@ -292,11 +293,11 @@ struct SessionView: View {
             switch store.cleanUpScope {
             case .all:
                 if store.isFilterActive {
-                    parts.append(L10n.text("All \(store.items.count) folder items are considered, even those hidden by filters."))
+                    parts.append(L10n.text("All \(store.archiveScopeCount) folder items are considered, even those hidden by filters."))
                 }
             case .filtered:
                 if store.isFilterActive {
-                    let hidden = store.items.count - store.visibleIndices.count
+                    let hidden = store.archiveScopeCount - store.visibleIndices.count
                     parts.append(L10n.text("Only \(store.visibleIndices.count) visible items are considered; \(hidden) hidden items stay untouched."))
                 }
             case .selected:
@@ -305,6 +306,7 @@ struct SessionView: View {
                 parts.append(L10n.text("Only \(phrase) considered — every unselected item stays in the folder."))
             }
         }
+        if let context = store.archiveScopeDescription { parts.append(context) }
         return parts.joined(separator: "\n")
     }
 
@@ -317,11 +319,11 @@ struct SessionView: View {
         let position = store.currentVisiblePosition.map { $0 + 1 } ?? 0
         var text = L10n.text("Item \(position) of \(store.visibleIndices.count)")
         if store.isFilterActive {
-            text += L10n.text(" (of \(store.items.count) total)")
+            text += L10n.text(" (of \(store.archiveScopeCount) total)")
         }
-        text += L10n.text("  ·  \(store.yesCount + store.noCount)/\(store.items.count) reviewed")
-        if store.mixedCount > 0 {
-            text += L10n.text("  ·  \(store.mixedCount) mixed")
+        text += L10n.text("  ·  \(store.archiveReviewedCount)/\(store.archiveScopeCount) reviewed")
+        if store.archiveMixedCount > 0 {
+            text += L10n.text("  ·  \(store.archiveMixedCount) mixed")
         }
         if store.selectedIndices.count > 1 {
             text += L10n.text("  ·  \(store.selectedIndices.count) selected")
@@ -372,24 +374,16 @@ struct SessionView: View {
             .foregroundStyle(.secondary)
             // Background-work spinner. Always present (just invisible when
             // idle) so the status text doesn't shift when it appears.
-            ProgressView()
-                .controlSize(.small)
-                .opacity(
+            SessionActivityIndicator(isActive:
                     store.fullImageLoads > 0
                         || store.isChangingRawJPEGPairingMode
-                        || store.isDuplicateBurstAnalysisRunning ? 1 : 0
-                )
-                .accessibilityLabel(
+                        || store.isDuplicateBurstAnalysisRunning,
+                label:
                     store.isDuplicateBurstAnalysisRunning
                         ? L10n.text("Analyzing duplicate and burst groups locally")
                         : store.isChangingRawJPEGPairingMode
                         ? L10n.text("Preparing separate JPEG metadata")
                         : L10n.text("Loading photo preview")
-                )
-                .accessibilityHidden(
-                    store.fullImageLoads == 0
-                        && !store.isChangingRawJPEGPairingMode
-                        && !store.isDuplicateBurstAnalysisRunning
                 )
             if hasReviewStatusDetails {
                 Image(systemName: "chevron.down")
@@ -407,17 +401,34 @@ struct SessionView: View {
                 Divider()
             }
             HStack(spacing: 0) {
-                Group {
-                    switch store.viewMode {
-                    case .gallery:
-                        GalleryView(store: store)
-                    case .grid:
-                        GridView(store: store,
-                            initialViewportReceipt: store.pendingOpeningViewportReceipt(for: .grid).map {
-                                ReviewCollectionViewportReceipt(physicalFileID: $0.physicalFileID, topOffset: CGFloat($0.topOffset))
-                            },
-                            onViewportRestored: { _ in store.consumeOpeningViewportReceipt(for: .grid) })
+                if store.isLeadingPaneVisible {
+                    ArchiveLeadingPaneView(store: store)
+                    Divider()
+                }
+                VStack(spacing: 0) {
+                    if store.hasArchiveFolders, !store.archiveSelectedFolderID.isEmpty,
+                       !(store.isLeadingPaneVisible && store.archiveLeadingPane == .folders) {
+                        ArchiveBreadcrumbView(store: store)
+                        Divider()
                     }
+                    if store.archiveNavigationWarning != nil {
+                        ArchiveNavigationWarningView(store: store)
+                        Divider()
+                    }
+                    Group {
+                        switch store.viewMode {
+                        case .gallery:
+                            GalleryView(store: store)
+                        case .grid:
+                            GridView(store: store,
+                                initialViewportReceipt: store.pendingOpeningViewportReceipt(for: .grid).map {
+                                    ReviewCollectionViewportReceipt(physicalFileID: $0.physicalFileID, topOffset: CGFloat($0.topOffset))
+                                },
+                                onViewportRestored: { _ in store.consumeOpeningViewportReceipt(for: .grid) })
+                                .id(store.archiveViewportGeneration)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -430,6 +441,9 @@ struct SessionView: View {
                         .frame(width: 280)
                         .transition(.move(edge: .trailing))
                 }
+            }
+            .overlay {
+                if store.isArchiveFoldersVisible { ArchivePaneResizeOverlay(store: store) }
             }
         }
     }
@@ -608,9 +622,11 @@ struct SessionView: View {
             } label: {
                 Image(systemName: "eraser")
             }
-            .disabled(store.isFileOperationRunning || store.ratedCount == 0)
+            .disabled(store.isFileOperationRunning || store.archiveRatedCount == 0)
             .accessibilityLabel(L10n.text("Clear All Decisions"))
-            .help(L10n.text("Clear all Yes/No decisions (\(toolbarShortcutHint(for: .clear)))"))
+            .help(store.archiveScopeIndices == nil
+                ? L10n.text("Clear all Yes/No decisions (\(toolbarShortcutHint(for: .clear)))")
+                : L10n.text("Clear Yes/No decisions in this folder (\(toolbarShortcutHint(for: .clear)))"))
         }
 
         if #available(macOS 26.0, *) {
@@ -618,16 +634,21 @@ struct SessionView: View {
         }
 
         ToolbarItemGroup {
-            // The Browser toggle leaves the toolbar entirely while the Grid
-            // is showing — the column it controls exists only in the Gallery.
-            if store.viewMode == .gallery {
+            // Grid exposes the folder tree; Gallery shares the pane with Browser.
+            if store.viewMode == .gallery || store.hasArchiveFolders {
                 Button {
-                    withAnimation(reduceMotion ? nil : .default) { store.toggleBrowser() }
+                    withAnimation(reduceMotion ? nil : .default) {
+                        store.toggleLeadingPane()
+                    }
                 } label: {
-                    Image(systemName: store.showBrowser ? "sidebar.squares.left" : "sidebar.left")
+                    Image(systemName: store.isLeadingPaneVisible ? "sidebar.squares.left" : "sidebar.left")
                 }
-                .accessibilityLabel(store.showBrowser ? L10n.text("Hide Browser") : L10n.text("Show Browser"))
-                .help(L10n.text("Show or hide the Browser in the Gallery view (\(toolbarShortcutHint(for: .browser)))"))
+                .accessibilityLabel((store.hasArchiveFolders && store.archiveLeadingPane == .folders) || store.viewMode == .grid
+                    ? (store.isLeadingPaneVisible ? L10n.text("Hide Folders") : L10n.text("Show Folders"))
+                    : (store.showBrowser ? L10n.text("Hide Browser") : L10n.text("Show Browser")))
+                .help((store.hasArchiveFolders && store.archiveLeadingPane == .folders) || store.viewMode == .grid
+                    ? L10n.text("Show or hide Folders (\(toolbarShortcutHint(for: .folders)))")
+                    : L10n.text("Show or hide the Browser in the Gallery view (\(toolbarShortcutHint(for: .browser)))"))
             }
 
             Button {
@@ -788,6 +809,8 @@ struct SessionView: View {
             case .commandPalette:
                 store.presentActionPalette()
                 return store.isActionPalettePresented
+            case .enclosingFolder:
+                return store.selectEnclosingArchiveFolder()
             case .rescan:
                 store.rescan()
                 return true
@@ -929,7 +952,15 @@ struct SessionView: View {
         case .seekBackward: store.seekCurrentVideo(by: -0.5); return true
         case .seekForward: store.seekCurrentVideo(by: 0.5); return true
         case .playPause: return store.toggleCurrentPlayableMedia()
-        case .browser: withAnimation(reduceMotion ? nil : .default) { store.toggleBrowser() }; return true
+        case .browser:
+            withAnimation(reduceMotion ? nil : .default) { store.toggleArchiveBrowser() }
+            return true
+        case .folders:
+            guard store.hasArchiveFolders else { return false }
+            withAnimation(reduceMotion ? nil : .default) { store.toggleArchiveFolders() }
+            return true
+        case .previousFolder: return store.selectPreviousArchiveFolder()
+        case .nextFolder: return store.selectNextArchiveFolder()
         case .info: withAnimation(reduceMotion ? nil : .default) { store.showMetadataPanel.toggle() }; return true
         case .clipping: return store.toggleClippingWarnings()
         case .grid: store.toggleViewMode(); return true
@@ -1313,7 +1344,7 @@ struct CleanUpMenuItems: View {
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .selection))
         Divider()
         Picker(L10n.text("Scope for Actions Below"), selection: $store.cleanUpScope) {
-            cleanUpScopeLabel(L10n.text("All Media"), scope: .all)
+            cleanUpScopeLabel(store.archiveAllScopeLabel, scope: .all)
                 .tag(CleanUpScope.all)
             cleanUpScopeLabel(L10n.text("Filtered"), scope: .filtered)
                 .tag(CleanUpScope.filtered)

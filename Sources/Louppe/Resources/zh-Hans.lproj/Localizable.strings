@@ -2102,3 +2102,47 @@
 "When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "开启键盘导航后，Tab 会在控件之间移动焦点。使用 G 切换视图。";
 
 "Subtitle tracks" = "字幕轨道";
+
+/* Archive folder navigation */
+"Folders" = "文件夹";
+"Entire Archive" = "整个归档";
+"Current Folder" = "当前文件夹";
+"Include Subfolders" = "包含子文件夹";
+"Hide Folders" = "隐藏文件夹";
+"Show Folders" = "显示文件夹";
+"Expand All" = "全部展开";
+"Collapse All" = "全部折叠";
+"All reviewed" = "已全部审阅";
+"Next Unfinished Folder" = "下一个未完成的文件夹";
+"Folders width" = "文件夹宽度";
+"Folder: {0}, including subfolders" = "文件夹：{0}，包含子文件夹";
+"Folder: {0}, direct items only" = "文件夹：{0}，仅限直接包含的项目";
+"No media in this folder" = "此文件夹中没有媒体";
+"Choose another folder or include subfolders." = "请选择其他文件夹或包含子文件夹。";
+"RAW + JPEG pairs stay together, even across folders." = "RAW + JPEG 配对文件始终一起处理，即使它们位于不同文件夹中。";
+"Folder navigation could not be restored. Previous positions are retained." = "无法恢复文件夹浏览状态。已保留之前的位置。";
+"Folder navigation could not be saved. Previous positions are retained." = "无法保存文件夹浏览状态。已保留之前的位置。";
+
+"Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "使用侧边栏顶部的按钮在浏览栏和文件夹之间切换；在网格中，请使用侧边栏按钮。无需重新打开归档即可浏览，并会记住浏览位置。";
+"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "文件操作和清除所有决定仅适用于所选文件夹。选择“所有媒体”可对整个归档执行操作。RAW + JPEG 配对文件始终一起处理。";
+"Reset Folder Navigation" = "重置文件夹导航";
+"Clear Yes/No decisions in this folder ({0})" = "清除此文件夹中的保留/排除决定（{0}）";
+
+/* Folder keyboard, menu and palette commands. */
+"Show / Hide Folders" = "显示 / 隐藏文件夹";
+"Previous Folder" = "上一个文件夹";
+"Next Folder" = "下一个文件夹";
+"Enclosing Folder" = "上层文件夹";
+"Sidebar" = "边栏";
+"Hide Sidebar" = "隐藏边栏";
+"Show Sidebar" = "显示边栏";
+"Expand All Folders" = "展开所有文件夹";
+"Collapse All Folders" = "折叠所有文件夹";
+"Show Current Item’s Folder" = "显示当前项目的文件夹";
+"Go to All Media" = "前往所有媒体";
+"Go to Folder “{0}”" = "前往文件夹“{0}”";
+"Show or hide Folders ({0})" = "显示或隐藏文件夹（{0}）";
+"Press Command and a letter or arrow. Add Shift if needed." = "按下 Command 和字母或方向键。需要时可加按 Shift。";
+"Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media." = "使用“显示”菜单或命令面板切换边栏内容、展开文件夹或前往文件夹。文件夹导航会跳过未直接包含媒体的文件夹。";
+
+"Checking folder…" = "正在检查文件夹…";

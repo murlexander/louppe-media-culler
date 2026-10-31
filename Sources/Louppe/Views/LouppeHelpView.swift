@@ -70,6 +70,17 @@ struct LouppeHelpView: View {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.text("Folders"))
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L10n.text("Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered."))
+                    Text(L10n.text("Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media."))
+                    Text(L10n.text("File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together."))
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 6) {
                     Text(L10n.text("Apple Photos"))
                         .font(.headline)
                         .accessibilityAddTraits(.isHeader)

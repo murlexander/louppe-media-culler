@@ -1,7 +1,7 @@
 # Local review builds
 
-The current local installation is the single `/Applications/Louppe.app`, updated
-to the signed public 1.12.0 (14) archive on 21 October at Alex's request. It uses
+The current local installation is the single `/Applications/Louppe.app`, a local
+ad-hoc 1.13.0 (15) build installed on 30 October at Alex's request. It uses
 the official identifier
 `com.alexandermarkin.louppe`. Future local installs replace that copy; do not
 install a second review app unless requested. The separate packaging workflow
@@ -31,6 +31,72 @@ source revision, build identity, fixtures, results, explicit skips, and native
 acceptance limits. Always launch with `-openFolder`.
 
 ## Latest recorded review
+
+30 October instant-opening follow-up: the official 1.13.0 (15) app now
+shows cached pinned photos before discovery, using the same toolbar spinner as
+review work. Built from the uncommitted `archive-folder-navigation` working tree
+based on `965163b`; no commit or push. Full debug XCTest: 1,282 cases, 56 explicit
+opt-in skips, zero failures, including all keyboard/scroll gates and six new
+instant-opening contracts. An additional opt-in real-drive worker check passed.
+Performance/safety checks: 75/75. Release packaging/preflight and strict deep
+installed signature pass; all 178 Contents entries, symlinks and file hashes
+match the packaged output. Installed executable SHA-256:
+`20ecb66d9b75faee98c4f4cb150f5bca46ecac7444e6640d6613b92e315cb731`.
+
+A background `-openFolder` launch opened a disposable text document. Native pin
+opens exposed cached browsing in 0.96–0.98 s (including pin resolution and native
+view mounting). Accessibility confirmed Checking folder and an `AXBusyIndicator`
+inside `AXToolbar`; Ready restored item 16,328 of 16,967, Saved. No foreground
+activation or global input was used. Window image capture failed, so visual
+pixel inspection remains unavailable. An optional release-mode XCTest attempt
+could not compile existing tests that depend on DEBUG-only helpers; the release
+application itself builds and launches successfully. The sandboxed Store build
+was not tested live.
+
+The existing archive snapshot is 984,935 bytes; the pin document is 2,539 bytes.
+Shared thumbnail payloads across all folders total 133,504,725 bytes, occupying
+163,504,128 bytes on disk at measurement. Instant opening adds no separate cache
+or original copies. The previous installed app was preserved in the Trash.
+
+30 October opening-speed install: replaced the official app with the same
+working tree plus fast discovery, compact pinned-safe metadata cache, drive-ID
+cache keys, fewer identity passes and pinned-folder preparation (see
+PERFORMANCE.md). Two independent GPT-6.1 Sol reviews found nine defects; all were
+fixed with regression tests. Final suite: 1,275 cases, 55 opt-in skips, zero
+failures, including Hotkey 42, BrowserScroll 3, GridScroll 4 and
+PersistentVerticalScroller 3; safety 75/75; video checks passed. Release
+preflight passed; strict deep signature passes; all 110 Contents entries match
+`dist/`. Executable SHA-256
+`c3eafca0ecd77bc29e5f99dd26dfac354e343b0db3c2d695ccca9076f7a73cfe`. The previous
+app is in the Trash. On Alex's exFAT (FSKit) archive, 16,967 items, the
+`Opening ready` log showed:
+
+| Open | Before | After |
+| --- | ---: | ---: |
+| Warm, `-openFolder` | 12.9 s (21.4 s first) | 1.7–2.0 s |
+| First open (v1→v2 cache, no EXIF reads) | — | 2.3 s |
+| Cold, after `diskutil` remount | 43.2 s with a rebuilt cache (earlier today) | 2.6 s |
+| Pin click after remount and automatic preparation | — | 1.6 s |
+
+Preparation after the remount took 2.7 s, unchanged, with no writes. The
+folder's inode survived the remount. The session restored its remembered item.
+
+30 October consolidation: built the uncommitted archive-folder working tree on
+`archive-folder-navigation` (base `965163b`, unchanged since the 05:34 full suite)
+with `build_app.sh` and installed it as the official app. Release preflight passed.
+The pre-install gates passed with zero failures: Hotkey 42, BrowserScroll 3,
+GridScroll 4 and PersistentVerticalScroller 3 (`/tmp/louppe-consolidate-gates.log`).
+Executable SHA-256 `85e1296f7c1437b62546032b3883f0788b514e674b2c39ee4b3268a47418a66c`.
+The installed copy passes strict deep signature checks. All 110 Contents entries
+match `dist/` by bytes, modes and symlink targets. The dated review app
+(`com.alexandermarkin.louppe.review.archivefolders`) moved to the Trash.
+Its folder-pane choice/width and `ArchiveNavigation.json` were copied into the
+official domain through exact-path `defaults` writes. Official shortcuts, grants
+and settings were kept. Pre-merge copies are in
+`~/Documents/tmp/louppe-consolidation-20261030/`. Security-scoped bookmarks follow the
+identity that created them. The review build's recents therefore stayed out,
+and the pinned archive needs one Locate in the official app. The Accessibility
+tree confirmed one running instance at Welcome.
 
 21 October release: replaced the single official app with the notarized public
 archive (SHA-256 `2cd47cf21aaceeb0919b306a9b14093cb9f1ab1283dc932cc29d57eb3396c99e`).

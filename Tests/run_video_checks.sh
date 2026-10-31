@@ -24,6 +24,10 @@ swiftc \
     Sources/Louppe/ArchiveMetadataIndex.swift \
     Sources/Louppe/SessionOpeningMetadata.swift \
     Sources/Louppe/FolderScanner.swift \
+    Sources/Louppe/QualityCueWorkPolicy.swift \
+    Sources/Louppe/PinnedFolders.swift \
+    Sources/Louppe/PinnedFolderPreparation.swift \
+    Sources/Louppe/ArchiveFolderIndex.swift \
     Sources/Louppe/MetadataExtractor.swift \
     Sources/Louppe/FujiFilmSimulation.swift \
     Sources/Louppe/VideoSupport.swift \

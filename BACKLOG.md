@@ -103,8 +103,19 @@ measurements before choosing a fix. Later ideas remain deferred.
   Multi-batch/cancellation/revocation runtime gaps remain. Validation and limitations: [acceptance record](Docs/PHOTOS_ORGANIZATION_2026-10-25.md).
 - [ ] **Archive folder navigation — Alex, 25 October 2026.** Show the actual
   SSD folder hierarchy as a compact collapsible native outline in Gallery and
-  Grid. Design investigated against the current scanner/index/selection code;
-  not implemented in the installed build.
+  Grid. Implemented on 29 October 2026 and installed as the official app on
+  30 October. Connected-archive opening and drive-remount checks passed on
+  30 October; keep open for physical input/assistive-technology and compatibility
+  acceptance. [Implementation and validation](Docs/ARCHIVE_FOLDER_NAVIGATION_2026-10-29.md).
+  - **30 October review:** corrected aligned headers/native value menus, flat-folder
+    layout, folder progress/Clear enablement and explicit corrupt-memory recovery.
+  - **30 October night:** one-click Browser/Folders switch, Expand/Collapse All,
+    resizable remembered pane, completion checkmarks, Show in Finder, T/[/]/⌘↑
+    shortcuts with View menu and palette (including Next Unfinished Folder), and
+    click focus returning to media. Audit fixes: unbounded live expansion,
+    single-report recursive disclosure, single scope change on recursive collapse,
+    first-mount reveal, deep-nesting layout and empty-folder/filter state. Physical
+    input, VoiceOver and composited appearance remain open, as below.
   - Share the leading navigation pane with Gallery's thumbnail Browser via
     Folders/Browser modes; retain Info trailing and the existing Browser width.
     Include All Media, breadcrumbs, prepared item counts, and descendants by
@@ -129,10 +140,6 @@ measurements before choosing a fix. Later ideas remain deferred.
     identities, keyboard/accessibility, and both layouts with Info visible.
     Measure real archive navigation and synthetic large item/folder trees;
     run required keyboard/scroll/safety gates before installing an implementation.
-- [ ] **Photo location lookup — Aymeric feedback, 20 October 2026.** Add an
-  explicit Open in Maps action to valid GPS coordinates in Info. Do not look up
-  locations before the click. Carry this forward from the deferred 1.12 work;
-  an embedded shoot map remains a separate later idea.
 - [ ] **Native workflow acceptance carried from 1.12.** Exercise physical Dock
   dragging at cold launch and with an open folder, retained window geometry,
   and physical rename-row dragging on disposable media. Review custom shortcuts
@@ -306,6 +313,10 @@ format 7; preserve copies before testing a downgrade to 1.10.
 
 These are deferred ideas, not committed implementation scope for 1.13.
 
+- [ ] **Photo location lookup — Aymeric feedback, 20 October 2026.** Add an
+  explicit Open in Maps action to valid GPS coordinates in Info. Do not look up
+  locations before the click. Deferred from 1.13 by Alex on 29 October 2026;
+  an embedded shoot map remains a separate idea.
 - [ ] **Archive gateway — Alex, 25 October 2026.** Make Louppe a familiar front
   door to existing media, with culling as one activity. Product ideas below are
   deferred; large-folder performance and remembered/pinned archives belong to

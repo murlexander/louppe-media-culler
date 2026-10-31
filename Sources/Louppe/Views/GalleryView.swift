@@ -8,16 +8,6 @@ struct GalleryView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            if store.showBrowser {
-                BrowserView(store: store,
-                    initialViewportReceipt: store.pendingOpeningViewportReceipt(for: .browser).map {
-                        ReviewCollectionViewportReceipt(physicalFileID: $0.physicalFileID, topOffset: CGFloat($0.topOffset))
-                    },
-                    onViewportRestored: { _ in store.consumeOpeningViewportReceipt(for: .browser) })
-                    .frame(width: BrowserView.width)
-                    .background(Color.appBackground)
-                    .transition(.move(edge: .leading))
-            }
 
             ZStack {
                 Color.appBackground
@@ -32,6 +22,10 @@ struct GalleryView: View {
                         systemImage: "rectangle.3.group",
                         description: Text(store.groupedReviewEmptyDescription)
                     )
+                } else if store.visibleIndices.isEmpty && !store.archiveSelectedFolderID.isEmpty
+                            && (!store.filter.isActive || store.archiveScopeCount == 0) {
+                    // An empty folder stays empty without filters; don't suggest clearing them.
+                    ArchiveFolderEmptyView(store: store)
                 } else if store.visibleIndices.isEmpty && store.filter.isActive {
                     ContentUnavailableView {
                         Label(L10n.text("No items match the filter"), systemImage: "line.3.horizontal.decrease.circle")

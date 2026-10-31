@@ -69,12 +69,18 @@ final class LiveArchivePerformanceTests: XCTestCase {
             catch { sampler.cancel(); await sampler.value; throw error }
             let ready = SpeedBenchmark.milliseconds(start)
             sampler.cancel(); await sampler.value
+            // The app writes the metadata cache after Ready; later iterations reuse it.
+            let commitStart = ContinuousClock.now
+            let commit = prepared?.metadataCommit
+            _ = await Task.detached(priority: .utility) { commit?.run(isCancelled: { false }) }.value
+            let postReadyCommit = SpeedBenchmark.milliseconds(commitStart)
             let metrics = recorder.snapshot()
             records.append(["kind": "opening", "iteration": iteration,
                 "metadataIndex": iteration == 0 ? "cold-isolated" : "warm-isolated",
                 "filesystemCache": "uncontrolled-warmed-by-inventory-and-prior-profile",
                 "firstMatchingVisibleThumbnailMS": firstPixels.map { $0 as Any } ?? NSNull(),
-                "fullWorkerReadinessMS": ready, "physicalFiles": metrics.physicalFileCount,
+                "fullWorkerReadinessMS": ready, "postReadyIndexCommitMS": postReadyCommit,
+                "physicalFiles": metrics.physicalFileCount,
                 "items": metrics.itemCount,
                 "stagesMS": metrics.secondsByStage.reduce(into: [String: Double]()) { $0[$1.key.rawValue] = $1.value * 1000 },
                 "peakResidentBytes": peak, "maxMainActorSamplingGapMS": gaps.max() ?? 0,

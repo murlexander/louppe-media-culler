@@ -31,7 +31,12 @@ switching and keeps your chosen review-window size.
 
 On Welcome, choose **Pin Folder…** to keep a folder shortcut without opening it.
 Pinned folders remember the current photo and browsing position. Disconnected
-folders stay visible; their menu offers Locate and Unpin.
+folders stay visible; their menu offers Locate and Unpin. While Welcome is open,
+Louppe quietly reads a pinned folder when its drive connects, so it opens faster.
+Previously opened pins can show cached photos immediately, with the toolbar's
+loading indicator while Louppe checks the folder. Photos added or removed since
+the last visit appear correctly when checking finishes; decisions and file
+actions become available then. Pinning does not copy your originals.
 
 ![Louppe Grid comparing street scenes, architecture, reflections and still life, with a photo selected in purple](Media/2026-09-26/grid-overview.png)
 
@@ -56,6 +61,51 @@ Move transfers originals and cannot be undone; Metadata (XMP) writes ratings
 to sidecars for other apps. **Clean Up** sends files to macOS Trash.
 **Organize Source Folder** builds folders from decisions, dates, ratings,
 and other metadata.
+
+## Archive folders
+
+When the opened folder has subfolders, two buttons at the top of the leading
+pane switch it between **Browser** and **Folders** in one click. In Grid, the
+sidebar toolbar button opens Folders; choosing Browser there returns to
+Gallery. Info stays on the right. Folders with no subfolders keep the original
+Browser/Grid layout without folder controls. Louppe remembers whether you last
+used Browser or Folders.
+
+Select a folder to browse it without rescanning or opening another session.
+A click hands the keyboard back to the media, so arrows keep moving through
+items. With keyboard navigation turned on, Tab moves focus into the tree, where
+arrows move between folders. The button at the pane's top right expands or
+collapses every folder (Option-click a disclosure triangle for one branch).
+Collapse All keeps the current folder visible and never changes the folder
+you are reviewing. Drag the pane's edge to fit long names; double-click the
+edge to restore the standard width.
+
+Counts include subfolders and count a RAW+JPEG pair once when pairing is
+enabled. A checkmark beside a count means every item in that folder is marked
+Yes or No; mixed pairs still need a decision. Empty folders remain visible but
+dimmed. **All Media** shows the entire archive. When the tree is hidden or
+showing Browser, a breadcrumb inside a subfolder lets you return to an
+ancestor. It stays hidden at All Media and while the folder tree is visible.
+A folder's context menu or breadcrumb menu can turn off **Include Subfolders**
+for direct items only; the context menu also offers **Show in Finder**.
+Metadata filters apply inside the chosen folder. Folder counts describe the
+inventory before those filters, so a nonempty folder can have no filter matches.
+
+Louppe remembers each folder's current item and independent Browser/Grid position,
+plus the expanded folders. Missing or replaced directories fall back to a verified
+ancestor. Originals, decisions and the archive's single save location stay intact.
+Opening a parent archive reads its own saved decisions; it does not merge
+sidecars from subfolders previously reviewed as separate sessions.
+If saved browsing positions cannot be read, **Reset Folder Navigation** starts
+fresh browsing memory and preserves the old memory files beside it. Decisions
+and originals are unaffected.
+
+Export, Clean Up, Rename, Organize and Clear All Decisions follow the current
+folder scope. Their All choice reads **Current Folder**, or **Entire Archive**
+at All Media. Filtered and Selected narrow it further. Paired RAW+JPEG files stay
+together even when a partner is outside the chosen folder; check the preview and
+confirmation before file work. Review progress and Clear availability follow
+the folder before metadata filters. Navigate to All Media explicitly for archive-wide work.
 
 ## Apple Photos
 
@@ -152,6 +202,10 @@ controls to return to Fit, 100%, or Phone size.
 
 Louppe supports common camera RAW, JPEG, TIFF, PNG, HEIC, JPEG XL (.jxl),
 WebP, AVIF, video, audio, and text formats. Unsupported files remain available to rate and export.
+Opening a folder skips hidden items, packages such as Photos libraries, Capture
+One's own `CaptureOne` cache folders (those holding only `Cache` and `Settings`
+folders) and Lightroom `.lrdata` preview folders. Capture One session folders
+such as Capture, Selects and Output are scanned normally.
 Gallery has Fit, Phone size, true 100% zoom, playback, metadata, histogram,
 clipping information, and optional quality cues. VoiceOver and keyboard review
 are supported.
@@ -211,7 +265,8 @@ matching mode keeps its own bindings.
 Click Command or Shift on the keyboard to preview modified shortcuts; holding
 the keys previews them temporarily. Command shortcuts follow the current Mac
 keyboard layout independently of physical review positions. Export, Command
-Palette and Rescan accept several Command or Shift-Command letter shortcuts.
+Palette, Rescan and Enclosing Folder accept several Command or Shift-Command
+letter or arrow shortcuts.
 Their aliases appear with the corresponding actions in the same editor.
 Standard Mac and modified navigation shortcuts remain read-only.
 
@@ -222,6 +277,18 @@ action and overlapping context. Reset an action with its reset button, or use
 **Restore shortcut defaults** to reset the current review mode and Command
 shortcuts together. Menus, the Command Palette, Help and tooltips reflect the
 saved keys and contexts. Escape retains its native selection/cancel behavior.
+
+Use View or the Command Palette to choose Browser or Folders, show or hide the
+sidebar, and expand or collapse folders. Previous/Next Folder skips empty and
+container-only folders; Next from All Media goes to the first folder with direct
+media. Next Unfinished Folder also skips folders whose items all have Yes or No.
+Entering a folder keeps the current item when it belongs there; otherwise it
+starts at the first undecided item. Enclosing Folder returns to the parent,
+including container-only folders.
+Show Current Item’s Folder keeps that item current. Go to All Media restores the
+whole archive. The palette also lists folder paths for archives of up to 2,000 folders.
+Folder commands require an archive hierarchy. They wait during file operations;
+Q and T remain available to switch sidebar content.
 
 The table below lists the defaults. **Help → Louppe Help** shows your current
 assignments and their view/media contexts, including customized keys.
@@ -240,7 +307,10 @@ assignments and their view/media contexts, including customized keys.
 | **A** | Toggle phone-sized preview in Gallery |
 | **X** | Show or hide the clipping overlay in Gallery |
 | **Tab / G** | Switch between Gallery and Grid |
-| **Q** | Show or hide the Gallery thumbnail browser |
+| **Q** | Show or hide the Gallery thumbnail browser; switch from Folders to Browser |
+| **T** | Show or hide Folders in Gallery or Grid |
+| **[ / ]** | Previous / next folder with direct media, in outline order |
+| **⌘↑** | Enclosing folder; top-level folders return to All Media |
 | **W** | Show or hide the Info panel |
 | **⌘+ / ⌘−** | Make Grid thumbnails larger / smaller |
 | **E / ⌘E** | Open Export |

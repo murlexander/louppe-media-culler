@@ -33,7 +33,7 @@ final class ReviewShortcutTests: XCTestCase {
         let defaults = UserDefaults(suiteName: domain)!
         defer { defaults.removePersistentDomain(forName: domain) }
         var preferences = ReviewShortcutPreferences(interpretation: .keyboardLayout)
-        XCTAssertTrue(preferences.add(.init(character: "t", keyCode: 17), for: .yes, scope: .gallery))
+        XCTAssertTrue(preferences.add(.init(character: "b", keyCode: 11), for: .yes, scope: .gallery))
         let layoutAliases = preferences.assignments(for: .yes)
         preferences.interpretation = .physicalPosition
         XCTAssertTrue(preferences.add(.init(character: "v", keyCode: 9), for: .no, scope: .grid))
@@ -51,13 +51,13 @@ final class ReviewShortcutTests: XCTestCase {
 
     func testLayoutCustomBindingDoesNotChangePhysicalMapping() {
         var preferences = ReviewShortcutPreferences(interpretation: .keyboardLayout)
-        XCTAssertTrue(preferences.set(.init(character: "t", keyCode: 17), for: .yes))
+        XCTAssertTrue(preferences.set(.init(character: "b", keyCode: 11), for: .yes))
         XCTAssertNil(preferences.action(for: event(code: 3, character: "f")))
-        XCTAssertEqual(preferences.action(for: event(code: 17, character: "t")), .yes)
+        XCTAssertEqual(preferences.action(for: event(code: 11, character: "b")), .yes)
         preferences.interpretation = .physicalPosition
         XCTAssertEqual(preferences.action(for: event(code: 3, character: "u")), .yes)
-        XCTAssertNil(preferences.action(for: event(code: 17, character: "y")))
-        XCTAssertEqual(preferences.binding(for: .yes), .init(character: "t", keyCode: 3))
+        XCTAssertNil(preferences.action(for: event(code: 11, character: "y")))
+        XCTAssertEqual(preferences.binding(for: .yes), .init(character: "b", keyCode: 3))
     }
 
     func testDvorakPhysicalEditsIgnoreTheInactiveLayoutCharacter() {
@@ -80,17 +80,17 @@ final class ReviewShortcutTests: XCTestCase {
 
     func testTrueConflictsAreRejectedInTheModeBeingEdited() {
         var preferences = ReviewShortcutPreferences(interpretation: .keyboardLayout)
-        XCTAssertEqual(preferences.conflictingAction(for: .init(character: "d", keyCode: 17), excluding: .yes), .no)
-        XCTAssertFalse(preferences.set(.init(character: "d", keyCode: 17), for: .yes))
+        XCTAssertEqual(preferences.conflictingAction(for: .init(character: "d", keyCode: 11), excluding: .yes), .no)
+        XCTAssertFalse(preferences.set(.init(character: "d", keyCode: 11), for: .yes))
         XCTAssertEqual(preferences, ReviewShortcutPreferences(interpretation: .keyboardLayout))
         // The physical code is irrelevant when assigning a layout character.
-        XCTAssertNil(preferences.conflictingAction(for: .init(character: "t", keyCode: 2), excluding: .yes))
-        XCTAssertTrue(preferences.set(.init(character: "t", keyCode: 2), for: .yes))
+        XCTAssertNil(preferences.conflictingAction(for: .init(character: "b", keyCode: 2), excluding: .yes))
+        XCTAssertTrue(preferences.set(.init(character: "b", keyCode: 2), for: .yes))
         XCTAssertEqual(preferences.binding(for: .yes).keyCode, 3)
         preferences.interpretation = .physicalPosition
-        XCTAssertEqual(preferences.conflictingAction(for: .init(character: "t", keyCode: 2), excluding: .yes), .no)
-        XCTAssertFalse(preferences.set(.init(character: "t", keyCode: 2), for: .yes))
-        XCTAssertEqual(preferences.binding(for: .yes), .init(character: "t", keyCode: 3))
+        XCTAssertEqual(preferences.conflictingAction(for: .init(character: "b", keyCode: 2), excluding: .yes), .no)
+        XCTAssertFalse(preferences.set(.init(character: "b", keyCode: 2), for: .yes))
+        XCTAssertEqual(preferences.binding(for: .yes), .init(character: "b", keyCode: 3))
     }
 
     func testPreferencesRoundTripAndInvalidSavedDataFallsBackSafely() {
@@ -98,20 +98,20 @@ final class ReviewShortcutTests: XCTestCase {
         let defaults = UserDefaults(suiteName: domain)!
         defer { defaults.removePersistentDomain(forName: domain) }
         var preferences = ReviewShortcutPreferences()
-        XCTAssertTrue(preferences.set(.init(character: "t", keyCode: 17), for: .yes))
+        XCTAssertTrue(preferences.set(.init(character: "b", keyCode: 11), for: .yes))
         preferences.interpretation = .physicalPosition
         preferences.save(to: defaults)
         XCTAssertEqual(ReviewShortcutPreferences.load(from: defaults), preferences)
         XCTAssertEqual(ReviewShortcutPreferences.decode("broken"), ReviewShortcutPreferences())
         let invalid = #"{"interpretation":"physicalPosition","customBindings":{"yes":{"character":"d","keyCode":17}}}"#
         XCTAssertEqual(ReviewShortcutPreferences.decode(invalid), ReviewShortcutPreferences())
-        let reserved = #"{"interpretation":"physicalPosition","customBindings":{"yes":{"character":"t","keyCode":49}}}"#
+        let reserved = #"{"interpretation":"physicalPosition","customBindings":{"yes":{"character":"b","keyCode":49}}}"#
         XCTAssertEqual(ReviewShortcutPreferences.decode(reserved), ReviewShortcutPreferences())
     }
 
     func testDecodedValueCacheTracksEditsInvalidValuesAndIndependentCopies() {
         var original = ReviewShortcutPreferences(interpretation: .keyboardLayout)
-        XCTAssertTrue(original.add(.init(character: "t", keyCode: 17), for: .yes))
+        XCTAssertTrue(original.add(.init(character: "b", keyCode: 11), for: .yes))
         let first = original.encoded
         var updated = original
         updated.interpretation = .physicalPosition
@@ -128,7 +128,7 @@ final class ReviewShortcutTests: XCTestCase {
 
     func testConcurrentDecodingKeepsRawValueAndValidatedValueTogether() {
         var preferences = ReviewShortcutPreferences()
-        XCTAssertTrue(preferences.add(.init(character: "t", keyCode: 17), for: .yes))
+        XCTAssertTrue(preferences.add(.init(character: "b", keyCode: 11), for: .yes))
         let custom = preferences
         let raw = preferences.encoded
         DispatchQueue.concurrentPerform(iterations: 100) { index in
@@ -149,12 +149,12 @@ final class ReviewShortcutTests: XCTestCase {
     }
 
     func testRecorderAcceptsNavigationButRejectsReservedKeysAndModifiers() {
-        XCTAssertEqual(ReviewShortcutBinding.capture(event(code: 17, character: "t")), .init(character: "t", keyCode: 17))
+        XCTAssertEqual(ReviewShortcutBinding.capture(event(code: 11, character: "b")), .init(character: "b", keyCode: 11))
         for modifier: NSEvent.ModifierFlags in [.command, .option, .control, .shift, .function, .help, .numericPad] {
-            XCTAssertNil(ReviewShortcutBinding.capture(event(code: 17, character: "t", modifiers: modifier)))
+            XCTAssertNil(ReviewShortcutBinding.capture(event(code: 11, character: "b", modifiers: modifier)))
         }
         for code: UInt16 in [36, 51, 53, 76, 117] {
-            XCTAssertNil(ReviewShortcutBinding.capture(event(code: code, character: "t")))
+            XCTAssertNil(ReviewShortcutBinding.capture(event(code: code, character: "b")))
         }
     }
 
@@ -162,10 +162,10 @@ final class ReviewShortcutTests: XCTestCase {
         var preferences = ReviewShortcutPreferences(interpretation: .keyboardLayout)
         let first = preferences.assignments(for: .yes)[0]
         XCTAssertEqual(first.id, preferences.assignments(for: .yes)[0].id)
-        XCTAssertTrue(preferences.add(.init(character: "t", keyCode: 17), for: .yes))
+        XCTAssertTrue(preferences.add(.init(character: "b", keyCode: 11), for: .yes))
         let added = preferences.assignments(for: .yes)[1]
-        XCTAssertEqual(preferences.hint(for: .yes), "F / T")
-        XCTAssertEqual(preferences.match(for: event(code: 17, character: "t"), context: .gridPhoto)?.action, .yes)
+        XCTAssertEqual(preferences.hint(for: .yes), "F / B")
+        XCTAssertEqual(preferences.match(for: event(code: 11, character: "b"), context: .gridPhoto)?.action, .yes)
         XCTAssertTrue(preferences.remove(first.id, for: .yes))
         XCTAssertNil(preferences.match(for: event(code: 3, character: "f"), context: .galleryPhoto))
         XCTAssertEqual(preferences.assignments(for: .yes)[0].id, added.id)
@@ -178,13 +178,13 @@ final class ReviewShortcutTests: XCTestCase {
 
     func testGlobalConflictsRejectButDisjointViewsAndMediaMayReuseAKey() {
         var preferences = ReviewShortcutPreferences()
-        let t = ReviewShortcutBinding(character: "t", keyCode: 17)
+        let t = ReviewShortcutBinding(character: "b", keyCode: 11)
         XCTAssertTrue(preferences.add(t, for: .yes, scope: .photos))
         XCTAssertEqual(preferences.conflict(for: t, action: .no, scope: .all)?.action, .yes)
         XCTAssertFalse(preferences.add(t, for: .no))
         XCTAssertTrue(preferences.add(t, for: .no, scope: .videos))
-        XCTAssertEqual(preferences.match(for: event(code: 17, character: "t"), context: .galleryPhoto)?.action, .yes)
-        XCTAssertEqual(preferences.match(for: event(code: 17, character: "t"), context: .galleryPlayableVideo)?.action, .no)
+        XCTAssertEqual(preferences.match(for: event(code: 11, character: "b"), context: .galleryPhoto)?.action, .yes)
+        XCTAssertEqual(preferences.match(for: event(code: 11, character: "b"), context: .galleryPlayableVideo)?.action, .no)
         XCTAssertTrue(preferences.add(.init(character: "v", keyCode: 9), for: .previous, scope: .gallery))
         XCTAssertTrue(preferences.add(.init(character: "v", keyCode: 9), for: .next, scope: .grid))
         XCTAssertFalse(preferences.add(.init(character: "v", keyCode: 9), for: .previous, scope: .gallery), "Duplicate aliases in one context are rejected even for the same action")
@@ -242,17 +242,17 @@ final class ReviewShortcutTests: XCTestCase {
 
     func testMatchingModesHaveIndependentAliasesAndConflicts() {
         var preferences = ReviewShortcutPreferences(interpretation: .keyboardLayout)
-        XCTAssertTrue(preferences.add(.init(character: "t", keyCode: 3), for: .yes))
+        XCTAssertTrue(preferences.add(.init(character: "b", keyCode: 3), for: .yes))
         preferences.interpretation = .physicalPosition
         XCTAssertEqual(preferences.assignments(for: .yes).count, 1)
         XCTAssertTrue(preferences.add(.init(character: "d", keyCode: 4), for: .yes))
         XCTAssertEqual(preferences.match(for: event(code: 4, character: "d"), context: .galleryPhoto)?.action, .yes)
-        XCTAssertFalse(preferences.add(.init(character: "t", keyCode: 2), for: .yes), "Physical No position remains reserved")
+        XCTAssertFalse(preferences.add(.init(character: "b", keyCode: 2), for: .yes), "Physical No position remains reserved")
         preferences.resetCurrentMode()
         XCTAssertEqual(preferences.assignments(for: .yes).count, 1)
         preferences.interpretation = .keyboardLayout
         XCTAssertEqual(preferences.assignments(for: .yes).count, 2)
-        XCTAssertEqual(preferences.match(for: event(code: 17, character: "t"), context: .galleryPhoto)?.action, .yes)
+        XCTAssertEqual(preferences.match(for: event(code: 11, character: "b"), context: .galleryPhoto)?.action, .yes)
         XCTAssertEqual(ReviewShortcutPreferences.decode(preferences.encoded), preferences)
     }
 
@@ -270,7 +270,7 @@ final class ReviewShortcutTests: XCTestCase {
 
     func testAmbiguousOrInvalidNewSavedMapsFallBackSafely() throws {
         var preferences = ReviewShortcutPreferences(interpretation: .keyboardLayout)
-        XCTAssertTrue(preferences.add(.init(character: "t", keyCode: 17), for: .yes))
+        XCTAssertTrue(preferences.add(.init(character: "b", keyCode: 11), for: .yes))
         let data = try XCTUnwrap(preferences.encoded.data(using: .utf8))
         var root = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         var map = try XCTUnwrap(root["layoutBindings"] as? [String: Any])
@@ -291,18 +291,18 @@ final class ReviewShortcutTests: XCTestCase {
         let recorder = ReviewShortcutRecorderButton()
         recorder.shortcutTitle = "F"
         recorder.actionTitle = "Mark Yes"
-        recorder.onCapture = { captures.append($0); return $0.character == "t" }
+        recorder.onCapture = { captures.append($0); return $0.character == "b" }
         recorder.onInvalid = { invalidCount += 1 }
         recorder.startRecording()
         recorder.keyDown(with: event(code: 2, character: "d"))
         XCTAssertTrue(recorder.isRecording, "A conflict keeps recording active for another key")
-        recorder.keyDown(with: event(code: 17, character: "T", modifiers: .shift))
+        recorder.keyDown(with: event(code: 11, character: "T", modifiers: .shift))
         XCTAssertTrue(recorder.isRecording)
         XCTAssertEqual(invalidCount, 1)
         XCTAssertEqual(captures.count, 1, "An unsupported modified key must never become a binding")
-        recorder.keyDown(with: event(code: 17, character: "t"))
+        recorder.keyDown(with: event(code: 11, character: "b"))
         XCTAssertFalse(recorder.isRecording)
-        XCTAssertEqual(captures.last, .init(character: "t", keyCode: 17))
+        XCTAssertEqual(captures.last, .init(character: "b", keyCode: 11))
         recorder.startRecording()
         recorder.keyDown(with: event(code: 53, character: "\u{1b}"))
         XCTAssertFalse(recorder.isRecording)

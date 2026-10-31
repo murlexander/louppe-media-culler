@@ -2085,3 +2085,47 @@
 "When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "कीबोर्ड नेविगेशन चालू होने पर, Tab से नियंत्रणों के बीच फ़ोकस बदलता है। दृश्य बदलने के लिए G का उपयोग करें।";
 
 "Subtitle tracks" = "उपशीर्षक ट्रैक";
+
+/* Archive folder navigation */
+"Folders" = "फ़ोल्डर";
+"Entire Archive" = "पूरा संग्रह";
+"Current Folder" = "वर्तमान फ़ोल्डर";
+"Include Subfolders" = "सबफ़ोल्डर शामिल करें";
+"Hide Folders" = "फ़ोल्डर छिपाएँ";
+"Show Folders" = "फ़ोल्डर दिखाएँ";
+"Expand All" = "सभी विस्तृत करें";
+"Collapse All" = "सभी संक्षिप्त करें";
+"All reviewed" = "सभी की समीक्षा हो गई";
+"Next Unfinished Folder" = "अगला अधूरा फ़ोल्डर";
+"Folders width" = "फ़ोल्डर की चौड़ाई";
+"Folder: {0}, including subfolders" = "फ़ोल्डर: {0}, सबफ़ोल्डर सहित";
+"Folder: {0}, direct items only" = "फ़ोल्डर: {0}, केवल सीधे मौजूद आइटम";
+"No media in this folder" = "इस फ़ोल्डर में कोई मीडिया नहीं है";
+"Choose another folder or include subfolders." = "दूसरा फ़ोल्डर चुनें या सबफ़ोल्डर शामिल करें।";
+"RAW + JPEG pairs stay together, even across folders." = "RAW + JPEG जोड़े अलग-अलग फ़ोल्डर में होने पर भी साथ रहते हैं।";
+"Folder navigation could not be restored. Previous positions are retained." = "फ़ोल्डर नेविगेशन बहाल नहीं हो सका। पिछले स्थान सुरक्षित हैं।";
+"Folder navigation could not be saved. Previous positions are retained." = "फ़ोल्डर नेविगेशन सहेजा नहीं जा सका। पिछले स्थान सुरक्षित हैं।";
+
+"Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "ऊपर के बटनों से साइडबार को ब्राउज़र और फ़ोल्डर के बीच बदलें; ग्रिड में साइडबार बटन इस्तेमाल करें। संग्रह दोबारा खोले बिना ब्राउज़ करें; स्थान याद रखे जाते हैं।";
+"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "फ़ाइल कार्रवाइयाँ और सभी निर्णय साफ़ करें चुने गए फ़ोल्डर पर लागू होते हैं। पूरे संग्रह पर कार्रवाई के लिए सभी मीडिया चुनें। RAW + JPEG जोड़े साथ रहते हैं।";
+"Reset Folder Navigation" = "फ़ोल्डर नेविगेशन रीसेट करें";
+"Clear Yes/No decisions in this folder ({0})" = "इस फ़ोल्डर के हाँ/नहीं निर्णय साफ़ करें ({0})";
+
+/* Folder keyboard, menu and palette commands. */
+"Show / Hide Folders" = "फ़ोल्डर दिखाएँ / छिपाएँ";
+"Previous Folder" = "पिछला फ़ोल्डर";
+"Next Folder" = "अगला फ़ोल्डर";
+"Enclosing Folder" = "ऊपरी फ़ोल्डर";
+"Sidebar" = "साइडबार";
+"Hide Sidebar" = "साइडबार छिपाएँ";
+"Show Sidebar" = "साइडबार दिखाएँ";
+"Expand All Folders" = "सभी फ़ोल्डर फैलाएँ";
+"Collapse All Folders" = "सभी फ़ोल्डर समेटें";
+"Show Current Item’s Folder" = "मौजूदा आइटम का फ़ोल्डर दिखाएँ";
+"Go to All Media" = "सभी मीडिया पर जाएँ";
+"Go to Folder “{0}”" = "“{0}” फ़ोल्डर पर जाएँ";
+"Show or hide Folders ({0})" = "फ़ोल्डर दिखाएँ या छिपाएँ ({0})";
+"Press Command and a letter or arrow. Add Shift if needed." = "Command के साथ कोई अक्षर या तीर दबाएँ। ज़रूरत हो तो Shift जोड़ें।";
+"Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media." = "साइडबार की सामग्री बदलने, फ़ोल्डर फैलाने या किसी फ़ोल्डर पर जाने के लिए दृश्य या कमांड पैलेट का उपयोग करें। फ़ोल्डर नेविगेशन सीधे मीडिया न रखने वाले फ़ोल्डर छोड़ देता है।";
+
+"Checking folder…" = "फ़ोल्डर की जाँच हो रही है…";

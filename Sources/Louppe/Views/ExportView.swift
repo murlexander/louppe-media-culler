@@ -209,6 +209,7 @@ struct ExportView: View {
                 }
 
                 Section(L10n.text("Media to include")) {
+                    ArchiveActionScopeNote(store: store)
                     quickPickRow
 
                     exportScopeRow
@@ -985,7 +986,8 @@ struct ExportView: View {
         selectionSnapshot = currentConfiguration.snapshot(
             items: store.items,
             filtered: store.visibleIndices,
-            selected: store.selectedIndices
+            selected: store.selectedIndices,
+            all: currentConfiguration.scope == .all ? store.archiveActionIndices : nil
         )
         scheduleXMPInspection()
     }
@@ -1169,7 +1171,7 @@ struct ExportView: View {
 
     private var scopeIndices: [Int] {
         currentConfiguration.candidateIndices(
-            all: store.items.indices,
+            all: scope == .all ? store.archiveActionIndices : [],
             filtered: store.visibleIndices,
             selected: store.selectedIndices
         )
@@ -1195,7 +1197,7 @@ struct ExportView: View {
 
     private var exportScopeRow: some View {
         Picker(L10n.text("Scope"), selection: $scope) {
-            exportScopeLabel(L10n.text("All Media"), scope: .all)
+            exportScopeLabel(store.archiveAllScopeLabel, scope: .all)
                 .tag(CleanUpScope.all)
             exportScopeLabel(L10n.text("Filtered"), scope: .filtered)
                 .tag(CleanUpScope.filtered)
@@ -1208,7 +1210,7 @@ struct ExportView: View {
 
     private func exportScopeLabel(_ title: String, scope: CleanUpScope) -> Text {
         let count = scope.candidateIndices(
-            all: store.items.indices,
+            all: scope == .all ? store.archiveActionIndices : [],
             filtered: store.visibleIndices,
             selected: store.selectedIndices
         ).count

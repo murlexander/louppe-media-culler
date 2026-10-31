@@ -359,7 +359,7 @@ struct ReviewShortcutsSettingsView: View {
     }
 
     private func invalidCommand(for action: CommandShortcutAction) {
-        showCommandError(L10n.text("Press Command and a letter. Add Shift if needed."), for: action)
+        showCommandError(L10n.text("Press Command and a letter or arrow. Add Shift if needed."), for: action)
     }
 
     private func showCommandError(_ message: String, for action: CommandShortcutAction) {

@@ -271,7 +271,7 @@ private struct FocusedLouppeSessionCommands: Commands {
                 Text(L10n.text("Clear All Decisions…"))
             }
             .disabled(
-                actionableStore?.ratedCount == 0
+                actionableStore?.archiveRatedCount == 0
                     || actionableStore?.isFileOperationRunning != false
             )
         }
@@ -330,6 +330,42 @@ private struct FocusedLouppeSessionCommands: Commands {
             .pickerStyle(.inline)
             .labelsHidden()
             .disabled(actionableStore == nil)
+
+            Divider()
+            Picker(L10n.text("Sidebar"), selection: Binding(
+                get: { focusedStore?.archiveLeadingPane ?? .browser },
+                set: { actionableStore?.showLeadingPane($0) }
+            )) {
+                Text(L10n.text("Browser")).tag(ArchiveLeadingPane.browser)
+                Text(L10n.text("Folders")).tag(ArchiveLeadingPane.folders)
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+            // Pane content and visibility are view-only, like Q and the
+            // toolbar button, so file operations do not disable them.
+            .disabled(actionableStore?.hasArchiveFolders != true)
+            Button(focusedStore?.isLeadingPaneVisible == true ? L10n.text("Hide Sidebar") : L10n.text("Show Sidebar")) {
+                actionableStore?.toggleLeadingPane()
+            }
+            .disabled(actionableStore.map { $0.viewMode == .gallery || $0.hasArchiveFolders } != true)
+            Button(L10n.text("Expand All Folders")) { actionableStore?.expandAllArchiveFolders() }
+                .disabled(actionableStore?.canExpandAllArchiveFolders != true)
+            Button(L10n.text("Collapse All Folders")) { actionableStore?.collapseAllArchiveFolders() }
+                .disabled(actionableStore?.canCollapseAllArchiveFolders != true)
+
+            Divider()
+            Button(L10n.text("Enclosing Folder")) { actionableStore?.selectEnclosingArchiveFolder() }
+                .disabled(actionableStore?.canSelectEnclosingArchiveFolder != true)
+            Button(L10n.text("Previous Folder")) { actionableStore?.selectPreviousArchiveFolder() }
+                .disabled(actionableStore?.canSelectPreviousArchiveFolder != true)
+            Button(L10n.text("Next Folder")) { actionableStore?.selectNextArchiveFolder() }
+                .disabled(actionableStore?.canSelectNextArchiveFolder != true)
+            Button(L10n.text("Next Unfinished Folder")) { actionableStore?.selectNextUnfinishedArchiveFolder() }
+                .disabled(actionableStore?.canSelectNextUnfinishedArchiveFolder != true)
+            Button(L10n.text("Show Current Item’s Folder")) { actionableStore?.revealCurrentItemArchiveFolder() }
+                .disabled(actionableStore?.canRevealCurrentItemArchiveFolder != true)
+            Button(L10n.text("All Media")) { actionableStore?.selectArchiveFolder("") }
+                .disabled(actionableStore?.canSelectAllArchiveMedia != true)
 
             Divider()
 

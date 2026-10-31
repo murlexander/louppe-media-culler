@@ -170,7 +170,6 @@ struct ActionPaletteView: View {
         case "gallery", "grid": return L10n.text("This view is already selected")
         case "grid-zoom-in", "grid-zoom-out": return L10n.text("Switch to Grid first")
         case "actual-size", "phone-size": return L10n.text("Select a photo in Gallery first")
-        case "browser": return L10n.text("Switch to Gallery first")
         case "seek-video-backward", "seek-video-forward",
              "seek-video-backward-large", "seek-video-forward-large":
             return L10n.text("Select a playable video in Gallery first")
@@ -819,7 +818,7 @@ struct ActionPaletteView: View {
                 symbol: "eraser",
                 shortcut: shortcut(.clear),
                 keywords: [L10n.text("reset yes no"), L10n.text("clear yes no"), L10n.text("remove decisions")],
-                isEnabled: store.ratedCount > 0 && !store.isFileOperationRunning,
+                isEnabled: store.archiveRatedCount > 0 && !store.isFileOperationRunning,
                 perform: { store.requestClearAllRatings() }
             ),
             ActionPaletteAction(
@@ -893,13 +892,13 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "browser",
                 category: L10n.text("View"),
-                title: store.showBrowser ? L10n.text("Hide Browser") : L10n.text("Show Browser"),
+                title: store.isArchiveBrowserVisible ? L10n.text("Hide Browser") : L10n.text("Show Browser"),
                 detail: L10n.text("Toggle the thumbnail browser in Gallery"),
                 symbol: "sidebar.left",
                 shortcut: shortcut(.browser),
                 keywords: ["thumbnails", "sidebar"],
-                isEnabled: store.viewMode == .gallery,
-                perform: { store.toggleBrowser() }
+                isEnabled: true,
+                perform: { store.toggleArchiveBrowser() }
             ),
             ActionPaletteAction(
                 id: "info",
@@ -923,7 +922,58 @@ struct ActionPaletteView: View {
                 isEnabled: store.canToggleClippingWarnings,
                 perform: { _ = store.toggleClippingWarnings() }
             ),
+        ] + archiveFolderActions()
+    }
+
+    private func archiveFolderActions() -> [ActionPaletteAction] {
+        let available = store.canUseArchiveFolderCommands(allowingActionPalette: true)
+        let index = store.archiveFolderIndex
+        let selected = store.archiveSelectedFolderID
+        let detail = store.archiveScopeDescription ?? L10n.text("All Media")
+        func action(_ id: String, _ title: String, shortcut: String? = nil,
+                    enabled: Bool = true, perform: @escaping @MainActor () -> Void) -> ActionPaletteAction {
+            .init(id: id, category: L10n.text("Folders"), title: title,
+                  detail: detail, symbol: "folder", shortcut: shortcut,
+                  keywords: ["tree", "sidebar", "directory", "parent", "folder"],
+                  isEnabled: available && enabled, perform: perform)
+        }
+        var result = [
+            action("folders", store.isArchiveFoldersVisible
+                ? L10n.text("Hide Folders") : L10n.text("Show Folders"), shortcut: shortcut(.folders),
+                perform: { store.toggleArchiveFolders() }),
+            action("expand-all-folders", L10n.text("Expand All Folders"),
+                enabled: store.canExpandAllArchiveFolders,
+                perform: { store.expandAllArchiveFolders() }),
+            action("collapse-all-folders", L10n.text("Collapse All Folders"),
+                enabled: store.canCollapseAllArchiveFolders,
+                perform: { store.collapseAllArchiveFolders() }),
+            action("next-folder", L10n.text("Next Folder"), shortcut: shortcut(.nextFolder),
+                enabled: store.archiveFolderTargets?.next != nil,
+                perform: { store.selectNextArchiveFolder() }),
+            action("next-unfinished-folder", L10n.text("Next Unfinished Folder"),
+                enabled: store.archiveFolderTargets?.nextUnfinished != nil,
+                perform: { store.selectNextUnfinishedArchiveFolder() }),
+            action("previous-folder", L10n.text("Previous Folder"), shortcut: shortcut(.previousFolder),
+                enabled: store.archiveFolderTargets?.previous != nil,
+                perform: { store.selectPreviousArchiveFolder() }),
+            action("enclosing-folder", L10n.text("Enclosing Folder"), shortcut: commandShortcut(.enclosingFolder),
+                enabled: index?.node(for: selected)?.parentID != nil,
+                perform: { store.selectEnclosingArchiveFolder() }),
+            action("current-item-folder", L10n.text("Show Current Item’s Folder"),
+                enabled: store.currentItemArchiveFolderID.map { $0 != selected } == true,
+                perform: { store.revealCurrentItemArchiveFolder() }),
+            action("all-media", L10n.text("Go to All Media"), enabled: !selected.isEmpty,
+                perform: { store.selectArchiveFolder("") }),
         ]
+        // Bound both the action count and path work; no media enumeration.
+        if let index, index.nodes.count - 1 <= 2_000, store.hasArchiveFolders {
+            result += index.directories.filter { !$0.id.isEmpty }.map { folder in
+                let path = folder.id.removingPercentEncoding ?? folder.id
+                return action("archive-folder-" + folder.id, L10n.text("Go to Folder “\(path)”"),
+                    enabled: folder.id != selected, perform: { store.selectArchiveFolder(folder.id) })
+            }
+        }
+        return result
     }
 
     private func chooseFirstEnabledAction() {

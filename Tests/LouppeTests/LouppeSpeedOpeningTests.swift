@@ -27,7 +27,10 @@ final class LouppeSpeedOpeningTests: XCTestCase {
                         let prepared = try await SessionOpeningWorker.prepare(
                             folder: root, pairingMode: mode, persistence: persistence, recorder: recorder
                         )
-                        return (recorder.snapshot(), prepared.restoration.items.map(\.id))
+                        let metrics = recorder.snapshot()
+                        // As the app does after Ready, outside the measured opening.
+                        prepared.metadataCommit?.run(isCancelled: { false })
+                        return (metrics, prepared.restoration.items.map(\.id))
                     }.value
                     if let order { XCTAssertEqual(metrics.1, order) } else { order = metrics.1 }
                     if iteration > 0 { samples.append(metrics.0) }

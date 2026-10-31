@@ -20,8 +20,11 @@ swiftc \
     Sources/Louppe/ForegroundWorkCoordinator.swift \
     Sources/Louppe/ArchiveMetadataIndex.swift \
     Sources/Louppe/PinnedFolders.swift \
+    Sources/Louppe/PinnedFolderPreparation.swift \
     Sources/Louppe/SessionOpeningMetadata.swift \
     Sources/Louppe/FolderScanner.swift \
+    Sources/Louppe/ArchiveFolderIndex.swift \
+    Sources/Louppe/ArchiveFolderProgress.swift \
     Sources/Louppe/MetadataExtractor.swift \
     Sources/Louppe/FujiFilmSimulation.swift \
     Sources/Louppe/VideoSupport.swift \
@@ -64,6 +67,9 @@ swiftc \
     Sources/Louppe/PhotosOrganizationPresentation.swift \
     Sources/Louppe/SessionOpeningWorker.swift \
     Sources/Louppe/SessionStore.swift \
+    Sources/Louppe/SessionStore+ArchiveNavigation.swift \
+    Sources/Louppe/SessionStore+ArchiveFolderCommands.swift \
+    Sources/Louppe/ArchiveNavigationMemory.swift \
     Tests/PerformanceChecks/main.swift \
     -o .build/performance-checks/LouppePerformanceChecks
 

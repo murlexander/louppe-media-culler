@@ -113,10 +113,11 @@ struct RenameFilesView: View {
     private var metadataSetup: some View {
         SheetForm(title: L10n.text("Rename Files"), layout: .grouped) {
             Section {
+                ArchiveActionScopeNote(store: store)
                 Picker(L10n.text("Apply to"), selection: $scope) {
                     ForEach(SourceOrganizationScope.allCases, id: \.self) {
                         value in
-                        Text("\(value.label) (\(store.organizationScopeCount(for: value)))")
+                        Text("\(value == .all ? store.archiveAllScopeLabel : value.label) (\(store.organizationScopeCount(for: value)))")
                             .tag(value)
                     }
                 }

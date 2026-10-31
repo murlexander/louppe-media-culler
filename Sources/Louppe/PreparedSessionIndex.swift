@@ -41,7 +41,17 @@ struct PreparedSessionIndex: Sendable {
         let counts: [Int]
     }
 
-    private(set) var sortedIndices: [Int] = []
+    private(set) var sortedIndices: [Int] = [] {
+        didSet {
+            sortPositions = Array(repeating: .max, count: sortedIndices.count)
+            for (position, index) in sortedIndices.enumerated() where sortPositions.indices.contains(index) {
+                sortPositions[index] = position
+            }
+        }
+    }
+    /// Prepared once per sort, so a small folder scope never scans the full
+    /// archive to recover its ordering.
+    private var sortPositions: [Int] = []
     /// Immutable capture-date/name/ID order for the current item structure.
     /// Review metadata mutations share small stores and cannot change this order.
     private var chronologicalIndices: [Int]?
@@ -316,7 +326,8 @@ struct PreparedSessionIndex: Sendable {
         to items: [PhotoItem],
         sort: PhotoSort,
         isGroupingEnabled: Bool,
-        qualityCueMatches: [QualityCueMatch]? = nil
+        qualityCueMatches: [QualityCueMatch]? = nil,
+        candidateIndices: [Int]? = nil
     ) {
         let interval = Self.signposter.beginInterval("Filter Session")
         defer {
@@ -324,18 +335,19 @@ struct PreparedSessionIndex: Sendable {
         }
         let prepared = PreparedPhotoFilter(filter)
         let unrestricted = prepared.isUnrestricted
+        let ordered = candidateIndices.map(orderedCandidates) ?? sortedIndices
         let matches: [Int]
         if let qualityCueMatches, !filter.selectedQualityCues.isEmpty {
             precondition(qualityCueMatches.count == items.count, "Cue matches must follow the item structure")
             let selected = QualityCueMatch(filter.selectedQualityCues)
-            matches = sortedIndices.filter {
+            matches = ordered.filter {
                 !qualityCueMatches[$0].intersection(selected).isEmpty
                     && (unrestricted || prepared.matches(items[$0]))
             }
         } else if unrestricted {
-            matches = sortedIndices
+            matches = ordered
         } else {
-            matches = sortedIndices.filter { prepared.matches(items[$0]) }
+            matches = ordered.filter { prepared.matches(items[$0]) }
         }
         if matches != visibleIndices {
             visibleIndices = matches
@@ -346,6 +358,15 @@ struct PreparedSessionIndex: Sendable {
             sort: sort,
             isGroupingEnabled: isGroupingEnabled
         )
+    }
+
+    /// Invalid/stale/duplicate candidates fail closed rather than indexing a
+    /// different generation. Folder membership is an input, never sort authority.
+    func orderedCandidates(_ candidates: [Int]) -> [Int] {
+        var seen: Set<Int> = []
+        return candidates.filter {
+            sortPositions.indices.contains($0) && sortPositions[$0] != .max && seen.insert($0).inserted
+        }.sorted { sortPositions[$0] < sortPositions[$1] }
     }
 
     mutating func rebuildGroups(

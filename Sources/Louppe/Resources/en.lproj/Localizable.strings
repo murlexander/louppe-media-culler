@@ -2085,3 +2085,47 @@
 "When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views.";
 
 "Subtitle tracks" = "Subtitle tracks";
+
+/* Archive folder navigation */
+"Folders" = "Folders";
+"Entire Archive" = "Entire Archive";
+"Current Folder" = "Current Folder";
+"Include Subfolders" = "Include Subfolders";
+"Hide Folders" = "Hide Folders";
+"Show Folders" = "Show Folders";
+"Expand All" = "Expand All";
+"Collapse All" = "Collapse All";
+"All reviewed" = "All reviewed";
+"Next Unfinished Folder" = "Next Unfinished Folder";
+"Folders width" = "Folders width";
+"Folder: {0}, including subfolders" = "Folder: {0}, including subfolders";
+"Folder: {0}, direct items only" = "Folder: {0}, direct items only";
+"No media in this folder" = "No media in this folder";
+"Choose another folder or include subfolders." = "Choose another folder or include subfolders.";
+"RAW + JPEG pairs stay together, even across folders." = "RAW + JPEG pairs stay together, even across folders.";
+"Folder navigation could not be restored. Previous positions are retained." = "Folder navigation could not be restored. Previous positions are retained.";
+"Folder navigation could not be saved. Previous positions are retained." = "Folder navigation could not be saved. Previous positions are retained.";
+
+"Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered.";
+"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together.";
+"Reset Folder Navigation" = "Reset Folder Navigation";
+"Clear Yes/No decisions in this folder ({0})" = "Clear Yes/No decisions in this folder ({0})";
+
+/* Folder keyboard, menu and palette commands. */
+"Show / Hide Folders" = "Show / Hide Folders";
+"Previous Folder" = "Previous Folder";
+"Next Folder" = "Next Folder";
+"Enclosing Folder" = "Enclosing Folder";
+"Sidebar" = "Sidebar";
+"Hide Sidebar" = "Hide Sidebar";
+"Show Sidebar" = "Show Sidebar";
+"Expand All Folders" = "Expand All Folders";
+"Collapse All Folders" = "Collapse All Folders";
+"Show Current Item’s Folder" = "Show Current Item’s Folder";
+"Go to All Media" = "Go to All Media";
+"Go to Folder “{0}”" = "Go to Folder “{0}”";
+"Show or hide Folders ({0})" = "Show or hide Folders ({0})";
+"Press Command and a letter or arrow. Add Shift if needed." = "Press Command and a letter or arrow. Add Shift if needed.";
+"Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media." = "Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media.";
+
+"Checking folder…" = "Checking folder…";

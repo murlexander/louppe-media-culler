@@ -56,11 +56,11 @@ final class SettingsLayoutTests: XCTestCase {
         recorder.startRecording()
         recorder.keyDown(with: try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero,
             modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
-            windowNumber: window.windowNumber, context: nil, characters: "t",
-            charactersIgnoringModifiers: "t", isARepeat: false, keyCode: 17)))
+            windowNumber: window.windowNumber, context: nil, characters: "y",
+            charactersIgnoringModifiers: "y", isARepeat: false, keyCode: 16)))
         settle(host)
         let saved = ReviewShortcutPreferences.decode(defaults.string(forKey: ReviewShortcutPreferences.preferenceKey) ?? "")
-        XCTAssertEqual(saved.binding(for: .oneStar).keyCode, 17)
+        XCTAssertEqual(saved.binding(for: .oneStar).keyCode, 16)
         XCTAssertFalse(recorder.isRecording)
         XCTAssertEqual(recorder.shortcutTitle, saved.display(for: saved.binding(for: .oneStar)))
         try snapshot(host, name: "keyboard-after-remap")

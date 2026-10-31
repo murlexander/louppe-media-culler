@@ -51,7 +51,7 @@ final class ArchiveMetadataIndexTests: XCTestCase {
         // Every actual index write remains responsible for aggregate bounds.
         for value in 0..<40 {
             try Data("disposable sibling".utf8).write(to:
-                fixture.cache.appendingPathComponent(String(format: "%064x", value) + ".json"))
+                fixture.cache.appendingPathComponent(ArchiveMetadataFixture.snapshotName(value)))
         }
         XCTAssertFalse(index.commit(items), "false means no cache filesystem work requiring another identity barrier")
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: fixture.cache.path).count, 41)
@@ -120,12 +120,17 @@ final class ArchiveMetadataIndexTests: XCTestCase {
             XCTAssertEqual(item.captureDateEvidence?.subsecondDigits, "125")
             XCTAssertEqual(item.captureDateEvidence?.utcOffset, "+02:00")
         }
-        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: fixture.index().cacheURL)) as? [String: Any])
-        let entries = try XCTUnwrap(object["entries"] as? [[String: Any]])
+        let entries = try XCTUnwrap(fixture.index().storedEntriesForTesting())
         XCTAssertEqual(entries.count, 2)
-        let metadata = try XCTUnwrap(entries[0]["metadata"] as? [String: Any])
+        // The stored record type has no decision, recovery or lineage fields.
+        let labels = Set(Mirror(reflecting: entries[0].metadata).children.compactMap(\.label))
+            .union(Mirror(reflecting: entries[0]).children.compactMap(\.label))
         for key in ["rating", "ratedAt", "stars", "starRating", "colorLabel", "fileIdentity", "recovery", "lineage"] {
-            XCTAssertNil(metadata[key])
+            XCTAssertFalse(labels.contains(key))
+        }
+        let bytes = try Data(contentsOf: fixture.index().cacheURL)
+        for key in ["rating", "ratedAt", "starRating", "colorLabel", "yes", "lineage"] {
+            XCTAssertNil(bytes.range(of: Data(key.utf8)), key)
         }
         try fixture.assertOriginalBytes()
     }
@@ -165,10 +170,9 @@ final class ArchiveMetadataIndexTests: XCTestCase {
         XCTAssertEqual(fresh.first?.displayName, "Renamed.JPG")
         XCTAssertEqual(fresh.first?.subfolder, "nested")
         XCTAssertEqual(reads.total, 3, "renamed paths conservatively refresh their metadata")
-        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: fixture.index().cacheURL)) as? [String: Any])
-        let entries = try XCTUnwrap(object["entries"] as? [[String: Any]])
+        let entries = try XCTUnwrap(fixture.index().storedEntriesForTesting())
         XCTAssertEqual(entries.count, 1)
-        XCTAssertEqual(entries[0]["path"] as? String, FolderScanner.fileSystemIdentityPath(for: destination))
+        XCTAssertEqual(entries[0].path, FolderScanner.fileSystemIdentityPath(for: destination))
     }
 
     func testMissingCorruptSchemaAndOversizedSnapshotsRebuildWithoutSourceWrites() throws {
@@ -290,7 +294,7 @@ final class ArchiveMetadataIndexTests: XCTestCase {
         let fixture = try ArchiveMetadataFixture(names: ["A.JPG"])
         defer { fixture.remove() }
         for value in 0..<40 {
-            let url = fixture.cache.appendingPathComponent(String(format: "%064x", value) + ".json")
+            let url = fixture.cache.appendingPathComponent(ArchiveMetadataFixture.snapshotName(value))
             try Data("old optional observation".utf8).write(to: url)
         }
         _ = try fixture.prepare(FolderScanner.discoverInventory(fixture.source), reads: ArchiveMetadataReads())
@@ -350,6 +354,11 @@ struct ArchiveMetadataFixture {
     }
 
     func remove() { try? FileManager.default.removeItem(at: root) }
+
+    /// A v2 snapshot filename that maintenance recognises (unpinned by default).
+    static func snapshotName(_ value: Int, protection: String? = nil) -> String {
+        (protection ?? String(format: "%032x", value)) + "-" + String(format: "%064x", value) + ".lmi"
+    }
 
     static func jpeg(camera: String) throws -> Data {
         let context = try XCTUnwrap(CGContext(data: nil, width: 8, height: 8, bitsPerComponent: 8, bytesPerRow: 32,

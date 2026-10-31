@@ -167,12 +167,27 @@ final class SessionStore: ObservableObject {
             if case .ready = phase { prefetchAroundCurrent() }
             else { cancelNeighbourPrefetch() }
             if sourceFolder != nil { startQualityCueAnalysis() }
+            if case .welcome = phase { pinnedFolderPreparation.welcomeDidAppear() }
+            else { pinnedFolderPreparation.cancel() }
         }
     }
     @Published private(set) var openingProgress: SessionOpeningProgress?
     private(set) var openingMetrics: SessionOpeningMetrics?
     @Published private(set) var openingSession: OpeningSessionState?
     var openingWorkerHooksForTesting = SessionOpeningWorker.Hooks()
+    /// Optional metadata-cache write after Ready. Close never waits for it;
+    /// Quit cancels it. One commit runs at a time; a newer opening replaces
+    /// the single waiting one, so stalled writes cannot retain inventories.
+    private var metadataIndexCommitTask: Task<Void, Never>?
+    private var pendingMetadataIndexCommit: (commit: SessionOpeningMetadataCommit,
+                                             access: SecurityScopedFolderAccess?)?
+
+    func waitForMetadataIndexCommitForTesting() async {
+        while let task = metadataIndexCommitTask {
+            await task.value
+            if metadataIndexCommitTask == task { return }
+        }
+    }
     private var openingViewportReceipts: [OpeningViewportSurface: OpeningViewportReceipt] = [:]
 
     func pendingOpeningViewportReceipt(for surface: OpeningViewportSurface) -> OpeningViewportReceipt? {
@@ -199,6 +214,9 @@ final class SessionStore: ObservableObject {
                 if case .ready = phase { openingViewportReceipts.removeAll() }
                 ForegroundWorkCoordinator.shared.noteInteraction()
                 schedulePinnedPositionSave()
+                if !archiveIsRestoringPosition {
+                    scheduleArchiveNavigationSave()
+                }
                 cancelNeighbourPrefetch()
                 videoPlayback.stop()
                 if needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() }
@@ -210,6 +228,58 @@ final class SessionStore: ObservableObject {
     }
     @Published var showMetadataPanel = true
     @Published var showBrowser = true
+    /// Remembered per Mac: someone who browses archives by folder keeps
+    /// Folders after relaunch. Flat shoots still show only the Browser.
+    @Published var archiveLeadingPane: ArchiveLeadingPane = .browser {
+        didSet {
+            guard oldValue != archiveLeadingPane, Self.remembersLeadingPane(in: reviewDefaults) else { return }
+            reviewDefaults.set(archiveLeadingPane.rawValue, forKey: Self.archiveLeadingPaneKey)
+        }
+    }
+    static let archiveLeadingPaneKey = "archive.leadingPane"
+    /// Folders pane width; Browser keeps its fixed thumbnail column.
+    @Published var archiveFolderPaneWidth = ArchiveFolderPaneWidth.standard
+    static let archiveFolderPaneWidthKey = "archive.folderPaneWidth"
+    func commitArchiveFolderPaneWidth() {
+        guard Self.remembersLeadingPane(in: reviewDefaults) else { return }
+        reviewDefaults.set(Double(archiveFolderPaneWidth), forKey: Self.archiveFolderPaneWidthKey)
+    }
+    /// Hidden test stores sharing standard defaults must not change the
+    /// person's remembered pane, nor leak a choice into the next test.
+    private static func remembersLeadingPane(in reviewDefaults: UserDefaults) -> Bool {
+        guard reviewDefaults === UserDefaults.standard else { return true }
+#if LOUPPE_TESTING
+        return false
+#else
+        return NSClassFromString("XCTestCase") == nil
+#endif
+    }
+    @Published var archiveFolderIndex: ArchiveFolderIndex? { didSet { archiveExpansionSummaryCache = nil } }
+    @Published var archiveSelectedFolderID = "" { didSet { archiveExpansionSummaryCache = nil } }
+    @Published var archiveIncludesDescendants = true
+    @Published var archiveExpandedFolderIDs: Set<String> = [""] { didSet { archiveExpansionSummaryCache = nil } }
+    var archiveExpansionSummaryCache: ArchiveExpansionSummary?
+    var archiveFolderProgressStorage: ArchiveFolderProgress?
+    /// Next/previous/unfinished targets for menu and palette enablement,
+    /// which SwiftUI evaluates on every publication.
+    var archiveFolderTargetsCache: ArchiveFolderTargets?
+    /// Bumped when a folder's completion may have changed; the outline then
+    /// refreshes only its visible rows.
+    var archiveFolderProgressRevision = 0
+    @Published var archiveNavigationWarning: String?
+    var archiveScopeIndices: [Int]?
+    var archiveScopeReviewStates: [Int: PhotoItemRatingState] = [:]
+    var archiveScopeReviewCounts = (yes: 0, no: 0, mixed: 0)
+    @Published var archiveNavigationCanReset = false
+    var archiveNavigationMemory: ArchiveNavigationMemory?
+    var archiveNavigationRootIdentity: PinnedFolderIdentity?
+    let archiveNavigationPersistence: ArchiveNavigationPersistence
+    var archiveNavigationSaveTask: Task<Void, Never>?
+    var archiveNavigationWriteTask: Task<Void, Never>?
+    var archiveNavigationWriteID: UUID?
+    var archiveNavigationSequence: UInt64 = 0
+    var archiveViewportGeneration = UUID()
+    var archiveIsRestoringPosition = false
     @Published var zoomMode: ZoomMode = .fit {
         didSet { if zoomMode != oldValue { prefetchAroundCurrent() } }
     }
@@ -385,6 +455,8 @@ final class SessionStore: ObservableObject {
     }
     @Published var recentFolders: [URL] = []
     let pinnedFolders: PinnedFoldersStore
+    /// Background cache warm-up for pinned folders while Welcome is idle.
+    let pinnedFolderPreparation: PinnedFolderPreparation
     private var pinnedViewportReceipts: [OpeningViewportSurface: PinnedFolderViewport] = [:]
     private struct PendingPinnedPosition {
         let identity: PinnedFolderIdentity
@@ -677,12 +749,15 @@ final class SessionStore: ObservableObject {
     /// input until it is dismissed. All session command surfaces share this
     /// definition so one route cannot mutate state behind another.
     var isSessionCommandPresentationActive: Bool {
+        isActionPalettePresented || isSessionCommandPresentationActiveExcludingActionPalette
+    }
+
+    var isSessionCommandPresentationActiveExcludingActionPalette: Bool {
         isPhotosLibraryPresented
             || isPhotosOrganizationPresented
             || isExportPresented
             || isOrganizePresented
             || isRenamePresented
-            || isActionPalettePresented
             || isEarlyUserFeedbackPresented
             || isFilterPresented
             || isSortPresented
@@ -1024,6 +1099,9 @@ final class SessionStore: ObservableObject {
         automaticallyRecoversInterruptedOperations: Bool = false,
         reviewDefaults: UserDefaults = .standard,
         pinnedFolders: PinnedFoldersStore? = nil,
+        /// Nil enables preparation only for the app's standard defaults outside XCTest.
+        pinnedFolderPreparationConfiguration: PinnedFolderPreparation.Configuration? = nil,
+        archiveNavigationPersistence: ArchiveNavigationPersistence? = nil,
         sourceResourceAccess: SecurityScopedResourceAccess = .live,
         sessionContentVerification: @escaping @Sendable (PhotoFile, SessionContentProof?) async throws -> SessionContentProof = {
             try await SessionContentVerificationLane.shared.verify($0, knownProof: $1)
@@ -1040,12 +1118,21 @@ final class SessionStore: ObservableObject {
         }
     ) {
         self.persistence = persistence
+        self.archiveNavigationPersistence = archiveNavigationPersistence ?? ArchiveNavigationPersistence(
+            fileURL: reviewDefaults === UserDefaults.standard ? nil
+                : FileManager.default.temporaryDirectory.appendingPathComponent("Louppe-TestNavigation-\(UUID()).json"))
         self.sourceResourceAccess = sourceResourceAccess
         self.pinnedFolders = pinnedFolders ?? PinnedFoldersStore(
             storageDirectory: reviewDefaults === UserDefaults.standard
                 ? PinnedFoldersStore.defaultStorageDirectory
                 : FileManager.default.temporaryDirectory.appendingPathComponent("Louppe-TestPins-\(UUID())"),
             observesSystemChanges: reviewDefaults === UserDefaults.standard)
+        self.pinnedFolderPreparation = PinnedFolderPreparation(
+            pins: self.pinnedFolders, defaults: reviewDefaults,
+            // Test hosts never prepare the real pins, even with standard defaults.
+            configuration: pinnedFolderPreparationConfiguration
+                ?? (reviewDefaults === UserDefaults.standard && !RebuildableCacheLocation.isTestHost ? .init() : nil),
+            resources: qualityCueResources)
         self.photosDecisions = photosDecisions
         self.photosLibrary = photosLibrary
         self.photosOrganization = photosOrganization
@@ -1067,6 +1154,14 @@ final class SessionStore: ObservableObject {
         qualityCuePreferences = CameraQualityWarningPreferences.load(from: reviewDefaults)
         let preferences = ReviewPreferences.load(from: reviewDefaults)
         viewMode = preferences.defaultView
+        if Self.remembersLeadingPane(in: reviewDefaults),
+           let width = reviewDefaults.object(forKey: Self.archiveFolderPaneWidthKey) as? Double, width.isFinite {
+            archiveFolderPaneWidth = ArchiveFolderPaneWidth.clamped(CGFloat(width))
+        }
+        if Self.remembersLeadingPane(in: reviewDefaults),
+           let pane = reviewDefaults.string(forKey: Self.archiveLeadingPaneKey).flatMap(ArchiveLeadingPane.init(rawValue:)) {
+            archiveLeadingPane = pane
+        }
         sort = preferences.defaultSort
         isGroupingEnabled = preferences.isGroupingEnabled
         self.saveTrailingDelay = max(0, saveTrailingDelay)
@@ -1086,12 +1181,25 @@ final class SessionStore: ObservableObject {
                 }
             }
         loadRecents()
+        pinnedFolderPreparation.isEligible = { [weak self] in self?.isWelcomeIdleForPreparation ?? false }
+        pinnedFolderPreparation.pairingMode = { [weak self] in self?.rawJPEGPairingMode ?? .separate }
+        pinnedFolderPreparation.recentPaths = { [weak self] in
+            self?.recentFolders.map(\.standardizedFileURL.path) ?? []
+        }
         if automaticallyRecoversInterruptedOperations,
            FileOperationJournal.hasPendingOperations(
             directory: operationJournalDirectory
            ) {
             beginInterruptedOperationRecovery()
         }
+        pinnedFolderPreparation.welcomeDidAppear()
+    }
+
+    /// Pinned-folder preparation runs only on an idle Welcome: no session
+    /// open or opening, no transition, recovery, file operation or Quit.
+    private var isWelcomeIdleForPreparation: Bool {
+        guard case .welcome = phase else { return false }
+        return scanTask == nil && items.isEmpty && photosBatch == nil && !isFileOperationRunning
     }
 
     // MARK: - Interrupted file-operation recovery
@@ -1816,7 +1924,7 @@ final class SessionStore: ObservableObject {
 
     // MARK: - Filtering
 
-    private func applyFilter(preservingCurrent: Bool = false) {
+    func applyFilter(preservingCurrent: Bool = false) {
         qualityCueFilterNeedsRefresh = false
         let cueMatches = filter.selectedQualityCues.isEmpty ? nil : preparedQualityCueMatches()
         preparedIndex.applyFilter(
@@ -1824,7 +1932,8 @@ final class SessionStore: ObservableObject {
             to: items,
             sort: sort,
             isGroupingEnabled: isGroupingEnabled,
-            qualityCueMatches: cueMatches
+            qualityCueMatches: cueMatches,
+            candidateIndices: archiveScopeIndices
         )
         applyGroupedReviewLayoutIfNeeded()
         publishPreparedVisibility()
@@ -1867,7 +1976,7 @@ final class SessionStore: ObservableObject {
 
     /// Destructive actions must use the filter text currently on screen, not
     /// the results from up to 150 ms ago while search typing is debounced.
-    private func flushPendingFilter() {
+    func flushPendingFilter() {
         guard filterDebounce != nil else { return }
         filterDebounce?.cancel()
         filterDebounce = nil
@@ -2201,6 +2310,15 @@ final class SessionStore: ObservableObject {
         preservingCurrent: Bool = false
     ) {
         sessionContentPendingFileIDs.formUnion(affectedFileIDs)
+        if dimension == .decision || dimension == .all, archiveScopeIndices != nil {
+            for index in Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] })
+                where archiveScopeReviewStates[index] != nil {
+                updateArchiveReviewCount(at: index)
+            }
+        }
+        if dimension == .decision || dimension == .all, archiveFolderProgressStorage != nil {
+            updateArchiveFolderProgress(itemIndices: Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] }))
+        }
         let changesSort: Bool
         let changesFilter: Bool
         switch dimension {
@@ -2295,6 +2413,9 @@ final class SessionStore: ObservableObject {
 #endif
         } else {
             rebuildStructuralIndices()
+        }
+        if openingIndex == nil, let index = archiveFolderIndex {
+            replaceArchiveFolderIndex(index.reproject(items: items))
         }
         if sourceFolder != nil { startQualityCueAnalysis() }
         if let physicalPairs {
@@ -2571,6 +2692,7 @@ final class SessionStore: ObservableObject {
 
     private func openPhotos(snapshot: PhotosLibrarySnapshot, selection: PhotosReviewSelection, continuing: Bool = false) {
         pinnedOpenGeneration &+= 1
+        pinnedFolderPreparation.cancel()
         guard !isFileOperationRunning,
               continuing || !photosBrowser.isLoading else { return }
         photosOpeningTask?.cancel()
@@ -2689,6 +2811,7 @@ final class SessionStore: ObservableObject {
 
     func openFolder(_ url: URL, expectedPinnedIdentity: PinnedFolderIdentity? = nil) {
         pinnedOpenGeneration &+= 1
+        pinnedFolderPreparation.cancel()
         if isRecoveringInterruptedOperations {
             deferredFolderOpen = url
             deferredPinnedFolderIdentity = expectedPinnedIdentity
@@ -2780,6 +2903,8 @@ final class SessionStore: ObservableObject {
         videoPlayback.resetRememberedPositions()
         let isSameFolder =
             sourceFolder?.standardizedFileURL == standardizedURL
+        let navigationResume = isSameFolder ? currentArchiveMemory() : nil
+        let navigationResumeRoot = isSameFolder ? archiveNavigationRootIdentity : nil
         if !isSameFolder {
             actualSizeViewport.reset()
             photoZoomScale = 1
@@ -2858,6 +2983,9 @@ final class SessionStore: ObservableObject {
         let allowsOpeningPreview = !isSameFolder && photosBatch == nil
         let openingPhotosBatch = photosBatch
 
+        // A cancelled preparation job stops between files; discovery starts
+        // after it exits, or after a short bound if one read is slow.
+        let preparationExit = pinnedFolderPreparation.cancel()
         // The cancelled worker may outlive Close or another folder open.
         // It owns a separate scope until its last persistence/metadata read.
         let workerAccess = sourceFolderAccess?.makeIndependentAccess()
@@ -2889,6 +3017,9 @@ final class SessionStore: ObservableObject {
                 Task { @MainActor in workerAccess?.stop() }
             }
             guard let self else { return }
+            if let preparationExit {
+                await PinnedFolderPreparation.awaitExit(preparationExit, timeout: .milliseconds(250))
+            }
             do {
                 let result = try await SessionOpeningWorker.prepare(
                     folder: standardizedURL, pairingMode: pairingMode,
@@ -2899,6 +3030,12 @@ final class SessionStore: ObservableObject {
                     allowsPreview: allowsOpeningPreview,
                     photosBatch: openingPhotosBatch,
                     preview: { snapshot in
+                        // Cached positioning is only a visual starting point;
+                        // Ready restores it again against freshly captured files.
+                        let initialID: String?
+                        if snapshot.isCached, let expectedPinnedIdentity {
+                            initialID = await pins.position(for: expectedPinnedIdentity)?.current?.physicalFileID
+                        } else { initialID = nil }
                         await MainActor.run {
                             guard !Task.isCancelled,
                                   self.scanGeneration == generation,
@@ -2906,7 +3043,7 @@ final class SessionStore: ObservableObject {
                                   case .scanning = self.phase else { return }
                             self.openingSession = OpeningSessionState(
                                 snapshot: snapshot, viewMode: openingViewMode,
-                                sourceAccess: readAuthority
+                                sourceAccess: readAuthority, initialPhysicalFileID: initialID
                             )
                         }
                     }, metadataReady: { metadataBuffer.append($0) },
@@ -2926,7 +3063,38 @@ final class SessionStore: ObservableObject {
                     }
                 }
                 let restoredPosition = rememberedPosition
+                var restoredNavigation: ArchiveNavigationMemory?
+                var navigationWarning: String?
+                if let identity = result.persistenceResult.access?.folderIdentity, let index = result.folderIndex {
+                    do {
+                        let root = PinnedFolderIdentity(source: identity)
+                        if navigationResumeRoot == root, let navigationResume {
+                            restoredNavigation = navigationResume.reconciled(with: index)
+                        } else {
+                            restoredNavigation = try await self.archiveNavigationPersistence.load(for: root)?.reconciled(with: index)
+                        }
+                    } catch {
+                        navigationWarning = error.localizedDescription
+                    }
+                }
+                let navigation = restoredNavigation
+                let navigationError = navigationWarning
+                openingHooks.didLoadOpeningStateForTesting?()
                 try Task.checkCancellation()
+                // Pin positions and folder memory were read after the worker's
+                // final barrier. Repeat it so a file replaced during those reads
+                // cannot reach Ready with its predecessor's identity or rating.
+                if let repeatFinalBarrier = result.repeatFinalBarrier {
+                    let barrierCancelled = FolderScanner.CancelFlag()
+                    try await withTaskCancellationHandler {
+                        try recorder.measure(.finalIdentityValidation) {
+                            try repeatFinalBarrier({ barrierCancelled.isSet })
+                        }
+                    } onCancel: {
+                        barrierCancelled.set()
+                    }
+                    try Task.checkCancellation()
+                }
                 await MainActor.run {
                     guard !Task.isCancelled,
                           self.scanGeneration == generation,
@@ -2940,6 +3108,9 @@ final class SessionStore: ObservableObject {
                             openingIndex: result.preparedIndex, openingSort: result.preparedSort,
                             persistenceResult: result.persistenceResult,
                             rememberedPosition: restoredPosition,
+                            archiveFolderIndex: result.folderIndex,
+                            archiveNavigation: navigation,
+                            archiveNavigationWarning: navigationError,
                             legacySidecarRelocationAuthorization:
                                 legacySidecarRelocationAuthorization,
                             replaceSavedSession: replaceSavedSession
@@ -2947,7 +3118,10 @@ final class SessionStore: ObservableObject {
                     }
                     self.openingProgress = nil
                     self.openingMetrics = recorder.snapshot()
-                    if case .ready = self.phase { recorder.logReadiness() }
+                    if case .ready = self.phase {
+                        recorder.logReadiness()
+                        if let commit = result.metadataCommit { self.startMetadataIndexCommit(commit) }
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -2964,6 +3138,55 @@ final class SessionStore: ObservableObject {
                 }
             }
         }
+    }
+
+    /// Writes the opening's validated metadata observations after Ready, so
+    /// cache comparison, encoding and I/O never delay review. The cache is
+    /// rebuildable and never decision or file-operation authority. Holds its
+    /// own folder lease for the commit's folder identity check.
+    private func startMetadataIndexCommit(_ commit: SessionOpeningMetadataCommit) {
+        guard !isPreparingForTermination else { return }
+        let access = sourceFolderAccess?.makeIndependentAccess()
+        guard metadataIndexCommitTask == nil else {
+            // Keep at most one waiting commit; the superseded one releases
+            // its lease and inventory now. A skipped write only costs a later
+            // cache miss.
+            pendingMetadataIndexCommit?.access?.stop()
+            pendingMetadataIndexCommit = (commit, access)
+            return
+        }
+        runMetadataIndexCommit(commit, access: access)
+    }
+
+    private func runMetadataIndexCommit(_ commit: SessionOpeningMetadataCommit,
+                                        access: SecurityScopedFolderAccess?) {
+        metadataIndexCommitTask = Task.detached(priority: .utility) { [weak self] in
+            let cancelled = FolderScanner.CancelFlag()
+            await withTaskCancellationHandler {
+                if !Task.isCancelled { commit.run(isCancelled: { cancelled.isSet }) }
+            } onCancel: {
+                cancelled.set()
+            }
+            await MainActor.run {
+                access?.stop()
+                guard let self else { return }
+                self.metadataIndexCommitTask = nil
+                guard let next = self.pendingMetadataIndexCommit else { return }
+                self.pendingMetadataIndexCommit = nil
+                if self.isPreparingForTermination {
+                    next.access?.stop()
+                } else {
+                    self.runMetadataIndexCommit(next.commit, access: next.access)
+                }
+            }
+        }
+    }
+
+    /// Quit preparation: cancel the running commit and drop the waiting one.
+    private func cancelMetadataIndexCommits() {
+        metadataIndexCommitTask?.cancel()
+        pendingMetadataIndexCommit?.access?.stop()
+        pendingMetadataIndexCommit = nil
     }
 
     func setRawJPEGPairingMode(_ mode: RawJPEGPairingMode) {
@@ -3118,12 +3341,15 @@ final class SessionStore: ObservableObject {
         openingSort: PhotoSort,
         persistenceResult: SessionPersistence.ReadResult,
         rememberedPosition: PinnedFolderRestoredPosition?,
+        archiveFolderIndex: ArchiveFolderIndex?,
+        archiveNavigation: ArchiveNavigationMemory?,
+        archiveNavigationWarning: String?,
         legacySidecarRelocationAuthorization:
             SessionPersistence.LegacySidecarRelocationAuthorization?,
         replaceSavedSession: Bool
     ) {
         guard sourceFolder == url, scanGeneration == generation else { return }
-        let openingHandoff = openingSession?.handoff()
+        let openingHandoff = openingSession?.handoff(validatedItems: restoration.items)
         openingSession = nil
         if let blockingMessage = persistenceResult.blockingMessage {
             pendingLegacySidecarRelocationAuthorization =
@@ -3184,7 +3410,21 @@ final class SessionStore: ObservableObject {
             }
             return
         }
+        resetArchiveNavigation()
+        self.archiveFolderIndex = archiveFolderIndex
+        self.archiveNavigationRootIdentity = persistenceResult.access.map { PinnedFolderIdentity(source: $0.folderIdentity) }
+        self.archiveNavigationCanReset = archiveNavigationWarning != nil
+        self.archiveNavigationWarning = archiveNavigationWarning
+        self.archiveNavigationMemory = archiveNavigation
+        self.archiveSelectedFolderID = archiveNavigation?.selectedFolderID ?? ""
+        if openingHandoff?.currentPhysicalFileID != nil || openingHandoff?.viewportReceipts.isEmpty == false {
+            self.archiveSelectedFolderID = ""
+        }
+        self.archiveIncludesDescendants = self.archiveSelectedFolderID.isEmpty ? true : archiveNavigation?.includesDescendants ?? true
+        self.archiveExpandedFolderIDs = archiveNavigation?.expandedFolderIDs ?? [""]
+        if !self.archiveSelectedFolderID.isEmpty { archiveLeadingPane = .folders }
         items = loaded
+        refreshArchiveScope()
         organizationOriginFolderPathBytesByFileID =
             restoration.restoredOrganizationOrigins
         emptySessionReason = nil
@@ -3251,6 +3491,7 @@ final class SessionStore: ObservableObject {
         for surface in [OpeningViewportSurface.browser, .grid] {
             pinnedViewportReceipts[surface] = pendingPinnedViewport(for: surface)
         }
+        if resumeIdentity == nil, openingHandoff?.currentPhysicalFileID == nil, openingHandoff?.viewportReceipts.isEmpty != false { restoreArchivePosition() }
         phase = loaded.isEmpty ? .welcome : .ready
         startSessionContentChecks()
         if !loaded.isEmpty, let organizationUndo = deferredOrganizationUndo {
@@ -3695,19 +3936,20 @@ final class SessionStore: ObservableObject {
     /// and the bare R shortcut all come through here so the threshold is
     /// consistent: 1–15 ratings clear immediately, while 16+ need approval.
     func requestClearAllRatings() {
-        guard !isFileOperationRunning, ratedCount > 0 else { return }
-        if ratedCount > 15 {
+        guard !isFileOperationRunning, archiveRatedCount > 0 else { return }
+        if archiveRatedCount > 15 {
             isClearAllRatingsConfirmationPresented = true
         } else {
             clearAllRatings()
         }
     }
 
-    /// Reset every photo to undecided — one undo step brings all ratings back.
+    /// Clear decisions in the current folder scope; one Undo restores the batch.
     func clearAllRatings() {
         guard !isFileOperationRunning else { return }
         isClearAllRatingsConfirmationPresented = false
-        let changes = items.flatMap { item -> [MetadataChange] in
+        let scoped = archiveActionIndices.map { items[$0] }
+        let changes = scoped.flatMap { item -> [MetadataChange] in
             guard item.hasAnyRating else { return [] }
             return item.metadataSnapshots.compactMap {
                 guard $0.rating != .undecided else { return nil }
@@ -3719,13 +3961,17 @@ final class SessionStore: ObservableObject {
         let now = Date()
         // A deliberate clear is newer review work, including after reopen.
         // Leave already-undecided RAW/JPEG components and their dates alone.
-        for item in items {
+        for item in scoped {
+            let oldState = item.ratingState
             for file in item.individualFiles where file.rating != .undecided {
                 file.setRating(.undecided, ratedAt: now)
             }
+            if archiveScopeIndices != nil { transitionRatingCount(from: oldState, to: item.ratingState) }
         }
-        ratingTally = (0, 0, items.count)
-        mixedRatingCount = 0
+        if archiveScopeIndices == nil {
+            ratingTally = (0, 0, items.count)
+            mixedRatingCount = 0
+        }
         publishMetadataMutation(.decision, affectedFileIDs: changes.map { $0.previous.fileID })
         scheduleSave()
     }
@@ -3932,7 +4178,7 @@ final class SessionStore: ObservableObject {
     /// action bypasses this property in `cleanUpTargets`.
     private var cleanUpCandidates: [Int] {
         cleanUpScope.candidateIndices(
-            all: items.indices,
+            all: cleanUpScope == .all ? archiveActionIndices : [],
             filtered: visibleIndices,
             selected: effectiveSelection
         )
@@ -3944,6 +4190,7 @@ final class SessionStore: ObservableObject {
     private func cleanUpCandidatesContain(_ predicate: (Int) -> Bool) -> Bool {
         switch cleanUpScope {
         case .all:
+            if let scope = archiveScopeIndices { return scope.contains(where: predicate) }
             return items.indices.contains(where: predicate)
         case .filtered:
             return visibleIndices.contains(where: predicate)
@@ -3955,7 +4202,7 @@ final class SessionStore: ObservableObject {
     /// Live candidate totals shown beside the three inline scope choices.
     func cleanUpScopeCount(for scope: CleanUpScope) -> Int {
         switch scope {
-        case .all: return items.count
+        case .all: return archiveScopeCount
         case .filtered: return visibleIndices.count
         case .selected: return effectiveSelection.count
         }
@@ -4082,7 +4329,7 @@ final class SessionStore: ObservableObject {
         return currentSessionIsDurable ? L10n.text("Saved") : L10n.text("Saving…")
     }
 
-    var isReviewComplete: Bool { !items.isEmpty && undecidedCount == 0 }
+    var isReviewComplete: Bool { archiveScopeCount > 0 && archiveReviewedCount == archiveScopeCount }
 
     /// Resolve counts only when a confirmation is requested, not per tile.
     func cleanUpDecisionBreakdown(for mode: CleanUpMode) -> (no: Int, undecided: Int) {
@@ -4638,7 +4885,7 @@ final class SessionStore: ObservableObject {
 
     func organizationScopeCount(for scope: SourceOrganizationScope) -> Int {
         switch scope {
-        case .all: return items.count
+        case .all: return archiveScopeCount
         case .filtered: return visibleIndices.count
         case .selected: return effectiveSelection.count
         }
@@ -4707,7 +4954,7 @@ final class SessionStore: ObservableObject {
         flushPendingFilter()
         let indices: [Int]
         switch scope {
-        case .all: indices = Array(items.indices)
+        case .all: indices = archiveActionIndices
         case .filtered: indices = visibleIndices
         case .selected: indices = effectiveSelection.sorted()
         }
@@ -4753,7 +5000,7 @@ final class SessionStore: ObservableObject {
         case .metadata:
             let indices: [Int]
             switch scope {
-            case .all: indices = Array(items.indices)
+            case .all: indices = archiveActionIndices
             case .filtered: indices = visibleIndices
             case .selected: indices = effectiveSelection.sorted()
             }
@@ -6269,6 +6516,8 @@ final class SessionStore: ObservableObject {
     /// sessions start no redundant write and a last-second rating still
     /// reaches disk. An already-active checkpoint is always awaited.
     func saveSessionForTermination() async -> SessionPersistence.SaveResult? {
+        // Bounded: a preparation job stops between files.
+        await pinnedFolderPreparation.cancelAndWait()
         // Quitting while the legacy decision is visible is equivalent to
         // Close Folder: preserve the old snapshot and write nothing.
         guard !isLegacySessionMigrationConfirmationPresented else {
@@ -6285,6 +6534,7 @@ final class SessionStore: ObservableObject {
         cancelScheduledSave()
         capturePinnedPosition()
         await flushPinnedPosition()
+        await flushArchiveNavigation()
 
         // A checkpoint already in flight may contain the complete live
         // session. Await it before deciding whether another write is needed;
@@ -6345,6 +6595,8 @@ final class SessionStore: ObservableObject {
         pauseSessionContentChecks()
         isPreparingForTermination = true
         cancelNeighbourPrefetch()
+        cancelMetadataIndexCommits()
+        pinnedFolderPreparation.cancel()
     }
 
     /// Called only when the photographer cancels Quit after a failed save.
@@ -6353,6 +6605,7 @@ final class SessionStore: ObservableObject {
         prefetchAroundCurrent()
         startQualityCueAnalysis()
         startSessionContentChecks()
+        if case .welcome = phase { pinnedFolderPreparation.welcomeDidAppear() }
     }
 
     /// Retry the newest live snapshot, or the exact snapshot retained after a
@@ -6704,6 +6957,7 @@ final class SessionStore: ObservableObject {
     private func preparePinnedFolderOpen(_ pin: PinnedFolder, reconnectingWith url: URL?) {
         guard !isFileOperationRunning, !isSessionTransitioning, !isPreparingForTermination,
               !isSessionCommandPresentationActive else { return }
+        pinnedFolderPreparation.cancel()
         pinnedOpenGeneration &+= 1
         let generation = pinnedOpenGeneration
         Task { @MainActor [weak self] in
@@ -6716,14 +6970,17 @@ final class SessionStore: ObservableObject {
         }
     }
 
-    func recordPinnedViewport(physicalFileID: String, topOffset: Double, surface: OpeningViewportSurface) {
-        guard case .ready = phase, !itemStructureNeedsRebuild,
+    func recordPinnedViewport(physicalFileID: String, topOffset: Double, surface: OpeningViewportSurface, archiveGeneration: UUID? = nil) {
+        guard archiveGeneration == nil || archiveGeneration == archiveViewportGeneration,
+              case .ready = phase, !itemStructureNeedsRebuild,
               let index = itemIndexByFileID[physicalFileID], items.indices.contains(index),
+              preparedIndex.location(forItemIndex: index) != nil,
               let file = items[index].individualFiles.first(where: { $0.id == physicalFileID }),
               let identity = file.scannedIdentity, topOffset.isFinite else { return }
         pinnedViewportReceipts[surface] = PinnedFolderViewport(
             anchor: PinnedFolderFileAnchor(physicalFileID: file.id, identity: identity), topOffset: topOffset)
         schedulePinnedPositionSave()
+        scheduleArchiveNavigationSave()
     }
 
     private func capturePinnedPosition() {
@@ -6817,6 +7074,41 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    func restoredArchivePosition(_ saved: PinnedFolderPosition) -> PinnedFolderRestoredPosition? {
+        guard let root = archiveNavigationRootIdentity else { return nil }
+        let ids = Set([saved.current?.physicalFileID, saved.browser?.anchor.physicalFileID,
+                       saved.grid?.anchor.physicalFileID].compactMap { $0 })
+        let candidates = ids.compactMap { id -> PinnedFolderFileAnchor? in
+            guard let index = itemIndexByFileID[id], preparedIndex.location(forItemIndex: index) != nil,
+                  let file = items[index].individualFiles.first(where: { $0.id == id }),
+                  let identity = file.scannedIdentity else { return nil }
+            return PinnedFolderFileAnchor(physicalFileID: id, identity: identity)
+        }
+        return saved.restored(for: root, expectedFolder: root, candidates: candidates)
+    }
+
+    func archiveVisibleIndex(for physicalFileID: String) -> Int? {
+        guard let index = itemIndexByFileID[physicalFileID],
+              preparedIndex.location(forItemIndex: index) != nil else { return nil }
+        return index
+    }
+
+    func clearArchiveViewportReceipts() {
+        openingViewportReceipts.removeAll()
+        pinnedViewportReceipts.removeAll()
+    }
+
+    func archiveRecordedViewport(for surface: OpeningViewportSurface) -> PinnedFolderViewport? {
+        pinnedViewportReceipts[surface] ?? pendingPinnedViewport(for: surface)
+    }
+
+    func installArchiveViewportReceipt(surface: OpeningViewportSurface, physicalFileID: String, topOffset: Double) {
+        guard let index = itemIndexByFileID[physicalFileID],
+              preparedIndex.location(forItemIndex: index) != nil else { return }
+        openingViewportReceipts[surface] = OpeningViewportReceipt(
+            surface: surface, physicalFileID: physicalFileID, topOffset: topOffset)
+    }
+
     // MARK: - Recent folders
 
     private func loadRecents() {
@@ -6876,6 +7168,8 @@ final class SessionStore: ObservableObject {
 
     private func finishClosingSession() {
         pinnedOpenGeneration &+= 1
+        // The session just warmed this pin's caches; Welcome need not repeat it.
+        if let pinID = currentPinnedFolderID { pinnedFolderPreparation.noteRecentlyOpened(pinID: pinID) }
         resetSessionRecovery()
         finishXMPPublicationLifecycle()
         invalidateDuplicateBurstAnalysis(rebuildLayout: false)
@@ -6891,6 +7185,7 @@ final class SessionStore: ObservableObject {
         openingSession = nil
         openingViewportReceipts = [:]
         pinnedViewportReceipts = [:]
+        resetArchiveNavigation()
         scanGeneration &+= 1
         cleanUpGeneration &+= 1
         filterDebounce?.cancel()

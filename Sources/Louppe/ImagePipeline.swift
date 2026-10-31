@@ -136,17 +136,17 @@ final class ImagePipeline: @unchecked Sendable {
     static let fullPixelSize: CGFloat = 4096
 
     private convenience init() {
-        let caches = FileManager.default.urls(
-            for: .cachesDirectory,
-            in: .userDomainMask
-        ).first ?? FileManager.default.temporaryDirectory
+        // Test hosts get a disposable per-process root and no daily pruning,
+        // so hidden test decodes cannot fill or evict a person's thumbnails.
         self.init(
-            diskCacheRoot: caches.appendingPathComponent(
-                "Louppe/Thumbnails",
-                isDirectory: true
-            ),
-            schedulesMaintenance: true
+            diskCacheRoot: Self.sharedDiskCacheRoot,
+            schedulesMaintenance: !RebuildableCacheLocation.isTestHost
         )
+    }
+
+    static var sharedDiskCacheRoot: URL {
+        (RebuildableCacheLocation.root ?? FileManager.default.temporaryDirectory)
+            .appendingPathComponent("Louppe/Thumbnails", isDirectory: true)
     }
 
     /// Isolated cache instance for focused tests. Production code always uses
@@ -559,6 +559,8 @@ final class ImagePipeline: @unchecked Sendable {
         thumbCache.removeObject(forKey: Self.cacheKey(for: item) as NSString)
     }
 
+    var diskCacheRootForTesting: URL { diskCacheRoot }
+
     func waitForFullWorkForTesting() async {
         await withCheckedContinuation { continuation in
             let barrier = BlockOperation { continuation.resume() }
@@ -584,8 +586,11 @@ final class ImagePipeline: @unchecked Sendable {
         if let cgImage = Self.decodeImage(url: diskURL, maxPixel: Self.thumbPixelSize) {
             return DecodedImage(cgImage)
         }
+        if let promoted = promoteV5Thumbnail(for: item, to: diskURL) {
+            return promoted
+        }
 
-        // v5 binds the cache to scan-time physical identity. Identity-less
+        // v6/v5 bind the cache to scan-time physical identity. Identity-less
         // v4/v3 thumbnails are only candidates for synthetic/legacy items
         // that have no scanned identity of their own. Once identity is known,
         // no timestamp comparison can prove which inode produced old cache
@@ -616,6 +621,29 @@ final class ImagePipeline: @unchecked Sendable {
         }
         guard let cgImage else { return nil }
         return DecodedImage(cgImage, diskURL: diskURL)
+    }
+
+    /// v5 keys add the mount root and device number to every v6 field, so a
+    /// v5 entry for the current identity holds valid v6 pixels. One atomic
+    /// rename moves it without re-encoding and removes the v5 name. If a
+    /// racing operation already moved it, read the v6 file that it left.
+    /// A corrupt promoted file falls through to a fresh source decode, whose
+    /// atomic write replaces it.
+    private func promoteV5Thumbnail(for item: PhotoItem, to diskURL: URL) -> DecodedImage? {
+        let v5URL = diskCacheRoot.appendingPathComponent(
+            Self.diskFileName(for: Self.v5ThumbnailCacheKey(for: item))
+        )
+        guard v5URL != diskURL else { return nil }
+        let renamed = v5URL.withUnsafeFileSystemRepresentation { source in
+            diskURL.withUnsafeFileSystemRepresentation { destination in
+                guard let source, let destination else { return false }
+                return Darwin.rename(source, destination) == 0
+            }
+        }
+        guard renamed || FileManager.default.fileExists(atPath: diskURL.path),
+              let cgImage = Self.decodeImage(url: diskURL, maxPixel: Self.thumbPixelSize)
+        else { return nil }
+        return DecodedImage(cgImage)
     }
 
     private func loadFullSync(revision: MediaSourceRevision, key: String, rendersRAW: Bool, decoder: AppleRawDecoder) -> DecodedImage? {
@@ -704,9 +732,16 @@ final class ImagePipeline: @unchecked Sendable {
     /// independent of the live filesystem after scanning.
     static func cacheKey(for item: PhotoItem) -> String {
         // Relative IDs repeat across folders and survive same-folder rescans.
-        // v5 adds the scan-time physical identity to byte-exact path, content
+        // v5 added the scan-time physical identity to byte-exact path, content
         // timestamps, size, and kind so a replacement cannot share pixels.
-        "\(item.contentRevision.cacheIdentity)|v5"
+        // v6 lets a volume UUID replace the transient device number and mount
+        // root, so a remounted drive keeps its thumbnails.
+        "\(item.contentRevision.cacheIdentity)|v6"
+    }
+
+    /// Exact v5 key for the current identity: a promotion source only.
+    static func v5ThumbnailCacheKey(for item: PhotoItem) -> String {
+        "\(item.contentRevision.v5CacheIdentity)|v5"
     }
 
     /// Immediately previous key. It is only a compatibility candidate after

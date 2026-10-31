@@ -32,7 +32,7 @@ struct SessionReviewStatus: View {
             parts.append(store.filter.reviewSummary)
         }
         if store.isReviewComplete && !store.isGroupedReviewActive {
-            parts.append(L10n.text("Review complete: \(store.yesCount) Yes · \(store.noCount) No"))
+            parts.append(L10n.text("Review complete: \(store.archiveYesCount) Yes · \(store.archiveNoCount) No"))
         }
         return parts.joined(separator: "  ·  ")
     }

@@ -34,11 +34,11 @@ final class ReviewKeyboardTests: XCTestCase {
     func testRemappingImmediatelyChangesMapWithoutChangingItsInput() {
         var preferences = ReviewShortcutPreferences()
         preferences.interpretation = .keyboardLayout
-        let map = ReviewKeyboardMap(interpretation: .keyboardLayout, layoutCharacters: [3: "f", 17: "t"])
-        XCTAssertTrue(preferences.set(.init(character: "t", keyCode: 17), for: .yes))
+        let map = ReviewKeyboardMap(interpretation: .keyboardLayout, layoutCharacters: [3: "f", 16: "y"])
+        XCTAssertTrue(preferences.set(.init(character: "y", keyCode: 16), for: .yes))
         XCTAssertTrue(map.actions(for: 3, preferences: preferences).isEmpty)
-        XCTAssertEqual(map.actions(for: 17, preferences: preferences), [.yes])
-        XCTAssertEqual(preferences.binding(for: .yes).character, "t")
+        XCTAssertEqual(map.actions(for: 16, preferences: preferences), [.yes])
+        XCTAssertEqual(preferences.binding(for: .yes).character, "y")
     }
 
     func testOverviewIncludesEveryCommandLayerAndTracksAliasReplacementRemovalAndReset() {
@@ -78,15 +78,15 @@ final class ReviewKeyboardTests: XCTestCase {
         var review = ReviewShortcutPreferences()
         let map = ReviewKeyboardMap(interpretation: .physicalPosition, layoutCharacters: [:],
                                    modifiedCharactersByLayer: [.command: [3: "f"]])
-        XCTAssertTrue(review.set(.init(character: "t", keyCode: 17), for: .oneStar))
+        XCTAssertTrue(review.set(.init(character: "y", keyCode: 16), for: .oneStar))
         XCTAssertTrue(map.actions(for: 18, preferences: review).isEmpty)
-        XCTAssertEqual(map.actions(for: 17, preferences: review), [.oneStar])
+        XCTAssertEqual(map.actions(for: 16, preferences: review), [.oneStar])
         XCTAssertTrue(review.remove(review.assignments(for: .oneStar)[0].id, for: .oneStar))
-        XCTAssertTrue(map.actions(for: 17, preferences: review).isEmpty)
+        XCTAssertTrue(map.actions(for: 16, preferences: review).isEmpty)
         XCTAssertTrue(review.reset(for: .oneStar))
         XCTAssertEqual(map.actions(for: 18, preferences: review), [.oneStar])
 
-        XCTAssertTrue(review.set(.init(character: "t", keyCode: 17), for: .yes))
+        XCTAssertTrue(review.set(.init(character: "y", keyCode: 16), for: .yes))
         XCTAssertTrue(map.actions(for: 3, preferences: review).isEmpty)
         XCTAssertEqual(map.commandActions(for: 3, preferences: CommandShortcutPreferences()), [.filterSearch],
                        "F stays lit because Command-F is still assigned")

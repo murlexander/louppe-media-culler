@@ -24,7 +24,7 @@ final class HotkeyTests: XCTestCase {
 
     func testToolbarHintsShowOnlyAliasesThatRouteInTheCurrentContext() {
         var preferences = ReviewShortcutPreferences(interpretation: .keyboardLayout)
-        let gridKey = ReviewShortcutBinding(character: "t", keyCode: 17)
+        let gridKey = ReviewShortcutBinding(character: "b", keyCode: 11)
         let photoKey = ReviewShortcutBinding(character: "y", keyCode: 16)
         XCTAssertTrue(preferences.add(gridKey, for: .export, scope: .grid))
         XCTAssertTrue(preferences.add(photoKey, for: .info, scope: .photos))
@@ -37,10 +37,10 @@ final class HotkeyTests: XCTestCase {
 
         XCTAssertEqual(hint(.export, command: .export), "E / ⌘E")
         XCTAssertEqual(hint(.info), "W")
-        XCTAssertNil(preferences.match(for: keyEvent(code: 17, characters: "t"), context: .galleryPlayableVideo))
+        XCTAssertNil(preferences.match(for: keyEvent(code: 11, characters: "b"), context: .galleryPlayableVideo))
         store.viewMode = .grid
-        XCTAssertEqual(hint(.export, command: .export), "E / T / ⌘E")
-        XCTAssertEqual(preferences.match(for: keyEvent(code: 17, characters: "t"), context: .gridPlayableVideo)?.action, .export)
+        XCTAssertEqual(hint(.export, command: .export), "E / B / ⌘E")
+        XCTAssertEqual(preferences.match(for: keyEvent(code: 11, characters: "b"), context: .gridPlayableVideo)?.action, .export)
         store.setIndex(1)
         XCTAssertEqual(hint(.info), "W / Y")
         XCTAssertEqual(preferences.match(for: keyEvent(code: 16, characters: "y"), context: .gridPhoto)?.action, .info)
@@ -112,21 +112,21 @@ final class HotkeyTests: XCTestCase {
 
     func testMultipleAliasesRouteSharedKeyOnlyWithinItsMediaContext() {
         var preferences = ReviewShortcutPreferences()
-        let shared = ReviewShortcutBinding(character: "t", keyCode: 17)
+        let shared = ReviewShortcutBinding(character: "b", keyCode: 11)
         XCTAssertTrue(preferences.add(shared, for: .yes, scope: .photos))
         XCTAssertTrue(preferences.add(shared, for: .no, scope: .videos))
         XCTAssertFalse(preferences.add(shared, for: .info, scope: .gallery))
 
         let photos = readyStore(itemCount: 3, firstItemIsVideo: false)
         let photoView = SessionView(store: photos)
-        XCTAssertTrue(photoView.handleKey(keyEvent(code: 17, characters: "t"), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertTrue(photoView.handleKey(keyEvent(code: 11, characters: "b"), context: .focusedSession, shortcutPreferences: preferences))
         XCTAssertEqual(photos.items[0].rating, .yes)
         XCTAssertTrue(photoView.handleKey(keyEvent(code: 3, characters: "f"), context: .focusedSession, shortcutPreferences: preferences))
         XCTAssertEqual(photos.items[1].rating, .yes)
 
         let videos = readyStore(itemCount: 3, firstItemIsVideo: true)
         let videoView = SessionView(store: videos)
-        XCTAssertTrue(videoView.handleKey(keyEvent(code: 17, characters: "t"), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertTrue(videoView.handleKey(keyEvent(code: 11, characters: "b"), context: .focusedSession, shortcutPreferences: preferences))
         XCTAssertEqual(videos.items[0].rating, .no)
     }
 
@@ -159,14 +159,14 @@ final class HotkeyTests: XCTestCase {
         let store = readyStore(itemCount: 4, firstItemIsVideo: false)
         let view = SessionView(store: store)
         var preferences = ReviewShortcutPreferences()
-        XCTAssertTrue(preferences.set(.init(character: "t", keyCode: 17), for: .yes))
+        XCTAssertTrue(preferences.set(.init(character: "b", keyCode: 11), for: .yes))
         XCTAssertFalse(view.handleKey(keyEvent(code: 3, characters: "f"), context: .focusedSession, shortcutPreferences: preferences))
         XCTAssertEqual(store.items[0].rating, .undecided)
         let textContext = SessionKeyRoutingContext(sessionOwnsEvent: true, hasModalPresentation: false,
                                                   focusedResponderOwnsText: true, focusedResponderOwnsNavigation: false)
-        XCTAssertFalse(view.handleKey(keyEvent(code: 17, characters: "t"), context: textContext, shortcutPreferences: preferences))
-        XCTAssertFalse(view.handleKey(keyEvent(code: 17, characters: "t", modifiers: .option), context: .focusedSession, shortcutPreferences: preferences))
-        XCTAssertTrue(view.handleKey(keyEvent(code: 17, characters: "t"), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertFalse(view.handleKey(keyEvent(code: 11, characters: "b"), context: textContext, shortcutPreferences: preferences))
+        XCTAssertFalse(view.handleKey(keyEvent(code: 11, characters: "b", modifiers: .option), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertTrue(view.handleKey(keyEvent(code: 11, characters: "b"), context: .focusedSession, shortcutPreferences: preferences))
         XCTAssertEqual(store.items[0].rating, .yes)
         preferences.interpretation = .physicalPosition
         XCTAssertTrue(preferences.set(.init(character: "d", keyCode: 4), for: .yes))

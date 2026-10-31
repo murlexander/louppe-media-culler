@@ -56,7 +56,7 @@ final class MenuShortcutColumnsTests: XCTestCase {
             defaults.removePersistentDomain(forName: domain)
         }
         var preferences = ReviewShortcutPreferences(interpretation: .keyboardLayout)
-        XCTAssertTrue(preferences.add(.init(character: "t", keyCode: 17), for: .export, scope: .gallery))
+        XCTAssertTrue(preferences.add(.init(character: "b", keyCode: 11), for: .export, scope: .gallery))
         preferences.save(to: defaults)
         let main = ShortcutCountingMenu(title: "Main")
         let item = NSMenuItem(title: L10n.text("Export…"), action: nil, keyEquivalent: "")
@@ -65,7 +65,7 @@ final class MenuShortcutColumnsTests: XCTestCase {
         let store = SessionStore(automaticallyRecoversInterruptedOperations: false)
         let columns = MenuShortcutColumns(store: store, defaults: defaults)
         columns.refresh()
-        XCTAssertEqual(item.accessibilityHelp(), "E / T / ⌘E")
+        XCTAssertEqual(item.accessibilityHelp(), "E / B / ⌘E")
         main.itemReads = 0
 
         store.objectWillChange.send()
@@ -209,23 +209,23 @@ final class MenuShortcutColumnsTests: XCTestCase {
     func testPreferenceEditsAndContextsReplaceHintsWithoutStaleAliases() {
         var preferences = ReviewShortcutPreferences()
         preferences.interpretation = .keyboardLayout
-        XCTAssertTrue(preferences.set(.init(character: "t", keyCode: 17), for: .export))
+        XCTAssertTrue(preferences.set(.init(character: "b", keyCode: 11), for: .export))
         XCTAssertTrue(preferences.add(.init(character: "y", keyCode: 16), for: .export, scope: .gallery))
         func exportHint(_ context: ReviewShortcutContext) -> String? {
             MenuShortcutColumns.entries(preferences: preferences, context: context).first { $0.title == L10n.text("Export…") }?.hint
         }
-        XCTAssertEqual(exportHint(galleryPhoto), "T / Y / ⌘E")
+        XCTAssertEqual(exportHint(galleryPhoto), "B / Y / ⌘E")
         let gridPhoto = ReviewShortcutContext(viewMode: .grid, mediaKind: .photo, isPlayable: false, canSeekVideo: false)
-        XCTAssertEqual(exportHint(gridPhoto), "T / ⌘E")
+        XCTAssertEqual(exportHint(gridPhoto), "B / ⌘E")
 
         let menu = NSMenu(title: "File")
         let presentation = MenuShortcutPresentation()
         let item = NSMenuItem(title: L10n.text("Export…"), action: nil, keyEquivalent: "")
         menu.addItem(item)
         presentation.apply(MenuShortcutColumns.entries(preferences: preferences, context: galleryPhoto), to: menu, isTracking: true)
-        XCTAssertEqual(item.keyEquivalent, "T / Y / ⌘E")
+        XCTAssertEqual(item.keyEquivalent, "B / Y / ⌘E")
         presentation.apply(MenuShortcutColumns.entries(preferences: preferences, context: gridPhoto), to: menu, isTracking: true)
-        XCTAssertEqual(item.keyEquivalent, "T / ⌘E")
+        XCTAssertEqual(item.keyEquivalent, "B / ⌘E")
         XCTAssertFalse(item.keyEquivalent.contains("Y"))
         XCTAssertEqual(item.title, L10n.text("Export…"))
     }
@@ -257,10 +257,10 @@ final class MenuShortcutColumnsTests: XCTestCase {
     func testPhysicalColumnIsCompactAndHelpExplainsPositions() {
         var preferences = ReviewShortcutPreferences()
         preferences.interpretation = .physicalPosition
-        XCTAssertTrue(preferences.set(.init(character: "y", keyCode: 17), for: .export))
+        XCTAssertTrue(preferences.set(.init(character: "y", keyCode: 11), for: .export))
         let entry = MenuShortcutColumns.entries(preferences: preferences, context: galleryPhoto).first { $0.title == L10n.text("Export…") }!
-        XCTAssertEqual(entry.hint, "T / ⌘E")
-        let position = "T"
+        XCTAssertEqual(entry.hint, "B / ⌘E")
+        let position = "B"
         XCTAssertEqual(entry.accessibilityHint, L10n.text("\(position) position") + " / ⌘E")
     }
 

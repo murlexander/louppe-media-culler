@@ -103,6 +103,8 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
     case yes, no, previous, next, previousRow, nextRow, playPause, seekBackward, seekForward
     case browser, info, clipping, grid, export, clear, undo, actualSize, phoneSize
     case clearStars, oneStar, twoStars, threeStars, fourStars, fiveStars
+    // Append only: default assignment IDs depend on case order.
+    case folders, previousFolder, nextFolder
 
     var title: String {
         switch self {
@@ -116,6 +118,9 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
         case .seekBackward: L10n.text("Seek backward")
         case .seekForward: L10n.text("Seek forward")
         case .browser: L10n.text("Show / Hide Browser")
+        case .folders: L10n.text("Show / Hide Folders")
+        case .previousFolder: L10n.text("Previous Folder")
+        case .nextFolder: L10n.text("Next Folder")
         case .info: L10n.text("Show / Hide Info")
         case .clipping: L10n.text("Toggle clipping overlay")
         case .grid: L10n.text("Switch Gallery / Grid")
@@ -135,9 +140,9 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
     var group: ReviewShortcutGroup {
         switch self {
         case .yes, .no, .export, .clear, .undo: .review
-        case .previous, .next, .previousRow, .nextRow: .navigation
+        case .previous, .next, .previousRow, .nextRow, .previousFolder, .nextFolder: .navigation
         case .playPause, .seekBackward, .seekForward: .playback
-        case .browser, .info, .clipping, .grid, .actualSize, .phoneSize: .view
+        case .browser, .folders, .info, .clipping, .grid, .actualSize, .phoneSize: .view
         case .clearStars, .oneStar, .twoStars, .threeStars, .fourStars, .fiveStars: .stars
         }
     }
@@ -153,6 +158,9 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
         case .seekBackward: "←"
         case .seekForward: "→"
         case .browser: "q"
+        case .folders: "t"
+        case .previousFolder: "["
+        case .nextFolder: "]"
         case .info: "w"
         case .clipping: "x"
         case .grid: "g"
@@ -194,7 +202,7 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
     var allowedScopes: [ReviewShortcutScope] {
         ReviewShortcutScope.allCases.filter { !$0.contexts.intersection(contexts).isEmpty }
     }
-    var isSafeDuringFileOperation: Bool { [.browser, .info, .clipping, .grid].contains(self) }
+    var isSafeDuringFileOperation: Bool { [.browser, .folders, .info, .clipping, .grid].contains(self) }
 }
 
 enum ReviewShortcutInterpretation: String, CaseIterable, Codable, Sendable {
@@ -297,10 +305,35 @@ struct ReviewShortcutPreferences: Codable, Equatable, Sendable {
             }
             interpretation = try container.decode(ReviewShortcutInterpretation.self, forKey: .interpretation)
         }
+        yieldNewDefaultsToSavedBindings()
         guard hasValidBindings else {
             throw DecodingError.dataCorruptedError(forKey: .layoutBindings, in: container, debugDescription: "Ambiguous shortcuts")
         }
     }
+    /// A newly introduced default must never discard established customizations.
+    /// Explicit entries (including empty ones) remain authoritative in each mode.
+    private mutating func yieldNewDefaultsToSavedBindings() {
+        let originalMode = interpretation
+        defer { interpretation = originalMode }
+        for mode in ReviewShortcutInterpretation.allCases {
+            interpretation = mode
+            let saved = mode == .keyboardLayout ? layoutBindings : physicalBindings
+            for action in [ReviewShortcutAction.folders, .previousFolder, .nextFolder] where saved[action.rawValue] == nil {
+                let defaults = Self.defaultAssignments(for: action)
+                let retained = defaults.filter { candidate in
+                    !ReviewShortcutAction.allCases.contains { other in
+                        (saved[other.rawValue] ?? []).contains { existing in
+                            sameKey(candidate.binding, existing.binding)
+                                && !effectiveContexts(for: action, scope: candidate.scope)
+                                    .isDisjoint(with: effectiveContexts(for: other, scope: existing.scope))
+                        }
+                    }
+                }
+                if retained != defaults { store(retained, for: action) }
+            }
+        }
+    }
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(2, forKey: .schemaVersion)

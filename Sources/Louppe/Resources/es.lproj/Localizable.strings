@@ -2085,3 +2085,47 @@
 "When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "Con la navegación por teclado activada, Tab mueve el foco entre los controles. Usa G para cambiar de vista.";
 
 "Subtitle tracks" = "Pistas de subtítulos";
+
+/* Archive folder navigation */
+"Folders" = "Carpetas";
+"Entire Archive" = "Archivo completo";
+"Current Folder" = "Carpeta actual";
+"Include Subfolders" = "Incluir subcarpetas";
+"Hide Folders" = "Ocultar carpetas";
+"Show Folders" = "Mostrar carpetas";
+"Expand All" = "Expandir todo";
+"Collapse All" = "Contraer todo";
+"All reviewed" = "Todo revisado";
+"Next Unfinished Folder" = "Carpeta siguiente sin terminar";
+"Folders width" = "Ancho de carpetas";
+"Folder: {0}, including subfolders" = "Carpeta: {0}, incluidas las subcarpetas";
+"Folder: {0}, direct items only" = "Carpeta: {0}, solo elementos directos";
+"No media in this folder" = "No hay contenido multimedia en esta carpeta";
+"Choose another folder or include subfolders." = "Elige otra carpeta o incluye las subcarpetas.";
+"RAW + JPEG pairs stay together, even across folders." = "Las parejas RAW + JPEG permanecen juntas, incluso entre carpetas.";
+"Folder navigation could not be restored. Previous positions are retained." = "No se pudo restaurar la navegación por carpetas. Se conservan las posiciones anteriores.";
+"Folder navigation could not be saved. Previous positions are retained." = "No se pudo guardar la navegación por carpetas. Se conservan las posiciones anteriores.";
+
+"Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "Cambia la barra lateral entre Explorador y Carpetas con los botones de arriba; en Cuadrícula, usa el botón lateral. Navega sin reabrir el archivo; se recuerdan las posiciones.";
+"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "Las acciones de archivo y Borrar todas las decisiones se aplican a la carpeta elegida. Elige Todo el contenido para actuar sobre el archivo completo. Las parejas RAW + JPEG permanecen juntas.";
+"Reset Folder Navigation" = "Restablecer navegación por carpetas";
+"Clear Yes/No decisions in this folder ({0})" = "Borrar decisiones Sí/No de esta carpeta ({0})";
+
+/* Folder keyboard, menu and palette commands. */
+"Show / Hide Folders" = "Mostrar / Ocultar carpetas";
+"Previous Folder" = "Carpeta anterior";
+"Next Folder" = "Carpeta siguiente";
+"Enclosing Folder" = "Carpeta superior";
+"Sidebar" = "Barra lateral";
+"Hide Sidebar" = "Ocultar barra lateral";
+"Show Sidebar" = "Mostrar barra lateral";
+"Expand All Folders" = "Expandir todas las carpetas";
+"Collapse All Folders" = "Contraer todas las carpetas";
+"Show Current Item’s Folder" = "Mostrar la carpeta del elemento actual";
+"Go to All Media" = "Ir a todos los medios";
+"Go to Folder “{0}”" = "Ir a la carpeta «{0}»";
+"Show or hide Folders ({0})" = "Mostrar u ocultar carpetas ({0})";
+"Press Command and a letter or arrow. Add Shift if needed." = "Pulsa Command y una letra o flecha. Añade Shift si es necesario.";
+"Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media." = "Usa Ver o la paleta de comandos para cambiar el contenido de la barra lateral, expandir carpetas o ir a una carpeta. La navegación omite las carpetas sin medios directos.";
+
+"Checking folder…" = "Comprobando carpeta…";

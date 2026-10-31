@@ -10,10 +10,6 @@ struct OpeningSessionView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                ProgressView().controlSize(.small)
-                Text(L10n.text("Loading photo details…"))
-                    .font(.callout)
-                Text("\(state.readyMetadataCount)/\(state.items.count)").foregroundStyle(.secondary).monospacedDigit()
                 Spacer()
                 Picker(L10n.text("View"), selection: $state.viewMode) {
                     Text(L10n.text("Gallery")).tag(ViewMode.gallery)
@@ -64,10 +60,29 @@ struct OpeningSessionView: View {
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text(verbatim: "Louppe").font(.headline)
+                HStack(spacing: 8) {
+                    Text(L10n.text(state.isCached ? "Checking folder…" : "Loading photo details…"))
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    SessionActivityIndicator(isActive: true,
+                        label: L10n.text(state.isCached ? "Checking folder…" : "Loading photo details…"))
+                }
             }
         }
         .accessibilityIdentifier("openingSession")
+    }
+}
+
+/// The same fixed toolbar spinner used by photo loading and review work.
+struct SessionActivityIndicator: View {
+    let isActive: Bool
+    let label: String
+
+    var body: some View {
+        ProgressView()
+            .controlSize(.small)
+            .opacity(isActive ? 1 : 0)
+            .accessibilityLabel(label)
+            .accessibilityHidden(!isActive)
     }
 }
 

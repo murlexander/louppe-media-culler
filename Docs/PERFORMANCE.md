@@ -152,6 +152,32 @@ persistence reads and final identity checks.
   Workers poll the `@Sendable` `isCancelled` closure. `{ Task.isCancelled }` reads false on
   GCD threads, so `SessionStore.openFolder` bridges task cancellation through
   `FolderScanner.CancelFlag` and `withTaskCancellationHandler`.
+- Discovery is a bounded parallel name-first walk (`FolderScanner.DiscoveryWalk`,
+  at most 8 GCD workers). `readdir` lists names; only folders and recognized
+  media get one `lstat`, which also forms their identity. Volume facts come
+  from one lookup per device. FileManager's enumerator fetched attributes for
+  every entry; on FSKit exFAT that dominated opening. It stays as
+  `legacyEnumeratorInventoryForTesting`, and equivalence tests require
+  byte-identical URLs, IDs, facts, identities, folder order and pairing.
+  Hidden and package rules match `.skipsHiddenFiles`/`.skipsPackageDescendants`:
+  APFS/HFS+ mirror the Finder invisible bit into `UF_HIDDEN`; exFAT/FAT keep
+  Finder info only in `._name`, so only entries with one ask `isHiddenKey`/
+  `isPackageKey`; other filesystems ask for every entry. Do not drop these
+  checks for speed. Only the calling thread polls `isCancelled` and reports
+  progress (every 25 files); output order never depends on worker timing.
+  Capture One `CaptureOne` folders holding only `Cache`/`Settings<digits>` and
+  Lightroom `*.lrdata` folders are skipped (`isAppManagedCacheFolder`).
+  Measured 30 October 2026 (optimized build, 17k media, 1,500 folders): cold
+  FSKit exFAT image discovery 14.0–17.4 s → 2.6–2.8 s, opening worker
+  16.5–16.7 s → 4.6–4.8 s; APFS 1.0–1.3 s → 0.16–0.28 s; the real exFAT
+  archive warm 3.0–3.3 s → 0.31–0.42 s.
+- Pairing computes each file's path, extension and IDs once, groups by index
+  and builds the lightweight records in fixed slots on up to 8 workers.
+  `legacyEnumeratorInventoryForTesting(usesLegacyPairing:)` keeps the previous
+  code; equivalence tests require identical inventories. Measured 30 October
+  2026 (optimized build): the real archive 0.41–0.44 s → 0.15–0.19 s. Most of
+  the rest is `PhotoFile.init` (calendar day, date label, search folding),
+  which contends on shared Foundation state and scales poorly across workers.
 
 `SessionOpeningWorker` restores saved decisions and prepares facets, exact physical
 pairs and the initial sort index before main-actor publication. Separate opening
@@ -174,6 +200,16 @@ Each executing media read holds independent source access
 through worker exit, including cancelled waiters. See the
 [large-folder record](LARGE_FOLDERS_2026-10-22.md).
 
+Pinned opens first decode the existing bounded metadata snapshot and can publish
+a provisional `OpeningSessionState` before discovery. No additional disk cache,
+photo copies, saved badges or write authority are added. The toolbar uses the
+same small activity indicator as Ready, labeled Checking folder. Missing, invalid
+or empty caches use the fresh-inventory preview above. Cached observations may
+omit uncached files and include removed files until Ready. The full scan,
+restoration and final barriers still run; navigation handoff rejects changed
+physical revisions. One cached projection remains stable until Ready rather
+than replacing it with another preview during opening.
+
 Gallery retains cancellation ownership for four unique neighboring full previews;
 actual-size mode also retains source-recipe interest. Grid cancels full prefetch.
 Changing the neighborhood removes only its waiters, preserving foreground joins
@@ -183,9 +219,30 @@ most 8 MiB/32 images including the active write; excess writes are skipped while
 visible pixels remain available. These bounds supplement the cache budgets below.
 
 Unreadable subfolders fail visibly; incomplete traversal cannot become a saved
-session. Final identity checks iterate physical files without a flattened copy,
-poll cancellation between files and before an empty pass, and check again after
-sorting. Keep filesystem loops and JSON encoding off `SessionStore`.
+session. Keep filesystem loops and JSON encoding off `SessionStore`.
+
+Opening identity passes (`SessionOpeningWorker`):
+
+| Pass | When | Covers |
+| --- | --- | --- |
+| Discovery capture | always | baseline identity of every file and folder |
+| Preview barrier | only when a preview mounts | files, folders and the opened folder before read-only badges and pixels |
+| Metadata miss bracket | per cache miss | identity after the admission wait and after the read: bytes read belong to the scanned file |
+| Cache hit | — | no I/O; the entry is keyed by the discovery identity |
+| Final barrier | always, after metadata, persistence read, restoration and derived preparation | files, folders and the opened folder before save/mutation authority |
+
+The opened folder is also checked before its sidecar is read. Barrier passes
+run on up to 8 workers over contiguous ranges (small inputs stay serial), poll
+cancellation before every file and before an empty pass, stop at the first
+mismatch and log only that one. Each pass uses a fresh
+`FileOperationJournal.VolumeLookup`: one volume lookup per device number, so a
+device number reused by another volume still fails. Folder checks use one
+`lstat` each. The synchronous `FolderScanner.scan`/`prepareMetadata` path keeps
+its own complete barrier after metadata. Measured 30 October 2026 (optimized
+build, 17k files): one complete pass 0.22–0.24 s → 0.027–0.037 s on the real
+archive; a warm opening ran about five such passes and now runs two (three
+counting discovery). DEBUG `IdentityCaptureCounter` tests bound a warm open to
+about two captures per file without a preview and three with one.
 
 Fuji film simulation is a finite scan-time value on each physical file. Reuse
 ImageIO metadata, then bound the read-only MakerNote/container fallback to 1 MiB,
@@ -332,19 +389,67 @@ resource bounds. Required save deadlines, transitions and Quit bypass admission.
 Executing native decodes keep their lanes/access through exit and cannot be
 preempted. This is pacing, not a hard CPU/storage cap.
 
-`ArchiveMetadataIndex` adds rebuildable scan observations to existing v5 thumbnail
+`ArchiveMetadataIndex` adds rebuildable scan observations to existing v6 thumbnail
 reuse. Exact percent-encoded paths, fresh physical identities/revisions, extractor
-schema, time zone and OS interpretation context own hits. Decisions, recovery,
+schema, time zone and OS interpretation context own hits. On UUID volumes, the
+UUID replaces the device number (`st_dev`) and mount root in the folder key and
+entry match. A remount with a new device number or at `/Volumes/<name> 1` still
+hits; paths are rebased from the snapshot's recorded folder path. UUID-less
+volumes keep requiring the exact path, mount root and device. Inode, birth, size,
+mtime and ctime must still match exactly. Decisions, recovery,
 fingerprints and save lineage are excluded. Fresh complete discovery/pairing and
 all validation barriers still run. Renames/replacements conservatively reread;
-missing/corrupt/oversized caches rebuild. Snapshots cap at 40k entries/32 MiB;
-maintenance caps 32 folders/256 MiB. Uncached excess files still complete normally.
+missing/corrupt/oversized/unsupported caches rebuild. Snapshots are binary v2
+(`archive-metadata-v2/<pin key>-<folder key>.lmi`): path-sorted front-coded paths,
+one volume/string/Double table, delta-coded inodes and times, and a trailing
+SHA-256. Reads stay bounded on an `O_NOFOLLOW` descriptor; writes stay atomic.
+Snapshots cap at 250k entries/32 MiB (about 50–60 B per entry). A valid v1 JSON
+snapshot is read once when v2 is missing, written as v2 without EXIF reads, then
+removed. v1 is found under its original key (the current mount's path and device).
+Uncached excess files still complete normally.
+Maintenance runs only after a snapshot write: unpinned snapshots keep 32 folders,
+oldest first; all snapshots share 256 MiB, evicting unpinned first and the oldest
+pin only when pins alone exceed it. `PinnedFoldersStore` publishes the pinned set
+(in memory, plus an async `pinned-folders` list for later launches); opening adds
+no I/O for it. XCTest/`LOUPPE_TESTING` hosts use a disposable per-process cache root.
 Extraction failures/timeouts are not reusable negative observations; extractor
-context 2 invalidates earlier failed entries. Comparison/encoding prepares before
-the original final identity barrier. Only changed snapshots do optional cache I/O,
-followed by another complete source barrier even if that I/O fails. Cache failure
-cannot fail source opening. Warm unchanged snapshots skip encoding and I/O. Optional cache work and
-its extra identity pass remain included in opening measurements.
+context 2 invalidates earlier failed entries. Cache hits do no source I/O; the
+final barrier rejects a file replaced after discovery. The worker returns a
+`SessionOpeningMetadataCommit`; after Ready, `SessionStore` runs it as one
+detached utility task at a time, holding its own folder lease. At most one more
+waits; a newer opening replaces it and releases its lease and inventory. It
+compares, encodes and writes only a changed snapshot. Its entries carry the
+identities the final barrier verified, so a file replaced later never hits them
+and is reread on the next opening; no source barrier follows. Close never waits
+for it; Quit cancels the running commit and drops the waiting one. Cache failure
+cannot fail source opening. Warm unchanged snapshots skip encoding and I/O.
+
+Pin positions and folder memory load after the worker returns, so `SessionStore`
+repeats the final file, folder and root barrier (`repeatFinalBarrier`) after those
+reads and immediately before publication (about 30 ms warm for 17k files).
+Discovery fails visibly when an entry of unknown type cannot be inspected; only
+a vanished unrecognized name is skipped. Directory listings poll cancellation
+every 32 entries, including the root's. Binary snapshot tables are bounded by
+what the entry cap can reference before any allocation.
+
+Pinned-folder preparation (`PinnedFolderPreparation`) runs the same discovery
+with 3 utility-QoS workers, loads the index and reads metadata only for misses,
+through the opening's extractor, miss bracket and foreground admission, with 2
+workers in batches of 32. It reads at most 2,000 files or for 60 s per job,
+checking the deadline before each file (an interrupted batch is discarded); the
+next job or open reads the rest. A changed snapshot is committed only after a
+complete file, folder and root identity barrier; an unchanged one needs neither.
+Any snapshot commit is skipped when the file changed since its producer read it,
+so a stale post-Ready commit cannot replace newer preparation results (or the
+reverse). Bookmark resolution and identity checks run outside the pin actor, so a
+stalled volume never delays a user's pin open or position read.
+Low Power Mode stops after the index check. A serious or critical thermal state,
+sampled before each stage and batch, postpones the job by 2 minutes; one timer
+retries every postponed pin. No inventory or results outlive the job. Thumbnails are not warmed: their disk
+cache is off the source volume, and Grid order depends on the sidecar.
+On a 2 GB exFAT (FSKit) UDIF image with 17,000 files in 648 folders, an open
+after a fresh attach took 2.83–3.00 s; preparing after attach took 3.0–3.5 s,
+and the open after it took 0.99–1.12 s, the same as a warm open (0.97–0.98 s).
 
 Opening observations coalesce in one per-generation buffer and publish at 100 ms.
 The inventory/order/geometry remain immutable while a separate ready-details overlay
@@ -352,6 +457,42 @@ accepts exact matching membership, revisions and restored decisions. A locked cu
 interest promotes the next unclaimed metadata slot after already-running units.
 Only the final prepared session owns ratings, save and mutation capabilities.
 See [archive acceptance](ARCHIVES_2026-10-25.md) for current evidence and limits.
+
+## Archive folder navigation
+
+The discovery walk retains real empty directories and exact encoded IDs,
+then validates stable directory identity alongside the physical inventory. It
+never descends symlinks, packages or skipped app cache folders. The reference
+enumerator still never calls `skipDescendants` for already-skipped entries: its
+flag can otherwise suppress the following sibling's subtree (regression-tested).
+
+Opening prepares the directory tree, counts and DFS subtree ranges off-main.
+Postings scale with physical parent memberships, not items × ancestor depth. LCA
+subtraction deduplicates cross-folder pairs in ancestor counts. Sort positions are
+prepared once per sort. Folder queries read only their postings and order candidates
+by those ranks; they never walk the whole archive to filter a small folder. Root
+All Media retains the existing complete projection. Structural updates rebuild the
+projection; ordinary decisions, selection and view updates do not rebuild the tree.
+
+The native outline reloads only for an index generation, and reuses realized cells.
+Unchanged representable updates skip expansion work (shared-storage set check).
+Expand/Collapse All use one recursive native call and Option-click disclosure
+reports one final set: 10k folders expand in about 0.6 s and collapse in 0.25 s
+in an unoptimized hidden-window test, versus 12.9 s and 10,001 store publications
+before. Folder completion counts are built once per index generation in
+O(items × depth), then each changed decision walks only its folders' ancestor
+chains; the outline refreshes only visible rows. Next/previous/unfinished folder
+targets are cached per index, selection and progress revision, because SwiftUI
+evaluates menu enablement on every publication.
+Only the active scope retains indexed decision snapshots. Scope/structure changes
+build its counts once; rating/undo/recovery updates visit only changed physical
+IDs, deduplicating paired components through the existing file-to-item map.
+Toolbar counts and Clear enablement are constant-time. Current/viewport changes
+schedule a coalesced capture rather than rebuilding bounded UI memory per input.
+Position restoration checks at most three physical IDs through existing maps rather
+than scanning all files. Bounded UI memory coalesces writes at 500 ms; Close/Open/
+Quit take a finite checkpoint independently of decision durability. See
+[implementation evidence](ARCHIVE_FOLDER_NAVIGATION_2026-10-29.md).
 
 ## Image cache budgets
 
@@ -363,16 +504,22 @@ See [archive acceptance](ARCHIVES_2026-10-25.md) for current evidence and limits
 | Histograms | 256 numeric results; temporary 1,024-pixel previews |
 | RAW histograms | 128 numeric results; temporary extended-linear RGBA-float bitmap near 1,024 pixels on longest side |
 | Actual-size tiles | 128 MiB total; 1,024 × 1,024 source-pixel tiles, normal and clipping variants; lazy recipes retain no whole bitmap |
-| Disk thumbnails | 512 MiB; 90-day age; utility maintenance at most daily after launch delay |
+| Disk thumbnails | 512 MiB; 90-day age; utility maintenance at most daily after launch delay; test hosts use a disposable root without pruning |
+| Archive metadata snapshots | 250k entries/32 MiB each; 32 unpinned folders; 256 MiB total, pins evicted last |
 
 Decoded cost is `bytesPerRow × height`. Return thumbnails before JPEG
 encoding/writing. Preserve the undersized embedded-preview fallback in
 `ImagePipeline.decodeImage` to avoid pixelation. Production scan identities
 reject identity-less v4/v3 pixels; timestamps cannot prove inode ownership.
-Cold v5 migration runs on bounded decode queues without blocking Grid's first
+Disk v6 keys let a volume UUID replace the device number and mount root;
+UUID-less volumes keep both. The byte-exact path component remains, so a mount
+at `/Volumes/<name> 1` still regenerates thumbnails. On a v6 miss, the exact v5
+key for the current identity is renamed to v6 without decoding or re-encoding;
+v5 entries written under another device number are not found and regenerate
+once. Cold migration runs on bounded decode queues without blocking Grid's first
 frame. Identity-less legacy/synthetic items may read byte-exact v4, or v3 for
 unambiguous ASCII paths, only when cache time is at least the captured source
-time. Atomically promote validated results. Replace corrupt v5 entries after
+time. Atomically promote validated results. Replace corrupt v6 entries after
 fresh source decode; replacements never inherit old pixels, even for slow RAW.
 
 | Deferred work | Dwell |

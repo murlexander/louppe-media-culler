@@ -24,6 +24,10 @@ it to every view.
 | `Sources/Louppe/CleanUpWorker.swift` | Background Trash/restore file loops, progress throttling, pair rollback, O(n+k) restoration merge |
 | `Sources/Louppe/FolderScanner.swift` | Recursive scans, deterministic volume-aware RAW+JPEG pairing, lazy JPEG metadata, pairing projection, chronological sort |
 | `Sources/Louppe/PinnedFolders.swift` | Durable identity-bound pins/bookmarks and bounded independent current/viewport positions, separate from decisions/caches |
+| `Sources/Louppe/PinnedFolderPreparation.swift` | Serial, cancellable background cache warm-up for pinned folders while Welcome is idle |
+| `Sources/Louppe/ArchiveFolderIndex.swift` | Exact directory manifest, deterministic native-tree nodes, pair-aware counts and subtree membership postings |
+| `Sources/Louppe/ArchiveNavigationMemory.swift` | Bounded identity-bound per-folder UI positions and separate durable persistence |
+| `Sources/Louppe/SessionStore+ArchiveNavigation.swift` | Folder scope, leading pane, position restore and independent UI-state save checkpoints |
 | `Sources/Louppe/ArchiveMetadataIndex.swift` | Disposable revision-bound metadata observations with bounded per-folder/aggregate storage |
 | `Sources/Louppe/ForegroundWorkCoordinator.swift` | Shared cancellable interaction admission between existing bounded worker units |
 | `Sources/Louppe/SessionOpeningWorker.swift` and `SessionOpening*` helpers | Cancellable complete inventory/metadata preparation, saved-decision restoration, facets/index preparation, and opening-stage measurements before session publication |
@@ -233,7 +237,9 @@ selected-folder entitlements in `Louppe.entitlements`.
   Review, ratings, navigation, folder open/close/rescan, saving, updates, and Quit
   remain available.
 - Journal media and artifacts must be regular files. Identity capture supports
-  directories; blocking opens use `O_NONBLOCK` before type checks. Remove started
+  directories; blocking opens use `O_NONBLOCK` before type checks. File
+  operations keep `captureIdentity(at:)`'s fresh per-call volume lookup;
+  `captureIdentity(at:volumes:)` and `identity(from:…)` serve opening barriers. Remove started
   generated partials only when their inode was durably recorded. Completed XMP
   retirement recognizes either reserved cleanup path; ambiguity preserves files.
 - Organize checks scanner-visible names and hidden/package flags in preview and
@@ -321,9 +327,36 @@ durable Application Support document, never a source sidecar or cache. Bookmark/
 UUID-or-conservative-device plus inode/birth identity is verified before opening
 persistence/discovery and again through existing source barriers. Missing/revoked
 pins remain visible with Locate/Unpin; failed resolution never falls back to path.
+Opening a pin resolves and verifies only that pin (again after a new bookmark),
+rewrites its record only if path, name or bookmark changed, and keeps the other
+pins' last availability until the next refresh.
 Current/Browser/Grid anchors require a fresh exact physical revision. Opening user
 interaction supersedes saved position; dormant receipts expire on later navigation.
 Position errors remain retryable and never authorize discarding decision state.
+
+`PinnedFolderPreparation` warms pinned folders' caches while Welcome is idle (no
+session open or opening, transition, recovery, file operation or Quit). Triggers:
+a mount whose volume UUID matches a pin, after a 3 s settle; launch or a return
+to Welcome, available pins in recent-folder order, skipping pins prepared in the
+last 15 minutes (or closed in that time) unless their volume was mounted since. UUID-less pins get only
+the Welcome trigger. One job runs at a time.
+`PinnedFoldersPersistence.accessForPreparation` resolves and verifies the pin
+without refreshing its bookmark or writing the document; the job holds its own
+scope until every worker has exited. It reads no sidecar, backup, navigation
+memory or pin position, and writes only the metadata cache. Any folder or Photos
+open, leaving Welcome, Quit, or an unmount/rename of the job's volume cancels it
+between files; opening waits at most 250 ms and Quit at most 2 s for its exit.
+Kill switch: `defaults write com.alexandermarkin.louppe
+disablePinnedFolderPreparation -bool YES`. XCTest stores never prepare unless a
+test injects a configuration.
+
+Archive folder browsing retains one root session and save authority. Its separate
+`ArchiveNavigation.json` stores at most 32 roots, 128 positions per root and 512
+expanded folders (shallowest first) under a 4 MiB ceiling, plus one previous copy. Root and directory
+volume/inode/birth evidence owns reuse; physical revisions own current/viewport
+anchors. Actor errors retain previous bytes and show a retryable UI warning, never
+change decision safety, and never authorize source mutations. Review bundle domains
+are independent; XCTest defaults use disposable storage.
 
 ## Session state and selection
 
@@ -340,6 +373,17 @@ Position errors remain retryable and never authorize discarding decision state.
   progress coalesces into one latest value, published at most every 100 ms.
   A complete, restored inventory may mount a separate read-only opening state;
   phase stays scanning and authoritative items stay empty until final validation.
+  Pinned opens can mount that state earlier from the existing metadata cache,
+  after checking root identity. This provisional projection may be incomplete or
+  stale, contains no decisions, and shows the shared toolbar activity indicator.
+  It is never used as discovery or persistence input. Final publication transfers
+  user navigation only for exact matching physical revisions; automatic cached
+  positioning never supersedes freshly validated saved positions.
+  Identity passes: discovery capture, a preview barrier only when a preview
+  mounts, a check after each cache miss's admission wait and read, none for
+  cache hits, and one final file/folder/opened-folder barrier after all slow
+  work ([table](PERFORMANCE.md#main-actor-rule)). The metadata cache is written
+  after Ready and never gates it.
   Its physical viewport receipts are consumed after native restoration and expire
   on later Ready navigation, including receipts for a dormant view mode.
 - Reset/recompute `visibleIndices` in the same turn as replacing/emptying
@@ -358,6 +402,11 @@ Position errors remain retryable and never authorize discarding decision state.
   access still checks revisions. No filename-set or per-photo task is created.
 - Update rating counts incrementally. Structural item changes rebuild facets
   and sorted indices: call `rebuildDerivedData()` before `applyFilter()`.
+- Discovery URLs, IDs, facts and identities must stay byte-identical to the
+  FileManager enumerator spelling (CoreFoundation URL construction, physical
+  root path, on-disk name bytes). Saved decisions, caches and sidecar matching
+  key on them; `FolderScannerDiscoveryEquivalenceTests` compares both walks,
+  including on exFAT and HFS+ via `LOUPPE_DISCOVERY_FIXTURE_PARENT`.
 - Pairing projects physical `PhotoFile` records. Grouped scans keep hidden JPEGs
   lightweight; the first split loads missing metadata off-main, and later toggles
   reuse it without rescan. Different decisions form Mixed, treated as undecided
@@ -389,6 +438,17 @@ Position errors remain retryable and never authorize discarding decision state.
 - Surviving explicit selection determines current after filter/restore. If it
   excludes the previous current, choose its first member in prepared visible
   order; empty selection uses the current-item fallback.
+
+Folder navigation intersects prepared folder membership before ordinary filters,
+prunes hidden selection and preserves the complete `items` array. All file-action
+scopes and Clear All Decisions use the current folder, with explicit Current Folder /
+Entire Archive labels. Pair-wide membership includes an item when either physical
+parent matches, counts shared ancestors once, and retains existing pair-wide worker
+semantics. Folder navigation does not restart scanning or reset Pause. Structural
+Organize/Rename/Undo use their existing worker-confirmed rescan, refreshing directory
+identities before Ready. Native viewport callbacks carry a folder generation; retired
+callbacks cannot write another folder's position. Active opening interaction takes
+precedence over remembered scope/position.
 
 ## Media rendering and caches
 
@@ -426,7 +486,9 @@ Position errors remain retryable and never authorize discarding decision state.
   decode if undersized (~160px). Preserve this fallback to prevent pixelation.
 - `PhotoItem.id` survives rescans and cannot identify content. Caches and async
   thumbnail/full/metadata/histogram/100%-tile/video state follow
-  `PhotoItem.contentRevision`. Disk v5 binds pixels to scanned physical identity.
+  `PhotoItem.contentRevision`. Disk v6 binds pixels to scanned physical identity;
+  a volume UUID replaces the device number and mount root, as in the file-operation
+  validators. A v6 miss renames the current identity's exact v5 entry.
   Production items reject v4/v3 bytes; identity-less compatibility still requires
   a cache timestamp at least as recent as the captured source timestamp.
 - Uncached image/RAW/histogram/audio reads check `MediaSourceRevision` before/after
@@ -454,6 +516,37 @@ Position errors remain retryable and never authorize discarding decision state.
   bitmap for this view.
 
 ## Native UI
+
+- With a folder hierarchy, the leading pane header holds a two-segment native
+  Browser/Folders picker (one click) and, for Folders, one Expand All/Collapse
+  All toggle. Browser retains its width; Folders uses a resizable (180–420 pt,
+  default 220, remembered; an AppKit splitter above the row, since SwiftUI
+  gestures cannot sit over the native outline) NSOutlineView with native row reuse, disclosure,
+  accessible names/counts, completion checkmarks and Include Subfolders/Show in
+  Finder context actions. Grid's sidebar opens Folders in one click; choosing
+  Browser from Grid returns to Gallery. The pane choice is remembered per Mac.
+  Root All Media always includes descendants. Expansion restores ancestors before
+  children. Collapsing a selected ancestor selects the nearest visible folder
+  once, even for recursive Option-click collapse. Collapse All is presentation
+  only: it keeps the current folder's path open and never changes scope. Live
+  expansion is unbounded; only persisted memory keeps 512, shallowest first.
+  Bulk changes use one recursive native call; recursive disclosure reports one
+  final set. The outline refuses pointer-initiated first responder (Finder
+  sidebar behavior) so arrows keep navigating media after a click; Tab, Full
+  Keyboard Access and VoiceOver still focus it for native arrows. Entering a
+  folder without a remembered position starts at its first undecided item.
+  Type-select is off so unassigned letters cannot jump scope. Breadcrumbs
+  expose ancestors and direct/subtree scope only inside a subfolder when the
+  folder tree is hidden (including Browser mode). All Media has no breadcrumb
+  row. No extra key monitor or media owner.
+  Folder-empty and metadata-filter-empty states remain distinct. Flat folders
+  retain the original layout. Native borderless value menus retain regular
+  header space; media uses the full height when breadcrumbs are redundant.
+  Persistence warnings remain independently visible.
+  Scoped decision snapshots update by changed physical-file IDs, keeping progress,
+  completion and Clear enablement constant-time between scope/structure changes.
+  Explicit Reset Folder Navigation preserves invalid primary/previous memory
+  leaves in a uniquely named sibling directory before writing fresh UI memory.
 
 - [Accessibility audit](ACCESSIBILITY.md) records Apple guidance, acceptance
   states, implemented semantics/settings support and remaining manual checks.

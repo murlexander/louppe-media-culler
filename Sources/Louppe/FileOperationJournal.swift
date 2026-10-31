@@ -2086,12 +2086,114 @@ enum FileOperationJournal {
         )
     }
 
+    /// Opening-barrier variant: one `lstat`, with the volume taken from a
+    /// per-pass lookup memoized by device number. Produces the same identity
+    /// as `captureIdentity(at:)`; a failed lookup falls back to it.
+    static func captureIdentity(at url: URL, volumes: VolumeLookup) throws -> FileIdentity {
+        var info = Darwin.stat()
+        let status: Int32 = url.withUnsafeFileSystemRepresentation { path in
+            guard let path else { return Int32(-1) }
+            return Darwin.lstat(path, &info)
+        }
+        guard status == 0 else { throw JournalError.missingFileIdentity(url) }
+        guard let volume = volumes.volume(device: info.st_dev, containing: url) else {
+            return try fileIdentity(at: url)
+        }
+        return identity(from: info, volumeRootPath: volume.rootPath, volumeUUIDString: volume.uuid)
+    }
+
+    /// Builds an identity from an `lstat` the caller already made. The volume
+    /// facts must describe that `stat`'s device.
+    static func identity(
+        from info: Darwin.stat,
+        volumeRootPath: String,
+        volumeUUIDString: String?
+    ) -> FileIdentity {
+#if DEBUG
+        IdentityCaptureCounter.shared.increment()
+#endif
+        return FileIdentity(
+            volumeRootPath: volumeRootPath,
+            volumeUUIDString: volumeUUIDString,
+            systemNumber: UInt64(info.st_dev),
+            fileNumber: UInt64(info.st_ino),
+            logicalSize: info.st_size,
+            modificationTime: FileIdentity.Timestamp(
+                seconds: Int64(info.st_mtimespec.tv_sec),
+                nanoseconds: Int64(info.st_mtimespec.tv_nsec)
+            ),
+            statusChangeTime: FileIdentity.Timestamp(
+                seconds: Int64(info.st_ctimespec.tv_sec),
+                nanoseconds: Int64(info.st_ctimespec.tv_nsec)
+            ),
+            birthTime: FileIdentity.Timestamp(
+                seconds: Int64(info.st_birthtimespec.tv_sec),
+                nanoseconds: Int64(info.st_birthtimespec.tv_nsec)
+            )
+        )
+    }
+
+    /// Volume facts for one identity pass, looked up once per device number.
+    /// Create a new lookup for every pass: a device number can be reused by
+    /// another volume after a remount, and only a fresh lookup sees that.
+    final class VolumeLookup: @unchecked Sendable {
+        struct Volume: Equatable, Sendable {
+            /// `volumeURL.standardizedFileURL.path`, as `captureIdentity` stores it.
+            let rootPath: String
+            let uuid: String?
+        }
+
+        /// Returns the volume URL and UUID containing a URL, or nil if unknown.
+        typealias Resolver = @Sendable (URL) -> (root: URL, uuid: String?)?
+
+        private let lock = NSLock()
+        private var volumes: [UInt64: Volume] = [:]
+        private let resolver: Resolver
+
+        init(resolver: Resolver? = nil) {
+            self.resolver = resolver ?? Self.resolveFresh
+        }
+
+        func volume(device: dev_t, containing url: URL) -> Volume? {
+            let key = UInt64(device)
+            lock.lock()
+            defer { lock.unlock() }
+            if let known = volumes[key] { return known }
+            // Resolving under the lock keeps it to one lookup per device.
+            guard let resolved = resolver(url) else { return nil }
+            let volume = Volume(rootPath: resolved.root.standardizedFileURL.path, uuid: resolved.uuid)
+            volumes[key] = volume
+            return volume
+        }
+
+        /// A new URL object, so no resource value cached on `url` is reused.
+        private static func resolveFresh(_ url: URL) -> (root: URL, uuid: String?)? {
+            let fresh: URL? = url.withUnsafeFileSystemRepresentation { path in
+                path.map { NSURL(fileURLWithFileSystemRepresentation: $0, isDirectory: url.hasDirectoryPath,
+                                 relativeTo: nil) as URL }
+            }
+            guard let values = try? fresh?.resourceValues(forKeys: [.volumeURLKey, .volumeUUIDStringKey]),
+                  let root = values.volume else { return nil }
+            return (root, values.volumeUUIDString)
+        }
+    }
+
+#if DEBUG
+    /// Counts identity captures so tests can bound opening's filesystem checks.
+    final class IdentityCaptureCounter: @unchecked Sendable {
+        static let shared = IdentityCaptureCounter()
+        private let lock = NSLock()
+        private var count = 0
+        func increment() { lock.lock(); count += 1; lock.unlock() }
+        var value: Int { lock.lock(); defer { lock.unlock() }; return count }
+    }
+#endif
+
     private static func fileIdentity(
         at url: URL,
         knownVolumeRoot: URL? = nil,
         knownVolumeUUIDString: String? = nil
     ) throws -> FileIdentity {
-        let fm = FileManager()
         var info = Darwin.stat()
         let status: Int32 = url.withUnsafeFileSystemRepresentation { path in
             guard let path else { return Int32(-1) }
@@ -2109,31 +2211,17 @@ enum FileOperationJournal {
                 .volumeUUIDStringKey,
             ])
         }
+        // The mounted-volume scan needs a FileManager only as a last resort.
         guard status == 0,
               let volume = knownVolumeRoot
                 ?? resourceValues?.volume
-                ?? volumeRoot(containing: url, fileManager: fm) else {
+                ?? volumeRoot(containing: url, fileManager: FileManager()) else {
             throw JournalError.missingFileIdentity(url)
         }
-        return FileIdentity(
+        return identity(
+            from: info,
             volumeRootPath: volume.standardizedFileURL.path,
-            volumeUUIDString:
-                knownVolumeUUIDString ?? resourceValues?.volumeUUIDString,
-            systemNumber: UInt64(info.st_dev),
-            fileNumber: UInt64(info.st_ino),
-            logicalSize: info.st_size,
-            modificationTime: FileIdentity.Timestamp(
-                seconds: Int64(info.st_mtimespec.tv_sec),
-                nanoseconds: Int64(info.st_mtimespec.tv_nsec)
-            ),
-            statusChangeTime: FileIdentity.Timestamp(
-                seconds: Int64(info.st_ctimespec.tv_sec),
-                nanoseconds: Int64(info.st_ctimespec.tv_nsec)
-            ),
-            birthTime: FileIdentity.Timestamp(
-                seconds: Int64(info.st_birthtimespec.tv_sec),
-                nanoseconds: Int64(info.st_birthtimespec.tv_nsec)
-            )
+            volumeUUIDString: knownVolumeUUIDString ?? resourceValues?.volumeUUIDString
         )
     }
 

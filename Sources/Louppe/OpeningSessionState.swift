@@ -2,9 +2,11 @@ import Foundation
 import Combine
 
 struct OpeningSessionSnapshot: Sendable {
-    /// Complete globally paired inventory, with identity-validated saved badges.
+    /// A fresh complete inventory, or provisional cached observations. Cached
+    /// snapshots contain no saved badges and can include removed files.
     /// No metadata completion ever mutates this projection or its ordering.
     let items: [PhotoItem]
+    var isCached = false
 }
 
 enum OpeningViewportSurface: Hashable, Sendable { case browser, grid }
@@ -28,6 +30,7 @@ struct OpeningSessionHandoff {
 @MainActor
 final class OpeningSessionState: ObservableObject {
     let items: [PhotoItem]
+    let isCached: Bool
     let sourceAccess: MediaReadAccess?
     private let indexByID: [String: Int]
     private var readyItems: [String: PhotoItem] = [:]
@@ -42,10 +45,14 @@ final class OpeningSessionState: ObservableObject {
     private var viewportReceipts: [OpeningViewportSurface: OpeningViewportReceipt] = [:]
     private var userViewportSurfaces: Set<OpeningViewportSurface> = []
 
-    init(snapshot: OpeningSessionSnapshot, viewMode: ViewMode, sourceAccess: MediaReadAccess?) {
+    init(snapshot: OpeningSessionSnapshot, viewMode: ViewMode, sourceAccess: MediaReadAccess?,
+         initialPhysicalFileID: String? = nil) {
         items = snapshot.items
+        isCached = snapshot.isCached
         indexByID = Dictionary(uniqueKeysWithValues: snapshot.items.enumerated().map { ($0.element.id, $0.offset) })
-        currentIndex = snapshot.items.firstIndex { $0.rating == .undecided } ?? 0
+        currentIndex = initialPhysicalFileID.flatMap { id in
+            snapshot.items.firstIndex { $0.individualFiles.contains { $0.id == id } }
+        } ?? snapshot.items.firstIndex { $0.rating == .undecided } ?? 0
         readyMetadataCount = snapshot.items.count { $0.primaryFile.metadataIsLoaded }
         self.viewMode = viewMode
         self.sourceAccess = sourceAccess
@@ -121,12 +128,26 @@ final class OpeningSessionState: ObservableObject {
         if userInitiated { userViewportSurfaces.insert(receipt.surface) }
     }
 
-    func handoff() -> OpeningSessionHandoff {
-        OpeningSessionHandoff(
-            currentPhysicalFileID: hasCurrentInteraction ? currentItem?.primaryFile.id : nil,
-            selectedPhysicalFileIDs: Set(selectedIDs.compactMap { indexByID[$0] }.flatMap { items[$0].individualFiles.map(\.id) }),
+    func handoff(validatedItems: [PhotoItem]? = nil) -> OpeningSessionHandoff {
+        // Provisional paths never transfer intent onto a replacement file.
+        let validIDs: Set<String>?
+        if let validatedItems {
+            let identities = Dictionary(uniqueKeysWithValues: validatedItems.flatMap(\.individualFiles).map { ($0.id, $0.scannedIdentity) })
+            validIDs = Set(items.flatMap(\.individualFiles).compactMap { file in
+                guard let old = file.scannedIdentity, let fresh = identities[file.id] ?? nil,
+                      ArchiveMetadataIndex.cachedIdentity(old, matches: fresh) else { return nil }
+                return file.id
+            })
+        } else { validIDs = nil }
+        func accepts(_ id: String) -> Bool { validIDs?.contains(id) ?? true }
+        let current = hasCurrentInteraction ? currentItem?.primaryFile.id : nil
+        return OpeningSessionHandoff(
+            currentPhysicalFileID: current.flatMap { accepts($0) ? $0 : nil },
+            selectedPhysicalFileIDs: Set(selectedIDs.compactMap { indexByID[$0] }.flatMap { items[$0].individualFiles.map(\.id) }.filter(accepts)),
             viewMode: viewMode,
-            viewportReceipts: viewportReceipts.filter { hasCurrentInteraction || userViewportSurfaces.contains($0.key) }
+            viewportReceipts: viewportReceipts.filter {
+                accepts($0.value.physicalFileID) && (hasCurrentInteraction || userViewportSurfaces.contains($0.key))
+            }
         )
     }
 }

@@ -26,7 +26,7 @@ struct CommandShortcutBinding: Codable, Equatable, Hashable, Sendable {
     var keyCode: UInt16
     var modifiers: CommandShortcutModifiers
 
-    private static let special: [UInt16: String] = [51: "⌫", 123: "←", 124: "→"]
+    private static let special: [UInt16: String] = [51: "⌫", 123: "←", 124: "→", 125: "↓", 126: "↑"]
     var isValid: Bool {
         if let label = Self.special[keyCode] { return character == label }
         return ReviewShortcutBinding.positionLabels[keyCode] != nil
@@ -56,17 +56,20 @@ struct CommandShortcutBinding: Codable, Equatable, Hashable, Sendable {
         return character == other.character
     }
     fileprivate var isEditableChord: Bool {
-        isValid && modifiers != .shift && character.unicodeScalars.count == 1
-            && character.unicodeScalars.allSatisfy { CharacterSet.letters.contains($0) }
+        isValid && modifiers != .shift && ((123...126).contains(keyCode)
+            || (character.unicodeScalars.count == 1
+                && character.unicodeScalars.allSatisfy { CharacterSet.letters.contains($0) }))
     }
 }
 
 enum CommandShortcutAction: String, CaseIterable, Codable, Sendable {
     case export, commandPalette, rescan, openFolder, settings, undo, selectAll, closeWindow, quit
     case filterSearch, trash, zoomIn, zoomOut, slower, faster, selectFirst, selectLast, seekBackward, seekForward
+    case enclosingFolder // Append only to preserve the established inventory order.
 
     var title: String {
         switch self {
+        case .enclosingFolder: L10n.text("Enclosing Folder")
         case .export: L10n.text("Open Export")
         case .commandPalette: L10n.text("Command palette")
         case .rescan: L10n.text("Rescan folder")
@@ -92,7 +95,7 @@ enum CommandShortcutAction: String, CaseIterable, Codable, Sendable {
         switch self {
         case .zoomIn, .zoomOut: .view
         case .slower, .faster, .seekBackward, .seekForward: .playback
-        case .selectFirst, .selectLast: .navigation
+        case .selectFirst, .selectLast, .enclosingFolder: .navigation
         default: .review
         }
     }
@@ -105,7 +108,7 @@ enum CommandShortcutAction: String, CaseIterable, Codable, Sendable {
         default: nil
         }
     }
-    var isEditable: Bool { [.export, .commandPalette, .rescan].contains(self) }
+    var isEditable: Bool { [.export, .commandPalette, .rescan, .enclosingFolder].contains(self) }
     var contexts: Set<ReviewShortcutContext> {
         switch self {
         case .zoomIn, .zoomOut: ReviewShortcutScope.grid.contexts
@@ -135,6 +138,13 @@ struct CommandShortcutPreferences: Codable, Equatable, Sendable {
             throw DecodingError.dataCorruptedError(forKey: .schemaVersion, in: container, debugDescription: "Unknown command shortcut schema")
         }
         customBindings = try container.decode([String: [CommandShortcutBinding]].self, forKey: .customBindings)
+        if customBindings[CommandShortcutAction.enclosingFolder.rawValue] == nil {
+            let defaults = Self.defaultBindings(for: .enclosingFolder)
+            let retained = defaults.filter { candidate in
+                !customBindings.values.joined().contains { candidate.hasSameChord(as: $0) }
+            }
+            if retained != defaults { customBindings[CommandShortcutAction.enclosingFolder.rawValue] = retained }
+        }
         guard hasValidBindings else {
             throw DecodingError.dataCorruptedError(forKey: .customBindings, in: container, debugDescription: "Unsafe command shortcuts")
         }
@@ -154,6 +164,7 @@ struct CommandShortcutPreferences: Codable, Equatable, Sendable {
         let key: String
         let modifiers: CommandShortcutModifiers
         switch action {
+        case .enclosingFolder: key = "↑"; modifiers = .command
         case .export: key = "e"; modifiers = .command
         case .commandPalette: key = "k"; modifiers = .command
         case .rescan: key = "r"; modifiers = .command
@@ -174,7 +185,7 @@ struct CommandShortcutPreferences: Codable, Equatable, Sendable {
         case .seekBackward: key = "←"; modifiers = .shift
         case .seekForward: key = "→"; modifiers = .shift
         }
-        let special: [String: UInt16] = ["⌫": 51, "←": 123, "→": 124]
+        let special: [String: UInt16] = ["⌫": 51, "←": 123, "→": 124, "↓": 125, "↑": 126]
         let code = special[key] ?? ReviewShortcutBinding.positionLabels.first { $0.value == key }!.key
         let primary = CommandShortcutBinding(character: key, keyCode: code, modifiers: modifiers)
         if action == .zoomIn {

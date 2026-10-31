@@ -1,6 +1,13 @@
 # Version History
 
-## 1.13.0 (15) — 2026-10-29
+## 1.13.0 (15) — 2026-10-30
+
+- Show cached pinned-folder photos before the drive scan finishes, using the existing toolbar loading indicator. Keep browsing read-only until fresh validation, preserve navigation only for unchanged files, and reuse the existing cache without copying originals.
+
+- Browse an archive's real folder tree in Gallery or Grid without opening another session. Share the leading pane with Browser, include empty folders and subfolder counts, and remember identity-checked folder positions. Progress, file-action scopes and Clear All Decisions follow the chosen folder; RAW+JPEG pairs stay together. Hide redundant breadcrumbs when the folder tree is visible or All Media is selected. Flat folders retain the original layout, and damaged browsing memory can be reset while preserving its old files.
+
+- Switch the leading pane between Browser and Folders in one click, expand or collapse every folder with one button, and widen the Folders pane by dragging its edge. Checkmarks show folders whose items all have a decision; empty folders are dimmed; Show in Finder opens a folder. Clicking a folder keeps arrow keys on the photos, and Louppe remembers Browser or Folders.
+- Add Folders (T), previous/next folder ([ / ]) and enclosing-folder (⌘↑) shortcuts, with View menu and Command Palette navigation, including Next Unfinished Folder and jumping to a folder by name. Keep saved shortcut customizations when new defaults conflict.
 
 - Improve accessibility of Browser/Grid collections, photo descriptions, histogram evidence and playback time. Add readable dark-mode and Increase Contrast colors, color-label names with Differentiate Without Color, and text-preview sizes up to 200%. Respect Tab navigation and expose subtitle, caption-style and alternative-audio choices in Info.
 
@@ -31,6 +38,11 @@
 - Pin folders directly from Welcome without opening them, and remember their current photo and browsing position. Keep disconnected folders visible, and verify the original source when reconnecting.
 - Reuse validated metadata and previews when reopening archives. Show individual photo details as they become ready while complete validation still protects decisions and file actions.
 - Yield optional background work during interaction and avoid repeated native layout work while browsing.
+- Find files in large folders much faster, especially on exFAT drives: on a cold 16,800-file archive, this step dropped from about 15 s to under 3 s. Skip Capture One and Lightroom cache folders, which hold previews and settings rather than originals.
+- Keep pinned archives' saved photo details when other folders or test runs fill the cache. The details cache is about 13× smaller, loads about 17× faster, covers archives of up to 250,000 files, and converts existing caches without rereading photos.
+- Keep cached photo details and thumbnails when macOS assigns a reconnected drive a new device number; existing thumbnails move to the new cache name without being rebuilt.
+- Check each file once before showing it and once before Ready instead of about five times, pair RAW+JPEG files about twice as fast, and update the details cache after review is ready. A warm 17,000-file exFAT archive opens in about 1 s instead of 2 s. Opening a pinned folder no longer rechecks every other pin.
+- Open pinned folders faster after connecting their drive: while Welcome is open, Louppe quietly reads the folder and new photos' details in the background, never writing to the drive. Recheck every file after loading remembered positions, immediately before review becomes ready.
 
 ## 1.12.0 (14) — 2026-10-21
 

@@ -17,6 +17,7 @@ struct BrowserView: View {
     var onViewportRestored: ((ReviewCollectionViewportReceipt) -> Void)? = nil
 
     var body: some View {
+        let archiveGeneration = store.archiveViewportGeneration
         GeometryReader { geometry in
             BrowserCollectionContent(
                 store: store,
@@ -36,10 +37,14 @@ struct BrowserView: View {
             .onAppear {
                 collectionController.onViewportChange = { receipt in
                             store.recordPinnedViewport(physicalFileID: receipt.physicalFileID,
-                                                       topOffset: Double(receipt.topOffset), surface: .browser)
+                                                       topOffset: Double(receipt.topOffset), surface: .browser,
+                                                       archiveGeneration: archiveGeneration)
                             onViewportChange?(receipt)
                         }
-                collectionController.onViewportRestored = onViewportRestored
+                collectionController.onViewportRestored = { receipt in
+                    guard archiveGeneration == store.archiveViewportGeneration else { return }
+                    onViewportRestored?(receipt)
+                }
                 if let initialViewportReceipt {
                     collectionController.restoreViewport(initialViewportReceipt)
                 } else if let id = store.currentItem?.id {

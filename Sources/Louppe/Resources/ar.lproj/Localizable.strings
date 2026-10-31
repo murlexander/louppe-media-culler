@@ -2085,3 +2085,47 @@
 "When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "عند تفعيل التنقل بلوحة المفاتيح، ينقل Tab التركيز بين عناصر التحكم. استخدم G للتبديل بين طرق العرض.";
 
 "Subtitle tracks" = "مسارات الترجمة";
+
+/* Archive folder navigation */
+"Folders" = "المجلدات";
+"Entire Archive" = "الأرشيف بالكامل";
+"Current Folder" = "المجلد الحالي";
+"Include Subfolders" = "تضمين المجلدات الفرعية";
+"Hide Folders" = "إخفاء المجلدات";
+"Show Folders" = "إظهار المجلدات";
+"Expand All" = "توسيع الكل";
+"Collapse All" = "طي الكل";
+"All reviewed" = "تمت مراجعة الكل";
+"Next Unfinished Folder" = "المجلد التالي غير المكتمل";
+"Folders width" = "عرض المجلدات";
+"Folder: {0}, including subfolders" = "المجلد: {0}، بما في ذلك المجلدات الفرعية";
+"Folder: {0}, direct items only" = "المجلد: {0}، العناصر المباشرة فقط";
+"No media in this folder" = "لا توجد وسائط في هذا المجلد";
+"Choose another folder or include subfolders." = "اختر مجلدًا آخر أو ضمّن المجلدات الفرعية.";
+"RAW + JPEG pairs stay together, even across folders." = "تبقى أزواج RAW + JPEG معًا، حتى عند وجودها في مجلدات مختلفة.";
+"Folder navigation could not be restored. Previous positions are retained." = "تعذرت استعادة التنقل بين المجلدات. تم الاحتفاظ بالمواضع السابقة.";
+"Folder navigation could not be saved. Previous positions are retained." = "تعذر حفظ التنقل بين المجلدات. تم الاحتفاظ بالمواضع السابقة.";
+
+"Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "بدّل الشريط الجانبي بين المتصفح والمجلدات بالأزرار في أعلاه؛ وفي الشبكة استخدم زر الشريط الجانبي. تصفّح دون إعادة فتح الأرشيف؛ يتم تذكّر المواضع.";
+"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "تتبع إجراءات الملفات ومسح كل القرارات المجلد المختار. اختر كل الوسائط للإجراءات على الأرشيف بالكامل. تبقى أزواج RAW + JPEG معًا.";
+"Reset Folder Navigation" = "إعادة تعيين التنقل بين المجلدات";
+"Clear Yes/No decisions in this folder ({0})" = "مسح قرارات نعم/لا في هذا المجلد ({0})";
+
+/* Folder keyboard, menu and palette commands. */
+"Show / Hide Folders" = "إظهار / إخفاء المجلدات";
+"Previous Folder" = "المجلد السابق";
+"Next Folder" = "المجلد التالي";
+"Enclosing Folder" = "المجلد الأصل";
+"Sidebar" = "الشريط الجانبي";
+"Hide Sidebar" = "إخفاء الشريط الجانبي";
+"Show Sidebar" = "إظهار الشريط الجانبي";
+"Expand All Folders" = "توسيع جميع المجلدات";
+"Collapse All Folders" = "طي جميع المجلدات";
+"Show Current Item’s Folder" = "إظهار مجلد العنصر الحالي";
+"Go to All Media" = "الانتقال إلى كل الوسائط";
+"Go to Folder “{0}”" = "الانتقال إلى المجلد «{0}»";
+"Show or hide Folders ({0})" = "إظهار المجلدات أو إخفاؤها ({0})";
+"Press Command and a letter or arrow. Add Shift if needed." = "اضغط على Command وحرف أو سهم. أضف Shift عند الحاجة.";
+"Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media." = "استخدم قائمة عرض أو لوحة الأوامر لتبديل محتوى الشريط الجانبي أو توسيع المجلدات أو الانتقال إلى مجلد. يتجاوز التنقل المجلدات التي لا تحتوي على وسائط مباشرة.";
+
+"Checking folder…" = "جارٍ التحقق من المجلد…";

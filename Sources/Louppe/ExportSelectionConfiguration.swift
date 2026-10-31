@@ -48,11 +48,11 @@ struct ExportSelectionConfiguration: Equatable {
         }
     }
 
-    func candidateIndices(
-        all: Range<Int>,
+    func candidateIndices<All: Sequence>(
+        all: All,
         filtered: [Int],
         selected: Set<Int>
-    ) -> [Int] {
+    ) -> [Int] where All.Element == Int {
         scope.candidateIndices(
             all: all,
             filtered: filtered,
@@ -63,16 +63,16 @@ struct ExportSelectionConfiguration: Equatable {
     func snapshot(
         items: [PhotoItem],
         filtered: [Int],
-        selected: Set<Int>
+        selected: Set<Int>,
+        all: [Int]? = nil
     ) -> ExportSelectionSnapshot {
-        ExportSelectionSnapshot(
-            items: items,
-            candidateIndices: candidateIndices(
-                all: items.indices,
-                filtered: filtered,
-                selected: selected
-            ),
-            predicate: predicate
-        )
+        let candidates: [Int]
+        switch scope {
+        case .all: candidates = all ?? Array(items.indices)
+        case .filtered: candidates = filtered
+        case .selected: candidates = selected.sorted()
+        }
+        return ExportSelectionSnapshot(
+            items: items, candidateIndices: candidates, predicate: predicate)
     }
 }

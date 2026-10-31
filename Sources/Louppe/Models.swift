@@ -624,7 +624,31 @@ struct PhotoContentRevision: Hashable, Sendable {
                 .max()
         }
 
+        /// v6 disk/memory identity. macOS can assign a remounted volume a new
+        /// device number or mount point; a stable volume UUID supersedes both,
+        /// as in the file-operation and persistence validators. UUID-less
+        /// volumes keep requiring the mount root and device number. Inode,
+        /// birth, size, mtime and ctime still reject same-path replacements.
         fileprivate var cacheIdentity: String {
+            let volume: String
+            if let volumeUUIDString {
+                volume = "volume=uuid:\(PhotoContentRevision.encode(volumeUUIDString))"
+            } else {
+                volume = "volume=device:\(systemNumber):\(PhotoContentRevision.encode(volumeRootPath))"
+            }
+            return [
+                volume,
+                "file=\(fileNumber)",
+                "size=\(logicalSize.map(String.init) ?? "-")",
+                "mtime=\(modificationTime?.cacheIdentity ?? "-")",
+                "ctime=\(statusChangeTime?.cacheIdentity ?? "-")",
+                "birth=\(birthTime?.cacheIdentity ?? "-")",
+            ].joined(separator: "|")
+        }
+
+        /// Exact v5 identity, including the mount root and device number.
+        /// Read only to promote an existing v5 thumbnail; never write it.
+        fileprivate var v5CacheIdentity: String {
             [
                 "root=\(PhotoContentRevision.encode(volumeRootPath))",
                 "uuid=\(PhotoContentRevision.encode(volumeUUIDString))",
@@ -672,12 +696,22 @@ struct PhotoContentRevision: Hashable, Sendable {
 
     /// Stable, unambiguous text form used inside the hashed disk-cache key.
     var cacheIdentity: String {
+        cacheIdentity(fileIdentity: stableFileIdentity?.cacheIdentity)
+    }
+
+    /// The exact identity text inside v5 disk keys. It is at least as specific
+    /// as `cacheIdentity`, so a v5 file may be promoted to the current key.
+    var v5CacheIdentity: String {
+        cacheIdentity(fileIdentity: stableFileIdentity?.v5CacheIdentity)
+    }
+
+    private func cacheIdentity(fileIdentity: String?) -> String {
         [
             "path=\(Self.encode(pathIdentity))",
             "mtime=\(modificationTimeBits.map(String.init) ?? "-")",
             "size=\(fileSize)",
             "kind=\(mediaKind.rawValue)",
-            "identity=\(stableFileIdentity?.cacheIdentity ?? "-")",
+            "identity=\(fileIdentity ?? "-")",
         ].joined(separator: "|")
     }
 
@@ -1094,11 +1128,11 @@ enum CleanUpScope: Hashable, Sendable {
     case filtered
     case selected
 
-    func candidateIndices(
-        all: Range<Int>,
+    func candidateIndices<All: Sequence>(
+        all: All,
         filtered: [Int],
         selected: Set<Int>
-    ) -> [Int] {
+    ) -> [Int] where All.Element == Int {
         switch self {
         case .all:
             return Array(all)

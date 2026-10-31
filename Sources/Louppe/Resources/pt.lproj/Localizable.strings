@@ -2085,3 +2085,47 @@
 "When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views." = "Com a Navegação por Teclado ativada, Tab move o foco entre os controles. Use G para alternar as visualizações.";
 
 "Subtitle tracks" = "Faixas de legendas";
+
+/* Archive folder navigation */
+"Folders" = "Pastas";
+"Entire Archive" = "Arquivo inteiro";
+"Current Folder" = "Pasta atual";
+"Include Subfolders" = "Incluir subpastas";
+"Hide Folders" = "Ocultar pastas";
+"Show Folders" = "Mostrar pastas";
+"Expand All" = "Expandir tudo";
+"Collapse All" = "Recolher tudo";
+"All reviewed" = "Tudo revisado";
+"Next Unfinished Folder" = "Pasta seguinte não concluída";
+"Folders width" = "Largura das pastas";
+"Folder: {0}, including subfolders" = "Pasta: {0}, incluindo subpastas";
+"Folder: {0}, direct items only" = "Pasta: {0}, apenas itens diretos";
+"No media in this folder" = "Não há mídia nesta pasta";
+"Choose another folder or include subfolders." = "Escolha outra pasta ou inclua as subpastas.";
+"RAW + JPEG pairs stay together, even across folders." = "Os pares RAW + JPEG permanecem juntos, mesmo em pastas diferentes.";
+"Folder navigation could not be restored. Previous positions are retained." = "Não foi possível restaurar a navegação por pastas. As posições anteriores foram mantidas.";
+"Folder navigation could not be saved. Previous positions are retained." = "Não foi possível salvar a navegação por pastas. As posições anteriores foram mantidas.";
+
+"Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "Alterne a barra lateral entre Navegador e Pastas com os botões no topo; na Grade, use o botão lateral. Navegue sem reabrir o arquivo; as posições são lembradas.";
+"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "As ações de arquivo e Limpar todas as decisões seguem a pasta escolhida. Escolha Todas as mídias para ações no arquivo inteiro. Os pares RAW + JPEG permanecem juntos.";
+"Reset Folder Navigation" = "Redefinir navegação por pastas";
+"Clear Yes/No decisions in this folder ({0})" = "Limpar decisões Sim/Não nesta pasta ({0})";
+
+/* Folder keyboard, menu and palette commands. */
+"Show / Hide Folders" = "Mostrar / Ocultar pastas";
+"Previous Folder" = "Pasta anterior";
+"Next Folder" = "Pasta seguinte";
+"Enclosing Folder" = "Pasta superior";
+"Sidebar" = "Barra lateral";
+"Hide Sidebar" = "Ocultar barra lateral";
+"Show Sidebar" = "Mostrar barra lateral";
+"Expand All Folders" = "Expandir todas as pastas";
+"Collapse All Folders" = "Recolher todas as pastas";
+"Show Current Item’s Folder" = "Mostrar pasta do item atual";
+"Go to All Media" = "Ir para todos os conteúdos";
+"Go to Folder “{0}”" = "Ir para a pasta «{0}»";
+"Show or hide Folders ({0})" = "Mostrar ou ocultar pastas ({0})";
+"Press Command and a letter or arrow. Add Shift if needed." = "Prima Command e uma letra ou seta. Adicione Shift se necessário.";
+"Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media." = "Use Visualização ou a paleta de comandos para mudar o conteúdo da barra lateral, expandir pastas ou ir para uma pasta. A navegação ignora pastas sem conteúdos diretos.";
+
+"Checking folder…" = "Verificando pasta…";

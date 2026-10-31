@@ -23,6 +23,12 @@ struct PinnedFolderIdentity: Codable, Equatable, Sendable {
         self == Self(source: source)
     }
 
+    /// Same equality as `==`; lets metadata-cache maintenance spare pinned folders.
+    var archiveMetadataProtectionKey: String {
+        ArchiveMetadataIndex.protectionKey(volumeRootPath: volumeRootPath, volumeUUIDString: volumeUUIDString,
+            systemNumber: systemNumber, fileNumber: fileNumber, birthTime: birthTime)
+    }
+
     static func == (lhs: Self, rhs: Self) -> Bool {
         let sameVolume = lhs.volumeUUIDString.map { rhs.volumeUUIDString == $0 }
             ?? (rhs.volumeUUIDString == nil && lhs.systemNumber == rhs.systemNumber
@@ -139,6 +145,33 @@ struct PinnedFolderOpenRequest: Sendable {
     let expectedIdentity: PinnedFolderIdentity
 }
 
+/// Read authority for background preparation. Unlike `PinnedFolderOpenRequest`
+/// it comes with no bookmark refresh or document write.
+struct PinnedFolderPreparationAccess: Sendable {
+    let pinID: UUID
+    let authorityURL: URL
+    let expectedIdentity: PinnedFolderIdentity
+}
+
+/// A mount, unmount or volume rename reported by `NSWorkspace`.
+enum PinnedFolderVolumeEvent: Sendable, Equatable {
+    case mounted(volumeURL: URL?)
+    case unmounted(volumeURL: URL?)
+    case renamed(oldVolumeURL: URL?, volumeURL: URL?)
+
+    init?(_ notification: Notification) {
+        let url = notification.userInfo?[NSWorkspace.volumeURLUserInfoKey] as? URL
+        switch notification.name {
+        case NSWorkspace.didMountNotification: self = .mounted(volumeURL: url)
+        case NSWorkspace.didUnmountNotification: self = .unmounted(volumeURL: url)
+        case NSWorkspace.didRenameVolumeNotification:
+            self = .renamed(oldVolumeURL: notification.userInfo?[NSWorkspace.oldVolumeURLUserInfoKey] as? URL,
+                            volumeURL: url)
+        default: return nil
+        }
+    }
+}
+
 enum PinnedFolderError: LocalizedError {
     case changedIdentity, bookmarkUnavailable, capacity, invalidStorage, invalidPosition
 
@@ -192,19 +225,25 @@ actor PinnedFoldersPersistence {
     private let fileURL: URL
     private let operations: SecurityScopedFolderBookmarks.Operations
     private let write: @Sendable (Data, URL) throws -> Void
+    /// Metadata-cache directory that receives the pinned set, if any.
+    private let archiveMetadataProtection: URL?
     private var records: [Record] = []
     private var loaded = false
     private var revision: UInt64 = 0
+    /// Folders from the last complete `snapshot()`, reused by `prepareOpen`.
+    private var lastFolders: [PinnedFolder] = []
 
     init(
         storageDirectory: URL,
         operations: SecurityScopedFolderBookmarks.Operations = .live,
+        archiveMetadataProtection: URL? = nil,
         write: @escaping @Sendable (Data, URL) throws -> Void = {
             try DurableFileIO.atomicWrite($0, to: $1, fullSync: true)
         }
     ) {
         fileURL = storageDirectory.appendingPathComponent("PinnedFolders.json")
         self.operations = operations
+        self.archiveMetadataProtection = archiveMetadataProtection
         self.write = write
     }
 
@@ -306,6 +345,12 @@ actor PinnedFoldersPersistence {
 
     private func snapshot(message: String? = nil) -> Snapshot {
         revision &+= 1
+        // Only a readable primary is authoritative; otherwise keep the last list.
+        if loaded, let archiveMetadataProtection {
+            ArchiveMetadataIndex.publishProtectedFolders(
+                Set(records.filter(\.isPinned).map(\.identity.archiveMetadataProtectionKey)),
+                in: archiveMetadataProtection)
+        }
         let folders = records.filter(\.isPinned).map { record -> PinnedFolder in
             let availability: PinnedFolderAvailability
             if let (url, _) = try? resolve(record) {
@@ -317,7 +362,24 @@ actor PinnedFoldersPersistence {
             return PinnedFolder(id: record.id, name: record.name, path: record.path,
                                 identity: record.identity, availability: availability)
         }
+        lastFolders = folders
         return .init(revision: revision, folders: folders, message: message)
+    }
+
+    /// The last complete snapshot with one pin just verified as available.
+    /// Other pins keep their last availability until the next refresh; no
+    /// bookmark is resolved. Falls back to `snapshot()` if the pinned set
+    /// differs from the last one.
+    private func snapshot(verifiedOpen id: UUID) -> Snapshot {
+        let pinned = records.filter(\.isPinned)
+        guard pinned.map(\.id) == lastFolders.map(\.id) else { return snapshot() }
+        revision &+= 1
+        let folders = zip(pinned, lastFolders).map { record, previous in
+            PinnedFolder(id: record.id, name: record.name, path: record.path, identity: record.identity,
+                         availability: record.id == id ? .available : previous.availability)
+        }
+        lastFolders = folders
+        return .init(revision: revision, folders: folders, message: nil)
     }
 
     func refresh() -> Snapshot {
@@ -411,13 +473,50 @@ actor PinnedFoldersPersistence {
                     throw PinnedFolderError.bookmarkUnavailable
                 }
                 proposed[index].bookmark = bookmark
+                // Creating the bookmark took time: verify the folder again.
+                try verified(url, identity: record.identity)
             }
-            try verified(url, identity: record.identity)
             proposed[index].path = url.path
             proposed[index].name = url.lastPathComponent.isEmpty ? url.path : url.lastPathComponent
         }
+        // `commit` writes only when the path, name or bookmark changed. The
+        // opening worker verifies the identity again before reading.
         try commit(proposed)
-        return (.init(pinID: id, authorityURL: url, expectedIdentity: record.identity), snapshot())
+        return (.init(pinID: id, authorityURL: url, expectedIdentity: record.identity), snapshot(verifiedOpen: id))
+    }
+
+    /// A pin's stored bookmark and identity, copied under the actor so that
+    /// background resolution never occupies it.
+    struct PreparationCandidate: Sendable {
+        let id: UUID
+        let bookmark: Data
+        let identity: PinnedFolderIdentity
+        let operations: SecurityScopedFolderBookmarks.Operations
+    }
+
+    private func preparationCandidate(id: UUID) throws -> PreparationCandidate {
+        try load()
+        guard let record = records.first(where: { $0.id == id && $0.isPinned }),
+              let bookmark = record.bookmark else {
+            throw PinnedFolderError.bookmarkUnavailable
+        }
+        return .init(id: id, bookmark: bookmark, identity: record.identity, operations: operations)
+    }
+
+    /// Resolves and verifies one pin without refreshing its bookmark or
+    /// writing the document. The caller starts its own scope from the URL.
+    /// Resolution and identity I/O run outside the actor: a stalled volume
+    /// must never delay a user's `prepareOpen` or position read.
+    @concurrent
+    nonisolated func accessForPreparation(id: UUID) async throws -> PinnedFolderPreparationAccess {
+        let candidate = try await preparationCandidate(id: id)
+        let url = try candidate.operations.resolve(candidate.bookmark).url
+        let started = candidate.operations.access.start(url)
+        defer { if started { candidate.operations.access.stop(url) } }
+        guard candidate.identity.matches(try SessionPersistence.SourceFolderIdentity.capture(at: url)) else {
+            throw PinnedFolderError.changedIdentity
+        }
+        return .init(pinID: id, authorityURL: url, expectedIdentity: candidate.identity)
     }
 
     func savePosition(_ position: PinnedFolderPosition, for identity: PinnedFolderIdentity) throws -> Snapshot {
@@ -463,6 +562,8 @@ final class PinnedFoldersStore: ObservableObject {
     private var activeRequests = 0
     private var observations: [AnyCancellable] = []
     private var refreshTask: Task<Void, Never>?
+    /// Mount, unmount and rename events, after the pin list refresh is scheduled.
+    let volumeEvents = PassthroughSubject<PinnedFolderVolumeEvent, Never>()
 
     static var defaultStorageDirectory: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -472,13 +573,21 @@ final class PinnedFoldersStore: ObservableObject {
     init(storageDirectory: URL? = nil,
          persistence: PinnedFoldersPersistence? = nil,
          observesSystemChanges: Bool = true) {
-        self.persistence = persistence ?? PinnedFoldersPersistence(storageDirectory: storageDirectory ?? Self.defaultStorageDirectory)
+        let directory = storageDirectory ?? Self.defaultStorageDirectory
+        // Only the app's own pin document protects the shared metadata cache.
+        let protects = directory.standardizedFileURL.path == Self.defaultStorageDirectory.standardizedFileURL.path
+        self.persistence = persistence ?? PinnedFoldersPersistence(storageDirectory: directory,
+            archiveMetadataProtection: protects ? ArchiveMetadataIndex.defaultDirectory : nil)
         if observesSystemChanges {
             let workspace = NSWorkspace.shared.notificationCenter
             for name in [NSWorkspace.didMountNotification, NSWorkspace.didUnmountNotification,
                          NSWorkspace.didRenameVolumeNotification] {
-                observations.append(workspace.publisher(for: name).sink { [weak self] _ in
-                    Task { @MainActor [weak self] in self?.scheduleRefresh() }
+                observations.append(workspace.publisher(for: name).sink { [weak self] notification in
+                    let event = PinnedFolderVolumeEvent(notification)
+                    Task { @MainActor [weak self] in
+                        self?.scheduleRefresh()
+                        if let event { self?.volumeEvents.send(event) }
+                    }
                 })
             }
             observations.append(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
@@ -496,6 +605,14 @@ final class PinnedFoldersStore: ObservableObject {
     }
 
     func refresh() async { apply(await persistence.refresh()) }
+
+    /// Test seam for the workspace observers above.
+    func noteVolumeEventForTesting(_ event: PinnedFolderVolumeEvent) { volumeEvents.send(event) }
+
+    /// Silent: no status message, no working state and no published snapshot.
+    func preparationAccess(id: UUID) async -> PinnedFolderPreparationAccess? {
+        try? await persistence.accessForPreparation(id: id)
+    }
 
     @discardableResult
     func pinSelectedFolder(url: URL) async -> UUID? {

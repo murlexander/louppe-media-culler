@@ -22,7 +22,8 @@ struct GridView: View {
     }
 
     private var grid: some View {
-        GeometryReader { geometry in
+        let archiveGeneration = store.archiveViewportGeneration
+        return GeometryReader { geometry in
             Group {
                 if store.items.isEmpty {
                     SessionEmptyView(
@@ -38,6 +39,10 @@ struct GridView: View {
                         description: Text(store.groupedReviewEmptyDescription)
                     )
                     .padding(.top, 80)
+                } else if store.visibleIndices.isEmpty && !store.archiveSelectedFolderID.isEmpty
+                            && (!store.filter.isActive || store.archiveScopeCount == 0) {
+                    // An empty folder stays empty without filters; don't suggest clearing them.
+                    ArchiveFolderEmptyView(store: store)
                 } else if store.visibleIndices.isEmpty
                             && store.filter.isActive {
                     ContentUnavailableView {
@@ -65,10 +70,14 @@ struct GridView: View {
                     .onAppear {
                         collectionController.onViewportChange = { receipt in
                             store.recordPinnedViewport(physicalFileID: receipt.physicalFileID,
-                                                       topOffset: Double(receipt.topOffset), surface: .grid)
+                                                       topOffset: Double(receipt.topOffset), surface: .grid,
+                                                       archiveGeneration: archiveGeneration)
                             onViewportChange?(receipt)
                         }
-                        collectionController.onViewportRestored = onViewportRestored
+                        collectionController.onViewportRestored = { receipt in
+                    guard archiveGeneration == store.archiveViewportGeneration else { return }
+                    onViewportRestored?(receipt)
+                }
                         updateColumnCount(for: geometry.size.width)
                         if let initialViewportReceipt {
                             collectionController.restoreViewport(initialViewportReceipt)

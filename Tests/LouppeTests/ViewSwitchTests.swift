@@ -247,22 +247,21 @@ final class ViewSwitchTests: XCTestCase {
     }
 #endif
 
+    /// Test hosts use a disposable per-process thumbnail root. Remove the
+    /// current key and its v5 promotion source so the next load is cold.
     private func removeDiskCacheEntries(for items: [PhotoItem]) {
-        guard let caches = FileManager.default.urls(
-            for: .cachesDirectory,
-            in: .userDomainMask
-        ).first else { return }
-        let root = caches.appendingPathComponent(
-            "Louppe/Thumbnails",
-            isDirectory: true
-        )
+        let root = ImagePipeline.shared.diskCacheRootForTesting
         for item in items {
-            let url = root.appendingPathComponent(
-                ImagePipeline.diskFileName(
-                    for: ImagePipeline.cacheKey(for: item)
+            for key in [
+                ImagePipeline.cacheKey(for: item),
+                ImagePipeline.v5ThumbnailCacheKey(for: item),
+            ] {
+                try? FileManager.default.removeItem(
+                    at: root.appendingPathComponent(
+                        ImagePipeline.diskFileName(for: key)
+                    )
                 )
-            )
-            try? FileManager.default.removeItem(at: url)
+            }
         }
     }
 

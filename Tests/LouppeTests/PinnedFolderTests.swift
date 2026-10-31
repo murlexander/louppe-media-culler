@@ -173,6 +173,49 @@ final class PinnedFolderPersistenceTests: XCTestCase {
                        recorder.events.filter { $0.hasPrefix("stop:") }.count)
     }
 
+    /// Opening a pin resolves and verifies only that pin, writes nothing when
+    /// its record is unchanged, and keeps the other pins' last availability.
+    func testOpeningAPinChecksOnlyThatPinAndWritesNothingWhenUnchanged() async throws {
+        let fixture = try PinnedFolderFixture()
+        defer { fixture.remove() }
+        let resolves = PinnedCallCounter()
+        let writes = PinnedCallCounter()
+        let base = fixture.operations()
+        let counting = SecurityScopedFolderBookmarks.Operations(
+            resolve: { resolves.increment(); return try base.resolve($0) },
+            create: base.create, exists: base.exists, access: base.access)
+        let worker = PinnedFoldersPersistence(storageDirectory: fixture.storage, operations: counting,
+            write: { data, url in writes.increment(); try DurableFileIO.atomicWrite(data, to: url, fullSync: true) })
+        let missing = fixture.root.appendingPathComponent("Missing")
+        let other = fixture.root.appendingPathComponent("Other")
+        for folder in [missing, other] {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+            _ = try await worker.pinSelectedFolder(url: folder)
+        }
+        let (id, _) = try await worker.pinSelectedFolder(url: fixture.folder)
+        try FileManager.default.removeItem(at: missing)
+        let refreshed = await worker.refresh()
+        XCTAssertEqual(refreshed.folders.map(\.availability), [.available, .available, .unavailable])
+        let resolvesBefore = resolves.value
+        let writesBefore = writes.value
+
+        let (request, snapshot) = try await worker.prepareOpen(id: id)
+        XCTAssertEqual(resolves.value - resolvesBefore, 1, "only the opened pin's bookmark")
+        XCTAssertEqual(writes.value, writesBefore, "an unchanged record needs no durable write")
+        XCTAssertEqual(request.pinID, id)
+        XCTAssertEqual(request.expectedIdentity, fixture.identity)
+        XCTAssertEqual(snapshot.folders.map(\.id), refreshed.folders.map(\.id))
+        XCTAssertEqual(snapshot.folders.map(\.availability), [.available, .available, .unavailable])
+        XCTAssertGreaterThan(snapshot.revision, refreshed.revision)
+
+        // A replaced folder at the pinned path is still refused.
+        try FileManager.default.moveItem(at: fixture.folder, to: fixture.root.appendingPathComponent("Moved"))
+        try FileManager.default.createDirectory(at: fixture.folder, withIntermediateDirectories: false)
+        do { _ = try await worker.prepareOpen(id: id); XCTFail("a same-path replacement must not open") }
+        catch { XCTAssertEqual(error as? PinnedFolderError, .changedIdentity) }
+        XCTAssertEqual(writes.value, writesBefore)
+    }
+
     func testPinAndIndependentPositionsSurviveRelaunchAndUnpinKeepsPosition() async throws {
         let fixture = try PinnedFolderFixture()
         defer { fixture.remove() }
@@ -573,6 +616,13 @@ private struct PinnedFolderFixture {
         return .init(current: current, browser: .init(anchor: current, topOffset: -17.5),
                      grid: .init(anchor: try anchor(second), topOffset: 23))
     }
+}
+
+private final class PinnedCallCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+    func increment() { lock.withLock { count += 1 } }
+    var value: Int { lock.withLock { count } }
 }
 
 private final class PinnedFolderWriteFault: @unchecked Sendable {
