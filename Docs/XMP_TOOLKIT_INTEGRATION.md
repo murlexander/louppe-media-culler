@@ -7,10 +7,10 @@ Parser pins, shipping bridge, and production regression checks.
 | Component | Repository | Pinned revision | License |
 |---|---|---|---|
 | Adobe XMP Toolkit SDK / XMPCore | `https://github.com/adobe/XMP-Toolkit-SDK` | `7093513bd3caaad29da01db0f275d88a39d6bcc2` | BSD 3-Clause |
-| Expat 2.8.5 | `https://github.com/libexpat/libexpat` | `4b3f0b06f39fb5529cead381694f8929901bc273` | MIT |
+| Expat 2.9.0 | `https://github.com/libexpat/libexpat` | `a76b1174c1ea52abb639a4c69d52b630a8a106a2` | MIT |
 
 Adobe’s reviewed `main` pin (2026-08-05) was last committed 2025-11-03.
-It declares Expat 2.5.0; Louppe uses patched `R_2_8_5`. Checksums and bounded-tree
+It declares Expat 2.5.0; Louppe uses patched `R_2_9_0`. Checksums and bounded-tree
 adapter changes are in the vendor README.
 
 Every source/binary distribution must include complete

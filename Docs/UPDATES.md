@@ -9,7 +9,7 @@ GitHub downloads use Sparkle updates and optional Revolut tips. Store builds use
 Apple-delivered updates and optional StoreKit consumable tips. All features stay
 free in both builds; tips never unlock features or create a subscription.
 
-Sparkle 2.10.0 checks daily, downloads in the background, and installs on quit.
+Sparkle 2.10.1 checks daily, downloads in the background, and installs on quit.
 **Louppe → Check for Updates…** checks manually; **Settings…** controls
 automatic checks and downloads.
 

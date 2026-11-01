@@ -1,6 +1,8 @@
 # Version History
 
-## 1.13.0 (15) — 2026-10-30
+## 1.13.0 (15) — 2026-11-01
+
+- Update Expat to 2.9.0 for parser security fixes and Sparkle to 2.10.1, preserving bounded XMP parsing and the existing updater policy.
 
 - Show cached pinned-folder photos before the drive scan finishes, using the existing toolbar loading indicator. Keep browsing read-only until fresh validation, preserve navigation only for unchanged files, and reuse the existing cache without copying originals.
 
