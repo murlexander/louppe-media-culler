@@ -1,11 +1,17 @@
 # App Store listing and search (ASO) — 4 November 2026
 
-Live Store version: 1.12.0 (Ready for Sale). macOS **1.13.0 (15)** was submitted
-on 4 November 2026 and is **Waiting for Review**, releasing automatically after
-approval. It carries all final metadata below for 11 localizations, the 88 new
-screenshots, no preview videos (the 1.10-era previews were removed), the 1.12
-review notes with `sample-media.zip`, and export compliance answered as
-Apple-system cryptography only.
+Live Store version: 1.12.0 (Ready for Sale). macOS **1.13.1 (16)** was submitted
+on 5 November 2026 and is **Waiting for Review**, releasing automatically after
+approval. It replaced the 1.13.0 (15) submission of 4 November, which was removed
+from review before Apple reviewed it; the same draft was renamed 1.13.1, so it
+keeps all final metadata below for 11 localizations, the 88 new screenshots, no
+preview videos (the 1.10-era previews were removed), the 1.12 review notes with
+`sample-media.zip`, and export compliance answered as Apple-system cryptography
+only. What's New keeps the 1.13 text and adds one line in es-ES, es-MX, pt-BR,
+zh-Hans, hi, and ar-SA: the Photos access prompt now appears in that language
+(the app has no German, French, or Japanese UI). Build 16 came from
+`dist/release-preparation/1.13.1-16-2026-11-04/store/Louppe.pkg` (SHA-256
+`0488c0e6…6245`, tag `v1.13.1`, `db6e707`) through one Transporter delivery.
 
 ## Baseline (13 Oct – 2 Nov 2026)
 
@@ -193,7 +199,7 @@ days before it. Note the change date here:
 | Date | Change | Expected effect |
 | --- | --- | --- |
 | 2026-11-04 | Promotional text, 6 locales | Page view → download conversion; no search effect |
-| (1.13 release; submitted 2026-11-04) | Name, subtitle, keywords, new locales, screenshots, previews removed | Search impressions and downloads; per-storefront impressions in DE, JP, FR, CN |
+| (1.13.1 release; submitted 2026-11-05) | Name, subtitle, keywords, new locales, screenshots, previews removed | Search impressions and downloads; per-storefront impressions in DE, JP, FR, CN |
 
 Also rerun the search checks for the terms above in the US, DE, JP, FR, and CN
 storefronts via `apps.apple.com/<cc>/mac/search?term=…`, and record Louppe's
