@@ -568,9 +568,20 @@ precedence over remembered scope/position.
   Explicit Reset Folder Navigation preserves invalid primary/previous memory
   leaves in a uniquely named sibling directory before writing fresh UI memory.
 
-- [Accessibility audit](ACCESSIBILITY.md) records Apple guidance, acceptance
-  states, implemented semantics/settings support and remaining manual checks.
-  The native collection exposes unignored SwiftUI elements with closed
+- Accessibility acceptance: Browser and Grid expose mounted cells, decisions,
+  selection and custom actions in reading order after scrolling, recycling and
+  RTL. Review, file dialogs, Settings, Help and media controls have named
+  controls and keyboard alternatives to gestures; text editors, native controls,
+  modal UI and VoiceOver keep their chords. Charts state their evidence in
+  words; photo previews name the current file; playback speaks elapsed time and
+  duration. Differentiate Without Color gives color labels and selection a
+  non-color cue; Increase Contrast gives readable purple and stronger outlines;
+  Reduce Motion and Reduce Transparency stay supported; document previews
+  enlarge to 200%. Automated and structure tests do not prove accessibility:
+  VoiceOver, Voice Control and Switch Control task tests stay manual (see the
+  backlog's manual acceptance). The dated 29 October 2026 audit is in git history
+  at `965163b:Docs/ACCESSIBILITY.md`.
+- The native collection exposes unignored SwiftUI elements with closed
   parent/child links and projection reading order. Forward app presentation
   values across hosting boundaries without copying private AX context. Refresh their
   environment when assistive technology, contrast or legibility settings change.
