@@ -1,0 +1,2 @@
+/* Photos permission prompt. build_app.sh copies this English text into Info.plist. */
+"NSPhotoLibraryUsageDescription" = "Review your Photos library and add confirmed selections to albums. Your review decisions stay in Louppe.";

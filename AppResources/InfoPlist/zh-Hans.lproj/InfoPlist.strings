@@ -1,0 +1,2 @@
+/* Photos permission prompt. */
+"NSPhotoLibraryUsageDescription" = "审阅你的照片图库，并将已确认的选择添加到相簿。你的审阅决定保留在 Louppe 中。";

@@ -154,6 +154,15 @@ cp ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt \
 cp ThirdPartyLicenses/Expat-MIT.txt \
     "$APP_DIR/Contents/Resources/Expat License.txt"
 cp PrivacyInfo.xcprivacy "$APP_DIR/Contents/Resources/PrivacyInfo.xcprivacy"
+# macOS reads permission prompts from the main bundle's InfoPlist.strings;
+# SwiftPM's resource bundle cannot localize them.
+INFOPLIST_STRINGS="AppResources/InfoPlist"
+for language in en es zh-Hans hi pt ar; do
+    plutil -lint "$INFOPLIST_STRINGS/$language.lproj/InfoPlist.strings" >/dev/null
+    mkdir -p "$APP_DIR/Contents/Resources/$language.lproj"
+    ditto --noextattr --noqtn "$INFOPLIST_STRINGS/$language.lproj/InfoPlist.strings" \
+        "$APP_DIR/Contents/Resources/$language.lproj/InfoPlist.strings"
+done
 
 if ! $APP_STORE; then
     SPARKLE_FRAMEWORK="$(find "$SCRATCH_PATH/artifacts" -type d \
@@ -180,8 +189,6 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
         <string>en</string><string>es</string><string>zh-Hans</string>
         <string>hi</string><string>pt</string><string>ar</string>
     </array>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>Review your Photos library and add confirmed selections to albums. Your review decisions stay in Louppe.</string>
     <key>CFBundleName</key>
     <string>Louppe</string>
     <key>CFBundleDisplayName</key>
@@ -277,6 +284,11 @@ cat >> "$APP_DIR/Contents/Info.plist" <<'PLIST'
 PLIST
 
 "$PWD/Scripts/localize_services.sh" "$APP_DIR/Contents/Info.plist"
+# The English InfoPlist.strings is the single source of the default prompt.
+plutil -insert NSPhotoLibraryUsageDescription -string \
+    "$(plutil -extract NSPhotoLibraryUsageDescription raw -o - \
+        "$INFOPLIST_STRINGS/en.lproj/InfoPlist.strings")" \
+    "$APP_DIR/Contents/Info.plist"
 
 xattr -cr "$APP_DIR"
 if $APP_STORE; then

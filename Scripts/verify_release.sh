@@ -95,6 +95,35 @@ verify_app_bundle() {
         plutil -lint "$bundled_strings" >/dev/null || fail "$label $locale localization is malformed."
         cmp -s "$source_strings" "$bundled_strings" || fail "$label $locale localization differs from source."
     done
+    # macOS shows permission prompts from the main bundle's InfoPlist.strings.
+    [[ "$(plist_value "$bundle" CFBundleDevelopmentRegion)" == "en" ]] \
+        || fail "$label development region must be English."
+    local declared_languages usage_key usage_strings localized_usage
+    declared_languages="$(plutil -extract CFBundleLocalizations json -o - "$bundle/Contents/Info.plist")"
+    local -a usage_keys
+    usage_keys=(${(f)"$(python3 -I -c 'import plistlib, sys
+print("\n".join(key for key in plistlib.load(open(sys.argv[1], "rb"))
+                if key.startswith("NS") and key.endswith("UsageDescription")))' \
+        "$bundle/Contents/Info.plist")"})
+    (( ${#usage_keys} )) || fail "$label Info.plist has no permission explanations."
+    for locale in en es zh-Hans hi pt ar; do
+        [[ "$declared_languages" == *"\"$locale\""* ]] \
+            || fail "$label Info.plist does not declare the $locale localization."
+        usage_strings="$bundle/Contents/Resources/$locale.lproj/InfoPlist.strings"
+        [[ -f "$usage_strings" ]] || fail "$label $locale permission text is missing."
+        plutil -lint "$usage_strings" >/dev/null || fail "$label $locale permission text is malformed."
+        cmp -s "AppResources/InfoPlist/$locale.lproj/InfoPlist.strings" "$usage_strings" \
+            || fail "$label $locale permission text differs from source."
+        for usage_key in "${usage_keys[@]}"; do
+            localized_usage="$(plutil -extract "$usage_key" raw -o - "$usage_strings" 2>/dev/null)" \
+                || fail "$label $locale permission text lacks $usage_key."
+            [[ -n "${localized_usage//[[:space:]]/}" ]] \
+                || fail "$label $locale $usage_key is empty."
+            if [[ "$locale" == en && "$localized_usage" != "$(plist_value "$bundle" "$usage_key")" ]]; then
+                fail "$label English $usage_key differs from Info.plist."
+            fi
+        done
+    done
     cmp -s PrivacyInfo.xcprivacy "$bundle/Contents/Resources/PrivacyInfo.xcprivacy" \
         || fail "$label does not contain the reviewed privacy manifest."
     plutil -lint "$bundle/Contents/Resources/PrivacyInfo.xcprivacy" >/dev/null \

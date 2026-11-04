@@ -17,6 +17,7 @@ use security-scoped bookmarks. Export destinations retain access while a
 recovery journal needs it; completing or retiring that record releases access.
 Opening Apple Photos requests Photos library permission. The Photos entitlement
 and usage description are required; review never issues library change requests.
+Edit the prompt in `AppResources/InfoPlist/*.lproj`; English fills Info.plist.
 Optional iCloud downloads use PhotoKit after the person enables them. The app
 requests no broad Pictures, Movies, Music, Full Disk Access, camera, microphone,
 contacts, or accessibility permissions.
