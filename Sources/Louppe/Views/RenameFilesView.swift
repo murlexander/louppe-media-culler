@@ -40,6 +40,15 @@ struct RenameFilesView: View {
         _customBaseName = State(initialValue: initialName)
     }
 
+    /// A finished rename with no error is a short confirmation, not a form.
+    private var sheetHeight: CGFloat {
+        if store.organizationProgress == nil, let outcome = store.organizationOutcome,
+           store.organizationError == nil, outcome.message == nil {
+            return 250
+        }
+        return isSingle ? 460 : 650
+    }
+
     var body: some View {
         Group {
             if let progress = store.organizationProgress {
@@ -54,7 +63,7 @@ struct RenameFilesView: View {
                 metadataSetup
             }
         }
-        .frame(width: isSingle ? 540 : 680, height: isSingle ? 460 : 650)
+        .frame(width: isSingle ? 540 : 680, height: sheetHeight)
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
         .controlSize(.regular)

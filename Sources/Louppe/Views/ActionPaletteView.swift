@@ -13,7 +13,9 @@ struct ActionPaletteView: View {
         let context = ReviewShortcutContext(viewMode: store.viewMode, mediaKind: store.currentItem?.mediaKind,
                                             isPlayable: store.currentItem?.isPlayableMedia == true,
                                             canSeekVideo: store.canSeekCurrentVideo)
-        return ReviewShortcutPreferences.decode(shortcutSettings).hint(for: action, context: context)
+        return ReviewShortcutPreferences.decode(shortcutSettings)
+            .compactHints(for: action, context: context)
+            .joined(separator: " / ")
     }
 
     private func commandShortcut(_ action: CommandShortcutAction) -> String {
@@ -122,10 +124,7 @@ struct ActionPaletteView: View {
                 }
                 Spacer(minLength: 8)
                 if let shortcut = action.shortcut, !shortcut.isEmpty {
-                    Text(shortcut)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                        .environment(\.layoutDirection, .leftToRight)
+                    PaletteKeycaps(shortcut: shortcut)
                 }
             }
             .padding(.horizontal, 18)
@@ -188,27 +187,24 @@ struct ActionPaletteView: View {
     private var footer: some View {
         HStack(spacing: 14) {
             if !commandShortcut(.commandPalette).isEmpty {
-                Text(commandShortcut(.commandPalette))
-                    .environment(\.layoutDirection, .leftToRight)
-                    .font(.caption.monospaced())
-                Text(L10n.text("to open"))
+                footerHint(commandShortcut(.commandPalette), L10n.text("to open"))
             }
             Spacer()
-            Text("↑↓")
-                .environment(\.layoutDirection, .leftToRight)
-                .font(.caption.monospaced())
-            Text(L10n.text("choose"))
-            Text("↵")
-                .font(.caption.monospaced())
-            Text(L10n.text("run"))
-            Text("Esc")
-                .font(.caption.monospaced())
-            Text(L10n.text("close"))
+            footerHint("↑↓", L10n.text("choose"))
+            footerHint("↵", L10n.text("run"))
+            footerHint("Esc", L10n.text("close"))
         }
         .font(.caption)
         .foregroundStyle(.secondary)
         .padding(.horizontal, 18)
         .frame(height: 38)
+    }
+
+    private func footerHint(_ keys: String, _ title: String) -> some View {
+        HStack(spacing: 5) {
+            PaletteKeycaps(shortcut: keys)
+            Text(title)
+        }
     }
 
     private var filteredActions: [ActionPaletteAction] {
@@ -1169,5 +1165,29 @@ enum ActionPaletteSearch {
             .lowercased()
             .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
             .map(String.init)
+    }
+}
+
+/// Shortcut hints drawn as small keycaps, one per alternative ("E / ⌘E").
+private struct PaletteKeycaps: View {
+    let shortcut: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(shortcut.components(separatedBy: " / ").enumerated()), id: \.offset) { _, key in
+                Text(key)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 5)
+                    .frame(minWidth: 20, minHeight: 18)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 4)
+                            .strokeBorder(Color(nsColor: .separatorColor))
+                    }
+            }
+        }
+        .environment(\.layoutDirection, .leftToRight)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(shortcut)
     }
 }

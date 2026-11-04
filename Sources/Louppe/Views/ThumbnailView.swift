@@ -329,6 +329,7 @@ struct UnsupportedThumbnail: View {
 
 /// The ✓ / ✗ / undecided / Mixed decision shown on thumbnails and in the Info panel.
 struct RatingBadge: View {
+    @Environment(\.colorSchemeContrast) private var contrast
     static let yesSymbolColor = NSColor.black
     static let yesFillColor = NSColor.systemGreen
     static let noSymbolColor = NSColor.white
@@ -355,10 +356,12 @@ struct RatingBadge: View {
                         .resizable().scaledToFit()
                         .foregroundStyle(Color(nsColor: Self.noSymbolColor), Color(nsColor: Self.noFillColor))
                 case .undecided:
-                    Image(systemName: "circle.fill")
+                    // An open dashed ring reads as "not decided yet" without
+                    // color and stays visible over both chrome and photos.
+                    Image(systemName: "circle.dashed")
                         .resizable().scaledToFit()
-                        .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
-                        .opacity(0.85)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(contrast == .increased ? Color.primary : Color.secondary)
                 }
             }
         }

@@ -316,7 +316,14 @@ struct MetadataPanel: View {
             Divider()
         }
 
+        // Cues appear only when something needs attention, so they lead
+        // before the always-present histogram.
+        QualityCueDetailsView(store: store, item: item)
+
         if showsHistogram {
+            if !store.qualityCues(for: item).isEmpty {
+                Divider()
+            }
             HistogramSection(
                 item: item,
                 analysis: displayedHistogram,
@@ -325,8 +332,6 @@ struct MetadataPanel: View {
                 store: store
             )
         }
-
-        QualityCueDetailsView(store: store, item: item)
 
         if (showsHistogram || !store.qualityCues(for: item).isEmpty)
             && (hasCameraLensInfo || hasShootingInfo || !otherFields.isEmpty) {

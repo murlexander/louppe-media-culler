@@ -268,43 +268,57 @@ struct FilterView: View {
 
     /// These four shortcuts change only the Decision facet. A narrower date,
     /// search, or other choice stays in place until the full filter is reset.
+    /// A native segmented control shows the active choice without relying on
+    /// color; custom Decision details leave no segment selected.
     private var quickDecisionFilter: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(L10n.text("Decision"))
                 .font(.subheadline.weight(.semibold))
-            HStack(spacing: 5) {
-                quickDecisionButton(L10n.text("All"), included: nil)
-                quickDecisionButton(L10n.text("Undecided"), included: .undecided)
-                quickDecisionButton(L10n.text("Yes"), included: .yes)
-                quickDecisionButton(L10n.text("No"), included: .no)
+            Picker(L10n.text("Decision"), selection: quickDecisionSelection) {
+                Text(L10n.text("All"))
+                    .accessibilityLabel(L10n.text("All decisions"))
+                    .tag(Optional(QuickDecision.all))
+                Text(L10n.text("Undecided")).tag(Optional(QuickDecision.undecided))
+                Text(L10n.text("Yes")).tag(Optional(QuickDecision.yes))
+                Text(L10n.text("No")).tag(Optional(QuickDecision.no))
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .controlSize(.small)
+            .fixedSize()
+        }
+    }
+
+    private enum QuickDecision: CaseIterable, Hashable {
+        case all, undecided, yes, no
+
+        var exclusions: Set<PhotoItemRatingState> {
+            let states: Set<PhotoItemRatingState> = [.yes, .no, .undecided, .mixed]
+            switch self {
+            case .all: return []
+            // Mixed RAW/JPEG decisions still need review and belong in the
+            // same quick bucket as undecided photos.
+            case .undecided: return [.yes, .no]
+            case .yes: return states.subtracting([.yes])
+            case .no: return states.subtracting([.no])
             }
         }
     }
 
-    private func quickDecisionButton(
-        _ title: String,
-        included: PhotoItemRatingState?
-    ) -> some View {
-        let states: Set<PhotoItemRatingState> = [.yes, .no, .undecided, .mixed]
-        let exclusions: Set<PhotoItemRatingState>
-        if included == .undecided {
-            // Mixed RAW/JPEG decisions still need review and belong in the
-            // same quick bucket as undecided photos.
-            exclusions = [.yes, .no]
-        } else {
-            exclusions = included.map { states.subtracting([$0]) } ?? []
-        }
-        return Button(title) {
-            var filter = store.filter
-            filter.excludedDecisionStates = exclusions
-            store.filter = filter
-        }
-        .buttonStyle(.bordered)
-        .tint(store.filter.excludedDecisionStates == exclusions
-            ? Color.louppeAccent : Color.primary)
-        .controlSize(.small)
-        .accessibilityLabel(included == nil ? L10n.text("All decisions") : title)
-        .accessibilityAddTraits(store.filter.excludedDecisionStates == exclusions ? .isSelected : [])
+    private var quickDecisionSelection: Binding<QuickDecision?> {
+        Binding(
+            get: {
+                QuickDecision.allCases.first {
+                    $0.exclusions == store.filter.excludedDecisionStates
+                }
+            },
+            set: { choice in
+                guard let choice else { return }
+                var filter = store.filter
+                filter.excludedDecisionStates = choice.exclusions
+                store.filter = filter
+            }
+        )
     }
 
     private var decisionSection: some View {

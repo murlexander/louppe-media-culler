@@ -385,6 +385,25 @@ struct ReviewShortcutPreferences: Codable, Equatable, Sendable {
         case .physicalPosition: return L10n.text("\(ReviewShortcutBinding.positionLabels[binding.keyCode, default: binding.character].uppercased()) position")
         }
     }
+    /// Compact keycap label for menus and the action palette. Physical mode
+    /// shows the keycap alone; Help keeps the longer "F position" wording.
+    func compactDisplay(for binding: ReviewShortcutBinding) -> String {
+        if interpretation == .physicalPosition,
+           ReviewShortcutBinding.specialLabels[binding.keyCode] == nil,
+           let position = ReviewShortcutBinding.positionLabels[binding.keyCode] {
+            return position.uppercased()
+        }
+        return display(for: binding)
+    }
+    func compactHints(for action: ReviewShortcutAction, context: ReviewShortcutContext) -> [String] {
+        var labels: [String] = []
+        for assignment in assignments(for: action)
+        where effectiveContexts(for: action, scope: assignment.scope).contains(context) {
+            let label = compactDisplay(for: assignment.binding)
+            if !labels.contains(label) { labels.append(label) }
+        }
+        return labels
+    }
     func hint(for action: ReviewShortcutAction) -> String { joinedHints(assignments(for: action)) }
     func hint(for action: ReviewShortcutAction, context: ReviewShortcutContext) -> String {
         joinedHints(assignments(for: action).filter { effectiveContexts(for: action, scope: $0.scope).contains(context) })

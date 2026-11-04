@@ -1249,9 +1249,16 @@ struct ExportView: View {
                 Text("\(count)")
                     .font(.title.bold())
                     .foregroundStyle(isSelected ? color : Color.secondary)
-                Text(label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                // A checkbox glyph states inclusion without relying on color.
+                Label {
+                    Text(label)
+                } icon: {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isSelected ? Color.louppeAccent : Color.secondary)
+                }
+                .labelStyle(.titleAndIcon)
+                .font(.caption)
+                .foregroundStyle(isSelected ? Color.primary : Color.secondary)
             }
             .frame(minWidth: 70, maxWidth: .infinity)
             .padding(.vertical, 6)
@@ -1262,9 +1269,11 @@ struct ExportView: View {
             .overlay {
                 RoundedRectangle(cornerRadius: 8)
                     .strokeBorder(isSelected
-                        ? color.opacity(0.4)
-                        : Color(nsColor: .separatorColor))
+                        ? Color.louppeAccent.opacity(0.7)
+                        : Color(nsColor: .separatorColor),
+                        lineWidth: isSelected ? 1.5 : 1)
             }
+            .opacity(isSelected ? 1 : 0.8)
             .contentShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)

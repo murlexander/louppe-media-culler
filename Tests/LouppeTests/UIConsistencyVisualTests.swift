@@ -284,7 +284,7 @@ final class UIConsistencyVisualTests: XCTestCase {
         XCTAssertTrue(state.organizationOutcome?.succeeded == true)
         for scheme in [ColorScheme.light, .dark] {
             try await capture(RenameFilesView(store: state), name: "rename-result-\(scheme)",
-                              size: CGSize(width: 540, height: 460), scheme: scheme, defaults: defaults, output: output)
+                              size: CGSize(width: 540, height: 250), scheme: scheme, defaults: defaults, output: output)
         }
         state.isRenamePresented = false
         state.presentSourceOrganization()
@@ -302,7 +302,7 @@ final class UIConsistencyVisualTests: XCTestCase {
         XCTAssertTrue(state.organizationOutcome?.succeeded == true)
         for scheme in [ColorScheme.light, .dark] {
             try await capture(OrganizeSourceView(store: state), name: "organize-result-\(scheme)",
-                              size: CGSize(width: 680, height: 650), scheme: scheme, defaults: defaults, output: output)
+                              size: CGSize(width: 680, height: 250), scheme: scheme, defaults: defaults, output: output)
         }
         _ = await state.saveSessionForTermination()
         _ = await state.waitForPersistenceIdleForTesting()
@@ -336,6 +336,8 @@ final class UIConsistencyVisualTests: XCTestCase {
             ? (scheme == .light ? .accessibilityHighContrastAqua : .accessibilityHighContrastDarkAqua)
             : (scheme == .light ? .aqua : .darkAqua)
         window.appearance = NSAppearance(named: appearance)
+        // Hosted collection cells resolve colors from the app appearance.
+        NSApp.appearance = window.appearance
         defer { window.contentView = nil; window.close() }
         // Yield to native representables and disposable-file preview work without
         // starting NSApplication.run(), ordering a window, or synthesizing events.

@@ -1315,13 +1315,13 @@ final class HotkeyTests: XCTestCase {
             try XCTUnwrap(actions.first { $0.id == id })
         }
 
-        XCTAssertEqual(try action("export").shortcut, "E position / ⌘E")
-        XCTAssertEqual(try action("gallery").shortcut, "Tab / G position")
-        XCTAssertEqual(try action("undo").shortcut, "Z position / ⌘Z")
+        XCTAssertEqual(try action("export").shortcut, "E / ⌘E")
+        XCTAssertEqual(try action("gallery").shortcut, "Tab / G")
+        XCTAssertEqual(try action("undo").shortcut, "Z / ⌘Z")
         XCTAssertEqual(try action("filter-search").shortcut, "⌘F")
         XCTAssertEqual(try action("grid-zoom-in").shortcut, "⌘+")
-        XCTAssertEqual(try action("actual-size").shortcut, "S position")
-        XCTAssertEqual(try action("phone-size").shortcut, "A position")
+        XCTAssertEqual(try action("actual-size").shortcut, "S")
+        XCTAssertEqual(try action("phone-size").shortcut, "A")
         XCTAssertEqual(try action("select-to-first").shortcut, "⇧⌘←")
         XCTAssertEqual(try action("select-to-last").shortcut, "⇧⌘→")
         XCTAssertEqual(try action("grid-item-above").shortcut, "")

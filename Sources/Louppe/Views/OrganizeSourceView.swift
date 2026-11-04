@@ -410,6 +410,11 @@ struct OrganizeSourceView: View {
            let plan {
             return plan.storageSafety.usesReducedDirectoryDurability ? 410 : 330
         }
+        // A finished move with no error is a short confirmation, not a form.
+        if store.organizationProgress == nil, let outcome = store.organizationOutcome,
+           store.organizationError == nil, outcome.message == nil {
+            return 250
+        }
         return 650
     }
 
