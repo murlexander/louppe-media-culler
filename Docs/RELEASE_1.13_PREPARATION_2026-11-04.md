@@ -107,13 +107,22 @@ Apple Distribution and 3rd Party Mac Developer Installer: SAMO DANNI EOOD
 `7a48daa7110ea3528bd092fad81fe077e9290ea1e3ffa43bb995ba65bd219f66`. The
 expanded payload is 1.13.0 (15), has no Sparkle, and carries only the sandbox,
 user-selected read-write, app-scope bookmark and Photos entitlements. The App
-Store session owns upload, attaching it to the 1.13 draft and submission.
+Store session owned upload, attaching it to the 1.13 draft and submission.
+
+Alex delivered the package through Transporter on 4 November 2026 at 20:33. A
+second delivery at 20:34 failed processing as a duplicate of build 15; App Store
+Connect has exactly one valid build 15. Export compliance was answered as Apple
+system cryptography only. The version was submitted and shows **Waiting for
+Review** after reload, releasing automatically after approval. The 1.10-era
+preview videos were removed from the 1.13 draft. Every Transporter delivery
+since 1.10 has shown "1 issue" warnings that were not read; 1.10–1.12 reached
+sale with them. See [the listing record](APP_STORE_LISTING.md).
 
 Artifacts are retained in ignored `dist/release-preparation/1.13.0-15-2026-11-04/`.
 
 ## Acceptance limits
 
-Apple review has not happened yet. Physical SD/exFAT reconnect, unplug and
+Apple review is pending (Waiting for Review). Physical SD/exFAT reconnect, unplug and
 power loss, network volumes, VoiceOver task walkthroughs, physical
 touch/trackpad and Dock dragging, ISO/JIS/IME input, older macOS, the signed
 Store sandbox runtime (stale/revoked grants), battery energy and the multi-camera
