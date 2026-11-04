@@ -45,6 +45,7 @@
 - Show quality cues before the histogram in Info, move the clipping-overlay button into the histogram header, and wrap long camera and lens names instead of clipping them. Hover over a long filename to see all of it.
 - Mark which decisions an Export includes with a check, not only a color. Show Command Palette shortcuts as keycaps.
 - Make Rename and Organize results compact, with the file count first and an Undo button.
+- Keep an undone decision when you immediately undo a Rename or Organize; Louppe now saves it before restoring the files.
 - Lay out the Sort popover like Filter, with compact menus, a checkbox for groups, and plain review-group commands.
 - App Store version: after three successful Copies on two different days, ask once per version for an App Store rating using Apple's standard prompt. The counters stay on the Mac; the direct download never asks.
 - Align folder, rename, playback, and Info wording, and mark Clear All Decisions with an ellipsis because it asks for confirmation.

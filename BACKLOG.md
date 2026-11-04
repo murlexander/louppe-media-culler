@@ -226,6 +226,11 @@ loading indicator shipped in 1.12; do not reimplement it as an unfinished featur
   the XMP namespace table with hostile-input tests. Expat 2.10.0's CVEs are
   unreachable here; adopt it in the next refresh. Open: Adobe Trust Center (manual)
   and the website dependency check.
+- [ ] **Release review follow-ups — 4 November 2026.** Not 1.13 blockers.
+  Localize the Photos permission explanation in `build_app.sh`'s Info.plist and
+  the XMP namespace-capacity message, which are English-only. Treat failed
+  disk-thumbnail deletions as a maintenance failure with backoff, so accounting
+  cannot undercount expired files or retry eviction repeatedly.
 
 ## Performance
 
