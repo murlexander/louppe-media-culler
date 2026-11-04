@@ -625,6 +625,9 @@ final class SessionStore: ObservableObject {
     private var photosOpeningGeneration = UUID()
 
     private let reviewDefaults: UserDefaults
+    #if APP_STORE
+    lazy var appStoreReviewPrompt = AppStoreReviewPrompt(defaults: reviewDefaults)
+    #endif
     @Published private(set) var activeFileOperation: FileOperationKind? {
         didSet {
             updateFileOperationPowerActivity()

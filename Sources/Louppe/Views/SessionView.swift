@@ -72,7 +72,11 @@ struct SessionView: View {
             .sheet(isPresented: $store.isSessionRecoveryPresented) {
                 SessionRecoveryView(store: store)
             }
-            .sheet(isPresented: $store.isExportPresented) {
+            .sheet(isPresented: $store.isExportPresented, onDismiss: {
+                #if APP_STORE
+                store.appStoreReviewPrompt.exportDidDismiss(store: store)
+                #endif
+            }) {
                 ExportView(store: store)
             }
             .sheet(isPresented: $store.isPhotosOrganizationPresented,

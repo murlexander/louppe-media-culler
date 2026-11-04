@@ -135,6 +135,14 @@ struct ExportView: View {
             refreshSelectionSnapshot()
         }
         .onChange(of: isRoutingCopies) { refreshRoutingEvaluation() }
+        #if APP_STORE
+        .onChange(of: exporter.state) {
+            if case .finished(let outcome) = exporter.state,
+               let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
+                store.appStoreReviewPrompt.recordCompletion(outcome, version: version)
+            }
+        }
+        #endif
         .onChange(of: routingRoutes) { refreshRoutingEvaluation() }
         .onChange(of: selectedRatings) { refreshSelectionSnapshot() }
         .onChange(of: selectedStars) { refreshSelectionSnapshot() }

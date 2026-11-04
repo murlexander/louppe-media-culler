@@ -70,6 +70,16 @@ window and relaunching), repeat tips, and unavailable products. Local mock
 tests cover presentation states and duplicate-click gating; they do not prove
 Apple checkout, sandbox networking, receipt verification, or settlement.
 
+## Rating requests
+
+The Store build may request Apple's standard rating prompt after a successful,
+nonempty Copy and dismissal of its result sheet. It waits for at least three
+successful Copies on two different days in the current app version, with at
+most one request per version. Failed, partial, cancelled, Move, and Trash
+operations never count. Requests wait for an active app with no file operation,
+recovery, or modal UI; Apple also controls whether the prompt appears. The small
+UserDefaults counters stay on the Mac. The direct download has no review flow.
+
 ## Build checks
 
 `./Scripts/verify_release.sh --app-store` checks the loose app and archive
