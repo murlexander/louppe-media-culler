@@ -5449,30 +5449,48 @@ final class SessionStore: ObservableObject {
                 )
             }
         }
-        let currentItems = items
-        let journalDirectory = operationJournalDirectory
-        let resumeIdentity = ScanResumeIdentity(
-            folder: folder.standardizedFileURL,
-            currentItemID: currentItemID.map {
-                record.sourceItemIDByDestinationItemID[$0] ?? $0
-            },
-            selectedItemIDs: Set(selectionState.itemIDs.map {
-                record.sourceItemIDByDestinationItemID[$0] ?? $0
-            })
-        )
-        Task.detached(priority: .userInitiated) { [weak self] in
-            let result = SourceOrganizationWorker.undo(
-                record,
-                currentItems: currentItems,
-                journalDirectory: journalDirectory,
-                progress: reporter
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            // Like forward Rename/Organize, land pending decision saves first:
+            // the restore rescans and reloads decisions from the sidecar, so an
+            // unsaved decision Undo would otherwise come back as the old value.
+            _ = await self.persistCurrentSessionIfNeededBeforeDiscard()
+            guard self.organizationGeneration == generation,
+                  self.isChangingSourceFiles else { return }
+            guard self.currentSessionIsDurable else {
+                self.activeFileOperation = nil
+                self.organizationProgress = nil
+                self.pushUndo(.organization(record))
+                self.organizationError = record.changeKind == .rename
+                    ? L10n.text("Louppe could not save the current ratings safely. Retry Saving before renaming files.")
+                    : L10n.text("Louppe could not save the current ratings safely. Retry Saving before organizing the source folder.")
+                return
+            }
+            let currentItems = self.items
+            let journalDirectory = self.operationJournalDirectory
+            let resumeIdentity = ScanResumeIdentity(
+                folder: folder.standardizedFileURL,
+                currentItemID: self.currentItemID.map {
+                    record.sourceItemIDByDestinationItemID[$0] ?? $0
+                },
+                selectedItemIDs: Set(self.selectionState.itemIDs.map {
+                    record.sourceItemIDByDestinationItemID[$0] ?? $0
+                })
             )
-            await self?.finishUndoSourceOrganization(
-                result,
-                record: record,
-                resumeIdentity: resumeIdentity,
-                generation: generation
-            )
+            Task.detached(priority: .userInitiated) { [weak self] in
+                let result = SourceOrganizationWorker.undo(
+                    record,
+                    currentItems: currentItems,
+                    journalDirectory: journalDirectory,
+                    progress: reporter
+                )
+                await self?.finishUndoSourceOrganization(
+                    result,
+                    record: record,
+                    resumeIdentity: resumeIdentity,
+                    generation: generation
+                )
+            }
         }
     }
 
