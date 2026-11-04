@@ -1016,7 +1016,7 @@ struct SessionView: View {
         for event: NSEvent,
         sessionWindow: NSWindow
     ) -> SessionKeyRoutingContext {
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
         let keyWindow =
             SessionKeyMonitorTestProbe.keyWindowOverride ?? NSApp.keyWindow
 #else
@@ -1190,7 +1190,7 @@ struct SessionKeyRoutingContext: Equatable {
     }
 }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
 /// Debug-only lifecycle accounting for the in-process event-monitor regression
 /// test. Release builds carry no counter or synchronization work.
 @MainActor
@@ -1315,7 +1315,7 @@ private struct SessionKeyEventMonitor: NSViewRepresentable {
                 }
             ) else { return }
             self.monitor = monitor
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
             SessionKeyMonitorTestProbe.didInstall()
 #endif
         }
@@ -1324,7 +1324,7 @@ private struct SessionKeyEventMonitor: NSViewRepresentable {
             guard let monitor else { return }
             NSEvent.removeMonitor(monitor)
             self.monitor = nil
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
             SessionKeyMonitorTestProbe.didRemove()
 #endif
         }

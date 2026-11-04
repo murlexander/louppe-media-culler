@@ -352,7 +352,7 @@ final class VideoPlaybackController: ObservableObject {
         itemID == item.id && contentRevision == item.contentRevision
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     /// Focused tests inspect the in-memory review aid without exposing it to
     /// production UI or persistence code.
     func rememberedPosition(for item: PhotoItem) -> TimeInterval? {

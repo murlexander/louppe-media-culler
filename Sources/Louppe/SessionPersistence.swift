@@ -217,7 +217,7 @@ actor SessionPersistence: SessionPersistenceClient {
             hasher.combine(birthTime.nanoseconds)
         }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
         /// Models macOS assigning the same UUID-owned card a different st_dev
         /// after remount; ordinary temporary test folders cannot trigger that
         /// kernel behavior deterministically.

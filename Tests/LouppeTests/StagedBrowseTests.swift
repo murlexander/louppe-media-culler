@@ -150,7 +150,7 @@ final class StagedBrowseTests: XCTestCase {
         XCTAssertTrue(store.items.isEmpty)
     }
 
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     func testMountedEarlyGalleryAndGridKeepPendingCapabilitiesAndSessionAuthoritySeparate() async throws {
         _ = NSApplication.shared
         let root = try fixture()

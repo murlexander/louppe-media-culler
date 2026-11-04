@@ -7,7 +7,7 @@ export LOUPPE_SPEED_TESTS=1
 export LOUPPE_SPEED_OUTPUT="${LOUPPE_SPEED_OUTPUT:-$(mktemp -d /private/tmp/louppe-speed-results.XXXXXX)}"
 mkdir -p "$LOUPPE_SPEED_OUTPUT"
 # Include untracked implementation/test files while profiling a working tree.
-rg --files -0 Sources Tests/LouppeTests -g '*.swift' | \
+find Sources Tests/LouppeTests -name '*.swift' -type f -print0 | \
     xargs -0 shasum -a 256 > "$LOUPPE_SPEED_OUTPUT/source-sha256.txt"
 {
     date -u +%Y-%m-%dT%H:%M:%SZ
@@ -24,9 +24,9 @@ rg --files -0 Sources Tests/LouppeTests -g '*.swift' | \
     uname -m
 } > "$LOUPPE_SPEED_OUTPUT/context.txt"
 print "Speed results: $LOUPPE_SPEED_OUTPUT"
-# The existing XCTest target references DEBUG-only seams unconditionally.
-# Keep those seams while using release optimization; report this exact flag.
+# XCTest hooks compile under LOUPPE_TEST_SEAMS, never DEBUG. Release
+# optimization plus that one flag keeps other debug-only code out.
 # No parallel test workers: timings would contend for CPU, disk and UI lanes.
-swift test --disable-keychain --build-system native -c release -Xswiftc -DDEBUG \
+swift test --disable-keychain --build-system native -c release -Xswiftc -DLOUPPE_TEST_SEAMS \
     --filter "${LOUPPE_SPEED_FILTER:-LouppeSpeed}" 2>&1 | tee "$LOUPPE_SPEED_OUTPUT/console.log"
 print "Results saved: $LOUPPE_SPEED_OUTPUT"

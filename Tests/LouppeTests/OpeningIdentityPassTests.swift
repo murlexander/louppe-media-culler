@@ -212,7 +212,7 @@ final class OpeningIdentityPassTests: XCTestCase, @unchecked Sendable {
         XCTAssertLessThan(polls.value, inventory.directories.count)
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     // MARK: Identity-capture budget
 
     func testWarmOpenCapturesAboutTwoIdentitiesPerFile() async throws {

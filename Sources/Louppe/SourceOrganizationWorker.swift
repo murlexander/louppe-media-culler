@@ -362,7 +362,7 @@ enum SourceOrganizationWorker {
         }
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     static func verifyExFATMoveCompatibilityForTesting(
         in sourceFolder: URL
     ) throws {

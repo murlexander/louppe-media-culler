@@ -578,7 +578,7 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
 
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     var pendingDiskWritesForTesting: (count: Int, bytes: Int) {
         diskWriteLock.withLock { (diskWrites.count, diskWriteBytes) }
     }
@@ -920,7 +920,7 @@ final class ImagePipeline: @unchecked Sendable {
         max(limit / 2, limit - (interval ?? liveMaintenanceWriteInterval))
     }
 
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     func pruneDiskCacheForTesting(onBatch: (@Sendable (Int) -> Void)? = nil) async -> Bool {
         await pruneDiskCacheWithAdmission(onBatch: onBatch).succeeded
     }

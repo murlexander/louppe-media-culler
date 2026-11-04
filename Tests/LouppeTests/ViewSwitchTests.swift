@@ -112,7 +112,7 @@ final class ViewSwitchTests: XCTestCase {
         )
 
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
         try await waitForMetadataRead(of: tail)
         let metadataCallCount = MetadataExtractorTestProbe.shared.callCount(
             for: tail.contentRevision
@@ -152,7 +152,7 @@ final class ViewSwitchTests: XCTestCase {
         )
         XCTAssertEqual(store.viewMode, .gallery)
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
         // If either mode owned a separate MetadataPanel, the final Gallery
         // task would survive its 80 ms debounce and perform another file read.
         try await Task.sleep(for: .milliseconds(150))
@@ -232,7 +232,7 @@ final class ViewSwitchTests: XCTestCase {
         view.subviews.flatMap { [$0] + descendants(of: $0) }
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     private func waitForMetadataRead(of item: PhotoItem) async throws {
         for _ in 0..<200 {
             if MetadataExtractorTestProbe.shared.callCount(

@@ -145,7 +145,7 @@ final class ForegroundWorkCoordinator: @unchecked Sendable {
         timer.schedule(deadline: .now() + seconds, leeway: .milliseconds(2))
     }
 
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     var waitingCountForTesting: Int { lock.withLock { waiters.count } }
     var foregroundDemandCountForTesting: Int { lock.withLock { foregroundDemands } }
     #endif

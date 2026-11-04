@@ -272,7 +272,7 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
         waiter.resume(returning: nil)
     }
 
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     func sourceWaiterCountForTesting(for item: PhotoItem, decoder: AppleRawDecoder = .appleDefault) -> Int {
         withStateLock { sourceInFlight[Self.sourceKey(for: item, decoder: decoder)]?.waiters.count ?? 0 }
     }

@@ -1,4 +1,4 @@
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
 import AppKit
 import SwiftUI
 import XCTest

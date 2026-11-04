@@ -421,7 +421,7 @@ final class HistogramPipeline: @unchecked Sendable {
         if admitted { queue.addOperation(operation) }
     }
 
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     func waiterCountForTesting(for item: PhotoItem) -> Int {
         let key = ImagePipeline.cacheKey(for: item) + "|histogram-v1-srgb-1024"
         return lock.withLock { inFlight[key]?.waiters.count ?? 0 }
@@ -830,7 +830,7 @@ final class RawHistogramPipeline: @unchecked Sendable {
         if admitted { queue.addOperation(operation) }
     }
 
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     func waiterCountForTesting(for item: PhotoItem) -> Int {
         let key = ImagePipeline.cacheKey(for: item) + "|raw-histogram-v1-appleDefault-linear-1024"
         return lock.withLock { inFlight[key]?.waiters.count ?? 0 }

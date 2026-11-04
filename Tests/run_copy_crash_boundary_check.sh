@@ -30,7 +30,7 @@ for f in $(grep -oE '(Sources/Louppe/[A-Za-z0-9_+/]+\.swift|Tests/PerformanceChe
   sources+=("$f")
 done
 swiftc -sdk "$SDK" -module-cache-path "$build/module-cache" \
-  -D DEBUG -D LOUPPE_TESTING -parse-as-library \
+  -D LOUPPE_TEST_SEAMS -D LOUPPE_TESTING -parse-as-library \
   "${sources[@]}" Tests/CrashBoundaryChecks/main.swift \
   -o "$build/LouppeCrashBoundaryChecks" > "$build/compile.log" 2>&1 \
   || { grep -E ': error:' "$build/compile.log" >&2; exit 1; }

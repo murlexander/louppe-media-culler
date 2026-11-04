@@ -2109,7 +2109,7 @@ enum FileOperationJournal {
         volumeRootPath: String,
         volumeUUIDString: String?
     ) -> FileIdentity {
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
         IdentityCaptureCounter.shared.increment()
 #endif
         return FileIdentity(
@@ -2178,7 +2178,7 @@ enum FileOperationJournal {
         }
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     /// Counts identity captures so tests can bound opening's filesystem checks.
     final class IdentityCaptureCounter: @unchecked Sendable {
         static let shared = IdentityCaptureCounter()

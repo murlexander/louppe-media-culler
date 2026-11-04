@@ -254,7 +254,7 @@ private struct OpeningPhotoView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .background {
-            #if DEBUG
+            #if LOUPPE_TEST_SEAMS
             ThumbnailRenderMarker(revision: item.contentRevision, hasImage: image != nil)
             #endif
         }

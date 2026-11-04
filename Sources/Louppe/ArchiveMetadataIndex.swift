@@ -546,7 +546,7 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
         return String(decoding: bytes[0..<32], as: UTF8.self)
     }
 
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     static func waitForProtectionPublicationForTesting() { protectionQueue.sync {} }
     /// Simulates a relaunch: maintenance falls back to the persisted list.
     static func forgetPublishedProtectionForTesting(in directory: URL) {

@@ -364,7 +364,7 @@ final class SessionStore: ObservableObject {
     private var qualityCueSelectionCursor = 0
     private let qualityCueResources: @Sendable () -> QualityCueWorkPolicy.Resources
     private let qualityCueRest: @Sendable (Duration) async -> Void
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     private(set) var qualityCueSelectionProbesForTesting = 0
     private(set) var qualityCueMatchBuildsForTesting = 0
     private(set) var qualityCueMatchUpdatesForTesting = 0
@@ -974,7 +974,7 @@ final class SessionStore: ObservableObject {
     private var contentResultsNeedProjection = false
     /// Minimum interval between recovery batches; tests lengthen it to hold results.
     var recoveryBatchMinimumInterval: Duration = .milliseconds(100)
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     private(set) var recoveryBatchesAppliedForTesting = 0
     var pendingRecoveryResultCountForTesting: Int { pendingContentResults.count }
 #endif
@@ -1050,7 +1050,7 @@ final class SessionStore: ObservableObject {
     private var recoveryRescanTarget: RecoveryRescanTarget?
     private var preparedIndex = PreparedSessionIndex()
     private var itemStructureNeedsRebuild = true
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     private(set) var structuralIndexGenerationForTesting: UInt64 = 0
     var pendingContentFileIDsForTesting: Set<String> { sessionContentPendingFileIDs }
 #endif
@@ -1408,7 +1408,7 @@ final class SessionStore: ObservableObject {
         return target.identity.matches(folder: folder)
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     var qualityCueCoverageCountsForTesting: (measured: Int, total: Int) {
         (qualityCueMeasuredCount, qualityCuePhotoCount)
     }
@@ -1709,7 +1709,7 @@ final class SessionStore: ObservableObject {
         let preferences = qualityCuePreferences
         let matches = items.map { qualityCueMatch(for: $0, preferences: preferences) }
         qualityCueMatchCache = matches
-        #if DEBUG
+        #if LOUPPE_TEST_SEAMS
         qualityCueMatchBuildsForTesting += 1
         #endif
         return matches
@@ -1884,7 +1884,7 @@ final class SessionStore: ObservableObject {
                         let matches = self.qualityCueMatch(for: self.items[index], preferences: self.qualityCuePreferences)
                         if self.qualityCueMatchCache != nil {
                             self.qualityCueMatchCache?[index] = matches
-                            #if DEBUG
+                            #if LOUPPE_TEST_SEAMS
                             self.qualityCueMatchUpdatesForTesting += 1
                             #endif
                         }
@@ -1955,7 +1955,7 @@ final class SessionStore: ObservableObject {
               qualityCueSelectionCursor < order.count {
             let index = order[qualityCueSelectionCursor]
             qualityCueSelectionCursor += 1
-            #if DEBUG
+            #if LOUPPE_TEST_SEAMS
             qualityCueSelectionProbesForTesting += 1
             #endif
             append(index)
@@ -2130,7 +2130,7 @@ final class SessionStore: ObservableObject {
         let cost = start.duration(to: .now)
         contentResultsNotBefore = ContinuousClock.now
             + max(recoveryBatchMinimumInterval, min(.seconds(1), cost * 4))
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
         recoveryBatchesAppliedForTesting += 1
 #endif
     }
@@ -2139,7 +2139,7 @@ final class SessionStore: ObservableObject {
         rebuildFileItemIndex()
         preparedIndex.rebuildItems(items, sort: sort)
         itemStructureNeedsRebuild = false
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
         structuralIndexGenerationForTesting &+= 1
 #endif
     }
@@ -2575,7 +2575,7 @@ final class SessionStore: ObservableObject {
             preparedIndex = openingIndex
             rebuildFileItemIndex()
             itemStructureNeedsRebuild = false
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
             structuralIndexGenerationForTesting &+= 1
 #endif
         } else {
@@ -3711,7 +3711,7 @@ final class SessionStore: ObservableObject {
         finishClosingSession()
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     /// Focused key-routing tests use an ordinary in-memory ready session and
     /// need to exercise the same modal command gate as the real scan flow.
     func presentLegacySessionMigrationConfirmationForTesting() {

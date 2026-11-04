@@ -6,6 +6,10 @@ import Foundation
 /// link Sparkle at all. The direct-download product retains its signed updater.
 let isAppStoreBuild = ProcessInfo.processInfo.environment["LOUPPE_APP_STORE"] == "1"
 
+/// XCTest-only hooks compile into debug builds. Optimized speed tests add
+/// `-Xswiftc -DLOUPPE_TEST_SEAMS`; release packaging never defines it or DEBUG.
+let testSeams: [SwiftSetting] = [.define("LOUPPE_TEST_SEAMS", .when(configuration: .debug))]
+
 let package = Package(
     name: "Louppe",
     defaultLocalization: "en",
@@ -89,6 +93,7 @@ let package = Package(
             dependencies: isAppStoreBuild ? ["XMPBridge"] : ["Sparkle", "XMPBridge"],
             path: "Sources/Louppe",
             resources: [.process("Resources")],
+            swiftSettings: testSeams,
             linkerSettings: [
                 // The release executable lives in Louppe.app/Contents/MacOS
                 // and Sparkle is embedded in Louppe.app/Contents/Frameworks.
@@ -101,7 +106,8 @@ let package = Package(
         .testTarget(
             name: "LouppeTests",
             dependencies: ["Louppe"],
-            path: "Tests/LouppeTests"
+            path: "Tests/LouppeTests",
+            swiftSettings: testSeams
         ),
     ],
     swiftLanguageModes: [.v6],

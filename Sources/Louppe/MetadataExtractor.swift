@@ -138,7 +138,7 @@ enum MetadataExtractor {
 
     /// Full field list for the metadata panel.
     static func fields(for item: PhotoItem) -> [MetadataField] {
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
         MetadataExtractorTestProbe.shared.record(item.contentRevision)
 #endif
         if item.primaryFile.photosMedia != nil {
@@ -513,7 +513,7 @@ final class MetadataDetailPipeline: @unchecked Sendable {
         request.continuation.resume(returning: result)
     }
 
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     var pendingCountForTesting: Int { lock.withLock { pending.count } }
 
     func waitForIdleForTesting() async {
@@ -526,7 +526,7 @@ final class MetadataDetailPipeline: @unchecked Sendable {
     #endif
 }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
 /// Counts exact metadata-field reads for unique content revisions in hosted
 /// regression tests. The release app has no probe or counting overhead.
 final class MetadataExtractorTestProbe: @unchecked Sendable {

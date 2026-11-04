@@ -18,7 +18,7 @@ struct ArchiveExpansionSummary: Equatable {
     let canExpand: Bool
     let canCollapse: Bool
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     init(canExpandForTesting canExpand: Bool, canCollapse: Bool) {
         self.canExpand = canExpand
         self.canCollapse = canCollapse

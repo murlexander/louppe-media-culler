@@ -73,7 +73,7 @@ final class HotkeyTests: XCTestCase {
         XCTAssertTrue(view.handleKey(keyEvent(code: 17, characters: "T", modifiers: [.command, .shift, .capsLock]), context: .focusedSession, commandShortcutPreferences: preferences))
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     func testInstalledMonitorUsesSavedCommandAliasesAndLeavesOldDefaultInactive() throws {
         _ = NSApplication.shared
         let domain = "HotkeyTests.Command.\(UUID())"
@@ -683,7 +683,7 @@ final class HotkeyTests: XCTestCase {
         Self.retainedHostingWindows.append(window)
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     func testRootPhaseTransitionReinstallsLiveSessionMonitor() {
         _ = NSApplication.shared
         let baselineMonitorCount =

@@ -301,7 +301,7 @@ enum DurableFileIO {
             case .foundation:
                 // ExFAT lacks RENAME_EXCL. Its probed Foundation fallback is
                 // still path-based, so refuse a known parent replacement.
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
                 DurableFileIO.foundationRenameWillStartForTesting()
 #endif
                 try DurableFileIO.renameWithoutOverwrite(
@@ -1084,7 +1084,7 @@ enum DurableFileIO {
         }
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     /// Test-only flush log. Tests install it around one synchronous worker
     /// call to prove flush order and count; production builds omit it.
     struct SyncEventForTesting: Equatable, Sendable {
@@ -1142,7 +1142,7 @@ enum DurableFileIO {
         path: String,
         fullSync: Bool
     ) throws {
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
         recordSyncForTesting(descriptor, fullSync: fullSync)
 #endif
         if fullSync {

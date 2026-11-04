@@ -39,7 +39,7 @@ struct ThumbnailImageState {
     }
 }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
 /// Mounted-pixel evidence for the large-folder benchmark; no release view or
 /// per-render counters. Background geometry follows the actual thumbnail tile.
 struct ThumbnailRenderMarker: NSViewRepresentable {
@@ -205,7 +205,7 @@ struct ThumbnailView: View {
             )
                 .padding(TileBadgeLayout.inset)
         }
-        #if DEBUG
+        #if LOUPPE_TEST_SEAMS
         .background {
             ThumbnailRenderMarker(revision: revision, hasImage: displayedImage != nil)
                 .accessibilityHidden(true)

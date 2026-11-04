@@ -1901,7 +1901,7 @@ enum ExportWorker {
         }
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     static func removeVerifiedCopyForTesting(
         source: URL,
         artifact: URL,

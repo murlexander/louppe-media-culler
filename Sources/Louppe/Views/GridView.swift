@@ -156,18 +156,18 @@ struct GridCollectionContent: View, Equatable {
 
     var controller: ReviewCollectionController? = nil
 
-    #if DEBUG
+    #if LOUPPE_TEST_SEAMS
     static var didConstruct: (() -> Void)?
     static var didBuildProjection: (() -> Void)?
     #endif
 
     var body: some View {
-        #if DEBUG
+        #if LOUPPE_TEST_SEAMS
         let _ = Self.didConstruct?()
         #endif
         let source = ProjectionSource(owner: ObjectIdentifier(store), groups: groups)
         let projection = projectionCache.resolve(for: source) {
-            #if DEBUG
+            #if LOUPPE_TEST_SEAMS
             Self.didBuildProjection?()
             #endif
             return ReviewCollectionProjection(sections: groups.map { group in

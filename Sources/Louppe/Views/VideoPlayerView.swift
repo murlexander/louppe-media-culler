@@ -1,7 +1,7 @@
 import SwiftUI
 import AVKit
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
 /// Hosted AppKit checks track the actual mounted transport lifetime; this also
 /// works when a test process has no enabled accessibility client or key loop.
 @MainActor
@@ -88,7 +88,7 @@ struct GalleryVideoPlayerView: View {
                             .padding(.bottom, 14)
                     }
                     .accessibilityIdentifier("louppe.gallery.video.controls")
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
                     .onAppear { GalleryVideoControlsTestProbe.mount(playback) }
                     .onDisappear { GalleryVideoControlsTestProbe.unmount(playback) }
 #endif
