@@ -110,6 +110,158 @@ final class MediaMaintenanceTests: XCTestCase {
         XCTAssertEqual(try jpegFiles(in: root).count, 3)
     }
 
+    // MARK: - Failed deletions
+
+    func testBackoffDoublesPerFailureUpToEightIntervals() {
+        let interval = ImagePipeline.liveMaintenanceWriteInterval
+        XCTAssertEqual(interval, 64 * 1024 * 1024)
+        let factors = (0...6).map { ImagePipeline.maintenanceBackoffBytes(interval: interval, consecutiveFailures: $0) / interval }
+        XCTAssertEqual(factors, [0, 1, 2, 4, 8, 8, 8])
+        XCTAssertEqual(ImagePipeline.maintenanceBackoffBytes(interval: .max / 2, consecutiveFailures: 4), .max)
+    }
+
+    func testFailedAgeDeletionStaysCountedAndMarksPassFailed() async throws {
+        let root = try Self.temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fresh = try Self.seed(root, count: 2, bytes: 20 * 1024)
+        let aged = try Self.seed(root, count: 1, bytes: 20 * 1024, prefix: "aged")[0]
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(-100 * 24 * 60 * 60)],
+                                              ofItemAtPath: aged.path)
+        let remover = FaultyRemover()
+        let pipeline = ImagePipeline(testingDiskCacheRoot: root, foregroundWork: Self.idle,
+                                     diskCacheByteLimit: 400 * 1024, liveMaintenanceWriteInterval: 100 * 1024,
+                                     diskCacheRemover: { try remover.remove($0) })
+        let directPass = await pipeline.pruneDiskCacheForTesting()
+        XCTAssertFalse(directPass, "a failed deletion fails the pass")
+
+        pipeline.startDiskMaintenanceForTesting()
+        try await settle(pipeline)
+        var state = pipeline.diskMaintenanceForTesting
+        XCTAssertEqual(state.passes, 1)
+        XCTAssertEqual(state.consecutiveFailures, 1)
+        XCTAssertEqual(state.knownBytes, 60 * 1024, "the undeleted aged file stays counted")
+        XCTAssertEqual(state.knownBytes, try Self.bytes(in: root))
+        XCTAssertEqual(remover.attempts, 2, "one attempt per pass, below the ceiling")
+
+        remover.setFailing(false)
+        pipeline.startDiskMaintenanceForTesting()
+        try await settle(pipeline)
+        state = pipeline.diskMaintenanceForTesting
+        XCTAssertEqual(state.passes, 2)
+        XCTAssertEqual(state.consecutiveFailures, 0)
+        XCTAssertEqual(state.knownBytes, 40 * 1024)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: aged.path))
+        XCTAssertEqual(Set(try jpegFiles(in: root).map(\.lastPathComponent)), Set(fresh.map(\.lastPathComponent)))
+    }
+
+    func testFailedEvictionsKeepAccountingBackOffAndRecover() async throws {
+        let root = try Self.temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let limit: Int64 = 400 * 1024, interval: Int64 = 100 * 1024
+        _ = try Self.seed(root, count: 10, bytes: 50 * 1024)
+        let remover = FaultyRemover()
+        let pipeline = ImagePipeline(testingDiskCacheRoot: root, foregroundWork: Self.idle,
+                                     diskCacheByteLimit: limit, liveMaintenanceWriteInterval: interval,
+                                     decoder: { url, _ in Self.noise(seed: url.lastPathComponent.hashValue) },
+                                     diskCacheRemover: { try remover.remove($0) })
+        pipeline.startDiskMaintenanceForTesting()
+        try await settle(pipeline)
+        var state = pipeline.diskMaintenanceForTesting
+        XCTAssertEqual(state.consecutiveFailures, 1, "evictions that fail mark the pass failed")
+        XCTAssertEqual(state.knownBytes, 500 * 1024, "undeleted files stay in the known total")
+        XCTAssertEqual(state.knownBytes, try Self.bytes(in: root))
+        XCTAssertEqual(remover.attempts, 10)
+        XCTAssertEqual(try jpegFiles(in: root).count, 10)
+
+        // The known total is over the ceiling, so without backoff the first
+        // write would rerun the pass. Each failure doubles the wait.
+        var index = 0
+        for (pass, factor) in [(2, Int64(1)), (3, 2)] {
+            let run = try await writeUntilPassStarts(pipeline, remover: remover, pass: pass, index: &index)
+            XCTAssertGreaterThan(run.writes, 1)
+            XCTAssertLessThan(run.before, factor * interval, "pass \(pass) started before its backoff")
+            XCTAssertGreaterThanOrEqual(run.after, factor * interval)
+            try await settle(pipeline)
+            state = pipeline.diskMaintenanceForTesting
+            XCTAssertEqual(state.passes, pass)
+            XCTAssertEqual(state.consecutiveFailures, pass)
+            XCTAssertEqual(state.knownBytes, try Self.bytes(in: root))
+        }
+
+        remover.setFailing(false)
+        let recovery = try await writeUntilPassStarts(pipeline, remover: remover, pass: 4, index: &index)
+        XCTAssertLessThan(recovery.before, 4 * interval)
+        XCTAssertGreaterThanOrEqual(recovery.after, 4 * interval)
+        try await settle(pipeline)
+        state = pipeline.diskMaintenanceForTesting
+        XCTAssertEqual(state.passes, 4)
+        XCTAssertEqual(state.consecutiveFailures, 0, "a successful pass resets the backoff")
+        let known = try XCTUnwrap(state.knownBytes)
+        XCTAssertEqual(known, try Self.bytes(in: root))
+        XCTAssertLessThanOrEqual(known, ImagePipeline.evictionTarget(limit: limit, interval: interval))
+
+        // Normal policy again: the next pass waits only for the ceiling.
+        let normal = try await writeUntilPassStarts(pipeline, remover: remover, pass: 5, index: &index)
+        XCTAssertLessThanOrEqual(known + normal.before, limit)
+        XCTAssertGreaterThan(known + normal.after, limit)
+        try await settle(pipeline)
+        XCTAssertEqual(pipeline.diskMaintenanceForTesting.consecutiveFailures, 0)
+        XCTAssertLessThanOrEqual(try Self.bytes(in: root), limit)
+        XCTAssertEqual(pipeline.diskMaintenancePeakConcurrencyForTesting, 1)
+    }
+
+    func testFailingPassesNeverOverlap() async throws {
+        let root = try Self.temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let remover = FaultyRemover(failsEveryOther: true)
+        let coordinator = ForegroundWorkCoordinator(quietInterval: .milliseconds(3), maximumDeferral: .milliseconds(6))
+        let pipeline = ImagePipeline(testingDiskCacheRoot: root, foregroundWork: coordinator,
+                                     diskCacheByteLimit: 96 * 1024, liveMaintenanceWriteInterval: 24 * 1024,
+                                     decoder: { url, _ in Self.noise(seed: url.lastPathComponent.hashValue) },
+                                     diskCacheRemover: { try remover.remove($0) })
+        for index in 0..<60 {
+            if index.isMultiple(of: 3) { pipeline.startDiskMaintenanceForTesting() }
+            coordinator.noteInteraction()
+            _ = await pipeline.thumbnail(for: Self.item("F\(index).JPG"))
+        }
+        await pipeline.waitForPendingDiskWrites()
+        try await settle(pipeline)
+        let state = pipeline.diskMaintenanceForTesting
+        XCTAssertGreaterThan(remover.attempts, 1)
+        XCTAssertGreaterThanOrEqual(state.consecutiveFailures, 0)
+        XCTAssertEqual(state.passes, pipeline.diskMaintenanceStartsForTesting, "every started pass finished")
+        XCTAssertEqual(pipeline.diskMaintenancePeakConcurrencyForTesting, 1)
+        if let known = state.knownBytes { XCTAssertLessThanOrEqual(known, try Self.bytes(in: root)) }
+    }
+
+    /// Writes one thumbnail at a time until pass `pass` claims. Returns bytes
+    /// written since the previous pass before and after the claiming write.
+    /// Counting removed bytes keeps the measure exact while that pass deletes.
+    private func writeUntilPassStarts(_ pipeline: ImagePipeline, remover: FaultyRemover, pass: Int,
+                                      index: inout Int) async throws -> (before: Int64, after: Int64, writes: Int) {
+        let root = pipeline.diskCacheRootForTesting
+        let baseline = try remover.bytesIncludingRemoved(in: root)
+        var before: Int64 = 0, writes = 0
+        while writes < 300 {
+            _ = await pipeline.thumbnail(for: Self.item("P\(index).JPG")); index += 1; writes += 1
+            await pipeline.waitForPendingDiskWrites()
+            let after = try remover.bytesIncludingRemoved(in: root) - baseline
+            // A live pass claims synchronously when the write completes.
+            if pipeline.diskMaintenanceStartsForTesting >= pass { return (before, after, writes) }
+            before = after
+        }
+        XCTFail("pass \(pass) never started")
+        return (before, before, writes)
+    }
+
+    static func seed(_ root: URL, count: Int, bytes: Int, prefix: String = "seed") throws -> [URL] {
+        try (0..<count).map { index in
+            let url = root.appendingPathComponent("\(prefix)\(index).jpg")
+            try Data(repeating: 0xAB, count: bytes).write(to: url)
+            return url
+        }
+    }
+
     // MARK: - AUD-10
 
     func testQueuedEXIFReadsRetireUnstartedAndAbandonedReadsStayBounded() async throws {
@@ -303,5 +455,39 @@ private final class ScopeCounter: @unchecked Sendable {
     var access: SecurityScopedResourceAccess {
         .init(start: { _ in self.lock.withLock { self.count += 1 }; return true },
               stop: { _ in self.lock.withLock { self.count -= 1 } })
+    }
+}
+
+/// Disk-cache deletion fault injection. Removal and its byte count share the
+/// lock, so `bytesIncludingRemoved` is exact even while a pass deletes.
+private final class FaultyRemover: @unchecked Sendable {
+    private let lock = NSLock()
+    private let failsEveryOther: Bool
+    private var failing: Bool
+    private var attemptCount = 0
+    private var removedBytes: Int64 = 0
+    var attempts: Int { lock.withLock { attemptCount } }
+
+    init(failsEveryOther: Bool = false) {
+        self.failsEveryOther = failsEveryOther
+        failing = !failsEveryOther
+    }
+
+    func setFailing(_ value: Bool) { lock.withLock { failing = value } }
+
+    func remove(_ url: URL) throws {
+        try lock.withLock {
+            attemptCount += 1
+            if failing || (failsEveryOther && attemptCount.isMultiple(of: 2)) {
+                throw CocoaError(.fileWriteNoPermission)
+            }
+            let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+            try FileManager.default.removeItem(at: url)
+            removedBytes += Int64(size)
+        }
+    }
+
+    func bytesIncludingRemoved(in root: URL) throws -> Int64 {
+        try lock.withLock { try MediaMaintenanceTests.bytes(in: root) + removedBytes }
     }
 }

@@ -504,7 +504,7 @@ Quit take a finite checkpoint independently of decision durability. See
 | Histograms | 256 numeric results; temporary 1,024-pixel previews |
 | RAW histograms | 128 numeric results; temporary extended-linear RGBA-float bitmap near 1,024 pixels on longest side |
 | Actual-size tiles | 128 MiB total; 1,024 × 1,024 source-pixel tiles, normal and clipping variants; lazy recipes retain no whole bitmap |
-| Disk thumbnails | 512 MiB; 90-day age; utility pass at most daily after launch delay, plus live passes after 64 MiB of writes before the total is known, then when known total + writes exceed 512 MiB; evicts to 448 MiB; one pass at a time; test hosts use a disposable root and prune only with injected limits |
+| Disk thumbnails | 512 MiB; 90-day age; utility pass at most daily after launch delay, plus live passes after 64 MiB of writes before the total is known, then when known total + writes exceed 512 MiB; evicts to 448 MiB; one pass at a time; undeleted files stay counted and fail the pass; live retries after failed passes wait 1, 2, 4, then 8 intervals of writes until one succeeds; test hosts use a disposable root and prune only with injected limits |
 | Archive metadata snapshots | 250k entries/32 MiB each; 32 unpinned folders; 256 MiB total, pins evicted last |
 
 Decoded cost is `bytesPerRow × height`. Return thumbnails before JPEG

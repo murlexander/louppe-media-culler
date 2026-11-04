@@ -2,6 +2,7 @@ import Foundation
 import AppKit
 import ImageIO
 import AVFoundation
+import OSLog
 
 /// One operation owns this lease from registration through synchronous worker
 /// exit. A coalescing join may supply missing authority, but never clears it.
@@ -92,6 +93,7 @@ final class ImagePipeline: @unchecked Sendable {
     private var maintenanceRunning = false
     private var knownDiskBytes: Int64?
     private var diskBytesSinceMaintenance: Int64 = 0
+    private var maintenanceFailureStreak = 0
     private var maintenancePassCount = 0
     private var maintenanceStartCount = 0
     private var activeMaintenancePasses = 0
@@ -128,6 +130,9 @@ final class ImagePipeline: @unchecked Sendable {
     }
     private let testingDecoder: (@Sendable (URL, CGFloat) -> CGImage?)?
     private let testingDiskWriter: (@Sendable (CGImage, URL) -> Void)?
+    private let testingDiskRemover: (@Sendable (URL) throws -> Void)?
+    private static let maintenanceLogger = Logger(subsystem: "com.alexandermarkin.louppe",
+                                                  category: "ThumbnailCacheMaintenance")
 
     private final class GeneratedImageBox: @unchecked Sendable {
         private let lock = NSLock()
@@ -176,7 +181,9 @@ final class ImagePipeline: @unchecked Sendable {
         foregroundWork: ForegroundWorkCoordinator = .shared,
         diskCacheByteLimit: Int64 = ImagePipeline.diskCacheByteLimit,
         liveMaintenanceWriteInterval: Int64? = nil,
-        decoder: (@Sendable (URL, CGFloat) -> CGImage?)? = nil
+        decoder: (@Sendable (URL, CGFloat) -> CGImage?)? = nil,
+        // After `decoder`, so existing trailing decoder closures still bind to it.
+        diskCacheRemover: (@Sendable (URL) throws -> Void)? = nil
     ) {
         self.init(
             diskCacheRoot: testingDiskCacheRoot,
@@ -184,6 +191,7 @@ final class ImagePipeline: @unchecked Sendable {
             foregroundWork: foregroundWork,
             diskCacheByteLimit: diskCacheByteLimit,
             liveMaintenanceWriteInterval: liveMaintenanceWriteInterval,
+            testingDiskRemover: diskCacheRemover,
             testingDecoder: decoder
         )
         if let thumbnailConcurrency {
@@ -220,12 +228,14 @@ final class ImagePipeline: @unchecked Sendable {
         diskCacheByteLimit: Int64 = ImagePipeline.diskCacheByteLimit,
         liveMaintenanceWriteInterval: Int64? = nil,
         testingDiskWriter: (@Sendable (CGImage, URL) -> Void)? = nil,
+        testingDiskRemover: (@Sendable (URL) throws -> Void)? = nil,
         testingDecoder: (@Sendable (URL, CGFloat) -> CGImage?)? = nil
     ) {
         self.foregroundWork = foregroundWork
         self.diskCacheRoot = diskCacheRoot
         self.testingDecoder = testingDecoder
         self.testingDiskWriter = testingDiskWriter
+        self.testingDiskRemover = testingDiskRemover
         diskByteLimit = max(1, diskCacheByteLimit)
         // Test hosts never prune unless a focused test injects small limits.
         liveMaintenanceInterval = schedulesMaintenance
@@ -850,11 +860,24 @@ final class ImagePipeline: @unchecked Sendable {
     /// a pass starts only when the known total plus later writes exceeds the
     /// ceiling. The flag prevents overlapping launch and live passes.
     private func claimLiveMaintenanceLocked() -> Bool {
-        guard let interval = liveMaintenanceInterval, !maintenanceRunning else { return false }
+        guard let interval = liveMaintenanceInterval, !maintenanceRunning,
+              diskBytesSinceMaintenance >= Self.maintenanceBackoffBytes(
+                interval: interval, consecutiveFailures: maintenanceFailureStreak)
+        else { return false }
         let due = knownDiskBytes.map { $0 + diskBytesSinceMaintenance > diskByteLimit }
             ?? (diskBytesSinceMaintenance >= interval)
         if due { maintenanceRunning = true }
         return due
+    }
+
+    /// Writes required before a live pass retries after failed passes: one
+    /// interval, doubling per consecutive failure up to eight. A successful
+    /// pass resets the streak; the daily launch pass ignores it.
+    static func maintenanceBackoffBytes(interval: Int64, consecutiveFailures: Int) -> Int64 {
+        guard consecutiveFailures > 0 else { return 0 }
+        let factor = Int64(1) << min(consecutiveFailures - 1, 3)
+        let (bytes, overflow) = interval.multipliedReportingOverflow(by: factor)
+        return overflow ? .max : bytes
     }
 
     private func startMaintenanceIfIdle() {
@@ -875,19 +898,32 @@ final class ImagePipeline: @unchecked Sendable {
                 peakMaintenancePasses = max(peakMaintenancePasses, activeMaintenancePasses)
             }
             let result = await pruneDiskCacheWithAdmission()
-            let continues = diskWriteLock.withLock {
+            let (continues, failures) = diskWriteLock.withLock {
                 activeMaintenancePasses -= 1
                 maintenanceRunning = false
                 maintenancePassCount += 1
                 // Writes during the pass may already be in the walked total;
                 // counting them again only makes the next pass earlier.
-                knownDiskBytes = result.succeeded ? result.remainingBytes : nil
+                // Undeleted files remain in a fully listed total.
+                knownDiskBytes = result.totalIsKnown ? result.remainingBytes : nil
+                maintenanceFailureStreak = result.succeeded ? 0 : maintenanceFailureStreak + 1
                 // Writes that finished during the pass could not claim it; chain
                 // one more pass now rather than waiting for a later write.
-                return result.succeeded && claimLiveMaintenanceLocked()
+                return (result.succeeded && claimLiveMaintenanceLocked(), maintenanceFailureStreak)
             }
-            if result.succeeded, maintenanceRecordsDefaults {
-                UserDefaults.standard.set(Date(), forKey: Self.lastDiskPruneDefaultsKey)
+            if result.succeeded {
+                if maintenanceRecordsDefaults {
+                    UserDefaults.standard.set(Date(), forKey: Self.lastDiskPruneDefaultsKey)
+                }
+            } else {
+                // Counts and error codes only; cache paths stay out of logs.
+                let error = result.firstDeletionError.map { "\($0.domain):\($0.code)" } ?? "none"
+                Self.maintenanceLogger.error("""
+                    Thumbnail cache maintenance failed: listed=\(result.totalIsKnown, privacy: .public) \
+                    failedDeletions=\(result.failedDeletions, privacy: .public) \
+                    failedBytes=\(result.failedDeletionBytes, privacy: .public) \
+                    error=\(error, privacy: .public) consecutiveFailures=\(failures, privacy: .public)
+                    """)
             }
             if continues { runClaimedMaintenance() }
         }
@@ -897,10 +933,11 @@ final class ImagePipeline: @unchecked Sendable {
     /// fixed maximum deferral, so repeated interaction cannot starve pruning.
     private func pruneDiskCacheWithAdmission(
         onBatch: (@Sendable (Int) -> Void)? = nil
-    ) async -> (succeeded: Bool, remainingBytes: Int64) {
+    ) async -> DiskPruneResult {
         let pass = DiskCachePrunePass(root: diskCacheRoot, limit: diskByteLimit,
                                       target: Self.evictionTarget(limit: diskByteLimit,
-                                                                  interval: liveMaintenanceInterval))
+                                                                  interval: liveMaintenanceInterval),
+                                      remover: testingDiskRemover)
         while await foregroundWork.waitForBackgroundAdmission() {
             let done = await withCheckedContinuation { continuation in
                 diskQueue.async {
@@ -909,9 +946,9 @@ final class ImagePipeline: @unchecked Sendable {
                     continuation.resume(returning: done)
                 }
             }
-            if done { return (pass.succeeded, pass.remainingBytes) }
+            if done { return pass.result(completed: true) }
         }
-        return (false, pass.remainingBytes)
+        return pass.result(completed: false)
     }
 
     /// Hysteresis keeps a full cache from walking its directory after every
@@ -925,8 +962,8 @@ final class ImagePipeline: @unchecked Sendable {
         await pruneDiskCacheWithAdmission(onBatch: onBatch).succeeded
     }
 
-    var diskMaintenanceForTesting: (running: Bool, passes: Int, knownBytes: Int64?) {
-        diskWriteLock.withLock { (maintenanceRunning, maintenancePassCount, knownDiskBytes) }
+    var diskMaintenanceForTesting: (running: Bool, passes: Int, knownBytes: Int64?, consecutiveFailures: Int) {
+        diskWriteLock.withLock { (maintenanceRunning, maintenancePassCount, knownDiskBytes, maintenanceFailureStreak) }
     }
 
     func startDiskMaintenanceForTesting() { startMaintenanceIfIdle() }
@@ -949,6 +986,18 @@ final class ImagePipeline: @unchecked Sendable {
         return pass.succeeded
     }
 
+    /// Outcome of one maintenance pass. Files that could not be deleted stay
+    /// in `remainingBytes`; any failed deletion makes the pass a failure.
+    struct DiskPruneResult: Sendable {
+        /// The whole directory was listed, so `remainingBytes` is the total.
+        var totalIsKnown: Bool
+        var failedDeletions: Int
+        var failedDeletionBytes: Int64
+        var firstDeletionError: (domain: String, code: Int)?
+        var remainingBytes: Int64
+        var succeeded: Bool { totalIsKnown && failedDeletions == 0 }
+    }
+
     /// Accessed serially by the disk queue (or the synchronous test boundary).
     /// Directory enumeration does not prefetch resource values for all entries.
     private final class DiskCachePrunePass: @unchecked Sendable {
@@ -956,7 +1005,8 @@ final class ImagePipeline: @unchecked Sendable {
         private let root: URL
         private let limit: Int64
         private let target: Int64
-        private let fm = FileManager()
+        private let fm: FileManager
+        private let remove:(URL) throws -> Void
         private let keys: Set<URLResourceKey> = [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey]
         private let cutoff = Date().addingTimeInterval(-90 * 24 * 60 * 60)
         private var enumerator: FileManager.DirectoryEnumerator?
@@ -965,16 +1015,47 @@ final class ImagePipeline: @unchecked Sendable {
         private var files: [(url: URL, size: Int64, date: Date)] = []
         private var total: Int64 = 0
         private var evictionIndex = 0
-        private(set) var succeeded = true
+        private var listingSucceeded = true
+        private var failedDeletions = 0
+        private var failedDeletionBytes: Int64 = 0
+        private var firstDeletionError: (domain: String, code: Int)?
         private(set) var lastBatchCount = 0
 
-        init(root: URL, limit: Int64, target: Int64) {
+        init(root: URL, limit: Int64, target: Int64,
+             remover: (@Sendable (URL) throws -> Void)? = nil) {
             self.root = root
             self.limit = limit
             self.target = min(limit, max(0, target))
+            let fm = FileManager()
+            self.fm = fm
+            if let remover { remove = remover } else { remove = { try fm.removeItem(at: $0) } }
         }
 
         var remainingBytes: Int64 { total }
+        var succeeded: Bool { listingSucceeded && failedDeletions == 0 }
+
+        /// `completed` is false when admission ended the pass early.
+        func result(completed: Bool) -> DiskPruneResult {
+            DiskPruneResult(totalIsKnown: completed && enumerated && listingSucceeded,
+                            failedDeletions: failedDeletions, failedDeletionBytes: failedDeletionBytes,
+                            firstDeletionError: firstDeletionError, remainingBytes: total)
+        }
+
+        /// An undeleted file is still on disk: callers keep it in `total`.
+        private func delete(_ url: URL, size: Int64) -> Bool {
+            do {
+                try remove(url)
+                return true
+            } catch {
+                failedDeletions += 1
+                failedDeletionBytes += size
+                if firstDeletionError == nil {
+                    let error = error as NSError
+                    firstDeletionError = (error.domain, error.code)
+                }
+                return false
+            }
+        }
 
         func processBatch() -> Bool {
             lastBatchCount = 0
@@ -983,10 +1064,10 @@ final class ImagePipeline: @unchecked Sendable {
                 enumerator = fm.enumerator(at: root, includingPropertiesForKeys: nil,
                                            options: [.skipsSubdirectoryDescendants],
                                            errorHandler: { [weak self] _, _ in
-                    self?.succeeded = false
+                    self?.listingSucceeded = false
                     return false
                 })
-                guard enumerator != nil else { succeeded = false; return true }
+                guard enumerator != nil else { listingSucceeded = false; return true }
             }
             if !enumerated {
                 for _ in 0..<Self.batchLimit {
@@ -994,16 +1075,17 @@ final class ImagePipeline: @unchecked Sendable {
                         enumerated = true
                         enumerator = nil
                         files.sort { $0.date < $1.date }
-                        return total <= limit || !succeeded
+                        return total <= limit || !listingSucceeded
                     }
                     lastBatchCount += 1
                     guard let values = try? url.resourceValues(forKeys: keys),
                           values.isRegularFile == true else { continue }
                     let date = values.contentModificationDate ?? .distantPast
+                    let size = Int64(values.fileSize ?? 0)
                     if date < cutoff {
-                        try? fm.removeItem(at: url)
+                        // Not an eviction candidate: one attempt per pass.
+                        if !delete(url, size: size) { total += size }
                     } else {
-                        let size = Int64(values.fileSize ?? 0)
                         files.append((url, size, date))
                         total += size
                     }
@@ -1017,7 +1099,7 @@ final class ImagePipeline: @unchecked Sendable {
                 let file = files[evictionIndex]
                 evictionIndex += 1
                 lastBatchCount += 1
-                if (try? fm.removeItem(at: file.url)) != nil { total -= file.size }
+                if delete(file.url, size: file.size) { total -= file.size }
             }
             return total <= target || evictionIndex == files.count
         }
