@@ -1,7 +1,9 @@
 # Louppe app backlog
 
 Reviewed on 21 October 2026 against current source, version history, and the
-[1.12 release record](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md).
+[1.12 release record](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md). Agent-runnable
+1.13 correctness and performance work was measured and updated on 4 November 2026:
+[4 November record](Docs/BACKLOG_1.13_2026-11-04.md).
 The next planned release is **1.13.0 (15)**. Implemented changes belong in
 [CHANGELOG.md](CHANGELOG.md); this backlog contains unfinished work only.
 
@@ -59,6 +61,10 @@ measurements before choosing a fix. Later ideas remain deferred.
     varied RAW/mixed and SD-card acceptance, physical diagonal/momentum/Welcome
     edge dragging, and remaining main-actor/readiness costs. Failed stress runners
     are recorded separately from completed samples; no general RAW reliability claim.
+  - **4 November:** ten fresh-process mixed RAW stress runs (3,328 operations, both
+    cache options, distinct and cloned RAFs) completed without a stall or crash; the
+    October failures did not reproduce. A sustained installed-app run on a large RAW
+    folder, SD-card and physical-input acceptance remain. [4 November record](Docs/BACKLOG_1.13_2026-11-04.md).
 - [ ] **Remembered archives and pinned folders — Alex, 25 October 2026.** Include
   this foundation with the overnight large-folder work, ahead of later archive
   product ideas. Keep casual folder opening simple; pinning retains a folder
@@ -158,9 +164,15 @@ loading indicator shipped in 1.12; do not reimplement it as an unfinished featur
   routed Copy/Back passed. Still test stale/revoked grants, card reconnect, and
   Review → Back → Review → Copy after cancellation/failure. Keep recents and
   destinations authorized for their intended lifetime; hardware gaps remain open.
-- [ ] **AUD-05 — ExFAT path replacement.** Reproduce path-based Move fallback and
-  launch recovery on disposable ExFAT. Standard Move/Rename/Organize/undo bind
-  parent descriptors; retain ExFAT’s no-overwrite probe and durability warning.
+  4 November: routed Review → Back → Review → Copy after cancelled, refused and
+  stopped attempts, and the grant core across Back/cancel/failure/retry/revocation,
+  keep leases balanced in tests. Signed-sandbox stale/revoked grants and card
+  reconnect remain.
+- [x] **AUD-05 — ExFAT path replacement.** Reproduced on a disposable ExFAT image
+  and locally (4 November). Destination replacement rolls back; source-folder
+  replacement can move a same-named foreign file into a hidden `.partial` while the
+  original stays intact and the journal stays retryable. No loss or overwrite; no
+  safe fix without `RENAME_EXCL`, so it is a documented residual.
 - [ ] **RAW 9 compatibility.** Check older/unsupported Macs, missing resources,
   failed downloads, and compressed/lossless-compressed Fuji RAFs. Verify retry/
   default remedies, fresh pixels after decoder changes, and intact originals.
@@ -171,17 +183,30 @@ loading indicator shipped in 1.12; do not reimplement it as an unfinished featur
   after Finder metadata appeared in Documents. Keep the current SDK and checks
   until the replacement passes; the latest full-suite baseline is in the
   [1.12 release record](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md#verification).
+  4 November (Xcode 27.2): the default backend matches native suite results with
+  `--scratch-path` outside File Provider. Packaging and the speed runner stay native
+  (release resource-bundle layout and folder-derived identifier). Test seams now
+  use `LOUPPE_TEST_SEAMS`, so speed runs no longer define `DEBUG`. Remaining:
+  migrate packaging to the default backend.
 - [ ] **AUD-21 — Media/AV APIs.** Modernize asynchronous AV-property loading
   behind synchronous worker bridges and macOS 27 reader/player notifications.
   A UI-thread semaphore stall has not been established. Measure mixed-media scan
   throughput/cancellation and retain finite timeouts, macOS 14, bounded lanes,
-  reader exit, and playback/audio cancellation tests.
+  reader exit, and playback/audio cancellation tests. 4 November: player end/failure
+  notifications use current names (macOS 14 safe); movie scan ~1 ms per file, so
+  the 15 s bridge is not a bottleneck. The async audio reader (macOS 26+) is not
+  justified by measurement.
 - [ ] **AUD-18 — Volume/interruption tests.** Extend fault injection beyond the
   recorded case-sensitive APFS and detach/remount cases: ExFAT, removable/network
   volumes, interrupted operations, lid-close, and simulated power loss. ExFAT
   image creation was unavailable on the release host, not a pass. Verify no
   overwrite, accurate durability, retained recovery, and safe undo/retry. Record
   actual coverage; related performance baselines remain AUD-06/AUD-19.
+  4 November: process kills before every flush, then fresh-process launch recovery,
+  passed for Copy (local, APFS image) and Organize (local, APFS and ExFAT images).
+  A crash during the data write leaves an unrecorded partial needing attention; the
+  ExFAT move probe can leave one hidden file. Unplug, network, lid-close and power
+  loss remain.
 - [ ] **AUD-19 — RAW/color/GPU baseline.** Build a licensed RAW/JPEG/profile corpus
   with orientation/transparency cases. Compare preview, RAW/histogram/clipping,
   and 100% tiles to reference renders; measure Release GPU/RSS under navigation/
@@ -189,12 +214,18 @@ loading indicator shipped in 1.12; do not reimplement it as an unfinished featur
   histogram baseline with byte/identity checks; synthetic 100 MP tile-budget tests
   also pass. Multi-camera/RAW 9, color/reference, cold-resource and sustained
   GPU/helper-process memory acceptance remain open. Record actual corpus coverage.
+  4 November: three local RAFs benchmarked with both decoders (Apple Default
+  previews 0.24–0.39 s; RAW 9 0.72–1.78 s after a 5.9 s first warm-up).
 - [ ] **AUD-20 — Dependencies/security.** Refresh the recorded Sparkle/Expat/
   Adobe XMP pins, patches, licenses, and official-advisory review for 1.13;
   coordinate the independent website dependency check with its release work.
   The bounded 7 October review is historical evidence, not a current security
   clearance. Investigate exposures and extend hostile-XMP tests as needed;
-  parser tests cover only the reviewed subset.
+  parser tests cover only the reviewed subset. 4 November: app pins, checksums,
+  patches and licenses verified and advisories reviewed; fixed unbounded growth of
+  the XMP namespace table with hostile-input tests. Expat 2.10.0's CVEs are
+  unreachable here; adopt it in the next refresh. Open: Adobe Trust Center (manual)
+  and the website dependency check.
 
 ## Performance
 
@@ -216,13 +247,21 @@ safety/native checks. Local stage medians are not whole-app speedups.
   The latest 1.12 release run records 100k camera-sort median 756 ms; the quality
   review records decision-sorted rating at 123 ms. These are current baselines,
   not evidence of a regression against an equivalent pre-1.12 run.
+  4 November: fixed proven hot paths. 5k-file recovery under Decision sort
+  28.5 s → 0.37 s; 100k grouped decision rating 168 → 29 ms; Select All → decision
+  1.3 → 0.36 s; batch Undo 2.1 → 0.37 s. Save capture (29 ms) and camera sort were
+  unchanged. Open: date-grouped projection/filter (~100–130 ms at 100k), the
+  content-check queue walk in Select All, real hashing on removable media and
+  mounted UI under recovery load.
   [Release measurements](Docs/RELEASE_1.12_PREPARATION_2026-10-21.md#verification) ·
   [Quality review](Docs/QUALITY_REVIEW_1.12_2026-10-20.md) ·
   [Implemented cue-filter optimizations](Docs/Archive/2026-10-14/QUALITY_CUE_FILTER_PERFORMANCE_2026-10-14.md).
 
 ### Next measurements
 
-- [ ] **AUD-12 — Lazy routing rows.** An outer lazy stack still contains eager
+- [ ] **AUD-12 — Lazy routing rows.** 4 November: rows are lazy; a 10k-file
+  preview opens in ~20 ms instead of ~3 s and realizes ~500 rows instead of 10–20k,
+  keeping every exact path. VoiceOver and visual spacing checks remain. An outer lazy stack still contains eager
   route-file/unmatched stacks. Mount 10k+ single-route and unmatched previews;
   measure opening, realized rows, scrolling and memory. Test per-file lazy rows
   if justified, retaining every exact name/path and accessible safety detail.
@@ -231,28 +270,48 @@ safety/native checks. Local stage medians are not whole-app speedups.
   already runs off-main. Count queries and measure large/local/delayed-volume
   selections. Freeze inputs for bounded off-main validation where justified;
   preserve grants, exact parent binding, progress/cancel and no early mutations.
-- [ ] **AUD-17 — Undo retention.** The limit is 500 steps, without a byte budget.
+  4 November: preflight runs off-main on frozen inputs with Cancel and stale-result
+  rejection. Main-actor block: Move 10k 120 → ~8 ms; 750 ms injected slow volume
+  → <1 ms. A real slow destination and the signed sandbox build remain.
+- [x] **AUD-17 — Undo retention.** The limit is 500 steps, without a byte budget.
   Select All alone creates no Undo step: measure repeated Select All → decision,
   star/color edits, Clear All and Undo at 1k/10k/100k. Record retained snapshots
   and peak RSS before choosing byte-based eviction. Preserve Mixed/independent
   physical decisions, per-photo Undo and journaled operation Undo.
+  4 November: 72 bytes per changed file; a 100k-pair whole-folder step is 13.7 MiB,
+  so 500 steps could reach ~6.7 GiB. Decision/star/color Undo now stays within
+  256 MiB (approved by Alex, 4 November): single-photo edits keep 500 steps, about
+  18 whole-folder edits remain at 100k pairs, oldest dropped first. Clean Up,
+  Organize and Rename steps are never dropped for memory. 10k × 500 steps:
+  687 → 255 MiB retained.
 - [ ] **AUD-09 — Live disk-thumbnail enforcement.** Delayed daily pruning,
   512 MiB target and 90-day age policy already exist. Test sustained writes and
   same-day launches with small injected limits, coalesced write/time maintenance,
   prune overlap and readable survivors. Measure peak overshoot and scroll latency;
   avoid per-thumbnail walks or unsupported increases to memory-cache budgets.
+  4 November: live passes now enforce the limit during a session (injected limit:
+  peak 8% over instead of 11×); a 20k-entry pass takes 0.24 s and disk-hit latency
+  is unchanged. A long installed-app session remains.
 - [ ] **AUD-10 — Abandoned EXIF detail reads.** Histogram/RAW/audio work already
   has bounded lanes and cancellable/coalesced waiters. The remaining Info detail
   reader starts detached EXIF work after dwell. Use injected slow reads during
   rapid navigation to count concurrent/abandoned readers and stale publications;
   then confirm on disposable removable/network media before changing scheduling.
-- [ ] **AUD-11 — Cold RAW source/navigation work.** High-resolution recipes are
+  4 November: simulated slow serial reads ran 10 concurrent readers (3.08 s to
+  settle); one lane with retired waiters settles in ~0.4 s. Physical removable/
+  network media remain.
+- [x] **AUD-11 — Cold RAW source/navigation work.** 4 November: measured, no
+  change justified. The Fit recipe costs 53–76 ms with either decoder and adds at
+  most 5–16 ms to the Fast Fit preview; 100% first tile 131 ms, ring 200 ms, warm
+  pan 54 ms. High-resolution recipes are
   requested even for Fit dimensions; source-waiter retirement remains separate
   from image-request cancellation. Measure cold Fit/100% transitions and both decoders
   before caching dimensions or changing dwell. Test visible-first tile priority
   and mode-aware RAW prefetch as hypotheses, comparing first visible pixels and
   warm-pan latency. Keep two tile renders, 128 MiB and bounded source regions.
-- [ ] **AUD-13 — Copy flush costs.** Export Copy is not covered by the new speed
+- [x] **AUD-13 — Copy flush costs.** 4 November: 2 of 5 media-side full flushes
+  per file were redundant and are removed (journal flushes unchanged); 50 small
+  files copy 0–24% faster on local and image volumes. Export Copy is not covered by the new speed
   suite. Instrument file/directory flush counts and time for small-file batches
   on local/removable storage, separating production and injected copiers. Remove
   only proven redundancy; preserve write → sync → stage → publish → directory
@@ -262,7 +321,9 @@ safety/native checks. Local stage medians are not whole-app speedups.
   `fcopyfile` still lacks progress/cancel callbacks. Measure progress intervals
   and Stop-to-worker-exit on disposable large video/slow storage before choosing
   callbacks or chunks. Preserve identity-proven partial cleanup, metadata/forks,
-  rollback and remount behavior.
+  rollback and remount behavior. 4 November: a `copyfile` status callback reports
+  progress every ~0.1 s on a 2 GiB file and Stop exits in 0.1–0.4 s with rollback.
+  A real slow card/network volume remains.
 
 ### Native and sustained acceptance
 
@@ -277,6 +338,9 @@ safety/native checks. Local stage medians are not whole-app speedups.
   representative mixed shoot.
   Establish repeatable baselines before setting regression limits; resolve native
   capture/AX tooling gaps rather than calling mirrored orchestration visual QA.
+  4 November: under background work Gallery input → matching thumbnail 32 ms, Grid
+  74 ms (p95 126 ms); 1,000 items drained in 87 s with a 68 ms longest main-actor
+  gap. Physical frames and SD-card softness remain.
 - [ ] **AUD-29 — Background energy and true idle.** Measure sustained CPU/GPU,
   RSS, wakeups, and decoder/helper exit on representative large RAW folders,
   after Pause/Close and complete drain. Compare battery/AC and foreground
@@ -285,6 +349,8 @@ safety/native checks. Local stage medians are not whole-app speedups.
   not establish battery drain. Preserve current/visible interest and accurate
   evidence; investigate an App Nap/inactive-window policy only after measurement.
   Keep the resource contracts in [PERFORMANCE.md](Docs/PERFORMANCE.md).
+  4 November: media pipelines return to 0.1% CPU with zero idle wakeups after
+  drain in the test process. Whole-app battery/AC measurement remains.
 
 ## People and access
 

@@ -188,7 +188,8 @@ selected-folder entitlements in `Louppe.entitlements`.
   syscall boundary. ExFAT-source → APFS Copy remains supported. Source
   Organize/Rename keep their tested reduced-durability fallback.
 - Route drafts retain chosen-folder access through Back and retryable errors.
-  Detached preflight and workers hold separate leases until exit. Removal,
+  Detached preflight (including ordinary Export preflight) and workers hold
+  separate leases until exit. Removal,
   replacement, reset, and dismissal release draft leases. Recent/recovery
   existence checks and bookmark refresh run with access active; failed resolution preserves
   stored evidence, and stale bookmarks refresh when possible.
@@ -207,6 +208,10 @@ selected-folder entitlements in `Louppe.entitlements`.
 - Plan-v3 paths carry exact filesystem bytes through validation, target
   construction, and recovery. Never normalize them through Swift strings; retain
   v1/v2 compatibility. A staged Copy is written, flushed, and source-verified.
+  The descriptor copy reports bytes after each write and honors a confirmed Stop
+  between writes; the stopped partial follows recorded-partial cleanup. Each Copy
+  step is flushed once: temporary contents, its folder before staged, then the
+  published folder.
   Recovery preserves staged/completed copies without the source volume and
   publishes verified temporaries only by exclusive rename to the planned path.
   Operation-created copy checks use volume/inode/birth/size/mtime, excluding
@@ -219,7 +224,10 @@ selected-folder entitlements in `Louppe.entitlements`.
   Move XMP uses those bound writes/publication. Parent replacement stops work
   without redirecting files; changes after a rename retain an ambiguous journal.
   ExFAT's Foundation fallback and launch recovery remain path-based with identity
-  checks. Reproduce a remaining risk before broadening those paths.
+  checks. Reproduce a remaining risk before broadening those paths. A source-folder
+  swap in that rename window can move a same-named foreign file into the reserved
+  temporary; recovery keeps it unresolved and the original stays intact. There is
+  no safe fix without `RENAME_EXCL` (reproduced 4 November 2026).
 - Clean Up snapshots on `SessionStore`, runs file loops in `CleanUpWorker`, then
   applies once on `SessionStore`; Export uses `ExportWorker`. Keep
   `trashItem`/`moveItem` loops off-main. During `isCleaningUp`, block item-index
@@ -386,6 +394,15 @@ are independent; XCTest defaults use disposable storage.
   after Ready and never gates it.
   Its physical viewport receipts are consumed after native restoration and expire
   on later Ready navigation, including receipts for a dormant view mode.
+- Saved-decision recovery applies verified results in batches: decisions, counts
+  and one sort/filter pass in the same main-actor turn, so selection, navigation
+  and operation scopes never see a lagging projection. Pause, file operations,
+  folder changes and Quit discard unapplied results, which stay queued for
+  re-verification. `reviewStateRevision` refreshes Export's editable summary.
+- Decision/star/color Undo stays within `undoMetadataByteBudgetDefault` (256 MiB,
+  charged by reserved capacity): oldest metadata steps are dropped first, the
+  newest is kept, single-photo edits keep 500 steps. Clean Up, Organize and Rename
+  steps are never dropped for memory; they follow only the 500-step limit.
 - Reset/recompute `visibleIndices` in the same turn as replacing/emptying
   `items` (see `openFolder`). Stale indices previously crashed rescan; retain
   `visibleItems` bounds checks.
@@ -463,6 +480,8 @@ precedence over remembered scope/position.
   operation identity. Running lanes remain occupied until worker exit. Gallery's
   full preview publishes independently of thumbnail stand-in work. Background RAW
   quality requests bypass Info's 700 ms dwell on the same single utility lane.
+  Info EXIF detail reads use `MetadataDetailPipeline`'s single lane; a retired
+  waiter never starts, and a running read keeps its grant until it exits.
 - Gallery owns one replaceable four-photo prefetch neighborhood. Navigation,
   view/zoom/decoder changes, folder changes and Close cancel its admitted waiters
   as well as its debounce. Grid does not warm full previews; high-resolution
@@ -692,7 +711,10 @@ precedence over remembered scope/position.
   source in both loose and archived apps. Packaging uses SwiftPM's native
   backend because Xcode's default backend attempted to sign resource bundles
   inside this File Provider workspace and failed on reattached Finder metadata.
-  Use `--build-system native` for focused `swift build`/`swift test` here.
+  Use `--build-system native` for focused `swift build`/`swift test` here. The
+  default backend matched native suite results on 4 November 2026 (Xcode 27.2)
+  only with `--scratch-path` outside File Provider; packaging remains native until
+  its release resource-bundle layout and identifier are handled.
 - The 2026-10-14 audit inspected all 1,600 existing entries per catalog and
   added complete messages for missed controls and operation summaries. Portuguese
   uses pt-BR consistently. Runtime template validation rejects stray braces as

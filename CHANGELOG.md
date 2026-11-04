@@ -1,8 +1,14 @@
 # Version History
 
-## 1.13.0 (15) — 2026-11-01
+## 1.13.0 (15) — 2026-11-04
 
 - Update Expat to 2.9.0 for parser security fixes and Sparkle to 2.10.1, preserving bounded XMP parsing and the existing updater policy.
+- Stop hostile XMP sidecars from slowing Louppe or growing its memory for the rest of the session.
+
+- Check the chosen Export folder in the background with a Cancel button, so slow drives and large Moves no longer freeze Louppe. Routed Copy previews with thousands of files open instantly.
+- Show Copy progress inside large videos and stop within moments instead of after the whole file. Skip redundant disk flushes when copying many small photos.
+- Speed up decisions, stars and colors under Decision, Star or Color sorting, Select All edits and Undo in large folders; restoring saved decisions for thousands of files takes seconds instead of minutes. Decision, star and color Undo now stays within 256 MB: single-photo edits still keep 500 steps, very large whole-folder edits keep fewer, and Clean Up, Organize and Rename steps are never dropped.
+- Keep the thumbnail cache within its 512 MB limit while Louppe is open, not just at daily cleanup. Info no longer piles up file reads when you move quickly through photos on slow cards or drives.
 
 - Show cached pinned-folder photos before the drive scan finishes, using the existing toolbar loading indicator. Keep browsing read-only until fresh validation, preserve navigation only for unchanged files, and reuse the existing cache without copying originals.
 

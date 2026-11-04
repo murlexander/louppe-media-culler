@@ -31,6 +31,10 @@ prints missing workloads and does not count them as passes or zero-duration work
 | `LOUPPE_SPEED_FILTER` | `LouppeSpeed` | XCTest name regular expression |
 | `LOUPPE_SPEED_RAW_FILE` | Unset; RAW test skips | Local RAW copied into a disposable directory before decoding |
 | `LOUPPE_OPENING_FOLDERS` | Unset; opening-stage test skips | Colon-separated disposable folders for read-only complete opening-stage profiles |
+| `LOUPPE_SPEED_RAW_FOLDER` | Unset; cold RAW Fit/100% rows skip | Folder of local RAWs, copied into a disposable directory before decoding |
+| `LOUPPE_UNDO_CYCLES` | Test default | Whole-folder edit steps for the Undo retention row |
+| `LOUPPE_RECOVERY_SIZES`, `LOUPPE_RECOVERY_ARMS` | Test defaults | Batch-recovery file counts and sort arms |
+| `LOUPPE_EXPORT_PREVIEW_MEASURE`, `LOUPPE_EXPORT_PREVIEW_SAMPLES` | Unset; measurement skips | Opt-in offscreen 10k routing-preview measurement (debug suite) |
 
 For a quick run:
 
@@ -52,10 +56,10 @@ No private media or source filenames enter the JSON reports.
 ## Measurement contract
 
 - Full Xcode, SwiftPM native backend, release optimization, sequential tests.
-  `-Xswiftc -DDEBUG` retains the existing target's required test seams. These
-  are optimized measurements with debug conditional code, not an untouched
-  shipping executable. The runner records exact toolchain, source checksums,
-  Git HEAD and working-copy state.
+  `-Xswiftc -DLOUPPE_TEST_SEAMS` compiles only the XCTest hooks; `DEBUG` is
+  not defined. Those hooks include a few counters on measured paths, so this is
+  still not an untouched shipping executable. The runner records exact
+  toolchain, source checksums, Git HEAD and working-copy state.
 - One warmup, then independent monotonic-clock samples; JSON retains every
   sample, median, nearest-rank p95, minimum and maximum. With seven samples,
   p95 is the largest observation, not a precise population-tail estimate.
@@ -95,6 +99,8 @@ No private media or source filenames enter the JSON reports.
 | Mounted large folders | Real 1k/10k generated JPEGs, Grid/Browser jumps to matching-revision pixels, native vertical wheel gates, process RSS and main-actor scheduling gaps |
 | First use | Real RootView opening through matching-revision visible pixels, complete readiness and final current pixels; saved decisions and original bytes verified |
 | Contention | Mounted navigation during production cues, fingerprint work and save activity; injected fingerprint delay is labelled separately |
+| Review retention | Decision/star/color projection, Select All edits, Undo retained bytes and memory, batch recovery on disposable files |
+| Media responsiveness | Info EXIF navigation with injected slow reads, live disk-thumbnail maintenance, cold RAW Fit/100% and idle drain, movie scan bridge |
 
 Independent candidate implementations remain in tests for equivalence checks.
 Production rows now exercise cached finite sorting, physical-pair preparation,

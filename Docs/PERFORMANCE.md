@@ -504,7 +504,7 @@ Quit take a finite checkpoint independently of decision durability. See
 | Histograms | 256 numeric results; temporary 1,024-pixel previews |
 | RAW histograms | 128 numeric results; temporary extended-linear RGBA-float bitmap near 1,024 pixels on longest side |
 | Actual-size tiles | 128 MiB total; 1,024 × 1,024 source-pixel tiles, normal and clipping variants; lazy recipes retain no whole bitmap |
-| Disk thumbnails | 512 MiB; 90-day age; utility maintenance at most daily after launch delay; test hosts use a disposable root without pruning |
+| Disk thumbnails | 512 MiB; 90-day age; utility pass at most daily after launch delay, plus live passes after 64 MiB of writes before the total is known, then when known total + writes exceed 512 MiB; evicts to 448 MiB; one pass at a time; test hosts use a disposable root and prune only with injected limits |
 | Archive metadata snapshots | 250k entries/32 MiB each; 32 unpinned folders; 256 MiB total, pins evicted last |
 
 Decoded cost is `bytesPerRow × height`. Return thumbnails before JPEG
@@ -526,7 +526,7 @@ fresh source decode; replacements never inherit old pixels, even for slow RAW.
 |---|---|
 | Neighbour prefetch | 60 ms debounce |
 | Full/clipping view decode | 40 ms; memory hits remain immediate |
-| Secondary Info EXIF/histogram | 80 ms |
+| Secondary Info EXIF/histogram | 80 ms; EXIF reads use one lane, and a retired waiter never starts a read |
 | RAW histogram in Info | 700 ms; separate utility lane; background quality requests have no dwell |
 
 At 100%, document points equal source pixels/backing scale, giving one physical
@@ -962,6 +962,13 @@ byte equality before publication. Unrecorded legacy partials remain untouched.
 `finishExport` clears state; Move removes completed IDs, clears stale undo,
 rebuilds/filter/saves. The modal sheet blocks rating/navigation keys.
 
+Ordinary preflight freezes inputs and runs off-main (`validatingDestination`)
+with its own lease and a Cancel button. Only the newest current result proceeds;
+cancel, dismissal or a newer request discards late results and releases access.
+Nothing is journaled or written and `activeFileOperation` is not claimed until
+it finishes. Move's per-source volume loop is cancellable. Routing preview rows
+are lazy per file and per unmatched item.
+
 `ExportDestinationValidator` resolves symlinks, refuses source/descendants,
 checks write permission and Copy capacity. Same-volume Move needs no full-size
 free space. Preflight and workers probe exclusive-rename capability on bound
@@ -1059,7 +1066,9 @@ need only a linear check. Default and finite metadata sorts reuse it. The pure
 `rebuildSort` entry point accepts arbitrary input; `rebuildPreparedSort` requires
 unchanged immutable items, with `items.didSet` invalidating the permutation.
 Sort-only changes retain item-ID, physical-file and portable-recovery maps;
-structural changes rebuild them before filtering.
+structural changes rebuild them before filtering. Finite metadata sorts retain
+item-indexed bucket ranks; grouping and unchanged-group checks reuse them until
+the next sort rebuild (every review-metadata change re-sorts).
 
 Quality-cue filtering borrows a dense, item-order numeric match array from
 `SessionStore`; one byte per item replaces the extra warning-array and filename-set
