@@ -133,6 +133,29 @@ final class HistogramTests: XCTestCase {
         )
     }
 
+    @MainActor
+    func testHistogramLabelsIdentifyRawSourcesOnly() {
+        let store = SessionStore(automaticallyRecoversInterruptedOperations: false)
+        let analysis = HistogramAnalysis(bins: [1], sampleCount: 1,
+                                         shadowCount: 0, highlightCount: 0)
+        for ext in ["jpg", "JPEG", "tif", "TIFF", "png", "heic", "RAF", "dng"] {
+            let item = photo(path: "/private/tmp/capture.\(ext)")
+            for source in [HistogramAnalysisSource.renderedPreview, .rawDecode] {
+                let view = HistogramSection(item: item, analysis: analysis, source: source,
+                                            loadFailed: false, store: store)
+                XCTAssertEqual(view.sourceLabel,
+                               ["RAF", "dng"].contains(ext) ? source.shortLabel : nil, ext)
+            }
+        }
+        let pending = HistogramSection(item: photo(path: "/private/tmp/capture.RAF"),
+                                       analysis: nil, source: .renderedPreview,
+                                       loadFailed: false, store: store)
+        XCTAssertNil(pending.sourceLabel, "Pending RAW analysis must not claim a completed source")
+        for ext in ["tif", "TIFF"] {
+            XCTAssertFalse(RawHistogramPipeline.supportsAnalysis(for: photo(path: "/private/tmp/capture.\(ext)")))
+        }
+    }
+
     func testRawProcessorUsesLinearClippingThresholdsAndBoundedBins() throws {
         let analysis = try XCTUnwrap(
             RawHistogramProcessor.analyze(

@@ -1,0 +1,8 @@
+Stopped after more than three minutes with eight scanner workers inside Apple
+ImageIO/RawCamera cache operations. One RawCamera cache barrier spun while other
+workers waited in libcache. This occurred during untimed fixture preparation,
+before mounted opening samples. The stack sample is retained.
+
+No completed timing or resource report from this attempt is counted. The earlier
+completed original-first-use report remains the timing baseline. No product
+workaround or dependency pass is inferred from this failed attempt.

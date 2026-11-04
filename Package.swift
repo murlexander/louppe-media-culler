@@ -6,16 +6,21 @@ import Foundation
 /// link Sparkle at all. The direct-download product retains its signed updater.
 let isAppStoreBuild = ProcessInfo.processInfo.environment["LOUPPE_APP_STORE"] == "1"
 
+/// XCTest-only hooks compile into debug builds. Optimized speed tests add
+/// `-Xswiftc -DLOUPPE_TEST_SEAMS`; release packaging never defines it or DEBUG.
+let testSeams: [SwiftSetting] = [.define("LOUPPE_TEST_SEAMS", .when(configuration: .debug))]
+
 let package = Package(
     name: "Louppe",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     targets: [
         // Use Sparkle's checksum-pinned public binary directly. This avoids a
         // source-control checkout (and therefore never needs GitHub credentials).
         .binaryTarget(
             name: "Sparkle",
-            url: "https://github.com/sparkle-project/Sparkle/releases/download/2.10.0/Sparkle-for-Swift-Package-Manager.zip",
-            checksum: "17e28312b8e18ab7cdbbe09a6fb28cc55a5479ec6c371dbc07cdecd2a14fd959"
+            url: "https://github.com/sparkle-project/Sparkle/releases/download/2.10.1/Sparkle-for-Swift-Package-Manager.zip",
+            checksum: "4c2e48a3e50ebcc2c88a58a4c7264a1a99c3c31857ce754357afb9cdb323022a"
         ),
         .target(
             name: "XMPBridge",
@@ -23,6 +28,7 @@ let package = Package(
             sources: [
                 "XMPBridge.mm",
                 "Vendor/Expat/expat/lib/xmlparse.c",
+                "Vendor/Expat/expat/lib/xcs.c",
                 "Vendor/Expat/expat/lib/xmlrole.c",
                 "Vendor/Expat/expat/lib/xmltok.c",
                 "Vendor/Expat/expat/lib/random_arc4random_buf.c",
@@ -86,6 +92,8 @@ let package = Package(
             name: "Louppe",
             dependencies: isAppStoreBuild ? ["XMPBridge"] : ["Sparkle", "XMPBridge"],
             path: "Sources/Louppe",
+            resources: [.process("Resources")],
+            swiftSettings: testSeams,
             linkerSettings: [
                 // The release executable lives in Louppe.app/Contents/MacOS
                 // and Sparkle is embedded in Louppe.app/Contents/Frameworks.
@@ -98,7 +106,8 @@ let package = Package(
         .testTarget(
             name: "LouppeTests",
             dependencies: ["Louppe"],
-            path: "Tests/LouppeTests"
+            path: "Tests/LouppeTests",
+            swiftSettings: testSeams
         ),
     ],
     swiftLanguageModes: [.v6],

@@ -49,6 +49,13 @@ verify_app_bundle() {
     local label="$2"
 
     codesign --verify --deep --strict "$bundle"
+    local entitlements
+    entitlements="$(mktemp "$CHECK_DIR/Louppe-entitlements.XXXXXX")"
+    codesign -d --entitlements :- "$bundle" 2>/dev/null > "$entitlements"
+    [[ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.personal-information.photos-library' "$entitlements")" == "true" ]] \
+        || fail "$label cannot request Photos library access."
+    [[ -n "$(plist_value "$bundle" NSPhotoLibraryUsageDescription)" ]] \
+        || fail "$label has no Photos permission explanation."
     [[ "$(plist_value "$bundle" CFBundleIdentifier)" == "com.alexandermarkin.louppe" ]] \
         || fail "$label bundle identifier changed."
     [[ "$(plist_value "$bundle" CFBundleShortVersionString)" == "$MARKETING_VERSION" ]] \
@@ -63,6 +70,11 @@ verify_app_bundle() {
         || fail "$label has no legacy app-icon fallback."
     [[ -f "$bundle/Contents/Resources/Assets.car" ]] \
         || fail "$label has no native appearance-aware app icon."
+    [[ "$(plist_value "$bundle" NSAccentColorName)" == "LouppeAccent" ]] \
+        || fail "$label does not declare Louppe's native accent color."
+    xcrun assetutil --info "$bundle/Contents/Resources/Assets.car" | \
+        python3 -c 'import json,sys; sys.exit(not any(a.get("Name") == "LouppeAccent" and a.get("AssetType") == "Color" for a in json.load(sys.stdin)))' \
+        || fail "$label has no compiled Louppe accent color."
     [[ "$(plist_value "$bundle" LSMultipleInstancesProhibited)" == "true" ]] \
         || fail "$label must prohibit a second app instance during file operations."
     cmp -s ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt \
@@ -71,10 +83,37 @@ verify_app_bundle() {
     cmp -s ThirdPartyLicenses/Expat-MIT.txt \
         "$bundle/Contents/Resources/Expat License.txt" \
         || fail "$label does not contain the reviewed Expat license."
+    "$PWD/Scripts/resource_bundle_metadata.sh" --verify \
+        "$bundle/Contents/Resources/Louppe_Louppe.bundle" \
+        || fail "$label resource bundle metadata is invalid."
+    local locale
+    for locale in en es zh-Hans hi pt ar; do
+        local source_strings="Sources/Louppe/Resources/$locale.lproj/Localizable.strings"
+        local locale_directory="${locale:l}"
+        local bundled_strings="$bundle/Contents/Resources/Louppe_Louppe.bundle/$locale_directory.lproj/Localizable.strings"
+        [[ -f "$bundled_strings" ]] || fail "$label $locale localization is missing."
+        plutil -lint "$bundled_strings" >/dev/null || fail "$label $locale localization is malformed."
+        cmp -s "$source_strings" "$bundled_strings" || fail "$label $locale localization differs from source."
+    done
     cmp -s PrivacyInfo.xcprivacy "$bundle/Contents/Resources/PrivacyInfo.xcprivacy" \
         || fail "$label does not contain the reviewed privacy manifest."
     plutil -lint "$bundle/Contents/Resources/PrivacyInfo.xcprivacy" >/dev/null \
         || fail "$label privacy manifest is invalid."
+
+    local declaration category reason
+    for declaration in \
+        'NSPrivacyAccessedAPICategoryFileTimestamp|3B52.1' \
+        'NSPrivacyAccessedAPICategoryFileTimestamp|C617.1' \
+        'NSPrivacyAccessedAPICategoryDiskSpace|E174.1' \
+        'NSPrivacyAccessedAPICategoryDiskSpace|85F4.1' \
+        'NSPrivacyAccessedAPICategorySystemBootTime|35F9.1' \
+        'NSPrivacyAccessedAPICategoryUserDefaults|CA92.1'; do
+        category="${declaration%%|*}"
+        reason="${declaration##*|}"
+        [[ "$(xmllint --xpath "count(/plist/dict/array/dict[string=\"$category\"]/array/string[.=\"$reason\"])" \
+            "$bundle/Contents/Resources/PrivacyInfo.xcprivacy")" == "1" ]] \
+            || fail "$label privacy manifest lacks $category reason $reason."
+    done
 
     if $DEVELOPER_ID || $PUBLISHING; then
         local signing_details
@@ -128,9 +167,8 @@ verify_app_bundle() {
     fi
 
     if $APP_STORE; then
-        local entitlements
-        entitlements="$(mktemp "$CHECK_DIR/Louppe-entitlements.XXXXXX")"
-        codesign -d --entitlements :- "$bundle" 2>/dev/null > "$entitlements"
+        [[ "$(plist_value "$bundle" LSApplicationCategoryType)" == "public.app-category.photography" ]] \
+            || fail "$label App Store category must be Photography."
         [[ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.app-sandbox' "$entitlements")" == "true" ]] \
             || fail "$label is not sandboxed."
         [[ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.files.user-selected.read-write' "$entitlements")" == "true" ]] \
@@ -184,7 +222,7 @@ xattr -cr "$VERIFIED_APP"
 verify_app_bundle "$VERIFIED_APP" "the loose app's"
 
 if ! $APP_STORE; then
-    SPARKLE_TOOLS="$(find .build/artifacts -type d -path '*/Sparkle/bin' -print -quit)"
+    SPARKLE_TOOLS="$(find "${LOUPPE_SCRATCH_PATH:-.build}/artifacts" -type d -path '*/Sparkle/bin' -print -quit)"
     [[ -n "$SPARKLE_TOOLS" && -x "$SPARKLE_TOOLS/sign_update" ]] \
         || fail "Sparkle's verification tool is missing."
     if $PUBLISHING; then

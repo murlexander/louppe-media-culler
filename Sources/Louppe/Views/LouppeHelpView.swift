@@ -7,94 +7,141 @@ enum LouppeHelpWindow {
 /// A small, searchable reference that can open independently of a photo session.
 struct LouppeHelpView: View {
     @State private var shortcutSearch = ""
-    @AppStorage("louppe.showQuickStart") private var showQuickStart = true
+    @AppStorage(ReviewShortcutPreferences.preferenceKey) private var shortcutSettings = ""
+    @AppStorage(CommandShortcutPreferences.preferenceKey) private var commandShortcutSettings = ""
+
+    private var shortcuts: ReviewShortcutPreferences { ReviewShortcutPreferences.decode(shortcutSettings) }
+    private var commandShortcuts: CommandShortcutPreferences { .decode(commandShortcutSettings) }
 
     private struct Shortcut: Identifiable {
+        let id: String
         let keys: String
         let action: String
-        var id: String { keys }
+        var context: String = ""
 
         func matches(_ query: String) -> Bool {
             keys.localizedStandardContains(query)
                 || action.localizedStandardContains(query)
+                || context.localizedStandardContains(query)
         }
     }
 
-    private static let shortcuts: [Shortcut] = [
-        .init(keys: "F / D", action: "Mark Yes / No; advance by default (Settings → Review)"),
-        .init(keys: "0–5", action: "Clear or set stars, independently of Yes / No"),
-        .init(keys: "← / →, J / L", action: "Previous / next item; arrows seek in Gallery video"),
-        .init(keys: "↑ / ↓", action: "Previous / next item or Grid row"),
-        .init(keys: "Space / K", action: "Play or pause media; Space advances on photos"),
-        .init(keys: "⇧← / ⇧→", action: "Seek five seconds in Gallery video"),
-        .init(keys: "S", action: "Toggle 100% photo view"),
-        .init(keys: "A", action: "Toggle phone-sized photo view"),
-        .init(keys: "X", action: "Toggle photo clipping overlay"),
-        .init(keys: "Tab / G", action: "Switch Gallery / Grid"),
-        .init(keys: "Q", action: "Show or hide Gallery thumbnail browser"),
-        .init(keys: "W", action: "Show or hide Info panel"),
-        .init(keys: "⌘+ / ⌘−", action: "Make Grid thumbnails larger / smaller"),
-        .init(keys: "E / ⌘E", action: "Open Export"),
-        .init(keys: "R", action: "Clear all Yes / No decisions"),
-        .init(keys: "Z / ⌘Z", action: "Undo the latest review or file action"),
-        .init(keys: "⌘O", action: "Open another folder"),
-        .init(keys: "⌘R", action: "Rescan the current folder"),
-        .init(keys: "⌘F", action: "Open Filter and focus Search"),
-        .init(keys: "⌘K", action: "Open Command Palette"),
-        .init(keys: "⌘A", action: "Select all visible items"),
-        .init(keys: "⌘← / ⌘→", action: "Change playback speed; previous / next photo"),
-        .init(keys: "⌘⇧← / ⌘⇧→", action: "Select to the first / last item"),
-        .init(keys: "Esc", action: "Cancel a scan or clear selection"),
-        .init(keys: "⌘⌫", action: "Move selected items to Trash; ⌘Z restores them"),
-    ]
+    private var shortcutReference: [Shortcut] {
+        let configurable = ReviewShortcutAction.allCases.flatMap { action -> [Shortcut] in
+            let assignments = shortcuts.assignments(for: action)
+            if assignments.isEmpty {
+                return [.init(id: "action-\(action.rawValue)", keys: L10n.text("No shortcut assigned"), action: action.title,
+                              context: action.contextLabel)]
+            }
+            return assignments.map { assignment in
+                .init(id: "action-\(action.rawValue)-\(assignment.id)", keys: shortcuts.display(for: assignment.binding),
+                      action: action.title,
+                      context: assignment.scope == .all ? action.contextLabel : assignment.scope.title)
+            }
+        }
+        let commands = CommandShortcutAction.allCases.map { action -> Shortcut in
+            let hint = commandShortcuts.hint(for: action)
+            return .init(id: "command-\(action.rawValue)",
+                         keys: hint.isEmpty ? L10n.text("No shortcut assigned") : hint,
+                         action: action.title, context: action.contextLabel)
+        }
+        return configurable + commands + [
+            .init(id: "escape", keys: "Esc", action: L10n.text("Cancel a scan or clear selection")),
+        ]
+    }
 
     private var matchingShortcuts: [Shortcut] {
         let query = shortcutSearch.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return Self.shortcuts }
-        return Self.shortcuts.filter { $0.matches(query) }
+        guard !query.isEmpty else { return shortcutReference }
+        return shortcutReference.filter { $0.matches(query) }
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Get started")
+                    Text(L10n.text("Get started"))
                         .font(.title2.bold())
-                    Text("Choose or drop a media folder. Louppe scans its subfolders and opens the review in Gallery or Grid.")
-                    Text("Mark keepers Yes (F) and rejects No (D). Both keys advance to the next undecided item by default; change this in Settings → Review. Stars (0–5) and color labels are separate from that decision.")
-                    Text("Use Export to copy chosen media. The Clean Up toolbar action asks before moving rejects to the macOS Trash.")
-                    Text("Decisions, stars, and color labels save automatically. Reopen the same folder to continue. Marking No never trashes a file by itself. Export → Metadata (XMP) makes ratings available to compatible editing apps.")
-                    Toggle("Show quick-start tips while reviewing", isOn: $showQuickStart)
+                    LouppeQuickStartContent()
+                    Link(L10n.text("User guide (English)"), destination: AppBuildInfo.userGuideURL)
+                        .foregroundStyle(Color.louppeAccent)
                 }
 
                 Divider()
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Look closer and find similar photos")
+                    Text(L10n.text("Folders"))
                         .font(.headline)
-                    Text("Use the zoom slider below the photo or pinch to zoom. Move around an enlarged photo with two-finger scrolling or click and drag. S returns custom zoom to centered 100%, then toggles Fit; A toggles Phone size. Double-click a photo to inspect that point at 100%.")
-                    Text("View → Review Groups finds exact duplicates, similar photos, and capture bursts. Analysis stays local and never changes decisions or files. Use Normal Review to return.")
-                    Text("In Filter, choose whether matching RAW + JPEG files are reviewed together or separately. The same toggle is available in the Command Palette (⌘K); search for RAW, JPEG, or pairing.")
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L10n.text("Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered."))
+                    Text(L10n.text("Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media."))
+                    Text(L10n.text("File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together."))
                 }
 
                 Divider()
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Supported media")
+                    Text(L10n.text("Apple Photos"))
                         .font(.headline)
-                    Text("Photos: common RAW formats, JPEG, HEIC, PNG, TIFF, and other ImageIO formats. Videos: MOV, MP4, M4V, and other macOS media formats. Audio: MP3, M4A, WAV, FLAC, and more.")
-                    Text("Some recognized files may appear without a preview when macOS cannot decode them.")
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L10n.text("File → Open Apple Photos… opens your System Photo Library or an album, with an optional date range. Review images load as you browse and exclude Photos edits."))
+                    Text(L10n.text("Settings → General → iCloud Access has separate choices for review images and originals. Photos may download source data for a review image. Open Original Detail, video playback, and Copy request originals separately."))
+                    Text(L10n.text("Ratings stay local. File → Add to Album… adds items only after confirmation and preserves existing memberships. Copy exports primary originals; Move, Rename, Organize, XMP, and Trash are unavailable for Photos."))
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.text("File safety and saved decisions"))
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L10n.text("Export copies by default. Move transfers originals and cannot be undone. Rename and Organize change file names or locations only after confirmation."))
+                    Text(L10n.text("Clean Up asks before moving files to Trash. ⌘⌫ trashes the selection without a dialog. ⌘Z restores trashed files during the open session while they remain in Trash."))
+                    Text(L10n.text("Folder ratings save to .louppe_session.json; File → Check Saved Decisions… offers recovery. Photos ratings save locally by asset ID."))
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.text("Look closer and find similar photos"))
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L10n.text("Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size."))
+                    Text(L10n.text("View → Review Groups finds exact duplicates, similar photos, and capture bursts locally. Ratings and files stay unchanged. Normal Review exits groups."))
+                    Text(L10n.text("Review matching RAW + JPEG files together or separately in Filter or the Command Palette. Search for RAW, JPEG, or pairing."))
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.text("Supported media"))
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L10n.text("Photos: RAW, JPEG, HEIC, PNG, TIFF, and other ImageIO formats. Video: MOV, MP4, M4V, and other macOS formats. Audio: MP3, M4A, WAV, FLAC, and more."))
+                    Text(L10n.text("Text previews are read-only and selectable: plain text, Markdown, JSON, XML, CSV, TSV, logs, and YAML, up to 1 MiB per file."))
+                    Text(L10n.text("Files macOS cannot decode appear without a preview."))
                         .foregroundStyle(.secondary)
                 }
 
                 Divider()
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Keyboard shortcuts")
+                    Text(L10n.text("Keyboard shortcuts"))
                         .font(.headline)
-                    TextField("Search shortcuts or actions", text: $shortcutSearch)
-                        .textFieldStyle(.roundedBorder)
-                        .accessibilityLabel("Search keyboard shortcuts")
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L10n.text("Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts."))
+                    Text(L10n.text("When Keyboard Navigation is on, Tab moves focus between controls. Use G to switch views."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(L10n.text("Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    NativeSearchField(
+                        text: $shortcutSearch,
+                        placeholder: L10n.text("Search shortcuts or actions"),
+                        accessibilityLabel: L10n.text("Search keyboard shortcuts"),
+                        accessibilityIdentifier: "louppe.helpSearch"
+                    )
 
                     if matchingShortcuts.isEmpty {
                         ContentUnavailableView.search(text: shortcutSearch)
@@ -102,10 +149,18 @@ struct LouppeHelpView: View {
                         ForEach(matchingShortcuts) { shortcut in
                             HStack(alignment: .firstTextBaseline, spacing: 14) {
                                 Text(shortcut.keys)
+                                    .environment(\.layoutDirection, .leftToRight)
                                     .font(.system(.body, design: .monospaced))
                                     .frame(width: 122, alignment: .leading)
-                                Text(shortcut.action)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(shortcut.action)
+                                    if !shortcut.context.isEmpty {
+                                        Text(shortcut.context)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                     }
@@ -113,11 +168,32 @@ struct LouppeHelpView: View {
 
                 Divider()
 
-                Link("Contact Alex · a@alex-markin.com", destination: URL(string: "mailto:a@alex-markin.com")!)
+                Link(L10n.text("Contact Alex · a@alex-markin.com"), destination: URL(string: "mailto:a@alex-markin.com")!)
             }
             .frame(maxWidth: 570, alignment: .leading)
             .padding(24)
         }
         .background(Color.appBackground)
+        .tint(Color.louppeAccent)
+    }
+}
+
+/// The onboarding guide lives in Help; review preferences live in Settings.
+struct LouppeQuickStartContent: View {
+    @AppStorage(CommandShortcutPreferences.preferenceKey) private var commandShortcutSettings = ""
+
+    var body: some View {
+        let paletteShortcut = CommandShortcutPreferences.decode(commandShortcutSettings).hint(for: .commandPalette)
+        let paletteName = paletteShortcut.isEmpty ? L10n.text("Command Palette") : L10n.text("Command Palette (\(paletteShortcut))")
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L10n.text("Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid."))
+            Text(L10n.text("Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent."))
+            Text(L10n.text("Export copies chosen media. Clean Up asks before moving rejects to the macOS Trash."))
+            Text(L10n.text("To rename keepers, filter to Yes, open \(paletteName) → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names."))
+            Text(L10n.text("Decisions, stars, and colors save automatically. Reopen the folder to continue. No never trashes files. Export → Metadata (XMP) shares ratings with compatible editing apps."))
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("louppe.quickStartGuide")
     }
 }

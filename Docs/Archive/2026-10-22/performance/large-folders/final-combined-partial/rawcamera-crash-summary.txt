@@ -1,0 +1,34 @@
+Combined optimized stress run: signal11 during RAW metadata properties extraction.
+Exception: {'codes': '0x0000000000000001, 0x0000000000000002', 'rawCodes': [1, 2], 'type': 'EXC_BAD_ACCESS', 'signal': 'SIGSEGV', 'subtype': 'KERN_INVALID_ADDRESS at 0x0000000000000002'}
+Only relevant stack symbols retained; original report stays in local DiagnosticReports and temporary evidence.
+Triggered thread 8, queue com.apple.root.user-initiated-qos
+RawCamera | <private framework frame>
+RawCamera | <private framework frame>
+RawCamera | <private framework frame>
+RawCamera | <private framework frame>
+libcache.dylib | _value_entry_release
+libcache.dylib | cache_release_value
+RawCamera | <private framework frame>
+RawCamera | <private framework frame>
+RawCamera | <private framework frame>
+RawCamera | <private framework frame>
+ImageIO | IIOReader_RawCamera::initImageAtOffset(CGImagePlugin*, unsigned long, unsigned long, unsigned long)
+ImageIO | IIOImageSource::makeImagePlus(unsigned long, IIODictionary*)
+ImageIO | IIOImageSource::getPropertiesAtIndexInternal(unsigned long, IIODictionary*)
+ImageIO | IIOImageSource::copyPropertiesAtIndex(unsigned long, IIODictionary*)
+ImageIO | CGImageSourceCopyPropertiesAtIndexEx
+LouppePackageTests | static MetadataExtractor.scanInfo(for:)
+LouppePackageTests | static FolderScanner.enrichMetadata(for:metadataReaderForTesting:)
+LouppePackageTests | closure #1 in closure #1 in static FolderScanner.makeItems(for:isCancelled:recorder:metadataReaderForTesting:)
+LouppePackageTests | specialized autoreleasepool<A, B>(invoking:)
+LouppePackageTests | closure #1 in static FolderScanner.makeItems(for:isCancelled:recorder:metadataReaderForTesting:)
+libswiftDispatch.dylib | partial apply for thunk for @callee_guaranteed (@unowned Int) -> ()
+libswiftDispatch.dylib | thunk for @escaping @callee_guaranteed (@unowned Int) -> ()
+libdispatch.dylib | _dispatch_client_callout2
+libdispatch.dylib | _dispatch_apply_invoke3
+libdispatch.dylib | _dispatch_client_callout
+libdispatch.dylib | _dispatch_once_callout
+libdispatch.dylib | _dispatch_apply_invoke
+libdispatch.dylib | _dispatch_client_callout
+libdispatch.dylib | <deduplicated_symbol>
+libdispatch.dylib | _dispatch_root_queue_drain

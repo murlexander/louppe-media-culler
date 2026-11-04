@@ -29,7 +29,7 @@ REVIEW_PLIST="$REVIEW_APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :SUEnableAutomaticChecks false' "$REVIEW_PLIST"
 /usr/libexec/PlistBuddy -c 'Set :SUAutomaticallyUpdate false' "$REVIEW_PLIST"
 xattr -cr "$REVIEW_APP"
-codesign --force --sign - "$REVIEW_APP"
+codesign --force --sign - --entitlements "$PWD/Louppe.direct.entitlements" "$REVIEW_APP"
 codesign --verify --deep --strict "$REVIEW_APP"
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$REVIEW_PLIST")" == "$REVIEW_BUNDLE_ID" ]]
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :SUEnableAutomaticChecks' "$REVIEW_PLIST")" == false ]]
@@ -43,10 +43,16 @@ xattr -cr "$REVIEW_OUTPUT"
 ditto -c -k --sequesterRsrc --keepParent "$REVIEW_APP" "$REVIEW_ARCHIVE"
 mkdir "$REVIEW_STAGE/unpacked"
 ditto -x -k "$REVIEW_ARCHIVE" "$REVIEW_STAGE/unpacked"
-codesign --verify --deep --strict "$REVIEW_OUTPUT"
+# Match direct release preflight: File Provider can immediately attach Finder
+# metadata to dist/. Check a clean copy of that exact output on the local volume,
+# independently from the archived app, without resigning or altering code bytes.
+REVIEW_VERIFIED_OUTPUT="$REVIEW_STAGE/LooseReview.app"
+ditto --noextattr --noqtn "$REVIEW_OUTPUT" "$REVIEW_VERIFIED_OUTPUT"
+xattr -cr "$REVIEW_VERIFIED_OUTPUT"
+codesign --verify --deep --strict "$REVIEW_VERIFIED_OUTPUT"
 codesign --verify --deep --strict "$REVIEW_STAGE/unpacked/$REVIEW_NAME.app"
 REVIEW_DIFFERENCES="$(rsync -rcln --delete --itemize-changes \
-    "$REVIEW_OUTPUT/Contents/" "$REVIEW_STAGE/unpacked/$REVIEW_NAME.app/Contents/")"
+    "$REVIEW_VERIFIED_OUTPUT/Contents/" "$REVIEW_STAGE/unpacked/$REVIEW_NAME.app/Contents/")"
 if [[ -n "$REVIEW_DIFFERENCES" ]]; then
     print -r -- "$REVIEW_DIFFERENCES" >&2
     echo 'Review archive differs from the verified app.' >&2

@@ -1,0 +1,90 @@
+{
+  "generatedAt" : "2026-10-22T01:27:19Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 17.606833,
+      "medianMS" : 17.544458,
+      "minMS" : 17.371708,
+      "name" : "jpeg_source_decode_320px_os_cache_warm",
+      "p95MS" : 17.606833,
+      "samplesMS" : [
+        17.544458,
+        17.371708,
+        17.606833
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 49.185833,
+      "medianMS" : 43.502041,
+      "minMS" : 43.092792,
+      "name" : "jpeg_source_decode_4096px_os_cache_warm",
+      "p95MS" : 49.185833,
+      "samplesMS" : [
+        43.092792,
+        43.502041,
+        49.185833
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 2.482375,
+      "medianMS" : 2.409709,
+      "minMS" : 2.369875,
+      "name" : "thumbnail_memory_hit_1000",
+      "p95MS" : 2.482375,
+      "samplesMS" : [
+        2.409709,
+        2.369875,
+        2.482375
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 2.373375,
+      "medianMS" : 2.316542,
+      "minMS" : 2.309708,
+      "name" : "full_memory_hit_1000",
+      "p95MS" : 2.373375,
+      "samplesMS" : [
+        2.316542,
+        2.373375,
+        2.309708
+      ]
+    },
+    {
+      "count" : 16,
+      "maxMS" : 11.956958,
+      "medianMS" : 11.732875,
+      "minMS" : 11.625416,
+      "name" : "thumbnail_disk_hit_16_including_pipeline_init",
+      "p95MS" : 11.956958,
+      "samplesMS" : [
+        11.956958,
+        11.732875,
+        11.625416
+      ]
+    },
+    {
+      "count" : 16,
+      "maxMS" : 337.696333,
+      "medianMS" : 294.111542,
+      "minMS" : 288.652083,
+      "name" : "thumbnail_source_16_including_pipeline_init_and_disk_drain",
+      "p95MS" : 337.696333,
+      "samplesMS" : [
+        288.652083,
+        337.696333,
+        294.111542
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-cache",
+  "warmups" : 1
+}

@@ -1,0 +1,48 @@
+Building for debugging...
+[0/6] Write sources
+[1/6] Write swift-version--58304C5D6DBC2206.txt
+[3/6] Compiling LouppeTests LouppeQualityResourceTests.swift
+[4/6] Emitting module LouppeTests
+[4/6] Write Objects.LinkFileList
+[5/6] Linking LouppePackageTests
+Build complete! (2.93s)
+Test Suite 'Selected tests' started at 2026-10-12 11:38:02.684 PM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-12 11:38:02.692 PM.
+Test Suite 'LouppeQualityResourceTests' started at 2026-10-12 11:38:02.692 PM.
+Test Case '-[LouppeTests.LouppeQualityResourceTests testAtMostTwoMeasurementsAndFiniteWorkDrainsToIdle]' started.
+Test Case '-[LouppeTests.LouppeQualityResourceTests testAtMostTwoMeasurementsAndFiniteWorkDrainsToIdle]' passed (0.357 seconds).
+Test Case '-[LouppeTests.LouppeQualityResourceTests testCurrentSelectedThenVisibleInterestPrecedeFolderWalk]' started.
+Test Case '-[LouppeTests.LouppeQualityResourceTests testCurrentSelectedThenVisibleInterestPrecedeFolderWalk]' passed (0.100 seconds).
+Test Case '-[LouppeTests.LouppeQualityResourceTests testDisableCloseAndQuitRetireLateResults]' started.
+Test Case '-[LouppeTests.LouppeQualityResourceTests testDisableCloseAndQuitRetireLateResults]' passed (0.288 seconds).
+Test Case '-[LouppeTests.LouppeQualityResourceTests testExplicitPauseSurvivesFileOperationLifecycle]' started.
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeQualityResourceTests.swift:157: error: -[LouppeTests.LouppeQualityResourceTests testExplicitPauseSurvivesFileOperationLifecycle] : XCTAssertTrue failed
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeQualityResourceTests.swift:161: error: -[LouppeTests.LouppeQualityResourceTests testExplicitPauseSurvivesFileOperationLifecycle] : XCTAssertEqual failed: ("8") is not equal to ("2")
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeQualityResourceTests.swift:163: error: -[LouppeTests.LouppeQualityResourceTests testExplicitPauseSurvivesFileOperationLifecycle] : XCTAssertTrue failed
+Test Case '-[LouppeTests.LouppeQualityResourceTests testExplicitPauseSurvivesFileOperationLifecycle]' failed (0.329 seconds).
+Test Case '-[LouppeTests.LouppeQualityResourceTests testExplicitPauseSurvivesThresholdChanges]' started.
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeQualityResourceTests.swift:138: error: -[LouppeTests.LouppeQualityResourceTests testExplicitPauseSurvivesThresholdChanges] : XCTAssertTrue failed
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeQualityResourceTests.swift:142: error: -[LouppeTests.LouppeQualityResourceTests testExplicitPauseSurvivesThresholdChanges] : XCTAssertEqual failed: ("8") is not equal to ("2") - Editing a cutoff must not undo explicit Pause
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeQualityResourceTests.swift:144: error: -[LouppeTests.LouppeQualityResourceTests testExplicitPauseSurvivesThresholdChanges] : XCTAssertTrue failed - Retired generation cannot publish
+Test Case '-[LouppeTests.LouppeQualityResourceTests testExplicitPauseSurvivesThresholdChanges]' failed (0.118 seconds).
+Test Case '-[LouppeTests.LouppeQualityResourceTests testMetadataOnlyAndDisabledRulesPerformZeroMeasurements]' started.
+Test Case '-[LouppeTests.LouppeQualityResourceTests testMetadataOnlyAndDisabledRulesPerformZeroMeasurements]' passed (0.099 seconds).
+Test Case '-[LouppeTests.LouppeQualityResourceTests testPauseResumeKeepsGlobalMeasurementAdmissionAtTwo]' started.
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeQualityResourceTests.swift:118: error: -[LouppeTests.LouppeQualityResourceTests testPauseResumeKeepsGlobalMeasurementAdmissionAtTwo] : XCTAssertLessThanOrEqual failed: ("4") is greater than ("2") - Cancellation retires publication immediately; active measurement admission must wait for worker exit
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeQualityResourceTests.swift:123: error: -[LouppeTests.LouppeQualityResourceTests testPauseResumeKeepsGlobalMeasurementAdmissionAtTwo] : XCTAssertLessThanOrEqual failed: ("4") is greater than ("2")
+Test Case '-[LouppeTests.LouppeQualityResourceTests testPauseResumeKeepsGlobalMeasurementAdmissionAtTwo]' failed (0.117 seconds).
+Test Case '-[LouppeTests.LouppeQualityResourceTests testRepeatwarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+edSelectionPriorityWalkHasQuadraticProbeCount]' started.
+Test Case '-[LouppeTests.LouppeQualityResourceTests testRepeatedSelectionPriorityWalkHasQuadraticProbeCount]' passed (0.114 seconds).
+Test Case '-[LouppeTests.LouppeQualityResourceTests testSameIDReplacementRejectsRetiredEvidenceBeforeRestart]' started.
+Test Case '-[LouppeTests.LouppeQualityResourceTests testSameIDReplacementRejectsRetiredEvidenceBeforeRestart]' passed (0.089 seconds).
+Test Case '-[LouppeTests.LouppeQualityResourceTests testThresholdEditsReuseCompletedEvidence]' started.
+Test Case '-[LouppeTests.LouppeQualityResourceTests testThresholdEditsReuseCompletedEvidence]' passed (0.188 seconds).
+Test Suite 'LouppeQualityResourceTests' failed at 2026-10-12 11:38:04.491 PM.
+	 Executed 10 tests, with 8 failures (0 unexpected) in 1.798 (1.799) seconds
+Test Suite 'LouppePackageTests.xctest' failed at 2026-10-12 11:38:04.492 PM.
+	 Executed 10 tests, with 8 failures (0 unexpected) in 1.798 (1.800) seconds
+Test Suite 'Selected tests' failed at 2026-10-12 11:38:04.492 PM.
+	 Executed 10 tests, with 8 failures (0 unexpected) in 1.798 (1.808) seconds
+Note: Some test targets reported failures:
+  - LouppePackageTests (XCTest)

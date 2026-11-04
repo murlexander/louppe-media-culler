@@ -1,0 +1,62 @@
+[0/1] Planning build
+Building for production...
+[0/6] Write sources
+[2/6] Write swift-version--58304C5D6DBC2206.txt
+[4/7] Compiling Louppe AppBuildInfo.swift
+[4/8] Write Objects.LinkFileList
+[5/8] Linking Louppe
+[7/9] Compiling LouppeTests AccessibilityTests.swift
+[8/10] Compiling LouppePackageTests runner.swift
+[8/10] Write Objects.LinkFileList
+[9/10] Linking LouppePackageTests
+Build complete! (103.04s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-13 12:03:51.407 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-13 12:03:51.416 AM.
+Test Suite 'LouppeSpeedQualityResourceTests' started at 2026-10-13 12:03:51.416 AM.
+Test Case '-[LouppeTests.LouppeSpeedQualityResourceTests testEvidenceAccumulationCPUAndPublicationCost]' started.
+Test Case '-[LouppeTests.LouppeSpeedQualityResourceTests testEvidenceAccumulationCPUAndPublicationCost]' passed (76.876 seconds).
+Test Suite 'LouppeSpeedQualityResourceTests' passed at 2026-10-13 12:05:08.292 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 76.876 (76.876) seconds
+Test Suite 'LouppeSpeedSessionTests' started at 2026-10-13 12:05:08.292 AM.
+Test Case '-[LouppeTests.LouppeSpeedSessionTests testReviewHotPathsAndCoverage]' started.
+Test Case '-[LouppeTests.LouppeSpeedSessionTests testReviewHotPathsAndCoverage]' passed (26.504 seconds).
+Test Suite 'LouppeSpeedSessionTests' passed at 2026-10-13 12:05:34.796 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 26.504 (26.504) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-13 12:05:34.796 AM.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 103.379 (103.380) seconds
+Test Suite 'Selected tests' passed at 2026-10-13 12:05:34.796 AM.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 103.379 (103.389) seconds
+SPEED quality.evidence.complete.wall n=1000 median=82.007ms p95=83.895ms
+SPEED quality.evidence.complete.process-cpu n=1000 median=136.999ms p95=139.062ms
+SPEED quality.evidence.complete.wall n=10000 median=790.397ms p95=824.523ms
+SPEED quality.evidence.complete.process-cpu n=10000 median=1310.566ms p95=1335.985ms
+SPEED quality.evidence.complete.wall n=100000 median=8027.306ms p95=8101.088ms
+SPEED quality.evidence.complete.process-cpu n=100000 median=13127.347ms p95=13198.894ms
+SPEED review.rating.default-sort n=1000 median=0.024ms p95=0.026ms
+SPEED review.rating.decision-sort n=1000 median=0.983ms p95=1.007ms
+SPEED review.stars.star-sort n=1000 median=1.006ms p95=1.541ms
+SPEED filter.decision.projection-and-groups n=1000 median=0.773ms p95=0.931ms
+SPEED sort-menu.camera.full-store n=1000 median=5.984ms p95=17.014ms
+SPEED sort-menu.camera.prepared-only-hypothesis n=1000 median=5.836ms p95=6.042ms
+SPEED quality.coverage.unmeasured-read n=1000 median=0.009ms p95=0.017ms
+SPEED filter.quality.switch-metadata-cue n=1000 median=0.739ms p95=1.921ms
+SPEED navigation.100-steps n=1000 median=3.820ms p95=4.278ms
+SPEED review.rating.default-sort n=10000 median=0.024ms p95=0.026ms
+SPEED review.rating.decision-sort n=10000 median=10.802ms p95=12.641ms
+SPEED review.stars.star-sort n=10000 median=10.465ms p95=11.586ms
+SPEED filter.decision.projection-and-groups n=10000 median=8.370ms p95=9.339ms
+SPEED sort-menu.camera.full-store n=10000 median=51.810ms p95=53.566ms
+SPEED sort-menu.camera.prepared-only-hypothesis n=10000 median=52.959ms p95=53.332ms
+SPEED quality.coverage.unmeasured-read n=10000 median=0.009ms p95=0.011ms
+SPEED filter.quality.switch-metadata-cue n=10000 median=8.275ms p95=16.929ms
+SPEED navigation.100-steps n=10000 median=4.118ms p95=4.532ms
+SPEED review.rating.default-sort n=100000 median=0.024ms p95=0.029ms
+SPEED review.rating.decision-sort n=100000 median=121.365ms p95=123.294ms
+SPEED review.stars.star-sort n=100000 median=115.435ms p95=135.180ms
+SPEED filter.decision.projection-and-groups n=100000 median=86.987ms p95=88.114ms
+SPEED sort-menu.camera.full-store n=100000 median=716.047ms p95=735.135ms
+SPEED sort-menu.camera.prepared-only-hypothesis n=100000 median=710.952ms p95=739.751ms
+SPEED quality.coverage.unmeasured-read n=100000 median=0.009ms p95=0.012ms
+SPEED filter.quality.switch-metadata-cue n=100000 median=78.615ms p95=183.037ms
+SPEED navigation.100-steps n=100000 median=3.934ms p95=5.043ms

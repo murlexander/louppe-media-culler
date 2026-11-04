@@ -180,7 +180,7 @@ final class SelectionStateTests: XCTestCase {
         store.toggleRating(at: 0)
         store.selectRange(to: 2)
 
-        GridCellActions(store: store, index: 3).selectPhoto()
+        GridCellActions(store: store, index: 3).selectPhoto(modifiers: [])
 
         XCTAssertEqual(store.currentIndex, 3)
         XCTAssertTrue(store.selectedIndices.isEmpty)
@@ -251,6 +251,30 @@ final class SelectionStateTests: XCTestCase {
         )
         XCTAssertFalse(
             GridRubberBandHitTest.shouldTrackCanvasDrag(
+                startingAt: CGPoint(x: 135, y: 65),
+                tileFrames: frames,
+                playableVideoIndices: []
+            ),
+            "the inner edge of the inset decision target must retain control ownership"
+        )
+        XCTAssertFalse(
+            GridRubberBandHitTest.shouldTrackCanvasDrag(
+                startingAt: CGPoint(x: 102, y: 180),
+                tileFrames: frames,
+                playableVideoIndices: []
+            ),
+            "the fourth circular cue must remain outside rubber-band selection"
+        )
+        XCTAssertFalse(
+            GridRubberBandHitTest.shouldTrackCanvasDrag(
+                startingAt: CGPoint(x: 30, y: 175),
+                tileFrames: frames,
+                playableVideoIndices: []
+            ),
+            "the in-tile quality cue control must own its drag"
+        )
+        XCTAssertFalse(
+            GridRubberBandHitTest.shouldTrackCanvasDrag(
                 startingAt: CGPoint(x: 95, y: 105),
                 tileFrames: frames,
                 playableVideoIndices: [3]
@@ -301,7 +325,7 @@ final class SelectionStateTests: XCTestCase {
             }
         )
 
-        actions.selectPhoto()
+        actions.selectPhoto(modifiers: [])
 
         XCTAssertEqual(currentWhenSignalled, 0)
         XCTAssertEqual(store.currentIndex, 3)

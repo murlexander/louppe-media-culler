@@ -1,0 +1,9 @@
+/private/tmp/louppe-quality-resource-review-cz5hvyqi/Louppe Quality Review.app: replacing existing signature
+Traceback (most recent call last):
+  File "/private/tmp/louppe-quality-resource/launch_review.py", line 27, in <module>
+    source_hashes = {str(p): digest(p) for p in sources}
+  File "/private/tmp/louppe-quality-resource/launch_review.py", line 27, in <dictcomp>
+    source_hashes = {str(p): digest(p) for p in sources}
+  File "/private/tmp/louppe-quality-resource/launch_review.py", line 26, in digest
+    return hashlib.file_digest(f, 'sha256').hexdigest()
+AttributeError: module 'hashlib' has no attribute 'file_digest'

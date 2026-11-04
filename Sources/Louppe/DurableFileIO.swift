@@ -56,7 +56,78 @@ enum DurableFileIO {
 
     struct DestinationChanged: LocalizedError {
         var errorDescription: String? {
-            "The destination folder changed or disconnected. Choose the folder again and retry. Your originals are unchanged."
+            L10n.text("The destination folder changed or disconnected. Choose the folder again and retry. Your originals are unchanged.")
+        }
+    }
+
+    /// The caller's copy-progress handler asked a descriptor copy to stop.
+    struct CopyStopped: Error, Equatable {}
+
+    private final class CopyProgressContext {
+        let handler: (Int64) -> Bool
+        var stopRequested = false
+        var reportedError: Int32 = 0
+
+        init(handler: @escaping (Int64) -> Bool) { self.handler = handler }
+    }
+
+    /// libcopyfile calls this on the copying thread after each data write.
+    /// Errors must return QUIT: without a callback they fail the copy, while
+    /// CONTINUE would retry a failed data write or silently drop an xattr.
+    private static let copyProgressCallback: copyfile_callback_t = {
+        what, stage, state, _, _, context in
+        guard let context else { return COPYFILE_CONTINUE }
+        let box = Unmanaged<CopyProgressContext>.fromOpaque(context)
+            .takeUnretainedValue()
+        if stage == COPYFILE_ERR {
+            if box.reportedError == 0 { box.reportedError = errno }
+            return COPYFILE_QUIT
+        }
+        guard what == COPYFILE_COPY_DATA, stage == COPYFILE_PROGRESS,
+              let state else { return COPYFILE_CONTINUE }
+        var copied: off_t = 0
+        guard copyfile_state_get(state, UInt32(COPYFILE_STATE_COPIED), &copied) == 0 else {
+            return COPYFILE_CONTINUE
+        }
+        if box.handler(Int64(copied)) { return COPYFILE_CONTINUE }
+        box.stopRequested = true
+        return COPYFILE_QUIT
+    }
+
+    /// `fcopyfile(..., COPYFILE_ALL)` with an optional per-write progress
+    /// and stop handler. The data path, metadata, xattrs and resource forks
+    /// are unchanged by the callback.
+    static func copyDescriptor(
+        _ sourceFD: Int32,
+        to targetFD: Int32,
+        progress: ((Int64) -> Bool)?
+    ) throws {
+        let flags = copyfile_flags_t(COPYFILE_ALL)
+        guard let progress else {
+            guard fcopyfile(sourceFD, targetFD, nil, flags) == 0 else {
+                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            }
+            return
+        }
+        guard let state = copyfile_state_alloc() else { throw POSIXError(.ENOMEM) }
+        defer { copyfile_state_free(state) }
+        let context = CopyProgressContext(handler: progress)
+        let retained = Unmanaged.passRetained(context)
+        defer { retained.release() }
+        guard copyfile_state_set(state, UInt32(COPYFILE_STATE_STATUS_CB),
+                  unsafeBitCast(copyProgressCallback, to: UnsafeRawPointer.self)) == 0,
+              copyfile_state_set(state, UInt32(COPYFILE_STATE_STATUS_CTX),
+                  UnsafeRawPointer(retained.toOpaque())) == 0 else {
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
+        guard fcopyfile(sourceFD, targetFD, state, flags) == 0 else {
+            let code = errno
+            if context.stopRequested { throw CopyStopped() }
+            // QUIT from an error callback reports ECANCELED; keep the
+            // underlying failure so it is never mistaken for a Stop.
+            let failure = code == ECANCELED && context.reportedError != 0
+                ? context.reportedError : (code == ECANCELED ? EIO : code)
+            throw POSIXError(POSIXErrorCode(rawValue: failure) ?? .EIO)
         }
     }
 
@@ -104,8 +175,13 @@ enum DurableFileIO {
             return fd
         }
 
+        /// `progress` receives the data bytes written so far after each
+        /// write and returns `false` to stop; the copy then throws
+        /// `CopyStopped` and leaves its partial temporary for the caller's
+        /// identity-checked cleanup.
         func copy(from source: URL, to temporary: URL,
-                  afterDestinationOpened: () -> Void = {}) throws {
+                  afterDestinationOpened: () -> Void = {},
+                  progress: ((Int64) -> Bool)? = nil) throws {
             let sourceFD = try openDescriptor(source,
                 flags: O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC,
                 operation: "open source for copy")
@@ -117,9 +193,7 @@ enum DurableFileIO {
             afterDestinationOpened()
             // Apple's descriptor copy preserves file metadata and resource
             // forks while never resolving the destination path again.
-            guard fcopyfile(sourceFD, targetFD, nil, copyfile_flags_t(COPYFILE_ALL)) == 0 else {
-                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
-            }
+            try DurableFileIO.copyDescriptor(sourceFD, to: targetFD, progress: progress)
             try syncDescriptor(targetFD, path: temporary.path, fullSync: true)
             try binding.requireCurrentPath()
         }
@@ -227,6 +301,9 @@ enum DurableFileIO {
             case .foundation:
                 // ExFAT lacks RENAME_EXCL. Its probed Foundation fallback is
                 // still path-based, so refuse a known parent replacement.
+#if LOUPPE_TEST_SEAMS
+                DurableFileIO.foundationRenameWillStartForTesting()
+#endif
                 try DurableFileIO.renameWithoutOverwrite(
                     from: source, to: target, strategy: strategy
                 )
@@ -283,7 +360,7 @@ enum DurableFileIO {
             switch self {
             case .system(let operation, let path, let code):
                 let message = String(cString: strerror(code))
-                return "\(operation) failed for \(path) (\(code): \(message))."
+                return L10n.text("\(operation) failed for \(path) (\(code): \(message)).")
             }
         }
     }
@@ -1007,11 +1084,67 @@ enum DurableFileIO {
         }
     }
 
+#if LOUPPE_TEST_SEAMS
+    /// Test-only flush log. Tests install it around one synchronous worker
+    /// call to prove flush order and count; production builds omit it.
+    struct SyncEventForTesting: Equatable, Sendable {
+        let path: String
+        let isDirectory: Bool
+        let fullSync: Bool
+    }
+
+    private static let syncObserverLock = NSLock()
+    nonisolated(unsafe) private static var syncObserver: (@Sendable (SyncEventForTesting) -> Void)?
+
+    static func observingSyncsForTesting<T>(
+        _ observer: @escaping @Sendable (SyncEventForTesting) -> Void,
+        perform body: () throws -> T
+    ) rethrows -> T {
+        syncObserverLock.withLock { syncObserver = observer }
+        defer { syncObserverLock.withLock { syncObserver = nil } }
+        return try body()
+    }
+
+    nonisolated(unsafe) private static var foundationRenameHook: (() -> Void)?
+
+    /// Runs `hook` inside the path-based ExFAT rename window: after the bound
+    /// parents were rechecked and immediately before Foundation's move.
+    static func interceptingFoundationRenameForTesting<T>(
+        _ hook: @escaping () -> Void,
+        perform body: () throws -> T
+    ) rethrows -> T {
+        syncObserverLock.withLock { foundationRenameHook = hook }
+        defer { syncObserverLock.withLock { foundationRenameHook = nil } }
+        return try body()
+    }
+
+    fileprivate static func foundationRenameWillStartForTesting() {
+        syncObserverLock.withLock { foundationRenameHook }?()
+    }
+
+    private static func recordSyncForTesting(_ descriptor: Int32, fullSync: Bool) {
+        guard let observer = syncObserverLock.withLock({ syncObserver }) else { return }
+        var status = Darwin.stat()
+        var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
+        guard fstat(descriptor, &status) == 0,
+              fcntl(descriptor, F_GETPATH, &buffer) == 0 else { return }
+        let path = buffer.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
+        observer(SyncEventForTesting(
+            path: path,
+            isDirectory: status.st_mode & S_IFMT == S_IFDIR,
+            fullSync: fullSync
+        ))
+    }
+#endif
+
     private static func syncDescriptor(
         _ descriptor: Int32,
         path: String,
         fullSync: Bool
     ) throws {
+#if LOUPPE_TEST_SEAMS
+        recordSyncForTesting(descriptor, fullSync: fullSync)
+#endif
         if fullSync {
             var result: Int32
             repeat {

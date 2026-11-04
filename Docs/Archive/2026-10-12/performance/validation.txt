@@ -1,0 +1,20 @@
+Test Suite 'HotkeyTests' passed at 2026-10-12 10:48:00.226 PM.
+	 Executed 658 tests, with 30 tests skipped and 0 failures (0 unexpected) in 25.972 (26.026) seconds
+Test Suite 'All tests' passed at 2026-10-12 10:48:17.153 PM.
+	 Executed 658 tests, with 30 tests skipped and 0 failures (0 unexpected) in 25.972 (26.034) seconds
+RAW+JPEG initial scan 250 pairs: separate 0.066976667 seconds, grouped 0.058108333 seconds
+Prepared index 1000 items: rebuild 20.0 ms, default reuse 1.6 ms, filter/group 1.6 ms
+Prepared index 10000 items: rebuild 188.5 ms, default reuse 13.9 ms, filter/group 18.4 ms
+Prepared index 100000 items: rebuild 2486.3 ms, default reuse 142.6 ms, filter/group 220.5 ms
+Metadata index 100000 items: filter 127.3 ms, sort 1927.2 ms, export selection 98.9 ms
+Rating one of 100000 items: 0.2 ms
+Save snapshot 100000 files: main capture 127.5 ms, background build 208.6 ms
+Performance checks passed (75/75)
+Original tracked local work unchanged: bf770ab39092f873b7624ac600d80cb4a23a65be7f3d867e930ce9438a1898b7
+Release preflight passed; review Documents copy acquired Finder metadata.
+After xattr cleanup: temporary loose and archive apps verified with codesign --verify --deep --strict.
+Complete review Contents comparison: empty rsync -rcln --delete --itemize-changes output.
+Unique review process: com.alexandermarkin.louppe.performanceReview20261012, launched with -openFolder.
+Disposable sidecar: schema 7, 12 entries, every decision undecided.
+Native UI verification blocked by two ScreenCaptureKit -3811 failures.
+zsh runner syntax and Python compilation passed. No install, commit, push, or release.

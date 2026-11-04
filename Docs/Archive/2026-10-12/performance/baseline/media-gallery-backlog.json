@@ -1,0 +1,46 @@
+{
+  "generatedAt" : "2026-10-13T02:29:47Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 41.315583,
+      "medianMS" : 35.880041,
+      "minMS" : 33.510166,
+      "name" : "mirrored_gallery_backlog_0_with_init_drain_cleanup",
+      "p95MS" : 41.315583,
+      "samplesMS" : [
+        35.880041,
+        34.186708,
+        33.913459,
+        33.510166,
+        39.586292,
+        39.1675,
+        41.315583
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 639.085875,
+      "medianMS" : 592.49775,
+      "minMS" : 586.520041,
+      "name" : "mirrored_gallery_backlog_128_with_init_drain_cleanup",
+      "p95MS" : 639.085875,
+      "samplesMS" : [
+        588.555375,
+        588.274375,
+        639.085875,
+        595.270042,
+        596.486875,
+        592.49775,
+        586.520041
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-gallery-backlog",
+  "warmups" : 1
+}

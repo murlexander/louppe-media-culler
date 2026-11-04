@@ -1,0 +1,17 @@
+/private/tmp/louppe-quality-resource-review-pn_o55n1/Louppe Quality Review.app: replacing existing signature
+{
+  "generatedAt": "2026-10-13T04:19:13.096309+00:00",
+  "app": "/private/tmp/louppe-quality-resource-review-pn_o55n1/Louppe Quality Review.app",
+  "fixture": "/private/tmp/louppe-quality-resource-review-pn_o55n1/launch-photos",
+  "bundleIdentifier": "com.alexandermarkin.louppe.qualityResourceReview20261013.rffeeaac3",
+  "pids": [
+    82969
+  ],
+  "schema": 7,
+  "entries": 13,
+  "allUnrated": true,
+  "fixtureAndSourceBytesUnchanged": true,
+  "strictTemporarySignatureVerified": true,
+  "containsDisposableRAW": true,
+  "updatesDisabled": true
+}

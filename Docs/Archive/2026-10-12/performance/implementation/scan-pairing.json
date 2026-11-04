@@ -1,0 +1,318 @@
+{
+  "generatedAt" : "2026-10-13T03:12:53Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 6.944542,
+      "medianMS" : 6.426459,
+      "minMS" : 6.246875,
+      "name" : "pairing.distinct-stems.production",
+      "p95MS" : 6.944542,
+      "samplesMS" : [
+        6.246875,
+        6.944542,
+        6.797875,
+        6.261583,
+        6.323667,
+        6.426459,
+        6.791291
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 9.127416,
+      "medianMS" : 8.585625,
+      "minMS" : 8.0005,
+      "name" : "pairing.distinct-stems.no-global-sort",
+      "p95MS" : 9.127416,
+      "samplesMS" : [
+        8.484,
+        8.945584,
+        9.127416,
+        8.310042,
+        8.0005,
+        8.671375,
+        8.585625
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 8.320125,
+      "medianMS" : 7.601084,
+      "minMS" : 7.001792,
+      "name" : "pairing.distinct-stems.physical-pair-preparation.production",
+      "p95MS" : 8.320125,
+      "samplesMS" : [
+        7.105833,
+        7.001792,
+        8.320125,
+        7.992166,
+        7.601084,
+        7.715208,
+        7.568667
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 5.193542,
+      "medianMS" : 4.739459,
+      "minMS" : 4.702667,
+      "name" : "pairing.raw-jpeg.production",
+      "p95MS" : 5.193542,
+      "samplesMS" : [
+        4.7385,
+        4.702667,
+        4.717667,
+        4.739459,
+        5.193542,
+        4.746334,
+        5.0165
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 7.214375,
+      "medianMS" : 6.266375,
+      "minMS" : 6.026,
+      "name" : "pairing.raw-jpeg.no-global-sort",
+      "p95MS" : 7.214375,
+      "samplesMS" : [
+        7.214375,
+        6.700459,
+        7.083042,
+        6.266375,
+        6.026,
+        6.034959,
+        6.232125
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 6.936083,
+      "medianMS" : 6.558417,
+      "minMS" : 5.97275,
+      "name" : "pairing.raw-jpeg.physical-pair-preparation.production",
+      "p95MS" : 6.936083,
+      "samplesMS" : [
+        5.97275,
+        6.059584,
+        6.558417,
+        5.996375,
+        6.580375,
+        6.936083,
+        6.886333
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 68.07125,
+      "medianMS" : 64.106709,
+      "minMS" : 63.019,
+      "name" : "pairing.distinct-stems.production",
+      "p95MS" : 68.07125,
+      "samplesMS" : [
+        68.07125,
+        66.678084,
+        63.019,
+        64.106709,
+        63.57725,
+        63.684583,
+        64.592667
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 100.851833,
+      "medianMS" : 81.435667,
+      "minMS" : 78.156541,
+      "name" : "pairing.distinct-stems.no-global-sort",
+      "p95MS" : 100.851833,
+      "samplesMS" : [
+        79.511292,
+        81.435667,
+        78.156541,
+        81.186166,
+        81.693,
+        100.851833,
+        81.976959
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 81.116,
+      "medianMS" : 77.144125,
+      "minMS" : 76.050416,
+      "name" : "pairing.distinct-stems.physical-pair-preparation.production",
+      "p95MS" : 81.116,
+      "samplesMS" : [
+        78.660583,
+        76.94075,
+        77.144125,
+        77.186,
+        76.050416,
+        76.904708,
+        81.116
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 51.989292,
+      "medianMS" : 49.760958,
+      "minMS" : 49.040792,
+      "name" : "pairing.raw-jpeg.production",
+      "p95MS" : 51.989292,
+      "samplesMS" : [
+        51.989292,
+        51.779292,
+        49.040792,
+        49.773667,
+        49.760958,
+        49.400167,
+        49.216917
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 65.190709,
+      "medianMS" : 63.868917,
+      "minMS" : 62.113875,
+      "name" : "pairing.raw-jpeg.no-global-sort",
+      "p95MS" : 65.190709,
+      "samplesMS" : [
+        62.113875,
+        63.880959,
+        62.714833,
+        64.8775,
+        63.868917,
+        63.35525,
+        65.190709
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 98.640542,
+      "medianMS" : 74.736042,
+      "minMS" : 72.228375,
+      "name" : "pairing.raw-jpeg.physical-pair-preparation.production",
+      "p95MS" : 98.640542,
+      "samplesMS" : [
+        72.228375,
+        78.014667,
+        77.033292,
+        73.321791,
+        73.027,
+        74.736042,
+        98.640542
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 765.650875,
+      "medianMS" : 726.255333,
+      "minMS" : 718.443916,
+      "name" : "pairing.distinct-stems.production",
+      "p95MS" : 765.650875,
+      "samplesMS" : [
+        725.276125,
+        765.650875,
+        754.392334,
+        749.272667,
+        718.443916,
+        726.255333,
+        720.06075
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 947.151958,
+      "medianMS" : 926.549666,
+      "minMS" : 921.06025,
+      "name" : "pairing.distinct-stems.no-global-sort",
+      "p95MS" : 947.151958,
+      "samplesMS" : [
+        938.5365,
+        947.151958,
+        926.549666,
+        930.596583,
+        925.016083,
+        921.06025,
+        925.989791
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 963.635709,
+      "medianMS" : 933.123042,
+      "minMS" : 924.701625,
+      "name" : "pairing.distinct-stems.physical-pair-preparation.production",
+      "p95MS" : 963.635709,
+      "samplesMS" : [
+        941.9075,
+        927.662917,
+        938.316833,
+        963.635709,
+        924.701625,
+        928.150208,
+        933.123042
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 565.391083,
+      "medianMS" : 554.826833,
+      "minMS" : 549.216209,
+      "name" : "pairing.raw-jpeg.production",
+      "p95MS" : 565.391083,
+      "samplesMS" : [
+        565.391083,
+        554.554208,
+        558.04,
+        554.826833,
+        550.86125,
+        557.808833,
+        549.216209
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 735.818833,
+      "medianMS" : 705.775083,
+      "minMS" : 702.916667,
+      "name" : "pairing.raw-jpeg.no-global-sort",
+      "p95MS" : 735.818833,
+      "samplesMS" : [
+        735.818833,
+        702.916667,
+        704.798875,
+        705.775083,
+        709.329959,
+        705.188667,
+        707.341333
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 1247.457917,
+      "medianMS" : 898.121125,
+      "minMS" : 868.967792,
+      "name" : "pairing.raw-jpeg.physical-pair-preparation.production",
+      "p95MS" : 1247.457917,
+      "samplesMS" : [
+        908.505917,
+        881.355291,
+        898.121125,
+        1247.457917,
+        930.452417,
+        874.474167,
+        868.967792
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "scan-pairing",
+  "warmups" : 1
+}

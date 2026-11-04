@@ -1,0 +1,558 @@
+{
+  "generatedAt" : "2026-10-22T02:25:05Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 5.89675,
+      "medianMS" : 5.627375,
+      "minMS" : 5.552458,
+      "name" : "sort.camera.comparator-reference",
+      "p95MS" : 5.89675,
+      "samplesMS" : [
+        5.89675,
+        5.552458,
+        5.627375
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.093084,
+      "medianMS" : 0.081709,
+      "minMS" : 0.0805,
+      "name" : "sort.camera.cold-distinct-ranks",
+      "p95MS" : 0.093084,
+      "samplesMS" : [
+        0.093084,
+        0.081709,
+        0.0805
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.001833,
+      "medianMS" : 0.001708,
+      "minMS" : 0.001667,
+      "name" : "sort.camera.warm-distinct-ranks",
+      "p95MS" : 0.001833,
+      "samplesMS" : [
+        0.001833,
+        0.001667,
+        0.001708
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 4.413625,
+      "medianMS" : 4.333583,
+      "minMS" : 4.24825,
+      "name" : "sort.lens.comparator-reference",
+      "p95MS" : 4.413625,
+      "samplesMS" : [
+        4.413625,
+        4.24825,
+        4.333583
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.071834,
+      "medianMS" : 0.062625,
+      "minMS" : 0.057625,
+      "name" : "sort.lens.cold-distinct-ranks",
+      "p95MS" : 0.071834,
+      "samplesMS" : [
+        0.062625,
+        0.057625,
+        0.071834
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.001958,
+      "medianMS" : 0.001833,
+      "minMS" : 0.00175,
+      "name" : "sort.lens.warm-distinct-ranks",
+      "p95MS" : 0.001958,
+      "samplesMS" : [
+        0.001958,
+        0.001833,
+        0.00175
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.22175,
+      "medianMS" : 0.217792,
+      "minMS" : 0.211583,
+      "name" : "projection.unrestricted.full-rebuild-reference",
+      "p95MS" : 0.22175,
+      "samplesMS" : [
+        0.22175,
+        0.217792,
+        0.211583
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.003041,
+      "medianMS" : 0.002542,
+      "minMS" : 0.0025,
+      "name" : "projection.unrestricted.unchanged-prepared",
+      "p95MS" : 0.003041,
+      "samplesMS" : [
+        0.003041,
+        0.0025,
+        0.002542
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.061875,
+      "medianMS" : 0.061042,
+      "minMS" : 0.061,
+      "name" : "projection.active-all-visible.unchanged-prepared",
+      "p95MS" : 0.061875,
+      "samplesMS" : [
+        0.061875,
+        0.061,
+        0.061042
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.4135,
+      "medianMS" : 0.280791,
+      "minMS" : 0.232,
+      "name" : "projection.restricted.full-rebuild-reference",
+      "p95MS" : 0.4135,
+      "samplesMS" : [
+        0.232,
+        0.4135,
+        0.280791
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.069125,
+      "medianMS" : 0.064,
+      "minMS" : 0.061375,
+      "name" : "projection.restricted.unchanged-prepared",
+      "p95MS" : 0.069125,
+      "samplesMS" : [
+        0.069125,
+        0.061375,
+        0.064
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.255167,
+      "medianMS" : 0.239083,
+      "minMS" : 0.23725,
+      "name" : "projection.membership-toggle.full-rebuild-reference",
+      "p95MS" : 0.255167,
+      "samplesMS" : [
+        0.23725,
+        0.255167,
+        0.239083
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.873583,
+      "medianMS" : 0.768791,
+      "minMS" : 0.638916,
+      "name" : "projection.membership-toggle.prepared",
+      "p95MS" : 0.873583,
+      "samplesMS" : [
+        0.768791,
+        0.873583,
+        0.638916
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.025625,
+      "medianMS" : 0.023708,
+      "minMS" : 0.0235,
+      "name" : "projection.cue-mask.unchanged-prepared",
+      "p95MS" : 0.025625,
+      "samplesMS" : [
+        0.025625,
+        0.023708,
+        0.0235
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 49.682375,
+      "medianMS" : 49.502583,
+      "minMS" : 48.904,
+      "name" : "sort.camera.comparator-reference",
+      "p95MS" : 49.682375,
+      "samplesMS" : [
+        49.682375,
+        49.502583,
+        48.904
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.627875,
+      "medianMS" : 0.619333,
+      "minMS" : 0.612875,
+      "name" : "sort.camera.cold-distinct-ranks",
+      "p95MS" : 0.627875,
+      "samplesMS" : [
+        0.627875,
+        0.612875,
+        0.619333
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.011833,
+      "medianMS" : 0.01175,
+      "minMS" : 0.011708,
+      "name" : "sort.camera.warm-distinct-ranks",
+      "p95MS" : 0.011833,
+      "samplesMS" : [
+        0.011833,
+        0.011708,
+        0.01175
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 39.706,
+      "medianMS" : 38.890917,
+      "minMS" : 38.778083,
+      "name" : "sort.lens.comparator-reference",
+      "p95MS" : 39.706,
+      "samplesMS" : [
+        38.778083,
+        38.890917,
+        39.706
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.883334,
+      "medianMS" : 0.55875,
+      "minMS" : 0.554834,
+      "name" : "sort.lens.cold-distinct-ranks",
+      "p95MS" : 0.883334,
+      "samplesMS" : [
+        0.554834,
+        0.55875,
+        0.883334
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.012041,
+      "medianMS" : 0.012,
+      "minMS" : 0.011875,
+      "name" : "sort.lens.warm-distinct-ranks",
+      "p95MS" : 0.012041,
+      "samplesMS" : [
+        0.011875,
+        0.012,
+        0.012041
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 3.033833,
+      "medianMS" : 2.655125,
+      "minMS" : 2.457917,
+      "name" : "projection.unrestricted.full-rebuild-reference",
+      "p95MS" : 3.033833,
+      "samplesMS" : [
+        2.457917,
+        2.655125,
+        3.033833
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.008958,
+      "medianMS" : 0.002708,
+      "minMS" : 0.002417,
+      "name" : "projection.unrestricted.unchanged-prepared",
+      "p95MS" : 0.008958,
+      "samplesMS" : [
+        0.008958,
+        0.002708,
+        0.002417
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.82575,
+      "medianMS" : 0.613042,
+      "minMS" : 0.611375,
+      "name" : "projection.active-all-visible.unchanged-prepared",
+      "p95MS" : 0.82575,
+      "samplesMS" : [
+        0.613042,
+        0.611375,
+        0.82575
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 2.815833,
+      "medianMS" : 2.586625,
+      "minMS" : 2.115708,
+      "name" : "projection.restricted.full-rebuild-reference",
+      "p95MS" : 2.815833,
+      "samplesMS" : [
+        2.586625,
+        2.815833,
+        2.115708
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.675667,
+      "medianMS" : 0.594375,
+      "minMS" : 0.591875,
+      "name" : "projection.restricted.unchanged-prepared",
+      "p95MS" : 0.675667,
+      "samplesMS" : [
+        0.675667,
+        0.594375,
+        0.591875
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 3.33025,
+      "medianMS" : 2.158541,
+      "minMS" : 2.05625,
+      "name" : "projection.membership-toggle.full-rebuild-reference",
+      "p95MS" : 3.33025,
+      "samplesMS" : [
+        2.158541,
+        3.33025,
+        2.05625
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 9.110667,
+      "medianMS" : 8.449625,
+      "minMS" : 8.308959,
+      "name" : "projection.membership-toggle.prepared",
+      "p95MS" : 9.110667,
+      "samplesMS" : [
+        8.449625,
+        8.308959,
+        9.110667
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.4905,
+      "medianMS" : 0.452875,
+      "minMS" : 0.23775,
+      "name" : "projection.cue-mask.unchanged-prepared",
+      "p95MS" : 0.4905,
+      "samplesMS" : [
+        0.452875,
+        0.4905,
+        0.23775
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 691.72575,
+      "medianMS" : 691.51275,
+      "minMS" : 688.782125,
+      "name" : "sort.camera.comparator-reference",
+      "p95MS" : 691.72575,
+      "samplesMS" : [
+        688.782125,
+        691.72575,
+        691.51275
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 15.183083,
+      "medianMS" : 14.827875,
+      "minMS" : 14.608083,
+      "name" : "sort.camera.cold-distinct-ranks",
+      "p95MS" : 15.183083,
+      "samplesMS" : [
+        14.827875,
+        15.183083,
+        14.608083
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 0.111875,
+      "medianMS" : 0.111792,
+      "minMS" : 0.111625,
+      "name" : "sort.camera.warm-distinct-ranks",
+      "p95MS" : 0.111875,
+      "samplesMS" : [
+        0.111792,
+        0.111625,
+        0.111875
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 554.757625,
+      "medianMS" : 549.553792,
+      "minMS" : 548.427375,
+      "name" : "sort.lens.comparator-reference",
+      "p95MS" : 554.757625,
+      "samplesMS" : [
+        549.553792,
+        548.427375,
+        554.757625
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 15.984375,
+      "medianMS" : 15.882333,
+      "minMS" : 15.561792,
+      "name" : "sort.lens.cold-distinct-ranks",
+      "p95MS" : 15.984375,
+      "samplesMS" : [
+        15.882333,
+        15.984375,
+        15.561792
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 0.117458,
+      "medianMS" : 0.115,
+      "minMS" : 0.114792,
+      "name" : "sort.lens.warm-distinct-ranks",
+      "p95MS" : 0.117458,
+      "samplesMS" : [
+        0.117458,
+        0.115,
+        0.114792
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 53.984917,
+      "medianMS" : 53.517334,
+      "minMS" : 53.345334,
+      "name" : "projection.unrestricted.full-rebuild-reference",
+      "p95MS" : 53.984917,
+      "samplesMS" : [
+        53.984917,
+        53.517334,
+        53.345334
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 0.020959,
+      "medianMS" : 0.003041,
+      "minMS" : 0.002583,
+      "name" : "projection.unrestricted.unchanged-prepared",
+      "p95MS" : 0.020959,
+      "samplesMS" : [
+        0.020959,
+        0.003041,
+        0.002583
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 17.881292,
+      "medianMS" : 17.5465,
+      "minMS" : 16.984708,
+      "name" : "projection.active-all-visible.unchanged-prepared",
+      "p95MS" : 17.881292,
+      "samplesMS" : [
+        17.881292,
+        16.984708,
+        17.5465
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 55.678,
+      "medianMS" : 54.582958,
+      "minMS" : 52.573834,
+      "name" : "projection.restricted.full-rebuild-reference",
+      "p95MS" : 55.678,
+      "samplesMS" : [
+        55.678,
+        54.582958,
+        52.573834
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 17.995834,
+      "medianMS" : 17.553791,
+      "minMS" : 17.005375,
+      "name" : "projection.restricted.unchanged-prepared",
+      "p95MS" : 17.995834,
+      "samplesMS" : [
+        17.995834,
+        17.005375,
+        17.553791
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 55.511542,
+      "medianMS" : 54.721583,
+      "minMS" : 53.815917,
+      "name" : "projection.membership-toggle.full-rebuild-reference",
+      "p95MS" : 55.511542,
+      "samplesMS" : [
+        53.815917,
+        54.721583,
+        55.511542
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 120.633541,
+      "medianMS" : 111.038167,
+      "minMS" : 108.273875,
+      "name" : "projection.membership-toggle.prepared",
+      "p95MS" : 120.633541,
+      "samplesMS" : [
+        108.273875,
+        120.633541,
+        111.038167
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 5.725167,
+      "medianMS" : 4.954,
+      "minMS" : 2.9835,
+      "name" : "projection.cue-mask.unchanged-prepared",
+      "p95MS" : 5.725167,
+      "samplesMS" : [
+        5.725167,
+        4.954,
+        2.9835
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "large-projection",
+  "warmups" : 1
+}

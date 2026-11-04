@@ -1,0 +1,27 @@
+{
+  "buildFlags": [
+    "-swift-version",
+    "6",
+    "-O",
+    "-parse-as-library",
+    "-module-cache-path",
+    "/private/tmp/louppe-quality-resource/module-cache"
+  ],
+  "compiler": "swift-driver version: 1.168.6 Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)",
+  "correctnessChecks": 7,
+  "filesSHA256": {
+    "Experiment.swift": "993cd29aa724555d71393d307e433059c03dc81a1d1fa8167e896eef8129bde6",
+    "ExperimentTemplate.swift.txt": "9fa1f04c655fa3e10875120277c3a2dc048fc0666337d3ca3e04f112f9ccca2e",
+    "generate.py": "011f759d8aae371057ce255f21020b9a71d8bc0e51adcd7deece63d843eb0b4d",
+    "provenance.json": "8a62537a6d0fe884b3c588d5e21363d463a151881b09a74242ba00552eb893db",
+    "results.json": "be827e515eb286975ef496c879dedf6279f9b232d346e13d2ed7e3c2dfb57373"
+  },
+  "hardwareDetails": "Detailed hw sysctl queries were blocked by the sandbox; no model, core-count or memory claims are made.",
+  "macOS": "27.0.1 (26A434)",
+  "macOSSDK": "27.0",
+  "samples": 140,
+  "samplesPerVariant": 7,
+  "target": "arm64-apple-macosx27.0.0",
+  "userContextDate": "2026-10-12",
+  "warmupsPerVariant": 2
+}

@@ -453,25 +453,25 @@ enum FileOperationJournal {
         var errorDescription: String? {
             switch self {
             case .invalidFileIndex:
-                return "The operation journal contains an invalid file index."
+                return L10n.text("The operation journal contains an invalid file index.")
             case .invalidFileSystemPath:
-                return "Louppe refused a filename whose exact filesystem representation could not be preserved safely."
+                return L10n.text("Louppe refused a filename whose exact filesystem representation could not be preserved safely.")
             case .missingFileIdentity(let url):
-                return "Louppe couldn't identify \(url.lastPathComponent) before starting the file operation."
+                return L10n.text("Louppe couldn't identify \(url.lastPathComponent) before starting the file operation.")
             case .sourceChangedSinceScan(let url):
-                return "\(url.lastPathComponent) changed after it was scanned. Rescan the folder before changing files."
+                return L10n.text("\(url.lastPathComponent) changed after it was scanned. Rescan the folder before changing files.")
             case .unsafePlan:
-                return "Louppe refused an unsafe file-operation plan before changing any files."
+                return L10n.text("Louppe refused an unsafe file-operation plan before changing any files.")
             case .corruptPlan:
-                return "An interrupted-operation journal is unreadable."
+                return L10n.text("An interrupted-operation journal is unreadable.")
             case .operationInUse:
-                return "Another Louppe process is currently changing files."
+                return L10n.text("Another Louppe process is currently changing files.")
             case .recoveryRequired:
-                return "An interrupted file operation must be recovered before another one can start."
+                return L10n.text("An interrupted file operation must be recovered before another one can start.")
             case .cannotInspectOperations:
-                return "Louppe couldn't verify that its operation journal is clear."
+                return L10n.text("Louppe couldn't verify that its operation journal is clear.")
             case .cannotLockOperations(let code):
-                return "Louppe couldn't lock its operation journal (system error \(code))."
+                return L10n.text("Louppe couldn't lock its operation journal (system error \(code)).")
             }
         }
     }
@@ -811,7 +811,7 @@ enum FileOperationJournal {
                         report.unresolvedOperations += 1
                         report.unresolvedFiles += ambiguousPairFiles
                         report.details.append(
-                            "A paired Trash action stopped between its files. Louppe left every file where it is."
+                            L10n.text("A paired Trash action stopped between its files. Louppe left every file where it is.")
                         )
                         continue
                     }
@@ -2086,31 +2086,35 @@ enum FileOperationJournal {
         )
     }
 
-    private static func fileIdentity(
-        at url: URL,
-        knownVolumeRoot: URL? = nil,
-        knownVolumeUUIDString: String? = nil
-    ) throws -> FileIdentity {
-        let fm = FileManager()
+    /// Opening-barrier variant: one `lstat`, with the volume taken from a
+    /// per-pass lookup memoized by device number. Produces the same identity
+    /// as `captureIdentity(at:)`; a failed lookup falls back to it.
+    static func captureIdentity(at url: URL, volumes: VolumeLookup) throws -> FileIdentity {
         var info = Darwin.stat()
         let status: Int32 = url.withUnsafeFileSystemRepresentation { path in
             guard let path else { return Int32(-1) }
             return Darwin.lstat(path, &info)
         }
-        let resourceValues = try? url.resourceValues(forKeys: [
-            .volumeURLKey,
-            .volumeUUIDStringKey,
-        ])
-        guard status == 0,
-              let volume = knownVolumeRoot
-                ?? resourceValues?.volume
-                ?? volumeRoot(containing: url, fileManager: fm) else {
-            throw JournalError.missingFileIdentity(url)
+        guard status == 0 else { throw JournalError.missingFileIdentity(url) }
+        guard let volume = volumes.volume(device: info.st_dev, containing: url) else {
+            return try fileIdentity(at: url)
         }
+        return identity(from: info, volumeRootPath: volume.rootPath, volumeUUIDString: volume.uuid)
+    }
+
+    /// Builds an identity from an `lstat` the caller already made. The volume
+    /// facts must describe that `stat`'s device.
+    static func identity(
+        from info: Darwin.stat,
+        volumeRootPath: String,
+        volumeUUIDString: String?
+    ) -> FileIdentity {
+#if LOUPPE_TEST_SEAMS
+        IdentityCaptureCounter.shared.increment()
+#endif
         return FileIdentity(
-            volumeRootPath: volume.standardizedFileURL.path,
-            volumeUUIDString:
-                knownVolumeUUIDString ?? resourceValues?.volumeUUIDString,
+            volumeRootPath: volumeRootPath,
+            volumeUUIDString: volumeUUIDString,
             systemNumber: UInt64(info.st_dev),
             fileNumber: UInt64(info.st_ino),
             logicalSize: info.st_size,
@@ -2126,6 +2130,98 @@ enum FileOperationJournal {
                 seconds: Int64(info.st_birthtimespec.tv_sec),
                 nanoseconds: Int64(info.st_birthtimespec.tv_nsec)
             )
+        )
+    }
+
+    /// Volume facts for one identity pass, looked up once per device number.
+    /// Create a new lookup for every pass: a device number can be reused by
+    /// another volume after a remount, and only a fresh lookup sees that.
+    final class VolumeLookup: @unchecked Sendable {
+        struct Volume: Equatable, Sendable {
+            /// `volumeURL.standardizedFileURL.path`, as `captureIdentity` stores it.
+            let rootPath: String
+            let uuid: String?
+        }
+
+        /// Returns the volume URL and UUID containing a URL, or nil if unknown.
+        typealias Resolver = @Sendable (URL) -> (root: URL, uuid: String?)?
+
+        private let lock = NSLock()
+        private var volumes: [UInt64: Volume] = [:]
+        private let resolver: Resolver
+
+        init(resolver: Resolver? = nil) {
+            self.resolver = resolver ?? Self.resolveFresh
+        }
+
+        func volume(device: dev_t, containing url: URL) -> Volume? {
+            let key = UInt64(device)
+            lock.lock()
+            defer { lock.unlock() }
+            if let known = volumes[key] { return known }
+            // Resolving under the lock keeps it to one lookup per device.
+            guard let resolved = resolver(url) else { return nil }
+            let volume = Volume(rootPath: resolved.root.standardizedFileURL.path, uuid: resolved.uuid)
+            volumes[key] = volume
+            return volume
+        }
+
+        /// A new URL object, so no resource value cached on `url` is reused.
+        private static func resolveFresh(_ url: URL) -> (root: URL, uuid: String?)? {
+            let fresh: URL? = url.withUnsafeFileSystemRepresentation { path in
+                path.map { NSURL(fileURLWithFileSystemRepresentation: $0, isDirectory: url.hasDirectoryPath,
+                                 relativeTo: nil) as URL }
+            }
+            guard let values = try? fresh?.resourceValues(forKeys: [.volumeURLKey, .volumeUUIDStringKey]),
+                  let root = values.volume else { return nil }
+            return (root, values.volumeUUIDString)
+        }
+    }
+
+#if LOUPPE_TEST_SEAMS
+    /// Counts identity captures so tests can bound opening's filesystem checks.
+    final class IdentityCaptureCounter: @unchecked Sendable {
+        static let shared = IdentityCaptureCounter()
+        private let lock = NSLock()
+        private var count = 0
+        func increment() { lock.lock(); count += 1; lock.unlock() }
+        var value: Int { lock.lock(); defer { lock.unlock() }; return count }
+    }
+#endif
+
+    private static func fileIdentity(
+        at url: URL,
+        knownVolumeRoot: URL? = nil,
+        knownVolumeUUIDString: String? = nil
+    ) throws -> FileIdentity {
+        var info = Darwin.stat()
+        let status: Int32 = url.withUnsafeFileSystemRepresentation { path in
+            guard let path else { return Int32(-1) }
+            return Darwin.lstat(path, &info)
+        }
+        // Scanner enumeration already prefetched both facts. Do not repeat
+        // the resource query on the common path; retain the fresh lookup for
+        // callers without complete prefetched evidence.
+        let resourceValues: URLResourceValues?
+        if knownVolumeRoot != nil, knownVolumeUUIDString != nil {
+            resourceValues = nil
+        } else {
+            resourceValues = try? url.resourceValues(forKeys: [
+                .volumeURLKey,
+                .volumeUUIDStringKey,
+            ])
+        }
+        // The mounted-volume scan needs a FileManager only as a last resort.
+        guard status == 0,
+              let volume = knownVolumeRoot
+                ?? resourceValues?.volume
+                ?? volumeRoot(containing: url, fileManager: FileManager()) else {
+            throw JournalError.missingFileIdentity(url)
+        }
+        return identity(
+            from: info,
+            volumeRootPath: volume.standardizedFileURL.path,
+            volumeUUIDString: knownVolumeUUIDString ?? resourceValues?.volumeUUIDString
         )
     }
 
@@ -3014,23 +3110,23 @@ enum FileOperationJournal {
         var errorDescription: String? {
             switch self {
             case .missingMovedFile(let source):
-                return "The interrupted move couldn't locate \(source.lastPathComponent)."
+                return L10n.text("The interrupted move couldn't locate \(source.lastPathComponent).")
             case .missingCopySource(let source):
-                return "Recovery couldn't verify the original \(source.lastPathComponent), so it preserved every copy."
+                return L10n.text("Recovery couldn't verify the original \(source.lastPathComponent), so it preserved every copy.")
             case .missingTrashedFile(let source):
-                return "The interrupted Trash undo couldn't locate \(source.lastPathComponent)."
+                return L10n.text("The interrupted Trash undo couldn't locate \(source.lastPathComponent).")
             case .bothLocationsExist(let source):
-                return "\(source.lastPathComponent) exists in both locations; Louppe left both untouched."
+                return L10n.text("\(source.lastPathComponent) exists in both locations; Louppe left both untouched.")
             case .multipleRecoveryCandidates(let source):
-                return "Recovery found multiple possible copies of \(source.lastPathComponent), so it left every file untouched."
+                return L10n.text("Recovery found multiple possible copies of \(source.lastPathComponent). All remain untouched.")
             case .refusesOverwrite(let url):
-                return "Recovery refused to overwrite \(url.lastPathComponent)."
+                return L10n.text("Recovery refused to overwrite \(url.lastPathComponent).")
             case .unsafeTemporaryPath:
-                return "Recovery found an invalid temporary path and left it untouched."
+                return L10n.text("Recovery found an invalid temporary path and left it untouched.")
             case .unverifiedOwnedFile(let url):
-                return "Recovery couldn't verify that \(url.lastPathComponent) belongs to the interrupted operation, so it left the file untouched."
+                return L10n.text("Recovery couldn't verify ownership of \(url.lastPathComponent). The file remains untouched.")
             case .contentMismatch(let source, let copy):
-                return "Recovery found different contents in \(source.lastPathComponent) and \(copy.lastPathComponent), so it preserved both files."
+                return L10n.text("Recovery found different contents in \(source.lastPathComponent) and \(copy.lastPathComponent). Both remain intact.")
             }
         }
     }

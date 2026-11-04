@@ -1,7 +1,17 @@
 import SwiftUI
 
+enum HistogramAccessibility {
+    static func value(analysis: HistogramAnalysis, source: HistogramAnalysisSource) -> String {
+        let shadows = (analysis.shadowPercentage / 100).formatted(.percent.precision(.fractionLength(1)))
+        let highlights = (analysis.highlightPercentage / 100).formatted(.percent.precision(.fractionLength(1)))
+        return L10n.text("\(source.detailLabel). Near-black area: \(shadows). Near-white area: \(highlights).")
+    }
+}
+
 /// Compact photo-only luminance inspection for the Info panel.
 struct HistogramSection: View {
+    @AppStorage(ReviewShortcutPreferences.preferenceKey) private var shortcutSettings = ""
+    let item: PhotoItem
     let analysis: HistogramAnalysis?
     let source: HistogramAnalysisSource
     let loadFailed: Bool
@@ -9,37 +19,38 @@ struct HistogramSection: View {
 
     private static let chartHeight: CGFloat = 88
 
+    // Only RAW photos have two distinct histogram sources to identify.
+    var sourceLabel: String? {
+        item.isRaw && analysis != nil ? source.shortLabel : nil
+    }
+
     var body: some View {
-        VStack(spacing: 8) {
-            ZStack(alignment: .topTrailing) {
-                chart
-                    .frame(height: Self.chartHeight)
-
-                if !loadFailed, store.viewMode == .gallery {
-                    clippingButton
-                        .padding(.top, 2)
-                        .padding(.trailing, 2)
-                }
-
-                if analysis != nil {
-                    Text(source.shortLabel)
+        VStack(alignment: .leading, spacing: 6) {
+            // A header row keeps the clipping toggle off the chart's data,
+            // matching the other captioned Info sections.
+            HStack(alignment: .center, spacing: 6) {
+                Text(L10n.text("Histogram"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityAddTraits(.isHeader)
+                if let sourceLabel {
+                    Text(sourceLabel)
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
-                        .padding(.top, 3)
-                        .padding(.leading, 3)
-                        .frame(
-                            maxWidth: .infinity,
-                            maxHeight: .infinity,
-                            alignment: .topLeading
-                        )
                         .accessibilityHidden(true)
-                        .allowsHitTesting(false)
+                }
+                Spacer(minLength: 4)
+                if !loadFailed, store.viewMode == .gallery {
+                    clippingButton
+                        // Keep the 36-point target without growing the row.
+                        .padding(.vertical, -10)
+                        .padding(.trailing, -8)
                 }
             }
+            .frame(height: 16)
 
-            if !loadFailed {
-                percentageRow
-            }
+            chart
+                .frame(height: Self.chartHeight)
         }
         .frame(maxWidth: .infinity)
     }
@@ -53,13 +64,14 @@ struct HistogramSection: View {
             )
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(
-                    accessibilityDescription(for: analysis)
+                    L10n.text("Luminance histogram")
                 )
+                .accessibilityValue(HistogramAccessibility.value(analysis: analysis, source: source))
         } else if loadFailed {
             HStack(spacing: 6) {
                 Image(systemName: "exclamationmark.triangle")
                     .foregroundStyle(.secondary)
-                Text("Histogram unavailable")
+                Text(L10n.text("Histogram unavailable"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -69,79 +81,46 @@ struct HistogramSection: View {
             ProgressView()
                 .controlSize(.small)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .accessibilityLabel("Calculating histogram")
+                .accessibilityLabel(L10n.text("Calculating histogram"))
         }
-    }
-
-    private var percentageRow: some View {
-        HStack(spacing: 8) {
-            percentage(
-                "Shadows",
-                value: analysis?.shadowPercentage
-            )
-            percentage(
-                "Highlights",
-                value: analysis?.highlightPercentage
-            )
-        }
-    }
-
-    private func percentage(_ label: String, value: Double?) -> some View {
-        VStack(spacing: 1) {
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            Text(value.map(Self.formatPercentage) ?? "—")
-                .font(.callout.weight(.medium))
-                .foregroundStyle(percentageColor(value))
-                .monospacedDigit()
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
     }
 
     private var clippingButton: some View {
         Button {
             store.toggleClippingWarnings()
         } label: {
-            Image(systemName: "circle.lefthalf.filled")
-                .font(.system(size: 15, weight: .semibold))
+            // Distinct from the half-filled "Mixed" decision symbol.
+            Image(systemName: "sun.max.trianglebadge.exclamationmark")
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(
                     store.showClippingWarnings
                         ? Color.louppeAccent
                         : Color.secondary
                 )
-                .frame(width: 24, height: 24)
+                .frame(width: 36, height: 36)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(
             store.showClippingWarnings
-                ? "Hide Preview Clipping Overlay"
-                : "Show Preview Clipping Overlay"
+                ? L10n.text("Hide Preview Clipping Overlay")
+                : L10n.text("Show Preview Clipping Overlay")
         )
         .accessibilityValue(
-            store.showClippingWarnings ? "On" : "Off"
+            store.showClippingWarnings ? L10n.text("On") : L10n.text("Off")
         )
-        .help("Show or hide the red preview clipping overlay (X)")
+        .help(clippingHelp)
     }
 
-    private func percentageColor(_ value: Double?) -> Color {
-        value == nil ? .secondary : .primary
+    private var clippingHelp: String {
+        let context = ReviewShortcutContext(viewMode: store.viewMode, mediaKind: store.currentItem?.mediaKind,
+                                            isPlayable: store.currentItem?.isPlayableMedia == true,
+                                            canSeekVideo: store.canSeekCurrentVideo)
+        let hint = ReviewShortcutPreferences.decode(shortcutSettings).hint(for: .clipping, context: context)
+        return hint.isEmpty ? L10n.text("Show or hide the red preview clipping overlay")
+            : L10n.text("Show or hide the red preview clipping overlay (\(hint))")
     }
 
-    private static func formatPercentage(_ value: Double) -> String {
-        if value == 0 { return "0%" }
-        if value < 0.1 { return "<0.1%" }
-        if value < 10 { return String(format: "%.1f%%", value) }
-        return String(format: "%.0f%%", value)
-    }
-
-    private func accessibilityDescription(
-        for analysis: HistogramAnalysis
-    ) -> String {
-        "\(source.detailLabel) luminance histogram. Shadows \(Self.formatPercentage(analysis.shadowPercentage)). Highlights \(Self.formatPercentage(analysis.highlightPercentage))."
-    }
 }
 
 private struct LuminanceHistogramView: View {
@@ -181,16 +160,6 @@ private struct LuminanceHistogramView: View {
             context.fill(
                 warningPath,
                 with: .color(Color.secondary.opacity(0.82))
-            )
-            context.stroke(
-                Path(CGRect(
-                    x: 0,
-                    y: size.height - 0.5,
-                    width: size.width,
-                    height: 0.5
-                )),
-                with: .color(Color.secondary.opacity(0.35)),
-                lineWidth: 0.5
             )
         }
     }

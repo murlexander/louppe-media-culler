@@ -1,0 +1,272 @@
+{
+  "generatedAt" : "2026-10-22T01:27:17Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 56.710416,
+      "medianMS" : 54.19075,
+      "minMS" : 46.806958,
+      "name" : "mirrored_gallery_backlog_0_with_init_drain_cleanup",
+      "p95MS" : 56.710416,
+      "samplesMS" : [
+        46.806958,
+        54.19075,
+        56.710416
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 54.79175,
+      "medianMS" : 52.592125,
+      "minMS" : 45.842542,
+      "name" : "gallery.full-ready.backlog-0",
+      "p95MS" : 54.79175,
+      "samplesMS" : [
+        45.842542,
+        52.592125,
+        54.79175
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 26.435667,
+      "medianMS" : 18.846833,
+      "minMS" : 17.703542,
+      "name" : "gallery.thumbnail-ready.backlog-0",
+      "p95MS" : 26.435667,
+      "samplesMS" : [
+        17.703542,
+        18.846833,
+        26.435667
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 54.79175,
+      "medianMS" : 52.592125,
+      "minMS" : 45.842542,
+      "name" : "gallery.mirrored-publication.backlog-0",
+      "p95MS" : 54.79175,
+      "samplesMS" : [
+        45.842542,
+        52.592125,
+        54.79175
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 0,
+      "medianMS" : 0,
+      "minMS" : 0,
+      "name" : "gallery.delay-after-full.backlog-0",
+      "p95MS" : 0,
+      "samplesMS" : [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 733.368334,
+      "medianMS" : 688.006708,
+      "minMS" : 662.470334,
+      "name" : "mirrored_gallery_backlog_128_with_init_drain_cleanup",
+      "p95MS" : 733.368334,
+      "samplesMS" : [
+        688.006708,
+        733.368334,
+        662.470334
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 68.0825,
+      "medianMS" : 64.209125,
+      "minMS" : 55.973292,
+      "name" : "gallery.full-ready.backlog-128",
+      "p95MS" : 68.0825,
+      "samplesMS" : [
+        55.973292,
+        64.209125,
+        68.0825
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 717.877167,
+      "medianMS" : 675.973875,
+      "minMS" : 651.547208,
+      "name" : "gallery.thumbnail-ready.backlog-128",
+      "p95MS" : 717.877167,
+      "samplesMS" : [
+        675.973875,
+        717.877167,
+        651.547208
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 717.877167,
+      "medianMS" : 675.973875,
+      "minMS" : 651.547208,
+      "name" : "gallery.mirrored-publication.backlog-128",
+      "p95MS" : 717.877167,
+      "samplesMS" : [
+        675.973875,
+        717.877167,
+        651.547208
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 653.668042,
+      "medianMS" : 620.000583,
+      "minMS" : 583.464708,
+      "name" : "gallery.delay-after-full.backlog-128",
+      "p95MS" : 653.668042,
+      "samplesMS" : [
+        620.000583,
+        653.668042,
+        583.464708
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 151.507958,
+      "medianMS" : 149.119667,
+      "minMS" : 140.83425,
+      "name" : "mounted_gallery_backlog_0_with_init_drain_cleanup",
+      "p95MS" : 151.507958,
+      "samplesMS" : [
+        140.83425,
+        151.507958,
+        149.119667
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 138.41775,
+      "medianMS" : 135.328,
+      "minMS" : 134.393625,
+      "name" : "gallery.production-full-ready.backlog-0",
+      "p95MS" : 138.41775,
+      "samplesMS" : [
+        135.328,
+        138.41775,
+        134.393625
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 18.381959,
+      "medianMS" : 18.147167,
+      "minMS" : 17.591834,
+      "name" : "gallery.production-thumbnail-ready.backlog-0",
+      "p95MS" : 18.381959,
+      "samplesMS" : [
+        17.591834,
+        18.381959,
+        18.147167
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 138.421834,
+      "medianMS" : 135.338459,
+      "minMS" : 134.398417,
+      "name" : "gallery.production-mounted-publication.backlog-0",
+      "p95MS" : 138.421834,
+      "samplesMS" : [
+        135.338459,
+        138.421834,
+        134.398417
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 0.010458999999997332,
+      "medianMS" : 0.004792000000009011,
+      "minMS" : 0.00408399999997755,
+      "name" : "gallery.production-delay-after-full.backlog-0",
+      "p95MS" : 0.010458999999997332,
+      "samplesMS" : [
+        0.010458999999997332,
+        0.00408399999997755,
+        0.004792000000009011
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 619.032875,
+      "medianMS" : 614.6435,
+      "minMS" : 602.389834,
+      "name" : "mounted_gallery_backlog_128_with_init_drain_cleanup",
+      "p95MS" : 619.032875,
+      "samplesMS" : [
+        614.6435,
+        619.032875,
+        602.389834
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 133.409791,
+      "medianMS" : 129.570541,
+      "minMS" : 128.736541,
+      "name" : "gallery.production-full-ready.backlog-128",
+      "p95MS" : 133.409791,
+      "samplesMS" : [
+        129.570541,
+        133.409791,
+        128.736541
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 607.258,
+      "medianMS" : 601.424916,
+      "minMS" : 589.565875,
+      "name" : "gallery.production-thumbnail-ready.backlog-128",
+      "p95MS" : 607.258,
+      "samplesMS" : [
+        601.424916,
+        607.258,
+        589.565875
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 133.414083,
+      "medianMS" : 129.574375,
+      "minMS" : 128.740458,
+      "name" : "gallery.production-mounted-publication.backlog-128",
+      "p95MS" : 133.414083,
+      "samplesMS" : [
+        129.574375,
+        133.414083,
+        128.740458
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 0.004291999999992413,
+      "medianMS" : 0.003917000000001281,
+      "minMS" : 0.0038340000000118835,
+      "name" : "gallery.production-delay-after-full.backlog-128",
+      "p95MS" : 0.004291999999992413,
+      "samplesMS" : [
+        0.0038340000000118835,
+        0.004291999999992413,
+        0.003917000000001281
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-gallery-backlog",
+  "warmups" : 1
+}

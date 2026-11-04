@@ -1,0 +1,51 @@
+{
+  "generatedAt" : "2026-10-22T02:25:19Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 4,
+      "maxMS" : 1454.8355000000001,
+      "medianMS" : 1453.619375,
+      "minMS" : 1449.837542,
+      "name" : "synthetic_raw_4_in_2_item_batches_dwell_700ms",
+      "p95MS" : 1454.8355000000001,
+      "samplesMS" : [
+        1449.837542,
+        1453.619375,
+        1454.8355000000001
+      ]
+    },
+    {
+      "count" : 4,
+      "maxMS" : 0.325708,
+      "medianMS" : 0.279875,
+      "minMS" : 0.278083,
+      "name" : "synthetic_raw_4_in_2_item_batches_dwell_0ms",
+      "p95MS" : 0.325708,
+      "samplesMS" : [
+        0.325708,
+        0.279875,
+        0.278083
+      ]
+    },
+    {
+      "count" : 4,
+      "maxMS" : 0.252042,
+      "medianMS" : 0.204625,
+      "minMS" : 0.176625,
+      "name" : "synthetic_raw_4_in_2_item_batches_production_background",
+      "p95MS" : 0.252042,
+      "samplesMS" : [
+        0.204625,
+        0.252042,
+        0.176625
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-raw-dwell",
+  "warmups" : 1
+}

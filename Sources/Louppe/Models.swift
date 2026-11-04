@@ -2,7 +2,7 @@ import Foundation
 
 enum SessionConstants {
     static let sidecarName = ".louppe_session.json"
-    static let currentSchemaVersion = 6
+    static let currentSchemaVersion = 7
     static let supportedSchemaVersions = 1...currentSchemaVersion
 }
 
@@ -34,6 +34,7 @@ enum PhotoColorLabel: String, Codable, CaseIterable, Hashable, Sendable {
     case purple
 
     var displayName: String { rawValue.capitalized }
+    var localizedDisplayName: String { L10n.label(displayName) }
 }
 
 enum MediaKind: String, Hashable, Sendable {
@@ -50,6 +51,8 @@ enum MediaKind: String, Hashable, Sendable {
         case .text: return "Text"
         }
     }
+
+    var localizedLabel: String { L10n.label(label) }
 
     var singularLabel: String {
         switch self {
@@ -74,7 +77,7 @@ enum RawJPEGPairingMode: String, Hashable, Sendable {
     case together
     case separate
 
-    static let togetherControlTitle = "Treat matching RAW + JPEG as one photo"
+    static let togetherControlTitle = L10n.text("Treat matching RAW + JPEG as one photo")
 }
 
 struct PhotoFileMetadataSnapshot: Equatable, Sendable {
@@ -230,6 +233,78 @@ private final class PhotoFileIdentityStorage: @unchecked Sendable {
     }
 }
 
+/// Evidence retained from the scan. A file creation date can be useful for
+/// ordering, but never proves when a photograph was captured.
+struct CaptureDateEvidence: Equatable, Sendable {
+    enum Source: Equatable, Sendable {
+        case exifOriginal
+        case exifDigitized
+        case tiff
+        case fileCreation
+        case photosLibrary
+        case unspecified
+    }
+
+    let date: Date
+    let source: Source
+    let rawDateTime: String?
+    let subsecondDigits: String?
+    let utcOffset: String?
+    let assumedTimeZoneIdentifier: String?
+
+    init(
+        date: Date,
+        source: Source,
+        rawDateTime: String? = nil,
+        subsecondDigits: String? = nil,
+        utcOffset: String? = nil,
+        assumedTimeZoneIdentifier: String? = nil
+    ) {
+        self.date = date
+        self.source = source
+        self.rawDateTime = rawDateTime
+        self.subsecondDigits = subsecondDigits
+        self.utcOffset = utcOffset
+        self.assumedTimeZoneIdentifier = assumedTimeZoneIdentifier
+    }
+
+    var sourceDescription: String {
+        switch source {
+        case .exifOriginal: return L10n.text("EXIF original capture time")
+        case .exifDigitized: return L10n.text("EXIF digitized time")
+        case .tiff: return L10n.text("TIFF date/time")
+        case .fileCreation: return L10n.text("File creation date · inferred capture time")
+        case .photosLibrary: return L10n.text("Apple Photos capture date")
+        case .unspecified: return L10n.text("Date source unverified")
+        }
+    }
+
+    var isInferred: Bool {
+        source == .fileCreation || source == .unspecified
+    }
+
+    var precisionDescription: String? {
+        guard !isInferred, source != .photosLibrary else { return nil }
+        return subsecondDigits.map { L10n.text("Subseconds: 0.\($0) s") }
+            ?? L10n.text("Whole seconds only; equal-time order uses filename identity")
+    }
+
+    var timeZoneDescription: String? {
+        if let utcOffset { return "UTC\(utcOffset)" }
+        if let assumedTimeZoneIdentifier {
+            return L10n.text("No UTC offset; assumed \(assumedTimeZoneIdentifier)")
+        }
+        return nil
+    }
+
+    var recordedDateTime: String? {
+        guard let rawDateTime else { return nil }
+        return rawDateTime
+            + (subsecondDigits.map { ".\($0)" } ?? "")
+            + (utcOffset.map { " \($0)" } ?? "")
+    }
+}
+
 /// One physical media file and everything Louppe learned about it.
 ///
 /// RAW+JPEG pairing is a presentation choice, so the individual files retain
@@ -253,9 +328,11 @@ struct PhotoFile: Identifiable, Sendable {
     let audioCodec: String?
     let audioIsPlayable: Bool
     let captureDate: Date?
+    let captureDateEvidence: CaptureDateEvidence?
     let captureDay: Date?
     let cameraModel: String?
     let lensModel: String?
+    let filmSimulation: FujiFilmSimulation?
     let subfolder: String?
     let aperture: Double?
     let shutterSpeed: Double?
@@ -269,9 +346,11 @@ struct PhotoFile: Identifiable, Sendable {
         identityStorage.snapshot()
     }
     let searchableText: String
-    /// False only for a hidden JPEG partner whose filesystem facts are known
-    /// but whose EXIF has deliberately not been opened yet.
+    /// False for an inventory file awaiting metadata or a hidden JPEG partner
+    /// whose EXIF is deferred until separate review. Filesystem identity and
+    /// media kind are already authoritative in either case.
     let metadataIsLoaded: Bool
+    let photosMedia: PhotosMediaReference?
     private let metadataStorage: PhotoFileMetadataStorage
 
     var rating: Rating {
@@ -302,8 +381,10 @@ struct PhotoFile: Identifiable, Sendable {
         url: URL,
         displayRelativePath: String? = nil,
         captureDate: Date?,
+        captureDateEvidence: CaptureDateEvidence? = nil,
         cameraModel: String?,
         lensModel: String?,
+        filmSimulation: FujiFilmSimulation? = nil,
         aperture: Double? = nil,
         shutterSpeed: Double? = nil,
         iso: Double? = nil,
@@ -324,10 +405,12 @@ struct PhotoFile: Identifiable, Sendable {
         starRating: StarRating? = nil,
         starsChangedAt: Date? = nil,
         colorLabel: PhotoColorLabel? = nil,
-        colorChangedAt: Date? = nil
+        colorChangedAt: Date? = nil,
+        photosMedia: PhotosMediaReference? = nil
     ) {
         let displayName = url.lastPathComponent
-        let fileTypeLabel = Self.makeFileTypeLabel(url: url, mediaKind: mediaKind)
+        let format = Self.makeFileTypeLabel(url: url, mediaKind: mediaKind)
+        let fileTypeLabel = format.isEmpty && photosMedia != nil ? mediaKind.label : format
         let legacyPersistenceID = displayRelativePath ?? id
         let subfolderPath =
             (legacyPersistenceID as NSString).deletingLastPathComponent
@@ -346,10 +429,13 @@ struct PhotoFile: Identifiable, Sendable {
         self.videoIsPlayable = videoIsPlayable
         self.audioCodec = audioCodec
         self.audioIsPlayable = audioIsPlayable
-        self.captureDate = captureDate
-        self.captureDay = captureDate.map { Calendar.current.startOfDay(for: $0) }
+        self.captureDate = captureDateEvidence?.date ?? captureDate
+        self.captureDateEvidence = captureDateEvidence
+            ?? captureDate.map { CaptureDateEvidence(date: $0, source: .unspecified) }
+        self.captureDay = self.captureDate.map { Calendar.current.startOfDay(for: $0) }
         self.cameraModel = cameraModel
         self.lensModel = lensModel
+        self.filmSimulation = filmSimulation
         self.subfolder = subfolder
         self.aperture = aperture
         self.shutterSpeed = shutterSpeed
@@ -358,6 +444,7 @@ struct PhotoFile: Identifiable, Sendable {
         self.fileSize = fileSize
         self.identityStorage = PhotoFileIdentityStorage(scannedIdentity)
         self.metadataIsLoaded = metadataIsLoaded
+        self.photosMedia = photosMedia
         self.metadataStorage = PhotoFileMetadataStorage(
             rating: rating,
             ratedAt: ratedAt,
@@ -371,6 +458,7 @@ struct PhotoFile: Identifiable, Sendable {
         if let subfolder { parts.append(subfolder) }
         if let cameraModel { parts.append(cameraModel) }
         if let lensModel { parts.append(lensModel) }
+        if let filmSimulation { parts.append(filmSimulation.label) }
         if let captureDate { parts.append(AppDateFormat.day(captureDate)) }
         searchableText = PhotoItem.normalizeForSearch(parts.joined(separator: " "))
     }
@@ -536,7 +624,31 @@ struct PhotoContentRevision: Hashable, Sendable {
                 .max()
         }
 
+        /// v6 disk/memory identity. macOS can assign a remounted volume a new
+        /// device number or mount point; a stable volume UUID supersedes both,
+        /// as in the file-operation and persistence validators. UUID-less
+        /// volumes keep requiring the mount root and device number. Inode,
+        /// birth, size, mtime and ctime still reject same-path replacements.
         fileprivate var cacheIdentity: String {
+            let volume: String
+            if let volumeUUIDString {
+                volume = "volume=uuid:\(PhotoContentRevision.encode(volumeUUIDString))"
+            } else {
+                volume = "volume=device:\(systemNumber):\(PhotoContentRevision.encode(volumeRootPath))"
+            }
+            return [
+                volume,
+                "file=\(fileNumber)",
+                "size=\(logicalSize.map(String.init) ?? "-")",
+                "mtime=\(modificationTime?.cacheIdentity ?? "-")",
+                "ctime=\(statusChangeTime?.cacheIdentity ?? "-")",
+                "birth=\(birthTime?.cacheIdentity ?? "-")",
+            ].joined(separator: "|")
+        }
+
+        /// Exact v5 identity, including the mount root and device number.
+        /// Read only to promote an existing v5 thumbnail; never write it.
+        fileprivate var v5CacheIdentity: String {
             [
                 "root=\(PhotoContentRevision.encode(volumeRootPath))",
                 "uuid=\(PhotoContentRevision.encode(volumeUUIDString))",
@@ -584,12 +696,22 @@ struct PhotoContentRevision: Hashable, Sendable {
 
     /// Stable, unambiguous text form used inside the hashed disk-cache key.
     var cacheIdentity: String {
+        cacheIdentity(fileIdentity: stableFileIdentity?.cacheIdentity)
+    }
+
+    /// The exact identity text inside v5 disk keys. It is at least as specific
+    /// as `cacheIdentity`, so a v5 file may be promoted to the current key.
+    var v5CacheIdentity: String {
+        cacheIdentity(fileIdentity: stableFileIdentity?.v5CacheIdentity)
+    }
+
+    private func cacheIdentity(fileIdentity: String?) -> String {
         [
             "path=\(Self.encode(pathIdentity))",
             "mtime=\(modificationTimeBits.map(String.init) ?? "-")",
             "size=\(fileSize)",
             "kind=\(mediaKind.rawValue)",
-            "identity=\(stableFileIdentity?.cacheIdentity ?? "-")",
+            "identity=\(fileIdentity ?? "-")",
         ].joined(separator: "|")
     }
 
@@ -631,9 +753,14 @@ struct PhotoItem: Identifiable, Sendable {
     var audioCodec: String? { primaryFile.audioCodec }
     var audioIsPlayable: Bool { primaryFile.audioIsPlayable }
     var captureDate: Date? { primaryFile.captureDate }
+    var captureDateEvidence: CaptureDateEvidence? { primaryFile.captureDateEvidence }
     var captureDay: Date? { primaryFile.captureDay }
     var cameraModel: String? { primaryFile.cameraModel }
     var lensModel: String? { primaryFile.lensModel }
+    /// Pairing keeps the primary file authoritative, just like camera/exposure.
+    /// Splitting reveals the JPEG's own separately indexed simulation.
+    var filmSimulation: FujiFilmSimulation? { primaryFile.filmSimulation }
+    var filmSimulationFacet: FujiFilmSimulation { filmSimulation ?? .notRecorded }
     var subfolder: String? { primaryFile.subfolder }
     var aperture: Double? { primaryFile.aperture }
     var shutterSpeed: Double? { primaryFile.shutterSpeed }
@@ -733,6 +860,7 @@ struct PhotoItem: Identifiable, Sendable {
         captureDate: Date?,
         cameraModel: String?,
         lensModel: String?,
+        filmSimulation: FujiFilmSimulation? = nil,
         aperture: Double? = nil,
         shutterSpeed: Double? = nil,
         iso: Double? = nil,
@@ -760,6 +888,7 @@ struct PhotoItem: Identifiable, Sendable {
             captureDate: captureDate,
             cameraModel: cameraModel,
             lensModel: lensModel,
+            filmSimulation: filmSimulation,
             aperture: aperture,
             shutterSpeed: shutterSpeed,
             iso: iso,
@@ -848,6 +977,13 @@ struct PhotoItem: Identifiable, Sendable {
         return FolderScanner.supportedExtensions.contains(primaryURL.pathExtension.lowercased())
     }
 
+    /// Photos can request an original for inspection before its format is known.
+    /// This enables inspection controls, not local decoding or quality analysis
+    /// of a synthetic review URL. The leased original owns those capabilities.
+    var supportsPhotoInspection: Bool {
+        mediaKind == .photo && (primaryFile.photosMedia != nil || isSupported)
+    }
+
     /// Labels the camera/lens filter toggles group by. Files without EXIF
     /// (screenshots, videos…) collect under "Unknown" so they stay filterable.
     var cameraLabel: String { cameraModel ?? "Unknown" }
@@ -907,7 +1043,7 @@ struct PhotoItem: Identifiable, Sendable {
     ) -> String {
         guard let pairedFile else { return primaryFile.searchableText }
         return normalizeForSearch(
-            "\(primaryFile.searchableText) \(pairedFile.searchableText) RAW + JPEG"
+            L10n.text("\(primaryFile.searchableText) \(pairedFile.searchableText) RAW + JPEG")
         )
     }
 
@@ -931,6 +1067,7 @@ struct PhotoSelectionSummary: Equatable {
     let textCount: Int
     let cameras: [String]
     let lenses: [String]
+    let filmSimulations: [String]
     let captureDayRange: ClosedRange<Date>?
     let unknownDateCount: Int
     let totalBytes: Int64
@@ -945,6 +1082,8 @@ struct PhotoSelectionSummary: Equatable {
         textCount = items.count { $0.mediaKind == .text }
         cameras = Self.distinctMetadataLabels(items.map(\.cameraModel))
         lenses = Self.distinctMetadataLabels(items.map(\.lensModel))
+        filmSimulations = Set(items.compactMap(\.filmSimulation).map(\.label))
+            .sorted(by: Self.localizedOrder)
 
         let captureDays = items.compactMap(\.captureDay)
         captureDayRange = captureDays.min().flatMap { earliest in
@@ -970,7 +1109,7 @@ struct PhotoSelectionSummary: Equatable {
             }
         }
         var result = known.sorted(by: localizedOrder)
-        if hasUnknown { result.append("Unknown") }
+        if hasUnknown { result.append(L10n.text("Unknown")) }
         return result
     }
 
@@ -989,11 +1128,11 @@ enum CleanUpScope: Hashable, Sendable {
     case filtered
     case selected
 
-    func candidateIndices(
-        all: Range<Int>,
+    func candidateIndices<All: Sequence>(
+        all: All,
         filtered: [Int],
         selected: Set<Int>
-    ) -> [Int] {
+    ) -> [Int] where All.Element == Int {
         switch self {
         case .all:
             return Array(all)
@@ -1160,37 +1299,37 @@ struct PhotoSort: Equatable, Sendable {
 
         var ascendingLabel: String {
             switch self {
-            case .captureDate: return "Oldest first"
+            case .captureDate: return L10n.text("Oldest first")
             case .name, .subfolder, .fileType, .camera, .lens, .videoCodec: return "A–Z"
-            case .folderHierarchy: return "Folders A–Z"
-            case .mediaKind: return "Photos first"
-            case .aperture: return "Widest first"
-            case .shutterSpeed: return "Fastest first"
-            case .iso: return "Lowest first"
-            case .duration: return "Shortest first"
-            case .videoResolution: return "Smallest first"
-            case .videoFrameRate: return "Lowest first"
-            case .decision: return "Yes first"
-            case .starRating: return "Lowest first"
-            case .colorLabel: return "Red to Purple"
+            case .folderHierarchy: return L10n.text("Folders A–Z")
+            case .mediaKind: return L10n.text("Photos first")
+            case .aperture: return L10n.text("Widest first")
+            case .shutterSpeed: return L10n.text("Fastest first")
+            case .iso: return L10n.text("Lowest first")
+            case .duration: return L10n.text("Shortest first")
+            case .videoResolution: return L10n.text("Smallest first")
+            case .videoFrameRate: return L10n.text("Lowest first")
+            case .decision: return L10n.text("Yes first")
+            case .starRating: return L10n.text("Lowest first")
+            case .colorLabel: return L10n.text("Red to Purple")
             }
         }
 
         var descendingLabel: String {
             switch self {
-            case .captureDate: return "Newest first"
+            case .captureDate: return L10n.text("Newest first")
             case .name, .subfolder, .fileType, .camera, .lens, .videoCodec: return "Z–A"
-            case .folderHierarchy: return "Folders Z–A"
-            case .mediaKind: return "Text first"
-            case .aperture: return "Narrowest first"
-            case .shutterSpeed: return "Slowest first"
-            case .iso: return "Highest first"
-            case .duration: return "Longest first"
-            case .videoResolution: return "Largest first"
-            case .videoFrameRate: return "Highest first"
-            case .decision: return "No first"
-            case .starRating: return "Highest first"
-            case .colorLabel: return "Purple to Red"
+            case .folderHierarchy: return L10n.text("Folders Z–A")
+            case .mediaKind: return L10n.text("Text first")
+            case .aperture: return L10n.text("Narrowest first")
+            case .shutterSpeed: return L10n.text("Slowest first")
+            case .iso: return L10n.text("Highest first")
+            case .duration: return L10n.text("Longest first")
+            case .videoResolution: return L10n.text("Largest first")
+            case .videoFrameRate: return L10n.text("Highest first")
+            case .decision: return L10n.text("No first")
+            case .starRating: return L10n.text("Highest first")
+            case .colorLabel: return L10n.text("Purple to Red")
             }
         }
 
@@ -1248,61 +1387,61 @@ struct PhotoSort: Equatable, Sendable {
         func groupTitle(for item: PhotoItem) -> String {
             switch self {
             case .captureDate:
-                guard let date = item.captureDate else { return "Unknown date" }
+                guard let date = item.captureDate else { return L10n.text("Unknown date") }
                 return AppDateFormat.day(date)
             case .name:
                 return ""
             case .subfolder:
-                return item.subfolderLabel
+                return item.subfolder ?? L10n.text("None")
             case .folderHierarchy:
-                return item.subfolder ?? "Source folder"
+                return item.subfolder ?? L10n.text("Source folder")
             case .fileType:
                 return item.fileTypeLabel
             case .mediaKind:
-                return item.mediaKind.label
+                return item.mediaKind.localizedLabel
             case .camera:
-                return item.cameraLabel
+                return item.cameraModel ?? L10n.text("Unknown")
             case .lens:
-                return item.lensLabel
+                return item.lensModel ?? L10n.text("Unknown")
             case .aperture:
-                guard let aperture = item.aperture else { return "Unknown aperture" }
+                guard let aperture = item.aperture else { return L10n.text("Unknown aperture") }
                 return "f/\(MetadataFormat.decimal(aperture))"
             case .shutterSpeed:
-                guard let shutter = item.shutterSpeed else { return "Unknown shutter speed" }
+                guard let shutter = item.shutterSpeed else { return L10n.text("Unknown shutter speed") }
                 return MetadataFormat.shutter(shutter)
             case .iso:
-                guard let iso = item.iso else { return "Unknown ISO" }
+                guard let iso = item.iso else { return L10n.text("Unknown ISO") }
                 return "ISO \(MetadataFormat.iso(iso))"
             case .duration:
-                return item.duration.map { MediaDurationFormat.display($0) } ?? "Unknown duration"
+                return item.duration.map { MediaDurationFormat.display($0) } ?? L10n.text("Unknown duration")
             case .videoResolution:
-                return item.videoResolutionLabel ?? "Unknown resolution"
+                return item.videoResolutionLabel ?? L10n.text("Unknown resolution")
             case .videoFrameRate:
                 guard let frameRate = item.videoFrameRate else {
-                    return "Unknown frame rate"
+                    return L10n.text("Unknown frame rate")
                 }
                 return VideoMetadataFormat.frameRate(frameRate)
             case .videoCodec:
-                return item.videoCodec ?? "Unknown video codec"
+                return item.videoCodec ?? L10n.text("Unknown video codec")
             case .decision:
                 switch item.ratingState {
-                case .yes: return "Yes"
-                case .undecided: return "Undecided"
-                case .mixed: return "Mixed"
-                case .no: return "No"
+                case .yes: return L10n.text("Yes")
+                case .undecided: return L10n.text("Undecided")
+                case .mixed: return L10n.text("Mixed")
+                case .no: return L10n.text("No")
                 }
             case .starRating:
                 switch item.starRatingState {
-                case .unrated: return "Unrated"
+                case .unrated: return L10n.text("Unrated")
                 case .stars(let rating):
-                    return rating == .one ? "1 star" : "\(rating.count) stars"
-                case .mixed: return "Mixed"
+                    return rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count) stars")
+                case .mixed: return L10n.text("Mixed")
                 }
             case .colorLabel:
                 switch item.colorLabelState {
-                case .none: return "None"
-                case .label(let label): return label.displayName
-                case .mixed: return "Mixed"
+                case .none: return L10n.text("None")
+                case .label(let label): return label.localizedDisplayName
+                case .mixed: return L10n.text("Mixed")
                 }
             }
         }
@@ -1782,11 +1921,11 @@ struct VideoResolution: Hashable, Sendable, Comparable {
 enum VideoMetadataFormat {
     static func frameRate(_ value: Double) -> String {
         guard let frameRate = MediaNumeric.frameRate(value) else {
-            return "Unknown frame rate"
+            return L10n.text("Unknown frame rate")
         }
         let text = String(format: "%.3f", frameRate)
             .replacingOccurrences(of: #"\.?0+$"#, with: "", options: .regularExpression)
-        return "\(text) fps"
+        return L10n.text("\(text) fps")
     }
 }
 
@@ -1826,9 +1965,37 @@ enum DateFilterMode: Hashable {
     case specificDates
 }
 
+enum QualityCueKind: String, CaseIterable, Hashable, Sendable {
+    case highISO
+    case slowShutter
+    case highlightClipping
+    case shadowClipping
+
+    var title: String {
+        switch self {
+        case .highISO: return L10n.text("High ISO")
+        case .slowShutter: return L10n.text("Slow shutter")
+        case .highlightClipping: return L10n.text("Near-white area")
+        case .shadowClipping: return L10n.text("Near-black area")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .highISO: return "aqi.medium"
+        case .slowShutter: return "timer"
+        case .highlightClipping: return "sun.max"
+        case .shadowClipping: return "moon"
+        }
+    }
+}
+
+
 /// What the toolbar filter menu narrows the session down to.
 /// An inactive filter shows everything.
 struct PhotoFilter: Equatable {
+    /// Any selected cue matches; the result intersects every ordinary facet.
+    var selectedQualityCues: Set<QualityCueKind> = []
     var searchText = ""
     /// These `Enabled` flags are internal effect flags, not UI toggles. The
     /// controls are always present; a flag becomes true only when the user
@@ -1864,6 +2031,7 @@ struct PhotoFilter: Equatable {
     /// Same exclusion pattern for camera and lens labels.
     var excludedCameras: Set<String> = []
     var excludedLenses: Set<String> = []
+    var excludedFilmSimulations: Set<FujiFilmSimulation> = []
     /// Video-specific facets only affect videos once the user narrows one of
     /// these values; photos and audio recordings stay untouched otherwise.
     var excludedVideoResolutions: Set<String> = []
@@ -1877,7 +2045,7 @@ struct PhotoFilter: Equatable {
     var excludedColorStates: Set<PhotoItemColorLabelState> = []
 
     var isActive: Bool {
-        !searchText.trimmingCharacters(in: .whitespaces).isEmpty
+        !selectedQualityCues.isEmpty || !searchText.trimmingCharacters(in: .whitespaces).isEmpty
             || dateEnabled
             || apertureEnabled
             || shutterEnabled
@@ -1888,6 +2056,7 @@ struct PhotoFilter: Equatable {
             || !excludedTypes.isEmpty
             || !excludedCameras.isEmpty
             || !excludedLenses.isEmpty
+            || !excludedFilmSimulations.isEmpty
             || !excludedVideoResolutions.isEmpty
             || !excludedVideoCodecs.isEmpty
             || !excludedSubfolders.isEmpty
@@ -1905,6 +2074,7 @@ struct PreparedPhotoFilter {
     let excludedTypes: Set<String>
     let excludedCameras: Set<String>
     let excludedLenses: Set<String>
+    let excludedFilmSimulations: Set<FujiFilmSimulation>
     let excludedVideoResolutions: Set<String>
     let excludedVideoCodecs: Set<String>
     let excludedSubfolders: Set<String>
@@ -1927,6 +2097,7 @@ struct PreparedPhotoFilter {
         excludedTypes = filter.excludedTypes
         excludedCameras = filter.excludedCameras
         excludedLenses = filter.excludedLenses
+        excludedFilmSimulations = filter.excludedFilmSimulations
         excludedVideoResolutions = filter.excludedVideoResolutions
         excludedVideoCodecs = filter.excludedVideoCodecs
         excludedSubfolders = filter.excludedSubfolders
@@ -1977,6 +2148,7 @@ struct PreparedPhotoFilter {
         if excludedTypes.contains(item.fileTypeLabel) { return false }
         if excludedCameras.contains(item.cameraLabel) { return false }
         if excludedLenses.contains(item.lensLabel) { return false }
+        if excludedFilmSimulations.contains(item.filmSimulationFacet) { return false }
         if !excludedVideoResolutions.isEmpty {
             guard item.isVideo else { return false }
             if excludedVideoResolutions.contains(
@@ -2062,9 +2234,19 @@ struct SessionEntry: Codable, Sendable {
     /// migration, but current ratings are restored only onto this exact
     /// scanned physical file rather than whichever file now owns the path.
     var fileIdentity: FileOperationJournal.FileIdentity? = nil
+    /// Schema 7: SHA-256 of all bytes, captured against this exact identity.
+    var contentSHA256: String? = nil
     /// Added in schema 6. Exact relative parent-directory bytes captured
     /// before Louppe first organizes this physical file.
     var organizationOriginFolderPathBytes: Data? = nil
+}
+
+/// Retain the old decision even after an explicit or verified restoration.
+/// Separate storage permits a new file to own the same path without erasing it.
+struct SessionRecoveryEntry: Codable, Sendable, Identifiable {
+    var id: UUID = UUID()
+    var entry: SessionEntry
+    var resolvedFileID: String? = nil
 }
 
 struct SessionFile: Codable, Sendable {
@@ -2084,6 +2266,8 @@ struct SessionFile: Codable, Sendable {
     /// omit it and remain readable; once present, this counter is authoritative
     /// over wall-clock timestamps when choosing between sidecar and backup.
     var snapshotGeneration: UInt64? = nil
+    /// Schema 7: unresolved decisions and resolved history survive every save.
+    var recoveryEntries: [SessionRecoveryEntry]? = nil
 }
 
 /// Resolves sidecar ratings by byte-exact file ID, with a read-only fallback
@@ -2121,7 +2305,7 @@ struct SessionRatingIndex {
         case identityConflict(Match)
     }
 
-    private struct PersistedIdentityKey: Hashable {
+    struct PersistedIdentityKey: Hashable {
         enum Volume: Hashable {
             case uuid(String)
             case legacy(root: String, systemNumber: UInt64)
@@ -2349,8 +2533,8 @@ struct CleanUpProgress: Sendable {
 
     var title: String {
         switch action {
-        case .movingToTrash: return "Moving files to the Trash…"
-        case .restoring: return "Restoring files from the Trash…"
+        case .movingToTrash: return L10n.text("Moving files to the Trash…")
+        case .restoring: return L10n.text("Restoring files from the Trash…")
         }
     }
 }

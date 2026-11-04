@@ -27,7 +27,9 @@ final class GalleryVideoAccessibilityTests: XCTestCase {
         container.addSubview(outside)
         let window = NSWindow(contentRect: container.frame, styleMask: [.titled], backing: .buffered, defer: false)
         window.contentView = container
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         defer { playback.stop(); window.orderOut(nil); window.contentView = nil }
         host.layoutSubtreeIfNeeded()
         XCTAssertTrue(window.makeFirstResponder(outside))

@@ -1,0 +1,9 @@
+/private/tmp/louppe-implementation-final-tests.log
+Test Suite 'All tests' started at 2026-10-12 11:27:21.436 PM.
+	 Executed 684 tests, with 30 tests skipped and 0 failures (0 unexpected) in 27.112 (27.166) seconds
+Test Suite 'All tests' passed at 2026-10-12 11:27:48.611 PM.
+	 Executed 684 tests, with 30 tests skipped and 0 failures (0 unexpected) in 27.112 (27.175) seconds
+/private/tmp/louppe-implementation-logic.log
+Test Suite 'Selected tests' started at 2026-10-12 11:03:27.855 PM.
+Test Suite 'Selected tests' passed at 2026-10-12 11:03:34.367 PM.
+	 Executed 125 tests, with 4 tests skipped and 0 failures (0 unexpected) in 6.493 (6.512) seconds

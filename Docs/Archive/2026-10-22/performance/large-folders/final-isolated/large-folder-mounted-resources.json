@@ -1,0 +1,80 @@
+[
+  {
+    "count" : 1000,
+    "createdHostCount" : 35,
+    "mainActorGapSamplesMS" : [
+      88.219374999999999,
+      547.46083299999998,
+      494.81395800000001,
+      958.00008400000002
+    ],
+    "maxMainActorGapMS" : 958.00008400000002,
+    "peakResidentBytes" : 219348992,
+    "physicalFrameMeasurement" : false,
+    "realizedItemCount" : 20,
+    "residentAfterNavigationBytes" : 219348992,
+    "retainedHostCount" : 35,
+    "samplingIntervalMS" : 2,
+    "surface" : "grid"
+  },
+  {
+    "count" : 1000,
+    "createdHostCount" : 9,
+    "mainActorGapSamplesMS" : [
+      363.29504200000002
+    ],
+    "maxMainActorGapMS" : 363.29504200000002,
+    "peakResidentBytes" : 220266496,
+    "physicalFrameMeasurement" : false,
+    "realizedItemCount" : 8,
+    "residentAfterNavigationBytes" : 220266496,
+    "retainedHostCount" : 9,
+    "samplingIntervalMS" : 2,
+    "surface" : "browser"
+  },
+  {
+    "count" : 1000,
+    "physicalFrameMeasurement" : false,
+    "residentBytes" : 220135424,
+    "surface" : "after-surface-teardown-and-disk-drain"
+  },
+  {
+    "count" : 10000,
+    "createdHostCount" : 35,
+    "mainActorGapSamplesMS" : [
+      89.407166000000004,
+      570.40695900000003,
+      527.17150000000004,
+      916.47345800000005
+    ],
+    "maxMainActorGapMS" : 916.47345800000005,
+    "peakResidentBytes" : 357318656,
+    "physicalFrameMeasurement" : false,
+    "realizedItemCount" : 20,
+    "residentAfterNavigationBytes" : 357318656,
+    "retainedHostCount" : 35,
+    "samplingIntervalMS" : 2,
+    "surface" : "grid"
+  },
+  {
+    "count" : 10000,
+    "createdHostCount" : 9,
+    "mainActorGapSamplesMS" : [
+      398.72758399999998
+    ],
+    "maxMainActorGapMS" : 398.72758399999998,
+    "peakResidentBytes" : 359350272,
+    "physicalFrameMeasurement" : false,
+    "realizedItemCount" : 8,
+    "residentAfterNavigationBytes" : 349913088,
+    "retainedHostCount" : 9,
+    "samplingIntervalMS" : 2,
+    "surface" : "browser"
+  },
+  {
+    "count" : 10000,
+    "physicalFrameMeasurement" : false,
+    "residentBytes" : 349765632,
+    "surface" : "after-surface-teardown-and-disk-drain"
+  }
+]

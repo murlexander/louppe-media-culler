@@ -1,0 +1,558 @@
+{
+  "generatedAt" : "2026-10-22T01:27:10Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 5.846875,
+      "medianMS" : 5.843459,
+      "minMS" : 5.660709,
+      "name" : "sort.camera.comparator-reference",
+      "p95MS" : 5.846875,
+      "samplesMS" : [
+        5.843459,
+        5.846875,
+        5.660709
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.121542,
+      "medianMS" : 0.0915,
+      "minMS" : 0.086083,
+      "name" : "sort.camera.cold-distinct-ranks",
+      "p95MS" : 0.121542,
+      "samplesMS" : [
+        0.086083,
+        0.0915,
+        0.121542
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.001791,
+      "medianMS" : 0.001667,
+      "minMS" : 0.001666,
+      "name" : "sort.camera.warm-distinct-ranks",
+      "p95MS" : 0.001791,
+      "samplesMS" : [
+        0.001791,
+        0.001667,
+        0.001666
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 4.653667,
+      "medianMS" : 4.492083,
+      "minMS" : 4.438916,
+      "name" : "sort.lens.comparator-reference",
+      "p95MS" : 4.653667,
+      "samplesMS" : [
+        4.438916,
+        4.653667,
+        4.492083
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.072875,
+      "medianMS" : 0.069542,
+      "minMS" : 0.069417,
+      "name" : "sort.lens.cold-distinct-ranks",
+      "p95MS" : 0.072875,
+      "samplesMS" : [
+        0.072875,
+        0.069542,
+        0.069417
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.001792,
+      "medianMS" : 0.001791,
+      "minMS" : 0.00175,
+      "name" : "sort.lens.warm-distinct-ranks",
+      "p95MS" : 0.001792,
+      "samplesMS" : [
+        0.001792,
+        0.001791,
+        0.00175
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.225916,
+      "medianMS" : 0.224167,
+      "minMS" : 0.221041,
+      "name" : "projection.unrestricted.full-rebuild-reference",
+      "p95MS" : 0.225916,
+      "samplesMS" : [
+        0.225916,
+        0.224167,
+        0.221041
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.003167,
+      "medianMS" : 0.0025,
+      "minMS" : 0.002459,
+      "name" : "projection.unrestricted.unchanged-prepared",
+      "p95MS" : 0.003167,
+      "samplesMS" : [
+        0.003167,
+        0.0025,
+        0.002459
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.06525,
+      "medianMS" : 0.064625,
+      "minMS" : 0.064541,
+      "name" : "projection.active-all-visible.unchanged-prepared",
+      "p95MS" : 0.06525,
+      "samplesMS" : [
+        0.06525,
+        0.064541,
+        0.064625
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.236958,
+      "medianMS" : 0.233792,
+      "minMS" : 0.233125,
+      "name" : "projection.restricted.full-rebuild-reference",
+      "p95MS" : 0.236958,
+      "samplesMS" : [
+        0.233125,
+        0.233792,
+        0.236958
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.069417,
+      "medianMS" : 0.064542,
+      "minMS" : 0.064208,
+      "name" : "projection.restricted.unchanged-prepared",
+      "p95MS" : 0.069417,
+      "samplesMS" : [
+        0.069417,
+        0.064208,
+        0.064542
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.234334,
+      "medianMS" : 0.224042,
+      "minMS" : 0.219333,
+      "name" : "projection.membership-toggle.full-rebuild-reference",
+      "p95MS" : 0.234334,
+      "samplesMS" : [
+        0.224042,
+        0.234334,
+        0.219333
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.841541,
+      "medianMS" : 0.716208,
+      "minMS" : 0.631833,
+      "name" : "projection.membership-toggle.prepared",
+      "p95MS" : 0.841541,
+      "samplesMS" : [
+        0.631833,
+        0.841541,
+        0.716208
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.0275,
+      "medianMS" : 0.025,
+      "minMS" : 0.024333,
+      "name" : "projection.cue-mask.unchanged-prepared",
+      "p95MS" : 0.0275,
+      "samplesMS" : [
+        0.0275,
+        0.025,
+        0.024333
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 53.15375,
+      "medianMS" : 52.401167,
+      "minMS" : 51.562709,
+      "name" : "sort.camera.comparator-reference",
+      "p95MS" : 53.15375,
+      "samplesMS" : [
+        53.15375,
+        52.401167,
+        51.562709
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.839334,
+      "medianMS" : 0.82225,
+      "minMS" : 0.692959,
+      "name" : "sort.camera.cold-distinct-ranks",
+      "p95MS" : 0.839334,
+      "samplesMS" : [
+        0.692959,
+        0.82225,
+        0.839334
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.013583,
+      "medianMS" : 0.013417,
+      "minMS" : 0.011667,
+      "name" : "sort.camera.warm-distinct-ranks",
+      "p95MS" : 0.013583,
+      "samplesMS" : [
+        0.013417,
+        0.013583,
+        0.011667
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 41.48125,
+      "medianMS" : 40.58975,
+      "minMS" : 40.3155,
+      "name" : "sort.lens.comparator-reference",
+      "p95MS" : 41.48125,
+      "samplesMS" : [
+        41.48125,
+        40.58975,
+        40.3155
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1.018875,
+      "medianMS" : 0.687084,
+      "minMS" : 0.624541,
+      "name" : "sort.lens.cold-distinct-ranks",
+      "p95MS" : 1.018875,
+      "samplesMS" : [
+        0.624541,
+        1.018875,
+        0.687084
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.014792,
+      "medianMS" : 0.011917,
+      "minMS" : 0.011916,
+      "name" : "sort.lens.warm-distinct-ranks",
+      "p95MS" : 0.014792,
+      "samplesMS" : [
+        0.011917,
+        0.011916,
+        0.014792
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 3.356209,
+      "medianMS" : 2.443708,
+      "minMS" : 2.408666,
+      "name" : "projection.unrestricted.full-rebuild-reference",
+      "p95MS" : 3.356209,
+      "samplesMS" : [
+        2.443708,
+        3.356209,
+        2.408666
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.011208,
+      "medianMS" : 0.002792,
+      "minMS" : 0.002542,
+      "name" : "projection.unrestricted.unchanged-prepared",
+      "p95MS" : 0.011208,
+      "samplesMS" : [
+        0.011208,
+        0.002792,
+        0.002542
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.841583,
+      "medianMS" : 0.648125,
+      "minMS" : 0.630417,
+      "name" : "projection.active-all-visible.unchanged-prepared",
+      "p95MS" : 0.841583,
+      "samplesMS" : [
+        0.841583,
+        0.630417,
+        0.648125
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 3.289916,
+      "medianMS" : 2.80025,
+      "minMS" : 2.322333,
+      "name" : "projection.restricted.full-rebuild-reference",
+      "p95MS" : 3.289916,
+      "samplesMS" : [
+        3.289916,
+        2.80025,
+        2.322333
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.633375,
+      "medianMS" : 0.576166,
+      "minMS" : 0.569541,
+      "name" : "projection.restricted.unchanged-prepared",
+      "p95MS" : 0.633375,
+      "samplesMS" : [
+        0.633375,
+        0.569541,
+        0.576166
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 2.83,
+      "medianMS" : 2.635416,
+      "minMS" : 2.238916,
+      "name" : "projection.membership-toggle.full-rebuild-reference",
+      "p95MS" : 2.83,
+      "samplesMS" : [
+        2.83,
+        2.238916,
+        2.635416
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 11.444709,
+      "medianMS" : 9.381917,
+      "minMS" : 9.062084,
+      "name" : "projection.membership-toggle.prepared",
+      "p95MS" : 11.444709,
+      "samplesMS" : [
+        9.062084,
+        9.381917,
+        11.444709
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 0.232916,
+      "medianMS" : 0.203,
+      "minMS" : 0.200375,
+      "name" : "projection.cue-mask.unchanged-prepared",
+      "p95MS" : 0.232916,
+      "samplesMS" : [
+        0.232916,
+        0.203,
+        0.200375
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 730.956,
+      "medianMS" : 725.082209,
+      "minMS" : 723.582458,
+      "name" : "sort.camera.comparator-reference",
+      "p95MS" : 730.956,
+      "samplesMS" : [
+        730.956,
+        723.582458,
+        725.082209
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 17.014209,
+      "medianMS" : 16.28,
+      "minMS" : 16.108459,
+      "name" : "sort.camera.cold-distinct-ranks",
+      "p95MS" : 17.014209,
+      "samplesMS" : [
+        16.28,
+        16.108459,
+        17.014209
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 0.116583,
+      "medianMS" : 0.113334,
+      "minMS" : 0.113208,
+      "name" : "sort.camera.warm-distinct-ranks",
+      "p95MS" : 0.116583,
+      "samplesMS" : [
+        0.116583,
+        0.113334,
+        0.113208
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 779.803833,
+      "medianMS" : 584.274291,
+      "minMS" : 583.436666,
+      "name" : "sort.lens.comparator-reference",
+      "p95MS" : 779.803833,
+      "samplesMS" : [
+        583.436666,
+        779.803833,
+        584.274291
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 16.603375,
+      "medianMS" : 16.240459,
+      "minMS" : 15.839292,
+      "name" : "sort.lens.cold-distinct-ranks",
+      "p95MS" : 16.603375,
+      "samplesMS" : [
+        15.839292,
+        16.603375,
+        16.240459
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 0.114625,
+      "medianMS" : 0.11425,
+      "minMS" : 0.11425,
+      "name" : "sort.lens.warm-distinct-ranks",
+      "p95MS" : 0.114625,
+      "samplesMS" : [
+        0.114625,
+        0.11425,
+        0.11425
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 54.391333,
+      "medianMS" : 54.114958,
+      "minMS" : 50.836875,
+      "name" : "projection.unrestricted.full-rebuild-reference",
+      "p95MS" : 54.391333,
+      "samplesMS" : [
+        54.391333,
+        50.836875,
+        54.114958
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 0.019458,
+      "medianMS" : 0.002875,
+      "minMS" : 0.0025,
+      "name" : "projection.unrestricted.unchanged-prepared",
+      "p95MS" : 0.019458,
+      "samplesMS" : [
+        0.019458,
+        0.002875,
+        0.0025
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 17.984209,
+      "medianMS" : 17.971542,
+      "minMS" : 17.198583,
+      "name" : "projection.active-all-visible.unchanged-prepared",
+      "p95MS" : 17.984209,
+      "samplesMS" : [
+        17.971542,
+        17.984209,
+        17.198583
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 112.001458,
+      "medianMS" : 63.288333,
+      "minMS" : 56.832083,
+      "name" : "projection.restricted.full-rebuild-reference",
+      "p95MS" : 112.001458,
+      "samplesMS" : [
+        56.832083,
+        63.288333,
+        112.001458
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 19.038042,
+      "medianMS" : 18.999625,
+      "minMS" : 17.451666,
+      "name" : "projection.restricted.unchanged-prepared",
+      "p95MS" : 19.038042,
+      "samplesMS" : [
+        18.999625,
+        17.451666,
+        19.038042
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 68.371667,
+      "medianMS" : 66.078625,
+      "minMS" : 61.905167,
+      "name" : "projection.membership-toggle.full-rebuild-reference",
+      "p95MS" : 68.371667,
+      "samplesMS" : [
+        66.078625,
+        61.905167,
+        68.371667
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 292.869875,
+      "medianMS" : 170.708292,
+      "minMS" : 163.232375,
+      "name" : "projection.membership-toggle.prepared",
+      "p95MS" : 292.869875,
+      "samplesMS" : [
+        292.869875,
+        170.708292,
+        163.232375
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 12.059167,
+      "medianMS" : 9.626917,
+      "minMS" : 6.626708,
+      "name" : "projection.cue-mask.unchanged-prepared",
+      "p95MS" : 12.059167,
+      "samplesMS" : [
+        6.626708,
+        12.059167,
+        9.626917
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "large-projection",
+  "warmups" : 1
+}

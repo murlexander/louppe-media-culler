@@ -1,63 +1,79 @@
+import AppKit
 import SwiftUI
 
-/// Compact Gallery zoom control. Fit is an explicit state; the slider shows
+/// Floating Gallery zoom control. Fit is an explicit state; the slider shows
 /// source-pixel magnification from 30% to 400% on a logarithmic scale.
 struct PhotoZoomControl: View {
     @ObservedObject var store: SessionStore
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
     @State private var lastReading: ZoomReading?
-    @AppStorage(RawDisplayMode.preferenceKey) private var rawDisplayMode = RawDisplayMode.fast
-    @AppStorage(AppleRawDecoder.preferenceKey) private var rawDecoder = AppleRawDecoder.appleDefault
 
     private let minimum = 0.30
     private let maximum = Double(ActualSizeGeometry.maximumZoom)
 
     var body: some View {
-        HStack(spacing: 5) {
-            if store.currentItem?.isRaw == true {
-                Menu {
-                    Picker("RAW display", selection: $rawDisplayMode) {
-                        ForEach(RawDisplayMode.allCases, id: \.self) { mode in
-                            Text(mode.title).tag(mode)
-                        }
-                    }
-                    Picker("Apple RAW decoder", selection: $rawDecoder) {
-                        ForEach(AppleRawDecoder.allCases, id: \.self) { decoder in
-                            Text(decoder.title).tag(decoder)
-                                .disabled(decoder == .raw9 && !AppleRawDecoder.supportsRAW9)
-                        }
-                    }
-                } label: {
-                    Text(store.currentPhotoRepresentation?.label ?? "…")
-                        .font(.caption)
-                }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-                .help("RAW display and decoder. RAW 9 uses more time and memory and requires a supported file on macOS 27.")
-                .accessibilityLabel("RAW display")
-                .accessibilityValue("\(store.currentPhotoRepresentation?.label ?? "Loading"), \(rawDecoder.title)")
+        controls
+            .padding(.horizontal, 12)
+            .frame(height: 36) // Match the native macOS toolbar glass groups.
+            .modifier(FloatingControlSurface(shape: Capsule(), reduceTransparency: reduceTransparency, contrast: contrast))
+            .contentShape(Capsule())
+            .background(ZoomFitDoubleClickSurface { store.zoomToFit() })
+            .help(L10n.text("Double-click to fit"))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("photoZoomControl")
+            .onChange(of: currentReading, initial: true) { _, reading in
+                if let reading { lastReading = reading }
             }
-            Button("Fit") { store.zoomToFit() }
-                .buttonStyle(.bordered)
-                .fontWeight(store.zoomMode == .fit ? .semibold : .regular)
-                .accessibilityLabel("Fit photo in window")
-                .accessibilityAddTraits(store.zoomMode == .fit ? .isSelected : [])
+    }
+
+    private var controls: some View {
+        HStack(spacing: 8) {
+            Button { store.zoomToFit() } label: {
+                Text(L10n.text("Fit"))
+                    .frame(minWidth: 36, minHeight: 36)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+            .fontWeight(store.zoomMode == .fit ? .semibold : .regular)
+            .accessibilityLabel(L10n.text("Fit photo in window"))
+            .accessibilityAddTraits(store.zoomMode == .fit ? .isSelected : [])
 
             Slider(value: sliderValue, in: 0...1)
-                .frame(width: 105)
+                .frame(minWidth: 64, idealWidth: 120, maxWidth: 120)
                 .disabled(displayedScale == nil)
-                .accessibilityLabel("Photo zoom")
+                .accessibilityLabel(L10n.text("Photo zoom"))
                 .accessibilityValue(currentValueLabel)
-                .help("Zoom from 30% to 400%. At 100%, one source pixel fills one display pixel.")
+                .help(L10n.text("Zoom from 30% to 400%. At 100%, one source pixel fills one display pixel."))
 
-            Text(currentValueLabel)
-                .font(.caption.monospacedDigit())
-                .frame(width: 45, alignment: .trailing)
+            // Share the readout's space while fitted detail loads. No empty
+            // trailing slot, and no change to the pill or native input positions.
+            ZStack {
+                Text(currentValueLabel)
+                    .environment(\.layoutDirection, .leftToRight)
+                    .font(.caption.monospacedDigit())
+                    .opacity(isLoadingFittedDetail ? 0 : 1)
+                    .accessibilityHidden(true) // The slider announces the value.
+
+                if isLoadingFittedDetail {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .help(L10n.text("Loading photo preview"))
+                        .accessibilityLabel(L10n.text("Loading photo preview"))
+                        .accessibilityIdentifier("photoDetailLoading")
+                }
+            }
+            .frame(minWidth: 36)
+            .fixedSize()
         }
         .controlSize(.small)
         .tint(Color.louppeAccent)
-        .onChange(of: currentReading, initial: true) { _, reading in
-            if let reading { lastReading = reading }
-        }
+    }
+
+    private var isLoadingFittedDetail: Bool {
+        guard store.zoomMode != .actual else { return false }
+        return store.currentPhotoRepresentation == .loadingPreview
+            || store.currentPhotoRepresentation == .loadingRAW
     }
 
     private struct ZoomReading: Equatable {
@@ -98,5 +114,58 @@ struct PhotoZoomControl: View {
                 store.setPhotoZoomScale(CGFloat(scale))
             }
         )
+    }
+}
+
+/// Observe double-clicks before NSSlider starts its synchronous tracking loop.
+/// Ordinary clicks and drags pass through immediately to the native controls.
+private struct ZoomFitDoubleClickSurface: NSViewRepresentable {
+    let fit: () -> Void
+
+    func makeNSView(context: Context) -> MonitorView {
+        let view = MonitorView()
+        view.fit = fit
+        view.setAccessibilityElement(false)
+        return view
+    }
+
+    func updateNSView(_ nsView: MonitorView, context: Context) {
+        nsView.fit = fit
+    }
+
+    static func dismantleNSView(_ nsView: MonitorView, coordinator: Void) {
+        nsView.removeMonitor()
+    }
+
+    final class MonitorView: NSView {
+        var fit: () -> Void = {}
+        private var monitor: Any?
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            removeMonitor()
+            guard window != nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+                guard let self, event.clickCount == 2,
+                      let window = self.window, event.window === window,
+                      window.attachedSheet == nil, NSApp.modalWindow == nil,
+                      !self.isHiddenOrHasHiddenAncestor else { return event }
+                let point = self.convert(event.locationInWindow, from: nil)
+                let capsule = NSBezierPath(roundedRect: self.bounds,
+                                          xRadius: self.bounds.height / 2,
+                                          yRadius: self.bounds.height / 2)
+                guard self.visibleRect.contains(point), capsule.contains(point) else { return event }
+                self.fit()
+                return nil
+            }
+        }
+
+        func removeMonitor() {
+            guard let monitor else { return }
+            NSEvent.removeMonitor(monitor)
+            self.monitor = nil
+        }
     }
 }

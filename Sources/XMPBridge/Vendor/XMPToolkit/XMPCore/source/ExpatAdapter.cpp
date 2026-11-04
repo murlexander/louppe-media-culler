@@ -13,6 +13,7 @@
 #include "XMPCore/source/XMPMeta.hpp"
 
 #include "third-party/expat/lib/expat.h"
+#include <mutex>
 #include <string.h>
 
 using namespace std;
@@ -132,6 +133,11 @@ ExpatAdapter::~ExpatAdapter()
 
 static const char * kOneSpace = " ";
 
+// Expat callbacks run on the parsing thread. This marks the parser whose
+// failure came from the process-wide namespace budget, not the packet itself,
+// without changing ExpatAdapter's layout.
+static thread_local const ExpatAdapter * sLouppeNamespaceCapacityParser = 0;
+
 void ExpatAdapter::ParseBuffer ( const void * buffer, size_t length, bool last /* = true */ )
 {
 	enum XML_Status status;
@@ -145,8 +151,11 @@ void ExpatAdapter::ParseBuffer ( const void * buffer, size_t length, bool last /
 	status = XML_Parse ( this->parser, (const char *)buffer, static_cast< XMP_StringLen >( length ), last );
 
     if ( this->louppeLimitExceeded ) {
-        XMP_Error error(kXMPErr_BadXML,
-            "This XMP sidecar is too complex to read. Its metadata was left unchanged; you can still export the media without XMP.");
+        const bool capacityExhausted = sLouppeNamespaceCapacityParser == this;
+        sLouppeNamespaceCapacityParser = 0;
+        XMP_Error error(kXMPErr_BadXML, capacityExhausted
+            ? "Louppe has read too many different XMP namespaces since it opened. Quit and reopen Louppe to read this sidecar. Its metadata was left unchanged; you can still export the media without XMP."
+            : "This XMP sidecar is too complex to read. Its metadata was left unchanged; you can still export the media without XMP.");
         this->NotifyClient ( kXMPErrSev_OperationFatal, error );
     }
 	
@@ -279,6 +288,53 @@ static bool LouppeParseBudget ( ExpatAdapter * parser, size_t nodes, size_t text
     return true;
 }
 
+// XMPCore registers every parsed namespace URI and prefix in both maps of its
+// process-wide table and never removes them; each new prefix collision also
+// scans that table under its lock. Bound each name, the number of new
+// registrations, and their retained bytes across all packets, so hostile
+// sidecars cannot grow memory or parse time for the rest of the session.
+// Common published prefixes are under 16 bytes (Iptc4xmpCore, MicrosoftPhoto)
+// and their URIs under 80; the limits leave several times that headroom.
+// Retention stays near 2 x 1 MiB of names plus map nodes for 4,096 entries.
+static const size_t kLouppeMaxNamespaceURIBytes = 1024;
+static const size_t kLouppeMaxNamespacePrefixBytes = 64;
+static const size_t kLouppeMaxParsedNamespaceRegistrations = 4096;
+static const size_t kLouppeMaxParsedNamespaceBytes = 1024 * 1024;
+// XMPCore may append "_<n>_" to a colliding prefix before storing it.
+static const size_t kLouppeNamespaceSuffixAllowance = 16;
+static std::mutex sLouppeNamespaceBudgetLock;
+static size_t sLouppeParsedNamespaceRegistrations = 0;
+static size_t sLouppeParsedNamespaceBytes = 0;
+
+static bool LouppeStopNamespace ( ExpatAdapter * parser, bool capacityExhausted )
+{
+    if ( capacityExhausted ) sLouppeNamespaceCapacityParser = parser;
+    parser->louppeLimitExceeded = true;
+    XML_StopParser ( parser->parser, XML_FALSE );
+    return false;
+}
+
+static bool LouppeAdmitNamespace ( ExpatAdapter * parser, XMP_StringPtr prefix, XMP_StringPtr uri )
+{
+    const size_t uriBytes = strlen ( uri );
+    const size_t prefixBytes = strlen ( prefix );
+    if ( uriBytes > kLouppeMaxNamespaceURIBytes || prefixBytes > kLouppeMaxNamespacePrefixBytes ) {
+        return LouppeStopNamespace ( parser, false );
+    }
+    // An existing URI keeps its registered prefix, so nothing new is retained.
+    if ( parser->registeredNamespaces->GetPrefix ( uri, 0, 0 ) ) return true;
+    const size_t retainedBytes = uriBytes + prefixBytes + kLouppeNamespaceSuffixAllowance;
+    std::lock_guard<std::mutex> budgetLock ( sLouppeNamespaceBudgetLock );
+    if ( sLouppeParsedNamespaceRegistrations >= kLouppeMaxParsedNamespaceRegistrations ||
+         retainedBytes > kLouppeMaxParsedNamespaceBytes - sLouppeParsedNamespaceBytes ) {
+        return LouppeStopNamespace ( parser, true );
+    }
+    // Reserve before registering; a concurrent duplicate only overcounts.
+    ++sLouppeParsedNamespaceRegistrations;
+    sLouppeParsedNamespaceBytes += retainedBytes;
+    return true;
+}
+
 static void StartNamespaceDeclHandler ( void * userData, XMP_StringPtr prefix, XMP_StringPtr uri )
 {
 	IgnoreParam(userData);
@@ -305,6 +361,7 @@ static void StartNamespaceDeclHandler ( void * userData, XMP_StringPtr prefix, X
 	#endif
 	
 	if ( XMP_LitMatch ( uri, "http://purl.org/dc/1.1/" ) ) uri = "http://purl.org/dc/elements/1.1/";
+	if ( ! LouppeAdmitNamespace ( thiz, prefix, uri ) ) return;
 	if (thiz->registeredNamespaces == sRegisteredNamespaces) {
 		(void)XMPMeta::RegisterNamespace(uri, prefix, 0, 0);
 	}

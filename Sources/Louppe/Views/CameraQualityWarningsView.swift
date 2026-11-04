@@ -1,111 +1,84 @@
 import SwiftUI
 
-/// One quiet metadata row that reveals exact cue values only on request. It
-/// never appears in Grid cells and never changes review metadata.
-struct CameraQualityCuesRow: View {
+/// Matching cues and their values, shared by Info and tile popovers.
+struct QualityCueDetailsView: View {
+    @ObservedObject var store: SessionStore
     let item: PhotoItem
-    let analysis: HistogramAnalysis?
-    let analysisSource: HistogramAnalysisSource
-    let isRawAnalysisPending: Bool
-    let preferences: CameraQualityWarningPreferences
-    @State private var isPopoverPresented = false
-
-    private var warnings: [CameraQualityWarning] {
-        CameraQualityWarning.warnings(
-            for: item,
-            analysis: analysis,
-            analysisSource: analysisSource,
-            preferences: preferences
-        )
-    }
-
-    var isVisible: Bool {
-        !warnings.isEmpty
-    }
+    var showsInspectionAction = false
 
     var body: some View {
-        if !warnings.isEmpty {
-            Button {
-                isPopoverPresented = true
-            } label: {
-                HStack(spacing: 4) {
-                    Text("⚠︎ \(warnings.count) quality \(warnings.count == 1 ? "cue" : "cues")")
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.semibold))
-                        .accessibilityHidden(true)
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(
-                "\(warnings.count) quality \(warnings.count == 1 ? "cue" : "cues")"
-            )
-            .accessibilityHint("Show exact values and sources")
-            .popover(isPresented: $isPopoverPresented, arrowEdge: .trailing) {
-                qualityCuesPopover
-            }
-        }
-    }
-
-    private var qualityCuesPopover: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Quality cues")
-                .font(.subheadline.weight(.semibold))
-
-            ForEach(warnings) { warning in
-                warningRow(warning)
-            }
-
-            if let clippingSourceDescription {
-                Text(clippingSourceDescription)
-                    .font(.caption2)
+        let cues = store.qualityCues(for: item)
+        if !cues.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L10n.text("Quality cues"))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if preferences.isClippingEnabled && isRawAnalysisPending {
-                HStack(spacing: 6) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("Checking RAW data…")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(cues) { cue in
+                    HStack(alignment: .firstTextBaseline) {
+                        Label(cue.title, systemImage: cue.kind.symbol)
+                            .font(.callout.weight(.medium))
+                        Spacer(minLength: 8)
+                        Text(cue.compactValue).font(.callout.monospacedDigit())
+                    }
+                    .accessibilityElement(children: .combine)
                 }
-                .accessibilityElement(children: .combine)
+                if showsInspectionAction {
+                    Button(L10n.text("Inspect in Info")) {
+                        guard let index = store.items.firstIndex(where: { $0.contentRevision == item.contentRevision }) else { return }
+                        store.setIndex(index)
+                        store.showMetadataPanel = true
+                    }
+                    .buttonStyle(.borderless)
+                }
             }
+            .foregroundStyle(.primary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityElement(children: .contain)
         }
-        .padding(12)
-        .frame(width: 320, alignment: .leading)
-        .accessibilityElement(children: .contain)
-    }
-
-    private var clippingSourceDescription: String? {
-        warnings.first { warning in
-            warning.kind == .highlightClipping
-                || warning.kind == .shadowClipping
-        }?.source.description
-    }
-
-    private func warningRow(_ warning: CameraQualityWarning) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(warning.title)
-                .font(.callout.weight(.medium))
-            Text(warning.detail)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Text("Source: \(warning.source.label)")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(warning.accessibilityLabel)
     }
 }
 
-/// Three compact, independently optional cues; values are written only when
+struct QualityCueTileIcons: View {
+    @ObservedObject var store: SessionStore
+    let item: PhotoItem
+    @State private var showsDetails = false
+
+    var body: some View {
+        let cues = store.qualityCues(for: item)
+        Group {
+            if !cues.isEmpty {
+                Button { showsDetails = true } label: {
+                    HStack(spacing: TileBadgeLayout.spacing) {
+                        ForEach(cues) { cue in
+                            Image(systemName: cue.kind.symbol)
+                                .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
+                                .background(.black.opacity(0.72), in: Circle())
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    .font(.system(size: TileBadgeLayout.iconSize, weight: .medium))
+                    .frame(minWidth: 36, minHeight: TileBadgeLayout.cueTargetHeight, alignment: .bottomLeading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white)
+                .help(cues.map { "\($0.title): \($0.compactValue)" }.joined(separator: "\n"))
+                .accessibilityLabel(L10n.text("Quality cues for \(item.displayName)"))
+                .accessibilityValue(cues.map { "\($0.title): \($0.compactValue)" }.joined(separator: ", "))
+                .popover(isPresented: $showsDetails) {
+                    QualityCueDetailsView(store: store, item: item, showsInspectionAction: true)
+                        .padding(12).frame(width: 300)
+                        .background(Color.appBackground)
+                        .tint(Color.louppeAccent)
+                }
+            }
+        }
+        .onAppear { store.prioritizeQualityCues(for: item) }
+    }
+}
+
+/// Four compact, independently optional cues; values are written only when
 /// their text field commits a valid edit.
 struct CameraQualityWarningsSettingsView: View {
     @AppStorage(CameraQualityWarningPreferences.Keys.isEnabled)
@@ -114,73 +87,104 @@ struct CameraQualityWarningsSettingsView: View {
     private var isHighISOEnabled = true
     @AppStorage(CameraQualityWarningPreferences.Keys.isSlowShutterEnabled)
     private var isSlowShutterEnabled = true
-    @AppStorage(CameraQualityWarningPreferences.Keys.isClippingEnabled)
-    private var isClippingEnabled = true
+    @AppStorage(CameraQualityWarningPreferences.Keys.isHighlightClippingEnabled)
+    private var isHighlightClippingEnabled = true
+    @AppStorage(CameraQualityWarningPreferences.Keys.isShadowClippingEnabled)
+    private var isShadowClippingEnabled = true
     @AppStorage(CameraQualityWarningPreferences.Keys.highISOThreshold)
     private var highISOThreshold = CameraQualityWarningPreferences.defaultHighISOThreshold
     @AppStorage(CameraQualityWarningPreferences.Keys.slowShutterThreshold)
     private var slowShutterThreshold = CameraQualityWarningPreferences.defaultSlowShutterThreshold
-    @AppStorage(CameraQualityWarningPreferences.Keys.clippingPercentageThreshold)
-    private var clippingPercentageThreshold = CameraQualityWarningPreferences.defaultClippingPercentageThreshold
-    @State private var thresholdResetGeneration = 0
+    @AppStorage(CameraQualityWarningPreferences.Keys.highlightPercentageThreshold)
+    private var highlightPercentageThreshold = CameraQualityWarningPreferences.defaultClippingPercentageThreshold
+    @AppStorage(CameraQualityWarningPreferences.Keys.shadowPercentageThreshold)
+    private var shadowPercentageThreshold = CameraQualityWarningPreferences.defaultClippingPercentageThreshold
+    @State private var highISOResetGeneration = 0
+    @State private var slowShutterResetGeneration = 0
+    @State private var highlightResetGeneration = 0
+    @State private var shadowResetGeneration = 0
 
     var body: some View {
-        Form {
+        Group {
             Section {
-                Toggle("Show quality cues", isOn: $isEnabled)
+                Toggle(L10n.text("Show quality cues"), isOn: $isEnabled)
+            } header: {
+                Text(L10n.text("Quality Cues"))
             }
 
             Section {
                 HStack(spacing: 10) {
-                    cueToggle("High ISO", isOn: $isHighISOEnabled)
+                    cueToggle(L10n.text("High ISO"), isOn: $isHighISOEnabled)
                     CameraQualityThresholdField(
                         kind: .highISO, value: $highISOThreshold,
-                        resetGeneration: $thresholdResetGeneration
+                        resetGeneration: $highISOResetGeneration
                     )
                     .disabled(!isHighISOEnabled)
-                    cueDetail("ISO or above")
+                    cueDetail(L10n.text("ISO or above"))
+                    resetButton(L10n.text("High ISO")) {
+                        highISOResetGeneration &+= 1
+                        highISOThreshold = CameraQualityWarningPreferences.defaultHighISOThreshold
+                        isHighISOEnabled = true
+                    }
                 }
                 HStack(spacing: 10) {
-                    cueToggle("Slow shutter", isOn: $isSlowShutterEnabled)
+                    cueToggle(L10n.text("Slow shutter"), isOn: $isSlowShutterEnabled)
                     CameraQualityThresholdField(
                         kind: .slowShutter, value: $slowShutterThreshold,
-                        resetGeneration: $thresholdResetGeneration
+                        resetGeneration: $slowShutterResetGeneration
                     )
                     .disabled(!isSlowShutterEnabled)
-                    cueDetail("s or slower")
+                    cueDetail(L10n.text("s or slower"))
+                    resetButton(L10n.text("Slow shutter")) {
+                        slowShutterResetGeneration &+= 1
+                        slowShutterThreshold = CameraQualityWarningPreferences.defaultSlowShutterThreshold
+                        isSlowShutterEnabled = true
+                    }
                 }
                 HStack(spacing: 10) {
-                    cueToggle("Clipping", isOn: $isClippingEnabled)
-                        .help(CameraQualityWarning.clippingSettingsDescription)
+                    cueToggle(L10n.text("Near-white area"), isOn: $isHighlightClippingEnabled)
                     CameraQualityThresholdField(
-                        kind: .clipping, value: $clippingPercentageThreshold,
-                        resetGeneration: $thresholdResetGeneration
+                        kind: .clipping, value: $highlightPercentageThreshold,
+                        resetGeneration: $highlightResetGeneration,
+                        accessibilityName: L10n.text("Near-white area threshold in percent")
                     )
-                    .disabled(!isClippingEnabled)
-                    cueDetail("% near black or white")
+                    .disabled(!isHighlightClippingEnabled)
+                    cueDetail(L10n.text("% or above"))
+                    resetButton(L10n.text("Near-white area")) {
+                        highlightResetGeneration &+= 1
+                        highlightPercentageThreshold = CameraQualityWarningPreferences.defaultClippingPercentageThreshold
+                        isHighlightClippingEnabled = true
+                    }
+                }
+                HStack(spacing: 10) {
+                    cueToggle(L10n.text("Near-black area"), isOn: $isShadowClippingEnabled)
+                    CameraQualityThresholdField(
+                        kind: .clipping, value: $shadowPercentageThreshold,
+                        resetGeneration: $shadowResetGeneration,
+                        accessibilityName: L10n.text("Near-black area threshold in percent")
+                    )
+                    .disabled(!isShadowClippingEnabled)
+                    cueDetail(L10n.text("% or above"))
+                    resetButton(L10n.text("Near-black area")) {
+                        shadowResetGeneration &+= 1
+                        shadowPercentageThreshold = CameraQualityWarningPreferences.defaultClippingPercentageThreshold
+                        isShadowClippingEnabled = true
+                    }
                 }
             }
             .disabled(!isEnabled)
 
-            Section {
-                Button("Restore Quality Cue Defaults") {
-                    // Retire focused drafts before changing any values. A
-                    // delayed focus-loss callback cannot restore stale text.
-                    thresholdResetGeneration &+= 1
-                    isEnabled = true
-                    isHighISOEnabled = true
-                    isSlowShutterEnabled = true
-                    isClippingEnabled = true
-                    highISOThreshold = CameraQualityWarningPreferences.defaultHighISOThreshold
-                    slowShutterThreshold = CameraQualityWarningPreferences.defaultSlowShutterThreshold
-                    clippingPercentageThreshold = CameraQualityWarningPreferences.defaultClippingPercentageThreshold
-                }
-            }
         }
-        .formStyle(.grouped)
-        .padding()
-        .frame(width: 460)
         .tint(Color.louppeAccent)
+    }
+
+    private func resetButton(_ title: String, action: @escaping () -> Void) -> some View {
+        ShortcutAccessoryButton(
+            symbol: "arrow.counterclockwise",
+            title: L10n.text("Restore defaults for \(title)"),
+            action: action
+        )
+        .help(L10n.text("Restore defaults for \(title)"))
     }
 
     private func cueDetail(_ text: String) -> some View {
@@ -191,15 +195,17 @@ struct CameraQualityWarningsSettingsView: View {
 
     private func cueToggle(_ title: String, isOn: Binding<Bool>) -> some View {
         Toggle(title, isOn: isOn)
-            .toggleStyle(.checkbox)
-            .frame(width: 108, alignment: .leading)
+            .toggleStyle(LouppeToggleStyle(.checkbox))
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(width: 148, alignment: .leading)
     }
 }
 
-private struct CameraQualityThresholdField: View {
+struct CameraQualityThresholdField: View {
     let kind: CameraQualityThresholdInput
     @Binding var value: Double
     @Binding var resetGeneration: Int
+    var accessibilityName: String? = nil
     @Environment(\.locale) private var locale
     @Environment(\.isEnabled) private var isEnabled
     @FocusState private var isFocused: Bool
@@ -217,10 +223,11 @@ private struct CameraQualityThresholdField: View {
         .multilineTextAlignment(.trailing)
         .frame(width: 76)
         .focused($isFocused)
-        .accessibilityLabel(kind.accessibilityLabel)
+        .accessibilityLabel(accessibilityName ?? kind.accessibilityLabel)
         .help(kind.inputHelp)
         .onAppear { refreshDraft() }
         .onSubmit { commit() }
+        .onDisappear { commit() }
         .onExitCommand { refreshDraft() }
         .onChange(of: isFocused) { _, focused in
             if !focused { commit() }

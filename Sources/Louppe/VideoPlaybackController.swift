@@ -1,5 +1,10 @@
 import Foundation
 import AVFoundation
+import ObjectiveC
+
+private enum PlayerSourceAccessKey {
+    nonisolated(unsafe) static var lease: UInt8 = 0
+}
 
 /// NotificationCenter's opaque observer token is not Sendable, while a
 /// main-actor class's deinitializer is nonisolated. Keep each token behind a
@@ -132,7 +137,9 @@ final class VideoPlaybackController: ObservableObject {
         periodicTimeObserver.remove()
     }
 
-    func prepare(_ item: PhotoItem) {
+    var sourceAccess: MediaReadAccess?
+
+    func prepare(_ item: PhotoItem, sourceAccess: MediaReadAccess? = nil) {
         guard item.isVideo || item.isAudio else { return }
         let requestedRevision = item.contentRevision
         if contentRevision == requestedRevision,
@@ -143,8 +150,8 @@ final class VideoPlaybackController: ObservableObject {
         errorMessage = nil
         guard item.isPlayableMedia else {
             errorMessage = item.isAudio
-                ? "This audio format or codec isn't supported by macOS."
-                : "This video's format or codec isn't supported by macOS."
+                ? L10n.text("This audio format or codec isn't supported by macOS.")
+                : L10n.text("This video's format or codec isn't supported by macOS.")
             return
         }
 
@@ -155,7 +162,13 @@ final class VideoPlaybackController: ObservableObject {
             errorMessage = MediaSourceRevision.changedMessage
             return
         }
-        let playerItem = AVPlayerItem(url: item.primaryURL)
+        let asset = AVURLAsset(url: item.primaryURL)
+        // The asset retains its exact grant even if queued native I/O outlives
+        // the session/player's reference during a folder transition.
+        if let lease = (sourceAccess ?? self.sourceAccess)?.begin() {
+            objc_setAssociatedObject(asset, &PlayerSourceAccessKey.lease, lease, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        let playerItem = AVPlayerItem(asset: asset)
         // AVPlayerView's native Play button uses the default rate; speed is
         // one shared review preference for videos and audio recordings.
         player.defaultRate = Float(playbackRate)
@@ -339,7 +352,7 @@ final class VideoPlaybackController: ObservableObject {
         itemID == item.id && contentRevision == item.contentRevision
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     /// Focused tests inspect the in-memory review aid without exposing it to
     /// production UI or persistence code.
     func rememberedPosition(for item: PhotoItem) -> TimeInterval? {
@@ -354,8 +367,10 @@ final class VideoPlaybackController: ObservableObject {
         sourceRevision: MediaSourceRevision
     ) {
         removeObservers()
+        // The macOS 27 SDK deprecates the Swift string aliases. These names are
+        // the same exported constants, available since macOS 10.7.
         endObserver.replace(with: NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemDidPlayToEndTime,
+            forName: AVPlayerItem.didPlayToEndTimeNotification,
             object: playerItem,
             queue: .main
         ) { [weak self] _ in
@@ -368,7 +383,7 @@ final class VideoPlaybackController: ObservableObject {
             }
         })
         failureObserver.replace(with: NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemFailedToPlayToEndTime,
+            forName: AVPlayerItem.failedToPlayToEndTimeNotification,
             object: playerItem,
             queue: .main
         ) { [weak self] notification in
@@ -377,13 +392,13 @@ final class VideoPlaybackController: ObservableObject {
                 guard self?.playbackGeneration == observedGeneration,
                       self?.contentRevision == observedRevision else { return }
                 self?.isPlaying = false
-                self?.errorMessage = message ?? "This media file couldn't be played."
+                self?.errorMessage = message ?? L10n.text("This media file couldn't be played.")
             }
         })
         itemStatusObservation = playerItem.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             let status = item.status
             guard status == .failed || status == .readyToPlay else { return }
-            let message = item.error?.localizedDescription ?? "This media file couldn't be played."
+            let message = item.error?.localizedDescription ?? L10n.text("This media file couldn't be played.")
             Task { @MainActor in
                 if status == .readyToPlay {
                     let matches = await Task.detached(priority: .userInitiated) {

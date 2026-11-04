@@ -60,6 +60,8 @@ struct ExportView: View {
                 switch exporter.state {
                 case .summary:
                     summaryView
+                case .validatingDestination:
+                    destinationValidationView
                 case .preparingXMP(let mode):
                     xmpExportPreparationView(mode: mode)
                 case .awaitingXMPConfirmation(let confirmation):
@@ -85,9 +87,10 @@ struct ExportView: View {
         .frame(width: 640, height: 620)
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
+        .controlSize(.regular)
         .interactiveDismissDisabled(isWorking)
         .confirmationDialog(
-            "Stop copying?",
+            L10n.text("Stop copying?"),
             isPresented: Binding(
                 get: { exporter.isCopyStopConfirmationPresented },
                 set: { isPresented in
@@ -98,12 +101,12 @@ struct ExportView: View {
             ),
             titleVisibility: .visible
         ) {
-            Button("Stop Copying") { exporter.confirmCopyStop() }
-            Button("Keep Copying", role: .cancel) {
+            Button(L10n.text("Stop Copying")) { exporter.confirmCopyStop() }
+            Button(L10n.text("Keep Copying"), role: .cancel) {
                 exporter.dismissCopyStopConfirmation()
             }
         } message: {
-            Text("Completed media stays at the destination. Louppe will safely roll back only the file currently being copied.")
+            Text(L10n.text("Completed media stays at the destination. Only the file being copied rolls back."))
         }
         .onAppear {
             xmpInclusionChoice = ExportXMPInclusionChoice()
@@ -132,6 +135,14 @@ struct ExportView: View {
             refreshSelectionSnapshot()
         }
         .onChange(of: isRoutingCopies) { refreshRoutingEvaluation() }
+        #if APP_STORE
+        .onChange(of: exporter.state) {
+            if case .finished(let outcome) = exporter.state,
+               let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
+                store.appStoreReviewPrompt.recordCompletion(outcome, version: version)
+            }
+        }
+        #endif
         .onChange(of: routingRoutes) { refreshRoutingEvaluation() }
         .onChange(of: selectedRatings) { refreshSelectionSnapshot() }
         .onChange(of: selectedStars) { refreshSelectionSnapshot() }
@@ -145,6 +156,14 @@ struct ExportView: View {
             refreshRoutingEvaluation()
         }
         .onChange(of: store.selectedIndices) {
+            refreshSelectionSnapshot()
+            refreshRoutingEvaluation()
+        }
+        // Background recovery can restore decisions or change the filtered
+        // membership while the summary is open. Follow it until Export,
+        // routing or XMP preparation freezes its inputs.
+        .onChange(of: store.reviewStateRevision) {
+            guard acceptsLiveScopeChanges else { return }
             refreshSelectionSnapshot()
             refreshRoutingEvaluation()
         }
@@ -165,19 +184,30 @@ struct ExportView: View {
     private var usesFormLayout: Bool {
         if mode == .metadataXMP {
             switch store.xmpPublicationState {
-            case .idle, .awaitingConfirmation: return true
+            case .idle, .awaitingConfirmation, .finished, .failed: return true
             default: return false
             }
         }
         switch exporter.state {
-        case .summary, .awaitingXMPConfirmation, .awaitingMultiDestinationConfirmation:
+        case .summary, .awaitingXMPConfirmation, .awaitingMultiDestinationConfirmation, .finished, .failed:
             return true
         default: return false
         }
     }
 
+    /// Only the editable summary follows live session changes; validation,
+    /// confirmations and running work keep the inputs they captured.
+    private var acceptsLiveScopeChanges: Bool {
+        guard exporter.state == .summary else { return false }
+        switch store.xmpPublicationState {
+        case .idle, .finished, .failed: return true
+        case .preflighting, .awaitingConfirmation, .publishing, .cancelling: return false
+        }
+    }
+
     private var isWorking: Bool {
         if store.isXMPPublicationRunning { return true }
+        if case .validatingDestination = exporter.state { return true }
         if case .preparingXMP = exporter.state { return true }
         if case .preparingMultiDestination = exporter.state { return true }
         if case .working = exporter.state { return true }
@@ -189,208 +219,218 @@ struct ExportView: View {
         if isRoutingCopies && mode == .copy {
             routingSummaryView
         } else {
-        SheetForm(title: "Export") {
-            Picker("Mode", selection: $mode) {
-                Text("Copy").tag(ExportMode.copy)
-                Text("Move").tag(ExportMode.move)
-                Text("Metadata (XMP)").tag(ExportMode.metadataXMP)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            SheetForm(title: L10n.text("Export"), layout: .grouped) {
+                Section {
+                    exportModePicker
 
-            if mode == .copy {
-                Toggle("Route copies to multiple folders", isOn: $isRoutingCopies)
-                    .accessibilityHint("Create explicit Copy-only routes with a separately chosen folder for each one")
-            }
+                    if mode == .copy && store.photosBatch?.mediaSession == nil {
+                        Toggle(L10n.text("Route copies to multiple folders"), isOn: $isRoutingCopies)
+                            .toggleStyle(LouppeToggleStyle(.switchControl))
+                            .accessibilityHint(L10n.text("Create Copy routes, each with its own chosen folder"))
+                    }
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Media to include")
-                    .font(.subheadline.weight(.semibold))
-
-                quickPickRow
-
-                exportScopeRow
-
-                Text("Yes/No/Undecided and stars are separate. An item must match both choices below, plus any color choice.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 12) {
-                    ratingTile(.yes, count: scopeRatingCount(.yes), label: "Yes", color: .green)
-                    ratingTile(.no, count: scopeRatingCount(.no), label: "No", color: .red)
-                    ratingTile(.undecided, count: scopeRatingCount(.undecided), label: "Undecided", color: .secondary)
+                    if mode == .move {
+                        Text(L10n.text("Move works on the same drive only; use Copy for another drive or card. Moved items leave this session and cannot be undone in Louppe."))
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.leading)
+                    }
                 }
 
-                exportMenuRow("Stars") {
-                    Menu(starSelectionSummary) {
-                        Toggle(
-                            "Unrated",
-                            isOn: membershipBinding(
-                                .unrated,
-                                in: $selectedStars
-                            )
-                        )
-                        ForEach(StarRating.allCases, id: \.self) { rating in
+                Section(L10n.text("Media to include")) {
+                    ArchiveActionScopeNote(store: store)
+                    quickPickRow
+
+                    exportScopeRow
+
+                    Text(L10n.text("Decisions, stars, and colors are independent. Items must match every chosen criterion."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 12) {
+                        ratingTile(.yes, count: scopeRatingCount(.yes), label: L10n.text("Yes"), color: .green)
+                        ratingTile(.no, count: scopeRatingCount(.no), label: L10n.text("No"), color: .red)
+                        ratingTile(.undecided, count: scopeRatingCount(.undecided), label: L10n.text("Undecided"), color: .secondary)
+                    }
+
+                    LabeledContent(L10n.text("Stars")) {
+                        Menu(starSelectionSummary) {
                             Toggle(
-                                rating == .one
-                                    ? "1 star"
-                                    : "\(rating.count) stars",
+                                L10n.text("Unrated"),
                                 isOn: membershipBinding(
-                                    .stars(rating),
+                                    .unrated,
                                     in: $selectedStars
                                 )
                             )
-                        }
-                        Toggle(
-                            "Mixed",
-                            isOn: membershipBinding(.mixed, in: $selectedStars)
-                        )
-                    }
-                    .accessibilityLabel("Star ratings")
-                    .accessibilityValue(starSelectionSummary)
-                }
-
-                exportMenuRow("Color") {
-                    Menu(colorSelectionSummary) {
-                        Toggle(
-                            "None",
-                            isOn: membershipBinding(
-                                .none,
-                                in: $selectedColors
-                            )
-                        )
-                        ForEach(PhotoColorLabel.allCases, id: \.self) { label in
+                            ForEach(StarRating.allCases, id: \.self) { rating in
+                                Toggle(
+                                    rating == .one
+                                        ? L10n.text("1 star")
+                                        : L10n.text("\(rating.count) stars"),
+                                    isOn: membershipBinding(
+                                        .stars(rating),
+                                        in: $selectedStars
+                                    )
+                                )
+                            }
                             Toggle(
+                                L10n.text("Mixed"),
+                                isOn: membershipBinding(.mixed, in: $selectedStars)
+                            )
+                        }
+                        .accessibilityLabel(L10n.text("Star ratings"))
+                        .accessibilityValue(starSelectionSummary)
+                    }
+
+                    LabeledContent(L10n.text("Color")) {
+                        Menu(colorSelectionSummary) {
+                            Toggle(
+                                L10n.text("None"),
                                 isOn: membershipBinding(
-                                    .label(label),
+                                    .none,
                                     in: $selectedColors
                                 )
-                            ) {
-                                HStack(spacing: 7) {
-                                    Circle()
-                                        .fill(label.swatchColor)
-                                        .frame(width: 10, height: 10)
-                                    Text(label.displayName)
+                            )
+                            ForEach(PhotoColorLabel.allCases, id: \.self) { label in
+                                Toggle(
+                                    isOn: membershipBinding(
+                                        .label(label),
+                                        in: $selectedColors
+                                    )
+                                ) {
+                                    HStack(spacing: 7) {
+                                        ColorLabelMark.shape
+                                            .fill(label.swatchColor)
+                                            .frame(width: 10, height: 10)
+                                        Text(label.localizedDisplayName)
+                                    }
                                 }
                             }
+                            Toggle(
+                                L10n.text("Mixed"),
+                                isOn: membershipBinding(.mixed, in: $selectedColors)
+                            )
                         }
-                        Toggle(
-                            "Mixed",
-                            isOn: membershipBinding(.mixed, in: $selectedColors)
-                        )
+                        .accessibilityLabel(L10n.text("Color labels"))
+                        .accessibilityValue(colorSelectionSummary)
                     }
-                    .accessibilityLabel("Color labels")
-                    .accessibilityValue(colorSelectionSummary)
-                }
 
-                exportPreview
-            }
+                    exportPreview
 
-            if mode == .metadataXMP {
-                Divider()
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Write Louppe decisions, stars, and colors to XMP sidecars for editing apps. Original photos stay unchanged.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    editingAppOptions
-                }
-            } else {
-                Divider()
-                VStack(alignment: .leading, spacing: 10) {
-                    Toggle(
-                        "Include XMP sidecars for editing apps",
-                        isOn: includeXMPBinding
-                    )
+                    if selectionSnapshot.mixedDecisionCount > 0 {
+                        Text((selectionSnapshot.mixedDecisionCount == 1 ? L10n.text("\(selectionSnapshot.mixedDecisionCount) included RAW+JPEG pair has different file decisions and is treated as undecided.") : L10n.text("\(selectionSnapshot.mixedDecisionCount) included RAW+JPEG pairs have different file decisions and are treated as undecided.")))
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.leading)
+                    }
 
-                    Text(copyMoveXMPExplanation)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if scopeMixedStarCount > 0 || scopeMixedColorCount > 0 {
+                        Text(mixedMetadataNote)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.leading)
+                    }
 
-                    if excludedACRCompanionCount > 0 {
-                        Text("\(excludedACRCompanionCount) Lightroom .acr companion\(excludedACRCompanionCount == 1 ? "" : "s") will not be included and will remain in the source folder.")
+                    if scopeRatingCount(.undecided) > 0 && !selectedRatings.contains(.undecided) {
+                        let count = scopeRatingCount(.undecided)
+                        Text((count == 1 ? L10n.text("\(count) item still undecided in this scope — they won't be exported.") : L10n.text("\(count) items still undecided in this scope — they won't be exported.")))
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
+                }
 
-                    if xmpInclusionChoice.isIncluded {
+                if mode == .metadataXMP {
+                    Section {
+                        Text(L10n.text("Write decisions, stars, and colors to XMP sidecars for editing apps. Originals stay unchanged."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         editingAppOptions
                     }
-                }
-            }
-
-            if mode == .move {
-                Text("Move works only to another folder on the same drive. For another drive or card, choose Copy. Moved items leave this session and can't be undone in Louppe.")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .multilineTextAlignment(.leading)
-            }
-
-            if selectionSnapshot.mixedDecisionCount > 0 {
-                Text("\(selectionSnapshot.mixedDecisionCount) included RAW+JPEG pair\(selectionSnapshot.mixedDecisionCount == 1 ? " has" : "s have") different file decisions and \(selectionSnapshot.mixedDecisionCount == 1 ? "is" : "are") treated as undecided.")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .multilineTextAlignment(.leading)
-            }
-
-            if scopeMixedStarCount > 0 || scopeMixedColorCount > 0 {
-                Text(mixedMetadataNote)
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .multilineTextAlignment(.leading)
-            }
-
-            if scopeRatingCount(.undecided) > 0 && !selectedRatings.contains(.undecided) {
-                let count = scopeRatingCount(.undecided)
-                Text("\(count) item\(count == 1 ? "" : "s") still undecided in this scope — they won't be exported.")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            }
-
-        } actions: {
-            HStack {
-                Spacer()
-                Button("Cancel") { store.isExportPresented = false }
-                    .keyboardShortcut(.cancelAction)
-                Button(mode == .metadataXMP ? "Review Sidecars…" : "Choose Destination…") {
-                    if mode == .metadataXMP {
-                        store.prepareXMPPublication(
-                            selected: selectionSnapshot.selectedItems(from: store.items),
-                            profile: xmpProfile,
-                            visibleDecisionKeywords: effectiveVisibleDecisionKeywords,
-                            allowExternalLabelReplacement: allowExternalLabelReplacement
+                } else if store.photosBatch?.mediaSession != nil {
+                    Section {
+                        SettingsLink { Text(L10n.text("Open Settings…")) }
+                        Text(L10n.text("Copy downloads exact primary originals one at a time. Review previews are never exported. Total bytes are unknown until originals load; destination space is checked for each file."))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                } else {
+                    Section {
+                        Toggle(
+                            L10n.text("Include XMP sidecars for editing apps"),
+                            isOn: includeXMPBinding
                         )
-                    } else {
-                        exporter.promptDestinationAndExport(
-                            sourceFolder: store.sourceFolder,
-                            selected: selectionSnapshot.selectedItems(from: store.items),
-                            familyContextItems: store.items,
-                            sessionGeneration:
-                                store.xmpConflictSessionGeneration,
-                            mode: mode,
-                            includeXMP: xmpInclusionChoice.isIncluded,
-                            xmpProfile: xmpProfile,
-                            visibleDecisionKeywords: effectiveVisibleDecisionKeywords,
-                            allowExternalLabelReplacement: allowExternalLabelReplacement,
-                            onOperationWillStart: { store.exportWillStart(mode: $0) },
-                            onOperationDidFinish: {
-                                store.finishExport(
-                                    mode: $0,
-                                    movedIDs: $1,
-                                    requiresRecovery: $2,
-                                    interruptionMessage: $3
-                                )
-                            }
-                        )
+                        .toggleStyle(LouppeToggleStyle(.switchControl))
+
+                        Text(copyMoveXMPExplanation)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        if excludedACRCompanionCount > 0 {
+                            Text((excludedACRCompanionCount == 1 ? L10n.text("\(excludedACRCompanionCount) Lightroom .acr companion will stay in the source folder, unexported.") : L10n.text("\(excludedACRCompanionCount) Lightroom .acr companions will stay in the source folder, unexported.")))
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+
+                        if xmpInclusionChoice.isIncluded {
+                            editingAppOptions
+                        }
                     }
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .disabled(
-                    selectionSnapshot.itemCount == 0
-                        || (mode != .metadataXMP && isCheckingExistingXMP)
-                )
+            } actions: {
+                HStack(spacing: 12) {
+                    Spacer()
+                    Button(L10n.text("Cancel")) { store.isExportPresented = false }
+                        .keyboardShortcut(.cancelAction)
+                    Button(mode == .metadataXMP ? L10n.text("Review Sidecars…") : L10n.text("Choose Destination…")) {
+                        if mode == .metadataXMP {
+                            store.prepareXMPPublication(
+                                selected: selectionSnapshot.selectedItems(from: store.items),
+                                profile: xmpProfile,
+                                visibleDecisionKeywords: effectiveVisibleDecisionKeywords,
+                                allowExternalLabelReplacement: allowExternalLabelReplacement
+                            )
+                        } else {
+                            exporter.promptDestinationAndExport(
+                                sourceFolder: store.sourceFolder,
+                                selected: selectionSnapshot.selectedItems(from: store.items),
+                                familyContextItems: store.items,
+                                sessionGeneration:
+                                    store.xmpConflictSessionGeneration,
+                                mode: mode,
+                                includeXMP: xmpInclusionChoice.isIncluded,
+                                xmpProfile: xmpProfile,
+                                visibleDecisionKeywords: effectiveVisibleDecisionKeywords,
+                                allowExternalLabelReplacement: allowExternalLabelReplacement,
+                                onOperationWillStart: { store.exportWillStart(mode: $0) },
+                                onOperationDidFinish: {
+                                    store.finishExport(
+                                        mode: $0,
+                                        movedIDs: $1,
+                                        requiresRecovery: $2,
+                                        interruptionMessage: $3
+                                    )
+                                }
+                            )
+                        }
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.louppeFilledAccent)
+                    .disabled(
+                        selectionSnapshot.itemCount == 0
+                            || (mode != .metadataXMP && isCheckingExistingXMP)
+                    )
+                }
             }
         }
+    }
+
+    private var exportModePicker: some View {
+        Picker(L10n.text("Mode"), selection: $mode) {
+            Text(L10n.text("Copy")).tag(ExportMode.copy)
+            if store.photosBatch == nil {
+                Text(L10n.text("Move")).tag(ExportMode.move)
+                Text(L10n.text("Metadata (XMP)")).tag(ExportMode.metadataXMP)
+            }
         }
     }
 
@@ -429,23 +469,23 @@ struct ExportView: View {
     private var quickPickRow: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Quick picks")
+                Text(L10n.text("Quick picks"))
                     .font(.caption.weight(.semibold))
                 if activeQuickPick == nil {
-                    Text("Custom")
+                    Text(L10n.text("Custom"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
             HStack(spacing: 8) {
-                quickPickButton("Keepers (Yes)", pick: .keepers)
+                quickPickButton(L10n.text("Keepers (Yes)"), pick: .keepers)
                     .help(store.exportKeepersRequested
-                        ? "Yes decisions, with any stars or colors, from the whole folder"
-                        : "Yes decisions, with any stars or colors, from the current filter")
-                quickPickButton("4–5 Stars", pick: .fourFiveStars)
-                    .help("4 or 5 stars with any decision or color, from the current filter")
-                quickPickButton("All Selected", pick: .allSelected)
-                    .help("Every explicitly selected item, regardless of decision, stars, or color")
+                        ? L10n.text("Yes decisions, with any stars or colors, from the whole folder")
+                        : L10n.text("Yes decisions, with any stars or colors, from the current filter"))
+                quickPickButton(L10n.text("4–5 Stars"), pick: .fourFiveStars)
+                    .help(L10n.text("4 or 5 stars with any decision or color, from the current filter"))
+                quickPickButton(L10n.text("All Selected"), pick: .allSelected)
+                    .help(L10n.text("Every explicitly selected item, regardless of decision, stars, or color"))
                     .disabled(store.selectedIndices.isEmpty)
             }
         }
@@ -502,121 +542,113 @@ struct ExportView: View {
         let outsideScope = max(0, store.items.count - scopeIndices.count)
         var parts: [String] = []
         if excludedByChoices > 0 {
-            parts.append("\(excludedByChoices) excluded by decision, stars, or color")
+            parts.append(L10n.text("\(excludedByChoices) excluded by decision, stars, or color"))
         }
         if outsideScope > 0 {
-            parts.append("\(outsideScope) outside this scope")
+            parts.append(L10n.text("\(outsideScope) outside this scope"))
         }
-        return parts.isEmpty ? "Nothing excluded." : parts.joined(separator: " · ") + "."
+        return parts.isEmpty ? L10n.text("Nothing excluded.") : parts.joined(separator: " · ") + "."
     }
 
     private var editingAppOptions: some View {
-        DisclosureGroup("Editing app options", isExpanded: $showEditingAppOptions) {
-            VStack(alignment: .leading, spacing: 9) {
-                exportMenuRow("Application") {
-                    Picker("Application", selection: $xmpProfile) {
-                        ForEach(XMPApplicationProfile.allCases, id: \.self) {
-                            Text($0.displayName).tag($0)
-                        }
-                    }
-                }
-                if xmpProfile == .universal {
-                    Toggle(
-                        "Make decisions visible as keywords",
-                        isOn: $universalDecisionKeywords
-                    )
-                }
-                Toggle(
-                    "Allow replacing or removing external color labels",
-                    isOn: $allowExternalLabelReplacement
-                )
-                if allowExternalLabelReplacement {
-                    Text("Confirmed: an external xmp:Label may be replaced or removed when it conflicts with the selected Louppe color.")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
+        DisclosureGroup(L10n.text("Editing app options"), isExpanded: $showEditingAppOptions) {
+            Picker(L10n.text("Application"), selection: $xmpProfile) {
+                ForEach(XMPApplicationProfile.allCases, id: \.self) {
+                    Text($0.displayName).tag($0)
                 }
             }
-            .padding(.top, 6)
+            if xmpProfile == .universal {
+                Toggle(
+                    L10n.text("Make decisions visible as keywords"),
+                    isOn: $universalDecisionKeywords
+                )
+                .toggleStyle(LouppeToggleStyle(.switchControl))
+            }
+            Toggle(
+                L10n.text("Allow replacing or removing external color labels"),
+                isOn: $allowExternalLabelReplacement
+            )
+            .toggleStyle(LouppeToggleStyle(.switchControl))
+            if allowExternalLabelReplacement {
+                Text(L10n.text("Confirmed: conflicting external xmp:Label values may be replaced or removed by the chosen Louppe color."))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
         }
-        .font(.caption)
     }
 
     // MARK: - Multi-destination Copy
 
     private var routingSummaryView: some View {
-        SheetForm(title: "Route Copies") {
-            Picker("Mode", selection: $mode) {
-                Text("Copy").tag(ExportMode.copy)
-                Text("Move").tag(ExportMode.move)
-                Text("Metadata (XMP)").tag(ExportMode.metadataXMP)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+        SheetForm(title: L10n.text("Route Copies"), layout: .grouped) {
+            Section {
+                exportModePicker
 
-            Toggle("Route copies to multiple folders", isOn: $isRoutingCopies)
-                .accessibilityHint("Turn off to return to normal one-folder Copy")
+                Toggle(L10n.text("Route copies to multiple folders"), isOn: $isRoutingCopies)
+                    .toggleStyle(LouppeToggleStyle(.switchControl))
+                    .accessibilityHint(L10n.text("Turn off to return to normal one-folder Copy"))
 
-            exportScopeRow
+                exportScopeRow
 
-            Text("Choose which media to copy into each folder. Items that match no route stay in the source folder.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.leading)
-
-            Group {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach($routingRoutes) { $route in
-                        routingRouteEditor($route)
-                    }
-                }
-                .padding(.horizontal, 1)
-            }
-
-            HStack {
-                Button("Add Route") {
-                    routingRoutes.append(MultiDestinationExportRoute(
-                        predicate: .decision(.no)
-                    ))
-                }
-                .disabled(routingRoutes.count >= 12)
-                Spacer()
-                Text(routingMatchSummary)
+                Text(L10n.text("Choose media for each destination. Unmatched items stay in the source folder."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            }
-
-            if let message = routingValidationMessage {
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.orange)
                     .multilineTextAlignment(.leading)
-                    .accessibilityLabel("Routing issue: \(message)")
             }
 
-            if !routingEvaluation.unmatchedItemIndices.isEmpty {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Unmatched — will stay in the source folder")
-                        .font(.caption.weight(.semibold))
-                    Text(routingItemList(routingEvaluation.unmatchedItemIndices))
+            ForEach($routingRoutes) { $route in
+                routingRouteEditor($route)
+            }
+
+            Section {
+                HStack {
+                    Button(L10n.text("Add Route")) {
+                        routingRoutes.append(MultiDestinationExportRoute(
+                            predicate: .decision(.no)
+                        ))
+                    }
+                    .disabled(routingRoutes.count >= 12)
+                    Spacer()
+                    Text(routingMatchSummary)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let message = routingValidationMessage {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .multilineTextAlignment(.leading)
+                        .accessibilityLabel(L10n.text("Routing issue: \(message)"))
+                }
+
+                if !routingEvaluation.unmatchedItemIndices.isEmpty {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(L10n.text("Unmatched — will stay in the source folder"))
+                            .font(.caption.weight(.semibold))
+                        Text(routingItemList(routingEvaluation.unmatchedItemIndices))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
 
-            Divider()
-            Toggle("Include XMP sidecars (off by default)", isOn: $routingIncludesXMP)
-            Text("Sidecars follow their media. Files that share an XMP sidecar must go to the same folder.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.leading)
+            Section {
+                Toggle(L10n.text("Include XMP sidecars (off by default)"), isOn: $routingIncludesXMP)
+                    .toggleStyle(LouppeToggleStyle(.switchControl))
+                Text(L10n.text("Sidecars follow media. Files sharing XMP must go to one folder."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
 
         } actions: {
-            HStack {
+            HStack(spacing: 12) {
                 Spacer()
-                Button("Cancel") { store.isExportPresented = false }
+                Button(L10n.text("Cancel")) { store.isExportPresented = false }
                     .keyboardShortcut(.cancelAction)
-                Button("Review Copy Plan…") {
+                Button(L10n.text("Review Copy Plan…")) {
                     exporter.prepareMultiDestinationExport(
                         routes: routingRoutes,
                         items: scopedItems,
@@ -641,6 +673,7 @@ struct ExportView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
                 .disabled(!routingCanReview)
             }
         }
@@ -650,40 +683,23 @@ struct ExportView: View {
         _ route: Binding<MultiDestinationExportRoute>
     ) -> some View {
         let routeID = route.wrappedValue.id
-        return VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(route.wrappedValue.predicate.displayName)
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                Button("Remove") {
-                    routingRoutes.removeAll { $0.id == routeID }
+        return Section {
+            Picker(L10n.text("Match"), selection: routingDimensionBinding(route)) {
+                ForEach(MultiDestinationRoutePredicate.Dimension.allCases, id: \.self) {
+                    Text($0.title).tag($0)
                 }
-                .disabled(routingRoutes.count == 1)
             }
 
-            HStack {
-                Picker("Match", selection: routingDimensionBinding(route)) {
-                    ForEach(MultiDestinationRoutePredicate.Dimension.allCases, id: \.self) {
-                        Text($0.title).tag($0)
-                    }
-                }
-                .frame(width: 145)
+            routingValuePicker(route)
 
-                routingValuePicker(route)
-                    .frame(maxWidth: .infinity)
-            }
-
-            HStack {
-                Text("Destination")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button(route.wrappedValue.destination?.lastPathComponent ?? "Choose Folder…") {
+            LabeledContent(L10n.text("Destination")) {
+                Button(route.wrappedValue.destination?.lastPathComponent ?? L10n.text("Choose Folder…")) {
                     chooseRoutingDestination(routeID)
                 }
                 .accessibilityLabel(
                     route.wrappedValue.destination == nil
-                        ? "Choose destination for \(route.wrappedValue.predicate.displayName)"
-                        : "Change destination for \(route.wrappedValue.predicate.displayName)"
+                        ? L10n.text("Choose destination for \(route.wrappedValue.predicate.displayName)")
+                        : L10n.text("Change destination for \(route.wrappedValue.predicate.displayName)")
                 )
             }
             if let destination = route.wrappedValue.destination {
@@ -693,11 +709,16 @@ struct ExportView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
-        }
-        .padding(10)
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.secondary.opacity(0.25))
+            HStack {
+                Spacer()
+                Button(L10n.text("Remove")) {
+                    exporter.removeRoutingDestinationAccess(for: routeID)
+                    routingRoutes.removeAll { $0.id == routeID }
+                }
+                .disabled(routingRoutes.count == 1)
+            }
+        } header: {
+            Text(route.wrappedValue.predicate.displayName)
         }
     }
 
@@ -707,42 +728,37 @@ struct ExportView: View {
     ) -> some View {
         switch route.wrappedValue.predicate.dimension {
         case .decision:
-            Picker("Decision", selection: routingDecisionBinding(route)) {
+            Picker(L10n.text("Decision"), selection: routingDecisionBinding(route)) {
                 ForEach([Rating.yes, .no, .undecided], id: \.self) {
                     Text($0.displayName).tag($0)
                 }
             }
-            .labelsHidden()
         case .stars:
-            Picker("Stars", selection: routingStarsBinding(route)) {
+            Picker(L10n.text("Stars"), selection: routingStarsBinding(route)) {
                 ForEach(routingStarStates, id: \.self) {
                     Text($0.displayName).tag($0)
                 }
             }
-            .labelsHidden()
         case .color:
-            Picker("Color", selection: routingColorBinding(route)) {
+            Picker(L10n.text("Color"), selection: routingColorBinding(route)) {
                 ForEach(routingColorStates, id: \.self) {
                     Text($0.displayName).tag($0)
                 }
             }
-            .labelsHidden()
         case .fileType:
-            Picker("File type", selection: routingFileTypeBinding(route)) {
+            Picker(L10n.text("File type"), selection: routingFileTypeBinding(route)) {
                 ForEach(store.availableTypes, id: \.self) { type in
                     Text(type).tag(type)
                 }
             }
-            .labelsHidden()
             .disabled(store.availableTypes.isEmpty)
         case .mediaKind:
-            Picker("Media type", selection: routingMediaKindBinding(route)) {
+            Picker(L10n.text("Media type"), selection: routingMediaKindBinding(route)) {
                 Text(MediaKind.photo.label).tag(MediaKind.photo)
                 Text(MediaKind.video.label).tag(MediaKind.video)
                 Text(MediaKind.audio.label).tag(MediaKind.audio)
                 Text(MediaKind.text.label).tag(MediaKind.text)
             }
-            .labelsHidden()
         }
     }
 
@@ -766,7 +782,7 @@ struct ExportView: View {
             case .color: route.wrappedValue.predicate = .color(.none)
             case .fileType:
                 route.wrappedValue.predicate = .fileType(
-                    store.availableTypes.first ?? "Unknown"
+                    store.availableTypes.first ?? L10n.text("Unknown")
                 )
             case .mediaKind: route.wrappedValue.predicate = .mediaKind(.photo)
             }
@@ -813,7 +829,7 @@ struct ExportView: View {
             if case .fileType(let value) = route.wrappedValue.predicate {
                 return value
             }
-            return store.availableTypes.first ?? "Unknown"
+            return store.availableTypes.first ?? L10n.text("Unknown")
         } set: { route.wrappedValue.predicate = .fileType($0) }
     }
 
@@ -839,19 +855,19 @@ struct ExportView: View {
         let routed = scopedItems.count
             - routingEvaluation.unmatchedItemIndices.count
             - routingEvaluation.overlappingItemIndices.count
-        return "\(max(routed, 0)) routed · \(routingEvaluation.unmatchedItemIndices.count) unmatched"
+        return L10n.text("\(max(routed, 0)) routed · \(routingEvaluation.unmatchedItemIndices.count) unmatched")
     }
 
     private var routingValidationMessage: String? {
-        if routingRoutes.isEmpty { return "Add at least one route." }
+        if routingRoutes.isEmpty { return L10n.text("Add at least one route.") }
         if routingRoutes.contains(where: { $0.destination == nil }) {
-            return "Choose a destination folder for every route."
+            return L10n.text("Choose a destination folder for every route.")
         }
         if !routingEvaluation.overlappingItemIndices.isEmpty {
-            return "\(routingEvaluation.overlappingItemIndices.count) item\(routingEvaluation.overlappingItemIndices.count == 1 ? "" : "s") match more than one route: \(routingItemList(routingEvaluation.overlappingItemIndices))."
+            return (routingEvaluation.overlappingItemIndices.count == 1 ? L10n.text("\(routingEvaluation.overlappingItemIndices.count) item match more than one route: \(routingItemList(routingEvaluation.overlappingItemIndices)).") : L10n.text("\(routingEvaluation.overlappingItemIndices.count) items match more than one route: \(routingItemList(routingEvaluation.overlappingItemIndices))."))
         }
         if !routingEvaluation.emptyRouteIDs.isEmpty {
-            return "Every route must match at least one item before it can be reviewed."
+            return L10n.text("Each route must match at least one item.")
         }
         return nil
     }
@@ -862,7 +878,7 @@ struct ExportView: View {
         }
         let remainder = max(0, indices.count - names.count)
         return names.joined(separator: ", ")
-            + (remainder > 0 ? " and \(remainder) more" : "")
+            + (remainder > 0 ? L10n.text(" and \(remainder) more") : "")
     }
 
     private func refreshRoutingEvaluation() {
@@ -878,8 +894,8 @@ struct ExportView: View {
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = "Choose where this route will copy its matching media."
-        panel.prompt = "Use Folder"
+        panel.message = L10n.text("Choose this route’s destination.")
+        panel.prompt = L10n.text("Use Folder")
         guard panel.runModal() == .OK, let destination = panel.url,
               let index = routingRoutes.firstIndex(where: { $0.id == routeID }) else {
             return
@@ -891,14 +907,14 @@ struct ExportView: View {
     private var multiDestinationPreparationView: some View {
         VStack(spacing: 12) {
             ProgressView()
-                .accessibilityLabel("Checking routing copy plan")
-            Text("Checking routing copy plan…")
+                .accessibilityLabel(L10n.text("Checking routing copy plan"))
+            Text(L10n.text("Checking routing copy plan…"))
                 .font(.headline)
-            Text("Checking destinations and safe file names before copying.")
+            Text(L10n.text("Checking destinations and filenames…"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button("Cancel") { exporter.cancelMultiDestinationPreparation() }
+            Button(L10n.text("Cancel")) { exporter.cancelMultiDestinationPreparation() }
                 .keyboardShortcut(.cancelAction)
         }
     }
@@ -906,91 +922,29 @@ struct ExportView: View {
     private func multiDestinationConfirmationView(
         _ plan: MultiDestinationExportPlan
     ) -> some View {
-        SheetForm(title: "Review Copy Plan") {
-            Text("\(plan.totalFiles) file\(plan.totalFiles == 1 ? "" : "s") will be copied. Originals stay where they are.")
+        SheetForm(title: L10n.text("Review Copy Plan")) {
+            Text((plan.totalFiles == 1 ? L10n.text("\(plan.totalFiles) file will be copied. Originals stay in place.") : L10n.text("\(plan.totalFiles) files will be copied. Originals stay in place.")))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
 
-            Group {
-                LazyVStack(alignment: .leading, spacing: 14) {
-                    ForEach(plan.routes) { route in
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("\(route.route.predicate.displayName) → \(route.destination.path)")
-                                .font(.subheadline.weight(.semibold))
-                            Text("\(route.itemCount) item\(route.itemCount == 1 ? "" : "s") · \(route.mediaFileCount) media file\(route.mediaFileCount == 1 ? "" : "s")")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            ForEach(route.files) { file in
-                                Text(filePreviewText(file))
-                                    .font(.caption.monospaced())
-                                    .foregroundStyle(file.role == .media ? .primary : .secondary)
-                                    .textSelection(.enabled)
-                            }
-                        }
-                        Divider()
-                    }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Unmatched — not copied")
-                            .font(.subheadline.weight(.semibold))
-                        if plan.unmatchedNames.isEmpty {
-                            Text("Every current item is routed exactly once.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            ForEach(plan.unmatchedNames, id: \.self) { name in
-                                Text(name)
-                                    .font(.caption.monospaced())
-                                    .textSelection(.enabled)
-                            }
-                        }
-                    }
-                    if let xmp = plan.xmpPlan {
-                        Divider()
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("XMP sidecars")
-                                .font(.subheadline.weight(.semibold))
-                            Text("\(xmp.existingRecognizedPacketCount) existing · \(xmp.count(.create)) to create · \(xmp.count(.update)) to update · \(xmp.applicationPacketCount) application packet\(xmp.applicationPacketCount == 1 ? "" : "s") copied unchanged")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            if !xmp.issueFamilies.isEmpty {
-                                Text("\(xmp.issueFamilies.count) sidecar \(xmp.issueFamilies.count == 1 ? "family is" : "families are") skipped because it could not be prepared safely; listed media files still copy.")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                            }
-                        }
-                    }
-                }
-            }
+            MultiDestinationPlanPreviewList(plan: plan)
 
-            Text("If copying is interrupted, completed copies remain in their destination folders. Originals stay unchanged.")
+            Text(L10n.text("Completed copies stay at their destinations after interruption. Originals stay unchanged."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
 
         } actions: {
-            HStack {
-                Button("Back") { exporter.backFromMultiDestinationConfirmation() }
+            HStack(spacing: 12) {
+                Button(L10n.text("Back")) { exporter.backFromMultiDestinationConfirmation() }
                     .keyboardShortcut(.cancelAction)
                 Spacer()
-                Button("Start Copy") { exporter.confirmMultiDestinationExport() }
+                Button(L10n.text("Start Copy")) { exporter.confirmMultiDestinationExport() }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.louppeFilledAccent)
             }
-        }
-    }
-
-    private func filePreviewText(
-        _ file: MultiDestinationExportPlan.RoutePreview.FilePreview
-    ) -> String {
-        let copy = file.sourcePath == file.destinationPath
-            ? file.sourcePath
-            : "\(file.sourcePath) → \(file.destinationPath)"
-        switch file.role {
-        case .media: return copy
-        case .applicationXMP: return "\(copy) (XMP application packet)"
-        case .preparedXMP: return "\(copy) (prepared XMP sidecar)"
-        case .retiredXMPSource: return "\(copy) (XMP safety record)"
         }
     }
 
@@ -998,7 +952,8 @@ struct ExportView: View {
         selectionSnapshot = currentConfiguration.snapshot(
             items: store.items,
             filtered: store.visibleIndices,
-            selected: store.selectedIndices
+            selected: store.selectedIndices,
+            all: currentConfiguration.scope == .all ? store.archiveActionIndices : nil
         )
         scheduleXMPInspection()
     }
@@ -1041,19 +996,19 @@ struct ExportView: View {
         var parts: [String] = []
         if outcome.appliedCount > 0 {
             parts.append(
-                "Unified \(outcome.appliedCount) RAW+JPEG conflict\(outcome.appliedCount == 1 ? "" : "s") in Louppe. Review the new plan before continuing."
+                (outcome.appliedCount == 1 ? L10n.text("Unified \(outcome.appliedCount) RAW+JPEG conflict in Louppe. Review the new plan before continuing.") : L10n.text("Unified \(outcome.appliedCount) RAW+JPEG conflicts in Louppe. Review the new plan before continuing."))
             )
         }
         let stale = outcome.staleConflictIDs.count
         if stale > 0 {
             parts.append(
-                "\(stale) conflict\(stale == 1 ? " changed while the resolver was open and was" : "s changed while the resolver was open and were") not overwritten. The refreshed plan shows the current values."
+                (stale == 1 ? L10n.text("\(stale) conflict changed while the resolver was open and was not overwritten. The refreshed plan shows the current values.") : L10n.text("\(stale) conflicts changed while the resolver was open and were not overwritten. The refreshed plan shows the current values."))
             )
         }
         let ineligible = outcome.ineligibleConflictIDs.count
         if ineligible > 0 {
             parts.append(
-                "\(ineligible) conflict choice\(ineligible == 1 ? " was" : "s were") rejected because the files no longer formed one safe RAW+JPEG pair."
+                (ineligible == 1 ? L10n.text("\(ineligible) conflict choice was rejected because the files no longer formed one safe RAW+JPEG pair.") : L10n.text("\(ineligible) conflict choices were rejected because the files no longer formed one safe RAW+JPEG pair."))
             )
         }
         return parts.isEmpty ? nil : parts.joined(separator: " ")
@@ -1069,7 +1024,7 @@ struct ExportView: View {
 
     private func scheduleXMPInspection() {
         cancelXMPInspection()
-        guard mode != .metadataXMP else {
+        guard mode != .metadataXMP, store.photosBatch?.mediaSession == nil else {
             isCheckingExistingXMP = false
             excludedACRCompanionCount = 0
             return
@@ -1108,48 +1063,51 @@ struct ExportView: View {
 
     private var copyMoveXMPExplanation: String {
         if isCheckingExistingXMP {
-            return "Checking the selected photos for existing XMP sidecars…"
+            return L10n.text("Checking the selected photos for existing XMP sidecars…")
         }
         if xmpInclusionChoice.isIncluded {
-            return "XMP carries Louppe decisions, stars, and colors to editing apps. Existing sidecars are included; missing ones are created."
+            return L10n.text("XMP shares decisions, stars, and colors with editing apps. Include existing sidecars and create missing ones.")
         }
         if existingXMPCount > 0 {
             return mode == .move
-                ? "Existing XMP sidecars will remain in the source folder."
-                : "Existing sidecars will stay at the source and will not be copied."
+                ? L10n.text("Existing XMP sidecars will remain in the source folder.")
+                : L10n.text("Existing sidecars will stay at the source and will not be copied.")
         }
-        return "No existing XMP sidecars found. Turn on to create editing-app ratings beside the exported media."
+        return L10n.text("No XMP sidecars found. Enable to create editing-app ratings beside exported media.")
     }
 
     private var exportDescription: String {
         if selectedRatings.isEmpty {
-            return "Select at least one decision tile above to export."
+            return L10n.text("Select at least one decision tile above to export.")
         }
         if selectedStars.isEmpty {
-            return "Select at least one star rating to export."
+            return L10n.text("Select at least one star rating to export.")
         }
         if selectedColors.isEmpty {
-            return "Select at least one color label to export."
+            return L10n.text("Select at least one color label to export.")
         }
         if selectionSnapshot.itemCount == 0 {
             return selectedRatings == [.yes]
                 && selectedStars == ExportSelectionPredicate.allStarStates
                 && selectedColors == ExportSelectionPredicate.allColorStates
-                ? "Mark some items Yes (press F) before exporting."
-                : "No items match all selected metadata."
+                ? L10n.text("Mark some items Yes (press F) before exporting.")
+                : L10n.text("No items match all selected metadata.")
         }
-        let verb: String
+        let count = selectionSnapshot.itemCount
+        var text: String
         switch mode {
-        case .copy: verb = "copied"
-        case .move: verb = "moved"
-        case .metadataXMP: verb = "prepared for XMP publication"
+        case .copy:
+            text = count == 1 ? L10n.text("1 item will be copied") : L10n.text("\(count) items will be copied")
+        case .move:
+            text = count == 1 ? L10n.text("1 item will be moved") : L10n.text("\(count) items will be moved")
+        case .metadataXMP:
+            text = count == 1 ? L10n.text("1 item will be prepared for XMP publication") : L10n.text("\(count) items will be prepared for XMP publication")
         }
-        var text = "\(selectionSnapshot.itemCount) item\(selectionSnapshot.itemCount == 1 ? "" : "s") will be \(verb)"
         if selectionSnapshot.physicalFileCount != selectionSnapshot.itemCount {
-            text += " (\(selectionSnapshot.physicalFileCount) files, including RAW+JPEG pairs)"
+            text += L10n.text(" (\(selectionSnapshot.physicalFileCount) files, including RAW+JPEG pairs)")
         }
         text += mode == .copy || mode == .metadataXMP
-            ? ". Originals are never touched."
+            ? L10n.text(". Originals are never touched.")
             : "."
         return text
     }
@@ -1164,21 +1122,22 @@ struct ExportView: View {
         var parts: [String] = []
         var total = 0
         if scopeMixedStarCount > 0 {
-            parts.append("\(scopeMixedStarCount) mixed-star pair\(scopeMixedStarCount == 1 ? "" : "s")")
+            parts.append((scopeMixedStarCount == 1 ? L10n.text("\(scopeMixedStarCount) mixed-star pair") : L10n.text("\(scopeMixedStarCount) mixed-star pairs")))
             total += scopeMixedStarCount
         }
         if scopeMixedColorCount > 0 {
-            parts.append("\(scopeMixedColorCount) mixed-color pair\(scopeMixedColorCount == 1 ? "" : "s")")
+            parts.append((scopeMixedColorCount == 1 ? L10n.text("\(scopeMixedColorCount) mixed-color pair") : L10n.text("\(scopeMixedColorCount) mixed-color pairs")))
             total += scopeMixedColorCount
         }
-        return parts.joined(separator: " and ")
-            + (total == 1 ? " matches" : " match")
-            + " only when Mixed is selected in the corresponding menu."
+        let pairs = parts.joined(separator: L10n.text(" and "))
+        return total == 1
+            ? L10n.text("\(pairs) matches only when Mixed is selected in the corresponding menu.")
+            : L10n.text("\(pairs) match only when Mixed is selected in the corresponding menu.")
     }
 
     private var scopeIndices: [Int] {
         currentConfiguration.candidateIndices(
-            all: store.items.indices,
+            all: scope == .all ? store.archiveActionIndices : [],
             filtered: store.visibleIndices,
             selected: store.selectedIndices
         )
@@ -1203,24 +1162,21 @@ struct ExportView: View {
     }
 
     private var exportScopeRow: some View {
-        exportMenuRow("Scope") {
-            Picker("Scope", selection: $scope) {
-                exportScopeLabel("All Media", scope: .all)
-                    .tag(CleanUpScope.all)
-                exportScopeLabel("Filtered", scope: .filtered)
-                    .tag(CleanUpScope.filtered)
-                exportScopeLabel("Selected", scope: .selected)
-                    .tag(CleanUpScope.selected)
-                    .disabled(store.selectedIndices.isEmpty)
-            }
-            .pickerStyle(.menu)
-            .accessibilityLabel("Media to consider")
+        Picker(L10n.text("Scope"), selection: $scope) {
+            exportScopeLabel(store.archiveAllScopeLabel, scope: .all)
+                .tag(CleanUpScope.all)
+            exportScopeLabel(L10n.text("Filtered"), scope: .filtered)
+                .tag(CleanUpScope.filtered)
+            exportScopeLabel(L10n.text("Selected"), scope: .selected)
+                .tag(CleanUpScope.selected)
+                .disabled(store.selectedIndices.isEmpty)
         }
+        .accessibilityLabel(L10n.text("Media to consider"))
     }
 
     private func exportScopeLabel(_ title: String, scope: CleanUpScope) -> Text {
         let count = scope.candidateIndices(
-            all: store.items.indices,
+            all: scope == .all ? store.archiveActionIndices : [],
             filtered: store.visibleIndices,
             selected: store.selectedIndices
         ).count
@@ -1248,28 +1204,28 @@ struct ExportView: View {
         all: Set<Value>,
         label: (Value) -> String
     ) -> String {
-        if selected == all { return "All selected" }
-        if selected.isEmpty { return "None selected" }
+        if selected == all { return L10n.text("All selected") }
+        if selected.isEmpty { return L10n.text("None selected") }
         if selected.count == 1, let only = selected.first {
             return label(only)
         }
-        return "\(selected.count) selected"
+        return L10n.text("\(selected.count) selected")
     }
 
     private func starStateLabel(_ state: PhotoItemStarRatingState) -> String {
         switch state {
-        case .unrated: return "Unrated"
+        case .unrated: return L10n.text("Unrated")
         case .stars(let rating):
-            return rating == .one ? "1 star" : "\(rating.count) stars"
-        case .mixed: return "Mixed"
+            return rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count) stars")
+        case .mixed: return L10n.text("Mixed")
         }
     }
 
     private func colorStateLabel(_ state: PhotoItemColorLabelState) -> String {
         switch state {
-        case .none: return "None"
-        case .label(let label): return label.displayName
-        case .mixed: return "Mixed"
+        case .none: return L10n.text("None")
+        case .label(let label): return label.localizedDisplayName
+        case .mixed: return L10n.text("Mixed")
         }
     }
 
@@ -1288,20 +1244,6 @@ struct ExportView: View {
         }
     }
 
-    private func exportMenuRow<Content: View>(
-        _ label: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        HStack {
-            Text(label)
-                .foregroundStyle(.secondary)
-            Spacer()
-            content()
-                .labelsHidden()
-                .frame(width: 170)
-        }
-    }
-
     private func ratingTile(_ rating: Rating, count: Int, label: String, color: Color) -> some View {
         let isSelected = selectedRatings.contains(rating)
         return Button {
@@ -1315,26 +1257,37 @@ struct ExportView: View {
                 Text("\(count)")
                     .font(.title.bold())
                     .foregroundStyle(isSelected ? color : Color.secondary)
-                Text(label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                // A checkbox glyph states inclusion without relying on color.
+                Label {
+                    Text(label)
+                } icon: {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isSelected ? Color.louppeAccent : Color.secondary)
+                }
+                .labelStyle(.titleAndIcon)
+                .font(.caption)
+                .foregroundStyle(isSelected ? Color.primary : Color.secondary)
             }
             .frame(minWidth: 70, maxWidth: .infinity)
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? color.opacity(0.12) : Color.clear)
+                    .fill(Color.appBackground)
             )
             .overlay {
                 RoundedRectangle(cornerRadius: 8)
                     .strokeBorder(isSelected
-                        ? color.opacity(0.4)
-                        : Color(nsColor: .separatorColor))
+                        ? Color.louppeAccent.opacity(0.7)
+                        : Color(nsColor: .separatorColor),
+                        lineWidth: isSelected ? 1.5 : 1)
             }
+            .opacity(isSelected ? 1 : 0.8)
             .contentShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
-        .help(isSelected ? "Click to leave \(label) items out" : "Click to include \(label) items")
+        .help(isSelected ? L10n.text("Click to leave \(label) items out") : L10n.text("Click to include \(label) items"))
+        .accessibilityLabel(label)
+        .accessibilityValue(count.formatted())
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -1345,27 +1298,27 @@ struct ExportView: View {
             summaryView
         case .preflighting(let done, let total):
             xmpProgressView(
-                title: "Checking sidecars…",
+                title: L10n.text("Checking sidecars…"),
                 done: done,
                 total: total,
-                stopTitle: "Stop Checking"
+                stopTitle: L10n.text("Stop Checking")
             )
         case .awaitingConfirmation(let plan):
             xmpPreflightView(plan)
         case .publishing(let done, let total):
             xmpProgressView(
-                title: "Writing Metadata (XMP)…",
+                title: L10n.text("Writing Metadata (XMP)…"),
                 done: done,
                 total: total,
-                stopTitle: "Stop Writing"
+                stopTitle: L10n.text("Stop Writing")
             )
         case .cancelling:
             VStack(spacing: 12) {
                 ProgressView()
-                    .accessibilityLabel("Stopping metadata work")
-                Text("Stopping at a safe boundary…")
+                    .accessibilityLabel(L10n.text("Stopping metadata work"))
+                Text(L10n.text("Stopping at a safe boundary…"))
                     .font(.headline)
-                Text("The current sidecar finishes safely first.")
+                Text(L10n.text("The current sidecar finishes safely first."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -1373,15 +1326,21 @@ struct ExportView: View {
         case .finished(let result):
             xmpFinishedView(result)
         case .failed(let message):
-            VStack(spacing: 12) {
+            SheetForm(title: L10n.text("Metadata (XMP)")) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 40))
                     .foregroundStyle(.secondary)
                 Text(message)
-                    .multilineTextAlignment(.center)
-                Button("OK") { store.resetXMPPublication() }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+            } actions: {
+                HStack(spacing: 12) {
+                    Spacer()
+                    Button(L10n.text("OK")) { store.resetXMPPublication() }
+                        .keyboardShortcut(.defaultAction)
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.louppeFilledAccent)
+                }
             }
         }
     }
@@ -1400,8 +1359,8 @@ struct ExportView: View {
                 total: Double(max(total, 1))
             )
             .accessibilityLabel(title)
-            .accessibilityValue("\(done) of \(total) sidecar families")
-            Text("\(done) of \(total) sidecar families")
+            .accessibilityValue(L10n.text("\(done) of \(total) sidecar families"))
+            Text(L10n.text("\(done) of \(total) sidecar families"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Button(stopTitle) { store.cancelXMPPublication() }
@@ -1411,18 +1370,18 @@ struct ExportView: View {
     private func xmpPreflightView(_ plan: XMPPublicationPlan) -> some View {
         let issues = plan.entries.filter { !$0.category.canPublish }
         let changes = plan.changeCounts
-        return SheetForm(title: "Metadata (XMP)") {
-            Text("Ready to write with \(plan.profile.displayName)")
+        return SheetForm(title: L10n.text("Metadata (XMP)")) {
+            Text(L10n.text("Ready to write with \(plan.profile.displayName)"))
                 .font(.headline)
 
             VStack(spacing: 6) {
-                xmpCountRow("Selected Louppe items", plan.selectedItemCount)
-                xmpCountRow("Physical photo files", plan.physicalFileCount)
-                xmpCountRow("Sidecars to create", plan.count(.create))
-                xmpCountRow("Sidecars to update", plan.count(.update))
-                xmpCountRow("Already current", plan.count(.alreadyCurrent))
+                xmpCountRow(L10n.text("Selected Louppe items"), plan.selectedItemCount)
+                xmpCountRow(L10n.text("Physical photo files"), plan.physicalFileCount)
+                xmpCountRow(L10n.text("Sidecars to create"), plan.count(.create))
+                xmpCountRow(L10n.text("Sidecars to update"), plan.count(.update))
+                xmpCountRow(L10n.text("Already current"), plan.count(.alreadyCurrent))
                 xmpCountRow(
-                    "Existing recognized sidecars",
+                    L10n.text("Existing recognized sidecars"),
                     plan.existingRecognizedSidecarCount
                 )
                 ForEach(
@@ -1443,25 +1402,25 @@ struct ExportView: View {
                 .multilineTextAlignment(.leading)
 
             if !plan.bestEffortFilenames.isEmpty {
-                warningText("This application may ignore sidecars for JPEG, TIFF, DNG, HEIC, or PNG because it normally expects embedded metadata. Louppe will not modify the original. Affected: \(fileList(plan.bestEffortFilenames))")
+                warningText(L10n.text("This app may expect embedded metadata and ignore JPEG, TIFF, DNG, HEIC, or PNG sidecars. Originals stay unchanged. Affected: \(fileList(plan.bestEffortFilenames))"))
             }
             if changes.stars + changes.colors + changes.flags + changes.keywords > 0 {
                 warningText(
-                    "Existing non-empty values will change — stars: \(changes.stars), colors: \(changes.colors), flags: \(changes.flags), reserved decision keywords: \(changes.keywords)."
+                    L10n.text("Existing non-empty values will change — stars: \(changes.stars), colors: \(changes.colors), flags: \(changes.flags), reserved decision keywords: \(changes.keywords).")
                 )
             }
             if plan.applicationPacketCount > 0 {
-                Text("\(plan.applicationPacketCount) extension-qualified application packet\(plan.applicationPacketCount == 1 ? "" : "s") will remain unchanged beside the originals.")
+                Text((plan.applicationPacketCount == 1 ? L10n.text("\(plan.applicationPacketCount) extension-qualified application packet will stay unchanged beside originals.") : L10n.text("\(plan.applicationPacketCount) extension-qualified application packets will stay unchanged beside originals.")))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
             }
             if plan.excludedACRCompanionCount > 0 {
-                warningText("\(plan.excludedACRCompanionCount) Lightroom .acr companion\(plan.excludedACRCompanionCount == 1 ? "" : "s") will remain untouched beside the originals. Louppe does not read or modify Lightroom heavy-edit data.")
+                warningText((plan.excludedACRCompanionCount == 1 ? L10n.text("\(plan.excludedACRCompanionCount) Lightroom .acr companion will stay untouched beside originals. Louppe never reads or changes Lightroom heavy-edit data.") : L10n.text("\(plan.excludedACRCompanionCount) Lightroom .acr companions will stay untouched beside originals. Louppe never reads or changes Lightroom heavy-edit data.")))
             }
             if !issues.isEmpty {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("These files will be skipped")
+                    Text(L10n.text("These files will be skipped"))
                         .font(.caption.weight(.semibold))
                     ForEach(issues.prefix(6)) { issue in
                         Text("\(issue.filenames.joined(separator: ", ")) — \(issue.category.label)")
@@ -1469,7 +1428,7 @@ struct ExportView: View {
                             .foregroundStyle(.orange)
                     }
                     if issues.count > 6 {
-                        Text("…and \(issues.count - 6) more")
+                        Text(L10n.text("…and \(issues.count - 6) more"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -1482,12 +1441,12 @@ struct ExportView: View {
             }
 
         } actions: {
-            HStack {
-                Button("Back") { store.resetXMPPublication() }
+            HStack(spacing: 12) {
+                Button(L10n.text("Back")) { store.resetXMPPublication() }
                     .keyboardShortcut(.cancelAction)
                 Spacer()
                 if !plan.resolvableSameStemConflicts.isEmpty {
-                    Button("Resolve RAW + JPEG Conflicts…") {
+                    Button(L10n.text("Resolve RAW + JPEG Conflicts…")) {
                         conflictResolutionNotice = nil
                         conflictResolver = XMPConflictResolverPresentation(
                             conflicts: plan.resolvableSameStemConflicts,
@@ -1495,11 +1454,12 @@ struct ExportView: View {
                         )
                     }
                 }
-                Button("Write Sidecars") {
+                Button(L10n.text("Write Sidecars")) {
                     store.startXMPPublication(planID: plan.id)
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
                 .disabled(plan.publishableCount == 0)
             }
         }
@@ -1507,56 +1467,51 @@ struct ExportView: View {
 
     private func xmpFinishedView(_ result: XMPPublicationResult) -> some View {
         let hasDetails = !result.details.isEmpty
-        return VStack(spacing: 14) {
-            Image(systemName: result.isClean ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(result.isClean ? Color.louppeAccent : Color.secondary)
-            Text(result.cancelled
-                ? "Metadata writing stopped"
-                : result.isClean
-                    ? "Metadata (XMP) complete"
-                    : "Metadata (XMP) finished with problems")
-                .font(.title3.bold())
-
+        let title = result.cancelled
+            ? L10n.text("Metadata writing stopped")
+            : result.isClean
+                ? L10n.text("Metadata (XMP) complete")
+                : L10n.text("Metadata (XMP) finished with problems")
+        return SheetForm(title: title) {
             VStack(spacing: 6) {
-                xmpCountRow("Created", result.created)
-                xmpCountRow("Updated", result.updated)
-                xmpCountRow("Already current", result.alreadyCurrent)
-                xmpCountRow("Skipped", result.skipped)
-                xmpCountRow("Conflicts", result.conflicts)
-                xmpCountRow("Failed", result.failed)
+                xmpCountRow(L10n.text("Created"), result.created)
+                xmpCountRow(L10n.text("Updated"), result.updated)
+                xmpCountRow(L10n.text("Already current"), result.alreadyCurrent)
+                xmpCountRow(L10n.text("Skipped"), result.skipped)
+                xmpCountRow(L10n.text("Conflicts"), result.conflicts)
+                xmpCountRow(L10n.text("Failed"), result.failed)
             }
 
             if result.cancelled {
-                Text("Completed sidecars remain safely written. No partially replaced packet was left behind.")
+                Text(L10n.text("Completed sidecars stay written. No packet was partly replaced."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if showXMPDetails, hasDetails {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(result.details) { detail in
-                            Text("\(detail.filenames.joined(separator: ", ")) — \(detail.category.label): \(detail.message)")
-                                .font(.caption)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
+                LazyVStack(alignment: .leading, spacing: 6) {
+                    ForEach(result.details) { detail in
+                        Text("\(detail.filenames.joined(separator: ", ")) — \(detail.category.label): \(detail.message)")
+                            .font(.caption)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .frame(maxHeight: 150)
             }
-            HStack {
+        } actions: {
+            HStack(spacing: 12) {
                 if hasDetails {
-                    Button(showXMPDetails ? "Hide Details" : "Show Details") {
+                    Button(showXMPDetails ? L10n.text("Hide Details") : L10n.text("Show Details")) {
                         showXMPDetails.toggle()
                     }
                 }
-                Button("Done") {
+                Spacer()
+                Button(L10n.text("Done")) {
                     store.resetXMPPublication()
                     store.isExportPresented = false
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
             }
         }
     }
@@ -1582,21 +1537,21 @@ struct ExportView: View {
     private func fileList(_ names: [String]) -> String {
         if names.count <= 4 { return names.joined(separator: ", ") }
         return names.prefix(4).joined(separator: ", ")
-            + ", and \(names.count - 4) more"
+            + L10n.text(", and \(names.count - 4) more")
     }
 
     private func xmpApplicationNote(_ profile: XMPApplicationProfile) -> String {
         switch profile {
         case .lightroomClassic:
-            return "After publication, use Lightroom Classic’s Read Metadata from Files command so its catalog sees the sidecars."
+            return L10n.text("After writing, choose Lightroom Classic’s Read Metadata from Files to load the sidecars.")
         case .captureOne:
-            return "Capture One may need XMP Auto Sync enabled or a manual metadata reload."
+            return L10n.text("Capture One may need XMP Auto Sync or a manual metadata reload.")
         case .darktable:
-            return "darktable reads the portable stem sidecar on import; its processing-history packet remains unchanged."
+            return L10n.text("darktable reads stem sidecars on import; its processing history stays unchanged.")
         case .bridge:
-            return "Bridge reads stars, colors, and Louppe’s visible decision keywords from the sidecars."
+            return L10n.text("Bridge reads sidecar stars, colors, and Louppe decision keywords.")
         case .universal:
-            return "Universal XMP keeps stars, colors, and the lossless Louppe decision in portable fields."
+            return L10n.text("Universal XMP stores stars, colors, and the full Louppe decision in portable fields.")
         }
     }
 
@@ -1605,29 +1560,33 @@ struct ExportView: View {
         completedBytes: Int64,
         totalBytes: Int64
     ) -> some View {
-        let verb = mode == .copy ? "copied" : "moved"
-        let completed = ByteCountFormatter.string(
+        let isPhotos = store.photosBatch?.mediaSession != nil
+        let completed = isPhotos ? completedBytes.formatted() : ByteCountFormatter.string(
             fromByteCount: max(0, completedBytes),
             countStyle: .file
         )
-        let total = ByteCountFormatter.string(
+        let total = isPhotos ? totalBytes.formatted() : ByteCountFormatter.string(
             fromByteCount: max(0, totalBytes),
             countStyle: .file
         )
         return VStack(spacing: 12) {
-            Text(mode == .copy ? "Copying media…" : "Moving media…")
+            Text(isPhotos ? L10n.text("Downloading and copying originals…") : mode == .copy ? L10n.text("Copying media…") : L10n.text("Moving media…"))
                 .font(.headline)
             ProgressView(
-                value: Double(max(0, completedBytes)),
+                value: Double(max(0, completedBytes)) + (isPhotos ? exporter.photosOriginalProgress : 0),
                 total: Double(max(totalBytes, 1))
             )
-            .accessibilityLabel(mode == .copy ? "Copying media" : "Moving media")
-            .accessibilityValue("\(completed) of \(total) \(verb)")
-            Text("\(completed) of \(total) \(verb)")
+            .accessibilityLabel(mode == .copy ? L10n.text("Copying media") : L10n.text("Moving media"))
+            .accessibilityValue((mode == .copy ? L10n.text("\(completed) of \(total) copied") : L10n.text("\(completed) of \(total) moved")))
+            Text((mode == .copy ? L10n.text("\(completed) of \(total) copied") : L10n.text("\(completed) of \(total) moved")))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            if isPhotos {
+                Text(L10n.text("Progress counts original files. iCloud downloads may take longer."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if mode == .copy {
-                Button(exporter.isCancellingCopy ? "Stopping…" : "Stop Copying…") {
+                Button(exporter.isCancellingCopy ? L10n.text("Stopping…") : L10n.text("Stop Copying…")) {
                     exporter.requestCopyStopConfirmation()
                 }
                 .disabled(exporter.isCancellingCopy)
@@ -1637,17 +1596,29 @@ struct ExportView: View {
         }
     }
 
+    /// Read-only destination preflight; nothing has been written yet.
+    private var destinationValidationView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .accessibilityLabel(L10n.text("Checking folder…"))
+            Text(L10n.text("Checking folder…"))
+                .font(.headline)
+            Button(L10n.text("Cancel")) { exporter.cancelDestinationValidation() }
+                .keyboardShortcut(.cancelAction)
+        }
+    }
+
     private func xmpExportPreparationView(mode: ExportMode) -> some View {
         VStack(spacing: 12) {
             ProgressView()
-                .accessibilityLabel("Checking XMP sidecars")
-            Text("Checking XMP sidecars…")
+                .accessibilityLabel(L10n.text("Checking XMP sidecars"))
+            Text(L10n.text("Checking XMP sidecars…"))
                 .font(.headline)
-            Text("Checking files and sidecars before \(mode == .copy ? "copying" : "moving").")
+            Text((mode == .copy ? L10n.text("Checking files and sidecars before copying.") : L10n.text("Checking files and sidecars before moving.")))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button("Stop Checking") {
+            Button(L10n.text("Stop Checking")) {
                 exporter.cancelXMPPreparation()
             }
         }
@@ -1658,26 +1629,26 @@ struct ExportView: View {
     ) -> some View {
         let plan = confirmation.plan
         let changes = plan.changeCounts
-        return SheetForm(title: confirmation.mode == .copy ? "Copy with XMP" : "Move with XMP") {
-            Text("Ready for \(confirmation.destination.lastPathComponent)")
+        return SheetForm(title: confirmation.mode == .copy ? L10n.text("Copy with XMP") : L10n.text("Move with XMP")) {
+            Text(L10n.text("Ready for \(confirmation.destination.lastPathComponent)"))
                 .font(.headline)
 
             VStack(spacing: 6) {
-                xmpCountRow("Selected Louppe items", plan.selectedItemCount)
-                xmpCountRow("Physical media files", plan.physicalFileCount)
+                xmpCountRow(L10n.text("Selected Louppe items"), plan.selectedItemCount)
+                xmpCountRow(L10n.text("Physical media files"), plan.physicalFileCount)
                 xmpCountRow(
-                    "Existing recognized sidecars",
+                    L10n.text("Existing recognized sidecars"),
                     plan.existingRecognizedPacketCount
                 )
-                xmpCountRow("Sidecars to create", plan.count(.create))
-                xmpCountRow("Sidecars to update", plan.count(.update))
+                xmpCountRow(L10n.text("Sidecars to create"), plan.count(.create))
+                xmpCountRow(L10n.text("Sidecars to update"), plan.count(.update))
                 xmpCountRow(
-                    "Already current",
+                    L10n.text("Already current"),
                     plan.count(.alreadyCurrent)
                 )
                 if plan.applicationPacketCount > 0 {
                     xmpCountRow(
-                        "Application packets copied unchanged",
+                        L10n.text("Application packets copied unchanged"),
                         plan.applicationPacketCount
                     )
                 }
@@ -1693,7 +1664,7 @@ struct ExportView: View {
                 }
                 if plan.excludedACRCompanionCount > 0 {
                     xmpCountRow(
-                        "Lightroom .acr companions excluded",
+                        L10n.text("Lightroom .acr companions excluded"),
                         plan.excludedACRCompanionCount
                     )
                 }
@@ -1701,14 +1672,14 @@ struct ExportView: View {
 
             if changes.stars + changes.colors + changes.flags
                 + changes.keywords > 0 {
-                Text("Existing values to update: \(changes.stars) star, \(changes.colors) color, \(changes.flags) decision flag, \(changes.keywords) keyword set.")
+                Text(L10n.text("Existing values to update: \(changes.stars) star, \(changes.colors) color, \(changes.flags) decision flag, \(changes.keywords) keyword set."))
                     .font(.caption)
                     .foregroundStyle(.orange)
                     .multilineTextAlignment(.leading)
             }
 
             if !plan.bestEffortFilenames.isEmpty {
-                Text("Some applications may ignore sidecars for: \(plan.bestEffortFilenames.joined(separator: ", ")). Original media will not be modified.")
+                Text(L10n.text("Some apps may ignore sidecars for: \(plan.bestEffortFilenames.joined(separator: ", ")). Original media stays unchanged."))
                     .font(.caption)
                     .foregroundStyle(.orange)
                     .multilineTextAlignment(.leading)
@@ -1738,18 +1709,18 @@ struct ExportView: View {
                     .multilineTextAlignment(.leading)
             }
 
-            Text("Included XMP sidecars follow their media to the destination.")
+            Text(L10n.text("Included XMP sidecars follow media."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
 
         } actions: {
-            HStack {
-                Button("Back") { exporter.backFromXMPConfirmation() }
+            HStack(spacing: 12) {
+                Button(L10n.text("Back")) { exporter.backFromXMPConfirmation() }
                     .keyboardShortcut(.cancelAction)
                 Spacer()
                 if !plan.resolvableSameStemConflicts.isEmpty {
-                    Button("Resolve RAW + JPEG Conflicts…") {
+                    Button(L10n.text("Resolve RAW + JPEG Conflicts…")) {
                         conflictResolutionNotice = nil
                         conflictResolver = XMPConflictResolverPresentation(
                             conflicts: plan.resolvableSameStemConflicts,
@@ -1757,65 +1728,65 @@ struct ExportView: View {
                         )
                     }
                 }
-                Button(confirmation.mode == .copy ? "Start Copy" : "Start Move") {
+                Button(confirmation.mode == .copy ? L10n.text("Start Copy") : L10n.text("Start Move")) {
                     exporter.confirmXMPExport()
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
             }
         }
     }
 
     private func finishedView(outcome: ExportManager.Outcome) -> some View {
-        VStack(spacing: 14) {
-            Image(systemName: outcome.isClean ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(outcome.isClean ? Color.louppeAccent : Color.secondary)
+        SheetForm(title: finishedTitle(for: outcome)) {
             VStack(spacing: 14) {
-                Text(finishedTitle(for: outcome))
-                    .font(.title3.bold())
                 Text(finishedMessage(for: outcome))
                     .font(.callout)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(finishedTitle(for: outcome)), \(finishedMessage(for: outcome))")
             .accessibilityFocused($isExportResultFocused)
             .onAppear { isExportResultFocused = true }
             if let xmp = outcome.xmpSummary {
                 VStack(spacing: 6) {
-                    xmpCountRow("Media \(outcome.mode == .copy ? "copied" : "moved")", xmp.mediaFiles)
-                    xmpCountRow("Sidecars created", xmp.created)
-                    xmpCountRow("Sidecars updated", xmp.updated)
-                    xmpCountRow("Sidecars already current", xmp.alreadyCurrent)
+                    xmpCountRow((outcome.mode == .copy ? L10n.text("Media copied") : L10n.text("Media moved")), xmp.mediaFiles)
+                    xmpCountRow(L10n.text("Sidecars created"), xmp.created)
+                    xmpCountRow(L10n.text("Sidecars updated"), xmp.updated)
+                    xmpCountRow(L10n.text("Sidecars already current"), xmp.alreadyCurrent)
                     xmpCountRow(
-                        "Application packets copied unchanged",
+                        L10n.text("Application packets copied unchanged"),
                         xmp.copiedUnchanged
                     )
                     if xmp.unsupported > 0 {
-                        xmpCountRow("Unsupported media", xmp.unsupported)
+                        xmpCountRow(L10n.text("Unsupported media"), xmp.unsupported)
                     }
                     if xmp.skipped > 0 {
-                        xmpCountRow("Skipped", xmp.skipped)
+                        xmpCountRow(L10n.text("Skipped"), xmp.skipped)
                     }
                     if xmp.conflicts > 0 {
-                        xmpCountRow("Conflicts", xmp.conflicts)
+                        xmpCountRow(L10n.text("Conflicts"), xmp.conflicts)
                     }
                     if xmp.failed > 0 {
-                        xmpCountRow("XMP failures", xmp.failed)
+                        xmpCountRow(L10n.text("XMP failures"), xmp.failed)
                     }
                 }
             }
-            HStack {
-                Button(outcome.destinations.count > 1 ? "Show First Folder" : "Show in Finder") {
+        } actions: {
+            HStack(spacing: 12) {
+                Button(outcome.destinations.count > 1 ? L10n.text("Show First Folder") : L10n.text("Show in Finder")) {
                     exporter.revealInFinder(outcome.destination)
                 }
-                Button("Done") {
+                Spacer()
+                Button(L10n.text("Done")) {
                     store.isExportPresented = false
                     exporter.reset()
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
             }
         }
     }
@@ -1823,11 +1794,11 @@ struct ExportView: View {
     private func finishedTitle(for outcome: ExportManager.Outcome) -> String {
         if outcome.recoveryRequired {
             return outcome.mode == .copy
-                ? "Securing copied files"
-                : "Securing moved files"
+                ? L10n.text("Securing copied files")
+                : L10n.text("Securing moved files")
         }
-        if outcome.cancelled { return "Copy stopped" }
-        return outcome.isClean ? "Export complete" : "Export finished with problems"
+        if outcome.cancelled { return L10n.text("Copy stopped") }
+        return outcome.isClean ? L10n.text("Export complete") : L10n.text("Export finished with problems")
     }
 
     private func finishedMessage(for outcome: ExportManager.Outcome) -> String {
@@ -1837,51 +1808,54 @@ struct ExportView: View {
             } ?? ""
             if outcome.mode == .copy {
                 return cause
-                    + "Louppe kept a durable record of the interrupted copy and is preserving every verified completed file while checking the unfinished transfer. Wait for the recovery notice before starting another file operation."
+                    + L10n.text("Louppe recorded the interruption and keeps verified completed copies. Wait for recovery to check unfinished work before another file operation.")
             }
             return cause
-                + "Louppe kept a durable record of the interrupted move. Completed groups stay at the destination; incomplete groups return to their safe source state. Wait for the recovery notice before starting another file operation."
+                + L10n.text("Completed groups stay at the destination; incomplete groups return to the source. Wait for recovery before another file operation.")
         }
-        let verb = outcome.mode == .copy ? "copied" : "moved"
-        let destinationText: String
+        let count = outcome.files
+        var text: String
         if outcome.destinations.count > 1 {
-            destinationText = "across \(outcome.destinations.count) folders"
+            text = outcome.mode == .copy
+                ? L10n.text("Copied files: \(count). Destination folders: \(outcome.destinations.count).")
+                : L10n.text("Moved files: \(count). Destination folders: \(outcome.destinations.count).")
         } else {
-            destinationText = "to \(outcome.destination.lastPathComponent)"
+            let folder = outcome.destination.lastPathComponent
+            text = outcome.mode == .copy
+                ? L10n.text("Copied files: \(count). Destination: \(folder)")
+                : L10n.text("Moved files: \(count). Destination: \(folder)")
         }
-        var text = "\(outcome.files) file\(outcome.files == 1 ? "" : "s") \(verb) \(destinationText)"
         switch outcome.mode {
         case .copy:
             if outcome.cancelled {
-                text += ". Completed photos remain at the destination; the photo in progress was rolled back."
+                text += L10n.text(". Completed photos stay at the destination; the photo in progress rolled back.")
                 if let reason = outcome.cancellationReason {
                     text += " \(reason.userMessage)"
                 } else {
-                    text += " Louppe did not record why this copy stopped; please send its diagnostic log with this report."
+                    text += L10n.text(" The stop reason is missing. Send the diagnostic log with this report.")
                 }
             } else if outcome.failedPhotos > 0 {
-                let agreement = outcome.failedPhotos == 1 ? "was" : "were"
-                text += " — \(outcome.failedPhotos) item\(outcome.failedPhotos == 1 ? "" : "s") couldn't be copied and \(agreement) rolled back."
+                text += (outcome.failedPhotos == 1 ? L10n.text(" — \(outcome.failedPhotos) item couldn't be copied and rolled back.") : L10n.text(" — \(outcome.failedPhotos) items couldn't be copied and rolled back."))
             } else {
                 text += "."
             }
             if outcome.inconsistentPhotos > 0 {
-                text += " For \(outcome.inconsistentPhotos), rollback also failed; check the destination for a partial pair."
+                text += L10n.text(" For \(outcome.inconsistentPhotos), rollback also failed; check the destination for a partial pair.")
             }
         case .move:
             if outcome.failedPhotos > 0 {
-                text += " — \(outcome.failedPhotos) item\(outcome.failedPhotos == 1 ? "" : "s") couldn't be moved and stayed in the session."
+                text += (outcome.failedPhotos == 1 ? L10n.text(" — \(outcome.failedPhotos) item couldn't be moved and stayed in the session.") : L10n.text(" — \(outcome.failedPhotos) items couldn't be moved and stayed in the session."))
             } else {
                 text += "."
             }
             if outcome.inconsistentPhotos > 0 {
-                text += " For \(outcome.inconsistentPhotos), rollback also failed; check both the source folder and the destination."
+                text += L10n.text(" For \(outcome.inconsistentPhotos), rollback also failed; check both the source folder and the destination.")
             }
         case .metadataXMP:
             break
         }
         if outcome.journalFailure {
-            text += " Louppe's file-safety checks stopped the operation before another file was started; affected originals remain at their last verified location."
+            text += L10n.text(" Safety checks stopped the operation before the next file. Affected originals remain at their last verified location.")
         }
         if let failure = outcome.failureMessage {
             text += failure.hasSuffix(".") ? " \(failure)" : " \(failure)."
@@ -1890,19 +1864,119 @@ struct ExportView: View {
     }
 
     private func failedView(message: String) -> some View {
-        VStack(spacing: 12) {
+        SheetForm(title: L10n.text("Export")) {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
             Text(message)
-                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
                 .accessibilityFocused($isExportResultFocused)
                 .onAppear { isExportResultFocused = true }
-            Button("OK") {
-                exporter.reset()
+        } actions: {
+            HStack(spacing: 12) {
+                Spacer()
+                Button(L10n.text("OK")) {
+                    exporter.reset(keepingRoutingDestinations: true)
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .tint(Color.louppeFilledAccent)
             }
-            .keyboardShortcut(.defaultAction)
-            .buttonStyle(.borderedProminent)
+        }
+    }
+}
+
+/// Exact routing Copy preview. Every file and unmatched item is its own lazy
+/// row, so a 10k-file route realizes only rows near the visible area while
+/// retaining each exact source/destination path, role, and unmatched name.
+struct MultiDestinationPlanPreviewList: View {
+    let plan: MultiDestinationExportPlan
+
+    var body: some View {
+        LazyVStack(alignment: .leading, spacing: 0) {
+            ForEach(plan.routes) { route in
+                Section {
+                    ForEach(route.files) { file in
+                        Text(Self.filePreviewText(file))
+                            .font(.caption.monospaced())
+                            .foregroundStyle(file.role == .media ? .primary : .secondary)
+                            .textSelection(.enabled)
+                            .padding(.top, 5)
+                    }
+                    Divider()
+                        .padding(.vertical, 14)
+                } header: {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("\(route.route.predicate.displayName) → \(route.destination.path)")
+                            .font(.subheadline.weight(.semibold))
+                            .accessibilityAddTraits(.isHeader)
+                        Text(Self.routeCountText(route))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Section {
+                if plan.unmatchedNames.isEmpty {
+                    Text(L10n.text("Every current item is routed exactly once."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 3)
+                } else {
+                    // Offsets, not names, identify rows: unmatched items in
+                    // different subfolders can share a display name.
+                    ForEach(plan.unmatchedNames.indices, id: \.self) { index in
+                        Text(plan.unmatchedNames[index])
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                            .padding(.top, 3)
+                    }
+                }
+            } header: {
+                Text(L10n.text("Unmatched — not copied"))
+                    .font(.subheadline.weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
+            }
+            if let xmp = plan.xmpPlan {
+                Divider()
+                    .padding(.vertical, 14)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L10n.text("XMP sidecars"))
+                        .font(.subheadline.weight(.semibold))
+                        .accessibilityAddTraits(.isHeader)
+                    Text((xmp.applicationPacketCount == 1 ? L10n.text("\(xmp.existingRecognizedPacketCount) existing · \(xmp.count(.create)) to create · \(xmp.count(.update)) to update · \(xmp.applicationPacketCount) application packet copied unchanged") : L10n.text("\(xmp.existingRecognizedPacketCount) existing · \(xmp.count(.create)) to create · \(xmp.count(.update)) to update · \(xmp.applicationPacketCount) application packets copied unchanged")))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if !xmp.issueFamilies.isEmpty {
+                        Text((xmp.issueFamilies.count == 1 ? L10n.text("\(xmp.issueFamilies.count) sidecar family is skipped after safety checks; listed media files still copy.") : L10n.text("\(xmp.issueFamilies.count) sidecar families are skipped after safety checks; listed media files still copy.")))
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+        }
+    }
+
+    static func routeCountText(
+        _ route: MultiDestinationExportPlan.RoutePreview
+    ) -> String {
+        route.itemCount == 1
+            ? (route.mediaFileCount == 1 ? L10n.text("\(route.itemCount) item · \(route.mediaFileCount) media file") : L10n.text("\(route.itemCount) item · \(route.mediaFileCount) media files"))
+            : (route.mediaFileCount == 1 ? L10n.text("\(route.itemCount) items · \(route.mediaFileCount) media file") : L10n.text("\(route.itemCount) items · \(route.mediaFileCount) media files"))
+    }
+
+    static func filePreviewText(
+        _ file: MultiDestinationExportPlan.RoutePreview.FilePreview
+    ) -> String {
+        let copy = file.sourcePath == file.destinationPath
+            ? file.sourcePath
+            : "\(file.sourcePath) → \(file.destinationPath)"
+        switch file.role {
+        case .media: return copy
+        case .applicationXMP: return L10n.text("\(copy) (XMP application packet)")
+        case .preparedXMP: return L10n.text("\(copy) (prepared XMP sidecar)")
+        case .retiredXMPSource: return L10n.text("\(copy) (XMP safety record)")
         }
     }
 }

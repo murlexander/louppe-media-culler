@@ -1,217 +1,217 @@
-# Louppe Media Culler backlog
+# Louppe app backlog
 
-This is the live backlog for the macOS app. Product and technical work belong
-here because they change with the app and should be visible to everyone working
-in this repository. The Obsidian `louppe` note remains the home for research,
-positioning, publicity planning, and the CAS record.
+Updated on 4 November 2026 after the 1.13 release. **1.13.0 (15) is published**
+on GitHub, Sparkle and Homebrew (4 November 2026); the App Store build is
+**Waiting for Review**. **1.13.1 (16) is prepared and held** until Apple approves
+1.13. Implemented changes belong in [CHANGELOG.md](CHANGELOG.md); this backlog
+contains unfinished work only.
 
-The latest published app is 1.9.0 (11). Its delivery and verification are in
-[the release record](Docs/RELEASE_1.9.0.md).
+[1.13.1 held release](#1131-held-release) ·
+[Manual acceptance](#manual-acceptance-needs-hardware-or-alex) ·
+[Agent work](#agent-work) · [Later and research](#later-and-research)
 
-## Waiting on Alex or collaborators
+[App guide](Docs/DEVELOPMENT.md) · [Website backlog](https://github.com/murlexander/louppe-website/blob/main/BACKLOG.md) ·
+[1.13 release record](Docs/RELEASE_1.13_PREPARATION_2026-11-04.md) ·
+[1.13 backlog record](Docs/BACKLOG_1.13_2026-11-04.md)
 
-- [ ] **AUD-23 — Accept native accessibility on the current 1.10.0 build.**
-  Check spoken VoiceOver feedback, Full Keyboard Access, increased contrast,
-  and Reduce Motion across review, recovery, persistent Gallery controls, and
-  connected-drive actions. Record the settings and outcomes; automated hotkey
-  and hosted-control checks do not replace spoken/control-by-control acceptance.
-- [ ] **AUD-24 — Accept display and provider edge cases.** Exercise
-  Welcome/Scanning/Ready on a small display, after resizing/display changes,
-  with long warnings, many mounted drives, and delayed File Provider folder
-  drops. Every action and message must remain reachable with visible feedback.
-- [ ] Back up and restore-test the private automatic-updater signing key.
-- [ ] Test a clean install and real culling workflow with Katerina.
-- [ ] Ask Andrey for a code review; decide separately whether co-authorship is
-  appropriate.
-- [ ] Obtain a final shared brand asset from Masha for the app icon and website.
-- [ ] Check XMP handoff in real Bridge, Lightroom Classic, and darktable;
-   rerun the separate RAW/JPEG conflict and reload workflow in Capture One.
-   Automated packet and resolver tests have passed, but these app workflows
-   have not been accepted end to end.
+Keep audit IDs stable and each task in one list. Check current code and reproduce
+suspected bugs before changing behavior. Implementation alone does not close
+manual acceptance. Completed outcomes stay in version history and dated reports.
+Research notes, publicity plans, and CAS notes stay in Obsidian.
 
-## Implemented in the consolidated 1.10.0 build, awaiting acceptance
+Closed in 1.13, with evidence in the dated records: large-folder opening, pinned
+archives, Photos album organization and archive folder navigation (agent work);
+AUD-05, 09, 10, 11, 12, 13, 14, 15, 17 and 21; and the agent-runnable parts of
+AUD-03, 18, 19, 20, 28 and 29. Their remaining hardware and people checks are
+listed once under Manual acceptance.
 
-- [x] Source-folder hierarchy in Sort, with full relative folder headers.
-- [x] Review preferences: advancement after a decision, default sort and group
-  dividers, and default Gallery/Grid view.
-- [x] Connected external drives and SD cards with capacity information and a
-  folder chooser starting on the selected drive.
+## 1.13.1 held release
 
-These changes are included in `/Applications/Louppe.app`, alongside RAW display,
-Apple Default / RAW 9 selection, and the early-user feedback prompt. The update
-remains unreleased. See [the review record](Docs/REVIEW_BUILD.md) for verification
-and remaining hardware acceptance. Configurable shortcuts remain deferred to
-preserve the established keyboard-safety rules.
+Three fixes from the 1.13 release review, each with tests: failed thumbnail-cache
+deletions are counted and backed off; Photos permission text is localized in all
+six languages (direct and Store builds); the XMP namespace-capacity error is
+localized. `VERSION` is 1.13.1 (16) with an open CHANGELOG entry.
 
-## Product improvements
-- [ ] Show the Fuji film simulation preset in photo metadata. Fuji camera previews
-  have the simulation baked into their pixels; the implemented RAW display mode
-  bypasses it through Apple rendering. Do not add a redundant simulation-removal
-  control or modify originals.
-- [ ] Extend media-format support where macOS capabilities allow it.
+**Hold.** Do not tag, notarize, publish or submit 1.13.1 while 1.13.0 (15) is
+Waiting for Review or In Review: a new Store submission would cancel or restart
+that review.
 
-## Technical hardening
+**Release steps after Apple approves 1.13.0** (follow [UPDATES.md](Docs/UPDATES.md),
+[APP_STORE.md](Docs/APP_STORE.md) and the [1.13 record](Docs/RELEASE_1.13_PREPARATION_2026-11-04.md)):
 
-- [ ] **Diagnose intermittent disposable scan-fixture failures.** The required
-  performance suite has occasionally raised `filesChangedDuringScan` or timed
-  out on a four-item rescan; unchanged reruns pass all 75 checks. Capture the
-  fixture and per-file identity transitions at failure before changing tests.
-  Keep production replacement checks and existing timeouts intact.
+1. Confirm App Store Connect shows 1.13.0 approved or released. On a clean `main`,
+   `git fetch origin`; `gh release list` shows v1.13.0 as Latest.
+2. Set the heading to `## 1.13.1 (16) — <date>`, commit, push fast-forward to
+   `origin`, and wait for green CI.
+3. Run the full suite, the window-raising suites (idle ≥ 300 s), the four install
+   gates and `Tests/run_performance_checks.sh` on that commit.
+4. `./build_app.sh --developer-id 'Developer ID Application: SAMO DANNI EOOD (P6F95J4ZPA)'`,
+   `./Scripts/notarize_release.sh --keychain-profile louppe-notary`,
+   `./Scripts/prepare_update_feed.sh`, `./Scripts/verify_release.sh --publishing`.
+   Copy the app, ZIP, notarization files and feed to
+   `dist/release-preparation/1.13.1-16-<date>/direct/`.
+5. `git tag -a v1.13.1 <commit> -m "Louppe 1.13.1 (16)"`, push the tag, then
+   `gh release create v1.13.1 <ZIP> --title "Louppe v1.13.1" --notes-file <notes> --verify-tag --latest`.
+   Commit and push `appcast.xml`. Rerun the Homebrew workflow if it loses the push
+   race with the feed commit. Check the public ZIP hash, feed bytes, both Sparkle
+   signatures and the latest-download redirect.
+6. Idle-gated, upgrade an isolated public 1.13.0 copy with the retained headless
+   Sparkle driver (`dist/release-preparation/1.13.0-15-2026-11-04/headless-update.swift`
+   and `run-idle-checks.sh`; update the version paths) and compare `Contents/`.
+7. Replace `/Applications/Louppe.app` with the released archive after the install
+   gates pass; quit Louppe by PID only if it is running; preserve preferences.
+8. In a detached checkout of the tag: `./build_app.sh --app-store`,
+   `./Scripts/verify_release.sh --app-store`, `./Scripts/package_app_store.sh
+   --application-identity 'Apple Distribution: SAMO DANNI EOOD (P6F95J4ZPA)'
+   --installer-identity '3rd Party Mac Developer Installer: SAMO DANNI EOOD (P6F95J4ZPA)'`.
+   Alex delivers the package in Transporter (Add Package → Deliver). Create
+   version 1.13.1 in App Store Connect, attach build 16, answer export compliance
+   (Apple system cryptography only), add What's New without Revolut/GitHub, submit.
+9. Write `Docs/RELEASE_1.13.1_PREPARATION_<date>.md` and update this backlog.
 
-- [ ] **RAW 9 compatibility acceptance.** Exercise real older/unsupported Macs,
-  unavailable model resources and failed downloads, and Fuji compressed/lossless
-  compressed RAFs. Confirm retry/default remedies, no stale pixels after decoder
-  changes, and intact originals. Current macOS 27 X-T50 uncompressed decoding and
-  regression checks passed; broader hardware/compression acceptance remains open.
+## Manual acceptance (needs hardware or Alex)
 
-- [ ] **AUD-05 — Reproduce the remaining ExFAT path-replacement boundary.**
-  Investigate path-based Move fallback and launch recovery on disposable ExFAT
-  media before changing compatibility or journal behavior. Standard macOS-volume
-  Move, Rename, Organize, and undo already bind parent descriptors; preserve the
-  ExFAT no-overwrite probe and its documented durability warning.
-- [ ] **AUD-21 — Modernize media probing and AV APIs.** Replace semaphore-based
-  probing with structured async work, and assess deprecated macOS 27 reader and
-  player-notification APIs. Preserve macOS 14 support, bounded decoder lanes,
-  real cancellation/reader-exit behavior, and existing playback regressions.
-- [ ] **AUD-18 — Expand real-volume and interruption verification.** Extend
-  filesystem fault injection and run disposable cases on case-sensitive APFS,
-  ExFAT, removable/network volumes, disconnect/remount, and lid-close or simulated
-  power-loss boundaries. Verify no overwrite, truthful durability, retained
-  recovery evidence, and safe undo/retry. Record which actual volume/interruption
-  cases were run; keep native UI acceptance under AUD-23/AUD-24 and release-mode
-  performance baselines under AUD-06/AUD-19.
+Agent-runnable work is done and recorded. Each item needs its environment or
+person; none counts as passed until run there. Owner: **Alex** unless noted.
 
-This backlog is the current source of truth for future work. Check each
-proposal against the current code and reproduce the issue before starting.
+### Hardware and environments
 
-## Audit follow-ups
+- [ ] **Physical storage.** SD-card and exFAT reconnect of pinned archives;
+  unplug during Copy/Organize; lid-close and power loss; network volumes; a slow
+  destination for Export preflight and Copy Stop; removable/network media for
+  Info EXIF reads; full-file recovery hashing on removable media
+  (AUD-03, 06, 10, 14, 15, 18).
+- [ ] **Sustained installed-app runs.** A large RAW folder (the October RawCamera
+  stall/crash did not reproduce in 3,328 test operations), a long session for live
+  thumbnail pruning, and battery vs AC energy (AUD-09, 29).
+- [ ] **Physical input and display.** Trackpad diagonal/momentum and touch, Dock
+  dragging at cold launch and with an open folder, rename-row and Welcome edge
+  dragging, physical frame pacing, SD-card preview softness, composited glass and
+  the two-display transition (AUD-28).
+- [ ] **Keyboards and assistive technology.** Custom shortcuts in a real shoot;
+  ISO/JIS/dead-key/IME input; VoiceOver walkthroughs of the Folders outline and
+  the lazy Export routing list.
+- [ ] **Compatibility.** Runtime on older macOS (14, 15, 26); RAW 9 on older or
+  unsupported Macs, missing resources, failed downloads and compressed Fuji RAFs;
+  the signed Store sandbox with stale/revoked grants and card reconnect (AUD-03).
+- [ ] **Photos organization runtime.** Multi-batch, cancellation, revocation and
+  process death on a real library, only with Alex's approval for library changes.
+- [ ] **RAW corpus.** A licensed multi-camera RAW/JPEG/profile corpus with
+  reference renders and sustained GPU/helper memory (AUD-19).
 
-Transferred from the [retired 29 September audit](Docs/Audits/2026-09-29/README.md).
-All 17 confirmed findings are implemented; [the implementation record](Docs/Audits/2026-09-29/implementation.md)
-retains tests and evidence. These are additional investigations, optimizations,
-and verification tasks, not reopened confirmed bugs. IDs remain stable when a
-completed item moves. Reproduce suspected failures and measure performance
-before choosing an implementation; preserve originals, identity, CAS, and journal
-contracts. Website publication belongs to its own `BACKLOG.md` (WEB-AUD-01).
+### People and accounts
 
-### Correctness investigations — start here
+- [ ] Back up the private Sparkle signing key and restore-test it.
+- [ ] Clean install and real culling workflow with a tester.
+- [ ] Code review by a collaborator.
+- [ ] The designer's final shared app/site brand asset.
+- [ ] External-editor XMP in Bridge, Lightroom Classic and darktable; separate
+  RAW/JPEG conflict/reload in Capture One. Packet/resolver tests pass.
+- [ ] Adobe Trust Center bulletins since October 2026; the page refuses automated
+  access (AUD-20).
+- [ ] Website dependency review. Owner: the website repository's release work (AUD-20).
 
-- [ ] **AUD-01 — Match session write/read size limits.** The reader caps snapshots
-  at 512 MiB, while encoding currently has no matching guard. Reproduce with an
-  injectable small limit, then refuse an oversized write before either destination
-  changes. Prior sidecar/backup bytes must survive; report a retryable failure
-  and keep dirty Close/Quit unsafe. No huge allocation is needed for the test.
-- [ ] **AUD-02 — Verify lazy JPEG enrichment after replacement.** Replace a
-  lightweight JPEG partner before Separate/Split and during EXIF loading. Confirm
-  whether new metadata can attach to the old scanned identity/ratings; if so,
-  add before/after identity validation and a Rescan remedy. Preserve file metadata
-  and prove unrelated replacement bytes are untouched.
-- [ ] **AUD-03 — Verify sandboxed recents and routing retry access.** Use a signed,
-  actually sandboxed App Store build: cold-launch bookmarks outside the container,
-  refresh stale bookmarks, reconnect a card, and repeat routing Review → Back →
-  Review → Copy after cancellation/failure. Reproduce before changing balanced
-  access-token ownership. Valid recents and chosen destinations must remain usable
-  for their intended lifetime; compile-only checks cannot close this task.
-- [ ] **AUD-04 — Cancel the final scan identity pass.** Bridge the existing cancel
-  flag into the second `validateScannedIdentities` pass after persistence read,
-  and check cancellation before entering it. A controlled cancellation must stop
-  further identity probes and prevent late scan results without weakening checks.
+### Distribution
 
-### Performance — measure before changing
+- [ ] **Apple review of 1.13.0 (15).** Submitted 4 November 2026; Waiting for
+  Review with automatic release. Respond to any review request, then run the
+  1.13.1 steps above. 1.12.0 went live on the Store on 22 October 2026.
+- [ ] **TestFlight — out of scope (Alex, 4 November 2026).** Every delivery shows
+  ITMS-90889: the bundle has no provisioning profile. Enabling TestFlight needs a
+  Mac App Store provisioning profile for `com.alexandermarkin.louppe` (team
+  P6F95J4ZPA) embedded as `Contents/embedded.provisionprofile` before signing,
+  `com.apple.application-identifier` and `com.apple.developer.team-identifier`
+  entitlements matching it, and `package_app_store.sh`/`verify_release.sh`
+  changes to accept exactly that profile (they refuse unexpected profiles today).
 
-- [ ] **AUD-06 — Reduce large-session structural and save-capture work.** Record
-  Release main-actor time and memory at 1k/10k/100k physical files for index rebuild,
-  metadata sort, filter/group, and save capture. Reuse unchanged ID/file maps for
-  sort-only changes; optimize other capture/rebuild costs where profiling justifies
-  it. Preserve prepared ordering, exact selection, shared metadata, and O(1) rating.
-- [ ] **AUD-07 — Make Capture Bursts metadata-only.** Present date groups without
-  waiting for duplicate hashes or visual decoding. Prove a burst-only request
-  performs no content hashing/decode; exact/similar review must still request its
-  own evidence, with the existing generation and cancellation guards.
-- [ ] **AUD-08 — Move expensive group construction off-main.** Measure initial
-  and sensitivity-change grouping at large counts, then background costly hash
-  bucket/union-find/date work. Only the current mode/sensitivity/generation may
-  publish; rapid changes must cancel or supersede obsolete work and retain caches.
-- [ ] **AUD-09 — Maintain the disk thumbnail budget during a long visit.** Add
-  coalesced utility-queue accounting/maintenance after enough writes or elapsed
-  time. Exercise a small injected size/age budget, including same-day launch;
-  pruning must reach its target without a directory walk on every thumbnail,
-  blocking scrolling, or compromising trustworthy cached pixels.
-- [ ] **AUD-10 — Bound abandoned Info metadata reads.** Measure cold removable
-  or network reads after the current dwell. If material, share a bounded/coalesced
-  worker keyed by content revision and cancel requests that lose interest.
-  Rapid navigation must not accumulate readers or publish/cache stale metadata;
-  retain the implemented source-identity checks.
-- [ ] **AUD-11 — Avoid unnecessary RAW fit-source work.** Measure cold RAW rapid
-  navigation and scale measurement. Use scan-cached oriented dimensions or a dwell
-  for uncached recipes when useful, and cancel uninterested source waiters.
-  Preserve persistent 100% inspection, the two-operation tile lane, and 128 MiB
-  decoded-tile limit; do not replace lazy/tiled work with whole-image bitmaps.
-- [ ] **AUD-12 — Make routing confirmation lazy per file.** Flatten route and
-  unmatched file rows into individually lazy elements. Verify a tens-of-thousands
-  fixture creates only the needed viewport rows while every exact filename/path
-  remains available; never truncate the safety-critical preview.
-- [ ] **AUD-13 — Measure and remove redundant Copy flushes.** Profile small-file
-  batches on local/removable destinations. Consolidate only flushes demonstrably
-  duplicated by the held-descriptor copier/publisher and worker. Preserve
-  write → sync → stage → publish → directory-sync/checkpoint order, injected copier
-  behavior, and post-side-effect recovery before accepting a speedup.
-- [ ] **AUD-14 — Move export destination preflight off-main.** Measure per-source
-  volume queries on large/remote selections, then freeze inputs and validate on a
-  worker. Keep chosen-folder access alive, expose progress/cancellation, and pass
-  the exact validated binding into the worker; no early journal/media mutation.
-- [ ] **AUD-15 — Improve feedback/cancellation inside large copies.** Investigate
-  `fcopyfile` callbacks or bounded chunks for a single large video. Show actual
-  byte progress and reach a safe cancel boundary without waiting for the whole
-  file. Retain only identity-proven owned partials and existing rollback/remount
-  rules; demonstrate the behavior on disposable files before changing the copier.
-- [ ] **AUD-16 — Measure compact session JSON.** Compare actual Foundation encoder
-  bytes and save/CAS costs at 1k/10k/100k entries. Confirm whether human-editable
-  formatting is needed before dropping pretty printing. Preserve sorted-key
-  reproducibility, schema/lineage compatibility, and exact byte-CAS semantics.
-- [ ] **AUD-17 — Budget bulk undo by retained bytes.** Measure repeated Select All
-  decisions/Clear All at large counts. If the 500-step cap retains excessive
-  snapshots, add a byte-based limit with clear eviction. Normal per-photo undo,
-  independent ratings, and journaled file-operation undo must remain correct.
+## Agent work
 
-### Further verification
+- [ ] **AUD-06 — Remaining projection costs.** Date-grouped projection and filter
+  toggles take ~100–130 ms at 100k; the content-check queue walk is ~58% of the
+  363 ms Select All → decision. Measure first; preserve serial proofs, ties,
+  physical/recovery maps, selection and saves.
+- [ ] **Toolchain.** Move packaging and the speed runner to SwiftPM's default
+  backend: handle its release resource-bundle layout (`Contents/Info.plist`) and
+  folder-derived bundle identifier, then retire `--build-system native`.
+- [ ] **AUD-20 — Expat 2.10.0.** Adopt it in the next dependency refresh (its four
+  CVEs are unreachable in Louppe), with the vendored-file and license checks.
 
-- [ ] **AUD-19 — Establish a camera/color and GPU-memory baseline.** Build a small,
-  licensed real RAW/JPEG/color-profile corpus with orientation/transparency cases.
-  Compare previews, RAW/histogram/clipping, and 100% tiles against known reference
-  renders; measure Release GPU/RSS during rapid navigation and zoom. Record actual
-  coverage and verify memory/decoder bounds. Synthetic replacement tests already
-  pass; they do not substitute for real camera-decoder/color acceptance.
-- [ ] **AUD-20 — Inventory dependency/security coverage.** Record exact pinned
-  Sparkle, Expat, Adobe XMP, and relevant website dependency versions, vendor patches,
-  licenses, and current official advisories. Investigate applicable exposures and
-  extend bounded hostile-XMP tests as needed. Keep the original vendor-review scope
-  limits explicit; inventory/parser tests do not prove every vendored line safe.
+## Later and research
 
-ExFAT/interruption testing, AV migration, native accessibility, and display/provider
-acceptance are carried by AUD-05/AUD-18, AUD-21, and AUD-23/AUD-24 above.
+These are deferred ideas, not committed implementation scope for 1.13.
 
-## Later / research
-
-- [ ] SD-card ingest with naming templates and review while copying.
-- [ ] Preview-first EXIF rule routing or auto-culling. It must never silently
-  move originals.
-- [ ] Focus peaking and detail/edge inspection modes.
-- [ ] Side-by-side comparison with synchronized zoom.
+- [ ] **Photo location lookup — Aymeric feedback, 20 October 2026.** Add an
+  explicit Open in Maps action to valid GPS coordinates in Info. Do not look up
+  locations before the click. Deferred from 1.13 by Alex on 29 October 2026;
+  an embedded shoot map remains a separate idea.
+- [ ] **Archive gateway — Alex, 25 October 2026.** Make Louppe a familiar front
+  door to existing media, with culling as one activity. Product ideas below are
+  deferred; large-folder performance and remembered/pinned archives shipped in 1.13.
+  - **Offline browsing.** Retain budgeted thumbnails/metadata for disconnected
+    archives, clearly distinguish unavailable originals, and identify the drive
+    needed for full detail or export.
+  - **Navigation through time.** Move from years to months to shoots to images;
+    retain folder navigation and stable browsing anchors.
+  - **Return to meaningful places.** Saved searches and shoot shortcuts extend
+    the remembered browsing positions included in the archive foundation.
+  - **Collections across folders.** Gather media for prints, portfolios or other
+    projects without moving or duplicating originals.
+  - **Rediscovery.** Explore older favorites, overlooked shoots and unreviewed
+    media using existing dates/decisions first; semantic search is later research.
+  - **Editor and file handoffs.** Make revealing originals, opening an editor and
+    exporting a rediscovered selection straightforward; reuse existing actions.
+- [ ] **Automatic blur detection.** Experiment with measured relative softness
+  within bursts and verified detail crops. Flag uncertainty for human review,
+  including low-texture and intentional-blur cases. Early-user feedback,
+  11 October 2026; the 1.12 review explicitly deferred this research.
+- [ ] **Additional media formats.** Identify a specific unsupported format and
+  representative licensed fixtures before expanding support where macOS allows.
+  JPEG XL, AVIF, and WebP decode routes already have regression fixtures.
+- [ ] **Additional rename recipes.** Obtain Alex's desired ExifRenamer filename
+  pattern before adding recipe controls. Keep exact previews, family/collision
+  checks, and journaled undo.
+- [ ] **Embedded shoot map.** Consider only after demand justifies the interface
+  and resource costs; the explicit GPS-to-Maps action is the location lookup above.
+- [ ] Portable recovery beyond the same relative filename: copied-and-renamed
+  or reorganized copies need explicit remapping/verified content discovery.
+  Physical originals already follow unique disk identity. Design recovery-history
+  retention limits without losing unresolved decisions or the saved generation.
+- [ ] SD-card ingest, naming templates, and review during copy.
+- [ ] Preview-first EXIF routing/auto-culling; never silently move originals.
+- [ ] Arbitrary metadata filters beyond Fuji film simulation. Design supported
+  tag discovery, typed value matching and bounded indexing; avoid repeated
+  per-file reads when changing filters. Aymeric feedback, 20 October 2026.
+- [ ] Focus peaking and detail/edge inspection.
+- [ ] Inline burst comparison with matched crops/synchronized zoom in the existing
+  Gallery/Info surfaces; avoid new screens or user-facing modes by default.
+- [ ] Scrollable subject/detail inspection in Info: user-selected region first,
+  then investigate local face/subject crops. Preserve revision and pixel mapping.
+- [ ] Video/audio Quality Cues with timestamped evidence and seek-to-interval in
+  existing Gallery. Report sampling/track/channel coverage; reuse bounded frame
+  and PCM work. Collect audio overload evidence before waveform sanitization.
+- [ ] ML/AI Quality Cues research — 12 October 2026. Evaluate local pairwise
+  preferences, Vision feature/face/aesthetics evidence, and optional OpenAI
+  finalist comparison. Recheck models/pricing/privacy and validate usefulness;
+  no models, cloud/API calls, uploads or automatic ratings in the first prototype.
 - [ ] Scenes / chronological-story review.
 - [ ] iPad Grid companion.
-- [ ] Optional embedded metadata in exported JPEG copies only, with a separate
-  safety design; never alter originals.
-
-- [ ] **AUD-22 — Define capture-date provenance for bursts.** Decide whether
-  filesystem creation/import dates should count as capture evidence when EXIF is
-  missing. Test mixed EXIF/fallback fixtures and retain provenance or adjust copy
-  if needed; do not describe inferred groups as certain capture sequences.
+- [ ] Embedded metadata in exported JPEG copies only, with a separate safety design.
+- [ ] **UI review follow-ups — post-1.13, Alex, 4 November 2026.** From the
+  blind screenshot review of the 1.13 UI polish; not for 1.13.
+  - **Decision filter counts.** Show All/Undecided/Yes/No totals with the
+    segmented control. Segments are equal width, so counts inside labels overflow
+    the 340-point Filter panel at large totals; a row aligned under the segments
+    fits Hindi but must follow NSSegmentedControl's app-level RTL mirroring.
+  - **Denser Browser filmstrip.** About 11 frames instead of 8 (for example
+    102 × 80 slots). Check that portrait tiles still fit star, label and decision
+    badges, and keep the 122-point column and 36-point targets.
+  - **Optional neutral-grey photo surround in light mode.** Reduces glare when
+    judging exposure. Reopens the decision below to keep one neutral photo
+    background; decide that first.
+  - **Rejected:** stars and color under the thumbnail. It conflicts with the
+    contact-sheet Grid rows, where photos rest on their filenames.
 
 ## Decisions already made
 
-- Custom photo backgrounds are not planned: they conflict with Louppe's
-  single neutral review background.
-- Capture One is not a standalone task. Current XMP export already supports
-  Capture One interoperability; further integration needs a separately scoped
-  proposal.
+- Keep one neutral photo background; custom backgrounds are not planned.
+- XMP export supports Capture One. Further integration needs a separate proposal.

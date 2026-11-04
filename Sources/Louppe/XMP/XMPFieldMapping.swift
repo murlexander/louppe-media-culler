@@ -16,7 +16,7 @@ enum XMPFieldMappingError: LocalizedError, Equatable {
              .propertyMissing(let message):
             return message
         case .ownershipConflict(let message):
-            return "XMP ownership conflict: \(message)"
+            return L10n.text("XMP ownership conflict: \(message)")
         }
     }
 }
@@ -77,13 +77,13 @@ enum XMPFieldMapping {
     ) throws -> Data {
         if let packet, packet.isEmpty {
             throw XMPFieldMappingError.invalidPacket(
-                "An existing XMP packet is empty and cannot be merged safely."
+                L10n.text("An existing XMP packet is empty and cannot be merged safely.")
             )
         }
         let input = packet ?? Data()
         guard input.count <= maximumPacketBytes else {
             throw XMPFieldMappingError.invalidPacket(
-                "The XMP packet exceeds Louppe's 64 MiB safety limit."
+                L10n.text("The XMP packet exceeds Louppe's 64 MiB safety limit.")
             )
         }
 
@@ -119,7 +119,7 @@ enum XMPFieldMapping {
     ) throws {
         guard !packet.isEmpty, packet.count <= maximumPacketBytes else {
             throw XMPFieldMappingError.invalidPacket(
-                "The XMP packet is empty or exceeds Louppe's 64 MiB safety limit."
+                L10n.text("The XMP packet is empty or exceeds Louppe's 64 MiB safety limit.")
             )
         }
         try withBridgeMetadata(metadata) { bridgeMetadata in
@@ -215,7 +215,7 @@ enum XMPFieldMapping {
     private static func errorText(
         _ pointer: UnsafeMutablePointer<CChar>?
     ) -> String {
-        pointer.map { String(cString: $0) } ?? "Unknown XMPCore failure."
+        pointer.map { String(cString: $0) } ?? L10n.text("Unknown XMPCore failure.")
     }
 
     private static func mappedError(

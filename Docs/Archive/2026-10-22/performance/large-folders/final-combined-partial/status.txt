@@ -1,0 +1,11 @@
+The combined optimized runner ended with signal 11 inside RawCamera during
+additional opening-stage RAW stress. It is not a passing runner.
+
+Ten tests completed before the crash. Their saved JSON reports, including
+RAW+JPEG first-use, are retained. Unfinished scan/session/JPEG opening tests
+passed in a separate six-test run.
+
+Use final-isolated and original-mounted-final for fresh-process mounted memory
+comparisons. Do not compare their RSS against this combined process, which had
+already run RAW opening and other suites. The isolated sampler also explicitly
+starts before navigation and excludes the synchronous wheel correctness gate.

@@ -1,0 +1,29 @@
+[0/1] Planning build
+Building for production...
+[0/6] Write sources
+[1/6] Write swift-version--58304C5D6DBC2206.txt
+[3/7] Compiling Louppe AppBuildInfo.swift
+[3/7] Write Objects.LinkFileList
+[4/7] Linking Louppe
+[6/8] Compiling LouppeTests AccessibilityTests.swift
+[7/9] Compiling LouppePackageTests runner.swift
+[7/9] Write Objects.LinkFileList
+[8/9] Linking LouppePackageTests
+Build complete! (112.86s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-12 10:47:33.036 PM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-12 10:47:33.044 PM.
+Test Suite 'LouppeSpeedRAWTests' started at 2026-10-12 10:47:33.044 PM.
+Test Case '-[LouppeTests.LouppeSpeedRAWTests testOptInRealRAWPreviewAndHistogram]' started.
+Test Case '-[LouppeTests.LouppeSpeedRAWTests testOptInRealRAWPreviewAndHistogram]' passed (12.998 seconds).
+SPEED raw.fast-preview.320px n=1 median=22.137ms p95=25.664ms
+SPEED raw.apple-default.preview.1024px n=1 median=179.406ms p95=236.691ms
+SPEED raw.apple-default.preview.4096px n=1 median=241.829ms p95=258.140ms
+SPEED raw.apple-default.histogram.dwell-700ms n=1 median=885.843ms p95=929.870ms
+SPEED raw.apple-default.histogram.dwell-0ms n=1 median=163.652ms p95=170.444ms
+Test Suite 'LouppeSpeedRAWTests' passed at 2026-10-12 10:47:46.043 PM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 12.998 (12.998) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-12 10:47:46.043 PM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 12.998 (12.998) seconds
+Test Suite 'Selected tests' passed at 2026-10-12 10:47:46.043 PM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 12.998 (13.006) seconds

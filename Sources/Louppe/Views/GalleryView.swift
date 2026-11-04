@@ -8,12 +8,6 @@ struct GalleryView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            if store.showBrowser {
-                BrowserView(store: store)
-                    .frame(width: BrowserView.width)
-                    .background(Color.appBackground)
-                    .transition(.move(edge: .leading))
-            }
 
             ZStack {
                 Color.appBackground
@@ -28,16 +22,22 @@ struct GalleryView: View {
                         systemImage: "rectangle.3.group",
                         description: Text(store.groupedReviewEmptyDescription)
                     )
+                } else if store.visibleIndices.isEmpty && !store.archiveSelectedFolderID.isEmpty
+                            && (!store.filter.isActive || store.archiveScopeCount == 0) {
+                    // An empty folder stays empty without filters; don't suggest clearing them.
+                    ArchiveFolderEmptyView(store: store)
                 } else if store.visibleIndices.isEmpty && store.filter.isActive {
                     ContentUnavailableView {
-                        Label("No items match the filter", systemImage: "line.3.horizontal.decrease.circle")
+                        Label(L10n.text("No items match the filter"), systemImage: "line.3.horizontal.decrease.circle")
                     } description: {
-                        Text("Try different choices or clear the filters to see media again.")
+                        Text(L10n.text("Change or clear filters to show media."))
                     } actions: {
-                        Button("Clear Filters") { store.resetFilter() }
+                        Button(L10n.text("Clear Filters")) { store.resetFilter() }
                     }
                 } else if let item = store.currentItem {
-                    if item.isText {
+                    if let reference = item.primaryFile.photosMedia {
+                        PhotosGalleryView(store: store, item: item, reference: reference)
+                    } else if item.isText {
                         TextPreviewView(item: item)
                             .id(item.contentRevision)
                     } else if item.isVideo {
@@ -85,9 +85,30 @@ struct GalleryView: View {
                             store.fullImageLoads += loading ? 1 : -1
                         }
                     }
+                } else if !store.visibleIndices.isEmpty {
+                    ContentUnavailableView {
+                        Label(L10n.text("Choose a matching item"), systemImage: "photo")
+                    } description: {
+                        Text(L10n.text("Checks found matching photos. Select one to continue reviewing."))
+                    } actions: {
+                        Button(L10n.text("Make Current")) {
+                            if let first = store.visibleIndices.first { store.setIndex(first) }
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .overlay(alignment: .bottom) {
+                if !store.visibleIndices.isEmpty,
+                   let item = store.currentItem,
+                   item.supportsPhotoInspection {
+                    PhotoZoomControl(store: store)
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 16)
+                }
+            }
+            .clipped()
         }
         .background(SessionRenderMarker(kind: .gallery))
     }

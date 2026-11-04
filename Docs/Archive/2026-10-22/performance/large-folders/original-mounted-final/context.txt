@@ -1,0 +1,12 @@
+Original production snapshot: git archive 87370f6.
+All Sources entries were checked: the only difference is the inert DEBUG
+ThumbnailRenderMarker needed for visible matching-revision pixel evidence.
+
+The mounted harness matches the candidate except native-only host metrics.
+Both set store.viewMode to match the mounted surface, start the sampler before
+navigation, and exclude synchronous wheel tracking from navigation-gap samples.
+
+Full Xcode, SwiftPM native backend, release -DDEBUG, one warmup plus three
+measured samples, 1k/10k generated JPEGs, warm filesystem. Process RSS includes
+runtime and caches. Scheduling gaps can include contiguous benchmark cycles;
+they are not individual frame latency measurements.

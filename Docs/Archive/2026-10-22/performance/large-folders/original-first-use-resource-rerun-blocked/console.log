@@ -1,0 +1,16 @@
+[0/1] Planning build
+Building for production...
+[0/4] Write sources
+[1/4] Write swift-version--58304C5D6DBC2206.txt
+[3/4] Compiling LouppeTests AccessibilityTests.swift
+[4/6] Compiling LouppePackageTests runner.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking LouppePackageTests
+Build complete! (46.22s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-22 4:06:37.724 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-22 4:06:37.732 AM.
+Test Suite 'LouppeSpeedFirstUseTests' started at 2026-10-22 4:06:37.732 AM.
+Test Case '-[LouppeTests.LouppeSpeedFirstUseTests testMountedOpeningFirstUsefulPixelsAndFullReadiness]' started.
+Note: Some test targets reported failures:
+  - LouppePackageTests (XCTest)

@@ -1,4 +1,5 @@
 import AppKit
+import DiskArbitration
 import SwiftUI
 import XCTest
 @testable import Louppe
@@ -16,6 +17,72 @@ final class ConnectedDrivesTests: XCTestCase {
         XCTAssertFalse(eligible(local: nil, internal: false, removable: true, transport: "USB"))
         XCTAssertFalse(eligible(internal: nil, removable: nil, transport: "USB"))
         XCTAssertFalse(eligible(internal: false, removable: true, transport: nil))
+    }
+
+    func testDiskArbitrationIdentityUsesMountedVolumeAndMediaUUIDs() throws {
+        let mount = URL(fileURLWithPath: "/Volumes/Camera Card")
+        let volume = try XCTUnwrap(CFUUIDCreate(kCFAllocatorDefault))
+        let media = try XCTUnwrap(CFUUIDCreate(kCFAllocatorDefault))
+        let identity = try XCTUnwrap(ConnectedDrive.ID.diskArbitrationIdentity(
+            description: [
+                kDADiskDescriptionVolumePathKey as String: mount,
+                kDADiskDescriptionVolumeUUIDKey as String: volume,
+                kDADiskDescriptionMediaUUIDKey as String: media,
+            ], bsdName: "disk4s1", enumeratedURL: mount
+        ))
+        XCTAssertEqual(identity.volumeUUID, CFUUIDCreateString(kCFAllocatorDefault, volume) as String?)
+        XCTAssertEqual(identity.mediaUUID, CFUUIDCreateString(kCFAllocatorDefault, media) as String?)
+        XCTAssertEqual(identity.bsdName, "disk4s1")
+        XCTAssertEqual(identity.mountURL, mount)
+    }
+
+    func testDiskArbitrationIdentityAcceptsOneKnownUUIDAndWholeMediaFallback() throws {
+        let mount = URL(fileURLWithPath: "/Volumes/Camera Card")
+        let uuid = try XCTUnwrap(CFUUIDCreate(kCFAllocatorDefault))
+        let mounted = [kDADiskDescriptionVolumePathKey as String: mount] as [String: Any]
+        let volumeOnly = ConnectedDrive.ID.diskArbitrationIdentity(
+            description: mounted.merging([kDADiskDescriptionVolumeUUIDKey as String: uuid]) { _, new in new },
+            bsdName: "disk4s1", enumeratedURL: mount
+        )
+        XCTAssertNotNil(volumeOnly)
+        XCTAssertNil(volumeOnly?.mediaUUID)
+        let mediaOnly = ConnectedDrive.ID.diskArbitrationIdentity(
+            description: mounted,
+            wholeDescription: [kDADiskDescriptionMediaUUIDKey as String: uuid],
+            bsdName: "disk4s1", enumeratedURL: mount
+        )
+        XCTAssertNotNil(mediaOnly)
+        XCTAssertNil(mediaOnly?.volumeUUID)
+        XCTAssertEqual(mediaOnly?.mediaUUID, CFUUIDCreateString(kCFAllocatorDefault, uuid) as String?)
+    }
+
+    func testDiskArbitrationIdentityRejectsMissingInvalidOrUnmountedMetadata() throws {
+        let mount = URL(fileURLWithPath: "/Volumes/Camera Card")
+        let uuid = try XCTUnwrap(CFUUIDCreate(kCFAllocatorDefault))
+        var description: [String: Any] = [kDADiskDescriptionVolumePathKey as String: mount]
+        XCTAssertNil(ConnectedDrive.ID.diskArbitrationIdentity(
+            description: description, bsdName: "disk4s1", enumeratedURL: mount
+        ))
+        description[kDADiskDescriptionVolumeUUIDKey as String] = "not a DA UUID"
+        XCTAssertNil(ConnectedDrive.ID.diskArbitrationIdentity(
+            description: description, bsdName: "disk4s1", enumeratedURL: mount
+        ))
+        description[kDADiskDescriptionVolumeUUIDKey as String] = uuid
+        XCTAssertNil(ConnectedDrive.ID.diskArbitrationIdentity(
+            description: description, bsdName: "", enumeratedURL: mount
+        ))
+        description[kDADiskDescriptionVolumePathKey as String] = nil
+        XCTAssertNil(ConnectedDrive.ID.diskArbitrationIdentity(
+            description: description, bsdName: "disk4s1", enumeratedURL: mount
+        ))
+        description[kDADiskDescriptionVolumePathKey as String] = URL(fileURLWithPath: "/Volumes/Replacement")
+        XCTAssertNil(ConnectedDrive.ID.diskArbitrationIdentity(
+            description: description, bsdName: "disk4s1", enumeratedURL: mount
+        ))
+        description[kDADiskDescriptionVolumePathKey as String] = URL(string: "https://example.invalid/card")!
+        XCTAssertNil(ConnectedDrive.ID.diskArbitrationIdentity(
+            description: description, bsdName: "disk4s1", enumeratedURL: mount
+        ))
     }
 
     func testCapacityKeepsMissingInvalidAndZeroValuesDistinct() {
@@ -36,7 +103,7 @@ final class ConnectedDrivesTests: XCTestCase {
             ConnectedDrive(
                 id: .init(
                     volumeUUID: "fixture-volume-\(index)",
-                    device: UInt64(20 + index), rootInode: 2,
+                    mediaUUID: "fixture-media-\(index)",
                     bsdName: "disk\(20 + index)s1",
                     mountURL: URL(fileURLWithPath: "/Volumes/Card-\(index)")
                 ),
@@ -100,6 +167,25 @@ final class ConnectedDrivesTests: XCTestCase {
         let model = ConnectedDrivesStore { await reader.read() }
         let oldCard = drive(uuid: "old-card")
         let replacement = drive(uuid: "new-card")
+        model.start()
+        defer { model.stop() }
+        try await respond(reader, request: 0, with: [oldCard])
+        try await eventually { model.drives == [oldCard] }
+        let open = Task { await model.directoryForOpening(oldCard) }
+        try await respond(reader, request: 1, with: [replacement])
+        let directory = await open.value
+        XCTAssertNil(directory)
+        XCTAssertEqual(model.drives, [replacement])
+        XCTAssertNotNil(model.statusMessage)
+    }
+
+    func testReplacementMediaWithSameVolumeUUIDBSDNameAndPathRejectsStaleClick() async throws {
+        let reader = ControlledDriveReader()
+        let model = ConnectedDrivesStore { await reader.read() }
+        let oldCard = drive(uuid: "cloned-volume", mediaUUID: "old-media")
+        let replacement = drive(uuid: "cloned-volume", mediaUUID: "new-media")
+        XCTAssertEqual(oldCard.id.bsdName, replacement.id.bsdName)
+        XCTAssertEqual(oldCard.url, replacement.url)
         model.start()
         defer { model.stop() }
         try await respond(reader, request: 0, with: [oldCard])
@@ -249,11 +335,11 @@ final class ConnectedDrivesTests: XCTestCase {
     }
 
     private func drive(
-        uuid: String = "camera-card", name: String = "Camera Card",
-        available: Int64? = 32_000_000_000, total: Int64? = 128_000_000_000
+        uuid: String = "camera-card", mediaUUID: String? = "camera-media",
+        name: String = "Camera Card",        available: Int64? = 32_000_000_000, total: Int64? = 128_000_000_000
     ) -> ConnectedDrive {
         ConnectedDrive(
-            id: .init(volumeUUID: uuid, device: 10, rootInode: 2,
+            id: .init(volumeUUID: uuid, mediaUUID: mediaUUID,
                       bsdName: "disk4s1", mountURL: URL(fileURLWithPath: "/Volumes/Camera Card")),
             name: name, availableBytes: available, totalBytes: total, isRemovable: true
         )

@@ -609,6 +609,158 @@ final class SessionDurabilityTests: XCTestCase {
         XCTAssertNil(store.persistenceWarning)
     }
 
+    func testOversizedSnapshotPreservesSavedCopiesAndSameSequenceRetry() async throws {
+        let fixture = try makeFixture(named: "OversizedSnapshot")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let seed = SessionPersistence(backupDirectory: fixture.backup)
+        var session = currentSession(
+            folder: fixture.photos,
+            file: fixture.photos.appendingPathComponent("A.png"),
+            rating: .yes
+        )
+        let initialResult = await seed.save(session, for: fixture.photos, sequence: 1)
+        XCTAssertEqual(initialResult, .savedToSidecar)
+        let sidecar = SessionPersistence.sidecarURL(for: fixture.photos)
+        let initialSidecar = try Data(contentsOf: sidecar)
+        let backup = try XCTUnwrap(FileManager.default.contentsOfDirectory(
+            at: fixture.backup, includingPropertiesForKeys: nil).first)
+        let initialBackup = try Data(contentsOf: backup)
+        let limit = initialSidecar.count + 32
+        let lockReached = DispatchSemaphore(value: 0)
+        let persistence = SessionPersistence(
+            backupDirectory: fixture.backup,
+            maximumSnapshotBytesForTesting: limit,
+            beforeSaveLockForTesting: { lockReached.signal() }
+        )
+        let loaded = await persistence.read(for: fixture.photos)
+        let access = try XCTUnwrap(loaded.access)
+        var oversized = session
+        oversized.entries[0].filename = String(repeating: "A", count: limit) + ".png"
+        let rejected = await persistence.save(
+            oversized, for: fixture.photos, sequence: 2, access: access
+        )
+        XCTAssertEqual(rejected, .failed(.init(sidecar: .snapshotTooLarge, backup: .snapshotTooLarge)))
+        XCTAssertFalse(rejected.canDiscardInMemoryState)
+        XCTAssertEqual(lockReached.wait(timeout: .now()), .timedOut,
+            "an oversized snapshot must be rejected before starting file I/O")
+        XCTAssertEqual(try Data(contentsOf: sidecar), initialSidecar)
+        XCTAssertEqual(try Data(contentsOf: backup), initialBackup)
+        let readable = await persistence.read(for: fixture.photos)
+        XCTAssertEqual(readable.session?.entries.first?.rating, Rating.yes.rawValue)
+        XCTAssertNil(readable.blockingMessage)
+
+        // Rejection must consume neither this save sequence nor generation.
+        session.entries[0].rating = Rating.no.rawValue
+        let retry = await persistence.save(
+            session, for: fixture.photos, sequence: 2, access: access
+        )
+        XCTAssertEqual(retry, .savedToSidecar)
+        let retriedSnapshot = try readSession(at: sidecar)
+        XCTAssertEqual(retriedSnapshot.snapshotGeneration, 2)
+        XCTAssertEqual(retriedSnapshot.entries.first?.rating, Rating.no.rawValue)
+    }
+
+    func testSnapshotAtExactByteLimitIsWritableAndReadable() async throws {
+        let fixture = try makeFixture(named: "ExactSnapshotByteLimit")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let session = currentSession(
+            folder: fixture.photos,
+            file: fixture.photos.appendingPathComponent("A.png"),
+            rating: .yes
+        )
+        var expected = session
+        expected.snapshotGeneration = 1
+        let limit = try SessionPersistence.encodeSnapshot(expected).count
+        let persistence = SessionPersistence(
+            backupDirectory: fixture.backup,
+            maximumSnapshotBytesForTesting: limit
+        )
+        let saved = await persistence.save(session, for: fixture.photos, sequence: 1)
+        XCTAssertEqual(saved, .savedToSidecar)
+        let sidecar = SessionPersistence.sidecarURL(for: fixture.photos)
+        XCTAssertEqual(try Data(contentsOf: sidecar).count, limit)
+        let loaded = await persistence.read(for: fixture.photos)
+        XCTAssertEqual(loaded.session?.snapshotGeneration, 1)
+        XCTAssertNil(loaded.blockingMessage)
+
+        let tighterReader = SessionPersistence(
+            backupDirectory: fixture.backup,
+            maximumSnapshotBytesForTesting: limit - 1
+        )
+        let rejected = await tighterReader.read(for: fixture.photos)
+        XCTAssertNil(rejected.session, "the same byte limit must apply to reads")
+        XCTAssertNotNil(rejected.blockingMessage)
+    }
+
+    func testOversizedDirtySessionKeepsRetryAndRefusesCloseAndQuit() async throws {
+        let fixture = try makeFixture(named: "OversizedDirtySession")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let seedStore = SessionStore(
+            persistence: SessionPersistence(backupDirectory: fixture.backup),
+            saveTrailingDelay: 10, saveMaximumDelay: 20
+        )
+        seedStore.openFolder(fixture.photos)
+        try await waitForReadySession(seedStore)
+        _ = try await waitForSidecar(in: fixture.photos) {
+            $0.entries.first?.rating == Rating.undecided.rawValue
+        }
+        let initialIdle = await seedStore.waitForPersistenceIdleForTesting()
+        XCTAssertTrue(initialIdle)
+        let sidecar = SessionPersistence.sidecarURL(for: fixture.photos)
+        let initialSidecar = try Data(contentsOf: sidecar)
+        let backup = try XCTUnwrap(FileManager.default.contentsOfDirectory(
+            at: fixture.backup, includingPropertiesForKeys: nil).first)
+        let initialBackup = try Data(contentsOf: backup)
+        seedStore.closeSession()
+        for _ in 0..<200 {
+            if case .welcome = seedStore.phase { break }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        guard case .welcome = seedStore.phase else { return XCTFail("seed session did not close") }
+        let store = SessionStore(
+            persistence: SessionPersistence(
+                backupDirectory: fixture.backup,
+                maximumSnapshotBytesForTesting: initialSidecar.count
+            ),
+            saveTrailingDelay: 10, saveMaximumDelay: 20
+        )
+        store.openFolder(fixture.photos)
+        try await waitForReadySession(store)
+        let openedIdle = await store.waitForPersistenceIdleForTesting()
+        XCTAssertTrue(openedIdle)
+        let baselineSidecar = try Data(contentsOf: sidecar)
+        let baselineBackup = try Data(contentsOf: backup)
+        XCTAssertEqual(baselineSidecar.count, initialSidecar.count)
+        XCTAssertEqual(baselineBackup.count, initialBackup.count)
+        store.rate(.yes, at: 0)
+        store.closeSession()
+        for _ in 0..<200 {
+            if !store.isSessionTransitioning { break }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertFalse(store.isSessionTransitioning)
+        guard case .ready = store.phase else { return XCTFail("oversized save discarded dirty ratings on Close") }
+        XCTAssertEqual(store.items.first?.rating, .yes)
+        XCTAssertTrue(store.canRetryPersistence)
+        XCTAssertTrue(store.persistenceWarning?.contains("too large") == true)
+        XCTAssertNotEqual(store.sessionSaveStatus, "Saved")
+        XCTAssertEqual(try Data(contentsOf: sidecar), baselineSidecar)
+        XCTAssertEqual(try Data(contentsOf: backup), baselineBackup)
+
+        store.retryPersistence()
+        let retriedIdle = await store.waitForPersistenceIdleForTesting()
+        XCTAssertTrue(retriedIdle)
+        XCTAssertTrue(store.canRetryPersistence)
+        store.beginTerminationPreparation()
+        let quitResult = await store.saveSessionForTermination()
+        XCTAssertEqual(quitResult, .failed(.init(sidecar: .snapshotTooLarge, backup: .snapshotTooLarge)))
+        XCTAssertEqual(quitResult?.canDiscardInMemoryState, false)
+        XCTAssertEqual(store.items.first?.rating, .yes)
+        XCTAssertEqual(try Data(contentsOf: sidecar), baselineSidecar)
+        XCTAssertEqual(try Data(contentsOf: backup), baselineBackup)
+        store.cancelTerminationPreparation()
+    }
+
     func testInvalidCurrentSnapshotCannotReplaceValidSidecar() async throws {
         let fixture = try makeFixture(named: "InvalidWriteContract")
         defer { try? FileManager.default.removeItem(at: fixture.root) }
@@ -728,7 +880,7 @@ final class SessionDurabilityTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: sidecar), lastKnownGood)
     }
 
-    func testSamePathReplacementBlocksScanWithoutRewritingSavedRatings() async throws {
+    func testSamePathReplacementOpensAndPreservesSavedRatingsInRecovery() async throws {
         let fixture = try makeFixture(named: "ReplacementConflict")
         defer { try? FileManager.default.removeItem(at: fixture.root) }
 
@@ -782,32 +934,22 @@ final class SessionDurabilityTests: XCTestCase {
             persistence: SessionPersistence(backupDirectory: fixture.backup)
         )
         store.openFolder(fixture.photos)
-        try await waitForIdentityConflict(in: store)
-
-        XCTAssertTrue(store.items.isEmpty)
-        XCTAssertTrue(
-            store.scanError?.contains("not the same physical file") == true
-        )
-        XCTAssertTrue(store.canOpenIdentityConflictAsNewSession)
-        XCTAssertEqual(try Data(contentsOf: sidecar), savedSidecar)
-        XCTAssertEqual(try Data(contentsOf: backupFile), savedBackup)
-
-        store.openIdentityConflictAsNewSession()
         try await waitForReadySession(store)
+        XCTAssertNil(store.scanError)
         XCTAssertFalse(store.canOpenIdentityConflictAsNewSession)
         XCTAssertEqual(store.items.first?.rating, .undecided)
+        XCTAssertEqual(store.pendingSessionRecoveryEntries.first?.entry.rating, "yes")
 
         let saveFinished = await store.waitForPersistenceIdleForTesting()
         XCTAssertTrue(saveFinished)
         XCTAssertNil(store.persistenceWarning)
         let replaced = try XCTUnwrap(readSidecar(in: fixture.photos))
         XCTAssertEqual(replaced.entries.count, 1)
-        XCTAssertEqual(replaced.entries.first?.filename, "A.png")
         XCTAssertEqual(replaced.entries.first?.rating, Rating.undecided.rawValue)
-        XCTAssertEqual(
-            replaced.entries.first?.fileIdentity,
-            store.items.first?.primaryFile.scannedIdentity
-        )
+        XCTAssertEqual(replaced.recoveryEntries?.first?.entry.rating, "yes")
+        XCTAssertEqual(replaced.recoveryEntries?.first?.entry.fileIdentity, saved.entries.first?.fileIdentity)
+        XCTAssertFalse(savedSidecar.isEmpty)
+        XCTAssertFalse(savedBackup.isEmpty)
     }
 
     func testMissingPhysicalFileRatingSurvivesAutosaveAndReturns() async throws {
@@ -980,7 +1122,7 @@ final class SessionDurabilityTests: XCTestCase {
         XCTAssertEqual(migrated.entries.count, 1)
     }
 
-    func testRelocatedSidecarWithoutPhysicalMatchCanStartNewSession() async throws {
+    func testRelocatedSidecarWithoutPhysicalMatchOpensAndRetainsOldDecisions() async throws {
         let fixture = try makeFixture(named: "UnverifiedRelocation")
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let persistence = SessionPersistence(backupDirectory: fixture.backup)
@@ -1032,32 +1174,18 @@ final class SessionDurabilityTests: XCTestCase {
             persistence: SessionPersistence(backupDirectory: fixture.backup)
         )
         store.openFolder(unrelated)
-        for _ in 0..<240 {
-            if case .welcome = store.phase,
-               store.scanError?.contains("another location") == true {
-                break
-            }
-            try await Task.sleep(nanoseconds: 25_000_000)
-        }
-
-        guard case .welcome = store.phase else {
-            return XCTFail("unverified relocated sidecar should block opening")
-        }
-        XCTAssertTrue(store.items.isEmpty)
-        XCTAssertTrue(store.scanError?.contains("another location") == true)
-        XCTAssertTrue(store.canOpenIdentityConflictAsNewSession)
-        XCTAssertEqual(try Data(contentsOf: copiedSidecar), preservedData)
-
-        store.openIdentityConflictAsNewSession()
         try await waitForReadySession(store)
+        XCTAssertNil(store.scanError)
         XCTAssertEqual(store.items.first?.id, "B.png")
         XCTAssertEqual(store.items.first?.rating, .undecided)
+        XCTAssertEqual(store.pendingSessionRecoveryEntries.first?.entry.filename, "A.png")
         let saveFinished = await store.waitForPersistenceIdleForTesting()
         XCTAssertTrue(saveFinished)
 
         let replaced = try XCTUnwrap(readSidecar(in: unrelated))
         XCTAssertEqual(replaced.sourcePath, unrelated.path)
         XCTAssertEqual(replaced.entries.map(\.filename), ["B.png"])
+        XCTAssertEqual(replaced.recoveryEntries?.first?.entry.rating, "yes")
     }
 
     func testRenamedOriginalLetsSamePathReplacementStartUndecided() async throws {
@@ -3581,6 +3709,13 @@ final class SessionDurabilityTests: XCTestCase {
             SessionFile.self,
             from: Data(contentsOf: url)
         )
+    }
+
+    private func encodedSession(_ session: SessionFile) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(session)
     }
 
     private func writeSession(_ session: SessionFile, to url: URL) throws {

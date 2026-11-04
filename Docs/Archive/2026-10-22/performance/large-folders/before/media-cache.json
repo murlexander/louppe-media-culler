@@ -1,0 +1,90 @@
+{
+  "generatedAt" : "2026-10-22T01:13:31Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 16.7855,
+      "medianMS" : 16.774208,
+      "minMS" : 16.733458,
+      "name" : "jpeg_source_decode_320px_os_cache_warm",
+      "p95MS" : 16.7855,
+      "samplesMS" : [
+        16.7855,
+        16.733458,
+        16.774208
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 32.365084,
+      "medianMS" : 32.281,
+      "minMS" : 31.767667,
+      "name" : "jpeg_source_decode_4096px_os_cache_warm",
+      "p95MS" : 32.365084,
+      "samplesMS" : [
+        31.767667,
+        32.281,
+        32.365084
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 2.38075,
+      "medianMS" : 2.263667,
+      "minMS" : 2.249333,
+      "name" : "thumbnail_memory_hit_1000",
+      "p95MS" : 2.38075,
+      "samplesMS" : [
+        2.263667,
+        2.38075,
+        2.249333
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 2.319833,
+      "medianMS" : 2.304958,
+      "minMS" : 2.301708,
+      "name" : "full_memory_hit_1000",
+      "p95MS" : 2.319833,
+      "samplesMS" : [
+        2.304958,
+        2.301708,
+        2.319833
+      ]
+    },
+    {
+      "count" : 16,
+      "maxMS" : 11.21725,
+      "medianMS" : 10.080333,
+      "minMS" : 9.845959,
+      "name" : "thumbnail_disk_hit_16_including_pipeline_init",
+      "p95MS" : 11.21725,
+      "samplesMS" : [
+        11.21725,
+        10.080333,
+        9.845959
+      ]
+    },
+    {
+      "count" : 16,
+      "maxMS" : 273.515708,
+      "medianMS" : 273.353958,
+      "minMS" : 270.976292,
+      "name" : "thumbnail_source_16_including_pipeline_init_and_disk_drain",
+      "p95MS" : 273.515708,
+      "samplesMS" : [
+        273.353958,
+        270.976292,
+        273.515708
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-cache",
+  "warmups" : 1
+}

@@ -1,86 +1,85 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml version="1.0" standalone="yes"?>
 <!-- sparkle-sign-warning:
 IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
 -->
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
-        <title>Louppe Updates</title>
-        <link>https://github.com/murlexander/louppe-media-culler</link>
-        <description>Secure automatic updates for Louppe.</description>
-        <language>en</language>
+        <title>Louppe</title>
         <item>
-            <title>1.9.0</title>
-            <pubDate>Sun, 27 Sep 2026 00:43:59 +0200</pubDate>
-            <link>https://github.com/murlexander/louppe-media-culler/releases/tag/v1.9.0</link>
-            <sparkle:version>11</sparkle:version>
-            <sparkle:shortVersionString>1.9.0</sparkle:shortVersionString>
+            <title>1.13.0</title>
+            <pubDate>Wed, 04 Nov 2026 20:11:38 +0100</pubDate>
+            <link>https://github.com/murlexander/louppe-media-culler/releases/tag/v1.13.0</link>
+            <sparkle:version>15</sparkle:version>
+            <sparkle:shortVersionString>1.13.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description sparkle:format="markdown"><![CDATA[
-Read [A Proper Hello](https://louppe.eu/blog/a-proper-hello/) for an introduction
-to Louppe and its approach to reviewing media.
+- Update Expat to 2.9.0 for parser security fixes and Sparkle to 2.10.1, preserving bounded XMP parsing and the existing updater policy.
+- Stop hostile XMP sidecars from slowing Louppe or growing its memory for the rest of the session.
 
-- Made the start-page logo open [louppe.eu](https://louppe.eu/).
+- Check the chosen Export folder in the background with a Cancel button, so slow drives and large Moves no longer freeze Louppe. Routed Copy previews with thousands of files open instantly.
+- Show Copy progress inside large videos and stop within moments instead of after the whole file. Skip redundant disk flushes when copying many small photos.
+- Speed up decisions, stars and colors under Decision, Star or Color sorting, Select All edits and Undo in large folders; restoring saved decisions for thousands of files takes seconds instead of minutes. Decision, star and color Undo now stays within a memory limit that scales with the Mac: 256 MB up to 16 GB of memory, then about 2% of memory, at most 2 GB. Single-photo edits still keep 500 steps, very large whole-folder edits keep fewer, and Clean Up, Organize and Rename steps are never dropped.
+- Keep the thumbnail cache within its 512 MB limit while Louppe is open, not just at daily cleanup. Info no longer piles up file reads when you move quickly through photos on slow cards or drives.
 
-- Fixed the standalone video check's missing exact-path dependency so the
-  complete GitHub quality workflow can run after the Copy safety changes.
-- Pinned CI checkout, disabled saved checkout credentials, added redacted
-  credential checks and weekly action updates, and ignored local signing secrets.
+- Show cached pinned-folder photos before the drive scan finishes, using the existing toolbar loading indicator. Keep browsing read-only until fresh validation, preserve navigation only for unchanged files, and reuse the existing cache without copying originals.
 
-- Shortened the bottom-panel save status to “Saved” or “Saving…” so it stays
-  compact while ratings are written.
+- Browse an archive's real folder tree in Gallery or Grid without opening another session. Share the leading pane with Browser, include empty folders and subfolder counts, and remember identity-checked folder positions. Progress, file-action scopes and Clear All Decisions follow the chosen folder; RAW+JPEG pairs stay together. Hide redundant breadcrumbs when the folder tree is visible or All Media is selected. Flat folders retain the original layout, and damaged browsing memory can be reset while preserving its old files.
 
-- Made the start screen a compact window and let folders be dropped anywhere
-  in it to open them.
+- Switch the leading pane between Browser and Folders in one click, expand or collapse every folder with one button, and widen the Folders pane by dragging its edge. Checkmarks show folders whose items all have a decision; empty folders are dimmed; Show in Finder opens a folder. Clicking a folder keeps arrow keys on the photos, and Louppe remembers Browser or Folders.
+- Add Folders (T), previous/next folder ([ / ]) and enclosing-folder (⌘↑) shortcuts, with View menu and Command Palette navigation, including Next Unfinished Folder and jumping to a folder by name. Keep saved shortcut customizations when new defaults conflict.
 
-- Removed the explanatory text below the Info panel's star rating.
+- Improve accessibility of Browser/Grid collections, photo descriptions, histogram evidence and playback time. Add readable dark-mode and Increase Contrast colors, color-label names with Differentiate Without Color, and text-preview sizes up to 200%. Respect Tab navigation and expose subtitle, caption-style and alternative-audio choices in Info.
 
-- Added read-only serif text previews for TXT, Markdown, XML, and common text
-  formats, with basic Markdown formatting and clickable web/email links.
+- Keep the README focused on installation and compatibility; move usage and development instructions into dedicated guides. Align localized Help with Photos review, file safety, recovery, and text previews, and link the full user guide.
 
-- Updated Sparkle to 2.10.0 and Expat to 2.8.5 with current security fixes.
-- Made unusually complex XMP sidecars fail gracefully while keeping originals
-  and unrelated metadata intact; affected media can still export without XMP.
-- Bound Copy writes to the chosen folder so replacing its path cannot redirect
-  exported photos; a changed destination can be selected again and retried.
+- Add direct-touch Grid selection and photo double-tap actions, native tile menus for selection and decisions, and larger Fit, playback and quality-cue targets. Keep native scrolling and immediate mouse response; update Tab order automatically and respect Reduce Motion in floating glass controls.
 
-- Updated the About description to say “for creators.”
-- Added a working Help window, searchable shortcuts, and dismissible review tips.
-- Combined filter information, save feedback, and review completion into one
-  compact bottom panel without repeating the toolbar's actions.
-- Kept the bottom panel height consistent across photos, video, and audio,
-  centered photo zoom, and removed clipped QuickTime artwork from audio controls.
-- Added a continuous photo zoom slider and pinch-to-zoom while retaining the
-  S (100%) and A (Phone size) shortcuts.
-- Prevented the zoom slider from briefly jumping to its minimum and flickering
-  when A or S switches back to Phone size or Fit.
-- Fixed a stuck loading spinner caused by late layout updates restarting
-  high-resolution loading after leaving the zoomed photo view.
-- Fixed pinch completion so the enlarged photo remains pannable and the
-  slider keeps responding. Added click-and-drag panning and a smooth return
-  from custom zoom to centered 100% with S.
-- Replaced separate RAW + JPEG palette commands with one searchable toggle
-  that explains the current mode and any temporary availability restriction.
-- Made explicit selections the default export scope, added keeper and star
-  quick picks, clarified independent review metadata and same-drive Move,
-  and simplified editing-app options.
-- Added quick decision filters, visible active filters, direct filter reset,
-  a RAW + JPEG pairing choice, and preview retry and Finder actions.
-- Clarified Trash No + Undecided with separate counts, refreshed first-run
-  instructions, and added separately named local review packaging.
+- Split Settings into native General and Keyboard shortcuts pages. Keep shortcut groups collapsed until opened or searched, activate search on click, and refresh the equal-height keyboard’s purple highlights as bindings change. Align scope controls beside removal.
 
-- Reorganized the Command Palette into predictable sections, improved search
-  ranking and aliases, displayed all applicable keyboard shortcuts, and added
-  missing folder, search, selection, and zoom actions.
-- Kept the native macOS toolbar appearance in local release builds by recording
-  the current SDK version in the packaged app.
+- Use native Sort pickers, search fields, shortcut Add menus, and the system Help button. Adapt floating video controls to current macOS glass with older-system and accessibility fallbacks.
+- Use the current native macOS grouped-form presentation for Photos, Export, Rename, and Organize options, matching Settings while keeping actions and multiselection controls distinct.
+- Unify dialog headings, scrolling content, and fixed action rows across Photos, Export, Rename, Organize, and saved-decision recovery. Align source buttons, small editing controls, color-label indicators, and accessibility feedback.
+
+- Browse complete Apple Photos libraries or selections without staging every original. Load unadjusted review images on demand with bounded caches, local/offline fallbacks, and separate iCloud choices for previews and originals.
+- Open original detail or copy exact primary originals one at a time, with cancellable downloads and the existing 5 GB staging limit. Keep preview quality, unavailable metadata, and per-item retry explicit.
+- Keep separate, remembered iCloud review-image and original permissions in General Settings, with direct Settings links when an item needs access.
+- Choose last week or the last seven days from Photos’ Recent Dates menu. Save decisions by asset ID across overlapping selections; Review decisions stay local.
+
+- Add reviewed Photos items to an existing album or a new album inside a Photos folder, with exact scope/destination confirmation and verified partial results. Preserve existing memberships and originals.
+- Move Choose Photos into Filter and remove the extra review header.
+
+- Shorten Trash actions across the Command Palette, Clean Up, menus, and confirmations.
+
+- Lay out Grid like a contact sheet: photos rest on their filenames, and the selection ring, decision, stars, color label and quality cues sit on the photo itself in Grid, Browser and Apple Photos reviews.
+- Show undecided items with an open ring instead of a faint dot, and draw color labels as squares so a green or red label never looks like a decision. Empty stars in Info no longer look disabled.
+- Show which Decision filter is active with a native segmented control, list Stars and Color first, and mark collapsed filter sections that are narrowing results.
+- Show quality cues before the histogram in Info, move the clipping-overlay button into the histogram header, and wrap long camera and lens names instead of clipping them. Hover over a long filename to see all of it.
+- Mark which decisions an Export includes with a check, not only a color. Show Command Palette shortcuts as keycaps.
+- Make Rename and Organize results compact, with the file count first and an Undo button.
+- Keep an undone decision when you immediately undo a Rename or Organize; Louppe now saves it before restoring the files.
+- Lay out the Sort popover like Filter, with compact menus, a checkbox for groups, and plain review-group commands.
+- App Store version: after three successful Copies on two different days, ask once per version for an App Store rating using Apple's standard prompt. The counters stay on the Mac; the direct download never asks.
+- Align folder, rename, playback, and Info wording, and mark Clear All Decisions with an ellipsis because it asks for confirmation.
+- Open Welcome at the smallest size that fits its contents; keep a larger size only after dragging a window edge, and restore the chosen review window size when reopening photos.
+- Browse photos while large folders finish reading metadata, preserving the browsed position when review becomes ready. Ratings and file actions wait for complete validation.
+- Keep large Grid and Browser collections bounded to the visible area, speed up camera/lens sorting, and cancel obsolete neighboring previews.
+- Restore the standalone video/audio checks with the source dependencies added by the folder-opening improvements.
+- Pin folders directly from Welcome without opening them, and remember their current photo and browsing position. Keep disconnected folders visible, and verify the original source when reconnecting.
+- Reuse validated metadata and previews when reopening archives. Show individual photo details as they become ready while complete validation still protects decisions and file actions.
+- Yield optional background work during interaction and avoid repeated native layout work while browsing.
+- Find files in large folders much faster, especially on exFAT drives: on a cold 16,800-file archive, this step dropped from about 15 s to under 3 s. Skip Capture One and Lightroom cache folders, which hold previews and settings rather than originals.
+- Keep pinned archives' saved photo details when other folders or test runs fill the cache. The details cache is about 13× smaller, loads about 17× faster, covers archives of up to 250,000 files, and converts existing caches without rereading photos.
+- Keep cached photo details and thumbnails when macOS assigns a reconnected drive a new device number; existing thumbnails move to the new cache name without being rebuilt.
+- Check each file once before showing it and once before Ready instead of about five times, pair RAW+JPEG files about twice as fast, and update the details cache after review is ready. A warm 17,000-file exFAT archive opens in about 1 s instead of 2 s. Opening a pinned folder no longer rechecks every other pin.
+- Open pinned folders faster after connecting their drive: while Welcome is open, Louppe quietly reads the folder and new photos' details in the background, never writing to the drive. Recheck every file after loading remembered positions, immediately before review becomes ready.
 
 ]]></description>
-            <enclosure url="https://github.com/murlexander/louppe-media-culler/releases/download/v1.9.0/Louppe.zip" length="6096278" type="application/octet-stream" sparkle:edSignature="bzXNYJXzvw9o/Nwqv9kmizb9CplJQiwPZKgInybguOS8ob4QEmV705E/5n6MZ8M7zs9IUBALKej/MGiLwUuYBQ=="/>
+            <enclosure url="https://github.com/murlexander/louppe-media-culler/releases/download/v1.13.0/Louppe.zip" length="8825693" type="application/octet-stream" sparkle:edSignature="h4B7comHX67aZyUFAjBWurIc09uwvrHxib6wV6h8awliQY4834lbIBetQLcLKD7RsPwzEqvZKpRnDwJplX4VDQ=="/>
         </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: kQJwTMaqCm2pMHdEjQAfPvJ4n7RMkyFm5PuGUVM9uiYqKhqWG/6NoJYOmzG0mHlcV/8Yi0kuaqudZGO3i20DAw==
-length: 4807
+edSignature: sRrInTT1XEmsjfRmFrBqwmZZEVMQEq6as2JG6RRBSWHyQAjYcy5qGEn4UkjhU04ybUePVLcwerWVVM4SW9ZiAA==
+length: 10835
 -->

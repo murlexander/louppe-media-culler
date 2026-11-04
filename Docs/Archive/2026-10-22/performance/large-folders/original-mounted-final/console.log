@@ -1,0 +1,56 @@
+[0/1] Planning build
+Building for production...
+[0/4] Write sources
+[1/4] Write swift-version--58304C5D6DBC2206.txt
+[3/4] Compiling LouppeTests AccessibilityTests.swift
+[3/5] Write Objects.LinkFileList
+[4/5] Linking LouppePackageTests
+Build complete! (46.87s)
+Test Suite 'Selected tests' started at 2026-10-22 4:32:41.486 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-22 4:32:41.494 AM.
+Test Suite 'LouppeSpeedLargeFolderTests' started at 2026-10-22 4:32:41.494 AM.
+Test Case '-[LouppeTests.LouppeSpeedLargeFolderTests testMountedLargeGridAndBrowserNavigation]' started.
+LARGE_MOUNT first_grid_matching_pixels_ms=225.461459 count=1000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED grid.jump-cycle.middle.including-reset n=1000 median=137.601ms p95=139.121ms
+SPEED grid.input-to-matching-pixels.middle.warm-after-first n=1000 median=67.935ms p95=70.234ms
+SPEED grid.jump-cycle.tail.including-reset n=1000 median=241.439ms p95=254.482ms
+SPEED grid.input-to-matching-pixels.tail.warm-after-first n=1000 median=130.125ms p95=135.277ms
+SPEED grid.jump-cycle.reverse.including-reset n=1000 median=106.398ms p95=173.199ms
+SPEED grid.input-to-matching-pixels.reverse.warm-after-first n=1000 median=53.965ms p95=64.456ms
+SPEED grid.jump-cycle.head.including-reset n=1000 median=291.292ms p95=292.542ms
+SPEED grid.input-to-matching-pixels.head.warm-after-first n=1000 median=114.220ms p95=166.149ms
+LARGE_MOUNT first_browser_matching_pixels_ms=30.531542 count=1000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED browser.jump-cycle.middle.including-reset n=1000 median=67.509ms p95=69.783ms
+SPEED browser.input-to-matching-pixels.middle.warm-after-first n=1000 median=32.891ms p95=35.531ms
+SPEED browser.jump-cycle.tail.including-reset n=1000 median=120.938ms p95=126.607ms
+SPEED browser.input-to-matching-pixels.tail.warm-after-first n=1000 median=65.292ms p95=69.852ms
+SPEED browser.jump-cycle.reverse.including-reset n=1000 median=50.691ms p95=70.313ms
+SPEED browser.input-to-matching-pixels.reverse.warm-after-first n=1000 median=26.293ms p95=26.975ms
+SPEED browser.jump-cycle.head.including-reset n=1000 median=119.675ms p95=127.099ms
+SPEED browser.input-to-matching-pixels.head.warm-after-first n=1000 median=56.732ms p95=58.922ms
+LARGE_MOUNT first_grid_matching_pixels_ms=62.082208 count=10000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED grid.jump-cycle.middle.including-reset n=10000 median=914.274ms p95=924.931ms
+SPEED grid.input-to-matching-pixels.middle.warm-after-first n=10000 median=451.142ms p95=508.831ms
+SPEED grid.jump-cycle.tail.including-reset n=10000 median=1805.529ms p95=1883.338ms
+SPEED grid.input-to-matching-pixels.tail.warm-after-first n=10000 median=961.420ms p95=969.991ms
+SPEED grid.jump-cycle.reverse.including-reset n=10000 median=1534.980ms p95=1747.939ms
+SPEED grid.input-to-matching-pixels.reverse.warm-after-first n=10000 median=764.949ms p95=834.810ms
+SPEED grid.jump-cycle.head.including-reset n=10000 median=1824.212ms p95=1884.162ms
+SPEED grid.input-to-matching-pixels.head.warm-after-first n=10000 median=853.370ms p95=890.973ms
+LARGE_MOUNT first_browser_matching_pixels_ms=22.071708 count=10000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED browser.jump-cycle.middle.including-reset n=10000 median=524.622ms p95=529.033ms
+SPEED browser.input-to-matching-pixels.middle.warm-after-first n=10000 median=266.748ms p95=275.645ms
+SPEED browser.jump-cycle.tail.including-reset n=10000 median=1146.412ms p95=1169.385ms
+SPEED browser.input-to-matching-pixels.tail.warm-after-first n=10000 median=611.240ms p95=626.003ms
+SPEED browser.jump-cycle.reverse.including-reset n=10000 median=935.202ms p95=1033.721ms
+SPEED browser.input-to-matching-pixels.reverse.warm-after-first n=10000 median=465.524ms p95=490.657ms
+SPEED browser.jump-cycle.head.including-reset n=10000 median=1279.812ms p95=1504.948ms
+SPEED browser.input-to-matching-pixels.head.warm-after-first n=10000 median=572.761ms p95=700.161ms
+Test Case '-[LouppeTests.LouppeSpeedLargeFolderTests testMountedLargeGridAndBrowserNavigation]' passed (49.627 seconds).
+Test Suite 'LouppeSpeedLargeFolderTests' passed at 2026-10-22 4:33:31.121 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 49.627 (49.627) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+22 4:33:31.122 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 49.627 (49.627) seconds
+Test Suite 'Selected tests' passed at 2026-10-22 4:33:31.122 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 49.627 (49.636) seconds

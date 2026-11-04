@@ -48,20 +48,61 @@ struct MediaSourceRevision: Sendable {
     }
 
     static let changedMessage =
-        "This file changed since the folder was scanned. Rescan the folder to use the current file."
+        L10n.text("This file changed since the folder was scanned. Rescan the folder to use the current file.")
 }
 
 
 enum MetadataExtractor {
+    /// Bump when scan/Fuji/movie/audio interpretation changes. Old observations
+    /// then rebuild without affecting sidecar or preview cache schemas.
+    static let archiveSchemaVersion = 2
 
     /// The metadata read once per file during the folder scan.
-    struct ScanInfo {
+    struct ScanInfo: Sendable {
         var captureDate: Date? = nil
+        var captureDateEvidence: CaptureDateEvidence? = nil
         var cameraModel: String? = nil
         var lensModel: String? = nil
         var aperture: Double? = nil
         var shutterSpeed: Double? = nil
         var iso: Double? = nil
+        var filmSimulation: FujiFilmSimulation? = nil
+        /// Missing tags after a successful header read are reusable. An I/O or
+        /// decoder failure is only an attempted observation and must be retried.
+        var extractionSucceeded: Bool = true
+    }
+
+    /// Read-only opening details use already prepared observations. Never
+    /// reopen ImageIO/AVAsset here or wait for unrelated metadata workers.
+    static func openingFields(for item: PhotoItem) -> [MetadataField] {
+        if item.isText || item.isVideo || item.isAudio { return fields(for: item) }
+        var result: [MetadataField] = []
+        func add(_ label: String, _ value: String?) {
+            guard let value, !value.isEmpty else { return }
+            result.append(MetadataField(id: label, label: label, value: value))
+        }
+        add("Filename", item.displayName)
+        add("Paired file", item.pairedURL?.lastPathComponent)
+        if let date = item.captureDate {
+            let formatted = AppDateFormat.dayAndTime(date)
+            let estimated = item.captureDateEvidence?.source != .exifOriginal
+                && item.captureDateEvidence?.source != .photosLibrary
+            add("Captured", estimated ? L10n.text("\(formatted) · estimated") : formatted)
+        }
+        add("Time zone", item.captureDateEvidence?.timeZoneDescription)
+        add("Camera", item.cameraModel)
+        add("Lens", item.lensModel)
+        add("Film simulation", item.filmSimulation?.label)
+        add("Aperture", MediaNumeric.aperture(item.aperture).map { String(format: "f/%.1f", $0) })
+        add("Shutter", MediaNumeric.shutterSpeed(item.shutterSpeed).map(formatShutter))
+        add("ISO", MediaNumeric.iso(item.iso).map { String(format: "%.0f", $0) })
+        if item.pairedURL != nil {
+            add("Primary size", formattedFileSize(item.fileSize))
+            add("Paired size", formattedFileSize(item.pairedFileSize))
+            add("Total size", formattedFileSize(item.totalFileSize))
+        } else { add("File size", formattedFileSize(item.fileSize)) }
+        add("Type", item.fileTypeLabel)
+        return result
     }
 
     /// Reads the metadata used by filtering and sorting in a single pass during
@@ -69,13 +110,11 @@ enum MetadataExtractor {
     static func scanInfo(for url: URL) -> ScanInfo {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
               let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
-            return ScanInfo()
+            return ScanInfo(extractionSucceeded: false)
         }
         let exif = props[kCGImagePropertyExifDictionary] as? [CFString: Any]
         let tiff = props[kCGImagePropertyTIFFDictionary] as? [CFString: Any]
-        let dateString = (exif?[kCGImagePropertyExifDateTimeOriginal] as? String)
-            ?? (exif?[kCGImagePropertyExifDateTimeDigitized] as? String)
-            ?? (tiff?[kCGImagePropertyTIFFDateTime] as? String)
+        let dateEvidence = captureDateEvidence(exif: exif ?? [:], tiff: tiff ?? [:])
         let aperture = MediaNumeric.aperture(
             finiteNumericValue(exif?[kCGImagePropertyExifFNumber])
         )
@@ -86,20 +125,32 @@ enum MetadataExtractor {
             firstNumericValue(exif?[kCGImagePropertyExifISOSpeedRatings])
         )
         return ScanInfo(
-            captureDate: dateString.flatMap { exifDateFormatter.date(from: $0) },
+            captureDate: dateEvidence?.date,
+            captureDateEvidence: dateEvidence,
             cameraModel: tiff?[kCGImagePropertyTIFFModel] as? String,
             lensModel: exif?[kCGImagePropertyExifLensModel] as? String,
             aperture: aperture,
             shutterSpeed: shutterSpeed,
-            iso: iso
+            iso: iso,
+            filmSimulation: FujiFilmSimulationReader.read(url: url, properties: props)
         )
     }
 
     /// Full field list for the metadata panel.
     static func fields(for item: PhotoItem) -> [MetadataField] {
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
         MetadataExtractorTestProbe.shared.record(item.contentRevision)
 #endif
+        if item.primaryFile.photosMedia != nil {
+            var fields = [MetadataField(id: "Filename", label: "Filename", value: item.displayName),
+                MetadataField(id: "Type", label: "Type", value: item.fileTypeLabel),
+                MetadataField(id: "Availability", label: "Availability",
+                    value: L10n.text("Original EXIF, size and quality checks unavailable during preview review."))]
+            if let date = item.captureDate {
+                fields.append(MetadataField(id: "Captured", label: "Captured", value: AppDateFormat.dayAndTime(date)))
+            }
+            return fields
+        }
         if item.isText {
             return [
                 MetadataField(id: "Filename", label: "Filename", value: item.displayName),
@@ -132,10 +183,17 @@ enum MetadataExtractor {
         let gps = props[kCGImagePropertyGPSDictionary] as? [CFString: Any] ?? [:]
 
         if let date = item.captureDate {
-            add("Captured", AppDateFormat.dayAndTime(date))
+            let formattedDate = AppDateFormat.dayAndTime(date)
+            let isEstimated = item.captureDateEvidence?.source != .exifOriginal
+                && item.captureDateEvidence?.source != .photosLibrary
+            add("Captured", isEstimated ? L10n.text("\(formattedDate) · estimated") : formattedDate)
+        }
+        if let evidence = item.captureDateEvidence {
+            add("Time zone", evidence.timeZoneDescription)
         }
         add("Camera", tiff[kCGImagePropertyTIFFModel] as? String)
         add("Lens", exif[kCGImagePropertyExifLensModel] as? String)
+        add("Film simulation", item.filmSimulation?.label)
 
         if let focal = MediaNumeric.focalLength(
             finiteNumericValue(exif[kCGImagePropertyExifFocalLength])
@@ -166,7 +224,7 @@ enum MetadataExtractor {
             )
         }
         if let wb = exif[kCGImagePropertyExifWhiteBalance] as? Int {
-            add("White balance", wb == 0 ? "Auto" : "Manual")
+            add("White balance", wb == 0 ? L10n.text("Auto") : L10n.text("Manual"))
         }
         if let widthValue = finiteNumericValue(
             props[kCGImagePropertyPixelWidth]
@@ -298,16 +356,177 @@ enum MetadataExtractor {
         return finiteNumericValue(value)
     }
 
-    private static let exifDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone.current
-        return formatter
-    }()
+    /// ImageIO exposes each date's companion subsecond and offset separately.
+    /// Parse only matching companions; a digitized offset cannot qualify an
+    /// original capture date. Invalid originals may fall back to another tag.
+    static func captureDateEvidence(
+        exif: [CFString: Any],
+        tiff: [CFString: Any],
+        assumedTimeZone: TimeZone = .current
+    ) -> CaptureDateEvidence? {
+        let candidates: [(Any?, Any?, Any?, CaptureDateEvidence.Source)] = [
+            (exif[kCGImagePropertyExifDateTimeOriginal],
+             exif[kCGImagePropertyExifSubsecTimeOriginal],
+             exif[kCGImagePropertyExifOffsetTimeOriginal], .exifOriginal),
+            (exif[kCGImagePropertyExifDateTimeDigitized],
+             exif[kCGImagePropertyExifSubsecTimeDigitized],
+             exif[kCGImagePropertyExifOffsetTimeDigitized], .exifDigitized),
+            (tiff[kCGImagePropertyTIFFDateTime],
+             exif[kCGImagePropertyExifSubsecTime],
+             exif[kCGImagePropertyExifOffsetTime], .tiff),
+        ]
+        for (rawDate, rawSubsecond, rawOffset, source) in candidates {
+            guard let rawDate = rawDate as? String else { continue }
+            let dateString = rawDate.trimmingCharacters(in: .whitespacesAndNewlines)
+            let bytes = Array(dateString.utf8)
+            guard bytes.count == 19,
+                  bytes[4] == 58, bytes[7] == 58, bytes[10] == 32,
+                  bytes[13] == 58, bytes[16] == 58 else { continue }
+            func number(_ range: Range<Int>) -> Int? {
+                let digits = bytes[range]
+                guard digits.allSatisfy({ (48...57).contains($0) }) else { return nil }
+                return digits.reduce(0) { $0 * 10 + Int($1 - 48) }
+            }
+            guard let year = number(0..<4), let month = number(5..<7),
+                  let day = number(8..<10), let hour = number(11..<13),
+                  let minute = number(14..<16), let second = number(17..<19),
+                  year > 0, (1...12).contains(month), (1...31).contains(day),
+                  (0...23).contains(hour), (0...59).contains(minute),
+                  (0...59).contains(second) else { continue }
+            let offset = parsedUTCOffset(rawOffset)
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = offset?.zone ?? assumedTimeZone
+            let components = DateComponents(
+                year: year, month: month, day: day,
+                hour: hour, minute: minute, second: second
+            )
+            guard let wholeDate = calendar.date(from: components),
+                  calendar.dateComponents(
+                    [.year, .month, .day, .hour, .minute, .second], from: wholeDate
+                  ) == components else { continue }
+            let subseconds = (rawSubsecond as? String)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let digits = subseconds.flatMap { value -> String? in
+                guard !value.isEmpty, value.utf8.allSatisfy({ (48...57).contains($0) })
+                else { return nil }
+                return value
+            }
+            // Double retains finite precision; keep the original digits for
+            // evidence even if the final Date cannot represent every digit.
+            let fraction = digits.flatMap { Double("0." + String($0.prefix(9))) } ?? 0
+            return CaptureDateEvidence(
+                date: wholeDate.addingTimeInterval(fraction), source: source,
+                rawDateTime: dateString, subsecondDigits: digits,
+                utcOffset: offset?.text,
+                assumedTimeZoneIdentifier: offset == nil ? assumedTimeZone.identifier : nil
+            )
+        }
+        return nil
+    }
+
+    private static func parsedUTCOffset(_ raw: Any?) -> (zone: TimeZone, text: String)? {
+        guard let raw = raw as? String else { return nil }
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let bytes = Array(text.utf8)
+        guard bytes.count == 6, bytes[0] == 43 || bytes[0] == 45,
+              bytes[3] == 58,
+              [bytes[1], bytes[2], bytes[4], bytes[5]].allSatisfy({ (48...57).contains($0) })
+        else { return nil }
+        let hours = Int(bytes[1] - 48) * 10 + Int(bytes[2] - 48)
+        let minutes = Int(bytes[4] - 48) * 10 + Int(bytes[5] - 48)
+        guard hours <= 14, minutes < 60, hours < 14 || minutes == 0 else { return nil }
+        let seconds = (hours * 3_600 + minutes * 60) * (bytes[0] == 45 ? -1 : 1)
+        guard let zone = TimeZone(secondsFromGMT: seconds) else { return nil }
+        return (zone, text)
+    }
+
 }
 
-#if DEBUG
+/// Info's EXIF detail reads. Each request owns one waiter and one operation.
+/// Navigation retires its waiter; a queued read that loses its waiter never
+/// starts. A running synchronous ImageIO read keeps its lane until it exits,
+/// so abandoned readers on slow media stay bounded by the lane width.
+/// One lane: on serialized slow media, the former unbounded detached reads
+/// filled every cooperative thread and delayed the final photo's fields ~3 s.
+final class MetadataDetailPipeline: @unchecked Sendable {
+    static let shared = MetadataDetailPipeline()
+    static let laneLimit = 1
+
+    private final class Pending {
+        let continuation: CheckedContinuation<[MetadataField]?, Never>
+        let operation: BlockOperation
+        init(continuation: CheckedContinuation<[MetadataField]?, Never>, operation: BlockOperation) {
+            self.continuation = continuation
+            self.operation = operation
+        }
+    }
+
+    private let queue = OperationQueue()
+    private let lock = NSLock()
+    private var pending: [UUID: Pending] = [:]
+    private let reader: @Sendable (PhotoItem) -> [MetadataField]
+
+    init(
+        concurrency: Int = MetadataDetailPipeline.laneLimit,
+        reader: @escaping @Sendable (PhotoItem) -> [MetadataField] = { MetadataExtractor.fields(for: $0) }
+    ) {
+        self.reader = reader
+        queue.name = "louppe.metadata.detail"
+        queue.maxConcurrentOperationCount = max(1, concurrency)
+        queue.qualityOfService = .userInitiated
+    }
+
+    /// Returns nil only when the caller was cancelled before a result.
+    func fields(for item: PhotoItem, sourceAccess: MediaReadAccess?) async -> [MetadataField]? {
+        let id = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                lock.lock()
+                guard !Task.isCancelled else {
+                    lock.unlock()
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let readAccess = MediaOperationReadAccess(sourceAccess)
+                let operation = BlockOperation()
+                // Queued cancellation may skip the execution block entirely.
+                operation.completionBlock = { readAccess.finish() }
+                operation.addExecutionBlock { [weak self, weak operation] in
+                    guard let self, let operation, !operation.isCancelled else { return }
+                    defer { readAccess.finish() }
+                    let fields = autoreleasepool { self.reader(item) }
+                    self.finish(id, result: fields)
+                }
+                pending[id] = Pending(continuation: continuation, operation: operation)
+                lock.unlock()
+                queue.addOperation(operation)
+            }
+        } onCancel: { [weak self] in
+            self?.finish(id, result: nil, cancelling: true)
+        }
+    }
+
+    private func finish(_ id: UUID, result: [MetadataField]?, cancelling: Bool = false) {
+        let request = lock.withLock { pending.removeValue(forKey: id) }
+        guard let request else { return }
+        if cancelling { request.operation.cancel() }
+        request.continuation.resume(returning: result)
+    }
+
+    #if LOUPPE_TEST_SEAMS
+    var pendingCountForTesting: Int { lock.withLock { pending.count } }
+
+    func waitForIdleForTesting() async {
+        await withCheckedContinuation { continuation in
+            let barrier = BlockOperation { continuation.resume() }
+            for operation in queue.operations { barrier.addDependency(operation) }
+            queue.addOperation(barrier)
+        }
+    }
+    #endif
+}
+
+#if LOUPPE_TEST_SEAMS
 /// Counts exact metadata-field reads for unique content revisions in hosted
 /// regression tests. The release app has no probe or counting overhead.
 final class MetadataExtractorTestProbe: @unchecked Sendable {

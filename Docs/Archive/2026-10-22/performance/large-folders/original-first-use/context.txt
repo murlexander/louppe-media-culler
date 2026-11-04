@@ -1,0 +1,9 @@
+Original source: git archive 87370f681d1bd3723bcc3176646db8afa94d9d8c
+Immutable build snapshot: canonical app/.build/large-original-source
+Only production instrumentation change: inert DEBUG ThumbnailRenderMarker behind thumbnails, same fields as final harness; no behavior changes.
+Added current LouppeSpeedFirstUseTests plus a test-only absent openingMetrics compatibility extension.
+Original implementation has no main-publication timer; zero-valued compatibility rows are unavailable and excluded from comparisons.
+Full Xcode27/macOS27 SDK, release optimization with -DDEBUG, native SwiftPM backend.
+Sizes1000,10000; one warmup, three measured samples; warm local filesystem/cache paths.
+Real Fuji RAF copied once per fixture and APFS cloned; independent files, shared source extents, not independent camera captures or cold storage.
+First useful pixels: matching-revision NSView marker visible with a nonnil image; hosted AppKit publication, not physical screen frames.

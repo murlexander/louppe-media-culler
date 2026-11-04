@@ -1,0 +1,78 @@
+[
+  {
+    "count" : 1000,
+    "createdHostCount" : 35,
+    "mainActorGapSamplesMS" : [
+      568.02091700000005,
+      533.04504099999997,
+      993.54508399999997
+    ],
+    "maxMainActorGapMS" : 993.54508399999997,
+    "peakResidentBytes" : 794312704,
+    "physicalFrameMeasurement" : false,
+    "realizedItemCount" : 20,
+    "residentAfterNavigationBytes" : 794312704,
+    "retainedHostCount" : 35,
+    "samplingIntervalMS" : 2,
+    "surface" : "grid"
+  },
+  {
+    "count" : 1000,
+    "createdHostCount" : 9,
+    "mainActorGapSamplesMS" : [
+
+    ],
+    "maxMainActorGapMS" : 0,
+    "peakResidentBytes" : 794460160,
+    "physicalFrameMeasurement" : false,
+    "realizedItemCount" : 8,
+    "residentAfterNavigationBytes" : 794722304,
+    "retainedHostCount" : 9,
+    "samplingIntervalMS" : 2,
+    "surface" : "browser"
+  },
+  {
+    "count" : 1000,
+    "physicalFrameMeasurement" : false,
+    "residentBytes" : 800669696,
+    "surface" : "after-surface-teardown-and-disk-drain"
+  },
+  {
+    "count" : 10000,
+    "createdHostCount" : 35,
+    "mainActorGapSamplesMS" : [
+      546.43558299999995,
+      492.92541699999998,
+      918.43454099999997
+    ],
+    "maxMainActorGapMS" : 918.43454099999997,
+    "peakResidentBytes" : 899137536,
+    "physicalFrameMeasurement" : false,
+    "realizedItemCount" : 20,
+    "residentAfterNavigationBytes" : 877019136,
+    "retainedHostCount" : 35,
+    "samplingIntervalMS" : 2,
+    "surface" : "grid"
+  },
+  {
+    "count" : 10000,
+    "createdHostCount" : 9,
+    "mainActorGapSamplesMS" : [
+
+    ],
+    "maxMainActorGapMS" : 0,
+    "peakResidentBytes" : 878280704,
+    "physicalFrameMeasurement" : false,
+    "realizedItemCount" : 8,
+    "residentAfterNavigationBytes" : 868892672,
+    "retainedHostCount" : 9,
+    "samplingIntervalMS" : 2,
+    "surface" : "browser"
+  },
+  {
+    "count" : 10000,
+    "physicalFrameMeasurement" : false,
+    "residentBytes" : 868794368,
+    "surface" : "after-surface-teardown-and-disk-drain"
+  }
+]

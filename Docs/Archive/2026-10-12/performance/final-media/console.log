@@ -1,0 +1,52 @@
+[0/1] Planning build
+Building for production...
+[0/4] Write sources
+[1/4] Write swift-version--58304C5D6DBC2206.txt
+[3/4] Compiling LouppeTests AccessibilityTests.swift
+[4/6] Compiling LouppePackageTests runner.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking LouppePackageTests
+Build complete! (30.55s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-12 10:39:49.982 PM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-12 10:39:49.989 PM.
+Test Suite 'LouppeSpeedMediaTests' started at 2026-10-12 10:39:49.990 PM.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testAlreadyCancelledThumbnailWork]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testAlreadyCancelledThumbnailWork]' passed (1.419 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testConcurrentSameRevisionThumbnailRequests]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testConcurrentSameRevisionThumbnailRequests]' passed (0.198 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testGalleryThumbnailDependencyUnderBacklog]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testGalleryThumbnailDependencyUnderBacklog]' passed (5.557 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testMediaDecodeAndCachePaths]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testMediaDecodeAndCachePaths]' passed (3.578 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testRawHistogramBatchDwellFloor]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testRawHistogramBatchDwellFloor]' passed (11.503 seconds).
+Test Suite 'LouppeSpeedMediaTests' passed at 2026-10-12 10:40:12.244 PM.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 22.254 (22.255) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-12 10:40:12.245 PM.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 22.254 (22.255) seconds
+Test Suite 'Selected tests' passed at 2026-10-12 10:40:12.245 PM.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 22.254 (22.262) seconds
+SPEED already_cancelled_32_unique_thumbnails_including_disk_drain n=32 median=152.434ms p95=168.347ms
+MEDIA_HYPOTHESIS already_cancelled_unique_requests=32 completed_per_sample=[32, 32, 32, 32, 32, 32, 32, 32] disk_entries_per_sample=[32, 32, 32, 32, 32, 32, 32, 32]
+SPEED same_revision_32_thumbnail_waiters_including_disk_drain n=32 median=19.178ms p95=19.382ms
+SPEED mirrored_gallery_backlog_0_with_init_drain_cleanup n=1 median=43.080ms p95=53.554ms
+SPEED gallery.full-ready.backlog-0 n=1 median=42.228ms p95=52.047ms
+SPEED gallery.thumbnail-ready.backlog-0 n=1 median=18.157ms p95=19.001ms
+SPEED gallery.mirrored-publication.backlog-0 n=1 median=42.228ms p95=52.047ms
+SPEED gallery.delay-after-full.backlog-0 n=1 median=0.000ms p95=0.000ms
+MEDIA_BACKLOG mirrored_orchestration=true task_start_counter=true deterministic_queue_order=false backlog=0 full_ready_ms=[46.494208, 33.451542, 33.714333, 37.257708, 42.228, 48.798959, 52.046541, 51.137041] thumbnail_ready_ms=[17.862416, 17.776084, 17.543083, 18.88225, 19.000791, 18.157042, 17.445625, 18.258291] publication_ms=[46.494208, 33.451542, 33.714333, 37.257708, 42.228, 48.798959, 52.046541, 51.137041] delay_after_full_ms=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+SPEED mirrored_gallery_backlog_128_with_init_drain_cleanup n=129 median=606.488ms p95=629.299ms
+SPEED gallery.full-ready.backlog-128 n=129 median=46.376ms p95=54.220ms
+SPEED gallery.thumbnail-ready.backlog-128 n=129 median=595.830ms p95=617.393ms
+SPEED gallery.mirrored-publication.backlog-128 n=129 median=595.830ms p95=617.393ms
+SPEED gallery.delay-after-full.backlog-128 n=129 median=549.453ms p95=565.942ms
+MEDIA_BACKLOG mirrored_orchestration=true task_start_counter=true deterministic_queue_order=false backlog=128 full_ready_ms=[57.450292, 47.342417, 44.451375, 46.376084, 47.81275, 42.682958, 45.401625, 54.220042] thumbnail_ready_ms=[637.36975, 588.41675, 601.825209, 595.8295, 590.216125, 589.606958, 611.343666, 617.39325] publication_ms=[637.36975, 588.41675, 601.825209, 595.8295, 590.216125, 589.606958, 611.343666, 617.39325] delay_after_full_ms=[579.919458, 541.074333, 557.373834, 549.4534160000001, 542.403375, 546.924, 565.942041, 563.1732079999999]
+SPEED jpeg_source_decode_320px_os_cache_warm n=1 median=17.639ms p95=45.096ms
+SPEED jpeg_source_decode_4096px_os_cache_warm n=1 median=52.103ms p95=57.447ms
+SPEED thumbnail_memory_hit_1000 n=1000 median=2.430ms p95=2.956ms
+SPEED full_memory_hit_1000 n=1000 median=2.342ms p95=2.460ms
+SPEED thumbnail_disk_hit_16_including_pipeline_init n=16 median=10.510ms p95=12.412ms
+SPEED thumbnail_source_16_including_pipeline_init_and_disk_drain n=16 median=283.995ms p95=318.175ms
+SPEED synthetic_raw_4_in_2_item_batches_dwell_700ms n=4 median=1432.813ms p95=1459.025ms
+SPEED synthetic_raw_4_in_2_item_batches_dwell_0ms n=4 median=0.343ms p95=0.485ms

@@ -9,75 +9,120 @@ struct BrowserView: View {
     static let width = 122 + PersistentVerticalScroller.gutterWidth
 
     @ObservedObject var store: SessionStore
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var followTask: Task<Void, Never>?
-    /// A plain click targets a thumbnail that is already on screen, so the
-    /// follow-scroll that click's index change triggers must be skipped —
-    /// centering the clicked thumbnail drags the strip under the cursor.
-    /// Keyboard navigation keeps following as before.
+    @Environment(\.locale) private var locale
+    @State private var collectionController = ReviewCollectionController()
     @State private var suppressNextFollow = false
+    var initialViewportReceipt: ReviewCollectionViewportReceipt? = nil
+    var onViewportChange: ((ReviewCollectionViewportReceipt) -> Void)? = nil
+    var onViewportRestored: ((ReviewCollectionViewportReceipt) -> Void)? = nil
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.vertical) {
-                LazyVStack(spacing: 6) {
-                    // Prepared entries keep stable media IDs without rebuilding
-                    // this whole array for each rating/loading publication.
-                    ForEach(store.browserEntries) { entry in
-                        BrowserRow(store: store, index: entry.index) {
-                            // Only set when the click will actually move
-                            // currentIndex, so the flag is always consumed
-                            // by the onChange it precedes.
-                            if entry.index != store.currentIndex {
-                                suppressNextFollow = true
-                            }
-                            store.setIndex(entry.index)
+        let archiveGeneration = store.archiveViewportGeneration
+        GeometryReader { geometry in
+            BrowserCollectionContent(
+                store: store,
+                entries: store.browserEntries,
+                viewportSize: geometry.size,
+                locale: locale,
+                onPlainClick: { index in
+                    if index != store.currentIndex { suppressNextFollow = true }
+                    store.setIndex(index)
+                },
+                controller: collectionController,
+                groups: store.gridGroups
+            )
+            .equatable()
+            .environment(\.mediaReadAccess, store.mediaReadAccess)
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .onAppear {
+                collectionController.onViewportChange = { receipt in
+                            store.recordPinnedViewport(physicalFileID: receipt.physicalFileID,
+                                                       topOffset: Double(receipt.topOffset), surface: .browser,
+                                                       archiveGeneration: archiveGeneration)
+                            onViewportChange?(receipt)
                         }
-                    }
+                collectionController.onViewportRestored = { receipt in
+                    guard archiveGeneration == store.archiveViewportGeneration else { return }
+                    onViewportRestored?(receipt)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 10)
-                .background(PersistentVerticalScroller())
+                if let initialViewportReceipt {
+                    collectionController.restoreViewport(initialViewportReceipt)
+                } else if let id = store.currentItem?.id {
+                    collectionController.follow(id: id)
+                }
             }
-            // The current item's id can change while its numeric index stays
-            // the same after Clean Up or Move export.
+            .onChange(of: initialViewportReceipt) { _, receipt in
+                if let receipt { collectionController.restoreViewport(receipt) }
+            }
             .onChange(of: store.currentItem?.id) {
                 if suppressNextFollow {
                     suppressNextFollow = false
-                    return
+                } else if let id = store.currentItem?.id {
+                    collectionController.follow(id: id)
                 }
-                followCurrentPhoto(using: proxy, animated: true)
-            }
-            .onAppear {
-                followCurrentPhoto(using: proxy, animated: false)
-            }
-            .onDisappear {
-                followTask?.cancel()
             }
         }
     }
+}
 
-    private func followCurrentPhoto(using proxy: ScrollViewProxy, animated: Bool) {
-        guard let id = store.currentItem?.id else { return }
-        followTask?.cancel()
-        followTask = Task { @MainActor in
-            // Let the current-index update reach the lazy stack before asking
-            // it to resolve an item that may start outside the viewport.
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            if animated && !reduceMotion {
-                withAnimation(.easeOut(duration: 0.15)) {
-                    proxy.scrollTo(id, anchor: .center)
-                }
-            } else {
-                proxy.scrollTo(id, anchor: .center)
-            }
-            // Lazy stacks estimate distant offsets, so a long jump can land
-            // off-center. Issue a second pass once the target row exists —
-            // the same correction the Grid view applies.
-            await Task.yield()
-            guard !Task.isCancelled, store.currentItem?.id == id else { return }
-            proxy.scrollTo(id, anchor: .center)
+/// Store publications update realized rows directly without reconstructing
+/// the full lazy collection's identity map on each navigation or selection.
+struct BrowserCollectionContent: View, Equatable {
+    private struct ProjectionSource: Equatable {
+        let owner: ObjectIdentifier
+        let groups: [PreparedSessionIndex.VisibleGroup]
+    }
+    @State private var projectionCache = ReviewCollectionProjectionCache<ProjectionSource>()
+    let store: SessionStore
+    let entries: [PreparedSessionIndex.VisibleEntry]
+    let viewportSize: CGSize
+    let locale: Locale
+    let onPlainClick: (Int) -> Void
+
+    // Shared immutable storage takes Array equality's identity fast path for
+    // current/selection publications. Headers still invalidate on regrouping.
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.store === rhs.store
+            && lhs.viewportSize == rhs.viewportSize
+            && lhs.locale == rhs.locale
+            && lhs.entries == rhs.entries
+            && lhs.groups == rhs.groups
+    }
+
+    var controller: ReviewCollectionController? = nil
+    var groups: [PreparedSessionIndex.VisibleGroup]? = nil
+
+    #if LOUPPE_TEST_SEAMS
+    static var didConstruct: (() -> Void)?
+    static var didBuildProjection: (() -> Void)?
+    static var didConstructSnapshot: ((Self) -> Void)?
+    #endif
+
+    var body: some View {
+        #if LOUPPE_TEST_SEAMS
+        let _ = Self.didConstruct?()
+        let _ = Self.didConstructSnapshot?(self)
+        #endif
+        let groups = groups ?? store.gridGroups
+        let source = ProjectionSource(owner: ObjectIdentifier(store), groups: groups)
+        let projection = projectionCache.resolve(for: source) {
+            #if LOUPPE_TEST_SEAMS
+            Self.didBuildProjection?()
+            #endif
+            return ReviewCollectionProjection(sections: groups.map { group in
+                ReviewCollectionSection(
+                    id: String(describing: group.id), title: group.title,
+                    entries: group.entries.compactMap { entry in
+                        guard store.items.indices.contains(entry.index) else { return nil }
+                        return ReviewCollectionEntry(id: entry.id, index: entry.index,
+                            physicalFileIDs: store.items[entry.index].individualFiles.map(\.id))
+                    }
+                )
+            })
+        }
+        ReviewCollection(projection: projection,
+                         style: .browser, controller: controller) { entry in
+            AnyView(BrowserRow(store: store, index: entry.index, id: entry.id) { onPlainClick(entry.index) })
         }
     }
 }
@@ -91,6 +136,7 @@ struct BrowserView: View {
 private struct BrowserRow: View {
     @ObservedObject var store: SessionStore
     let index: Int
+    let id: String
     /// Runs on an unmodified click; the parent supplies it so the
     /// suppress-follow flag stays BrowserView @State.
     let onPlainClick: () -> Void
@@ -98,46 +144,24 @@ private struct BrowserRow: View {
     var body: some View {
         // The bounds check stays inside the row: it re-renders independently
         // of the parent, and visibleIndices must never outlive items.
-        if store.items.indices.contains(index) {
+        if store.items.indices.contains(index), store.items[index].id == id {
             let item = store.items[index]
-            VStack(spacing: 6) {
-                if let title = store.visibleGroupTitles[index] {
-                    // Same header shape as the Grid: name first,
-                    // divider filling whatever width is left.
-                    HStack(spacing: 6) {
-                        Text(title)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .help(title)
-                            .layoutPriority(1)
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(.secondary.opacity(0.5))
-                            .frame(height: 2)
-                    }
-                    .frame(width: 102)
-                    .padding(.vertical, 3)
-                }
-                ThumbnailView(
+            ThumbnailView(
                     item: item,
                     isCurrent: item.id == store.currentItem?.id,
                     isSelected: store.selectedIndices.contains(index),
-                    // Read the decision in this observed row instead of
-                    // hiding it inside a child whose PhotoItem storage
-                    // identity does not change when the decision changes.
-                    showsRatingBadge: false
+                    // This observed row rebuilds the thumbnail's scalar
+                    // metadata snapshots when shared file decisions change.
+                    showsRatingBadge: true,
+                    tileOverlay: AnyView(
+                        Color.clear.allowsHitTesting(false)
+                            .overlay(alignment: .bottomLeading) {
+                                QualityCueTileIcons(store: store, item: item)
+                                    .padding(TileBadgeLayout.inset)
+                            }
+                    )
                 )
                 .frame(width: 102, height: 102)
-                .overlay(alignment: .topTrailing) {
-                    RatingBadge(
-                        rating: item.rating,
-                        isMixed: item.hasMixedRatings,
-                        size: 18
-                    )
-                    .frame(width: 28, height: 28)
-                    .padding(3)
-                }
                 .onTapGesture {
                     // ⇧-click: range · ⌘-click: add/remove · click: jump.
                     store.handleThumbnailClick(at: index, plainClick: onPlainClick)
@@ -146,7 +170,7 @@ private struct BrowserRow: View {
                     item: item,
                     isCurrent: item.id == store.currentItem?.id,
                     isSelected: store.selectedIndices.contains(index),
-                    showActionTitle: "Show in Gallery",
+                    showActionTitle: L10n.text("Show in Gallery"),
                     show: onPlainClick,
                     open: onPlainClick,
                     canRate: store.canRate,
@@ -163,9 +187,11 @@ private struct BrowserRow: View {
                         store.toggleSelection(of: index)
                     }
                 )
-            }
-            // Keep the String identity as the follow-scroll target.
-            .id(item.id)
+                // Stable ID also retires thumbnail state when a reuse host rebinds.
+                .id(item.id)
+                .contextMenu {
+                    MediaTileContextMenu(store: store, index: index, revision: item.contentRevision, open: onPlainClick)
+                }
         }
     }
 }

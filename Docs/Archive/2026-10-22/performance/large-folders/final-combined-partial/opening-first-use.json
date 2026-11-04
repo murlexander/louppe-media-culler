@@ -1,0 +1,220 @@
+{
+  "generatedAt" : "2026-10-22T02:24:43Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 233.025125,
+      "medianMS" : 229.031209,
+      "minMS" : 227.639417,
+      "name" : "jpeg-generated.first-useful-pixels.warm-local",
+      "p95MS" : 233.025125,
+      "samplesMS" : [
+        233.025125,
+        227.639417,
+        229.031209
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 498.379,
+      "medianMS" : 490.669875,
+      "minMS" : 487.907209,
+      "name" : "jpeg-generated.fully-ready-state.warm-local",
+      "p95MS" : 498.379,
+      "samplesMS" : [
+        498.379,
+        490.669875,
+        487.907209
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 498.395375,
+      "medianMS" : 490.686292,
+      "minMS" : 487.926625,
+      "name" : "jpeg-generated.ready-current-pixels.warm-local",
+      "p95MS" : 498.395375,
+      "samplesMS" : [
+        498.395375,
+        490.686292,
+        487.926625
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 3.13020833345945,
+      "medianMS" : 3.124000000752858,
+      "minMS" : 3.085166666096484,
+      "name" : "jpeg-generated.main-publication.warm-local",
+      "p95MS" : 3.13020833345945,
+      "samplesMS" : [
+        3.13020833345945,
+        3.085166666096484,
+        3.124000000752858
+      ]
+    },
+    {
+      "count" : 2000,
+      "maxMS" : 420.81125,
+      "medianMS" : 413.925458,
+      "minMS" : 406.190708,
+      "name" : "raw-jpeg-clones.first-useful-pixels.warm-local",
+      "p95MS" : 420.81125,
+      "samplesMS" : [
+        413.925458,
+        420.81125,
+        406.190708
+      ]
+    },
+    {
+      "count" : 2000,
+      "maxMS" : 1054.384125,
+      "medianMS" : 1040.472625,
+      "minMS" : 1033.109375,
+      "name" : "raw-jpeg-clones.fully-ready-state.warm-local",
+      "p95MS" : 1054.384125,
+      "samplesMS" : [
+        1040.472625,
+        1033.109375,
+        1054.384125
+      ]
+    },
+    {
+      "count" : 2000,
+      "maxMS" : 1054.401167,
+      "medianMS" : 1040.490625,
+      "minMS" : 1033.125792,
+      "name" : "raw-jpeg-clones.ready-current-pixels.warm-local",
+      "p95MS" : 1054.401167,
+      "samplesMS" : [
+        1040.490625,
+        1033.125792,
+        1054.401167
+      ]
+    },
+    {
+      "count" : 2000,
+      "maxMS" : 7.2026666666715755,
+      "medianMS" : 6.631874999584397,
+      "minMS" : 5.969416666630423,
+      "name" : "raw-jpeg-clones.main-publication.warm-local",
+      "p95MS" : 7.2026666666715755,
+      "samplesMS" : [
+        7.2026666666715755,
+        5.969416666630423,
+        6.631874999584397
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1312.782291,
+      "medianMS" : 1309.845,
+      "minMS" : 1303.592208,
+      "name" : "jpeg-generated.first-useful-pixels.warm-local",
+      "p95MS" : 1312.782291,
+      "samplesMS" : [
+        1303.592208,
+        1309.845,
+        1312.782291
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 2056.138416,
+      "medianMS" : 2023.296958,
+      "minMS" : 2010.915291,
+      "name" : "jpeg-generated.fully-ready-state.warm-local",
+      "p95MS" : 2056.138416,
+      "samplesMS" : [
+        2056.138416,
+        2023.296958,
+        2010.915291
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 2056.161833,
+      "medianMS" : 2023.320667,
+      "minMS" : 2010.946875,
+      "name" : "jpeg-generated.ready-current-pixels.warm-local",
+      "p95MS" : 2056.161833,
+      "samplesMS" : [
+        2056.161833,
+        2023.320667,
+        2010.946875
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 31.688375000157976,
+      "medianMS" : 29.72270833379298,
+      "minMS" : 29.599708333989838,
+      "name" : "jpeg-generated.main-publication.warm-local",
+      "p95MS" : 31.688375000157976,
+      "samplesMS" : [
+        29.72270833379298,
+        31.688375000157976,
+        29.599708333989838
+      ]
+    },
+    {
+      "count" : 20000,
+      "maxMS" : 2985.295291,
+      "medianMS" : 2967.318917,
+      "minMS" : 2928.465416,
+      "name" : "raw-jpeg-clones.first-useful-pixels.warm-local",
+      "p95MS" : 2985.295291,
+      "samplesMS" : [
+        2985.295291,
+        2928.465416,
+        2967.318917
+      ]
+    },
+    {
+      "count" : 20000,
+      "maxMS" : 8247.126333,
+      "medianMS" : 8173.880208,
+      "minMS" : 8150.479458,
+      "name" : "raw-jpeg-clones.fully-ready-state.warm-local",
+      "p95MS" : 8247.126333,
+      "samplesMS" : [
+        8247.126333,
+        8150.479458,
+        8173.880208
+      ]
+    },
+    {
+      "count" : 20000,
+      "maxMS" : 8247.143625,
+      "medianMS" : 8173.8985,
+      "minMS" : 8150.510875,
+      "name" : "raw-jpeg-clones.ready-current-pixels.warm-local",
+      "p95MS" : 8247.143625,
+      "samplesMS" : [
+        8247.143625,
+        8150.510875,
+        8173.8985
+      ]
+    },
+    {
+      "count" : 20000,
+      "maxMS" : 73.7911249998433,
+      "medianMS" : 72.57120833310182,
+      "minMS" : 72.2885833329201,
+      "name" : "raw-jpeg-clones.main-publication.warm-local",
+      "p95MS" : 73.7911249998433,
+      "samplesMS" : [
+        72.2885833329201,
+        72.57120833310182,
+        73.7911249998433
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "opening-first-use",
+  "warmups" : 1
+}

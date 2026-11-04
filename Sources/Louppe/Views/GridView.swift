@@ -8,39 +8,12 @@ import SwiftUI
 /// ⌘+/⌘− resize the tiles; W toggles photo info.
 struct GridView: View {
     @ObservedObject var store: SessionStore
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    /// The native scrollbar thumb is inset within its reserved gutter. A
-    /// slightly smaller trailing content inset makes the visible photo-to-thumb
-    /// gap match the 12-point window-edge-to-photo gap on the leading side.
-    private static let leadingPadding: CGFloat = 12
-    private static let trailingPadding: CGFloat = 6
-    private static let verticalPadding: CGFloat = 12
-
-    /// Coordinate space of the grid content — tile frames and the rubber
-    /// band both live in it, so they stay aligned while scrolling.
-    private static let gridSpace = "gridView"
-
-    /// Frames of the currently rendered tiles, keyed by absolute item index.
-    /// (Lazy grids only report tiles that exist on screen — the rubber band
-    /// can only touch what's rendered, which is all the user can see anyway.)
-    /// Held in a reference box, NOT @State: the frames are read only inside
-    /// the drag gesture, so updating them as tiles scroll in and out must not
-    /// invalidate the grid body (which would re-run dayGroups every frame).
-    @State private var tileFrames = TileFrameStore()
-    /// The selection rectangle while a drag is in progress.
-    @State private var rubberBand: CGRect?
-    /// A cancellable, one-shot follow request. Unlike a bound scroll position,
-    /// this stays completely idle while the user manually scrolls the grid.
-    @State private var followTask: Task<Void, Never>?
-    /// A pointer click already targets a rendered tile, so centering that same
-    /// tile would move the Grid under the pointer. Keyboard navigation and
-    /// structural current-item changes continue to follow normally.
+    @Environment(\.locale) private var locale
+    @State private var collectionController = ReviewCollectionController()
     @State private var suppressNextFollow = false
-
-    private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: store.gridThumbSize, maximum: store.gridThumbSize * 1.4), spacing: 10)]
-    }
+    var initialViewportReceipt: ReviewCollectionViewportReceipt? = nil
+    var onViewportChange: ((ReviewCollectionViewportReceipt) -> Void)? = nil
+    var onViewportRestored: ((ReviewCollectionViewportReceipt) -> Void)? = nil
 
     var body: some View {
         grid
@@ -49,126 +22,88 @@ struct GridView: View {
     }
 
     private var grid: some View {
-        GeometryReader { geometry in
-            ScrollViewReader { proxy in
-                ScrollView {
-                    if store.items.isEmpty {
-                        SessionEmptyView(
-                            reason: store.emptySessionReason,
-                            canUndo: store.canUndo
-                        )
-                        .padding(.top, 80)
-                    } else if store.visibleIndices.isEmpty
-                                && store.isGroupedReviewActive {
-                        ContentUnavailableView(
-                            store.groupedReviewEmptyTitle,
-                            systemImage: "rectangle.3.group",
-                            description: Text(store.groupedReviewEmptyDescription)
-                        )
-                        .padding(.top, 80)
-                    } else if store.visibleIndices.isEmpty
-                                && store.filter.isActive {
-                        ContentUnavailableView {
-                            Label("No items match the filter", systemImage: "line.3.horizontal.decrease.circle")
-                        } description: {
-                            Text("Try different choices or clear the filters to see media again.")
-                        } actions: {
-                            Button("Clear Filters") { store.resetFilter() }
+        let archiveGeneration = store.archiveViewportGeneration
+        return GeometryReader { geometry in
+            Group {
+                if store.items.isEmpty {
+                    SessionEmptyView(
+                        reason: store.emptySessionReason,
+                        canUndo: store.canUndo
+                    )
+                    .padding(.top, 80)
+                } else if store.visibleIndices.isEmpty
+                            && store.isGroupedReviewActive {
+                    ContentUnavailableView(
+                        store.groupedReviewEmptyTitle,
+                        systemImage: "rectangle.3.group",
+                        description: Text(store.groupedReviewEmptyDescription)
+                    )
+                    .padding(.top, 80)
+                } else if store.visibleIndices.isEmpty && !store.archiveSelectedFolderID.isEmpty
+                            && (!store.filter.isActive || store.archiveScopeCount == 0) {
+                    // An empty folder stays empty without filters; don't suggest clearing them.
+                    ArchiveFolderEmptyView(store: store)
+                } else if store.visibleIndices.isEmpty
+                            && store.filter.isActive {
+                    ContentUnavailableView {
+                        Label(L10n.text("No items match the filter"), systemImage: "line.3.horizontal.decrease.circle")
+                    } description: {
+                        Text(L10n.text("Change or clear filters to show media."))
+                    } actions: {
+                        Button(L10n.text("Clear Filters")) { store.resetFilter() }
+                    }
+                    .padding(.top, 80)
+                } else {
+                    GridCollectionContent(
+                        store: store,
+                        groups: store.gridGroups,
+                        thumbnailSize: store.gridThumbSize,
+                        viewportSize: geometry.size,
+                        locale: locale,
+                        onPointerCurrentChange: suppressFollowForPointerAction,
+                        controller: collectionController
+                    )
+                    .equatable()
+                    .environment(\.mediaReadAccess, store.mediaReadAccess)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .background(Color.appBackground)
+                    .onAppear {
+                        collectionController.onViewportChange = { receipt in
+                            store.recordPinnedViewport(physicalFileID: receipt.physicalFileID,
+                                                       topOffset: Double(receipt.topOffset), surface: .grid,
+                                                       archiveGeneration: archiveGeneration)
+                            onViewportChange?(receipt)
                         }
-                        .padding(.top, 80)
-                    }
-                    // One lazy grid gives SwiftUI one stable row-height model.
-                    // Nesting a separate LazyVGrid for every day inside a
-                    // LazyVStack made off-screen day heights estimates; those
-                    // estimates were corrected while scrolling upward or
-                    // after a thumbnail resize, visibly moving the viewport.
-                    LazyVGrid(columns: columns, spacing: 10) {
-                        ForEach(store.visibleGroups) { group in
-                            Section {
-                                ForEach(group.indices, id: \.self) { index in
-                                    if store.items.indices.contains(index) {
-                                        cell(index: index, item: store.items[index])
-                                    }
-                                }
-                            } header: {
-                                if let title = group.title {
-                                    HStack(spacing: 8) {
-                                        Text(title)
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                            .truncationMode(.middle)
-                                            .help(title)
-                                        RoundedRectangle(cornerRadius: 1)
-                                            .fill(.secondary.opacity(0.4))
-                                            .frame(height: 2)
-                                    }
-                                    .padding(.horizontal, 4)
-                                    .padding(.vertical, 4)
-                                }
-                            }
+                        collectionController.onViewportRestored = { receipt in
+                    guard archiveGeneration == store.archiveViewportGeneration else { return }
+                    onViewportRestored?(receipt)
+                }
+                        updateColumnCount(for: geometry.size.width)
+                        if let initialViewportReceipt {
+                            collectionController.restoreViewport(initialViewportReceipt)
+                        } else if let id = store.currentItem?.id {
+                            collectionController.follow(id: id)
                         }
                     }
-                    .padding(.vertical, Self.verticalPadding)
-                    .padding(.leading, Self.leadingPadding)
-                    .padding(.trailing, Self.trailingPadding)
-                    .background(PersistentVerticalScroller())
-                    // Make the gaps between tiles draggable too, so a rubber band
-                    // can start anywhere in the grid.
-                    .contentShape(Rectangle())
-                    .overlay(alignment: .topLeading) { rubberBandOverlay }
-                    .coordinateSpace(name: Self.gridSpace)
-                    .simultaneousGesture(rubberBandGesture)
-                    // Mutating the box (not reassigning @State) keeps this off the
-                    // view-invalidation path — scrolling stays cheap.
-                    .onPreferenceChange(TileFrameKey.self) { tileFrames.frames = $0 }
-                }
-                .background(Color.appBackground)
-                .onAppear {
-                    updateColumnCount(for: geometry.size.width)
-                    followCurrentPhoto(using: proxy, animated: false)
-                }
-                .onChange(of: geometry.size.width) { _, newWidth in
-                    updateColumnCount(for: newWidth)
-                }
-                .onChange(of: store.gridThumbSize) { _, _ in
-                    updateColumnCount(for: geometry.size.width)
-                }
-                // Follow the stable media identity as well as numeric index
-                // changes: Clean Up or Move can replace an item at the same
-                // index.
-                .onChange(of: store.currentItem?.id) {
-                    if suppressNextFollow {
-                        suppressNextFollow = false
-                        return
+                    .onChange(of: geometry.size.width) { _, width in
+                        updateColumnCount(for: width)
                     }
-                    followCurrentPhoto(using: proxy, animated: true)
-                }
-                .onDisappear {
-                    followTask?.cancel()
+                    .onChange(of: store.gridThumbSize) { _, _ in
+                        updateColumnCount(for: geometry.size.width)
+                    }
+                    .onChange(of: initialViewportReceipt) { _, receipt in
+                        if let receipt { collectionController.restoreViewport(receipt) }
+                    }
+                    .onChange(of: store.currentItem?.id) {
+                        if suppressNextFollow {
+                            suppressNextFollow = false
+                        } else if let id = store.currentItem?.id {
+                            collectionController.follow(id: id)
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    private func followCurrentPhoto(using proxy: ScrollViewProxy, animated: Bool) {
-        guard let id = store.currentItem?.id else { return }
-        followTask?.cancel()
-        followTask = Task { @MainActor in
-            // Wait for the lazy day grid to receive the new current index,
-            // then issue a second pass so very distant targets are resolved.
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            if animated && !reduceMotion {
-                withAnimation(.easeOut(duration: 0.15)) {
-                    proxy.scrollTo(id, anchor: .center)
-                }
-            } else {
-                proxy.scrollTo(id, anchor: .center)
-            }
-            await Task.yield()
-            guard !Task.isCancelled, store.currentItem?.id == id else { return }
-            proxy.scrollTo(id, anchor: .center)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
     }
 
@@ -177,8 +112,8 @@ struct GridView: View {
         // width. Exclude it so arrow-key columns match the rendered grid.
         let contentWidth = max(
             width
-                - Self.leadingPadding
-                - Self.trailingPadding
+                - 12
+                - 6
                 - PersistentVerticalScroller.gutterWidth,
             1
         )
@@ -187,86 +122,96 @@ struct GridView: View {
         store.setGridColumnCount(count)
     }
 
-    private func cell(index: Int, item: PhotoItem) -> some View {
-        GridCell(
-            store: store,
-            index: index,
-            onPointerCurrentChange: suppressFollowForPointerAction
-        )
-        .id(item.id)
-        .contentShape(Rectangle())
-        .background(
-            GeometryReader { geo in
-                Color.clear.preference(
-                    key: TileFrameKey.self,
-                    value: [index: geo.frame(in: .named(Self.gridSpace))]
-                )
-            }
-        )
-    }
-
     private func suppressFollowForPointerAction() {
         suppressNextFollow = true
-        followTask?.cancel()
+    }
+}
+
+/// Only structural/layout inputs invalidate the collection. Realized cells
+/// observe live review state themselves; the host still owns follow and gestures.
+struct GridCollectionContent: View, Equatable {
+    private struct ProjectionSource: Equatable {
+        let owner: ObjectIdentifier
+        let groups: [PreparedSessionIndex.VisibleGroup]
+    }
+    @State private var projectionCache = ReviewCollectionProjectionCache<ProjectionSource>()
+    @State private var tileImageSizes = GridTileImageSizes()
+    @Environment(\.layoutDirection) private var layoutDirection
+    let store: SessionStore
+    let groups: [PreparedSessionIndex.VisibleGroup]
+    let thumbnailSize: CGFloat
+    let viewportSize: CGSize
+    let locale: Locale
+    let onPointerCurrentChange: () -> Void
+
+    // The callback targets the host's persistent State, so it does not change
+    // while the store and collection identity stay the same. Array equality
+    // fast-paths shared immutable storage on ordinary store publications.
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.store === rhs.store
+            && lhs.thumbnailSize == rhs.thumbnailSize
+            && lhs.viewportSize == rhs.viewportSize
+            && lhs.locale == rhs.locale
+            && lhs.groups == rhs.groups
     }
 
-    // MARK: - Rubber-band selection
+    var controller: ReviewCollectionController? = nil
 
-    private var rubberBandGesture: some Gesture {
-        DragGesture(minimumDistance: 8, coordinateSpace: .named(Self.gridSpace))
-            .onChanged { value in
-                guard rubberBandShouldTrackCanvas(
-                    startingAt: value.startLocation
-                ) else {
-                    rubberBand = nil
-                    return
-                }
-                let rect = CGRect(
-                    x: min(value.startLocation.x, value.location.x),
-                    y: min(value.startLocation.y, value.location.y),
-                    width: abs(value.location.x - value.startLocation.x),
-                    height: abs(value.location.y - value.startLocation.y)
+    #if LOUPPE_TEST_SEAMS
+    static var didConstruct: (() -> Void)?
+    static var didBuildProjection: (() -> Void)?
+    #endif
+
+    var body: some View {
+        #if LOUPPE_TEST_SEAMS
+        let _ = Self.didConstruct?()
+        #endif
+        let source = ProjectionSource(owner: ObjectIdentifier(store), groups: groups)
+        let projection = projectionCache.resolve(for: source) {
+            #if LOUPPE_TEST_SEAMS
+            Self.didBuildProjection?()
+            #endif
+            return ReviewCollectionProjection(sections: groups.map { group in
+                ReviewCollectionSection(
+                    id: String(describing: group.id), title: group.title,
+                    entries: group.entries.compactMap { entry in
+                        guard store.items.indices.contains(entry.index) else { return nil }
+                        return ReviewCollectionEntry(id: entry.id, index: entry.index,
+                            physicalFileIDs: store.items[entry.index].individualFiles.map(\.id))
+                    }
                 )
-                rubberBand = rect
-                store.setSelection(Set(tileFrames.frames.filter { $0.value.intersects(rect) }.map(\.key)))
-            }
-            .onEnded { value in
-                defer { rubberBand = nil }
-                guard rubberBandShouldTrackCanvas(
-                    startingAt: value.startLocation
-                ) else { return }
-                store.commitSelectionAnchor()
-            }
-    }
-
-    private func rubberBandShouldTrackCanvas(
-        startingAt point: CGPoint
-    ) -> Bool {
-        let playableVideoIndices = Set(
-            tileFrames.frames.keys.filter { index in
-                store.items.indices.contains(index)
-                    && store.items[index].isPlayableMedia
-            }
-        )
-        return GridRubberBandHitTest.shouldTrackCanvasDrag(
-            startingAt: point,
-            tileFrames: tileFrames.frames,
-            playableVideoIndices: playableVideoIndices
-        )
-    }
-
-    @ViewBuilder
-    private var rubberBandOverlay: some View {
-        if let rect = rubberBand {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(Color.louppeAccent.opacity(0.12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 2)
-                        .strokeBorder(Color.louppeAccent.opacity(0.8), lineWidth: 1)
-                )
-                .frame(width: rect.width, height: rect.height)
-                .offset(x: rect.minX, y: rect.minY)
-                .allowsHitTesting(false)
+            })
+        }
+        ReviewCollection(
+            projection: projection,
+            style: .grid(thumbnailSize: thumbnailSize),
+            controller: controller,
+            rubberBand: ReviewCollectionRubberBand(
+                shouldBegin: { point, frames in
+                    let playable = Set(frames.keys.filter {
+                        store.items.indices.contains($0) && store.items[$0].isPlayableMedia
+                    })
+                    return GridRubberBandHitTest.shouldTrackCanvasDrag(
+                        startingAt: point, tileFrames: frames, playableVideoIndices: playable,
+                        rightToLeft: layoutDirection == .rightToLeft,
+                        imageSizes: Dictionary(uniqueKeysWithValues: frames.keys.compactMap { index in
+                            guard store.items.indices.contains(index) else { return nil }
+                            let item = store.items[index]
+                            guard let size = tileImageSizes.sizes[item.contentRevision]
+                                ?? TileMediaGeometry.imageSize(for: item, loadedImage: ImagePipeline.shared.cachedThumbnail(for: item))
+                            else { return nil }
+                            return (index, size)
+                        }))
+                },
+                changed: { rect, frames in
+                    store.setSelection(Set(frames.filter { $0.value.intersects(rect) }.map(\.key)))
+                },
+                ended: { store.commitSelectionAnchor() }
+            )
+        ) { entry in
+            AnyView(GridCell(store: store, index: entry.index, id: entry.id,
+                             onPointerCurrentChange: onPointerCurrentChange,
+                             tileImageSizes: tileImageSizes))
         }
     }
 }
@@ -276,15 +221,14 @@ struct GridView: View {
 /// shared per-file rating storage changes. Keeping the observation here makes
 /// the badge, selection frame, and accessibility value update immediately.
 private struct GridCell: View {
-    private static let ratingBadgeSize: CGFloat = 21
-    private static let ratingButtonSize: CGFloat = 40
-
     @ObservedObject var store: SessionStore
     let index: Int
+    let id: String
     let onPointerCurrentChange: () -> Void
+    let tileImageSizes: GridTileImageSizes
 
     var body: some View {
-        if store.items.indices.contains(index) {
+        if store.items.indices.contains(index), store.items[index].id == id {
             let item = store.items[index]
             let actions = GridCellActions(
                 store: store,
@@ -293,16 +237,6 @@ private struct GridCell: View {
             )
             VStack(spacing: 3) {
                 ZStack {
-                    ThumbnailView(
-                        item: item,
-                        isCurrent: index == store.currentIndex,
-                        isSelected: store.selectedIndices.contains(index),
-                        showsRatingBadge: false,
-                        videoPlayback: store.videoPlayback
-                    )
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-
                     // A representable has a 100x100 default ideal size. Keep
                     // it in an overlay so it receives the media square's real
                     // size without participating in the Grid cell's layout.
@@ -316,7 +250,7 @@ private struct GridCell: View {
                                 item: item,
                                 isCurrent: index == store.currentIndex,
                                 isSelected: store.selectedIndices.contains(index),
-                                showActionTitle: "Make Current",
+                                showActionTitle: L10n.text("Make Current"),
                                 show: {
                                     actions.makeCurrent()
                                 },
@@ -339,9 +273,25 @@ private struct GridCell: View {
                             )
                         }
 
+                    ThumbnailView(
+                        item: item,
+                        isCurrent: index == store.currentIndex,
+                        isSelected: store.selectedIndices.contains(index),
+                        showsRatingBadge: false,
+                        videoPlayback: store.videoPlayback,
+                        mediaAlignment: .bottom,
+                        tileOverlay: AnyView(tileControls(item: item, actions: actions)),
+                        onImageSizeChange: { revision, size in
+                            tileImageSizes.sizes[revision] = size
+                        }
+                    )
+
                     if item.isPlayableMedia {
                         Button {
-                            if index != store.currentIndex { store.setIndex(index) }
+                            if index != store.currentIndex {
+                                onPointerCurrentChange()
+                                store.setIndex(index)
+                            }
                             store.videoPlayback.toggle(item)
                         } label: {
                             Image(systemName: store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
@@ -350,55 +300,23 @@ private struct GridCell: View {
                                 .frame(width: 18, height: 18)
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.louppeFilledAccent)
                         .buttonBorderShape(.circle)
                         .tint(.black.opacity(0.62))
                         .foregroundStyle(.white)
                         .controlSize(.large)
                         .help(store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
-                            ? "Pause \(item.mediaKind.singularLabel)"
-                            : "Play \(item.mediaKind.singularLabel)")
+                            ? L10n.text("Pause \(L10n.label(item.mediaKind.singularLabel))")
+                            : L10n.text("Play \(L10n.label(item.mediaKind.singularLabel))"))
                         .accessibilityLabel(store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
-                            ? "Pause \(item.mediaKind.singularLabel)"
-                            : "Play \(item.mediaKind.singularLabel)")
+                            ? L10n.text("Pause \(L10n.label(item.mediaKind.singularLabel))")
+                            : L10n.text("Play \(L10n.label(item.mediaKind.singularLabel))"))
                     }
-                }
-                // Keep the rating control above the photo's selection gesture
-                // so its click never falls through and changes two things.
-                .overlay(alignment: .topTrailing) {
-                    Button {
-                        actions.cycleRating()
-                    } label: {
-                        RatingBadge(
-                            rating: item.rating,
-                            isMixed: item.hasMixedRatings,
-                            size: Self.ratingBadgeSize
-                        )
-                        .frame(
-                            width: Self.ratingButtonSize,
-                            height: Self.ratingButtonSize
-                        )
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!store.canRate)
-                    .padding(2)
-                    .help("Change Yes/No decision")
-                    .accessibilityLabel("Change decision for \(item.displayName)")
-                    .accessibilityValue(
-                        MediaTileAccessibility.ratingDescription(
-                            for: item.ratingState
-                        )
-                    )
                 }
                 .frame(maxWidth: .infinity)
                 .aspectRatio(1, contentMode: .fit)
 
-                Text(item.displayName)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: .infinity)
+                ReviewGridCaption(title: item.displayName)
                     .accessibilityHidden(true)
                     .overlay {
                         GridImmediateClickSurface(
@@ -409,7 +327,46 @@ private struct GridCell: View {
                     }
             }
             .frame(maxWidth: .infinity)
+            .contextMenu {
+                MediaTileContextMenu(store: store, index: index, revision: item.contentRevision, open: actions.openInGallery)
+            }
         }
+    }
+
+    private func tileControls(item: PhotoItem, actions: GridCellActions) -> some View {
+        Color.clear
+            .allowsHitTesting(false)
+            .overlay {
+                DecisionBadgeLayout {
+                    Button {
+                        actions.cycleRating()
+                    } label: {
+                        Color.clear.contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!store.canRate)
+                    .help(L10n.text("Change Yes/No decision"))
+                    .accessibilityLabel(L10n.text("Change decision for \(item.displayName)"))
+                    .accessibilityValue(
+                        MediaTileAccessibility.ratingDescription(
+                            for: item.ratingState
+                        )
+                    )
+
+                    RatingBadge(
+                        rating: item.rating,
+                        isMixed: item.hasMixedRatings,
+                        size: TileBadgeLayout.height
+                    )
+                    .opacity(store.canRate ? 1 : 0.5)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
+            }
+            .overlay(alignment: .bottomLeading) {
+                QualityCueTileIcons(store: store, item: item)
+                    .padding(TileBadgeLayout.inset)
+            }
     }
 }
 
@@ -441,6 +398,7 @@ struct GridImmediateClickSurface: NSViewRepresentable {
         var onDoubleClick: () -> Void
         private var mouseDownLocation: CGPoint?
         private var exceededDragThreshold = false
+        private let touchActions = DirectTouchClickActions()
 
         init(
             onSingleClick: @escaping (NSEvent.ModifierFlags) -> Void,
@@ -449,6 +407,13 @@ struct GridImmediateClickSurface: NSViewRepresentable {
             self.onSingleClick = onSingleClick
             self.onDoubleClick = onDoubleClick
             super.init(frame: .zero)
+            touchActions.singleTap = { [weak self] _, modifiers in
+                guard let self else { return }
+                self.window?.makeFirstResponder(nil)
+                self.onSingleClick(modifiers)
+            }
+            touchActions.doubleTap = { [weak self] _ in self?.onDoubleClick() }
+            touchActions.install(on: self, includesSingleTap: true)
         }
 
         @available(*, unavailable)
@@ -550,30 +515,14 @@ struct GridCellActions {
     }
 }
 
-/// Collects the on-screen tiles' frames (in the grid's coordinate space)
-/// so the rubber band can hit-test them.
-private struct TileFrameKey: PreferenceKey {
-    static var defaultValue: [Int: CGRect] { [:] }
-    static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect]) {
-        value.merge(nextValue()) { _, new in new }
-    }
-}
-
-/// A mutable box for the tile frames. Held in @State so it survives redraws,
-/// but mutated (not reassigned) so writes don't invalidate the view — the
-/// frames feed the drag gesture only, never the rendered output.
-private final class TileFrameStore {
-    var frames: [Int: CGRect] = [:]
-}
-
 /// Classifies the starting point of a Grid drag from the tile geometry already
 /// needed for selection. Control locations are deterministic within each
-/// square media tile, so this avoids one GeometryReader and preference value
+/// fitted photo rectangle, so this avoids one GeometryReader and preference value
 /// per rendered control while keeping native Button drags out of rubber-band
 /// selection.
 enum GridRubberBandHitTest {
-    /// The 40-point rating target plus its two-point outer padding on each side.
-    private static let ratingControlRegionSize: CGFloat = 44
+    /// Include the decision target and its shared corner inset.
+    private static let ratingControlRegionSize = TileBadgeLayout.decisionTargetSize + TileBadgeLayout.inset
     /// Conservatively covers the native large circular Play button without
     /// making the surrounding photo difficult to use as a drag origin.
     private static let playbackControlRegionSize: CGFloat = 48
@@ -581,7 +530,9 @@ enum GridRubberBandHitTest {
     static func shouldTrackCanvasDrag(
         startingAt point: CGPoint,
         tileFrames: [Int: CGRect],
-        playableVideoIndices: Set<Int>
+        playableVideoIndices: Set<Int>,
+        rightToLeft: Bool = false,
+        imageSizes: [Int: CGSize] = [:]
     ) -> Bool {
         guard let (index, tileFrame) = tileFrames.first(where: {
             $0.value.contains(point)
@@ -592,21 +543,38 @@ enum GridRubberBandHitTest {
 
         // GridCell's media area is a square at the top of the cell; the
         // filename beneath it remains an ordinary selection-canvas target.
-        let mediaFrame = CGRect(
+        let slotFrame = CGRect(
             x: tileFrame.minX,
             y: tileFrame.minY,
             width: tileFrame.width,
             height: tileFrame.width
         )
-        guard mediaFrame.contains(point) else { return true }
+        guard slotFrame.contains(point) else { return true }
+        let mediaFrame = TileMediaGeometry.fittedRect(in: slotFrame, imageSize: imageSizes[index],
+                                                      alignment: .bottom)
 
+        // The same target GridCell lays out, widened by the shared inset
+        // toward the photo's top trailing corner.
+        let target = TileBadgeLayout.decisionTarget(inPhoto: mediaFrame)
         let ratingFrame = CGRect(
-            x: mediaFrame.maxX - ratingControlRegionSize,
-            y: mediaFrame.minY,
+            x: rightToLeft ? mediaFrame.minX : mediaFrame.maxX - ratingControlRegionSize,
+            y: target.minY - TileBadgeLayout.inset,
             width: ratingControlRegionSize,
             height: ratingControlRegionSize
         )
         if ratingFrame.contains(point) { return false }
+        if !playableVideoIndices.contains(index) {
+            let cueRegionHeight = TileBadgeLayout.cueTargetHeight + TileBadgeLayout.inset
+            let cueFrame = CGRect(
+                x: rightToLeft
+                    ? mediaFrame.maxX - (TileBadgeLayout.maximumCueRowWidth + TileBadgeLayout.inset)
+                    : mediaFrame.minX,
+                y: mediaFrame.maxY - cueRegionHeight,
+                width: TileBadgeLayout.maximumCueRowWidth + TileBadgeLayout.inset,
+                height: cueRegionHeight
+            )
+            if cueFrame.contains(point) { return false }
+        }
 
         if playableVideoIndices.contains(index) {
             let halfPlaybackSize = playbackControlRegionSize / 2
@@ -619,6 +587,7 @@ enum GridRubberBandHitTest {
             if playbackFrame.contains(point) { return false }
         }
 
+        // Everything else, including the filename, is selection canvas.
         return true
     }
 }

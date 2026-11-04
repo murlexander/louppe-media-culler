@@ -1,0 +1,14 @@
+/private/tmp/louppe-performance-implementation-83x3uszk/Louppe Performance Implementation.app: replacing existing signature
+{
+  "app": "/private/tmp/louppe-performance-implementation-83x3uszk/Louppe Performance Implementation.app",
+  "fixture": "/private/tmp/louppe-performance-implementation-83x3uszk/launch-photos",
+  "bundleIdentifier": "com.alexandermarkin.louppe.performanceImplementation20261012.r170fddfc",
+  "pids": [
+    "76346"
+  ],
+  "schema": 7,
+  "entries": 12,
+  "allUnrated": true,
+  "fixtureAndSourceBytesUnchanged": true,
+  "strictTemporarySignatureVerified": true
+}

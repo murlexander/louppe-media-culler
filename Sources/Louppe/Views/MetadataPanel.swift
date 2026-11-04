@@ -7,6 +7,7 @@ struct MetadataPanel: View {
     /// A short dwell prevents key repeat from opening every transient file.
     private static let inspectionDebounceNanoseconds: UInt64 = 80_000_000
 
+    @Environment(\.mediaReadAccess) private var sourceAccess
     @ObservedObject var store: SessionStore
     let item: PhotoItem
 
@@ -31,24 +32,6 @@ struct MetadataPanel: View {
     @State private var filenamePlanningCancelFlag:
         SourceOrganizationPlanningCancelFlag?
     @FocusState private var filenameIsFocused: Bool
-    @AppStorage(CameraQualityWarningPreferences.Keys.isEnabled)
-    private var cameraQualityWarningsEnabled = true
-    @AppStorage(CameraQualityWarningPreferences.Keys.isHighISOEnabled)
-    private var highISOWarningEnabled = true
-    @AppStorage(CameraQualityWarningPreferences.Keys.isSlowShutterEnabled)
-    private var slowShutterWarningEnabled = true
-    @AppStorage(CameraQualityWarningPreferences.Keys.isClippingEnabled)
-    private var clippingWarningEnabled = true
-    @AppStorage(CameraQualityWarningPreferences.Keys.highISOThreshold)
-    private var highISOWarningThreshold =
-        CameraQualityWarningPreferences.defaultHighISOThreshold
-    @AppStorage(CameraQualityWarningPreferences.Keys.slowShutterThreshold)
-    private var slowShutterWarningThreshold =
-        CameraQualityWarningPreferences.defaultSlowShutterThreshold
-    @AppStorage(CameraQualityWarningPreferences.Keys.clippingPercentageThreshold)
-    private var clippingWarningThreshold =
-        CameraQualityWarningPreferences.defaultClippingPercentageThreshold
-
     private struct MetadataLoadID: Hashable {
         let contentRevision: PhotoContentRevision
         let isMultipleSelection: Bool
@@ -64,6 +47,7 @@ struct MetadataPanel: View {
         let isEligible: Bool
     }
 
+    // Large camera-display values; focal length leads the labeled row below.
     private let shootingLabels = ["Aperture", "Shutter", "ISO"]
     private let secondaryShootingLabels = ["Focal length", "Exposure comp.", "White balance"]
     private let promotedLabels = [
@@ -126,32 +110,6 @@ struct MetadataPanel: View {
             && audioLevelsLoadFailed
     }
 
-    private var cameraQualityWarningPreferences: CameraQualityWarningPreferences {
-        CameraQualityWarningPreferences(
-            isEnabled: cameraQualityWarningsEnabled,
-            isHighISOEnabled: highISOWarningEnabled,
-            isSlowShutterEnabled: slowShutterWarningEnabled,
-            isClippingEnabled: clippingWarningEnabled,
-            highISOThreshold: highISOWarningThreshold,
-            slowShutterThreshold: slowShutterWarningThreshold,
-            clippingPercentageThreshold: clippingWarningThreshold
-        )
-    }
-
-    private var cameraQualityCuesRow: CameraQualityCuesRow {
-        CameraQualityCuesRow(
-            item: item,
-            analysis: displayedHistogram,
-            analysisSource: displayedHistogramSource,
-            isRawAnalysisPending: displayedRawHistogramIsPending,
-            preferences: cameraQualityWarningPreferences
-        )
-    }
-
-    private var showsCameraQualityCues: Bool {
-        cameraQualityCuesRow.isVisible
-    }
-
     private var cameraName: String? {
         displayedFields.first { $0.label == "Camera" }?.value
     }
@@ -203,7 +161,7 @@ struct MetadataPanel: View {
     }
 
     private var showsHistogram: Bool {
-        store.selectedIndices.count <= 1
+        item.primaryFile.photosMedia == nil && store.selectedIndices.count <= 1
             && item.mediaKind == .photo
             && item.isSupported
     }
@@ -242,11 +200,12 @@ struct MetadataPanel: View {
                 nanoseconds: Self.inspectionDebounceNanoseconds
             )
             guard !Task.isCancelled else { return }
-            let current = item
-            let loaded = await Task.detached(priority: .userInitiated) {
-                MetadataExtractor.fields(for: current)
-            }.value
-            guard !Task.isCancelled,
+            // The bounded reader retires this waiter on navigation; a queued
+            // read never starts, and a running one keeps its own grant lease.
+            let loaded = await MetadataDetailPipeline.shared.fields(
+                for: item, sourceAccess: sourceAccess
+            )
+            guard let loaded, !Task.isCancelled,
                   fieldsRevision == requestedRevision else { return }
             fields = loaded
         }
@@ -262,7 +221,7 @@ struct MetadataPanel: View {
             guard !Task.isCancelled else { return }
             let requestedItem = item
             let loaded = await HistogramPipeline.shared.analysis(
-                for: requestedItem
+                for: requestedItem, sourceAccess: sourceAccess
             )
             guard !Task.isCancelled,
                   histogramRevision == requestedRevision else { return }
@@ -282,7 +241,7 @@ struct MetadataPanel: View {
             guard rawHistogramIsPending else { return }
 
             let loaded = await RawHistogramPipeline.shared.analysis(
-                for: requestedItem
+                for: requestedItem, sourceAccess: sourceAccess
             )
             guard !Task.isCancelled,
                   rawHistogramRevision == requestedRevision else { return }
@@ -300,7 +259,7 @@ struct MetadataPanel: View {
             )
             guard !Task.isCancelled else { return }
             let requestedItem = item
-            let loaded = await AudioLevelPipeline.shared.analysis(for: requestedItem)
+            let loaded = await AudioLevelPipeline.shared.analysis(for: requestedItem, sourceAccess: sourceAccess)
             guard !Task.isCancelled,
                   audioLevelsRevision == requestedRevision else { return }
             audioLevels = loaded
@@ -341,6 +300,8 @@ struct MetadataPanel: View {
                 playback: store.videoPlayback,
                 isEnabled: store.canSetCurrentPlayableMediaPlaybackRate
             )
+            MediaTrackSelectionControls(item: item, playback: store.videoPlayback)
+                .disabled(!store.canSetCurrentPlayableMediaPlaybackRate)
             Divider()
         }
 
@@ -356,8 +317,16 @@ struct MetadataPanel: View {
             Divider()
         }
 
+        // Cues appear only when something needs attention, so they lead
+        // before the always-present histogram.
+        QualityCueDetailsView(store: store, item: item)
+
         if showsHistogram {
+            if !store.qualityCues(for: item).isEmpty {
+                Divider()
+            }
             HistogramSection(
+                item: item,
                 analysis: displayedHistogram,
                 source: displayedHistogramSource,
                 loadFailed: displayedHistogramLoadFailed,
@@ -365,20 +334,20 @@ struct MetadataPanel: View {
             )
         }
 
-        if showsHistogram
+        if (showsHistogram || !store.qualityCues(for: item).isEmpty)
             && (hasCameraLensInfo || hasShootingInfo || !otherFields.isEmpty) {
             Divider()
         }
 
         if let cameraLensText {
-            metadataValue(cameraLensText, emphasized: true)
+            cameraLensLine(cameraLensText)
         }
 
         if hasCameraLensInfo && hasShootingInfo {
             Divider()
         }
 
-        if hasShootingInfo || showsCameraQualityCues {
+        if hasShootingInfo {
             VStack(spacing: 12) {
                 if !primaryShootingFields.isEmpty {
                     metadataRow(primaryShootingFields, showLabels: false, emphasized: true)
@@ -386,19 +355,16 @@ struct MetadataPanel: View {
                 if !secondaryShootingFields.isEmpty {
                     metadataRow(secondaryShootingFields)
                 }
-                if showsCameraQualityCues {
-                    cameraQualityCuesRow
-                }
             }
         }
 
-        if (hasShootingInfo || showsCameraQualityCues) && !otherFields.isEmpty {
+        if hasShootingInfo && !otherFields.isEmpty {
             Divider()
         }
 
         ForEach(otherFields) { field in
             VStack(alignment: .leading, spacing: 1) {
-                Text(field.label)
+                Text(L10n.label(field.label))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text(field.value)
@@ -412,15 +378,15 @@ struct MetadataPanel: View {
         VStack(alignment: .leading, spacing: 4) {
             if isEditingFilename {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    TextField("Filename", text: $filenameDraft)
+                    TextField(L10n.text("Filename"), text: $filenameDraft)
                         .textFieldStyle(.roundedBorder)
                         .font(.title3.weight(.semibold))
                         .focused($filenameIsFocused)
                         .onSubmit { submitFilenameRename() }
                         .onExitCommand { cancelFilenameEditing() }
-                        .accessibilityLabel("Filename without extension")
+                        .accessibilityLabel(L10n.text("Filename without extension"))
                         .accessibilityHint(
-                            "Edit the name without its extension. Matching RAW, JPEG, and XMP files are renamed together."
+                            L10n.text("Edit the name without its extension. Matching RAW, JPEG, and XMP files are renamed together.")
                         )
                     Text(filenameExtension)
                         .font(.title3.weight(.semibold))
@@ -431,16 +397,19 @@ struct MetadataPanel: View {
                         cancelFilenameEditing()
                     } label: {
                         Image(systemName: "xmark")
+                            .frame(width: 36, height: 36)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
-                    .accessibilityLabel("Cancel filename editing")
+                    .accessibilityLabel(L10n.text("Cancel filename editing"))
+                    .help(L10n.text("Cancel filename editing"))
                 }
 
                 if isPlanningFilename {
                     HStack(spacing: 6) {
                         ProgressView().controlSize(.small)
-                        Text("Checking filename…")
+                        Text(L10n.text("Checking filename…"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -469,7 +438,7 @@ struct MetadataPanel: View {
                         .controlSize(.small)
                 }
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("Renaming \(item.displayName)")
+                .accessibilityLabel(L10n.text("Renaming \(item.displayName)"))
             } else {
                 Button {
                     beginFilenameEditing()
@@ -482,9 +451,10 @@ struct MetadataPanel: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!store.canRenameSource)
-                .help("Click to edit filename")
+                // Lead with the full name: the heading truncates in the middle.
+                .help("\(item.displayName)\n\(L10n.text("Click to edit filename"))")
                 .accessibilityLabel(item.displayName)
-                .accessibilityHint("Click to edit the filename in place.")
+                .accessibilityHint(L10n.text("Click to edit the filename in place."))
             }
 
             if let operationError = store.organizationError,
@@ -551,7 +521,7 @@ struct MetadataPanel: View {
                 itemID: requestedItemID
             ) else {
                 isPlanningFilename = false
-                filenamePlanningError = "This filename can no longer be edited."
+                filenamePlanningError = L10n.text("This filename can no longer be edited.")
                 return
             }
             let result = await Task.detached(priority: .userInitiated) {
@@ -612,28 +582,32 @@ struct MetadataPanel: View {
 
         MetadataEditingControls(store: store)
 
-        Button("Rename Files…") {
+        Button(L10n.text("Rename Files…")) {
             store.presentMetadataFileRenaming()
         }
         .disabled(!store.canRenameSource)
 
         Divider()
 
-        selectionSummaryField("Cameras", value: summary.cameras.joined(separator: ", "))
-        selectionSummaryField("Lenses", value: summary.lenses.joined(separator: ", "))
-        selectionSummaryField("Captured", value: captureDateText(for: summary))
+        selectionSummaryField(L10n.text("Cameras"), value: summary.cameras.joined(separator: ", "))
+        selectionSummaryField(L10n.text("Lenses"), value: summary.lenses.joined(separator: ", "))
+        if !summary.filmSimulations.isEmpty {
+            selectionSummaryField(L10n.text("Film simulation"), value: summary.filmSimulations.joined(separator: ", "))
+        }
+        selectionSummaryField(L10n.text("Captured"), value: captureDateText(for: summary))
         selectionSummaryField(
-            "Total size",
-            value: ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file)
+            L10n.text("Total size"),
+            value: store.photosBatch?.mediaSession != nil ? L10n.text("Unavailable until originals load")
+                : ByteCountFormatter.string(fromByteCount: summary.totalBytes, countStyle: .file)
         )
-        selectionSummaryField("Types", value: summary.fileTypes.joined(separator: ", "))
+        selectionSummaryField(L10n.text("Types"), value: summary.fileTypes.joined(separator: ", "))
     }
 
     private func selectionTitle(for summary: PhotoSelectionSummary) -> String {
         let itemLabel = summary.photoCount == summary.count
-            ? "photos"
-            : "media items"
-        return "\(summary.count) \(itemLabel) selected · \(summary.fileCount) files"
+            ? L10n.text("photos")
+            : L10n.text("media items")
+        return L10n.text("\(summary.count) \(itemLabel) selected · \(summary.fileCount) files")
     }
 
     private func selectionSummaryField(_ label: String, value: String) -> some View {
@@ -663,15 +637,19 @@ struct MetadataPanel: View {
             }
         }
         if summary.unknownDateCount > 0 {
-            let itemLabel = summary.photoCount == summary.count
-                ? "photo"
-                : "media item"
-            let label = summary.unknownDateCount == 1
-                ? "1 \(itemLabel) without a capture date"
-                : "\(summary.unknownDateCount) \(itemLabel)s without a capture date"
+            let label: String
+            if summary.photoCount == summary.count {
+                label = summary.unknownDateCount == 1
+                    ? L10n.text("1 photo without a capture date")
+                    : L10n.text("\(summary.unknownDateCount) photos without a capture date")
+            } else {
+                label = summary.unknownDateCount == 1
+                    ? L10n.text("1 media item without a capture date")
+                    : L10n.text("\(summary.unknownDateCount) media items without a capture date")
+            }
             lines.append(label)
         }
-        return lines.isEmpty ? "Unknown" : lines.joined(separator: "\n")
+        return lines.isEmpty ? L10n.text("Unknown") : lines.joined(separator: "\n")
     }
 
     @ViewBuilder
@@ -681,25 +659,43 @@ struct MetadataPanel: View {
         emphasized: Bool = false
     ) -> some View {
         if !rowFields.isEmpty {
-            HStack(alignment: .top, spacing: 4) {
-                ForEach(rowFields) { field in
-                    VStack(spacing: 2) {
-                        if showLabels {
-                            Text(displayLabel(for: field))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                        if emphasized {
-                            settingValue(for: field)
-                        } else {
-                            Text(field.value)
-                                .font(.callout.weight(.medium))
-                            .foregroundStyle(.primary)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
+            // All values on one line when they fit; otherwise two rows.
+            ViewThatFits(in: .horizontal) {
+                metadataFieldsLine(rowFields, showLabels: showLabels, emphasized: emphasized)
+                VStack(spacing: 10) {
+                    let half = (rowFields.count + 1) / 2
+                    metadataFieldsLine(Array(rowFields.prefix(half)), showLabels: showLabels, emphasized: emphasized)
+                    metadataFieldsLine(Array(rowFields.dropFirst(half)), showLabels: showLabels, emphasized: emphasized)
                 }
+            }
+        }
+    }
+
+    private func metadataFieldsLine(
+        _ rowFields: [MetadataField],
+        showLabels: Bool,
+        emphasized: Bool
+    ) -> some View {
+        HStack(alignment: .top, spacing: 4) {
+            ForEach(rowFields) { field in
+                VStack(spacing: 2) {
+                    if showLabels {
+                        Text(displayLabel(for: field))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    if emphasized {
+                        settingValue(for: field)
+                            .fixedSize()
+                    } else {
+                        Text(field.value)
+                            .font(.callout.weight(.medium))
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .frame(maxWidth: .infinity)
             }
         }
     }
@@ -726,7 +722,7 @@ struct MetadataPanel: View {
                 .lineLimit(1)
                 .textSelection(.enabled)
         case "ISO":
-            return Text("ISO\(Text(value).font(largeFont))")
+            return Text("ISO\u{2009}\(Text(value).font(largeFont))")
                 .font(smallFont)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -742,10 +738,29 @@ struct MetadataPanel: View {
 
     private func displayLabel(for field: MetadataField) -> String {
         switch field.label {
-        case "Exposure comp.": return "Exp. comp."
-        case "White balance": return "WB"
-        default: return field.label
+        case "Exposure comp.": return L10n.text("Exp. comp.")
+        case "White balance": return L10n.text("WB")
+        default: return L10n.label(field.label)
         }
+    }
+
+    /// Camera and lens on one line when they fit; otherwise each on its own
+    /// line, wrapping long lens names instead of clipping them.
+    private func cameraLensLine(_ text: String) -> some View {
+        ViewThatFits(in: .horizontal) {
+            Text(text)
+                .font(.subheadline)
+                .lineLimit(1)
+                .fixedSize()
+                .frame(maxWidth: .infinity)
+                .textSelection(.enabled)
+            VStack(spacing: 2) {
+                if let cameraName { metadataValue(cameraName, emphasized: true) }
+                if let lensName { metadataValue(lensName, emphasized: true) }
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .combine)
     }
 
     private func metadataValue(_ value: String, emphasized: Bool = false) -> some View {
@@ -766,10 +781,10 @@ private struct MediaPlaybackSpeedControl: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Playback speed")
+            Text(L10n.text("Playback speed"))
                 .font(.subheadline.weight(.semibold))
             Picker(
-                "Media playback speed",
+                L10n.text("Media playback speed"),
                 selection: Binding(
                     get: { playback.playbackRate },
                     set: { playback.setPlaybackRate($0) }
@@ -781,9 +796,10 @@ private struct MediaPlaybackSpeedControl: View {
                 }
             }
             .pickerStyle(.segmented)
+            .tint(Color.louppeFilledAccent)
             .labelsHidden()
             .disabled(!isEnabled)
-            .accessibilityHint("Applies to video and audio playback.")
+            .accessibilityHint(L10n.text("Applies to video and audio playback."))
         }
     }
 

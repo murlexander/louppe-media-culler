@@ -57,6 +57,53 @@ final class ZoomTransitionTests: XCTestCase {
                        "The toolbar spinner must stop after the displayed photo settles")
     }
 
+    func testLiveFittedPinchDoesNotPaintOverBrowser() async throws {
+        let fixture = try Fixture()
+        defer { fixture.close() }
+        let store = SessionStore()
+        store.items = [fixture.item]
+        store.rebuildDerivedDataForTesting()
+        store.phase = .ready
+        store.showBrowser = true
+        store.zoomMode = .fit
+        let host = NSHostingView(rootView: GalleryView(store: store))
+        fixture.window.setContentSize(CGSize(width: 600, height: 320))
+        fixture.window.contentView = host
+        fixture.window.makeKeyAndOrderFront(nil)
+        defer { fixture.window.contentView = nil }
+
+        func fittedSurface(in view: NSView) -> FittedImageDoubleClickView? {
+            if let fitted = view as? FittedImageDoubleClickView { return fitted }
+            return view.subviews.lazy.compactMap { fittedSurface(in: $0) }.first
+        }
+        for _ in 0..<200 {
+            host.layoutSubtreeIfNeeded()
+            if fittedSurface(in: host) != nil, store.fullImageLoads == 0 { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let fitted = try XCTUnwrap(fittedSurface(in: host))
+        func browserPixel() throws -> NSColor {
+            host.layoutSubtreeIfNeeded()
+            host.displayIfNeeded()
+            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            // Below the only thumbnail and clear of the native scroller.
+            let x = Int((BrowserView.width - 25) / host.bounds.width * CGFloat(bitmap.pixelsWide))
+            return try XCTUnwrap(bitmap.colorAt(x: x, y: bitmap.pixelsHigh / 2)?.usingColorSpace(.deviceRGB))
+        }
+        let before = try browserPixel()
+        fitted.beginPinch()
+        fitted.updatePinch(delta: 1.5,
+                           at: CGPoint(x: fitted.bounds.midX, y: fitted.bounds.midY),
+                           backingScale: fixture.window.backingScaleFactor)
+        try await Task.sleep(for: .milliseconds(100))
+        let during = try browserPixel()
+        XCTAssertEqual(during.redComponent, before.redComponent, accuracy: 0.02)
+        XCTAssertEqual(during.greenComponent, before.greenComponent, accuracy: 0.02)
+        XCTAssertEqual(during.blueComponent, before.blueComponent, accuracy: 0.02)
+        XCTAssertEqual(store.zoomMode, .fit, "Check the live preview before the pinch hands off")
+    }
+
     func testCustomZoomReturnsSmoothlyToCenteredActualSizeFromBothDirections() async throws {
         let fixture = try Fixture()
         defer { fixture.close() }

@@ -24,7 +24,7 @@ struct MetadataEditingControls: View {
         VStack(alignment: .leading, spacing: 9) {
             if showsDecision {
                 HStack {
-                    Text("Decision")
+                    Text(L10n.text("Decision"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -32,59 +32,71 @@ struct MetadataEditingControls: View {
                 }
             }
 
-            HStack(spacing: 3) {
-                Text("Stars")
+            VStack(alignment: .leading, spacing: 3) {
+                Text(L10n.text("Stars"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Spacer(minLength: 4)
-                Button {
-                    store.setStarRating(nil)
-                } label: {
-                    Image(systemName: "xmark")
-                        .frame(width: 18, height: 22)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .disabled(!store.canRate)
-                .accessibilityLabel("Clear stars")
-
-                ForEach(StarRating.allCases, id: \.self) { rating in
+                HStack(spacing: 3) {
                     Button {
-                        store.setStarRating(rating)
+                        store.setStarRating(nil)
                     } label: {
-                        Image(systemName: starSymbol(for: rating, state: stars))
-                            .frame(width: 18, height: 22)
+                        Image(systemName: "xmark")
+                            .frame(width: 36, height: 36)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(starColor(for: rating, state: stars))
+                    .foregroundStyle(.secondary)
                     .disabled(!store.canRate)
-                    .accessibilityLabel("Set \(rating.count) stars")
+                    .accessibilityLabel(L10n.text("Clear stars"))
+                    .accessibilityValue(MediaTileAccessibility.starDescription(for: stars))
+                    .help(L10n.text("Clear stars"))
+
+                    ForEach(StarRating.allCases, id: \.self) { rating in
+                        let title = rating == .one
+                            ? L10n.text("Set 1 Star")
+                            : L10n.text("Set \(rating.count) Stars")
+                        Button {
+                            store.setStarRating(rating)
+                        } label: {
+                            Image(systemName: starSymbol(for: rating, state: stars))
+                                .frame(width: 36, height: 36)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(starColor(for: rating, state: stars))
+                        .disabled(!store.canRate)
+                        .accessibilityLabel(title)
+                        .accessibilityValue(MediaTileAccessibility.starDescription(for: stars))
+                        .accessibilityAddTraits(stars == .stars(rating) ? .isSelected : [])
+                        .help(title)
+                    }
                 }
             }
 
             HStack {
-                Text("Color label")
+                Text(L10n.text("Color label"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                ColorLabelMark(state: color)
                 Menu {
-                    Button("None") { store.setColorLabel(nil) }
+                    Button(L10n.text("None")) { store.setColorLabel(nil) }
                     Divider()
                     ForEach(PhotoColorLabel.allCases, id: \.self) { label in
-                        Button(label.displayName) {
+                        Button(label.localizedDisplayName) {
                             store.setColorLabel(label)
                         }
                     }
                 } label: {
                     Text(colorLabelText(for: color))
-                        .foregroundStyle(colorLabelTint(for: color))
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                 }
                 .menuStyle(.borderlessButton)
-                .tint(colorLabelTint(for: color))
+                .tint(Color.louppeAccent)
                 .fixedSize()
                 .disabled(!store.canRate)
-                .accessibilityLabel("Color label")
+                .accessibilityLabel(L10n.text("Color label"))
                 .accessibilityValue(colorLabelText(for: color))
             }
         }
@@ -106,23 +118,16 @@ struct MetadataEditingControls: View {
         case .mixed:
             return .secondary
         default:
-            return Color(nsColor: .tertiaryLabelColor)
+            // Available empty stars stay readable, not disabled-looking.
+            return .secondary
         }
     }
 
     private func colorLabelText(for state: PhotoItemColorLabelState) -> String {
         switch state {
-        case .none: return "None"
-        case .label(let label): return label.displayName
-        case .mixed: return "Mixed"
-        }
-    }
-
-    private func colorLabelTint(for state: PhotoItemColorLabelState) -> Color {
-        switch state {
-        case .none: return .secondary
-        case .label(let label): return label.swatchColor
-        case .mixed: return .louppeAccent
+        case .none: return L10n.text("None")
+        case .label(let label): return label.localizedDisplayName
+        case .mixed: return L10n.text("Mixed")
         }
     }
 }
@@ -142,40 +147,43 @@ struct MetadataDecisionButton: View {
                 isMixed: decision == .mixed,
                 size: size
             )
-            .frame(width: size + 6, height: size + 6)
+            .frame(width: max(36, size + 6), height: max(36, size + 6))
         }
         .buttonStyle(.plain)
         .disabled(!store.canRate)
-        .accessibilityLabel("Change decision")
+        .accessibilityLabel(L10n.text("Change decision"))
         .accessibilityValue(
             MediaTileAccessibility.decisionDescription(
                 for: decision
             )
         )
-        .help("Change Yes/No decision")
+        .help(L10n.text("Change Yes/No decision"))
     }
 }
 
+/// Color labels are rounded squares so a green or red label never reads as
+/// the round ✓ / ✗ decision badge.
 struct ColorLabelMark: View {
+    static let shape = RoundedRectangle(cornerRadius: 3.5, style: .continuous)
     let state: PhotoItemColorLabelState
 
     var body: some View {
         Group {
             switch state {
             case .none:
-                Circle()
-                    .stroke(Color.secondary, lineWidth: 1.5)
+                Self.shape
+                    .strokeBorder(Color.secondary, lineWidth: 1.5)
             case .label(let label):
                 // A filled Shape keeps its explicit label color inside Menu
                 // labels; SF Symbols inherit the app's purple menu tint.
-                Circle()
+                Self.shape
                     .fill(label.swatchColor)
             case .mixed:
-                Image(systemName: "circle.lefthalf.filled")
+                Image(systemName: "square.lefthalf.filled")
                     .foregroundStyle(Color.louppeAccent)
             }
         }
-        .frame(width: 13, height: 13)
+        .frame(width: 12, height: 12)
         .accessibilityHidden(true)
     }
 }
@@ -184,33 +192,63 @@ struct ColorLabelMark: View {
 struct MetadataBadgeStrip: View {
     let starRatingState: PhotoItemStarRatingState
     let colorLabelState: PhotoItemColorLabelState
+    var showsColorNames = false
 
     var body: some View {
         if starRatingState != .unrated || colorLabelState != .none {
-            HStack(spacing: 4) {
-                switch starRatingState {
-                case .unrated:
-                    EmptyView()
-                case .stars(let rating):
-                    HStack(spacing: 1) {
-                        Image(systemName: "star.fill")
-                        Text("\(rating.count)")
-                    }
-                case .mixed:
-                    Text("★–")
+            HStack(spacing: TileBadgeLayout.spacing) {
+                if starRatingState != .unrated {
+                    starBadge
                 }
                 if colorLabelState != .none {
-                    ColorLabelMark(state: colorLabelState)
+                    if showsColorNames {
+                        Text(colorTitle)
+                            .font(.caption2.weight(.semibold))
+                            .lineLimit(1)
+                            .padding(.horizontal, 5)
+                            .frame(height: TileBadgeLayout.height)
+                            .background(.black.opacity(0.85), in: Capsule())
+                    } else {
+                        ColorLabelMark(state: colorLabelState)
+                            .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
+                            .background(.black.opacity(0.68),
+                                        in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    }
                 }
             }
-            .font(.caption2.weight(.semibold))
+            .frame(height: TileBadgeLayout.height)
             .foregroundStyle(.white)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 3)
-            .background(.black.opacity(0.68), in: Capsule())
             .shadow(radius: 1)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
         }
+    }
+
+    private var colorTitle: String {
+        switch colorLabelState {
+        case .none: L10n.text("None")
+        case .mixed: L10n.text("Mixed")
+        case .label(let label): label.localizedDisplayName
+        }
+    }
+
+    private var starBadge: some View {
+        Group {
+            switch starRatingState {
+            case .unrated:
+                EmptyView()
+            case .stars(let rating):
+                HStack(spacing: 1) {
+                    Image(systemName: "star.fill")
+                    Text("\(rating.count)")
+                }
+            case .mixed:
+                Text("★–")
+            }
+        }
+        .font(.system(size: TileBadgeLayout.iconSize, weight: .semibold))
+        .padding(.horizontal, 5)
+        .frame(height: TileBadgeLayout.height)
+        .background(.black.opacity(0.68), in: Capsule())
     }
 }

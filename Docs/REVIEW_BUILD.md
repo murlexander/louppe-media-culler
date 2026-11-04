@@ -1,258 +1,175 @@
-# louppe - to review
+# Local review builds
 
-Historical review and consolidation record, 29 September 2026. The current
-unreleased cycle is 1.10.0 (12), following published 1.9.0 (11). Earlier sections
-record the separate review builds and their original verification; those copies
-are superseded by the consolidated production app.
+The current local installation is the single `/Applications/Louppe.app`: the
+published, notarized 1.13.0 (15) release archive, installed on 4 November 2026
+([release record](RELEASE_1.13_PREPARATION_2026-11-04.md)). It uses the official
+identifier `com.alexandermarkin.louppe`. Future local installs replace that copy; do not
+install a second review app unless requested. The separate packaging workflow
+below remains available for an explicitly requested isolated review artifact.
 
-## Scope
+Build a separate review copy with full Xcode and the current SDK:
 
-1. **Folder hierarchy:** the existing Sort popover gains a source-tree order.
-   Root files precede nested folders, parents precede descendants, and sibling
-   folders use natural ordering. Reversing changes sibling order. Browser/Grid
-   dividers show full relative paths, and filtering preserves the hierarchy.
-2. **Review preferences:** a native Review settings tab controls advancement
-   after Yes/No commands and defaults for new folders: view, sort, direction,
-   and group dividers. Existing review and same-folder rescans keep their
-   layout. Tile controls, stars, and color labels retain their existing behavior.
-3. **Connected drives:** a compact start-screen section lists physical external
-   drives/cards with available and total capacity. A drive opens the normal
-   folder chooser at its root. Mount changes invalidate stale entries and
-   opening revalidates the selected device. Five recent folders and every
-   connected drive appear in aligned columns, with additional drive columns
-   when needed. The page does not scroll, and the window cannot shrink below
-   the size its content needs. No automatic whole-drive scan.
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./Scripts/build_review.sh
+open "dist/louppe - to review.app" --args -openFolder /path/to/disposable/photos
+```
 
-The existing toolbar structure, neutral background, and purple accent remain.
+The script creates `dist/louppe - to review.app` and its ZIP, using the version
+in `VERSION`. Its identifier is `com.alexandermarkin.louppe.review2`; preferences,
+recents, and window state are separate from the stable app. Automatic updates
+are disabled, and the review copy does not advertise a duplicate Finder service.
+Verification checks a clean local-volume copy of the exact loose output and an
+independently unpacked archive, comparing their complete Contents trees. This
+avoids File Provider reattaching Finder metadata during signature verification.
 
-## Separate app
+Both apps use `.louppe_session.json`. Opening the same folder shares decisions;
+use disposable copies of media. 1.11 saves format 7, which 1.10 cannot read.
+Keep saved-session copies before evaluating a downgrade.
 
-`Scripts/build_review.sh` produces **louppe - to review.app** and a matching ZIP.
-Its identifier is `com.alexandermarkin.louppe.review2`; the production identifier
-remains `com.alexandermarkin.louppe`. Preferences, recents, and window state are
-separate. Automatic update startup and the update settings/command are disabled.
+Run the affected tests and the checks in [AGENTS.md](../AGENTS.md). Record the
+source revision, build identity, fixtures, results, explicit skips, and native
+acceptance limits. Always launch with `-openFolder`.
 
-Folder sessions retain the normal `.louppe_session.json` format and the existing
-shared persistence/file-operation safety boundaries. Opening the same media in
-both apps therefore shares folder decisions; the review copy is not a separate
-photo library. UI verification uses disposable copies of existing demo photos.
+## Latest recorded review
 
-## Verification
+30 October instant-opening follow-up: the official 1.13.0 (15) app now
+shows cached pinned photos before discovery, using the same toolbar spinner as
+review work. Built from the uncommitted `archive-folder-navigation` working tree
+based on `965163b`; no commit or push. Full debug XCTest: 1,282 cases, 56 explicit
+opt-in skips, zero failures, including all keyboard/scroll gates and six new
+instant-opening contracts. An additional opt-in real-drive worker check passed.
+Performance/safety checks: 75/75. Release packaging/preflight and strict deep
+installed signature pass; all 178 Contents entries, symlinks and file hashes
+match the packaged output. Installed executable SHA-256:
+`20ecb66d9b75faee98c4f4cb150f5bca46ecac7444e6640d6613b92e315cb731`.
 
-- Complete XCTest run: 450 tests, zero failures, one explicit skip. All 34
-  HotkeyTests passed, including real installed-monitor/window events. The
-  skipped hosted-drive test encounters an empty SwiftUI accessibility tree
-  inside XCTest; the production drive view was instead inspected in a native
-  fixture app through computer use.
-- Focused feature tests: 11 hierarchy, 13 preference, and 8 drive logic/race
-  tests passed. The 10,000-item hierarchy test took about 0.10 seconds.
-- Required performance and file-safety script: 75/75 passed against current
-  source, including real Trash/restore. A first restore assertion failed once;
-  an identity-instrumented isolated run and two complete reruns passed. No
-  cleanup implementation was changed; the initial cause remains unproven.
-- Full-Xcode release packaging, code signatures, independently extracted ZIP,
-  and complete app/archive content comparison passed. Installed app:
-  `/Applications/louppe - to review.app`. Review ZIP:
-  `dist/louppe - to review.zip`.
-- Stable `/Applications/Louppe.app`: all 104 recorded file/symlink entries and
-  the stable preference file remained identical to the pre-work baseline.
-- All 13 copied media files remained byte-identical. Session saving and undo
-  were checked through the UI and the disposable `.louppe_session.json`.
+A background `-openFolder` launch opened a disposable text document. Native pin
+opens exposed cached browsing in 0.96–0.98 s (including pin resolution and native
+view mounting). Accessibility confirmed Checking folder and an `AXBusyIndicator`
+inside `AXToolbar`; Ready restored item 16,328 of 16,967, Saved. No foreground
+activation or global input was used. Window image capture failed, so visual
+pixel inspection remains unavailable. An optional release-mode XCTest attempt
+could not compile existing tests that depend on DEBUG-only helpers; the release
+application itself builds and launches successfully. The sandboxed Store build
+was not tested live.
 
-Computer-use checks in the installed app confirmed persisted Grid/hierarchy
-starting defaults, natural folder order, reverse sibling order with parents
-first, full-path Browser/Grid headings, Gallery/Grid switching, advancement
-off/on, batch-independent undo, and advancement under the Undecided filter
-without skipping the next item. Review defaults were restored after testing.
-Gallery, Grid, and Settings were also inspected in screenshots.
+The existing archive snapshot is 984,935 bytes; the pin document is 2,539 bytes.
+Shared thumbnail payloads across all folders total 133,504,725 bytes, occupying
+163,504,128 bytes on disk at measurement. Instant opening adds no separate cache
+or original copies. The previous installed app was preserved in the Trash.
 
-The standalone drive fixture rendered the exact production drive view with
-known and unavailable capacity states. Its native folder chooser opened at the
-selected fixture drive. Automated confirmation in the native folder chooser
-did not complete reliably, so media loading used the documented `-openFolder`
-launch flag. This leaves native chooser confirmation for manual acceptance
-with a physical card.
+30 October opening-speed install: replaced the official app with the same
+working tree plus fast discovery, compact pinned-safe metadata cache, drive-ID
+cache keys, fewer identity passes and pinned-folder preparation (see
+PERFORMANCE.md). Two independent GPT-6.1 Sol reviews found nine defects; all were
+fixed with regression tests. Final suite: 1,275 cases, 55 opt-in skips, zero
+failures, including Hotkey 42, BrowserScroll 3, GridScroll 4 and
+PersistentVerticalScroller 3; safety 75/75; video checks passed. Release
+preflight passed; strict deep signature passes; all 110 Contents entries match
+`dist/`. Executable SHA-256
+`c3eafca0ecd77bc29e5f99dd26dfac354e343b0db3c2d695ccca9076f7a73cfe`. The previous
+app is in the Trash. On Alex's exFAT (FSKit) archive, 16,967 items, the
+`Opening ready` log showed:
 
-## Welcome-layout follow-up — 29 September 2026
+| Open | Before | After |
+| --- | ---: | ---: |
+| Warm, `-openFolder` | 12.9 s (21.4 s first) | 1.7–2.0 s |
+| First open (v1→v2 cache, no EXIF reads) | — | 2.3 s |
+| Cold, after `diskutil` remount | 43.2 s with a rebuilt cache (earlier today) | 2.6 s |
+| Pin click after remount and automatic preparation | — | 1.6 s |
 
-- Recent folders and connected drives now use matching rows in aligned
-  columns. The first five recent folders are shown; connected drives have no
-  count cap. More drive columns appear as useful space is available.
-- Removed the welcome ScrollView. Intrinsic content and warning banners set
-  the native minimum, with native toolbar space included. Content growth
-  expands the window; removing content lowers the minimum without shrinking
-  it unexpectedly. Screen changes and display-configuration changes reflow
-  columns and fit the window after measurement.
-- Final focused run: 51 tests executed, 50 passed, one existing hosted SwiftUI
-  accessibility skip, zero failures. Includes all 34 HotkeyTests, nine drive
-  logic/race tests (including twelve distinct drives), and seven native window
-  tests. Performance/file-safety script passed 75/75.
-- A native fixture using the production welcome view and window bridge
-  verified five recents with zero, one, seven, and thirteen connected drives.
-  All rendered content fit at the native minimum, with no scroll view.
-  Seven drives fit at 961 × 618 points; thirteen at 1257 × 618 on the larger
-  display. Tests also covered reflow between the two attached displays.
-- Installed the verified ZIP as `/Applications/louppe - to review.app`.
-  Code signature verified, and all 104 stable app entries plus the stable
-  preference file remained identical to the pre-update baseline.
-- Computer use confirmed the installed app launches, renders the two aligned
-  sections, has no accessibility scroll area, and shows the actual connected
-  WORK_FAST_A drive with its reported capacity. Its welcome page was inspected
-  in a screenshot. After clicking the drive, macOS screen capture returned
-  error -3812, preventing further inspection of the native chooser or a manual
-  resize gesture. Native minimum-size behavior passed the window tests and
-  rendered fixture checks above.
+Preparation after the remount took 2.7 s, unchanged, with no writes. The
+folder's inode survived the remount. The session restored its remembered item.
 
-## Acceptance
+30 October consolidation: built the uncommitted archive-folder working tree on
+`archive-folder-navigation` (base `965163b`, unchanged since the 05:34 full suite)
+with `build_app.sh` and installed it as the official app. Release preflight passed.
+The pre-install gates passed with zero failures: Hotkey 42, BrowserScroll 3,
+GridScroll 4 and PersistentVerticalScroller 3 (`/tmp/louppe-consolidate-gates.log`).
+Executable SHA-256 `85e1296f7c1437b62546032b3883f0788b514e674b2c39ee4b3268a47418a66c`.
+The installed copy passes strict deep signature checks. All 110 Contents entries
+match `dist/` by bytes, modes and symlink targets. The dated review app
+(`com.alexandermarkin.louppe.review.archivefolders`) moved to the Trash.
+Its folder-pane choice/width and `ArchiveNavigation.json` were copied into the
+official domain through exact-path `defaults` writes. Official shortcuts, grants
+and settings were kept. Pre-merge copies are in
+`~/Documents/tmp/louppe-consolidation-20261030/`. Security-scoped bookmarks follow the
+identity that created them. The review build's recents therefore stayed out,
+and the pinned archive needs one Locate in the official app. The Accessibility
+tree confirmed one running instance at Welcome.
 
-The actual external drive listing and capacity have been observed. Physical
-insertion/removal and chooser confirmation remain manual acceptance checks;
-eligibility, stale snapshots, and replacement identities have controlled tests.
+21 October release: replaced the single official app with the notarized public
+archive (SHA-256 `2cd47cf21aaceeb0919b306a9b14093cb9f1ab1283dc932cc29d57eb3396c99e`).
+Complete Contents, strict signatures, Gatekeeper and stapling pass. All 41 hotkey
+and complete Browser/Grid/scroll bridge gates passed before installation. Native
+launch shows Welcome with retained recents; final media/physical scroll inspection
+was unavailable because native capture failed. The same source's sandbox media,
+rename/Undo and persistence acceptance passed earlier. See the
+[release record](RELEASE_1.12_PREPARATION_2026-10-21.md) for CI, public update,
+Store submission and explicit limits. Preferences/grants were not reset.
 
-## Minimal UI follow-up — 29 September 2026
+20 October consolidation: installed the verified 1.12 official-identity archive
+at `/Applications/Louppe.app` and moved both previous installed copies outside
+Applications to `/private/tmp/Louppe-unified-am51990j/previous-apps/`. Preferences
+from both domains were backed up in the parent directory; review settings/hotkeys/window frames
+were merged into the official domain, recent histories combined, and the
+official folder grants retained. Archive SHA-256:
+`3ae741aaf92006e355c5e12e6edb075f2a42fd5a945aa248afffd92746417b7e`.
+The candidate's machine code matches the reviewed app after removing differing
+embedded bundle signatures from temporary comparison copies. Loose output,
+archive and installed complete Contents trees match and strict deep signatures
+pass. All 38 HotkeyTests passed before this install; no source/version change
+or publication occurred.
 
-The start page begins with Choose Media Folder, uses a 20-point top inset,
-and stays top-aligned when enlarged. Its measured minimum still fits five
-recent folders and every connected drive without scrolling.
+The initial identifier-based defaults import resolved to the registered Store
+container instead of the desktop domain. The native launch exposed the missing
+shortcut choice. Restored the container's complete pre-install settings, including
+removal of the two keys introduced by the merge. Repeated migration using exact
+desktop/review preference-file paths, preserving the desktop grants and combining
+14 recent records before launch. Corrected snapshots are in
+`/private/tmp/Louppe-unified-am51990j/preference-correction/`. Desktop shortcuts
+match the review JSON exactly, including the saved keyboard-layout mode. Final
+verification confirms one installed app, one running instance and strict signature
+success. The final window capture is unavailable due to ScreenCaptureKit errors;
+native media launch was verified before the preference correction and the
+relaunched process/settings were verified afterward. Do not use identifier-only
+`defaults` imports for this dual desktop/Store setup; target exact file domains.
 
-Quality Cues has inline numeric fields and an independent checkbox for High
-ISO, Slow shutter, and Clipping. The master switch remains available. Turning
-a cue off retains its threshold. Valid values commit on Return or focus loss;
-invalid input reverts to the last saved value, Escape discards the draft, and
-Restore Defaults also discards a still-focused edit. Shutter values accept
-fractions or decimal seconds; locale decimals are supported. Exact custom
-thresholds appear in Info as well as Settings.
+20 October stability/performance review: final suite passes 817 cases, 781 passed,
+36 explicit skips and zero failures. Fixed partial Fuji monochrome metadata and
+unnecessary/global menu refreshes, including background callback safety. See the
+[quality review](QUALITY_REVIEW_1.12_2026-10-20.md) for evidence and limits.
 
-The final focused test run passed 58/58: 17 cue tests, all 34 HotkeyTests,
-and seven native window tests. Performance/file-safety rerun passed 75/75.
-The first performance run timed out waiting five seconds for a four-item
-rescan; the unchanged binary passed on rerun. The original failure did not
-retain enough state to identify its cause, and no timeout was weakened.
+20 October Mac keyboard follow-up: Settings is 620 points wide with a complete
+compact Mac keyboard silhouette. Affected checks: 68 passed, two explicit skips,
+zero failures; complete HotkeyTests pass and the Store configuration compiles.
 
-The alignment follow-up gives all three numeric controls the same 76-point
-width and 24-point height, aligned on both edges. Units and explanations start
-in a separate shared column. A native render of the production settings view
-confirmed identical control frames and untruncated labels. The final focused
-regression run again passed 58/58, including all 34 required keyboard tests.
+20 October 1.12 keyboard follow-up: 814 XCTest cases, 778 passed, 36 explicit skips,
+zero failures; complete HotkeyTests and 75 performance/safety checks pass.
+Custom review bindings, folder opening, Fuji simulation Info/filtering, a fitted
+detail-loading indicator, renaming Help, dynamic menu hint columns and the visual
+Settings keyboard are implemented. New shortcut setups use physical positions;
+saved modes and bindings are preserved. See the
+[1.12 review record](REVIEW_1.12_2026-10-20.md) for local
+installation, launch evidence and remaining native/hardware checks.
 
-## Review fixes and local consolidation — 29 September 2026
+15 October preparation: 755 XCTest tests executed, 719 passed, 36 explicit
+skips, and zero failures; all 35 HotkeyTests and 75 safety checks pass. A freshly
+signed direct candidate opened generated disposable media and saved a decision
+without changing its bytes. This did not install or replace the review app.
+See [current preparation](RELEASE_1.11_PREPARATION_2026-10-15.md) for package
+identity, owner acceptance, and the pending notarization approval.
 
-The review found one actionable layout issue: many connected drives or long
-warning text could push the welcome window beyond the available display
-height. Welcome content now uses native vertical scrolling only when it
-exceeds usable screen height. The minimum and window frame account for the
-title bar and toolbar; ordinary welcome layouts retain their intrinsic size.
-The view's lifecycle remains stable when scrolling becomes necessary.
+## 14 October review
 
-Verification passed:
+The 14 October 1.11 review combined the floating zoom control, Grid/Browser
+bounds fixes, localization, Quality Cues, recovery, and performance work.
+The full suite executed 754 tests: 718 passed, 36 explicit skips, zero failures.
+All 35 HotkeyTests and 75 required performance/file-safety checks passed.
+These are dated results, not validation of subsequent changes.
 
-- Focused run: all 34 HotkeyTests and 11 native window/layout tests (45/45).
-  Coverage includes overflow, usable height changing at constant screen
-  width, and scrolling the production welcome view with thirteen drives.
-- Full XCTest run: 471 executed, one existing hosted-accessibility skip,
-  zero failures. The hosted overflow test passed independently of that skip.
-- Performance and file-safety checks: 75/75, including real Trash/restore.
-  A legacy recovery fixture now standardizes its root path to match the
-  historical v1 writer when running under `/private/tmp`; recovery validation
-  itself is unchanged. Session-wait failures now include state diagnostics.
-- The earlier four-item rescan timeout did not recur in 100 isolated repeats
-  or the final full script. Its original cause remains unproven.
-- Developer ID signing, loose app and extracted ZIP verification, and full
-  app/archive content comparison passed for Louppe 1.9.1 (12).
-
-The current source, including the review features, is installed as
-`/Applications/Louppe.app` with the production bundle identifier. It opened
-three disposable items and saved a three-entry session; the test originals
-remained byte-identical. It was then closed normally, its merged preferences
-restored, and reopened normally. The final check confirmed one running
-production instance and preserved review/cue settings plus seven recent
-folders. No user media was opened for this installation check.
-
-Thirteen prior app bundles and both preference domains were archived under
-`dist/local-backups/2026-09-29-consolidation`; every app file and symlink was
-checked against its archive. Twelve redundant bundles were removed after
-launch verification, including the separate installed review app. The old
-`dist/Louppe.app` had already been replaced by the verified current build.
-Only `Louppe.app` remains installed in `/Applications`, and `dist/` retains
-one current app and release ZIP. Older output ZIPs are in the backup folder.
-
-Screen capture failed with ScreenCaptureKit error -3811 during this final
-installation check. Native layout tests and actual folder loading/saving
-passed; final visual inspection and physical-drive insertion/removal remain
-manual acceptance checks. No commit, push, or public release was performed.
-
-## Promotion to 1.10 — 29 September 2026
-
-At the owner's request, the existing unreleased update was promoted from
-1.9.1 to 1.10.0. Build 12 remains the same release-cycle build; the latest
-published release is still 1.9.0 (11). `VERSION` and the current changelog
-heading now agree on 1.10.0 (12).
-
-All 34 HotkeyTests and 75 performance/file-safety checks passed again before
-installation. The Developer ID build, loose bundle, independently extracted
-ZIP, and complete archive contents passed release verification. The signed
-app replaced `/Applications/Louppe.app`, opened a disposable image, and saved
-its one-entry session without changing the image. After restoring the fresh
-pre-install preference snapshot, normal relaunch confirmed one running
-1.10.0 app with settings and recent folders preserved. The previous 1.9.1
-bundle is archived with a verified content manifest in the consolidation
-backup folder. No source behavior changed, and no public release was made.
-
-
-## Session wrap-up — 29 September 2026
-
-Reviewed every remaining Louppe development chat: RAW representation, Fuji
-research, selectable RAW 9, feedback copy, and settings explanations. Their
-requested changes are complete in the shared source. Fuji metadata, broader RAW 9
-hardware/resource/compression acceptance, and the intermittent disposable scan
-fixture remain in `BACKLOG.md`; the existing audit acceptance tasks remain open.
-
-Verification of the integrated source passed:
-
-- Full XCTest: 537 tests, zero failures, three explicit skips (optional Fuji
-  benchmark, optional real RAW fixture, and hosted-drive accessibility).
-  All 35 mandatory HotkeyTests passed. A further real Fuji preview run removed
-  the RAW-fixture skip: 10 focused tests, zero failures, one optional benchmark skip.
-- Strict Swift 6 concurrency build with warnings as errors passed.
-- Performance/file-safety checks: 75/75, including real Trash/restore. The first
-  run raised `filesChangedDuringScan`; the unchanged binary passed on rerun.
-  Diagnosis is recorded in the backlog; no identity checks/timeouts were weakened.
-- Scrollbar checks: 10/10. Native media checks passed.
-- Redacted credential checks passed. Two malformed duplicate Git references
-  (`main 2`) were preserved outside `.git/refs`; normal fetch and Git integrity
-  checks then succeeded. An empty duplicate vendor directory was removed.
-- Developer ID packaging, loose/independently extracted ZIP signatures, and
-  complete app/archive comparison passed for 1.10.0 (12).
-
-All five running copies accepted normal Quit. The integrated build replaced
-`/Applications/Louppe.app`, opened a disposable JPEG, and saved its session without
-changing the JPEG. Native accessibility inspection confirmed the review window
-and Saved status, then the ordinary welcome window after relaunch.
-
-Thirty-five former bundles were archived and verified file-by-file (including
-symlink targets and file modes). Thirty-four obsolete bundles were removed from
-`dist/` and temporary launch locations; the previous installed bundle was replaced.
-Older output ZIPs and preference snapshots are preserved under
-`dist/local-backups/2026-09-29-wrap-up`. Launch Services entries for obsolete copies
-were removed; the installed production app was registered. One production instance
-runs from `/Applications`, and `dist/` retains its matching app and ZIP.
-
-Reconciled cached and on-disk production preferences, preserving the latest
-29-key snapshot and seven preexisting recent folders. Removed only this wrap-up's
-smoke-test recent entry. Fixture-only decoder/feedback domains were not imported.
-The final production signature and launch checks passed.
-
-The website's twelve regressions passed; its consent fix was committed and pushed,
-GitHub Pages deployment succeeded, and the live script matched source. Two-tab
-browser acceptance remains in the website backlog. The app update remains
-unreleased; no public 1.10 release or updater-feed promotion was performed.
-
-The first remote quality run selected Xcode 26.6 and could not compile the
-macOS 27 RAW-resource API. The quality workflow now uses GitHub’s `xcode-27`
-runner, matching the local SDK requirement; application source is unchanged.
-
-The Xcode 27 hosted runner exposes 608 points of usable window height. Three
-layout tests assumed 650–690 points and produced six assertion failures despite
-the correct welcome overflow cap. Their assertions now check intrinsic height
-when it fits and the actual display limit otherwise. Existing overflow scrolling
-and full-size toolbar checks remain; production window behavior is unchanged.
+- [Release preparation and remaining acceptance](RELEASE_1.11_READINESS_2026-10-14.md)
+- [Current open work](../BACKLOG.md)
+- [Dated implementation reviews](DEVELOPMENT.md#historical-records)
+- [Complete review history](Archive/2026-10-14/REVIEW_BUILD_HISTORY.md)
+- [Installed-review manifest](Archive/2026-10-14/performance/cue-filter/installed-review.json)

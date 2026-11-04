@@ -1,0 +1,12 @@
+{
+  "candidateChange": "Only analyze: alpha == 255 reads RGB directly; every other operation is unchanged.",
+  "dictionaryPayload": "SyntheticEvidence preserves evidence scalar fields; SyntheticRevision approximates the real revision payload. This is a Combine/COW mechanism experiment, not SessionStore.",
+  "histogramSourcePath": "/Users/developer/Documents/code/louppe/app/Sources/Louppe/HistogramPipeline.swift",
+  "histogramSourceSHA256": "e774458040fe5e5d6ee4b41d3c724c9b30f2bc6335dcfca9a6faaab1e7954194",
+  "histogramTypeSHA256": "7db2357b783b91253c31560c2db8f5efda79ec859594b0fc7c04050432da86dd",
+  "histogramTypeStartLine": "44",
+  "processorSHA256": "19cefa98844dc98ef2f492bc0b4edeac795166ce595f1fb82123f6177d6512d5",
+  "processorStartLine": "89",
+  "qualityCueSourceSHA256": "610105ed579d347ac0aecfec6c180f138d314ebc80f28dbd4be5821bf79df508",
+  "sessionStoreSourceSHA256": "aeea131453e243f2485ed190703ee5049433ce8ef5fa2de9c0f386725b2a110c"
+}

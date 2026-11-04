@@ -19,11 +19,11 @@ enum MultiDestinationRoutePredicate: Equatable, Hashable, Sendable {
 
         var title: String {
             switch self {
-            case .decision: return "Decision"
-            case .stars: return "Stars"
-            case .color: return "Color"
-            case .fileType: return "File type"
-            case .mediaKind: return "Media type"
+            case .decision: return L10n.text("Decision")
+            case .stars: return L10n.text("Stars")
+            case .color: return L10n.text("Color")
+            case .fileType: return L10n.text("File type")
+            case .mediaKind: return L10n.text("Media type")
             }
         }
     }
@@ -41,15 +41,15 @@ enum MultiDestinationRoutePredicate: Equatable, Hashable, Sendable {
     var displayName: String {
         switch self {
         case .decision(let rating):
-            return "Decision: \(rating.displayName)"
+            return L10n.text("Decision: \(rating.displayName)")
         case .stars(let state):
-            return "Stars: \(state.displayName)"
+            return L10n.text("Stars: \(state.displayName)")
         case .color(let state):
-            return "Color: \(state.displayName)"
+            return L10n.text("Color: \(state.displayName)")
         case .fileType(let type):
-            return "File type: \(type)"
+            return L10n.text("File type: \(type)")
         case .mediaKind(let kind):
-            return "Media type: \(kind.label)"
+            return L10n.text("Media type: \(kind.label)")
         }
     }
 
@@ -73,9 +73,9 @@ enum MultiDestinationRoutePredicate: Equatable, Hashable, Sendable {
 extension Rating {
     var displayName: String {
         switch self {
-        case .yes: return "Yes"
-        case .no: return "No"
-        case .undecided: return "Undecided"
+        case .yes: return L10n.text("Yes")
+        case .no: return L10n.text("No")
+        case .undecided: return L10n.text("Undecided")
         }
     }
 }
@@ -83,10 +83,10 @@ extension Rating {
 extension PhotoItemStarRatingState {
     var displayName: String {
         switch self {
-        case .unrated: return "Unrated"
+        case .unrated: return L10n.text("Unrated")
         case .stars(let rating):
-            return rating == .one ? "1 star" : "\(rating.count) stars"
-        case .mixed: return "Mixed"
+            return rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count) stars")
+        case .mixed: return L10n.text("Mixed")
         }
     }
 }
@@ -94,9 +94,9 @@ extension PhotoItemStarRatingState {
 extension PhotoItemColorLabelState {
     var displayName: String {
         switch self {
-        case .none: return "None"
+        case .none: return L10n.text("None")
         case .label(let label): return label.displayName
-        case .mixed: return "Mixed"
+        case .mixed: return L10n.text("Mixed")
         }
     }
 }
@@ -211,15 +211,15 @@ enum MultiDestinationExportPlanner {
         var errorDescription: String? {
             switch self {
             case .noRoutes:
-                return "Add at least one route before reviewing the copy plan."
+                return L10n.text("Add at least one route before reviewing the copy plan.")
             case .missingDestination:
-                return "Choose a destination folder for every route before reviewing the copy plan."
+                return L10n.text("Choose a destination folder for every route before reviewing the copy plan.")
             case .emptyRoute:
-                return "Every route must currently match at least one item. Remove an empty route or choose a matching value."
+                return L10n.text("Each route must match an item. Remove empty routes or change their criteria.")
             case .overlappingRoutes:
-                return "Some items match more than one route. Make the routes exclusive before reviewing the copy plan."
+                return L10n.text("Some items match more than one route. Make the routes exclusive before reviewing the copy plan.")
             case .splitXMPFamily:
-                return "Including XMP sidecars would split one same-stem media family across destinations. Keep that family in one route or turn off Include XMP sidecars."
+                return L10n.text("XMP would split a same-stem media family across destinations. Keep it in one route or turn off Include XMP sidecars.")
             }
         }
     }

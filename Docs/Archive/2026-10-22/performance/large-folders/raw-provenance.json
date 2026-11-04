@@ -1,0 +1,12 @@
+{
+  "source": "existing Louppe demo-media Fuji RAF; copied once then APFS cloned",
+  "raw_bytes": 87282176,
+  "raw_sha256": "e6b21086a55a0bcafc37f0a94349cb40d944e1bd43b93ea41a4c2ec8c176b08b",
+  "counts_of_pairs": [
+    1000,
+    10000
+  ],
+  "independent_originals": false,
+  "filesystem_cache": "warm clone extent reuse; not representative independent camera captures",
+  "source_bytes_and_identity_unchanged": true
+}

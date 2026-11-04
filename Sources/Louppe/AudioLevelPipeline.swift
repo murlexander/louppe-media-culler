@@ -235,13 +235,16 @@ final class AudioLevelPipeline: @unchecked Sendable {
     private final class PendingAnalysis {
         var waiters: [UUID: CheckedContinuation<AudioLevelAnalysis?, Never>]
         let operation: BlockOperation
+        let readAccess: MediaOperationReadAccess
 
         init(
             waiters: [UUID: CheckedContinuation<AudioLevelAnalysis?, Never>],
-            operation: BlockOperation
+            operation: BlockOperation,
+            readAccess: MediaOperationReadAccess
         ) {
             self.waiters = waiters
             self.operation = operation
+            self.readAccess = readAccess
         }
     }
 
@@ -271,7 +274,7 @@ final class AudioLevelPipeline: @unchecked Sendable {
         self.decoder = decoder
     }
 
-    func analysis(for item: PhotoItem) async -> AudioLevelAnalysis? {
+    func analysis(for item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> AudioLevelAnalysis? {
         guard (item.isVideo || item.isAudio), item.isPlayableMedia else {
             return nil
         }
@@ -294,13 +297,16 @@ final class AudioLevelPipeline: @unchecked Sendable {
                     return
                 }
                 if let pending = inFlight[key] {
+                    pending.readAccess.retainIfNeeded(sourceAccess)
                     pending.waiters[requestID] = continuation
                     lock.unlock()
                     return
                 }
 
                 let operation = BlockOperation()
+                let readAccess = MediaOperationReadAccess(sourceAccess)
                 operation.addExecutionBlock { [weak self, weak operation] in
+                    defer { readAccess.finish() }
                     guard let self, let operation, !operation.isCancelled
                     else { return }
                     let result = revision.read {
@@ -311,7 +317,7 @@ final class AudioLevelPipeline: @unchecked Sendable {
                 operation.qualityOfService = .utility
                 inFlight[key] = PendingAnalysis(
                     waiters: [requestID: continuation],
-                    operation: operation
+                    operation: operation, readAccess: readAccess
                 )
                 lock.unlock()
                 queue.addOperation(operation)

@@ -59,13 +59,15 @@ else
 fi
 # Sparkle is a public, checksum-pinned binary. Do not ask macOS Keychain for
 # unrelated github.com credentials while downloading it.
-BUILD_ARGUMENTS=(--disable-keychain -c release)
+# LOUPPE_SCRATCH_PATH may keep build products outside a File Provider folder.
+SCRATCH_PATH="${LOUPPE_SCRATCH_PATH:-.build}"
+BUILD_ARGUMENTS=(--disable-keychain --build-system native --scratch-path "$SCRATCH_PATH" -c release)
 if $APP_STORE; then
     BUILD_ARGUMENTS+=(-Xswiftc -DAPP_STORE)
-    LOUPPE_APP_STORE=1 swift build "${BUILD_ARGUMENTS[@]}"
-else
-    swift build "${BUILD_ARGUMENTS[@]}"
+    export LOUPPE_APP_STORE=1
 fi
+swift build "${BUILD_ARGUMENTS[@]}"
+BIN_PATH="$(swift build "${BUILD_ARGUMENTS[@]}" --show-bin-path)"
 
 OUTPUT_APP="dist/Louppe.app"
 OUTPUT_ARCHIVE="dist/Louppe.zip"
@@ -79,7 +81,13 @@ APP_DIR="$STAGING_ROOT/Louppe.app"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources" \
     "$APP_DIR/Contents/Frameworks"
 
-cp .build/release/Louppe "$APP_DIR/Contents/MacOS/Louppe"
+cp "$BIN_PATH/Louppe" "$APP_DIR/Contents/MacOS/Louppe"
+ditto --noextattr --noqtn "$BIN_PATH/Louppe_Louppe.bundle" \
+    "$APP_DIR/Contents/Resources/Louppe_Louppe.bundle"
+# SwiftPM writes localization metadata but no resource-bundle identifier.
+# Stamp it before signing so App Store validation accepts the nested bundle.
+"$PWD/Scripts/resource_bundle_metadata.sh" --prepare \
+    "$APP_DIR/Contents/Resources/Louppe_Louppe.bundle"
 
 # Xcode 27's SwiftPM linker can record the deployment target (14.0) as the
 # linked SDK even though compilation used the current SDK. macOS then presents
@@ -113,6 +121,7 @@ fi
 # Dark, Clear, and Tinted appearances. Shipping only the legacy .icns makes
 # Tahoe place the transparent glyph on its generic gray compatibility tile.
 ICON_SOURCE="$STAGING_ROOT/AppIcon.icon"
+ACCENT_SOURCE="$STAGING_ROOT/Appearance.xcassets"
 ICON_OUTPUT="$STAGING_ROOT/icon-output"
 ACTOOL="/Applications/Xcode.app/Contents/Developer/usr/bin/actool"
 [[ -x "$ACTOOL" ]] || {
@@ -120,11 +129,14 @@ ACTOOL="/Applications/Xcode.app/Contents/Developer/usr/bin/actool"
     exit 1
 }
 ditto --noextattr --noqtn AppIcon/AppIcon.icon "$ICON_SOURCE"
+ditto --noextattr --noqtn AppIcon/Appearance.xcassets "$ACCENT_SOURCE"
 xattr -cr "$ICON_SOURCE"
+xattr -cr "$ACCENT_SOURCE"
 mkdir -p "$ICON_OUTPUT"
-"$ACTOOL" "$ICON_SOURCE" \
+"$ACTOOL" "$ICON_SOURCE" "$ACCENT_SOURCE" \
     --compile "$ICON_OUTPUT" \
     --app-icon AppIcon \
+    --accent-color LouppeAccent \
     --enable-on-demand-resources NO \
     --development-region en \
     --target-device mac \
@@ -144,7 +156,7 @@ cp ThirdPartyLicenses/Expat-MIT.txt \
 cp PrivacyInfo.xcprivacy "$APP_DIR/Contents/Resources/PrivacyInfo.xcprivacy"
 
 if ! $APP_STORE; then
-    SPARKLE_FRAMEWORK="$(find .build/artifacts -type d \
+    SPARKLE_FRAMEWORK="$(find "$SCRATCH_PATH/artifacts" -type d \
         -path '*/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework' \
         -print -quit)"
     if [[ -z "$SPARKLE_FRAMEWORK" ]]; then
@@ -161,6 +173,15 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string><string>es</string><string>zh-Hans</string>
+        <string>hi</string><string>pt</string><string>ar</string>
+    </array>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Review your Photos library and add confirmed selections to albums. Your review decisions stay in Louppe.</string>
     <key>CFBundleName</key>
     <string>Louppe</string>
     <key>CFBundleDisplayName</key>
@@ -177,8 +198,12 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
     <string>AppIcon</string>
     <key>CFBundleIconName</key>
     <string>AppIcon</string>
+    <key>NSAccentColorName</key>
+    <string>LouppeAccent</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.photography</string>
     <key>NSHumanReadableCopyright</key>
     <string>© 2026 Alex Markin</string>
     <key>LSMinimumSystemVersion</key>
@@ -189,6 +214,19 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
     <true/>
     <key>NSSupportsAutomaticGraphicsSwitching</key>
     <true/>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Media Folder</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array><string>public.folder</string></array>
+        </dict>
+    </array>
     <key>NSServices</key>
     <array>
         <dict>
@@ -238,6 +276,8 @@ cat >> "$APP_DIR/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
+"$PWD/Scripts/localize_services.sh" "$APP_DIR/Contents/Info.plist"
+
 xattr -cr "$APP_DIR"
 if $APP_STORE; then
     codesign --force --sign - --entitlements "$PWD/Louppe.entitlements" "$APP_DIR"
@@ -261,9 +301,10 @@ elif [[ -n "$DEVELOPER_IDENTITY" ]]; then
         --sign "$DEVELOPER_IDENTITY" \
         "$APP_DIR/Contents/Frameworks/Sparkle.framework"
     codesign --force --options runtime --timestamp \
+        --entitlements "$PWD/Louppe.direct.entitlements" \
         --sign "$DEVELOPER_IDENTITY" "$APP_DIR"
 else
-    codesign --force --sign - "$APP_DIR"
+    codesign --force --sign - --entitlements "$PWD/Louppe.direct.entitlements" "$APP_DIR"
 fi
 codesign --verify --deep --strict "$APP_DIR"
 

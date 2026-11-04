@@ -1,0 +1,144 @@
+[0/1] Planning build
+Building for debugging...
+[0/6] Write sources
+[2/6] Write swift-version--58304C5D6DBC2206.txt
+[4/8] Emitting module Louppe
+[5/8] Compiling Louppe ReviewCollection.swift
+[6/13] Compiling Louppe GalleryView.swift
+[7/13] Compiling Louppe BrowserView.swift
+[8/13] Compiling Louppe GridView.swift
+[9/13] Compiling Louppe SessionView.swift
+[10/13] Compiling Louppe OpeningSessionView.swift
+[10/15] Write Objects.LinkFileList
+[11/15] Linking Louppe
+[12/15] Applying Louppe
+[14/21] Compiling LouppeTests LouppeSpeedLargeFolderTests.swift
+[15/21] Compiling LouppeTests StagedViewportHandoffTests.swift
+[16/21] Compiling LouppeTests ReviewCollectionTests.swift
+[17/21] Compiling LouppeTests MountedLargeListInvalidationTests.swift
+[18/21] Compiling LouppeTests StagedBrowseTests.swift
+[19/21] Emitting module LouppeTests
+[19/21] Write Objects.LinkFileList
+[20/21] Linking LouppePackageTests
+Build complete! (10.37s)
+Test Suite 'Selected tests' started at 2026-10-22 4:18:23.437 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-22 4:18:23.446 AM.
+Test Suite 'LocalizationTests' started at 2026-10-22 4:18:23.446 AM.
+Test Case '-[LouppeTests.LocalizationTests testArabicCountersAndPhotographicLabels]' started.
+Test Case '-[LouppeTests.LocalizationTests testArabicCountersAndPhotographicLabels]' passed (0.013 seconds).
+Test Case '-[LouppeTests.LocalizationTests testArabicMirrorsLeadingLayoutAndKeepsShortcutOrder]' started.
+Test Case '-[LouppeTests.LocalizationTests testArabicMirrorsLeadingLayoutAndKeepsShortcutOrder]' passed (0.073 seconds).
+Test Case '-[LouppeTests.LocalizationTests testArabicNumericRangesKeepTheirReadingOrder]' started.
+Test Case '-[LouppeTests.LocalizationTests testArabicNumericRangesKeepTheirReadingOrder]' passed (0.000 seconds).
+Test Case '-[LouppeTests.LocalizationTests testBackupAndLockKeepExistingIdentityAndRecoverRatings]' started.
+Test Case '-[LouppeTests.LocalizationTests testBackupAndLockKeepExistingIdentityAndRecoverRatings]' passed (0.038 seconds).
+Test Case '-[LouppeTests.LocalizationTests testCatalogsKeepProductNamesAndSafetyTokens]' started.
+Test Case '-[LouppeTests.LocalizationTests testCatalogsKeepProductNamesAndSafetyTokens]' passed (6.225 seconds).
+Test Case '-[LouppeTests.LocalizationTests testCompleteCatalogsPreserveSafetyArgumentsAndFormats]' started.
+Test Case '-[LouppeTests.LocalizationTests testCompleteCatalogsPreserveSafetyArgumentsAndFormats]' passed (0.290 seconds).
+Test Case '-[LouppeTests.LocalizationTests testDamagedTemplatesFallBackBeforeInsertingLiteralUserText]' started.
+Test Case '-[LouppeTests.LocalizationTests testDamagedTemplatesFallBackBeforeInsertingLiteralUserText]' passed (0.000 seconds).
+Test Case '-[LouppeTests.LocalizationTests testEachRequestedLanguageLoadsItsOwnBundledText]' started.
+Test Case '-[LouppeTests.LocalizationTests testEachRequestedLanguageLoadsItsOwnBundledText]' passed (0.012 seconds).
+Test Case '-[LouppeTests.LocalizationTests testEnglishFallbackForUnknownLanguageAndMissingKey]' started.
+Test Case '-[LouppeTests.LocalizationTests testEnglishFallbackForUnknownLanguageAndMissingKey]' passed (0.000 seconds).
+Test Case '-[LouppeTests.LocalizationTests testEveryCatalogMessageRendersWithoutTemplateDebris]' started.
+Test Case '-[LouppeTests.LocalizationTests testEveryCatalogMessageRendersWithoutTemplateDebris]' passed (0.338 seconds).
+Test Case '-[LouppeTests.LocalizationTests testExportGroupingRetainsXMPFamilyAndGeneratedPacket]' started.
+Test Case '-[LouppeTests.LocalizationTests testExportGroupingRetainsXMPFamilyAndGeneratedPacket]' passed (0.006 seconds).
+Test Case '-[LouppeTests.LocalizationTests testFolderAndVideoFilterIdentitiesStayStable]' started.
+Test Case '-[LouppeTests.LocalizationTests testFolderAndVideoFilterIdentitiesStayStable]' passed (0.011 seconds).
+Test Case '-[LouppeTests.LocalizationTests testInterpolationDoesNotTranslateOrReinterpretFilenames]' started.
+Test Case '-[LouppeTests.LocalizationTests testInterpolationDoesNotTranslateOrReinterpretFilenames]' passed (0.001 seconds).
+Test Case '-[LouppeTests.LocalizationTests testLanguagePreferencesAndRegionalVariants]' started.
+Test Case '-[LouppeTests.LocalizationTests testLanguagePreferencesAndRegionalVariants]' passed (0.000 seconds).
+Test Case '-[LouppeTests.LocalizationTests testLaunchedMacOSLanguagePreference]' started.
+Test Case '-[LouppeTests.LocalizationTests testLaunchedMacOSLanguagePreference]' passed (0.000 seconds).
+Test Case '-[LouppeTests.LocalizationTests testLocalizedPresentationFixtures]' started.
+Test Case '-[LouppeTests.LocalizationTests testLocalizedPresentationFixtures]' passed (0.000 seconds).
+Test Case '-[LouppeTests.LocalizationTests testNativeFinderServiceUsesCatalogLabelsWithoutChangingItsRoute]' started.
+Test Case '-[LouppeTests.LocalizationTests testNativeFinderServiceUsesCatalogLabelsWithoutChangingItsRoute]' passed (0.106 seconds).
+Test Case '-[LouppeTests.LocalizationTests testNumericLimitsAndTimeFormatsRemainIntact]' started.
+Test Case '-[LouppeTests.LocalizationTests testNumericLimitsAndTimeFormatsRemainIntact]' passed (0.022 seconds).
+Test Case '-[LouppeTests.LocalizationTests testSourceLiteralsHaveEnglishCatalogEntries]' started.
+Checked 2124 literal L10n callsites; missing/unsupported: 0
+Test Case '-[LouppeTests.LocalizationTests testSourceLiteralsHaveEnglishCatalogEntries]' passed (0.133 seconds).
+Test Case '-[LouppeTests.LocalizationTests testStoredMetadataAndFilenameRecipeWordsStayEnglish]' started.
+Test Case '-[LouppeTests.LocalizationTests testStoredMetadataAndFilenameRecipeWordsStayEnglish]' passed (0.000 seconds).
+Test Case '-[LouppeTests.LocalizationTests testUnchangedEnglishTextIsLimitedToBrandsUnitsAndSharedWords]' started.
+Test Case '-[LouppeTests.LocalizationTests testUnchangedEnglishTextIsLimitedToBrandsUnitsAndSharedWords]' passed (0.021 seconds).
+Test Case '-[LouppeTests.LocalizationTests testUndoJournalIdentityAndOriginalBytesRemainStable]' started.
+Test Case '-[LouppeTests.LocalizationTests testUndoJournalIdentityAndOriginalBytesRemainStable]' passed (0.077 seconds).
+Test Suite 'LocalizationTests' passed at 2026-10-22 4:18:30.815 AM.
+	 Executed 22 tests, with 0 failures (0 unexpected) in 7.367 (7.369) seconds
+Test Suite 'ReviewCollectionTests' started at 2026-10-22 4:18:30.815 AM.
+Test Case '-[LouppeTests.ReviewCollectionTests testBrowserEqualityIncludesGroupsWhenItemOrderDoesNotChange]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testBrowserEqualityIncludesGroupsWhenItemOrderDoesNotChange]' passed (0.002 seconds).
+Test Case '-[LouppeTests.ReviewCollectionTests testDistantGeometryRealizesOnlyIntersectingRowsAcrossManyGroups]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testDistantGeometryRealizesOnlyIntersectingRowsAcrossManyGroups]' passed (0.015 seconds).
+Test Case '-[LouppeTests.ReviewCollectionTests testGridMirrorsPhysicalColumnsAndControlExclusion]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testGridMirrorsPhysicalColumnsAndControlExclusion]' passed (0.001 seconds).
+Test Case '-[LouppeTests.ReviewCollectionTests testMountedDistantFollowIsBoundedAndManualScrollDoesNotRefollow]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testMountedDistantFollowIsBoundedAndManualScrollDoesNotRefollow]' passed (0.374 seconds).
+Test Case '-[LouppeTests.ReviewCollectionTests testNativeDocumentRebindsAxisGuardAndCannotRestartAfterDismantle]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testNativeDocumentRebindsAxisGuardAndCannotRestartAfterDismantle]' passed (0.116 seconds).
+Test Case '-[LouppeTests.ReviewCollectionTests testOneShotPhysicalViewportRestoresThroughReorderAndThenAllowsNavigation]' started.
+Test Case '-[LouppeTests.ReviewCollectionTests testOneShotPhysicalViewportRestoresThroughReorderAndThenAllowsNavigation]' passed (0.173 seconds).
+Test Suite 'ReviewCollectionTests' passed at 2026-10-22 4:18:31.495 AM.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.680 (0.680) seconds
+Test Suite 'ReviewPreferencesTests' started at 2026-10-22 4:18:31.495 AM.
+Test Case '-[LouppeTests.ReviewPreferencesTests testAdvancementOffFilterRemovalKeepsNearestItemInDisplayedOrder]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testAdvancementOffFilterRemovalKeepsNearestItemInDisplayedOrder]' passed (0.008 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testAdvancementOffKeepsSingleItemAndRespondsToLivePreferenceChanges]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testAdvancementOffKeepsSingleItemAndRespondsToLivePreferenceChanges]' passed (0.006 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testAdvancementOffPreservesMultiSelectionAndOneUndoRestoresBatch]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testAdvancementOffPreservesMultiSelectionAndOneUndoRestoresBatch]' passed (0.004 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testAdvancementOnRatesBatchAndCollapsesSelectionToNextPending]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testAdvancementOnRatesBatchAndCollapsesSelectionToNextPending]' passed (0.004 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testDecisionSortAdvancesFromTheOrderBeforeTheDecision]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testDecisionSortAdvancesFromTheOrderBeforeTheDecision]' passed (0.004 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testDefaultAdvancementSkipsDecidedItemsAndWrapsToPending]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testDefaultAdvancementSkipsDecidedItemsAndWrapsToPending]' passed (0.004 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testDefaultsAndEachSortKeyRoundTripInAnIsolatedSuite]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testDefaultsAndEachSortKeyRoundTripInAnIsolatedSuite]' passed (0.004 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testLastDecisionStaysAtLastItemAndUndoRestoresIt]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testLastDecisionStaysAtLastItemAndUndoRestoresIt]' passed (0.004 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testMalformedPreferencesFallBackWithoutMutatingTheStoredValues]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testMalformedPreferencesFallBackWithoutMutatingTheStoredValues]' passed (0.002 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testNewFolderAndCloseUseDefaultsWhileRescanPreservesCurrentLayout]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testNewFolderAndCloseUseDefaultsWhileRescanPreservesCurrentLayout]' passed (0.129 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testPendingSearchIsAppliedBeforeReviewDecision]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testPendingSearchIsAppliedBeforeReviewDecision]' passed (0.005 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testPointerAndAccessibleTileDecisionsNeverAdvanceAndStarsStayIndependent]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testPointerAndAccessibleTileDecisionsNeverAdvanceAndStarsStayIndependent]' passed (0.004 seconds).
+Test Case '-[LouppeTests.ReviewPreferencesTests testUndecidedFilterDoesNotSkipTheNextItemInEitherDirection]' started.
+Test Case '-[LouppeTests.ReviewPreferencesTests testUndecidedFilterDoesNotSkipTheNextItemInEitherDirection]' passed (0.008 seconds).
+Test Suite 'ReviewPreferencesTests' passed at 2026-10-22 4:18:31.682 AM.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 0.186 (0.187) seconds
+Test Suite 'StagedBrowseTests' started at 2026-10-22 4:18:31.682 AM.
+Test Case '-[LouppeTests.StagedBrowseTests testCancelledAndSupersededSameURLSnapshotCannotPublishOrBecomeReady]' started.
+Test Case '-[LouppeTests.StagedBrowseTests testCancelledAndSupersededSameURLSnapshotCannotPublishOrBecomeReady]' passed (0.212 seconds).
+Test Case '-[LouppeTests.StagedBrowseTests testEarlyBrowseHasNoSessionMutationOrSaveAuthorityAndHandsOffLatestSelection]' started.
+Test Case '-[LouppeTests.StagedBrowseTests testEarlyBrowseHasNoSessionMutationOrSaveAuthorityAndHandsOffLatestSelection]' passed (0.031 seconds).
+Test Case '-[LouppeTests.StagedBrowseTests testManualViewportIsHandedOffWithoutChoosingTheCurrentPhoto]' started.
+Test Case '-[LouppeTests.StagedBrowseTests testManualViewportIsHandedOffWithoutChoosingTheCurrentPhoto]' passed (0.001 seconds).
+Test Case '-[LouppeTests.StagedBrowseTests testMountedEarlyGalleryAndGridKeepPendingCapabilitiesAndSessionAuthoritySeparate]' started.
+Test Case '-[LouppeTests.StagedBrowseTests testMountedEarlyGalleryAndGridKeepPendingCapabilitiesAndSessionAuthoritySeparate]' passed (0.367 seconds).
+Test Case '-[LouppeTests.StagedBrowseTests testNewFolderSupersedesUnpublishedSnapshot]' started.
+Test Case '-[LouppeTests.StagedBrowseTests testNewFolderSupersedesUnpublishedSnapshot]' passed (0.111 seconds).
+Test Case '-[LouppeTests.StagedBrowseTests testPreviewBoundaryRejectsReplacementBeforeAnyEarlyPixels]' started.
+Test Case '-[LouppeTests.StagedBrowseTests testPreviewBoundaryRejectsReplacementBeforeAnyEarlyPixels]' passed (0.016 seconds).
+Test Case '-[LouppeTests.StagedBrowseTests testUninteractedPreviewUsesFinalDefaultSortForInitialCurrent]' started.
+Test Case 'warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+-[LouppeTests.StagedBrowseTests testUninteractedPreviewUsesFinalDefaultSortForInitialCurrent]' passed (0.028 seconds).
+Test Suite 'StagedBrowseTests' passed at 2026-10-22 4:18:32.450 AM.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.767 (0.768) seconds
+Test Suite 'StagedViewportHandoffTests' started at 2026-10-22 4:18:32.450 AM.
+Test Case '-[LouppeTests.StagedViewportHandoffTests testMountedOpeningHandsOffManualAnchorSeparatelyFromCurrentAfterFinalReorder]' started.
+Test Case '-[LouppeTests.StagedViewportHandoffTests testMountedOpeningHandsOffManualAnchorSeparatelyFromCurrentAfterFinalReorder]' passed (1.172 seconds).
+Test Suite 'StagedViewportHandoffTests' passed at 2026-10-22 4:18:33.623 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.172 (1.172) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-22 4:18:33.623 AM.
+	 Executed 49 tests, with 0 failures (0 unexpected) in 10.172 (10.177) seconds
+Test Suite 'Selected tests' passed at 2026-10-22 4:18:33.623 AM.
+	 Executed 49 tests, with 0 failures (0 unexpected) in 10.172 (10.186) seconds

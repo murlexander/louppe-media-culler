@@ -1,0 +1,35 @@
+| Workload | Count | Median ms | p95 ms | Change vs baseline |
+|---|---:|---:|---:|---:|
+| reopen.durable-session | 100 | 2.533 | 2.639 | — |
+| reopen.durable-session | 1,000 | 21.308 | 21.548 | — |
+| save.durable-sidecar-and-backup | 100 | 13.365 | 17.654 | — |
+| save.durable-sidecar-and-backup | 1,000 | 25.002 | 30.180 | — |
+| scan.jpeg.warm-filesystem | 100 | 9.524 | 21.199 | — |
+| scan.jpeg.warm-filesystem | 1,000 | 88.945 | 92.125 | — |
+| filter.decision.projection-and-groups | 1,000 | 0.834 | 1.192 | — |
+| filter.decision.projection-and-groups | 10,000 | 7.487 | 7.903 | — |
+| filter.decision.projection-and-groups | 100,000 | 85.880 | 185.698 | — |
+| filter.quality.switch-metadata-cue | 1,000 | 1.626 | 2.015 | — |
+| filter.quality.switch-metadata-cue | 10,000 | 11.723 | 18.722 | — |
+| filter.quality.switch-metadata-cue | 100,000 | 112.098 | 200.798 | — |
+| navigation.100-steps | 1,000 | 3.599 | 4.783 | — |
+| navigation.100-steps | 10,000 | 3.982 | 4.679 | — |
+| navigation.100-steps | 100,000 | 3.894 | 4.328 | — |
+| quality.coverage.unmeasured-read | 1,000 | 1.302 | 1.788 | — |
+| quality.coverage.unmeasured-read | 10,000 | 7.990 | 8.638 | — |
+| quality.coverage.unmeasured-read | 100,000 | 80.927 | 104.445 | — |
+| review.rating.decision-sort | 1,000 | 1.319 | 1.635 | — |
+| review.rating.decision-sort | 10,000 | 14.403 | 19.268 | — |
+| review.rating.decision-sort | 100,000 | 163.531 | 165.677 | — |
+| review.rating.default-sort | 1,000 | 0.028 | 0.138 | — |
+| review.rating.default-sort | 10,000 | 0.025 | 0.030 | — |
+| review.rating.default-sort | 100,000 | 0.024 | 0.028 | — |
+| review.stars.star-sort | 1,000 | 1.273 | 3.304 | — |
+| review.stars.star-sort | 10,000 | 10.874 | 11.455 | — |
+| review.stars.star-sort | 100,000 | 123.816 | 125.671 | — |
+| sort-menu.camera.full-store | 1,000 | 19.316 | 26.599 | — |
+| sort-menu.camera.full-store | 10,000 | 72.829 | 82.490 | — |
+| sort-menu.camera.full-store | 100,000 | 933.677 | 953.364 | — |
+| sort-menu.camera.prepared-only-hypothesis | 1,000 | 7.614 | 10.197 | — |
+| sort-menu.camera.prepared-only-hypothesis | 10,000 | 52.490 | 54.172 | — |
+| sort-menu.camera.prepared-only-hypothesis | 100,000 | 719.481 | 742.194 | — |

@@ -1,0 +1,16 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.35s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-12 11:20:06.673 PM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-12 11:20:06.681 PM.
+Test Suite 'QualityCueSessionTests' started at 2026-10-12 11:20:06.681 PM.
+Test Case '-[LouppeTests.QualityCueSessionTests testRealRAWProvidesBoundedSourceEvidenceWithInfoClosed]' started.
+Test Case '-[LouppeTests.QualityCueSessionTests testRealRAWProvidesBoundedSourceEvidenceWithInfoClosed]' passed (0.904 seconds).
+Test Suite 'QualityCueSessionTests' passed at 2026-10-12 11:20:07.585 PM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.904 (0.905) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-12 11:20:07.585 PM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.904 (0.905) seconds
+Test Suite 'Selected tests' passed at 2026-10-12 11:20:07.585 PM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.904 (0.912) seconds

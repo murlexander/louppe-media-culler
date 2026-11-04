@@ -1,0 +1,148 @@
+{
+  "generatedAt" : "2026-10-13T03:11:49Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 26.407958,
+      "medianMS" : 25.162041,
+      "minMS" : 24.289125,
+      "name" : "raw.fast-preview.320px",
+      "p95MS" : 26.407958,
+      "samplesMS" : [
+        26.266125,
+        24.837416,
+        26.068041,
+        24.289125,
+        24.605833,
+        25.162041,
+        26.407958
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 267.422125,
+      "medianMS" : 181.403666,
+      "minMS" : 172.235875,
+      "name" : "raw.apple-default.preview.1024px",
+      "p95MS" : 267.422125,
+      "samplesMS" : [
+        267.422125,
+        182.721291,
+        172.853583,
+        181.403666,
+        190.372583,
+        174.531458,
+        172.235875
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 269.782542,
+      "medianMS" : 240.069583,
+      "minMS" : 228.196416,
+      "name" : "raw.apple-default.preview.4096px",
+      "p95MS" : 269.782542,
+      "samplesMS" : [
+        228.196416,
+        240.069583,
+        249.62275,
+        231.039292,
+        236.425583,
+        242.783917,
+        269.782542
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 907.077292,
+      "medianMS" : 892.295,
+      "minMS" : 873.448292,
+      "name" : "raw.apple-default.histogram.dwell-700ms",
+      "p95MS" : 907.077292,
+      "samplesMS" : [
+        901.118417,
+        882.455709,
+        907.077292,
+        901.82625,
+        892.295,
+        873.448292,
+        875.817166
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 168.009583,
+      "medianMS" : 160.544084,
+      "minMS" : 159.465167,
+      "name" : "raw.apple-default.histogram.dwell-0ms",
+      "p95MS" : 168.009583,
+      "samplesMS" : [
+        159.465167,
+        159.710459,
+        160.544084,
+        166.626541,
+        160.533459,
+        168.009583,
+        161.483333
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 180.474167,
+      "medianMS" : 163.595458,
+      "minMS" : 161.348917,
+      "name" : "raw.apple-default.histogram.production-background",
+      "p95MS" : 180.474167,
+      "samplesMS" : [
+        161.348917,
+        164.015334,
+        161.858208,
+        162.855792,
+        163.9705,
+        163.595458,
+        180.474167
+      ]
+    },
+    {
+      "count" : 2,
+      "maxMS" : 163.158125,
+      "medianMS" : 160.1635,
+      "minMS" : 158.626125,
+      "name" : "raw.production-background.with-foreground-jpeg",
+      "p95MS" : 163.158125,
+      "samplesMS" : [
+        160.1635,
+        159.262917,
+        161.384167,
+        161.735375,
+        159.819084,
+        163.158125,
+        158.626125
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 4.676333,
+      "medianMS" : 3.765542,
+      "minMS" : 3.619041,
+      "name" : "jpeg.foreground-full-during-production-background-raw",
+      "p95MS" : 4.676333,
+      "samplesMS" : [
+        3.765542,
+        3.619041,
+        3.628333,
+        4.087,
+        4.676333,
+        4.235833,
+        3.714542
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-real-raw",
+  "warmups" : 1
+}

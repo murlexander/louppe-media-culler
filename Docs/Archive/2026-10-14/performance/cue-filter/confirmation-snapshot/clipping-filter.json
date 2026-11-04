@@ -1,0 +1,216 @@
+{
+  "generatedAt" : "2026-10-14T15:42:34Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 0.37675,
+      "medianMS" : 0.357167,
+      "minMS" : 0.353083,
+      "name" : "clipping.warm-switch.highlights",
+      "p95MS" : 0.37675,
+      "samplesMS" : [
+        0.37675,
+        0.356958,
+        0.36925,
+        0.353541,
+        0.3595,
+        0.353083,
+        0.357167
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.622417,
+      "medianMS" : 0.368875,
+      "minMS" : 0.353291,
+      "name" : "clipping.warm-switch.shadows",
+      "p95MS" : 0.622417,
+      "samplesMS" : [
+        0.362917,
+        0.357375,
+        0.622417,
+        0.460208,
+        0.391334,
+        0.368875,
+        0.353291
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.792333,
+      "medianMS" : 0.661542,
+      "minMS" : 0.622375,
+      "name" : "clipping.warm-switch.either-clipping",
+      "p95MS" : 0.792333,
+      "samplesMS" : [
+        0.68525,
+        0.661792,
+        0.625292,
+        0.648916,
+        0.622375,
+        0.792333,
+        0.661542
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.714334,
+      "medianMS" : 0.549167,
+      "minMS" : 0.433291,
+      "name" : "clipping.first-use.highlights.after-threshold-change",
+      "p95MS" : 0.714334,
+      "samplesMS" : [
+        0.714334,
+        0.4875,
+        0.433291,
+        0.585959,
+        0.549167,
+        0.568458,
+        0.452042
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 4.611083,
+      "medianMS" : 4.216583,
+      "minMS" : 3.341959,
+      "name" : "clipping.warm-switch.highlights",
+      "p95MS" : 4.611083,
+      "samplesMS" : [
+        4.611083,
+        4.392583,
+        4.493625,
+        4.216583,
+        3.475084,
+        3.341959,
+        3.87775
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 4.495375,
+      "medianMS" : 4.307334,
+      "minMS" : 3.288417,
+      "name" : "clipping.warm-switch.shadows",
+      "p95MS" : 4.495375,
+      "samplesMS" : [
+        4.06375,
+        4.164667,
+        3.288417,
+        4.307334,
+        4.495375,
+        4.392292,
+        4.31275
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 7.257708,
+      "medianMS" : 6.817542,
+      "minMS" : 6.4055,
+      "name" : "clipping.warm-switch.either-clipping",
+      "p95MS" : 7.257708,
+      "samplesMS" : [
+        6.866208,
+        6.588542,
+        6.61575,
+        6.4055,
+        7.257708,
+        6.903667,
+        6.817542
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 6.063375,
+      "medianMS" : 5.342542,
+      "minMS" : 4.525875,
+      "name" : "clipping.first-use.highlights.after-threshold-change",
+      "p95MS" : 6.063375,
+      "samplesMS" : [
+        4.810291,
+        5.961167,
+        6.063375,
+        5.342542,
+        5.410333,
+        4.945709,
+        4.525875
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 39.79925,
+      "medianMS" : 39.339083,
+      "minMS" : 38.21675,
+      "name" : "clipping.warm-switch.highlights",
+      "p95MS" : 39.79925,
+      "samplesMS" : [
+        38.903708,
+        38.717584,
+        39.79925,
+        39.565042,
+        38.21675,
+        39.339083,
+        39.496709
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 41.013375,
+      "medianMS" : 39.918708,
+      "minMS" : 38.545416,
+      "name" : "clipping.warm-switch.shadows",
+      "p95MS" : 41.013375,
+      "samplesMS" : [
+        39.698583,
+        40.110042,
+        41.013375,
+        39.918708,
+        38.723916,
+        38.545416,
+        40.98175
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 72.993417,
+      "medianMS" : 70.649167,
+      "minMS" : 69.888,
+      "name" : "clipping.warm-switch.either-clipping",
+      "p95MS" : 72.993417,
+      "samplesMS" : [
+        70.777,
+        70.830042,
+        72.993417,
+        70.540708,
+        70.649167,
+        70.506958,
+        69.888
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 70.040292,
+      "medianMS" : 66.113917,
+      "minMS" : 63.754375,
+      "name" : "clipping.first-use.highlights.after-threshold-change",
+      "p95MS" : 70.040292,
+      "samplesMS" : [
+        64.985375,
+        65.357834,
+        70.040292,
+        66.113917,
+        66.627375,
+        66.321791,
+        63.754375
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "clipping-filter",
+  "warmups" : 1
+}

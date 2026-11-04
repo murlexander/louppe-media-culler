@@ -1,0 +1,29 @@
+Installed verification — 22 October 2026
+
+Louppe 1.13.0 (15), official /Applications/Louppe.app.
+Strict deep signature verification passed. The installed Contents tree matches
+all 178 build entries by file bytes, executable modes and symlink targets.
+The previous bundle is retained in a temporary rollback directory; its local
+pointer is /private/tmp/louppe-install-rollback-20261022.txt.
+
+Native checks used disposable generated JPEG folders only:
+- Cold Welcome after a large saved review frame: 912×974-pixel capture, with
+  Choose Media Folder and recents present.
+- Cold -openFolder launch: 1 of 1,000 items, zero reviewed, Saved.
+- Recent-folder native open: 1 of 10,000 items, zero reviewed, Saved.
+- Launcher activation restored full-size capture after inactive Stage Manager
+  thumbnails and incomplete accessibility reads. Browser and Grid pixels render.
+- Browser horizontal input, vertical travel/reversal, distant AX tail jump and
+  Gallery/Grid switching were exercised. Current FRAME_009999 remained selected.
+- Grid scroll reached FRAME_000066 while current stayed FRAME_000000. Info
+  hide/show retained that manual position. Reversal returned to FRAME_000000.
+  Horizontal input retained the visible column and native gutter.
+- Back compacted Welcome to 912×974 pixels; reopening restored review to
+  3024×1898 pixels. Two edge-drag automation attempts produced no resize;
+  the physical edge-drag condition is unverified, not a pass.
+- An apparent follow drift did not reproduce using fresh controls. Invalid AX
+  control references and inactive snapshots made early observations inconclusive.
+
+Physical combined diagonal/momentum input, a second display and SD-card storage
+remain open. Controlled native event tests are separate evidence.
+Original media were not modified. No commit, push or release was published.

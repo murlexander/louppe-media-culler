@@ -7,6 +7,176 @@ import XCTest
 final class HotkeyTests: XCTestCase {
     private static var retainedHostingWindows: [NSWindow] = []
 
+    func testKeyboardNavigationKeepsTabAndShiftTabWhileGStillSwitchesViews() {
+        let store = readyStore(itemCount: 3, firstItemIsVideo: false)
+        let view = SessionView(store: store)
+        let context = SessionKeyRoutingContext(sessionOwnsEvent: true, hasModalPresentation: false,
+                                               isKeyboardNavigationEnabled: true)
+        for modifiers: NSEvent.ModifierFlags in [[], .shift] {
+            XCTAssertFalse(view.handleKey(keyEvent(code: 48, characters: "\t", modifiers: modifiers), context: context))
+            XCTAssertEqual(store.viewMode, .gallery)
+        }
+        XCTAssertTrue(view.handleKey(keyEvent(code: 5, characters: "g"), context: context))
+        XCTAssertEqual(store.viewMode, .grid)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 48, characters: "\t"), context: .focusedSession))
+        XCTAssertEqual(store.viewMode, .gallery)
+    }
+
+    func testToolbarHintsShowOnlyAliasesThatRouteInTheCurrentContext() {
+        var preferences = ReviewShortcutPreferences(interpretation: .keyboardLayout)
+        let gridKey = ReviewShortcutBinding(character: "b", keyCode: 11)
+        let photoKey = ReviewShortcutBinding(character: "y", keyCode: 16)
+        XCTAssertTrue(preferences.add(gridKey, for: .export, scope: .grid))
+        XCTAssertTrue(preferences.add(photoKey, for: .info, scope: .photos))
+        let store = readyStore(itemCount: 3, firstItemIsVideo: true)
+        let view = SessionView(store: store)
+        func hint(_ action: ReviewShortcutAction, command: CommandShortcutAction? = nil) -> String {
+            view.toolbarShortcutHint(for: action, command: command,
+                                     shortcutPreferences: preferences, commandShortcutPreferences: .init())
+        }
+
+        XCTAssertEqual(hint(.export, command: .export), "E / ⌘E")
+        XCTAssertEqual(hint(.info), "W")
+        XCTAssertNil(preferences.match(for: keyEvent(code: 11, characters: "b"), context: .galleryPlayableVideo))
+        store.viewMode = .grid
+        XCTAssertEqual(hint(.export, command: .export), "E / B / ⌘E")
+        XCTAssertEqual(preferences.match(for: keyEvent(code: 11, characters: "b"), context: .gridPlayableVideo)?.action, .export)
+        store.setIndex(1)
+        XCTAssertEqual(hint(.info), "W / Y")
+        XCTAssertEqual(preferences.match(for: keyEvent(code: 16, characters: "y"), context: .gridPhoto)?.action, .info)
+        store.viewMode = .gallery
+        XCTAssertEqual(hint(.export, command: .export), "E / ⌘E")
+    }
+
+    func testEditedCommandAliasesRespectOwnershipCapsLockAndRemoval() throws {
+        var preferences = CommandShortcutPreferences()
+        let original = try XCTUnwrap(preferences.bindings(for: .export).first)
+        XCTAssertTrue(preferences.replace(original, with: .init(character: "t", keyCode: 17, modifiers: .commandShift), for: .export))
+        let store = readyStore(itemCount: 3, firstItemIsVideo: false)
+        let view = SessionView(store: store)
+        let event = keyEvent(code: 17, characters: "T", modifiers: [.command, .shift])
+        let text = SessionKeyRoutingContext(sessionOwnsEvent: true, hasModalPresentation: false,
+                                            focusedResponderOwnsText: true, focusedResponderOwnsNavigation: true)
+        let modal = SessionKeyRoutingContext(sessionOwnsEvent: true, hasModalPresentation: true)
+        for context in [text, modal, .blocked] {
+            XCTAssertFalse(view.handleKey(event, context: context, commandShortcutPreferences: preferences))
+        }
+        XCTAssertFalse(view.handleKey(keyEvent(code: 14, characters: "e", modifiers: .command), context: .focusedSession, commandShortcutPreferences: preferences))
+        XCTAssertFalse(view.handleKey(keyEvent(code: 17, characters: "t", modifiers: .command), context: .focusedSession, commandShortcutPreferences: preferences))
+        XCTAssertFalse(store.isExportPresented)
+        XCTAssertFalse(view.handleKey(keyEvent(code: 17, characters: "T", modifiers: [.command, .shift, .function]), context: .focusedSession, commandShortcutPreferences: preferences))
+        let voiceOver = SessionKeyRoutingContext(sessionOwnsEvent: true, hasModalPresentation: false, isVoiceOverEnabled: true)
+        XCTAssertFalse(view.handleKey(keyEvent(code: 17, characters: "T", modifiers: [.command, .shift, .capsLock]), context: voiceOver, commandShortcutPreferences: preferences))
+        XCTAssertTrue(view.handleKey(event, context: .focusedSession, commandShortcutPreferences: preferences))
+        XCTAssertTrue(store.isExportPresented)
+        store.isExportPresented = false
+        XCTAssertTrue(view.handleKey(keyEvent(code: 17, characters: "T", modifiers: [.command, .shift, .capsLock]), context: .focusedSession, commandShortcutPreferences: preferences))
+    }
+
+#if LOUPPE_TEST_SEAMS
+    func testInstalledMonitorUsesSavedCommandAliasesAndLeavesOldDefaultInactive() throws {
+        _ = NSApplication.shared
+        let domain = "HotkeyTests.Command.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        var preferences = CommandShortcutPreferences()
+        let original = try XCTUnwrap(preferences.bindings(for: .export).first)
+        XCTAssertTrue(preferences.replace(original, with: .init(character: "t", keyCode: 17, modifiers: .commandShift), for: .export))
+        preferences.save(to: defaults)
+        let store = readyStore(itemCount: 3, firstItemIsVideo: false)
+        let frame = NSRect(x: 0, y: 0, width: 900, height: 620)
+        let host = NSHostingView(rootView: SessionView(store: store).defaultAppStorage(defaults))
+        host.frame = frame
+        let window = NSWindow(contentRect: frame, styleMask: [.titled], backing: .buffered, defer: false)
+        let baseline = SessionKeyMonitorTestProbe.activeMonitorCount
+        window.contentView = host
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
+        SessionKeyMonitorTestProbe.overrideKeyWindow(with: window)
+        defer {
+            store.isExportPresented = false
+            window.contentView = nil
+            window.orderOut(nil)
+            SessionKeyMonitorTestProbe.overrideKeyWindow(with: nil)
+        }
+        XCTAssertTrue(waitForCondition { SessionKeyMonitorTestProbe.activeMonitorCount == baseline + 1 })
+        XCTAssertTrue(window.makeFirstResponder(host))
+        sendKeyEvent(code: 14, characters: "e", modifiers: .command, in: window)
+        XCTAssertFalse(store.isExportPresented)
+        sendKeyEvent(code: 17, characters: "T", modifiers: [.command, .shift], in: window)
+        XCTAssertTrue(store.isExportPresented)
+        XCTAssertTrue(waitForCondition { window.attachedSheet != nil })
+    }
+#endif
+
+    func testMultipleAliasesRouteSharedKeyOnlyWithinItsMediaContext() {
+        var preferences = ReviewShortcutPreferences()
+        let shared = ReviewShortcutBinding(character: "b", keyCode: 11)
+        XCTAssertTrue(preferences.add(shared, for: .yes, scope: .photos))
+        XCTAssertTrue(preferences.add(shared, for: .no, scope: .videos))
+        XCTAssertFalse(preferences.add(shared, for: .info, scope: .gallery))
+
+        let photos = readyStore(itemCount: 3, firstItemIsVideo: false)
+        let photoView = SessionView(store: photos)
+        XCTAssertTrue(photoView.handleKey(keyEvent(code: 11, characters: "b"), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertEqual(photos.items[0].rating, .yes)
+        XCTAssertTrue(photoView.handleKey(keyEvent(code: 3, characters: "f"), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertEqual(photos.items[1].rating, .yes)
+
+        let videos = readyStore(itemCount: 3, firstItemIsVideo: true)
+        let videoView = SessionView(store: videos)
+        XCTAssertTrue(videoView.handleKey(keyEvent(code: 11, characters: "b"), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertEqual(videos.items[0].rating, .no)
+    }
+
+    func testRemovingNavigationAliasKeepsItsDisjointVideoMeaningAndNativeFocus() throws {
+        var preferences = ReviewShortcutPreferences()
+        let left = try XCTUnwrap(preferences.assignments(for: .previous).first { $0.binding.keyCode == 123 })
+        XCTAssertTrue(preferences.remove(left.id, for: .previous))
+        let photos = readyStore(itemCount: 3, firstItemIsVideo: false)
+        photos.setIndex(1)
+        let photoView = SessionView(store: photos)
+        let leftEvent = keyEvent(code: 123, modifiers: [.numericPad, .function])
+        XCTAssertFalse(photoView.handleKey(leftEvent, context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertEqual(photos.currentIndex, 1)
+
+        let videos = readyStore(itemCount: 3, firstItemIsVideo: true)
+        let videoView = SessionView(store: videos)
+        XCTAssertTrue(videoView.handleKey(leftEvent, context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertEqual(videos.currentIndex, 0)
+
+        XCTAssertTrue(preferences.add(.init(character: "←", keyCode: 123), for: .yes, scope: .photos))
+        let nativeControl = SessionKeyRoutingContext(sessionOwnsEvent: true, hasModalPresentation: false,
+                                                    focusedResponderOwnsText: false, focusedResponderOwnsNavigation: true)
+        XCTAssertFalse(photoView.handleKey(leftEvent, context: nativeControl, shortcutPreferences: preferences))
+        XCTAssertEqual(photos.items[1].rating, .undecided)
+        XCTAssertTrue(photoView.handleKey(leftEvent, context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertEqual(photos.items[1].rating, .yes)
+    }
+
+    func testCustomAndPhysicalReviewBindingsUseExistingOwnershipGates() {
+        let store = readyStore(itemCount: 4, firstItemIsVideo: false)
+        let view = SessionView(store: store)
+        var preferences = ReviewShortcutPreferences()
+        XCTAssertTrue(preferences.set(.init(character: "b", keyCode: 11), for: .yes))
+        XCTAssertFalse(view.handleKey(keyEvent(code: 3, characters: "f"), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertEqual(store.items[0].rating, .undecided)
+        let textContext = SessionKeyRoutingContext(sessionOwnsEvent: true, hasModalPresentation: false,
+                                                  focusedResponderOwnsText: true, focusedResponderOwnsNavigation: false)
+        XCTAssertFalse(view.handleKey(keyEvent(code: 11, characters: "b"), context: textContext, shortcutPreferences: preferences))
+        XCTAssertFalse(view.handleKey(keyEvent(code: 11, characters: "b", modifiers: .option), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertTrue(view.handleKey(keyEvent(code: 11, characters: "b"), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertEqual(store.items[0].rating, .yes)
+        preferences.interpretation = .physicalPosition
+        XCTAssertTrue(preferences.set(.init(character: "d", keyCode: 4), for: .yes))
+        XCTAssertTrue(view.handleKey(keyEvent(code: 4, characters: "d"), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertEqual(store.items[1].rating, .yes)
+        store.isEarlyUserFeedbackPresented = true
+        XCTAssertFalse(view.handleKey(keyEvent(code: 4, characters: "d"), context: .focusedSession, shortcutPreferences: preferences))
+        XCTAssertEqual(store.items[2].rating, .undecided)
+    }
+
     func testFeedbackPromptOwnsKeysUntilDismissed() {
         let store = readyStore(itemCount: 3, firstItemIsVideo: false)
         let view = SessionView(store: store)
@@ -350,7 +520,9 @@ final class HotkeyTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
 
         let focusedControlProxy = try XCTUnwrap(hostingView.nextKeyView)
@@ -418,8 +590,9 @@ final class HotkeyTests: XCTestCase {
             defer: false
         )
         window.contentView = contentView
-        NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
 
         XCTAssertTrue(window.makeFirstResponder(selectableText))
         let context = SessionKeyRoutingContext(
@@ -475,7 +648,9 @@ final class HotkeyTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
 
         XCTAssertTrue(window.makeFirstResponder(hostingView))
@@ -489,6 +664,7 @@ final class HotkeyTests: XCTestCase {
         )
         XCTAssertFalse(context.focusedResponderOwnsText)
         XCTAssertFalse(context.focusedResponderOwnsNavigation)
+        XCTAssertEqual(context.isKeyboardNavigationEnabled, NSApp.isFullKeyboardAccessEnabled)
         XCTAssertTrue(context.acceptsReviewShortcuts)
         XCTAssertTrue(context.acceptsNavigationShortcuts)
 
@@ -507,7 +683,7 @@ final class HotkeyTests: XCTestCase {
         Self.retainedHostingWindows.append(window)
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     func testRootPhaseTransitionReinstallsLiveSessionMonitor() {
         _ = NSApplication.shared
         let baselineMonitorCount =
@@ -523,7 +699,9 @@ final class HotkeyTests: XCTestCase {
             defer: false
         )
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         SessionKeyMonitorTestProbe.overrideKeyWindow(with: window)
         defer {
             window.contentView = nil
@@ -603,7 +781,9 @@ final class HotkeyTests: XCTestCase {
             defer: false
         )
         window.contentView = container
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         // XCTest bundles cannot become the process's active app, so AppKit
         // never assigns their otherwise-real test window to NSApp.keyWindow.
         // The debug-only override supplies only that unavailable fact; event
@@ -695,7 +875,9 @@ final class HotkeyTests: XCTestCase {
         )
         window.contentView = NSView(frame: window.frame)
         window.contentView?.addSubview(editor)
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         XCTAssertTrue(window.makeFirstResponder(editor))
         let editingContext = SessionKeyRoutingContext(
             eventWindow: window,
@@ -1061,8 +1243,8 @@ final class HotkeyTests: XCTestCase {
         let rawAction = try XCTUnwrap(actions.first {
             $0.id == "trash-paired-raws"
         })
-        XCTAssertEqual(jpegAction.title, "Move Paired JPEGs to Trash…")
-        XCTAssertEqual(rawAction.title, "Move Paired RAWs to Trash…")
+        XCTAssertEqual(jpegAction.title, "Trash Paired JPEGs…")
+        XCTAssertEqual(rawAction.title, "Trash Paired RAWs…")
         XCTAssertTrue(jpegAction.isEnabled)
         XCTAssertTrue(rawAction.isEnabled)
         jpegAction.perform()
@@ -1140,10 +1322,15 @@ final class HotkeyTests: XCTestCase {
         XCTAssertEqual(try action("grid-zoom-in").shortcut, "⌘+")
         XCTAssertEqual(try action("actual-size").shortcut, "S")
         XCTAssertEqual(try action("phone-size").shortcut, "A")
-        XCTAssertEqual(try action("select-to-first").shortcut, "⌘⇧←")
-        XCTAssertEqual(try action("select-to-last").shortcut, "⌘⇧→")
-        XCTAssertEqual(try action("grid-item-above").shortcut, "↑")
-        XCTAssertEqual(try action("grid-item-below").shortcut, "↓")
+        XCTAssertEqual(try action("select-to-first").shortcut, "⇧⌘←")
+        XCTAssertEqual(try action("select-to-last").shortcut, "⇧⌘→")
+        XCTAssertEqual(try action("grid-item-above").shortcut, "")
+        XCTAssertEqual(try action("grid-item-below").shortcut, "")
+        store.viewMode = .grid
+        let gridActions = ActionPaletteView(store: store).actions
+        XCTAssertEqual(gridActions.first { $0.id == "grid-item-above" }?.shortcut, "↑")
+        XCTAssertEqual(gridActions.first { $0.id == "grid-item-below" }?.shortcut, "↓")
+        store.viewMode = .gallery
         XCTAssertTrue(try action("trash-selection").detail.contains("skips confirmation"))
         XCTAssertTrue(try action("mark-yes").detail.contains("advance"))
         XCTAssertTrue(try action("close-session").isEnabled)

@@ -1,0 +1,27 @@
+[0/1] Planning build
+Building for production...
+[0/4] Write sources
+[1/4] Write swift-version--58304C5D6DBC2206.txt
+[3/4] Compiling LouppeTests AccessibilityTests.swift
+[4/6] Compiling LouppePackageTests runner.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking LouppePackageTests
+Build complete! (32.21s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-13 12:09:24.585 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-13 12:09:24.593 AM.
+Test Suite 'LouppeSpeedQualityResourceTests' started at 2026-10-13 12:09:24.593 AM.
+Test Case '-[LouppeTests.LouppeSpeedQualityResourceTests testEvidenceAccumulationCPUAndPublicationCost]' started.
+Test Case '-[LouppeTests.LouppeSpeedQualityResourceTests testEvidenceAccumulationCPUAndPublicationCost]' passed (72.434 seconds).
+Test Suite 'LouppeSpeedQualityResourceTests' passed at 2026-10-13 12:10:37.027 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 72.434 (72.434) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-13 12:10:37.027 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 72.434 (72.434) seconds
+Test Suite 'Selected tests' passed at 2026-10-13 12:10:37.027 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 72.434 (72.441) seconds
+SPEED quality.evidence.complete.wall n=1000 median=75.786ms p95=80.828ms
+SPEED quality.evidence.complete.process-cpu n=1000 median=108.281ms p95=115.084ms
+SPEED quality.evidence.complete.wall n=10000 median=776.061ms p95=786.805ms
+SPEED quality.evidence.complete.process-cpu n=10000 median=1096.686ms p95=1108.858ms
+SPEED quality.evidence.complete.wall n=100000 median=7670.848ms p95=7679.558ms
+SPEED quality.evidence.complete.process-cpu n=100000 median=10756.968ms p95=10820.337ms

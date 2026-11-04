@@ -53,9 +53,9 @@ enum ExportWorker {
         var userMessage: String {
             switch self {
             case .userConfirmed:
-                return "You chose to stop copying."
+                return L10n.text("You chose to stop copying.")
             case .unrecorded:
-                return "Louppe stopped copying without a recorded reason. Please send Louppe’s diagnostic log with this report."
+                return L10n.text("Copy stopped without a recorded reason. Send Alex the diagnostic log with this report.")
             }
         }
 
@@ -278,9 +278,9 @@ enum ExportWorker {
         var errorDescription: String? {
             switch self {
             case .conflictingFamilyNames:
-                return "Some files in one media/XMP family have equivalent destination names. Export them separately without XMP, or give them distinct names before exporting."
+                return L10n.text("One media/XMP family has equivalent destination names. Export separately without XMP, or rename the files first.")
             case .collisionSearchExhausted:
-                return "Louppe could not reserve a distinct destination name. Choose another folder and retry."
+                return L10n.text("Louppe could not reserve a distinct destination name. Choose another folder and retry.")
             }
         }
     }
@@ -564,7 +564,7 @@ enum ExportWorker {
                 cancellationReason: nil,
                 journalFailure: false,
                 requiresRecovery: false,
-                failureMessage: "A destination name was claimed after confirmation. Review and confirm a fresh export plan.",
+                failureMessage: L10n.text("A destination name was claimed after confirmation. Review and confirm a fresh export plan."),
                 xmpSummary: xmpSummary
             )
         }
@@ -580,7 +580,7 @@ enum ExportWorker {
                 cancellationReason: nil,
                 journalFailure: true,
                 requiresRecovery: false,
-                failureMessage: "One or more source files could not be verified before copying",
+                failureMessage: L10n.text("One or more source files could not be verified before copying"),
                 xmpSummary: xmpSummary
             )
         }
@@ -595,7 +595,7 @@ enum ExportWorker {
                 let binding = try plan.destinationBindings.first {
                     FileOperationJournal.exactPathsEqual($0.url, parent)
                 } ?? DurableFileIO.DirectoryBinding(url: parent)
-                try binding.requireCurrentPath()
+                try ExportDestinationValidator.requireCollisionSafePublication(at: binding)
                 directories[key] = try DurableFileIO.BoundDirectory(binding)
             }
             boundDirectories = directories
@@ -605,6 +605,7 @@ enum ExportWorker {
                 journalFailure: false, requiresRecovery: false,
                 failureMessage: error.localizedDescription, xmpSummary: xmpSummary)
         }
+        let inFileCopy = InFileCopyMonitor(isCancelled: isCancelled)
         let protectedCopier: FileCopier = { source, temporary in
             let key = try XMPExactFileSystemPath(url: temporary).parent.bytes
             guard let directory = boundDirectories[key] else {
@@ -614,8 +615,15 @@ enum ExportWorker {
             if let fileCopier { // Fault injection for the existing worker tests.
                 try fileCopier(source, temporary)
                 try directory.binding.requireCurrentPath()
+                // Injected copiers write through pathnames, so flush their
+                // result here. The production copier already full-syncs the
+                // created descriptor before returning.
+                try DurableFileIO.syncFile(at: temporary, fullSync: true)
             } else {
-                try directory.copy(from: source, to: temporary)
+                // Report bytes within a large file and honor a confirmed
+                // Stop between writes instead of after the whole file.
+                try directory.copy(from: source, to: temporary,
+                                   progress: inFileCopy.report)
             }
         }
         let writer: FileOperationJournal.Writer
@@ -657,7 +665,7 @@ enum ExportWorker {
             )
         }
         var reporter = ThrottledProgress(total: plan.totalFiles, callback: progress)
-        var byteReporter = ThrottledByteProgress(
+        let byteReporter = ThrottledByteProgress(
             total: plan.totalTransferBytes,
             callback: byteProgress
         )
@@ -706,7 +714,7 @@ enum ExportWorker {
                     journalFailure = true
                     failed = true
                     failureMessage = failureMessage
-                        ?? "Louppe could not resolve its protected temporary copy path"
+                        ?? L10n.text("Louppe could not resolve its protected temporary copy path")
                     touchedForItem.append(touched)
                     reporter.advance()
                     break
@@ -736,6 +744,11 @@ enum ExportWorker {
                             try writer.requireUnchangedSource(at: fileIndex)
                             try directory.write(preparedContents, to: temporary)
                         } else {
+                            let limit = file.transferByteCount
+                            inFileCopy.onBytes = { copied in
+                                byteReporter.setInFlight(copied, limit: limit)
+                            }
+                            defer { inFileCopy.onBytes = nil }
                             try copySourceWithReconnectRetry(
                                 writer: writer,
                                 fileIndex: fileIndex,
@@ -748,10 +761,9 @@ enum ExportWorker {
                         touched.location = .temporary(temporary)
                         touched.identity = try FileOperationJournal
                             .captureIdentity(at: temporary)
-                        try DurableFileIO.syncFile(
-                            at: temporary,
-                            fullSync: true
-                        )
+                        // Every writer above has already full-synced the
+                        // temporary's contents. Make its directory entry
+                        // durable before the staged checkpoint names it.
                         try DurableFileIO.syncDirectory(
                             temporary.deletingLastPathComponent(),
                             fullSync: true
@@ -775,6 +787,13 @@ enum ExportWorker {
                         }
                     } catch {
                         if case SourceReconnectError.cancelled = error {
+                            cancelled = true
+                            observedCancellationReason = cancellationReason()
+                                ?? .unrecorded
+                        } else if error is DurableFileIO.CopyStopped {
+                            // A confirmed Stop interrupted this file's data
+                            // copy. Its partial is recorded and removed below
+                            // exactly like any other incomplete copy.
                             cancelled = true
                             observedCancellationReason = cancellationReason()
                                 ?? .unrecorded
@@ -863,13 +882,11 @@ enum ExportWorker {
                             at: temporary,
                             includeStatusChange: false
                         )
+                        // `publish` renames inside the held destination
+                        // folder and full-syncs that same directory before
+                        // returning; the temporary always shares its parent.
                         try directory.publish(from: temporary, to: file.target)
                         touched.location = .destination
-                        try DurableFileIO.syncRenameDirectories(
-                            from: temporary,
-                            to: file.target,
-                            fullSync: true
-                        )
                         touched.identity = try verifiedIdentity(
                             matching: identity,
                             at: file.target
@@ -934,6 +951,8 @@ enum ExportWorker {
                 touchedForItem.append(touched)
                 if case .destination = touched.location {
                     byteReporter.advance(by: file.transferByteCount)
+                } else {
+                    byteReporter.clearInFlight()
                 }
                 reporter.advance()
                 if failed { break }
@@ -1001,7 +1020,7 @@ enum ExportWorker {
         if !journalFinalized {
             journalFailure = true
             failureMessage = failureMessage
-                ?? "Louppe could not seal the completed file-safety record"
+                ?? L10n.text("Louppe could not seal the completed file-safety record")
         }
         return CopyResult(
             copiedFiles: copied,
@@ -1049,7 +1068,7 @@ enum ExportWorker {
                 inconsistentPhotos: 0,
                 journalFailure: false,
                 requiresRecovery: false,
-                failureMessage: "Move requires the source and destination to be on the same storage volume",
+                failureMessage: L10n.text("Move requires the source and destination to be on the same storage volume"),
                 xmpSummary: xmpSummary
             )
         }
@@ -1073,7 +1092,7 @@ enum ExportWorker {
                 inconsistentPhotos: 0,
                 journalFailure: true,
                 requiresRecovery: false,
-                failureMessage: "Louppe could not preserve the exact source paths safely",
+                failureMessage: L10n.text("Louppe could not preserve the exact source paths safely"),
                 xmpSummary: xmpSummary
             )
         }
@@ -1110,7 +1129,7 @@ enum ExportWorker {
                 inconsistentPhotos: 0,
                 journalFailure: false,
                 requiresRecovery: false,
-                failureMessage: "A destination name was claimed after confirmation. Review and confirm a fresh export plan.",
+                failureMessage: L10n.text("A destination name was claimed after confirmation. Review and confirm a fresh export plan."),
                 xmpSummary: xmpSummary
             )
         }
@@ -1125,9 +1144,32 @@ enum ExportWorker {
                 inconsistentPhotos: 0,
                 journalFailure: true,
                 requiresRecovery: false,
-                failureMessage: "One or more source files could not be verified before moving",
+                failureMessage: L10n.text("One or more source files could not be verified before moving"),
                 xmpSummary: xmpSummary
             )
+        }
+        // Source Organization/Rename owns its separately probed ExFAT
+        // fallback. Ordinary Export Move needs the same exclusive publication
+        // contract as Copy and must refuse unsupported folders before journaling.
+        if journalKind == .exportMove {
+            do {
+                var checkedParents = Set<Data>()
+                for file in plan.items.flatMap(\.files) {
+                    let parent = try XMPExactFileSystemPath(url: file.target).parent
+                    guard checkedParents.insert(parent.bytes).inserted else { continue }
+                    let binding = try plan.destinationBindings.first {
+                        FileOperationJournal.exactPathsEqual($0.url, parent.url)
+                    } ?? DurableFileIO.DirectoryBinding(url: parent.url)
+                    try ExportDestinationValidator.requireCollisionSafePublication(at: binding)
+                }
+            } catch {
+                return MoveResult(
+                    movedItemIDs: [], movedFiles: 0, failedPhotos: items.count,
+                    inconsistentPhotos: 0, journalFailure: false,
+                    requiresRecovery: false, failureMessage: error.localizedDescription,
+                    xmpSummary: xmpSummary
+                )
+            }
         }
         let writer: FileOperationJournal.Writer
         do {
@@ -1188,12 +1230,12 @@ enum ExportWorker {
                 inconsistentPhotos: 0,
                 journalFailure: !journalFinalized,
                 requiresRecovery: !journalFinalized,
-                failureMessage: "No photos were moved. \(error.localizedDescription)",
+                failureMessage: L10n.text("No photos were moved. \(error.localizedDescription)"),
                 xmpSummary: xmpSummary
             )
         }
         var reporter = ThrottledProgress(total: plan.totalFiles, callback: progress)
-        var byteReporter = ThrottledByteProgress(
+        let byteReporter = ThrottledByteProgress(
             total: plan.totalTransferBytes,
             callback: byteProgress
         )
@@ -1243,7 +1285,7 @@ enum ExportWorker {
                     journalFailure = true
                     failed = true
                     failureMessage = failureMessage
-                        ?? "Louppe could not reserve a safe temporary path for \(file.source.lastPathComponent)."
+                        ?? L10n.text("Louppe could not reserve a safe temporary path for \(file.source.lastPathComponent).")
                     touchedForItem.append(touched)
                     reporter.advance()
                     break
@@ -1627,7 +1669,7 @@ enum ExportWorker {
             requiresRecovery: inconsistentPhotos > 0 || !journalFinalized,
             failureMessage: failedPhotos > 0 || journalFailure
                 ? failureMessage
-                    ?? "A source, destination, or file-safety checkpoint became unavailable during the move"
+                    ?? L10n.text("A source, destination, or file-safety checkpoint became unavailable during the move")
                 : nil,
             xmpSummary: xmpSummary
         )
@@ -1859,7 +1901,7 @@ enum ExportWorker {
         }
     }
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
     static func removeVerifiedCopyForTesting(
         source: URL,
         artifact: URL,
@@ -2259,24 +2301,24 @@ enum ExportWorker {
             candidate.domain == NSPOSIXErrorDomain ? candidate.code : nil
         })
         if posixCodes.contains(Int(EEXIST)) {
-            return "The destination for \(filename) was claimed after confirmation. Louppe stopped without overwriting it."
+            return L10n.text("The destination for \(filename) was claimed after confirmation. Louppe stopped without overwriting it.")
         }
         if !posixCodes.isDisjoint(with: [Int(ENOTSUP), Int(EOPNOTSUPP)]) {
-            return "This storage does not support the collision-safe rename needed to move \(filename)."
+            return L10n.text("This storage does not support the collision-safe rename needed to move \(filename).")
         }
         if posixCodes.contains(Int(ENOSPC)) {
-            return "The storage ran out of free space while moving \(filename)."
+            return L10n.text("The storage ran out of free space while moving \(filename).")
         }
         if !posixCodes.isDisjoint(with: [Int(EACCES), Int(EPERM), Int(EROFS)]) {
-            return "The storage stopped allowing changes while Louppe was moving \(filename)."
+            return L10n.text("The storage stopped allowing changes while Louppe was moving \(filename).")
         }
         switch phase {
         case .staging:
-            return "Louppe could not safely begin moving \(filename): \(error.localizedDescription)"
+            return L10n.text("Louppe could not safely begin moving \(filename): \(error.localizedDescription)")
         case .publishing:
-            return "Louppe could not place \(filename) at its confirmed destination: \(error.localizedDescription)"
+            return L10n.text("Louppe could not place \(filename) at its confirmed destination: \(error.localizedDescription)")
         case .safetyRecord:
-            return "Louppe could not update the file-safety record for \(filename): \(error.localizedDescription)"
+            return L10n.text("Louppe could not update the file-safety record for \(filename): \(error.localizedDescription)")
         }
     }
 
@@ -2285,7 +2327,7 @@ enum ExportWorker {
         phase: CopyFailurePhase
     ) -> String {
         if isUnavailableSourceError(error) {
-            return "The source drive disconnected and did not remount in time"
+            return L10n.text("The source drive disconnected and did not remount in time")
         }
         let chain = errorChain(error)
         if chain.contains(where: {
@@ -2294,25 +2336,25 @@ enum ExportWorker {
             $0.domain == NSCocoaErrorDomain
                 && $0.code == NSFileWriteOutOfSpaceError
         }) {
-            return "The destination ran out of free space"
+            return L10n.text("The destination ran out of free space")
         }
         if chain.contains(where: {
             $0.domain == NSPOSIXErrorDomain
                 && [Int(EACCES), Int(EPERM), Int(EROFS)].contains($0.code)
         }) {
             return phase == .readingSource
-                ? "The source file could no longer be read"
-                : "The destination could no longer be written"
+                ? L10n.text("The source file could no longer be read")
+                : L10n.text("The destination could no longer be written")
         }
         switch phase {
         case .planning:
-            return "Louppe could not create a safe export plan: \(error.localizedDescription)"
+            return L10n.text("Louppe could not create a safe export plan: \(error.localizedDescription)")
         case .readingSource:
-            return "A source file could not be copied: \(error.localizedDescription)"
+            return L10n.text("A source file could not be copied: \(error.localizedDescription)")
         case .publishingDestination:
-            return "A completed copy could not be published at the destination: \(error.localizedDescription)"
+            return L10n.text("A completed copy could not be published at the destination: \(error.localizedDescription)")
         case .safetyRecord:
-            return "Louppe could not advance its durable file-safety record: \(error.localizedDescription)"
+            return L10n.text("Louppe could not advance its durable file-safety record: \(error.localizedDescription)")
         }
     }
 
@@ -2403,40 +2445,85 @@ enum ExportWorker {
 /// Coalesces transfer-byte progress for Export without changing the existing
 /// physical-file progress contract shared with Clean Up. A rollback reports
 /// immediately so the visible amount never claims a safely removed copy.
-private struct ThrottledByteProgress {
+/// In-flight bytes of the file being copied are shown separately and are
+/// retracted at once if that file does not reach its destination.
+private final class ThrottledByteProgress {
     let total: Int64
     let callback: ExportWorker.ByteProgress
     private(set) var completed: Int64 = 0
+    private var inFlight: Int64 = 0
     private var lastReport = Date.distantPast
+    private var lastReported: Int64 = -1
 
     init(total: Int64, callback: @escaping ExportWorker.ByteProgress) {
         self.total = max(0, total)
         self.callback = callback
     }
 
-    mutating func advance(by amount: Int64) {
+    private var visible: Int64 {
+        let (sum, overflowed) = completed.addingReportingOverflow(inFlight)
+        return min(overflowed ? Int64.max : sum, total)
+    }
+
+    func advance(by amount: Int64) {
         let amount = max(0, amount)
+        inFlight = 0
         let (sum, overflowed) = completed.addingReportingOverflow(amount)
         completed = min(overflowed ? Int64.max : sum, total)
         reportIfNeeded(force: completed == total)
     }
 
-    mutating func retract(by amount: Int64) {
+    /// Bytes written so far for the current file, capped at its planned size.
+    func setInFlight(_ amount: Int64, limit: Int64) {
+        inFlight = min(max(0, amount), max(0, limit))
+        reportIfNeeded(force: false)
+    }
+
+    func clearInFlight() {
+        guard inFlight != 0 else { return }
+        inFlight = 0
+        reportIfNeeded(force: true)
+    }
+
+    func retract(by amount: Int64) {
+        inFlight = 0
         completed = max(0, completed - max(0, amount))
         reportIfNeeded(force: true)
     }
 
-    mutating func finish() {
+    func finish() {
+        inFlight = 0
         guard completed != total else { return }
         completed = total
         reportIfNeeded(force: true)
     }
 
-    private mutating func reportIfNeeded(force: Bool) {
+    private func reportIfNeeded(force: Bool) {
         guard total > 0 else { return }
+        let value = visible
+        // In-flight and completion updates can name the same amount; repeat
+        // nothing the photographer has already seen.
+        guard value != lastReported else { return }
         let now = Date()
         guard force || now.timeIntervalSince(lastReport) >= 0.1 else { return }
-        callback(completed, total)
+        callback(value, total)
         lastReport = now
+        lastReported = value
+    }
+}
+
+/// Carries one worker's within-file copy progress and Stop check into the
+/// synchronous descriptor copy. Only the worker thread touches `onBytes`.
+private final class InFileCopyMonitor: @unchecked Sendable {
+    let isCancelled: @Sendable () -> Bool
+    var onBytes: ((Int64) -> Void)?
+
+    init(isCancelled: @escaping @Sendable () -> Bool) {
+        self.isCancelled = isCancelled
+    }
+
+    func report(_ copied: Int64) -> Bool {
+        onBytes?(copied)
+        return !isCancelled()
     }
 }

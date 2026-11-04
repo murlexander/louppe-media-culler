@@ -1,0 +1,11 @@
+{
+  "compared": 157,
+  "changedExistingSources": [
+    "Sources/Louppe/HistogramPipeline.swift",
+    "Sources/Louppe/QualityCueAnalysis.swift",
+    "Sources/Louppe/SessionStore.swift",
+    "Sources/Louppe/Views/FilterView.swift"
+  ],
+  "unchanged": 153,
+  "changesPurpose": "quality scheduler, numeric publication, JPEG request purpose, filter Pause/Resume"
+}

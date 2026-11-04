@@ -1,0 +1,3 @@
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc -swift-version 6 -O -parse-as-library -module-cache-path /private/tmp/louppe-quality-resource/module-cache /private/tmp/louppe-quality-resource/Experiment.swift -o /private/tmp/louppe-quality-resource/quality-resource-experiment
+/private/tmp/louppe-quality-resource/quality-resource-experiment > /private/tmp/louppe-quality-resource/results.json
+python3 /private/tmp/louppe-quality-resource/summarize.py /private/tmp/louppe-quality-resource/results.json

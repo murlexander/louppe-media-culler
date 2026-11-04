@@ -1,0 +1,57 @@
+[0/1] Planning build
+Building for production...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Compiling LouppeTests AccessibilityTests.swift
+[4/6] Compiling LouppePackageTests runner.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking LouppePackageTests
+Build complete! (52.48s)
+Test Suite 'Selected tests' started at 2026-10-22 4:03:57.036 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-22 4:03:57.043 AM.
+Test Suite 'LouppeSpeedLargeFolderTests' started at 2026-10-22 4:03:57.043 AM.
+Test Case '-[LouppeTests.LouppeSpeedLargeFolderTests testMountedLargeGridAndBrowserNavigation]' started.
+Test Case '-[LouppeTests.LouppeSpeedLargeFolderTests testMountedLargeGridAndBrowserNavigation]' passed (51.989 seconds).
+Test Suite 'LouppeSpeedLargeFolderTests' passed at 2026-10-22 4:04:49.033 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 51.989 (51.990) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-22 4:04:49.033 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 51.989 (51.990) seconds
+Test Suite 'Selected tests' passed at 2026-10-22 4:04:49.033 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 51.989 (51.997) seconds
+LARGE_MOUNT first_grid_matching_pixels_ms=162.739292 count=1000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED grid.jump-cycle.middle.including-reset n=1000 median=136.665ms p95=138.439ms
+SPEED grid.input-to-matching-pixels.middle.warm-after-first n=1000 median=68.512ms p95=69.503ms
+SPEED grid.jump-cycle.tail.including-reset n=1000 median=204.290ms p95=239.619ms
+SPEED grid.input-to-matching-pixels.tail.warm-after-first n=1000 median=108.520ms p95=113.162ms
+SPEED grid.jump-cycle.reverse.including-reset n=1000 median=157.911ms p95=639.442ms
+SPEED grid.input-to-matching-pixels.reverse.warm-after-first n=1000 median=60.124ms p95=82.994ms
+SPEED grid.jump-cycle.head.including-reset n=1000 median=218.294ms p95=246.298ms
+SPEED grid.input-to-matching-pixels.head.warm-after-first n=1000 median=106.252ms p95=119.376ms
+LARGE_MOUNT first_browser_matching_pixels_ms=24.655792 count=1000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED browser.jump-cycle.middle.including-reset n=1000 median=66.424ms p95=78.708ms
+SPEED browser.input-to-matching-pixels.middle.warm-after-first n=1000 median=34.845ms p95=37.025ms
+SPEED browser.jump-cycle.tail.including-reset n=1000 median=124.033ms p95=126.873ms
+SPEED browser.input-to-matching-pixels.tail.warm-after-first n=1000 median=66.718ms p95=67.461ms
+SPEED browser.jump-cycle.reverse.including-reset n=1000 median=54.133ms p95=91.257ms
+SPEED browser.input-to-matching-pixels.reverse.warm-after-first n=1000 median=27.590ms p95=28.394ms
+SPEED browser.jump-cycle.head.including-reset n=1000 median=125.382ms p95=144.361ms
+SPEED browser.input-to-matching-pixels.head.warm-after-first n=1000 median=56.686ms p95=75.138ms
+LARGE_MOUNT first_grid_matching_pixels_ms=60.469208 count=10000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED grid.jump-cycle.middle.including-reset n=10000 median=915.825ms p95=917.522ms
+SPEED grid.input-to-matching-pixels.middle.warm-after-first n=10000 median=461.170ms p95=464.701ms
+SPEED grid.jump-cycle.tail.including-reset n=10000 median=1976.307ms p95=2106.492ms
+SPEED grid.input-to-matching-pixels.tail.warm-after-first n=10000 median=1067.627ms p95=1208.817ms
+SPEED grid.jump-cycle.reverse.including-reset n=10000 median=1580.710ms p95=1826.264ms
+SPEED grid.input-to-matching-pixels.reverse.warm-after-first n=10000 median=753.661ms p95=961.280ms
+SPEED grid.jump-cycle.head.including-reset n=10000 median=1971.061ms p95=2007.534ms
+SPEED grid.input-to-matching-pixels.head.warm-after-first n=10000 median=928.341ms p95=932.982ms
+LARGE_MOUNT first_browser_matching_pixels_ms=20.963 count=10000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED browser.jump-cycle.middle.including-reset n=10000 median=542.125ms p95=548.316ms
+SPEED browser.input-to-matching-pixels.middle.warm-after-first n=10000 median=282.136ms p95=283.143ms
+SPEED browser.jump-cycle.tail.including-reset n=10000 median=1243.034ms p95=1248.077ms
+SPEED browser.input-to-matching-pixels.tail.warm-after-first n=10000 median=682.908ms p95=685.296ms
+SPEED browser.jump-cycle.reverse.including-reset n=10000 median=931.777ms p95=1113.581ms
+SPEED browser.input-to-matching-pixels.reverse.wawarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+rm-after-first n=10000 median=463.163ms p95=559.804ms
+SPEED browser.jump-cycle.head.including-reset n=10000 median=1240.574ms p95=1249.643ms
+SPEED browser.input-to-matching-pixels.head.warm-after-first n=10000 median=571.158ms p95=581.504ms

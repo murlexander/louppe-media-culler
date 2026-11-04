@@ -19,6 +19,9 @@ final class AppleRawDecoderTests: XCTestCase {
     }
 
     func testRAW9RequiresBothSystemAndPerFileSupportIncludingDNG() throws {
+        guard #available(macOS 27, *) else {
+            throw XCTSkip("RAW 9 SDK constants require macOS 27")
+        }
         XCTAssertThrowsError(try AppleRawDecoder.raw9.version(supported: [.version9], supportsRAW9: false))
         XCTAssertThrowsError(try AppleRawDecoder.raw9.version(supported: [.version7, .version8], supportsRAW9: true))
         XCTAssertThrowsError(try AppleRawDecoder.raw9.version(supported: [], supportsRAW9: true))
@@ -38,40 +41,85 @@ final class AppleRawDecoderTests: XCTestCase {
 
     func testDecoderSwitchRejectsLateSourceAndRetryRestartsSamePhoto() async throws {
         var pending: [AppleRawDecoder: [CheckedContinuation<ZoomImageSource?, Never>]] = [:]
+        var resumedCount: [AppleRawDecoder: Int] = [:]
+        var returnedCancellation: [AppleRawDecoder: [Bool]] = [:]
+        var renderingFailed = false
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(5))
         let scroll = ActualSizeScrollView { _, decoder in
-            await withCheckedContinuation { pending[decoder, default: []].append($0) }
+            let source = await withCheckedContinuation {
+                pending[decoder, default: []].append($0)
+            }
+            returnedCancellation[decoder, default: []].append(Task.isCancelled)
+            return source
+        }
+        defer {
+            scroll.prepareForRemoval()
+            for (decoder, continuations) in pending {
+                for continuation in continuations.dropFirst(resumedCount[decoder, default: 0]) {
+                    continuation.resume(returning: nil)
+                }
+            }
         }
         let photo = item("switch.RAF")
         let viewport = ActualSizeViewport()
         func configure(_ decoder: AppleRawDecoder, retry: UInt64 = 0) {
             scroll.configure(item: photo, preview: nil, showsClippingWarnings: false,
                              viewport: viewport, onLoading: { _ in }, zoomScale: 0.5,
-                             decoder: decoder, retryGeneration: retry)
+                             decoder: decoder, retryGeneration: retry,
+                             onRenderingFailure: { renderingFailed = $0 })
         }
         func source(_ decoder: AppleRawDecoder) -> ZoomImageSource {
             let image = CIImage(color: .white).cropped(to: CGRect(x: 0, y: 0, width: 64, height: 64))
             return ZoomImageSource(key: HighResolutionImagePipeline.sourceKey(for: photo, decoder: decoder),
                                    image: image, pixelSize: image.extent.size, decoder: decoder)
         }
+        func waitUntil(_ message: String, _ condition: () -> Bool) async throws {
+            while !condition() {
+                guard clock.now < deadline else {
+                    XCTFail(message)
+                    throw NSError(domain: "AppleRawDecoderTests", code: 1)
+                }
+                try await Task.sleep(for: .milliseconds(5))
+            }
+        }
         configure(.appleDefault)
-        await Task.yield()
+        try await waitUntil("Default decoder did not start loading") {
+            pending[.appleDefault]?.count == 1
+        }
         configure(.raw9)
-        await Task.yield()
+        try await waitUntil("RAW 9 did not start loading") {
+            pending[.raw9]?.count == 1
+        }
         let old = try XCTUnwrap(pending[.appleDefault]?.first)
         let current = try XCTUnwrap(pending[.raw9]?.first)
+        let raw9Source = source(.raw9)
+        resumedCount[.appleDefault] = 1
         old.resume(returning: source(.appleDefault))
-        await Task.yield()
+        try await waitUntil("Older decoder did not return after cancellation") {
+            returnedCancellation[.appleDefault]?.count == 1
+        }
+        XCTAssertEqual(returnedCancellation[.appleDefault]?.first, true)
         XCTAssertNil(scroll.displayedSourceKey, "Older decoder must not publish after switching")
-        current.resume(returning: source(.raw9))
-        await Task.yield()
-        XCTAssertEqual(scroll.displayedSourceKey, source(.raw9).key)
+        resumedCount[.raw9] = 1
+        current.resume(returning: raw9Source)
+        try await waitUntil("RAW 9 source did not publish") {
+            scroll.displayedSourceKey == raw9Source.key
+        }
+        XCTAssertEqual(scroll.displayedSourceKey, raw9Source.key)
+        renderingFailed = false
         configure(.raw9, retry: 1)
-        await Task.yield()
         XCTAssertNil(scroll.displayedSourceKey, "Retry retires failed tiles and the old source")
+        try await waitUntil("Retry did not restart the same RAW 9 photo") {
+            pending[.raw9]?.count == 2
+        }
         XCTAssertEqual(pending[.raw9]?.count, 2)
+        resumedCount[.raw9] = 2
         pending[.raw9]?.last?.resume(returning: nil)
-        await Task.yield()
-        scroll.prepareForRemoval()
+        try await waitUntil("Retry failure did not publish") {
+            returnedCancellation[.raw9]?.count == 2 && renderingFailed
+        }
+        XCTAssertNil(scroll.displayedSourceKey)
     }
 
     /// Run each decoder in a separate test process so peak RSS is comparable.

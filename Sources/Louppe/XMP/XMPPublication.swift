@@ -17,19 +17,19 @@ enum XMPPublicationCategory: String, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .create: return "Create"
-        case .update: return "Update"
-        case .alreadyCurrent: return "Already current"
+        case .create: return L10n.text("Create")
+        case .update: return L10n.text("Update")
+        case .alreadyCurrent: return L10n.text("Already current")
         case .copyUnchangedApplicationPacket:
-            return "Copy unchanged application packet"
-        case .unsupportedMedia: return "Unsupported media"
-        case .crossFolderPair: return "Cross-folder pair sidecars skipped"
-        case .sameStemMetadataConflict: return "Same-stem metadata conflict"
-        case .destinationCollision: return "Destination collision"
-        case .malformedXMP: return "Malformed XMP"
-        case .readOnlyPermissionFailure: return "Read-only or permission failure"
-        case .unsafeFileType: return "Symlink or unsafe file type"
-        case .externalModificationConflict: return "External modification conflict"
+            return L10n.text("Copy unchanged application packet")
+        case .unsupportedMedia: return L10n.text("Unsupported media")
+        case .crossFolderPair: return L10n.text("Cross-folder pair sidecars skipped")
+        case .sameStemMetadataConflict: return L10n.text("Same-stem metadata conflict")
+        case .destinationCollision: return L10n.text("Destination collision")
+        case .malformedXMP: return L10n.text("Malformed XMP")
+        case .readOnlyPermissionFailure: return L10n.text("Read-only or permission failure")
+        case .unsafeFileType: return L10n.text("Symlink or unsafe file type")
+        case .externalModificationConflict: return L10n.text("External modification conflict")
         }
     }
 
@@ -286,7 +286,7 @@ struct XMPPublicationSourceValidation: Equatable, Sendable {
 
 struct XMPPublicationSourceChanged: LocalizedError {
     var errorDescription: String? {
-        "The media files or source folder changed after scanning. Rescan the folder before publishing XMP."
+        L10n.text("The media files or source folder changed after scanning. Rescan the folder before publishing XMP.")
     }
 }
 
@@ -625,13 +625,13 @@ enum XMPPublicationPlanner {
         case .unsupportedMedia:
             return base.entry(
                 category: .unsupportedMedia,
-                message: "Video and audio files do not support XMP publication."
+                message: L10n.text("Video and audio files do not support XMP publication.")
             )
         case .metadataConflict:
             return base.entry(
                 sidecar: family.canonicalSidecar,
                 category: .sameStemMetadataConflict,
-                message: "Files sharing this stem have different Louppe metadata and will be skipped.",
+                message: L10n.text("Files sharing this stem have different Louppe metadata and will be skipped."),
                 sameStemConflict: .make(
                     id: id,
                     sessionGeneration: sessionGeneration,
@@ -642,14 +642,14 @@ enum XMPPublicationPlanner {
         case .filenameCollision:
             return base.entry(
                 category: .destinationCollision,
-                message: "More than one filesystem name resolves to this sidecar; nothing will be overwritten."
+                message: L10n.text("More than one filesystem name resolves to this sidecar; nothing will be overwritten.")
             )
         case .publish:
             guard let path = family.canonicalSidecar,
                   let metadata = family.metadata else {
                 return base.entry(
                     category: .destinationCollision,
-                    message: "Louppe could not determine one safe sidecar path."
+                    message: L10n.text("Louppe could not determine one safe sidecar path.")
                 )
             }
             do {
@@ -677,8 +677,8 @@ enum XMPPublicationPlanner {
                     metadata: metadata,
                     category: category,
                     message: category == .alreadyCurrent
-                        ? "The sidecar already contains the selected Louppe metadata."
-                        : "The sidecar is ready to \(category == .create ? "create" : "update").",
+                        ? L10n.text("The sidecar already contains the selected Louppe metadata.")
+                        : (category == .create ? L10n.text("The sidecar is ready to create.") : L10n.text("The sidecar is ready to update.")),
                     fingerprint: prepared.preflightFingerprint,
                     sourceValidation: validation,
                     changeCounts: XMPPublicationChangeCounts(
@@ -831,7 +831,7 @@ enum XMPPublicationWorker {
                             partial.details.append(runtimeFailure(
                                 entry,
                                 category: .unsafeFileType,
-                                message: "The immutable publication plan is incomplete."
+                                message: L10n.text("The immutable publication plan is incomplete.")
                             ))
                             reporter.advance()
                             continue

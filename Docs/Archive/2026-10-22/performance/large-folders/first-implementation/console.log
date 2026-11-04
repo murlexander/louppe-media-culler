@@ -1,0 +1,355 @@
+[0/1] Planning build
+Building for production...
+[0/7] Write sources
+[2/7] Write swift-version--58304C5D6DBC2206.txt
+[4/8] Compiling Louppe AppBuildInfo.swift
+[4/8] Write Objects.LinkFileList
+[5/8] Linking Louppe
+[7/9] Compiling LouppeTests AccessibilityTests.swift
+[8/10] Compiling LouppePackageTests runner.swift
+[8/10] Write Objects.LinkFileList
+[9/10] Linking LouppePackageTests
+Build complete! (136.72s)
+Test Suite 'Selected tests' started at 2026-10-22 3:26:06.550 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-22 3:26:06.558 AM.
+Test Suite 'LouppeSpeedIOTests' started at 2026-10-22 3:26:06.558 AM.
+Test Case '-[LouppeTests.LouppeSpeedIOTests testRealJPEGScanAndDurableSaveReopen]' started.
+Test Case '-[LouppeTests.LouppeSpeedIOTests testRealJPEGScanAndDurableSaveReopen]' passed (0.993 seconds).
+Test Suite 'LouppeSpeedIOTests' passed at 2026-10-22 3:26:07.552 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.993 (0.994) seconds
+Test Suite 'LouppeSpeedLargeFolderTests' started at 2026-10-22 3:26:07.552 AM.
+Test Case '-[LouppeTests.LouppeSpeedLargeFolderTests testMountedLargeGridAndBrowserNavigation]' started.
+Test Case '-[LouppeTests.LouppeSpeedLargeFolderTests testMountedLargeGridAndBrowserNavigation]' passed (49.770 seconds).
+Test Suite 'LouppeSpeedLargeFolderTests' passed at 2026-10-22 3:26:57.322 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 49.770 (49.770) seconds
+Test Suite 'LouppeSpeedLargeProjectionTests' started at 2026-10-22 3:26:57.322 AM.
+Test Case '-[LouppeTests.LouppeSpeedLargeProjectionTests testDistinctModelRanksAndUnchangedProjection]' started.
+Test Case '-[LouppeTests.LouppeSpeedLargeProjectionTests testDistinctModelRanksAndUnchangedProjection]' passed (13.614 seconds).
+Test Suite 'LouppeSpeedLargeProjectionTests' passed at 2026-10-22 3:27:10.937 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 13.614 (13.615) seconds
+Test Suite 'LouppeSpeedMediaTests' started at 2026-10-22 3:27:10.937 AM.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testAlreadyCancelledThumbnailWork]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testAlreadyCancelledThumbnailWork]' passed (0.151 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testConcurrentSameRevisionThumbnailRequests]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testConcurrentSameRevisionThumbnailRequests]' passed (0.136 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testGalleryThumbnailDependencyUnderBacklog]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testGalleryThumbnailDependencyUnderBacklog]' passed (6.638 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testMediaDecodeAndCachePaths]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testMediaDecodeAndCachePaths]' passed (2.004 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testRawHistogramBatchDwellFloor]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testRawHistogramBatchDwellFloor]' passed (5.815 seconds).
+Test Suite 'LouppeSpeedMediaTests' passed at 2026-10-22 3:27:25.682 AM.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 14.744 (14.745) seconds
+Test Suite 'LouppeSpeedOpeningTests' started at 2026-10-22 3:27:25.682 AM.
+Test Case '-[LouppeTests.LouppeSpeedOpeningTests testOpeningStagesOnProvidedFolders]' started.
+SPEED scan.jpeg.warm-filesystem n=100 median=9.919ms p95=10.538ms
+SPEED save.durable-sidecar-and-backup n=100 median=11.915ms p95=13.908ms
+SPEED reopen.durable-session n=100 median=2.661ms p95=2.682ms
+SPEED scan.jpeg.warm-filesystem n=1000 median=98.145ms p95=100.430ms
+SPEED save.durable-sidecar-and-backup n=1000 median=22.454ms p95=23.850ms
+SPEED reopen.durable-session n=1000 median=20.292ms p95=20.719ms
+LARGE_MOUNT first_grid_matching_pixels_ms=165.372542 count=1000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED grid.jump-cycle.middle.including-reset n=1000 median=138.831ms p95=157.861ms
+SPEED grid.input-to-matching-pixels.middle.warm-after-first n=1000 median=75.374ms p95=84.763ms
+SPEED grid.jump-cycle.tail.including-reset n=1000 median=224.118ms p95=234.631ms
+SPEED grid.input-to-matching-pixels.tail.warm-after-first n=1000 median=114.856ms p95=134.795ms
+SPEED grid.jump-cycle.reverse.including-reset n=1000 median=125.525ms p95=158.363ms
+SPEED grid.input-to-matching-pixels.reverse.warm-after-first n=1000 median=64.198ms p95=73.685ms
+SPEED grid.jump-cycle.head.including-reset n=1000 median=298.770ms p95=381.549ms
+SPEED grid.input-to-matching-pixels.head.warm-after-first n=1000 median=165.809ms p95=167.210ms
+LARGE_MOUNT first_browser_matching_pixels_ms=20.89225 count=1000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED browser.jump-cycle.middle.including-reset n=1000 median=63.778ms p95=65.861ms
+SPEED browser.input-to-matching-pixels.middle.warm-after-first n=1000 median=33.142ms p95=34.555ms
+SPEED browser.jump-cycle.tail.including-reset n=1000 median=118.462ms p95=125.280ms
+SPEED browser.input-to-matching-pixels.tail.warm-after-first n=1000 median=65.336ms p95=68.166ms
+SPEED browser.jump-cycle.reverse.including-reset n=1000 median=48.234ms p95=66.183ms
+SPEED browser.input-to-matching-pixels.reverse.warm-after-first n=1000 median=25.055ms p95=27.422ms
+SPEED browser.jump-cycle.head.including-reset n=1000 median=112.765ms p95=120.003ms
+SPEED browser.input-to-matching-pixels.head.warm-after-first n=1000 median=52.440ms p95=56.362ms
+LARGE_MOUNT first_grid_matching_pixels_ms=68.450417 count=10000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED grid.jump-cycle.middle.including-reset n=10000 median=872.685ms p95=935.180ms
+SPEED grid.input-to-matching-pixels.middle.warm-after-first n=10000 median=447.392ms p95=487.983ms
+SPEED grid.jump-cycle.tail.including-reset n=10000 median=1809.004ms p95=1879.293ms
+SPEED grid.input-to-matching-pixels.tail.warm-after-first n=10000 median=961.262ms p95=963.680ms
+SPEED grid.jump-cycle.reverse.including-reset n=10000 median=1614.216ms p95=1777.745ms
+SPEED grid.input-to-matching-pixels.reverse.warm-after-first n=10000 median=814.713ms p95=952.260ms
+SPEED grid.jump-cycle.head.including-reset n=10000 median=1853.012ms p95=1869.394ms
+SPEED grid.input-to-matching-pixels.head.warm-after-first n=10000 median=875.208ms p95=908.391ms
+LARGE_MOUNT first_browser_matching_pixels_ms=21.351666 count=10000 cache_state=first_grid_then_shared_browser filesystem=warm
+SPEED browser.jump-cycle.middle.including-reset n=10000 median=546.248ms p95=565.159ms
+SPEED browser.input-to-matching-pixels.middle.warm-after-first n=10000 median=282.338ms p95=292.781ms
+SPEED browser.jump-cycle.tail.including-reset n=10000 median=1215.012ms p95=1230.083ms
+SPEED browser.input-to-matching-pixels.tail.warm-after-first n=10000 median=655.055ms p95=660.241ms
+SPEED browser.jump-cycle.reverse.including-reset n=10000 median=981.696ms p95=1073.894ms
+SPEED browser.input-to-matching-pixels.reverse.warm-after-first n=10000 median=492.566ms p95=557.652ms
+SPEED browser.jump-cycle.head.including-reset n=10000 median=1220.220ms p95=1235.627ms
+SPEED browser.input-to-matching-pixels.head.warm-after-first n=10000 median=556.198ms p95=559.513ms
+SPEED sort.camera.comparator-reference n=1000 median=5.843ms p95=5.847ms
+SPEED sort.camera.cold-distinct-ranks n=1000 median=0.091ms p95=0.122ms
+SPEED sort.camera.warm-distinct-ranks n=1000 median=0.002ms p95=0.002ms
+SPEED sort.lens.comparator-reference n=1000 median=4.492ms p95=4.654ms
+SPEED sort.lens.cold-distinct-ranks n=1000 median=0.070ms p95=0.073ms
+SPEED sort.lens.warm-distinct-ranks n=1000 median=0.002ms p95=0.002ms
+SPEED projection.unrestricted.full-rebuild-reference n=1000 median=0.224ms p95=0.226ms
+SPEED projection.unrestricted.unchanged-prepared n=1000 median=0.003ms p95=0.003ms
+SPEED projection.active-all-visible.unchanged-prepared n=1000 median=0.065ms p95=0.065ms
+SPEED projection.restricted.full-rebuild-reference n=1000 median=0.234ms p95=0.237ms
+SPEED projection.restricted.unchanged-prepared n=1000 median=0.065ms p95=0.069ms
+SPEED projection.membership-toggle.full-rebuild-reference n=1000 median=0.224ms p95=0.234ms
+SPEED projection.membership-toggle.prepared n=1000 median=0.716ms p95=0.842ms
+SPEED projection.cue-mask.unchanged-prepared n=1000 median=0.025ms p95=0.028ms
+SPEED sort.camera.comparator-reference n=10000 median=52.401ms p95=53.154ms
+SPEED sort.camera.cold-distinct-ranks n=10000 median=0.822ms p95=0.839ms
+SPEED sort.camera.warm-distinct-ranks n=10000 median=0.013ms p95=0.014ms
+SPEED sort.lens.comparator-reference n=10000 median=40.590ms p95=41.481ms
+SPEED sort.lens.cold-distinct-ranks n=10000 median=0.687ms p95=1.019ms
+SPEED sort.lens.warm-distinct-ranks n=10000 median=0.012ms p95=0.015ms
+SPEED projection.unrestricted.full-rebuild-reference n=10000 median=2.444ms p95=3.356ms
+SPEED projection.unrestricted.unchanged-prepared n=10000 median=0.003ms p95=0.011ms
+SPEED projection.active-all-visible.unchanged-prepared n=10000 median=0.648ms p95=0.842ms
+SPEED projection.restricted.full-rebuild-reference n=10000 median=2.800ms p95=3.290ms
+SPEED projection.restricted.unchanged-prepared n=10000 median=0.576ms p95=0.633ms
+SPEED projection.membership-toggle.full-rebuild-reference n=10000 median=2.635ms p95=2.830ms
+SPEED projection.membership-toggle.prepared n=10000 median=9.382ms p95=11.445ms
+SPEED projection.cue-mask.unchanged-prepared n=10000 median=0.203ms p95=0.233ms
+SPEED sort.camera.comparator-reference n=100000 median=725.082ms p95=730.956ms
+SPEED sort.camera.cold-distinct-ranks n=100000 median=16.280ms p95=17.014ms
+SPEED sort.camera.warm-distinct-ranks n=100000 median=0.113ms p95=0.117ms
+SPEED sort.lens.comparator-reference n=100000 median=584.274ms p95=779.804ms
+SPEED sort.lens.cold-distinct-ranks n=100000 median=16.240ms p95=16.603ms
+SPEED sort.lens.warm-distinct-ranks n=100000 median=0.114ms p95=0.115ms
+SPEED projection.unrestricted.full-rebuild-reference n=100000 median=54.115ms p95=54.391ms
+SPEED projection.unrestricted.unchanged-prepared n=100000 median=0.003ms p95=0.019ms
+SPEED projection.active-all-visible.unchanged-prepared n=100000 median=17.972ms p95=17.984ms
+SPEED projection.restricted.full-rebuild-reference n=100000 median=63.288ms p95=112.001ms
+SPEED projection.restricted.unchanged-prepared n=100000 median=19.000ms p95=19.038ms
+SPEED projection.membership-toggle.full-rebuild-reference n=100000 median=66.079ms p95=68.372ms
+SPEED projection.membership-toggle.prepared n=100000 median=170.708ms p95=292.870ms
+SPEED projection.cue-mask.unchanged-prepared n=100000 median=9.627ms p95=12.059ms
+SPEED already_cancelled_32_unique_thumbnails_including_disk_drain n=32 median=0.692ms p95=0.971ms
+MEDIA_CANCELLATION already_cancelled_unique_requests=32 completed_per_sample=[0, 0, 0, 0] disk_entries_per_sample=[0, 0, 0, 0]
+SPEED same_revision_32_thumbnail_waiters_including_disk_drain n=32 median=21.299ms p95=21.455ms
+SPEED mirrored_gallery_backlog_0_with_init_drain_cleanup n=1 median=54.191ms p95=56.710ms
+SPEED gallery.full-ready.backlog-0 n=1 median=52.592ms p95=54.792ms
+SPEED gallery.thumbnail-ready.backlog-0 n=1 median=18.847ms p95=26.436ms
+SPEED gallery.mirrored-publication.backlog-0 n=1 median=52.592ms p95=54.792ms
+SPEED gallery.delay-after-full.backlog-0 n=1 median=0.000ms p95=0.000ms
+MEDIA_BACKLOG mirrored_orchestration=true task_start_counter=true deterministic_queue_order=false backlog=0 full_ready_ms=[107.739291, 45.842542, 52.592125, 54.79175] thumbnail_ready_ms=[21.361125, 17.703542, 18.846833, 26.435667] publication_ms=[107.739291, 45.842542, 52.592125, 54.79175] delay_after_full_ms=[0.0, 0.0, 0.0, 0.0]
+SPEED mirrored_gallery_backlog_128_with_init_drain_cleanup n=129 median=688.007ms p95=733.368ms
+SPEED gallery.full-ready.backlog-128 n=129 median=64.209ms p95=68.082ms
+SPEED gallery.thumbnail-ready.backlog-128 n=129 median=675.974ms p95=717.877ms
+SPEED gallery.mirrored-publication.backlog-128 n=129 median=675.974ms p95=717.877ms
+SPEED gallery.delay-after-full.backlog-128 n=129 median=620.001ms p95=653.668ms
+MEDIA_BACKLOG mirrored_orchestration=true task_start_counter=true deterministic_queue_order=false backlog=128 full_ready_ms=[65.83975, 55.973292, 64.209125, 68.0825] thumbnail_ready_ms=[758.655459, 675.973875, 717.877167, 651.547208] publication_ms=[758.655459, 675.973875, 717.877167, 651.547208] delay_after_full_ms=[692.815709, 620.000583, 653.668042, 583.464708]
+SPEED mounted_gallery_backlog_0_with_init_drain_cleanup n=1 median=149.120ms p95=151.508ms
+SPEED gallery.production-full-ready.backlog-0 n=1 median=135.328ms p95=138.418ms
+SPEED gallery.production-thumbnail-ready.backlog-0 n=1 median=18.147ms p95=18.382ms
+SPEED gallery.production-mounted-publication.backlog-0 n=1 median=135.338ms p95=138.422ms
+SPEED gallery.production-delay-after-full.backlog-0 n=1 median=0.005ms p95=0.010ms
+MEDIA_MOUNTED_BACKLOG production_view=true displayed_surface_and_settled=true frame_measurement=false poll_ms=1 backlog=0 full_ready_ms=[140.59825, 135.328, 138.41775, 134.393625] thumbnail_ready_ms=[17.738167, 17.591834, 18.381959, 18.147167] publication_ms=[140.604834, 135.338459, 138.421834, 134.398417] delay_after_full_ms=[0.006584000000003698, 0.010458999999997332, 0.00408399999997755, 0.004792000000009011]
+SPEED mounted_gallery_backlog_128_with_init_drain_cleanup n=129 median=614.644ms p95=619.033ms
+SPEED gallery.production-full-ready.backlog-128 n=129 median=129.571ms p95=133.410ms
+SPEED gallery.production-thumbnail-ready.backlog-128 n=129 median=601.425ms p95=607.258ms
+SPEED gallery.production-mounted-publication.backlog-128 n=129 median=129.574ms p95=133.414ms
+SPEED gallery.production-delay-after-full.backlog-128 n=129 median=0.004ms p95=0.004ms
+MEDIA_MOUNTED_BACKLOG production_view=true displayed_surface_and_settled=true frame_measurement=false poll_ms=1 backlog=128 full_ready_ms=[152.692917, 129.570541, 133.409791, 128.736541] thumbnail_ready_ms=[632.51775, 601.424916, 607.258, 589.565875] publication_ms=[152.697375, 129.574375, 133.414083, 128.740458] delay_after_full_ms=[0.004457999999999629, 0.0038340000000118835, 0.004291999999992413, 0.003917000000001281]
+SPEED jpeg_source_decode_320px_os_cache_warm n=1 median=17.544ms p95=17.607ms
+SPEED jpeg_source_decode_4096px_os_cache_warm n=1 median=43.502ms p95=49.186ms
+SPEED thumbnail_memory_hit_1000 n=1000 median=2.410ms p95=2.482ms
+SPEED full_memory_hit_1000 n=1000 median=2.317ms p95=2.373ms
+SPEED thumbnail_disk_hit_16_including_pipeline_init n=16 median=11.733ms p95=11.957ms
+SPEED thumbnail_source_16_including_pipeline_init_and_disk_drain n=16 median=294.112ms p95=337.696ms
+SPEED synthetic_raw_4_in_2_item_batches_dwell_700ms n=4 median=1453.055ms p95=1453.353ms
+SPEED synthetic_raw_4_in_2_item_batches_dwell_0ms n=4 median=0.610ms p95=0.702ms
+SPEED synthetic_raw_4_in_2_item_batches_production_background n=4 median=0.382ms p95=0.568ms
+SPEED opening.jpeg-1000.separate.folderIdentity n=1000 median=0.047ms p95=0.062ms
+SPEED opening.jpeg-1000.separate.discovery n=1000 median=22.778ms p95=25.584ms
+SPEED opening.jpeg-1000.separate.pairing n=1000 median=29.407ms p95=29.981ms
+SPEED opening.jpeg-1000.separate.metadata n=1000 median=35.883ms p95=40.929ms
+SPEED opening.jpeg-1000.separate.metadataIdentityValidation n=1000 median=11.075ms p95=12.963ms
+SPEED opening.jpeg-1000.separate.chronologicalSort n=1000 median=0.856ms p95=0.994ms
+SPEED opening.jpeg-1000.separate.persistenceRead n=1000 median=0.221ms p95=0.389ms
+SPEED opening.jpeg-1000.separate.decisionRestoration n=1000 median=0.004ms p95=0.035ms
+SPEED opening.jpeg-1000.separate.finalIdentityValidation n=1000 median=10.079ms p95=14.132ms
+SPEED opening.jpeg-1000.separate.derivedPreparation n=1000 median=1.994ms p95=3.604ms
+SPEED opening.jpeg-1000.separate.complete n=1000 median=117.851ms p95=121.368ms
+SPEED opening.jpeg-1000.together.folderIdentity n=1000 median=0.046ms p95=0.052ms
+SPEED opening.jpeg-1000.together.discovery n=1000 median=22.494ms p95=23.251ms
+SPEED opening.jpeg-1000.together.pairing n=1000 median=21.973ms p95=22.478ms
+SPEED opening.jpeg-1000.together.metadata n=1000 median=29.543ms p95=32.775ms
+SPEED opening.jpeg-1000.together.metadataIdentityValidation n=1000 median=10.666ms p95=11.296ms
+SPEED opening.jpeg-1000.together.chronologicalSort n=1000 median=0.764ms p95=0.791ms
+SPEED opening.jpeg-1000.together.persistenceRead n=1000 median=0.230ms p95=0.290ms
+SPEED opening.jpeg-1000.together.decisionRestoration n=1000 median=0.004ms p95=0.008ms
+SPEED opening.jpeg-1000.together.finalIdentityValidation n=1000 median=9.875ms p95=10.243ms
+SPEED opening.jpeg-1000.together.derivedPreparation n=1000 median=1.893ms p95=2.200ms
+SPEED opening.jpeg-1000.together.complete n=1000 median=97.934ms p95=102.222ms
+SPEED opening.jpeg-10000.separate.folderIdentity n=10000 median=0.085ms p95=0.117ms
+SPEED opening.jpeg-10000.separatwarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+e.discovery n=10000 median=235.446ms p95=235.722ms
+SPEED opening.jpeg-10000.separate.pairing n=10000 median=363.859ms p95=397.538ms
+SPEED opening.jpeg-10000.separate.metadata n=10000 median=322.516ms p95=476.354ms
+SPEED opening.jpeg-10000.separate.metadataIdentityValidation n=10000 median=127.642ms p95=131.882ms
+SPEED opening.jpeg-10000.separate.chronologicalSort n=10000 median=7.134ms p95=7.165ms
+SPEED opening.jpeg-10000.separate.persistenceRead n=10000 median=99.461ms p95=116.400ms
+SPEED opening.jpeg-10000.separate.decisionRestoration n=10000 median=41.433ms p95=42.433ms
+SPEED opening.jpeg-10000.separate.finalIdentityValidation n=10000 median=101.060ms p95=104.989ms
+SPEED opening.jpeg-10000.separate.derivedPreparation n=10000 median=22.469ms p95=22.545ms
+SPEED opening.jpeg-10000.separate.complete n=10000 median=1376.963ms p95=1440.005ms
+SPEED opening.jpeg-10000.together.folderIdentity n=10000 median=0.076ms p95=0.099ms
+SPEED opening.jpeg-10000.together.discovery n=10000 median=227.433ms p95=338.660ms
+SPEED opening.jpeg-10000.together.pairing n=10000 median=230.651ms p95=319.117ms
+SPEED opening.jpeg-10000.together.metadata n=10000 median=292.218ms p95=507.673ms
+SPEED opening.jpeg-10000.together.metadataIdentityValidation n=10000 median=99.401ms p95=103.036ms
+SPEED opening.jpeg-10000.together.chronologicalSort n=10000 median=7.806ms p95=10.699ms
+SPEED opening.jpeg-10000.together.persistenceRead n=10000 median=102.003ms p95=102.045ms
+SPEED opening.jpeg-10000.together.decisionRestoration n=10000 median=39.187ms p95=41.077ms
+SPEED opening.jpeg-10000.together.finalIdentityValidation n=10000 median=99.681ms p95=103.084ms
+SPEED opening.jpeg-10000.together.derivedPreparation n=10000 median=21.003ms p95=21.065ms
+SPEED opening.jpeg-10000.together.complete n=10000 median=1126.023ms p95=1548.773ms
+SPEED opening.raw-jpeg-1000.separate.folderIdentity n=2000 median=0.057ms p95=0.080ms
+SPEED opening.raw-jpeg-1000.separate.discovery n=2000 median=48.673ms p95=51.873ms
+SPEED opening.raw-jpeg-1000.separate.pairing n=2000 median=58.278ms p95=87.518ms
+SPEED opening.raw-jpeg-1000.separate.metadata n=2000 median=485.840ms p95=685.841ms
+SPEED opening.raw-jpeg-1000.separate.metadataIdentityValidation n=2000 median=22.154ms p95=27.752ms
+SPEED opening.raw-jpeg-1000.separate.chronologicalSort n=2000 median=16.541ms p95=17.269ms
+SPEED opening.raw-jpeg-1000.separate.persistenceRead n=2000 median=0.223ms p95=0.255ms
+SPEED opening.raw-jpeg-1000.separate.decisionRestoration n=2000 median=0.004ms p95=0.009ms
+SPEED opening.raw-jpeg-1000.separate.finalIdentityValidation n=2000 median=21.876ms p95=21.976ms
+SPEED opening.raw-jpeg-1000.separate.derivedPreparation n=2000 median=4.771ms p95=5.295ms
+SPEED opening.raw-jpeg-1000.separate.complete n=2000 median=676.417ms p95=863.163ms
+SPEED opening.raw-jpeg-1000.together.folderIdentity n=2000 median=0.050ms p95=0.068ms
+SPEED opening.raw-jpeg-1000.together.discovery n=2000 meTest Case '-[LouppeTests.LouppeSpeedOpeningTests testOpeningStagesOnProvidedFolders]' passed (66.965 seconds).
+Test Suite 'LouppeSpeedOpeningTests' passed at 2026-10-22 3:28:32.649 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 66.965 (66.967) seconds
+Test Suite 'LouppeSpeedScanTests' started at 2026-10-22 3:28:32.649 AM.
+Test Case '-[LouppeTests.LouppeSpeedScanTests testFiniteMetadataBucketSort]' started.
+Test Case '-[LouppeTests.LouppeSpeedScanTests testFiniteMetadataBucketSort]' passed (15.147 seconds).
+Test Case '-[LouppeTests.LouppeSpeedScanTests testMetadataBucketRequiresCanonicalOrder]' started.
+Test Case '-[LouppeTests.LouppeSpeedScanTests testMetadataBucketRequiresCanonicalOrder]' passed (0.001 seconds).
+Test Case '-[LouppeTests.LouppeSpeedScanTests testPairingWithoutGlobalSort]' started.
+Test Case '-[LouppeTests.LouppeSpeedScanTests testPairingWithoutGlobalSort]' passed (27.223 seconds).
+Test Suite 'LouppeSpeedScanTests' passed at 2026-10-22 3:29:15.020 AM.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 42.371 (42.372) seconds
+Test Suite 'LouppeSpeedSessionTests' started at 2026-10-22 3:29:15.020 AM.
+Test Case '-[LouppeTests.LouppeSpeedSessionTests testReviewHotPathsAndCoverage]' started.
+Test Case '-[LouppeTests.LouppeSpeedSessionTests testReviewHotPathsAndCoverage]' passed (5.999 seconds).
+Test Suite 'LouppeSpeedSessionTests' passed at 2026-10-22 3:29:21.019 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 5.999 (5.999) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-22 3:29:21.019 AM.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 194.457 (194.461) seconds
+Test Suite 'Selected tests' passed at 2026-10-22 3:29:21.019 AM.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 194.457 (194.469) seconds
+dian=45.422ms p95=48.840ms
+SPEED opening.raw-jpeg-1000.together.pairing n=2000 median=58.273ms p95=58.315ms
+SPEED opening.raw-jpeg-1000.together.metadata n=2000 median=406.150ms p95=409.512ms
+SPEED opening.raw-jpeg-1000.together.metadataIdentityValidation n=2000 median=21.452ms p95=21.902ms
+SPEED opening.raw-jpeg-1000.together.chronologicalSort n=2000 median=1.448ms p95=1.467ms
+SPEED opening.raw-jpeg-1000.together.persistenceRead n=2000 median=0.205ms p95=0.212ms
+SPEED opening.raw-jpeg-1000.together.decisionRestoration n=2000 median=0.002ms p95=0.003ms
+SPEED opening.raw-jpeg-1000.together.finalIdentityValidation n=2000 median=21.851ms p95=21.962ms
+SPEED opening.raw-jpeg-1000.together.derivedPreparation n=2000 median=3.736ms p95=3.825ms
+SPEED opening.raw-jpeg-1000.together.complete n=2000 median=562.146ms p95=563.532ms
+SPEED opening.raw-jpeg-10000.separate.folderIdentity n=20000 median=0.106ms p95=0.122ms
+SPEED opening.raw-jpeg-10000.separate.discovery n=20000 median=479.471ms p95=491.443ms
+SPEED opening.raw-jpeg-10000.separate.pairing n=20000 median=580.337ms p95=584.360ms
+SPEED opening.raw-jpeg-10000.separate.metadata n=20000 median=4466.144ms p95=4614.500ms
+SPEED opening.raw-jpeg-10000.separate.metadataIdentityValidation n=20000 median=211.254ms p95=212.977ms
+SPEED opening.raw-jpeg-10000.separate.chronologicalSort n=20000 median=182.406ms p95=182.724ms
+SPEED opening.raw-jpeg-10000.separate.persistenceRead n=20000 median=0.290ms p95=0.301ms
+SPEED opening.raw-jpeg-10000.separate.decisionRestoration n=20000 median=0.006ms p95=0.007ms
+SPEED opening.raw-jpeg-10000.separate.finalIdentityValidation n=20000 median=209.759ms p95=214.149ms
+SPEED opening.raw-jpeg-10000.separate.derivedPreparation n=20000 median=58.390ms p95=58.625ms
+SPEED opening.raw-jpeg-10000.separate.complete n=20000 median=6215.288ms p95=6335.374ms
+SPEED opening.raw-jpeg-10000.together.folderIdentity n=20000 median=0.086ms p95=0.151ms
+SPEED opening.raw-jpeg-10000.together.discovery n=20000 median=472.898ms p95=475.778ms
+SPEED opening.raw-jpeg-10000.together.pairing n=20000 median=582.480ms p95=582.581ms
+SPEED opening.raw-jpeg-10000.together.metadata n=20000 median=4187.292ms p95=4554.524ms
+SPEED opening.raw-jpeg-10000.together.metadataIdentityValidation n=20000 median=211.011ms p95=212.547ms
+SPEED opening.raw-jpeg-10000.together.chronologicalSort n=20000 median=17.409ms p95=19.250ms
+SPEED opening.raw-jpeg-10000.together.persistenceRead n=20000 median=0.250ms p95=0.261ms
+SPEED opening.raw-jpeg-10000.together.decisionRestoration n=20000 median=0.004ms p95=0.010ms
+SPEED opening.raw-jpeg-10000.together.finalIdentityValidation n=20000 median=213.990ms p95=216.247ms
+SPEED opening.raw-jpeg-10000.together.derivedPreparation n=20000 median=53.599ms p95=53.908ms
+SPEED opening.raw-jpeg-10000.together.complete n=20000 median=5747.040ms p95=6116.726ms
+SPEED metadata.decision.ascending.production n=1000 median=0.126ms p95=0.127ms
+SPEED metadata.decision.ascending.stable-buckets n=1000 median=0.123ms p95=0.130ms
+SPEED metadata.decision.descending.production n=1000 median=0.127ms p95=0.129ms
+SPEED metadata.decision.descending.stable-buckets n=1000 median=0.124ms p95=0.126ms
+SPEED metadata.starRating.ascending.production n=1000 median=0.126ms p95=0.132ms
+SPEED metadata.starRating.ascending.stable-buckets n=1000 median=0.127ms p95=0.129ms
+SPEED metadata.starRating.descending.production n=1000 median=0.125ms p95=0.130ms
+SPEED metadata.starRating.descending.stable-buckets n=1000 median=0.123ms p95=0.125ms
+SPEED metadata.colorLabel.ascending.production n=1000 median=0.136ms p95=0.137ms
+SPEED metadata.colorLabel.ascending.stable-buckets n=1000 median=0.131ms p95=0.143ms
+SPEED metadata.colorLabel.descending.production n=1000 median=0.136ms p95=0.137ms
+SPEED metadata.colorLabel.descending.stable-buckets n=1000 median=0.129ms p95=0.131ms
+SPEED metadata.decision.ascending.production n=10000 median=1.464ms p95=1.971ms
+SPEED metadata.decision.ascending.stable-buckets n=10000 median=1.736ms p95=2.001ms
+SPEED metadata.decision.descending.production n=10000 median=2.411ms p95=2.748ms
+SPEED metadata.decision.descending.stable-buckets n=10000 median=2.038ms p95=2.297ms
+SPEED metadata.starRating.ascending.production n=10000 median=1.363ms p95=2.274ms
+SPEED metadata.starRating.ascending.stable-buckets n=10000 median=1.539ms p95=1.927ms
+SPEED metadata.starRating.descending.production n=10000 median=1.992ms p95=3.100ms
+SPEED metadata.starRating.descending.stable-buckets n=10000 median=2.099ms p95=2.392ms
+SPEED metadata.colorLabel.ascending.production n=10000 median=1.385ms p95=2.049ms
+SPEED metadata.colorLabel.ascending.stable-buckets n=10000 median=1.642ms p95=1.767ms
+SPEED metadata.colorLabel.descending.production n=10000 median=2.601ms p95=2.676ms
+SPEED metadata.colorLabel.descending.stable-buckets n=10000 median=2.075ms p95=2.138ms
+SPEED metadata.decision.ascending.production n=100000 median=52.155ms p95=52.648ms
+SPEED metadata.decision.ascending.stable-buckets n=100000 median=52.304ms p95=53.173ms
+SPEED metadata.decision.descending.production n=100000 median=47.733ms p95=48.265ms
+SPEED metadata.decision.descending.stable-buckets n=100000 median=48.055ms p95=48.372ms
+SPEED metadata.starRating.ascending.production n=100000 median=48.076ms p95=48.219ms
+SPEED metadata.starRating.ascending.stable-buckets n=100000 median=46.645ms p95=46.955ms
+SPEED metadata.starRating.descending.production n=100000 median=47.232ms p95=48.377ms
+SPEED metadata.starRating.descending.stable-buckets n=100000 median=47.825ms p95=49.603ms
+SPEED metadata.colorLabel.ascending.production n=100000 median=51.590ms p95=56.951ms
+SPEED metadata.colorLabel.ascending.stable-buckets n=100000 median=48.048ms p95=53.114ms
+SPEED metadata.colorLabel.descending.production n=100000 median=49.586ms p95=49.633ms
+SPEED metadata.colorLabel.descending.stable-buckets n=100000 median=47.190ms p95=48.153ms
+SPEED pairing.distinct-stems.production n=1000 median=6.314ms p95=6.738ms
+SPEED pairing.distinct-stems.no-global-sort n=1000 median=8.994ms p95=9.433ms
+SPEED pairing.distinct-stems.physical-pair-preparation.production n=1000 median=7.805ms p95=8.103ms
+SPEED pairing.raw-jpeg.production n=1000 median=5.115ms p95=5.376ms
+SPEED pairing.raw-jpeg.no-global-sort n=1000 median=6.875ms p95=7.210ms
+SPEED pairing.raw-jpeg.physical-pair-preparation.production n=1000 median=7.330ms p95=7.546ms
+SPEED pairing.distinct-stems.production n=10000 median=65.974ms p95=66.884ms
+SPEED pairing.distinct-stems.no-global-sort n=10000 median=84.064ms p95=85.847ms
+SPEED pairing.distinct-stems.physical-pair-preparation.production n=10000 median=82.232ms p95=82.846ms
+SPEED pairing.raw-jpeg.production n=10000 median=51.653ms p95=51.962ms
+SPEED pairing.raw-jpeg.no-global-sort n=10000 median=63.508ms p95=65.211ms
+SPEED pairing.raw-jpeg.physical-pair-preparation.production n=10000 median=79.525ms p95=83.651ms
+SPEED pairing.distinct-stems.production n=100000 median=726.382ms p95=757.946ms
+SPEED pairing.distinct-stems.no-global-sort n=100000 median=960.573ms p95=964.501ms
+SPEED pairing.distinct-stems.physical-pair-preparation.production n=100000 median=953.897ms p95=976.165ms
+SPEED pairing.raw-jpeg.production n=100000 median=562.964ms p95=566.556ms
+SPEED pairing.raw-jpeg.no-global-sort n=100000 median=729.044ms p95=729.330ms
+SPEED pairing.raw-jpeg.physical-pair-preparation.production n=100000 median=915.324ms p95=932.505ms
+SPEED review.rating.default-sort n=1000 median=0.031ms p95=0.035ms
+SPEED review.rating.decision-sort n=1000 median=1.050ms p95=1.087ms
+SPEED review.stars.star-sort n=1000 median=1.126ms p95=1.198ms
+SPEED filter.decision.projection-and-groups n=1000 median=0.174ms p95=0.183ms
+SPEED sort-menu.camera.full-store n=1000 median=0.702ms p95=0.838ms
+SPEED sort-menu.camera.prepared-only-hypothesis n=1000 median=0.791ms p95=0.866ms
+SPEED quality.coverage.unmeasured-read n=1000 median=0.017ms p95=0.018ms
+SPEED filter.quality.switch-metadata-cue n=1000 median=0.021ms p95=0.368ms
+SPEED navigation.100-steps n=1000 median=4.988ms p95=5.242ms
+SPEED review.rating.default-sort n=10000 median=0.029ms p95=0.029ms
+SPEED review.rating.decision-sort n=10000 median=11.030ms p95=11.642ms
+SPEED review.stars.star-sort n=10000 median=12.052ms p95=12.499ms
+SPEED filter.decision.projection-and-groups n=10000 median=1.858ms p95=2.142ms
+SPEED sort-menu.camera.full-store n=10000 median=8.798ms p95=8.985ms
+SPEED sort-menu.camera.prepared-only-hypothesis n=10000 median=11.000ms p95=11.167ms
+SPEED quality.coverage.unmeasured-read n=10000 median=0.016ms p95=0.019ms
+SPEED filter.quality.switch-metadata-cue n=10000 median=0.071ms p95=3.741ms
+SPEED navigation.100-steps n=10000 median=5.020ms p95=5.248ms
+SPEED review.rating.default-sort n=100000 median=0.025ms p95=0.027ms
+SPEED review.rating.decision-sort n=100000 median=125.824ms p95=127.532ms
+SPEED review.stars.star-sort n=100000 median=119.800ms p95=120.492ms
+SPEED filter.decision.projection-and-groups n=100000 median=27.164ms p95=27.218ms
+SPEED sort-menu.camera.full-store n=100000 median=126.394ms p95=128.782ms
+SPEED sort-menu.camera.prepared-only-hypothesis n=100000 median=158.938ms p95=162.437ms
+SPEED quality.coverage.unmeasured-read n=100000 median=0.017ms p95=0.020ms
+SPEED filter.quality.switch-metadata-cue n=100000 median=0.730ms p95=39.548ms
+SPEED navigation.100-steps n=100000 median=5.033ms p95=5.056ms

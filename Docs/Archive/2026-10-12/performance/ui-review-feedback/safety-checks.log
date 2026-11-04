@@ -1,0 +1,25 @@
+Sources/Louppe/VideoPlaybackController.swift:358:23: warning: 'AVPlayerItemDidPlayToEndTime' was deprecated in macOS 27.0: Use AVPlayerItem.didPlayToEndTimeNotification instead. [#DeprecatedDeclaration]
+356 |         removeObservers()
+357 |         endObserver.replace(with: NotificationCenter.default.addObserver(
+358 |             forName: .AVPlayerItemDidPlayToEndTime,
+    |                       `- warning: 'AVPlayerItemDidPlayToEndTime' was deprecated in macOS 27.0: Use AVPlayerItem.didPlayToEndTimeNotification instead. [#DeprecatedDeclaration]
+359 |             object: playerItem,
+360 |             queue: .main
+
+Sources/Louppe/VideoPlaybackController.swift:371:23: warning: 'AVPlayerItemFailedToPlayToEndTime' was deprecated in macOS 27.0: Use AVPlayerItem.failedToPlayToEndTimeNotification instead. [#DeprecatedDeclaration]
+369 |         })
+370 |         failureObserver.replace(with: NotificationCenter.default.addObserver(
+371 |             forName: .AVPlayerItemFailedToPlayToEndTime,
+    |                       `- warning: 'AVPlayerItemFailedToPlayToEndTime' was deprecated in macOS 27.0: Use AVPlayerItem.failedToPlayToEndTimeNotification instead. [#DeprecatedDeclaration]
+372 |             object: playerItem,
+373 |             queue: .main
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+RAW+JPEG initial scan 250 pairs: separate 0.06095725 seconds, grouped 0.051657083 seconds
+Prepared index 1000 items: rebuild 20.4 ms, default reuse 2.4 ms, filter/group 2.1 ms
+Prepared index 10000 items: rebuild 202.7 ms, default reuse 24.9 ms, filter/group 15.3 ms
+Prepared index 100000 items: rebuild 2726.9 ms, default reuse 260.7 ms, filter/group 220.5 ms
+Metadata index 100000 items: filter 138.4 ms, sort 325.8 ms, export selection 99.0 ms
+Rating one of 100000 items: 0.2 ms
+Save snapshot 100000 files: main capture 121.1 ms, background build 221.1 ms
+Performance checks passed (75/75)

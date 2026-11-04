@@ -1,7 +1,7 @@
 import SwiftUI
 import AVKit
 
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
 /// Hosted AppKit checks track the actual mounted transport lifetime; this also
 /// works when a test process has no enabled accessibility client or key loop.
 @MainActor
@@ -23,6 +23,7 @@ enum GalleryVideoControlsTestProbe {
 /// an unavoidable whole-video hover scrim, so Gallery uses AVPlayerLayer.
 /// Keeping the transport visible also preserves keyboard and VoiceOver access.
 struct GalleryVideoPlayerView: View {
+    @Environment(\.mediaReadAccess) private var sourceAccess
     let item: PhotoItem
     @ObservedObject var playback: VideoPlaybackController
     @StateObject private var presentation = GalleryVideoPresentationController()
@@ -38,7 +39,7 @@ struct GalleryVideoPlayerView: View {
             } else if let error = playback.errorMessage,
                       playback.represents(item) {
                 ContentUnavailableView(
-                    "Can't play this video",
+                    L10n.text("Can't play this video"),
                     systemImage: "exclamationmark.triangle",
                     description: Text(error)
                 )
@@ -59,15 +60,15 @@ struct GalleryVideoPlayerView: View {
                                 systemName: presentation.isPictureInPictureActive
                                     ? "pip.exit" : "pip.enter",
                                 help: presentation.isPictureInPictureActive
-                                    ? "Close Picture in Picture"
-                                    : "Picture in Picture"
+                                    ? L10n.text("Close Picture in Picture")
+                                    : L10n.text("Picture in Picture")
                             ) {
                                 presentation.togglePictureInPicture()
                             }
                             .disabled(!presentation.pictureInPictureSupported)
                             controlButton(
                                 systemName: "arrow.up.left.and.arrow.down.right",
-                                help: "Toggle full screen"
+                                help: L10n.text("Toggle full screen")
                             ) {
                                 presentation.toggleFullScreen()
                             }
@@ -87,7 +88,7 @@ struct GalleryVideoPlayerView: View {
                             .padding(.bottom, 14)
                     }
                     .accessibilityIdentifier("louppe.gallery.video.controls")
-#if DEBUG
+#if LOUPPE_TEST_SEAMS
                     .onAppear { GalleryVideoControlsTestProbe.mount(playback) }
                     .onDisappear { GalleryVideoControlsTestProbe.unmount(playback) }
 #endif
@@ -99,24 +100,32 @@ struct GalleryVideoPlayerView: View {
             }
         }
         .onAppear {
-            playback.prepare(item)
+            playback.prepare(item, sourceAccess: sourceAccess)
             volume = Double(playback.player.volume)
             isMuted = playback.player.isMuted
         }
-        .onChange(of: item.contentRevision) { playback.prepare(item) }
+        .onChange(of: item.contentRevision) { playback.prepare(item, sourceAccess: sourceAccess) }
     }
 
+    @ViewBuilder
     private func controlButton(
         systemName: String,
         help: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        let button = Button(action: action) {
             Image(systemName: systemName)
                 .frame(width: 20, height: 20)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        Group {
+            if #available(macOS 26.0, *) {
+                button.buttonStyle(.glass).buttonBorderShape(.circle)
+                    .tint(Color.louppeFilledAccent)
+            } else {
+                button.buttonStyle(.bordered).buttonBorderShape(.circle)
+            }
+        }
         .help(help)
         .accessibilityLabel(help)
     }
@@ -132,16 +141,16 @@ struct GalleryVideoPlayerView: View {
 
     private var unsupportedView: some View {
         ContentUnavailableView(
-            "Video isn't supported",
+            L10n.text("Video isn't supported"),
             systemImage: "film",
-            description: Text("macOS can't play this video's container or codec. You can still rate and export it — \(item.displayName)")
+            description: Text(L10n.text("macOS can’t play this video format. You can still rate and export it — \(item.displayName)"))
         )
     }
 }
 
 /// One AVPlayer-backed transport for Gallery video and audio. Audio uses two
 /// rows so the controls remain usable when the Gallery pane is narrow.
-private struct GalleryMediaTransportView: View {
+struct GalleryMediaTransportView: View {
     let item: PhotoItem
     @ObservedObject var playback: VideoPlaybackController
     @Binding var isScrubbing: Bool
@@ -149,6 +158,8 @@ private struct GalleryMediaTransportView: View {
     @Binding var volume: Double
     @Binding var isMuted: Bool
     let compact: Bool
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
         Group {
@@ -159,10 +170,10 @@ private struct GalleryMediaTransportView: View {
                     wideTransport
                         .frame(minWidth: 460)
                     stackedTransport
-                        .background(
-                            Color.appBackground,
-                            in: RoundedRectangle(cornerRadius: 14)
-                        )
+                        .modifier(FloatingControlSurface(
+                            shape: RoundedRectangle(cornerRadius: 14),
+                            reduceTransparency: reduceTransparency, contrast: contrast
+                        ))
                 }
             }
         }
@@ -176,7 +187,9 @@ private struct GalleryMediaTransportView: View {
         }
         .padding(.horizontal, 14)
         .frame(height: 48)
-        .background(Color.appBackground, in: Capsule())
+        .modifier(FloatingControlSurface(
+            shape: Capsule(), reduceTransparency: reduceTransparency, contrast: contrast
+        ))
     }
 
     private var stackedTransport: some View {
@@ -220,19 +233,20 @@ private struct GalleryMediaTransportView: View {
 
     private var playbackControls: some View {
         HStack(spacing: 12) {
-            controlButton(systemName: "gobackward.15", help: "Skip back 15 seconds") {
+            controlButton(systemName: "gobackward.15", help: L10n.text("Skip back 15 seconds")) {
                 playback.seek(item, by: -15)
             }
             controlButton(
                 systemName: playback.isPlaying ? "pause.fill" : "play.fill",
-                help: playback.isPlaying ? "Pause" : "Play"
+                help: playback.isPlaying ? L10n.text("Pause") : L10n.text("Play")
             ) {
                 playback.toggle(item)
             }
-            controlButton(systemName: "goforward.15", help: "Skip forward 15 seconds") {
+            controlButton(systemName: "goforward.15", help: L10n.text("Skip forward 15 seconds")) {
                 playback.seek(item, by: 15)
             }
         }
+        .environment(\.layoutDirection, .leftToRight)
     }
 
     private var timelineControls: some View {
@@ -241,6 +255,7 @@ private struct GalleryMediaTransportView: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 42, alignment: .trailing)
+                .accessibilityHidden(true)
             Slider(
                 value: timelineValue,
                 in: 0...1,
@@ -256,13 +271,16 @@ private struct GalleryMediaTransportView: View {
                 }
             )
             .disabled(duration <= 0)
-            .accessibilityLabel("Timeline")
+            .accessibilityLabel(L10n.text("Timeline"))
+            .accessibilityValue(L10n.text("\(MediaDurationFormat.accessibility(displayedTime)) of \(MediaDurationFormat.accessibility(item.duration))"))
             Text(MediaDurationFormat.display(item.duration))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 42, alignment: .leading)
+                .accessibilityHidden(true)
         }
         .frame(maxWidth: .infinity)
+        .environment(\.layoutDirection, .leftToRight)
     }
 
     private var volumeControls: some View {
@@ -270,14 +288,14 @@ private struct GalleryMediaTransportView: View {
             controlButton(
                 systemName: isMuted || volume == 0
                     ? "speaker.slash.fill" : "speaker.wave.2.fill",
-                help: isMuted ? "Unmute" : "Mute"
+                help: isMuted ? L10n.text("Unmute") : L10n.text("Mute")
             ) {
                 playback.player.isMuted.toggle()
                 isMuted = playback.player.isMuted
             }
             Slider(value: $volume, in: 0...1)
                 .frame(width: compact ? 74 : 82)
-                .accessibilityLabel("Volume")
+                .accessibilityLabel(L10n.text("Volume"))
                 .onChange(of: volume) {
                     playback.player.volume = Float(volume)
                     if volume > 0, playback.player.isMuted {
@@ -295,7 +313,7 @@ private struct GalleryMediaTransportView: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .frame(width: 20, height: 20)
+                .frame(width: 36, height: 36)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -306,6 +324,7 @@ private struct GalleryMediaTransportView: View {
 
 /// Waveform and controls share AVPlayer with Gallery video and Grid playback.
 struct GalleryAudioPlayerView: View {
+    @Environment(\.mediaReadAccess) private var sourceAccess
     let item: PhotoItem
     @ObservedObject var playback: VideoPlaybackController
     @State private var waveform: AudioLevelAnalysis?
@@ -323,7 +342,7 @@ struct GalleryAudioPlayerView: View {
             } else if let error = playback.errorMessage,
                       playback.represents(item) {
                 ContentUnavailableView(
-                    "Can't play this audio",
+                    L10n.text("Can't play this audio"),
                     systemImage: "waveform.badge.exclamationmark",
                     description: Text(error)
                 )
@@ -344,7 +363,7 @@ struct GalleryAudioPlayerView: View {
                                 Image(systemName: "waveform.badge.exclamationmark")
                                     .font(.title)
                                     .foregroundStyle(.secondary)
-                                Text("Waveform unavailable")
+                                Text(L10n.text("Waveform unavailable"))
                                     .font(.callout)
                                     .foregroundStyle(.secondary)
                             }
@@ -352,7 +371,7 @@ struct GalleryAudioPlayerView: View {
                             VStack(spacing: 8) {
                                 ProgressView()
                                     .controlSize(.small)
-                                Text("Preparing waveform…")
+                                Text(L10n.text("Preparing waveform…"))
                                     .font(.callout)
                                     .foregroundStyle(.secondary)
                             }
@@ -386,17 +405,17 @@ struct GalleryAudioPlayerView: View {
             }
         }
         .onAppear {
-            playback.prepare(item)
+            playback.prepare(item, sourceAccess: sourceAccess)
             volume = Double(playback.player.volume)
             isMuted = playback.player.isMuted
         }
-        .onChange(of: item.contentRevision) { playback.prepare(item) }
+        .onChange(of: item.contentRevision) { playback.prepare(item, sourceAccess: sourceAccess) }
         .task(id: item.contentRevision) {
             let requestedRevision = item.contentRevision
             waveform = nil
             waveformLoadFailed = false
             waveformRevision = requestedRevision
-            let loaded = await AudioLevelPipeline.shared.analysis(for: item)
+            let loaded = await AudioLevelPipeline.shared.analysis(for: item, sourceAccess: sourceAccess)
             guard !Task.isCancelled,
                   waveformRevision == requestedRevision else { return }
             waveform = loaded
@@ -406,9 +425,9 @@ struct GalleryAudioPlayerView: View {
 
     private var unsupportedView: some View {
         ContentUnavailableView(
-            "Audio isn't supported",
+            L10n.text("Audio isn't supported"),
             systemImage: "waveform.badge.exclamationmark",
-            description: Text("macOS can't play this audio format or codec. You can still rate and export it — \(item.displayName)")
+            description: Text(L10n.text("macOS can’t play this audio format. You can still rate and export it — \(item.displayName)"))
         )
     }
 }

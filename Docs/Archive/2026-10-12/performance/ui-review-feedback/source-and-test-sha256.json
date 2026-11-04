@@ -1,0 +1,2161 @@
+{
+  "schema": "source-sha256-v1",
+  "files": [
+    {
+      "path": "Sources/Louppe/AppBuildInfo.swift",
+      "sha256": "67f8392aa2bd0edfbe83ca43e71e4657925ce26d5bfc1cddded1026aabc1740e"
+    },
+    {
+      "path": "Sources/Louppe/AppDateFormat.swift",
+      "sha256": "14f8b5401dacfcea57ed228a75a6d233b5ed9e64f881342ef654d51ea8ca9153"
+    },
+    {
+      "path": "Sources/Louppe/AudioLevelPipeline.swift",
+      "sha256": "2c0cc8bd750f1fa8a6854e0c2bd3a8c2f11b396bef0bcb64672c57151691c6ad"
+    },
+    {
+      "path": "Sources/Louppe/CameraQualityWarnings.swift",
+      "sha256": "d9894cb3935314e540a4a52a19c6ccc2902a960e79fe552284e932abbfaaad3d"
+    },
+    {
+      "path": "Sources/Louppe/CleanUpWorker.swift",
+      "sha256": "02b022286ab5e6cac183255ed68c192d979e100b74084586081f0f4fc2d6c978"
+    },
+    {
+      "path": "Sources/Louppe/ConnectedDrives.swift",
+      "sha256": "36a18a8468a1f0279e20f3021be15085582cccc0f3d8681fc81719bc2398e399"
+    },
+    {
+      "path": "Sources/Louppe/DuplicateBurstAnalysis.swift",
+      "sha256": "ba0f014cea4c6aaf5c4c538d89b68aebd7d573e4854d9407c0ff5748566dde06"
+    },
+    {
+      "path": "Sources/Louppe/DurableFileIO.swift",
+      "sha256": "16db1bf7e6fbafd3b6da3f5b228086ef64a9d598fe52cf730e4f51da9d5a6ad1"
+    },
+    {
+      "path": "Sources/Louppe/ExportDestinationValidator.swift",
+      "sha256": "b5bebc9b189899323898a28be5ddba405e2d8b44944d4f2019f8d585b6bacd1e"
+    },
+    {
+      "path": "Sources/Louppe/ExportManager.swift",
+      "sha256": "b4727058bb9aa6da8130c2caadf990ada5a5573499658fc95dbf1aa4fe84dd71"
+    },
+    {
+      "path": "Sources/Louppe/ExportSelectionConfiguration.swift",
+      "sha256": "570974c1320d4ab90bd5df73f28a8539e84820e157236928f53b837a56bcb5b3"
+    },
+    {
+      "path": "Sources/Louppe/ExportWorker.swift",
+      "sha256": "b0639f854febdc28b887973ebb3b884071b06d8fc5331a2b0a9053c3d9449a52"
+    },
+    {
+      "path": "Sources/Louppe/FileOperationJournal.swift",
+      "sha256": "d747492cd5fe0bf4ca9de1aa5a1367b9091b2584873e6d7c21c54f05ce0c4797"
+    },
+    {
+      "path": "Sources/Louppe/FileRenaming.swift",
+      "sha256": "41505ceeb67ea45b7eb2133676c4c5dd4ac1963e13819a3b429ac3541a1ad89d"
+    },
+    {
+      "path": "Sources/Louppe/FolderScanner.swift",
+      "sha256": "0fd82e0d36c5dbfca7e5dc2956819b80bf46f33c8713b770abfe679f75f08f4f"
+    },
+    {
+      "path": "Sources/Louppe/HighResolutionImagePipeline.swift",
+      "sha256": "6180dc8fdff71c09eb029581a89909ab84f77fb996a250b66c2d9a29643190ce"
+    },
+    {
+      "path": "Sources/Louppe/HistogramPipeline.swift",
+      "sha256": "6db160792aa6fe842bcb648b4e76ad63dbb9d896e83c2c4f2de7174ca772f67d"
+    },
+    {
+      "path": "Sources/Louppe/ImagePipeline.swift",
+      "sha256": "07e6ebcd0c7c085eef47001c0d6df0a91380b10169ff43f454799ebd856bf139"
+    },
+    {
+      "path": "Sources/Louppe/Localization.swift",
+      "sha256": "80f8f4e4edf86919504a1ff0b11ebeca9dd7135e4e33953e3d72ee1eaeb2e7f7"
+    },
+    {
+      "path": "Sources/Louppe/LouppeApp.swift",
+      "sha256": "61804eb784870bc2cfd1d745aca05a1b10314ce826c3444b7034fdab8100969e"
+    },
+    {
+      "path": "Sources/Louppe/MetadataExtractor.swift",
+      "sha256": "e77707d8cfb709444a5e8eae1f010f241bd48716aa3c6ffb9b4e2c9d8dc5a498"
+    },
+    {
+      "path": "Sources/Louppe/Models.swift",
+      "sha256": "a582fcdab311a6cfb9244b7b5707c509262b367ca103c4266a944caed74e0154"
+    },
+    {
+      "path": "Sources/Louppe/MultiDestinationExport.swift",
+      "sha256": "337b50250477924548b9b2f92a7cd46d9d047a7c52cf1aae2f269631af9ae510"
+    },
+    {
+      "path": "Sources/Louppe/PreparedSessionIndex.swift",
+      "sha256": "a8be0b97f42d65f0bbaa5cef24b07c066f09e2b3c63961ad7c31954d970e41a3"
+    },
+    {
+      "path": "Sources/Louppe/QualityCueAnalysis.swift",
+      "sha256": "e3333f48a1d7d32dbb7fd139e1d801cf61fcd84c05abc5b8a7c5748df3158441"
+    },
+    {
+      "path": "Sources/Louppe/QualityCueWorkPolicy.swift",
+      "sha256": "48c550993a2d32f977b5c0f95ccf3212fc20e90ca987d1acd858c5d9872789cd"
+    },
+    {
+      "path": "Sources/Louppe/RawDisplay.swift",
+      "sha256": "c96a60970e86f570af837636d71c2b0d4d7991a98d5786fff4db40b5e79c7b2f"
+    },
+    {
+      "path": "Sources/Louppe/Resources/ar.lproj/Localizable.strings",
+      "sha256": "b1c4fdf849156690cc264a91485160a3cd8ef08ebcef75ec73a023aea2632029"
+    },
+    {
+      "path": "Sources/Louppe/Resources/en.lproj/Localizable.strings",
+      "sha256": "0291c278a1862ae52e89207b363eb4fb416ae9d077c0c6f583af6d642ad2ec3e"
+    },
+    {
+      "path": "Sources/Louppe/Resources/es.lproj/Localizable.strings",
+      "sha256": "5afef5c6573a51e27c0c484af51298486e9d5bcc4ac11554b23988153d00eb4c"
+    },
+    {
+      "path": "Sources/Louppe/Resources/hi.lproj/Localizable.strings",
+      "sha256": "4e5f8be184ab5c33f4c2c3a1f2aa433f92fe90500ac62ba9d6c51297a140829e"
+    },
+    {
+      "path": "Sources/Louppe/Resources/pt.lproj/Localizable.strings",
+      "sha256": "3d77715d95d2c290b17554365665cd3082ecb7f17b122a10954103cdd6a7a2cd"
+    },
+    {
+      "path": "Sources/Louppe/Resources/zh-Hans.lproj/Localizable.strings",
+      "sha256": "cde8d9d2ab309e30cd180e7d68107ac58dd0c1862d2245872e3a7b36623861bb"
+    },
+    {
+      "path": "Sources/Louppe/ReviewPreferences.swift",
+      "sha256": "74bde549042869074392aee0d078f67a051f47b86b2738a796d33ae48970bbf2"
+    },
+    {
+      "path": "Sources/Louppe/SecurityScopedAccess.swift",
+      "sha256": "acd9d92be75efd3a293ffc2534e422d46e6202e9ef6d501fbc916f07af4d4201"
+    },
+    {
+      "path": "Sources/Louppe/SelectionState.swift",
+      "sha256": "ef94a96d0489537d2674b6558fe948c99e17619d4977e2868127e1b1053ad522"
+    },
+    {
+      "path": "Sources/Louppe/SessionPersistence.swift",
+      "sha256": "d99a02631e16ae4a4b7f0ed199de6047bd621164515ad8a3cbaa8a5d8e84cef5"
+    },
+    {
+      "path": "Sources/Louppe/SessionRatingRecovery.swift",
+      "sha256": "7b167ea23597931aaa63698fcffa286beadfa72638e682fd58800f34c4804f1b"
+    },
+    {
+      "path": "Sources/Louppe/SessionStore.swift",
+      "sha256": "999c1ea04f6ff40d558fac98d70de35ca9decd12da125f4f179d616c0186605e"
+    },
+    {
+      "path": "Sources/Louppe/SourceOrganization.swift",
+      "sha256": "8e3a80b7304724f4dd97f3ab07171a255515a81e4f18e716a61a87900901b6a4"
+    },
+    {
+      "path": "Sources/Louppe/SourceOrganizationStorageSafety.swift",
+      "sha256": "e58b591ad61abd8ad92d6e42d5a2b407cb1d0ea2a1d6220a18036002886245e1"
+    },
+    {
+      "path": "Sources/Louppe/SourceOrganizationWorker.swift",
+      "sha256": "78e3197b7a913d77b0938b58df6c9acc01455b30aeef1185ec135fea4b5f7027"
+    },
+    {
+      "path": "Sources/Louppe/TextPreviewLoader.swift",
+      "sha256": "82fb11ce7ad4ceae210378fd3a66719facc5e48f15466884932ba6db28aaf763"
+    },
+    {
+      "path": "Sources/Louppe/TipStore.swift",
+      "sha256": "e2d0de1fa0128bf66c1a70f75a2c9c31d0a291010da549db09fb6f090cf06036"
+    },
+    {
+      "path": "Sources/Louppe/TipView.swift",
+      "sha256": "dd9f4e675a4c07f45dece5c2d87f46ca848eccdb63e6796390c989d41eb312d9"
+    },
+    {
+      "path": "Sources/Louppe/UpdaterViews.swift",
+      "sha256": "b35929d819f4ea59197a64b4e9cdafb1dae7ffe65d880f3642388b7e66007add"
+    },
+    {
+      "path": "Sources/Louppe/VideoPlaybackController.swift",
+      "sha256": "44f64fcad593541df403dbaa4c23d555f1707a2cd341775b8c43147588760f51"
+    },
+    {
+      "path": "Sources/Louppe/VideoSupport.swift",
+      "sha256": "787d5e5fb67f7e0c098c6ad923820a03e49fb0c89e4c7a881fcfe9fa9a955bf7"
+    },
+    {
+      "path": "Sources/Louppe/Views/ActionPaletteView.swift",
+      "sha256": "5b03ab1bee680fa488dae0b6ea8623fd71bc7ecff50a5d08d249f3a0a9bfae2c"
+    },
+    {
+      "path": "Sources/Louppe/Views/ActualSizeImageView.swift",
+      "sha256": "14aa964c1ad4f4b5bd0626993cae22dd421ca0b393fcdd2cd03b971a17043f27"
+    },
+    {
+      "path": "Sources/Louppe/Views/AudioLevelView.swift",
+      "sha256": "dd1bfe5ac9e4eba0c1853cd65cd4570b73858e30abbc050562da060c27d96f79"
+    },
+    {
+      "path": "Sources/Louppe/Views/BrowserView.swift",
+      "sha256": "ecc9a6c6573bfe12e0e4dd0fe05ee3079e8edf6dcbf86f488593811dd8441dfc"
+    },
+    {
+      "path": "Sources/Louppe/Views/CameraQualityWarningsView.swift",
+      "sha256": "57954d51abbe870dcc575e89fe0c12856576e08aad33ea808e5f393d0c8def5b"
+    },
+    {
+      "path": "Sources/Louppe/Views/EarlyUserFeedbackView.swift",
+      "sha256": "56c4593798824ed57e1279490d08e78f8fac46bdcbf79ae9ca49051c2ab023a5"
+    },
+    {
+      "path": "Sources/Louppe/Views/ExportView.swift",
+      "sha256": "567875430e01c95c51cb48b9d0fed623fc89079d7fce132704da53bea3517792"
+    },
+    {
+      "path": "Sources/Louppe/Views/FilterView.swift",
+      "sha256": "bc2d8dd3882a4d44af412aceb19bebd002ec206755793012576b61f8f0d21550"
+    },
+    {
+      "path": "Sources/Louppe/Views/FullImageView.swift",
+      "sha256": "ed6a6064cd556185111901538ddcee4b2dad48db5582eefebb1fe877f1835f6b"
+    },
+    {
+      "path": "Sources/Louppe/Views/GalleryView.swift",
+      "sha256": "abdabe1b874ea174b61ed3901f41bb830a63cbde4a77c1d222c6c00c2c180582"
+    },
+    {
+      "path": "Sources/Louppe/Views/GridView.swift",
+      "sha256": "73bb1b820e3cb947115eb92802fb6bf3b572c308c702886fbb54609f13c5c2dd"
+    },
+    {
+      "path": "Sources/Louppe/Views/HistogramView.swift",
+      "sha256": "5bdd096566165729da6ae44fc8d39f0703a26988cff27e09a8cd9a195b6a1b51"
+    },
+    {
+      "path": "Sources/Louppe/Views/LocalizedInterface.swift",
+      "sha256": "fb57b2ea5117b98428be90ae93d2033ddfdf2f7e9fe62e69935519ae09fa268d"
+    },
+    {
+      "path": "Sources/Louppe/Views/LouppeHelpView.swift",
+      "sha256": "e50e3020675fa0aaa325b53b08163f16f94b851a73bc634e863d84c4a1a92afa"
+    },
+    {
+      "path": "Sources/Louppe/Views/LouppeSettingsForm.swift",
+      "sha256": "5ac9a69c769d75ad847f314d706da0b73f89348ce28d0b9b6e1f2cfb910642c3"
+    },
+    {
+      "path": "Sources/Louppe/Views/MediaTileAccessibility.swift",
+      "sha256": "71af13cf4a3f806c31c2f97b3af46af22f41c778cd8f62efea0239c4f21f6605"
+    },
+    {
+      "path": "Sources/Louppe/Views/MetadataEditingControls.swift",
+      "sha256": "5fac14ce7c8bf62647d67579472f635b329dc239a79dcf96e86ec9345b5cd5b1"
+    },
+    {
+      "path": "Sources/Louppe/Views/MetadataPanel.swift",
+      "sha256": "60fa8a871cbb5c288aba0d677e88e42d147184562bbb10f604959d7323416a5a"
+    },
+    {
+      "path": "Sources/Louppe/Views/OrganizeSourceView.swift",
+      "sha256": "2ca4d46803b05da1bad560df69509a3db04b1eb66da8269ef3b06a0f5e374dd2"
+    },
+    {
+      "path": "Sources/Louppe/Views/PersistentVerticalScroller.swift",
+      "sha256": "6647807f54ac354b83f32cf1e5ca607e2af735f2ccc5d92f390d618331c4c2ed"
+    },
+    {
+      "path": "Sources/Louppe/Views/PhotoZoomControl.swift",
+      "sha256": "d66aa7681292a1f09a279cc4fdf91f7a0b96ad4ea1338e916c531814a2c2fead"
+    },
+    {
+      "path": "Sources/Louppe/Views/RenameFilesView.swift",
+      "sha256": "ad8ae1677077c3eabdac3cac9b21f9491d81cd4f3524df5aebb7bc10649b4f0c"
+    },
+    {
+      "path": "Sources/Louppe/Views/ReviewPreferencesSettingsView.swift",
+      "sha256": "c9c5910c6c4409ef4b92ef5c013a73ff629af5958c72f63d0e5314e35ecdca1f"
+    },
+    {
+      "path": "Sources/Louppe/Views/RootView.swift",
+      "sha256": "ddf61f4be58a629ede0c2aa6f2faea1ec53a22c1fb00c23c6914bf1dbaa892b6"
+    },
+    {
+      "path": "Sources/Louppe/Views/SessionEmptyView.swift",
+      "sha256": "26b45767cf6987a376bfd89280f5cb3ac8f287765411169b8bf34d703ff379f3"
+    },
+    {
+      "path": "Sources/Louppe/Views/SessionRecoveryView.swift",
+      "sha256": "e30294c432a5e14853828aebe764776977cf94fdeccf393384bdbd8351e49668"
+    },
+    {
+      "path": "Sources/Louppe/Views/SessionReviewGuidance.swift",
+      "sha256": "505912c826a4b5e60a1134c12f5838d424fb339a005c89d5960c89d4bdfcbd64"
+    },
+    {
+      "path": "Sources/Louppe/Views/SessionView.swift",
+      "sha256": "b0d2f3333cbd4939432443a80b426635c7f57b1ae09cf3563b364d0e96e42a24"
+    },
+    {
+      "path": "Sources/Louppe/Views/SheetForm.swift",
+      "sha256": "41d96d91b669f18ab4defbcdcedff364086ef08789eb5c7d866b58a92d126867"
+    },
+    {
+      "path": "Sources/Louppe/Views/SortView.swift",
+      "sha256": "3b5c61423bfdf829333ea6f7bc3be67e182a701e119ca3cf5b7440ab3e23ded1"
+    },
+    {
+      "path": "Sources/Louppe/Views/TextPreviewView.swift",
+      "sha256": "07e24c0751a7ac9cd1395669d322d6e2830ed553de62e99a940967d6b65741cb"
+    },
+    {
+      "path": "Sources/Louppe/Views/ThumbnailView.swift",
+      "sha256": "d9b9776c0f61a42e460a92966f29d470100ec4bcac232ebe96b36c2c18592ced"
+    },
+    {
+      "path": "Sources/Louppe/Views/VideoPlayerView.swift",
+      "sha256": "79f96da853036d4b2e3883053730864450f8638a48497f5c0b7323abef9b1254"
+    },
+    {
+      "path": "Sources/Louppe/Views/WelcomeView.swift",
+      "sha256": "e718b3a008fb4a84d1654c31924ba3096f1ad94dfd7771ac1ce8e717185ec8ac"
+    },
+    {
+      "path": "Sources/Louppe/Views/XMPConflictResolverView.swift",
+      "sha256": "bbbe1e811987a72d55f515e068d87c7ca95604b18222346a7bb6879dd674c510"
+    },
+    {
+      "path": "Sources/Louppe/XMP/XMPApplicationProfile.swift",
+      "sha256": "1587b5f4dccd44bda1b088563a9de6db3c6e5ffcd762d897fa960769a681b422"
+    },
+    {
+      "path": "Sources/Louppe/XMP/XMPExactFileSystemPath.swift",
+      "sha256": "51d60783737b3175ddb4873664f7b67630d5806b3afdb40ca6704beda973c66d"
+    },
+    {
+      "path": "Sources/Louppe/XMP/XMPExportPlanner.swift",
+      "sha256": "4e43a53c89e14738e13c4fbbc4a5e29ba676781f0b6118c12c56607b97a54819"
+    },
+    {
+      "path": "Sources/Louppe/XMP/XMPFieldMapping.swift",
+      "sha256": "ea1305ea9acdaef10b410ad01d4302f658e553315bf78563132094d010a120e4"
+    },
+    {
+      "path": "Sources/Louppe/XMP/XMPMetadataStore.swift",
+      "sha256": "d132c0f058d65d4d758cea724cc0651f60d4f8014b5e1ddf8b28be7acd17c12b"
+    },
+    {
+      "path": "Sources/Louppe/XMP/XMPPublication.swift",
+      "sha256": "14462e78cf8a0bf6a2c9c9f34894d5d1138336db2a987ccd45e8f566b29c0219"
+    },
+    {
+      "path": "Sources/Louppe/XMP/XMPSidecarResolver.swift",
+      "sha256": "47a7a79bc9c750ac985d3700b5d5d9dfd57e1aceb1aa4d8439d870cb095923f7"
+    },
+    {
+      "path": "Sources/Louppe/ZoomViewport.swift",
+      "sha256": "92b04cc1d43085e5af832492232336e68205c7de29ef2ad4d1e65aea27f3df2c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/Makefile.am",
+      "sha256": "f0a9b25eee893830ec487ac29bec3cd96a673ddeb7e11f0a2417c9a386cf90e1"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/ascii.h",
+      "sha256": "5ce49460794894b78f97060f634c129d13f2e9cc9b8dacd829f4be2dbc6e0649"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/asciitab.h",
+      "sha256": "5792cb56f285c8876b988d875a70d49019bc7e6d5ebcd0f8224b24e695301832"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/expat.h",
+      "sha256": "17cd1fc3b4c61d00de96091ceed0a3721d5bac9755c6d04e89d9f8a79d037c12"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/expat_external.h",
+      "sha256": "2249eae72c6bc9021b7110267507cca98ff6a269fb8b5af5bcb508858e83bfc1"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/fallthrough.h",
+      "sha256": "5e42477487bca7e7caac6b832ab940f39a1a20b8765c945374e4f6c2670f55b6"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/hash_table.h",
+      "sha256": "ad93851f86df1f4e8f85488dbac53cab3539e59d701ad747c7beea354d69e0dc"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/iasciitab.h",
+      "sha256": "a9cd6f2cf5199ae3c29d22ee4913736fcd984f62132146a0352c88549700e83f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/internal.h",
+      "sha256": "0123d00963768b5779544cc54dcccad311824b192a38d3489c4fb1fbbfa33b17"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/latin1tab.h",
+      "sha256": "b0daf8a75c690e895421f765ddb2ae2fbc1ba14694e06a3215dba84f1ff3427d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/libexpat.def.cmake",
+      "sha256": "3be6f98774580420c8563a9aee487ecf13b35f418144c3659fcce5d877199bb5"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/libexpat.map.in",
+      "sha256": "d6a82f557e605a876ed47c68128763b5b930d8dedaf3917a2051727e49a72668"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/memory_sanitizer.h",
+      "sha256": "377ca054fdc531360f42a5cb7c522bcbf88b6c67aebc2e29544c37d14e836bde"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/nametab.h",
+      "sha256": "8f78e64f11e2b23df8b32cb5528cfeda6215acd6abf6bcf1ad59fdc7b1ffd105"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_arc4random.c",
+      "sha256": "33b936335d0bbe1bb36b0da65d82e2d656fef9cf2e49660101c74a3f4f9d5c37"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_arc4random.h",
+      "sha256": "dd1a23b22604b61e1942e9fccdefe4d876cdf55477cd2e61904e50af162c15bf"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_arc4random_buf.c",
+      "sha256": "e9a72469deea3c7faed0fd45e3ac7d81e8ce4e63b52ef7bb647baf71f3d0fd78"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_arc4random_buf.h",
+      "sha256": "fccc4650a76f0b4df0b1123abeb248087a22d4eba9acbd1188cd44e21de4377b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_dev_urandom.c",
+      "sha256": "4d2a204c94285b0c459397619acfca5a8f5d690fbd8f419ac45879074e6afebd"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_dev_urandom.h",
+      "sha256": "65a0bf3666927824029dd52dc4b6af3218719999ab9f45db8d8406645960f5ab"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_getentropy.c",
+      "sha256": "ba99df7b694ff0b62d2871cc13b87e75d1a715af6045102ee7aff120ec1ae332"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_getentropy.h",
+      "sha256": "8a122afb95decf1fcf960cf92004d0305d7c9154f84c1ac739e67ef554e02e59"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_getrandom.c",
+      "sha256": "7d813973f1b021bd6576820180df180d3b07e5c47072ce083b7cb2029bcaed6d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_getrandom.h",
+      "sha256": "06738fafa3ec5b0148a699efeaa55aa80b8956b78a95bf5f78fcd9e0be998c48"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_rand_s.c",
+      "sha256": "39ae3d8d337517ae2db5935a501cc9d6f55cc12e8ba552c03ea78eda6bdc2200"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/random_rand_s.h",
+      "sha256": "941134a3796e544bf44c428cd1e1553506c9f344a5c0c4479a8a819745a0c0ff"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/siphash.h",
+      "sha256": "12ecc9915bccb793ea8bb543cc7d002e226f4e4d6b97ec9839dca41cbe4e2e27"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/utf8tab.h",
+      "sha256": "3fa349a3a19143366e80a58d9aa950152ef9cd7903f557f971051410b47f335c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/winconfig.h",
+      "sha256": "0ab6446eb98abc492ae341ef7607b535e44dedf52633fdc7c6e1a1361aec3922"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/xcsinc.c",
+      "sha256": "1210979a688301412f46e058d0497fa3c1c63c296c2e015834cda0f0b314875d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/xmlparse.c",
+      "sha256": "73e23fc6220bc12f13eda7022444f6d4d1027aaf025cc7e8d4284c3c297d37d7"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/xmlrole.c",
+      "sha256": "b1ad87cc3c0d4722358a7dfb1642df7f62066d1613a0a56dc9289e7112fb3f0c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/xmlrole.h",
+      "sha256": "8a0b61cd6efcd7427acbc86759e9013e7a61755097a1f82cbb2a79c011af5ee5"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/xmltok.c",
+      "sha256": "47ffd58f56f61284fd84cecd94ddad4c79cde922f57994c1525f8df1eb9272eb"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/xmltok.h",
+      "sha256": "623dea24bc27712e2e205a0c0517c79e211234f8d1051fe46d780839f754cf9e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/xmltok_impl.c",
+      "sha256": "4dcd7ae88dd90bbc89d0e41ba6affb46a107ee28df3b49cb84cdf228b7cc7981"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/xmltok_impl.h",
+      "sha256": "a5053c69219d12788088de9bd670537e1c784302766c331afe6b253460d0417d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/Expat/expat/lib/xmltok_ns.c",
+      "sha256": "ea723a3470d3eed5c4a4e873bec2f996c605326fad25709b45452664261c5465"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/README.md",
+      "sha256": "9bde61c82ef5ea7b192cc73de329e573fb304862058d0e4a4bdd997a05f73562"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/BaseClasses/MemoryManagedObject.h",
+      "sha256": "787ae09a42641b49687d7addf37744d536caeb30df7fc8b7f73f81be096e2bce"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/BaseClasses/TSingleton.h",
+      "sha256": "31d9235a72ab55cdb4227b50c3e8aedb8fa433e031a147c6f9f4b1ba55a6fb1b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/ImplHeaders/ConfigurableImpl.h",
+      "sha256": "269936552e14297cbfa1944214009ce255a93a70da5062f2e940f0effe301482"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/ImplHeaders/ConfigurationManagerImpl.h",
+      "sha256": "5976c98ffa11769b315928985fbcc2e1b024d8b90b937bc38a46142b150a0e5c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/ImplHeaders/DefaultErrorNotifierImpl.h",
+      "sha256": "e521c4e78d0b9035514276cd3d722f342df6a863ea85067c3cb6e599000e99f6"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/ImplHeaders/ErrorImpl.h",
+      "sha256": "0688c5350309d0644c6e98177d6656d39be587e1cd9d7dc18c5a0db2416a4bff"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/ImplHeaders/ErrorNotifierWrapperImpl.h",
+      "sha256": "ec6d0106799281c6eafd68c70fb4a04dfd7c455a8252e6e91e22e248458ecd1c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/ImplHeaders/MemoryAllocatorWrapperImpl.h",
+      "sha256": "0313a0196bfccc325de090cedb62e70bcd0b0a767ec6bb33e2bcfd0b6225431e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/ImplHeaders/SharedMutexImpl.h",
+      "sha256": "4c1810eee0187aaf9ad8c5540c38725442211926af634f9c1dde8df4a6a143da"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/ImplHeaders/SharedObjectImpl.h",
+      "sha256": "0bc34c5b5c7d1ed5ac9049b9926c16495b742a6f7fb118374ddaa634ba68fbbe"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/ImplHeaders/ThreadSafeImpl.h",
+      "sha256": "e0fc008df5f5459f5a74970cb686c2ddf6cfd5aeffa8bcce7e78ee31a76093fc"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/ImplHeaders/UTF8StringImpl.h",
+      "sha256": "c767a2904381160164381c3c58ac1df4ef7702624e6aef03110d7a76195314b3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Interfaces/BaseInterfaces/IConfigurable_I.h",
+      "sha256": "bcaa1606f728994c903d6633e87b95ff2435d2fc2421c87e2e345d5a25dd7256"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Interfaces/BaseInterfaces/ISharedObject_I.h",
+      "sha256": "32bdac89c38a12af3151e8dce6c14b40c65035d97162f5f456781eed449c8418"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Interfaces/BaseInterfaces/IThreadSafe_I.h",
+      "sha256": "15cea5d8a91d6b651de93cb896b1a4b0a75334451fd95da8aa409aa242303e5a"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Interfaces/IConfigurationManager_I.h",
+      "sha256": "1d9d3701feb478283ed1ceeae28ff7cf499d40210dca496da19334d964b7c615"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Interfaces/IErrorNotifier_I.h",
+      "sha256": "48e7a47ad1eda07aefde449a3835fa3af6081c19d8d9716a4275e890f9eb5b7a"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Interfaces/IError_I.h",
+      "sha256": "b3deb7e5800cca9d4047804474d0a148be8c12e6c3e82ca29d4d669454661071"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Interfaces/IMemoryAllocator_I.h",
+      "sha256": "8c0823d3af322f81236ca66ba54f3ec3425b224bf79258275a17dbab7088245a"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Interfaces/ISharedMutex.h",
+      "sha256": "fb705fa89bdda54bbae3a13af17f7e158cb165fc7a55cd0dafbba10ed95a9e50"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Interfaces/IUTF8String_I.h",
+      "sha256": "3688a62efef7948bd183c7e11a87fac7d1f252e169fda10f31d66eecf3df9cd3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/AutoSharedLock.h",
+      "sha256": "f64941af17a80496dd6b67b4a1b186317a092b00b43dd3d7af79d2c354c22117"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/IUTF8StringComparator.h",
+      "sha256": "5ace608c6253a2bbe3dee40397d66c690af742580bbba1cb0684761f5c091be4"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/TAllocator.h",
+      "sha256": "7b4460d68b5fd159d6e4a2be8c674428ec4d5bc79dcbd279d90a0108c676407a"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/TAtomicTypes.h",
+      "sha256": "8092684fab20f20b656ff688448aa0d36c37b4320671b4bb68e8f75582d2d140"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/TAtomicTypes_Android.h",
+      "sha256": "efc7c282466a79cca7ff461f59b7c2c07e32bd579ba625ca5a5a5568572095d9"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/TAtomicTypes_Linux.h",
+      "sha256": "9c3878d7ee7c265b15457313516f0a70b75c001604e5995ff4d357c0dc21aa47"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/TAtomicTypes_Mac.h",
+      "sha256": "a4c17e733508b8216c6101cdc2a90415e3c752a7e655af191a14365aff6216a3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/TAtomicTypes_Win.h",
+      "sha256": "3056ffe3a519b890161e3bb1629946061f9e1b625e5cb77012268c687f349c77"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/TSmartPointers_I.h",
+      "sha256": "429bfabc7791bd650a5570c4306e5553efb743a08cc99441f62e23bdf834684d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/TWrapperFunctions2_I.h",
+      "sha256": "a12073d8f5c1d5e69fc55c03c4ae71112ed82f9c65a529680bad04cd31e9003e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/TWrapperFunctions_I.h",
+      "sha256": "fedd120aa135090a23616b3fdbd29d73beae767615e223462eb63deab1ec0ec0"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/Utilities/UTF8String.h",
+      "sha256": "aecdd878852e2beab46adfbb8a086639200bc3ab29b0a9b8d4816cf745c4d123"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/XMPCommonDefines_I.h",
+      "sha256": "5fb4df9b7ac1c4d74052743110d7c8b07413a3041bee2e711e37706320ad7401"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/XMPCommonErrorCodes_I.h",
+      "sha256": "951f55c8b0002d61d689274c08de8de4c4261718d633210bbc7d886616526cfe"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/XMPCommonFwdDeclarations_I.h",
+      "sha256": "fca109c965c6db7580cedebd42958515af4a429ed6f91db641d1a0a562552daf"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/XMPCommon_I.h",
+      "sha256": "46c887acaf90e6683cc2ae251b67ea77941d06606118630c647f0b802ab5521d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/AutoSharedLock.cpp",
+      "sha256": "39de0e8c3dcd760ee486f66eb8fa4d7f914eb7b67a2c788adf203cd5cc96b3c8"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/ConfigurableImpl.cpp",
+      "sha256": "719150c68984d21ffd278759ab97cb39b980de84fcb6f049104ca4e8eb99ad5e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/ConfigurationManagerImpl.cpp",
+      "sha256": "13435673bc8e3fe3c822d641e5f285a751aeb8b56e0eb67a7e39cc617fff5892"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/DefaultErrorNotifierImpl.cpp",
+      "sha256": "6cf8f78a1047818559a03c658fadd1569abab333446331b5ef1f0e0bb39231b8"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/ErrorImpl.cpp",
+      "sha256": "4cc718898268aa13dfb3a28883a543c3c17e9f04f44aa0130015cfb33a2e15f3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/ErrorNotifierWrapperImpl.cpp",
+      "sha256": "8a691b4011a438a814e1e8b60c6a2da91bf0451ec9092994b692b3958209bc01"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/IConfigurable_I.cpp",
+      "sha256": "ea545d99fe47de6451c01ffbcc0f7e007ca214a4a775c8f7281bbbfcb1049586"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/IConfigurationManager_I.cpp",
+      "sha256": "fe716a2ecaab6cad1cea0f79395cc36dbf7ae00b7effb5cf7f4100cefb430167"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/IErrorNotifier_I.cpp",
+      "sha256": "777b60907e97fbb83f214f116a20130b778fb4cbbe97cb7950b68de79b9865fb"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/IError_I.cpp",
+      "sha256": "10b9000479fe55939afd4e5fe7b101a9db8cd12a8dfc8065f470e3d12582d667"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/IMemoryAllocator_I.cpp",
+      "sha256": "09f2942bfdb0126a42f4c87371008ae8ebe0896de7b0a9f7d905de90bf84754f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/IUTF8StringComparator.cpp",
+      "sha256": "e15ecb41179df36c79e7862ce99830e7b14333a6c5a5f77d44089c60ea561115"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/IUTF8String_I.cpp",
+      "sha256": "e90c19ad26d634007c0d3efd2bb354f9b0a6ebf5b0d22bf2c4c4e2c64f02f4de"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/MemoryAllocatorWrapperImpl.cpp",
+      "sha256": "e970cad0440ecf7ea11e081875b1f0d1925ae6ca7e99f029a990295886d2b08d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/MemoryManagedObject.cpp",
+      "sha256": "ef61d3ab6b149906309dbb3fe7372de1c3504f26084f6bcd0601fdfabf722f28"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/SharedMutexImpl.cpp",
+      "sha256": "23e591250175d221bae6e9ab87832feb3fa9bbb1e3601de3b5c720d32ca7cd41"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/SharedObjectImpl.cpp",
+      "sha256": "18dacdc60af4b430fb962057c26cbcae438f5f346220fa8db07ce9024a031847"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/ThreadSafeImpl.cpp",
+      "sha256": "fda50ab67526ec2da45ce0b5a4d01c9b3d06d90b30f9912804c29235133552c6"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/UTF8StringImpl.cpp",
+      "sha256": "85bcefb144e4d56c60212ba1d6be583524bf2059fea687044eaddc5aefdb4bac"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCommon/source/XMPCommon.cpp",
+      "sha256": "bef913f5b801468e1e2a0b66a7a12dd652f9f347ed437f2cbb65273275d28022"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/ArrayNodeImpl.h",
+      "sha256": "6260a413abf8f05ea3e84565a0c1e22c58717be4b911441ea7e5f4f5bfdf2ce3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/ClientDOMParserWrapperImpl.h",
+      "sha256": "641248091606199509cf5c8840b3109d12afab16edfd0281b23f5e9888e40795"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/ClientDOMSerializerWrapperImpl.h",
+      "sha256": "74e27ffe9fdbc114354e9fb72eee86cc3449f488d2d6d32cdf88ca50a718cf67"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/CompositeNodeImpl.h",
+      "sha256": "85c7a0a73a659ca77eeb5325a7ec893c69eebfc177b21c4940fa926bfd6e63aa"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/CoreConfigurationManagerImpl.h",
+      "sha256": "9c952d164b91f18bc12a2193cf7577e4f3b9d4c167aea2840fd0233ca5a96e03"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/CoreObjectFactoryImpl.h",
+      "sha256": "32a9705b87cb4300d49010edde3c08d809c3379ea031e28346c506de8a6c62dc"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/DOMImplementationRegistryImpl.h",
+      "sha256": "7b3ccec755f05c71db9ad4ce63044eacec8d16798fba2bf09244b31f71f032cd"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/DOMParserImpl.h",
+      "sha256": "ea7370c786f65ce1b7270b78ef46b31d7b47adebddb886ad2890383989a6c6b8"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/DOMSerializerImpl.h",
+      "sha256": "6b33b41d2d827a552cea12d3febb8413ef6c61b419e936274d2482fe9fe3a4a2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/MetadataConverterUtilsImpl.h",
+      "sha256": "1551c44ce2608b4a7da3bf69b44b87d297b8480f85f73e6efd6d3659739fcbe4"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/MetadataImpl.h",
+      "sha256": "69d42a078ef24f377fe3fe3a73362066e6944acd336f5af13baa6b94d0c10be9"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/NameSpacePrefixMapImpl.h",
+      "sha256": "c0b311b35359b5e924d93d79afca18e74d4989a090197e3c18c8b261445ee463"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/NodeImpl.h",
+      "sha256": "5473d18b95b4d2057925605b8e394cb3ca64b0bb83527f28fa30b1490ef54db2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/PathImpl.h",
+      "sha256": "87c8bd51b1346e986615f24a67bed49539766cacbbc8b67a3d6a69b46c3ed880"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/PathSegmentImpl.h",
+      "sha256": "fa72c152caa2e15a0d32fd47f9e6cf344a44fd46705e0c64c8dbd13cd00e95fb"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/RDFDOMParserImpl.h",
+      "sha256": "8e19372b9509715f2816cacd55c210f4736f338426cfb6e0114a64a8b4ab3534"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/RDFDOMSerializerImpl.h",
+      "sha256": "9e95330a30bebcd88d6efe76b33354ffbb4f3666db78f9ab3ef74fff959ae37a"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/SimpleNodeImpl.h",
+      "sha256": "9b52907945c68c3444620d0eb9e61149ceb48258221c64bba6ff733b24c61c32"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/StructureNodeImpl.h",
+      "sha256": "ad94c811961420a25dcd6f3cc245d79cb4f184ac0a8d8a1f4871f7199585591e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/ImplHeaders/TNodeIteratorImpl.h",
+      "sha256": "8b6b44debe3b414be68e880663a864eb5af96d7f170225ecfa03729029f0c531"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/IArrayNode_I.h",
+      "sha256": "2876df7d13bea625f499b9ed9587a50c4ef732b1fdc096c1081048261577a2f2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/ICompositeNode_I.h",
+      "sha256": "e3bb1622752618efbcf72d608f5070732a0fbd48d7cd82c9c515360e2d880b1e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/ICoreConfigurationManager_I.h",
+      "sha256": "8b775c80e7104761537434bc42aa050a1624ad715a69c2a21f615ae3fe97c010"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/ICoreObjectFactory_I.h",
+      "sha256": "bfa18a91fdbba9177acdc1c2e0949b7738d69d76e473be5ce492d1425e06995a"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/IDOMImplementationRegistry_I.h",
+      "sha256": "02edd7fdf1855aa171ead8d247ef1d69953c78b47b18af1192e3db3bd3d1163d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/IDOMParser_I.h",
+      "sha256": "2dd446469ced23dd2dd97792a50735b40d188f21c1ad9c59df5ef3f6ad694d97"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/IDOMSerializer_I.h",
+      "sha256": "52b6155aefda175b16b8d3d6dba407c4348a38b652cc6a4bb8a22dfefb85bc65"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/IMetadataConverterUtils_I.h",
+      "sha256": "17d7591452608f4d494526e2e3f8d152cd862b954b5d1b28a041c8be67fc125d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/IMetadata_I.h",
+      "sha256": "5a21d3fa0b85a65f784d14a5a14e81e1956d315474aadd4c3cbeaef4bc058c8e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/INameSpacePrefixMap_I.h",
+      "sha256": "ca1585d69f26365660bd2921f930dbae3d5b6a4177756d66f5fb1b3fd2689d42"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/INodeIterator_I.h",
+      "sha256": "5fcf0fc370cc015b49e91aaf5b077d799871d61e479906c7c3a16fa0b52fe0e9"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/INode_I.h",
+      "sha256": "a4f7c99ec4933606db3f839599d0b22f07b28999bdbca75cac069eb75104d158"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/IPathSegment_I.h",
+      "sha256": "08b329b252da458ff5373958888c1c90007520d8acf1ab07054b83d6beaef314"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/IPath_I.h",
+      "sha256": "f1d201da6ec9d7cde8168e53f9651f75278ddf53b7f165db1e436a6896c7fd55"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/ISimpleNode_I.h",
+      "sha256": "cc1e42f51b1b2b5ae1313382c0249e8ca053c973707a6114337fff606f9d5a78"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/IStructureNode_I.h",
+      "sha256": "727c2e3eb611b5063da067b7271be7a78d687ed086d1ea2dd6ca00c5265740a8"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/Interfaces/IXMPLanguageAlternative_I.h",
+      "sha256": "c4dae3a5a54d0e2c6b26616cfe9374b7f1ac8b3a02128bebae83d8bd14e6944a"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/XMPCoreDefines_I.h",
+      "sha256": "60faf972a5b3d8afa0290ccfc5bd09b5766838724c9cc0c9341b5908c5a3aa56"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/XMPCoreFwdDeclarations_I.h",
+      "sha256": "ba2863ee899ff7a1f21d4b17536b149de18749c740bbe59eb9144f54a7f50ef7"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/android/XMPCore.exp",
+      "sha256": "4b7971007d2612c034fed964b368c560a69e3aaff7a9c0c51c9c10e2f8f2e7a3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/android/expat_config.h",
+      "sha256": "23ec7a7f0343c3cff6830f41fd98b3d6f10dfb894847a15a817727ba6de8a253"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/ios/XMPCore.plist",
+      "sha256": "246408c35217e92a24ff0fb7bbb17de910aef681d35e5dbcaaaf42604633a427"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/ios/XMPCorePList.h",
+      "sha256": "68c68307320df5b79e0f1e24a74e8ddd61855140d4665f47b07f557d018b28cc"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/ios/expat_config.h",
+      "sha256": "c861f29ffc5a94f90fc32bc074b5e0eb73593bdfb1d83503f2f8876021e19364"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/linux/XMPCore.exp",
+      "sha256": "4b7971007d2612c034fed964b368c560a69e3aaff7a9c0c51c9c10e2f8f2e7a3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/linux/expat_config.h",
+      "sha256": "23ec7a7f0343c3cff6830f41fd98b3d6f10dfb894847a15a817727ba6de8a253"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/mac/XMPCore.exp",
+      "sha256": "687d9f359216ec2613b7f7236f15a1766fc6d21c1ab9db85aedf4d415433f5c0"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/mac/XMPCore.plist",
+      "sha256": "246408c35217e92a24ff0fb7bbb17de910aef681d35e5dbcaaaf42604633a427"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/mac/XMPCore.unexp",
+      "sha256": "8b7ae2cecb59d19b75170b7e7b7fd528afe574c5abee6030513673ae8f217984"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/mac/XMPCorePList.h",
+      "sha256": "68c68307320df5b79e0f1e24a74e8ddd61855140d4665f47b07f557d018b28cc"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/mac/expat_config.h",
+      "sha256": "117acdeff7b323e58665d6f9319d205cb3979fd3ff4e5b2b50691c750e57fbc2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/win/XMPCore.def",
+      "sha256": "b88aac455625005b76ed66803be71c1bd4543657ac28e554048f1b1be082cb45"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/win/XMPCore.rc",
+      "sha256": "c979611977c8ac4763aae015348cbeab87bb897bba04476bda650915409af76e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/resource/win/expat_config.h",
+      "sha256": "88e30b431bde1d2648aa29e461963fc1911ee948bdbfab585f211dc285b78653"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/ArrayNodeImpl.cpp",
+      "sha256": "39a87f103cfcbf5936269b4e72fb8ca1316b0f94ccba51d3bc8321dbdbe017cd"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/ClientDOMParserWrapperImpl.cpp",
+      "sha256": "ad0b3b833e1ee47a00817fd9cb7e465ea683d09d859542e04843f402d8c466f5"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/ClientDOMSerializerWrapperImpl.cpp",
+      "sha256": "bc0e2e28a258859102e034afc53e13024d3537f1b60c1654ff072b8297f72991"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/CompositeNodeImpl.cpp",
+      "sha256": "a423b8fe6b6f05a3e7aa34e75e87a5a5b7133d616ba43f924451d11f36ad9136"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/CoreConfigurationManagerImpl.cpp",
+      "sha256": "18602e82dab7969b15c85edc4a271d6c787eaa1bed30e80ae4f1e5f73ff3cf48"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/CoreObjectFactoryImpl.cpp",
+      "sha256": "46577a57c0ba17cacfce60067d7276de2b6784d6a4abfc9b784ef20733443245"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/DOMImplementationRegistryImpl.cpp",
+      "sha256": "6cf50d2aed430419ab8be980c656aac276a1874a8c2bd07213ac99db61b315c9"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/DOMParserImpl.cpp",
+      "sha256": "6f77bfc237826b31d057344599295fc0391df3e166065e43de5091805ba2dd86"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/DOMSerializerImpl.cpp",
+      "sha256": "0808c64512b05f1b7ff25a301f2c42b87b7441b2e7ba3417b00ef50cf8d6c550"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/ExpatAdapter.cpp",
+      "sha256": "6843b2ac931a0f6261cb3e2150226922b402b2f02c91035588b0567e0c93c496"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/IArrayNode_I.cpp",
+      "sha256": "778b49bc84f3b8ef239f8b8e1852f19e94b3f8de189322b51751736381895557"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/ICompositeNode_I.cpp",
+      "sha256": "0140c221d230aea8349e225d2cbced54732b7a319e84e1c2a3d79b87f39d916b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/ICoreConfigurationManager_I.cpp",
+      "sha256": "c4bc987d0d117d263fa19df35a4a5af6bd551966739077e0cdab9f3b58d3c0f3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/ICoreObjectFactory_I.cpp",
+      "sha256": "4000f1fa1b2481294758ae1308c7725fc3557e884af3a4d1c76037f9485f96c8"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/IDOMImplementationRegistry_I.cpp",
+      "sha256": "cf7a1364b82b8fc14ac1ac88b2930c8756627f4fbdf52bfa7ab78b6e544f065c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/IDOMParser_I.cpp",
+      "sha256": "08cb5197403b641c1bb1b09d0e09a16e32138e6d9a0b26b279cf3b076967850c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/IDOMSerializer_I.cpp",
+      "sha256": "f00d90eecdf97929e301aa87fe8bdc5e90ae9def5d3ca7765c0ac251e73ec105"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/IMetadataConverterUtils_I.cpp",
+      "sha256": "4bcb8151a9fc9ad023ed47af19d114bd9c5c37c21c8d8e7e5106c5f000c76c91"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/IMetadata_I.cpp",
+      "sha256": "5a6fdfe3c0f0bcadc88d121248efd7ccf56000b26eab9c110473a95c4884cb03"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/INameSpacePrefixMap_I.cpp",
+      "sha256": "c1d586eadf815f52a4b905a9fce7dba91f9f240eaa33955efff47b1086b5b8c2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/INodeIterator_I.cpp",
+      "sha256": "6a26e671c6fb439c20420a0acae196cb49d37793648dc81e84632387fccfb965"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/INode_I.cpp",
+      "sha256": "a92222fa2416f5cd697e65e79da72dde1c0daa0a47ff6037d9094ea5cc4fa960"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/IPathSegment_I.cpp",
+      "sha256": "a296734a7ba194fa24c95826e72daecd585e18e72eb6f4a26f93b7415eec0e31"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/IPath_I.cpp",
+      "sha256": "794846d5ca6138d6f751c8a38f340bd5b290ad8a059db5dab0fca4151e7a5e26"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/ISimpleNode_I.cpp",
+      "sha256": "dba0b5ba1ccd2f38322787fa1d7bffc5bda9f578410c2ebeae3084086af20aff"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/IStructureNode_I.cpp",
+      "sha256": "00d47fce8e75e14d20957349071532016eb9a4e3bd5150e1e4086b17155222bd"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/MetadataConverterUtilsImpl.cpp",
+      "sha256": "ef45a1475b5c5af37fe00f3ed8b0b0108400084ac478c4ceccc647cac9406e70"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/MetadataImpl.cpp",
+      "sha256": "2d70dec23696b5b7d345f730f82d86ca5b5b5f077d1c63542fa118370fd3637f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/NameSpacePrefixMapImpl.cpp",
+      "sha256": "cad7bc273dfcaee525ff2f287c0c1707cafd5107d254d1debf1706944b249242"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/NodeImpl.cpp",
+      "sha256": "99f5d8daecaaf2aa42a6b42e7e3e664fb843ae71358a90bdc45c880b875f67fa"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/ParseRDF.cpp",
+      "sha256": "58545a128ff375bf3714081a0d56bc89040109126d206475ffe5e320130f9cd8"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/PathImpl.cpp",
+      "sha256": "c0ebe7fc681a4b4f83677e2d2d2a938f9cc08df9292297c1f291a15dd3476d0c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/PathSegmentImpl.cpp",
+      "sha256": "e47f5c257e0aa99500e15cd55db1a8be5bc7de3646f452c78eabc4e92e2da95b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/RDFDOMParserImpl.cpp",
+      "sha256": "621e752b587ef888c68e99ddb2572ca4917c4ec07b2cc3e2549d7d966aa64671"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/RDFDOMSerializerImpl.cpp",
+      "sha256": "dbd06b39cac3a789f4a1b6750a62d6167726e0c3df3dd0afc0624a2b370be4b0"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/SimpleNodeImpl.cpp",
+      "sha256": "038f74ceb5742e82be68fe48457db304a4ae98456eb41ce77f66e3acecf54b1b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/StructureNodeImpl.cpp",
+      "sha256": "4847a3784f073fc41239d0c3ea1e10b884ef52cf460649d741e51a23dd27570b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/WXMPIterator.cpp",
+      "sha256": "39c0aa54c7dcef075b1e6f3bbc57a121a862ef5af8eb987fe0e50e0e40d3b6ac"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/WXMPMeta.cpp",
+      "sha256": "3cae066529272386bb9517413e982264403842737db934ac9efd9cb51cc23179"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/WXMPUtils.cpp",
+      "sha256": "1b55f5ae6e27a38415953f1563abab8bf08fbfcf34d2159e909ec61eaacba300"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPCore_Impl.cpp",
+      "sha256": "0a9f2117461fa4066388f24a61e7a2ee95d530b0311c4131ea096be1c54bd9fa"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPCore_Impl.hpp",
+      "sha256": "da8e95eb362a6f818a5b0c7533f70939719f3b5d7a69cc3a54ffb5c7043bb05b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPIterator.cpp",
+      "sha256": "93f78bcce511d3f3dad6aee1ce5620f093178c0ae3fcde0fef9689bb5998ff1e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPIterator.hpp",
+      "sha256": "96d1dd263757e1d0a7542c277993b14319867928d49d85bbf4fbcd70270404c1"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPIterator2.cpp",
+      "sha256": "0ca3397afdca047e8221113b639ebfb6252ad9c7df78b5bb2e15726cfe39c161"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPIterator2.hpp",
+      "sha256": "094f5cb6ea700af751a4d03cc3a47f787180741270e481a1a8c5de0763594c83"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPMeta-GetSet.cpp",
+      "sha256": "ff88d6ca45698f362323ac51b064f3329c3854f3b93cd3f77f51a3f19c3e3f70"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPMeta-Parse.cpp",
+      "sha256": "edbb19f9d157879b8d47ee45881a4dcf6b89f123fc3071efb37c6706b9e1075c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPMeta-Serialize.cpp",
+      "sha256": "28ffc5347163526a3856895df0213f251476be54ec6f7196f65d850bd3c52787"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPMeta.cpp",
+      "sha256": "0479db966cb1be44b4bffa902c4064c79442b178a7a9a70fd53e038a69459681"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPMeta.hpp",
+      "sha256": "187d4da10a06b4c887b345c6ecc1e5ae09604ccbf676083ad916153983fba6b8"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPMeta2-GetSet.cpp",
+      "sha256": "d99960cc3789700dfad1a9f06cff7e7c271997a5c9366b24e8bd92e3c1dcfbc5"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPMeta2.hpp",
+      "sha256": "6689a0ae1b5a7664414c380fa5f2200637975a2f1a6a1bfbd1ee34a911dde2f2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPUtils-FileInfo.cpp",
+      "sha256": "26770065a67f67d1c93c39db5b66300de51c2abea69fffdaa669116de1b6123f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPUtils.cpp",
+      "sha256": "d990f398a24cad84aa753ffba0291f341caf992fe0e22c630f97128f81c0f547"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPUtils.hpp",
+      "sha256": "8418fbb9393e3184aa04ff7a89a1e8a9b87711b2fc31a785cf0fb3477fe4f378"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/XMPCore/source/XMPUtils2.cpp",
+      "sha256": "10a91abd30ff94158bf9bc8804dfd14909ede2c81beea6093c17a4a9984c8cc2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/build/XMP_BuildInfo.h",
+      "sha256": "8a82d8b053cefa616976b78236789feb305ffc1f5851dfd903e01f59ca86f176"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/TXMPFiles.hpp",
+      "sha256": "fc439055551b188aa9150860e31584a8873b21bc02e372582523e48b84fa363a"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/TXMPIterator.hpp",
+      "sha256": "cdb6924c50ef19f439dd341c3ba4ece4574b91954fed8326bb6af4c9a1635cf4"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/TXMPMeta.hpp",
+      "sha256": "bb24b24f69484bafefea06ee41948db9d7df373f6bf673823fe4631aab1b8d51"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/TXMPUtils.hpp",
+      "sha256": "726ce3acb192b2950e1427d68c4b0b75f9eff79d0001964b083ef088c8ad9f51"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMP.hpp",
+      "sha256": "a581ab33e2472297002c9fb6ad5684374ccda5635e8f5a95b7ae330f8784b253"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMP.incl_cpp",
+      "sha256": "2d51892ef35cb35b09ff4d93bb4eefa872961b0bfbf9102d44d93f0db6a04f8f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Interfaces/BaseInterfaces/IConfigurable.h",
+      "sha256": "3daf2514a040e460c8c96c0a056cc295c93f13942813ac7f63119fbb2cd705fc"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Interfaces/BaseInterfaces/ISharedObject.h",
+      "sha256": "682a3688ef9173442b22bf2f4bacbc4eb97e3607ae89137c01e54b0d3f3cd333"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Interfaces/BaseInterfaces/IThreadSafe.h",
+      "sha256": "e88ae352ac73d6eae2b0d050549aa0fabc1da4b7552e27d6726f2ac56a839f3f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Interfaces/BaseInterfaces/IVersionable.h",
+      "sha256": "d973929144f6e4b85d10a0cb8955cd8c6c04873bd39cd4e90418b53d0ea3b439"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Interfaces/IConfigurationManager.h",
+      "sha256": "2fe950652c330567b8d3a6bfe0e26a2fc3b5628763a03f431c00fd9f55265317"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Interfaces/IError.h",
+      "sha256": "85df189a72fb0c0caeba28390de87ca06ddf758d5c0814307a79984803d9c65d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Interfaces/IErrorNotifier.h",
+      "sha256": "983fad1f005bfa283a2d4bdbeae51eb0c9c02f6c020c7a9d6888bfd38dae9939"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Interfaces/IMemoryAllocator.h",
+      "sha256": "310b2caf60117a23b45ddbc344b626cd81e8a8c3d53ca0cea05eb3fc0a19fee1"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Interfaces/IObjectFactory.h",
+      "sha256": "977098d61e0cd85dfbc8387bf033d69867803d61f399b3d5d3c9f39757e18f54"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Interfaces/IUTF8String.h",
+      "sha256": "4ed56f7720c820b12c68c5fa8bd9f27f6c1eded86c54d3af5be6e9a63bf8d585"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Utilities/TWrapperFunctions.h",
+      "sha256": "aa3bda3d245942ab5fda648e3d7630ccf3bc403854ac5da00cd79ccb48752922"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/Utilities/TWrapperFunctions2.h",
+      "sha256": "25137289b23710afc9d7222e3799098b1c1dd784baa461560cc5924efdf24f94"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/XMPCommonDefines.h",
+      "sha256": "86872bc91b696ee82ce7ae77f86f97831d5daf9caa682f445ccce9e3a1de2d6b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/XMPCommonErrorCodes.h",
+      "sha256": "c13e10661a7720c4e25aebdba3212c905eb30d2fc3c58a4b41d47976fe86747c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/XMPCommonFwdDeclarations.h",
+      "sha256": "d119690f85a239885d22108543209e2f3965b099274550d11573990107745029"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/XMPCommonLatestInterfaceVersions.h",
+      "sha256": "ed88c01847ac60ddd73a0c6178405a9f10e9c3e9c39f532bf234dec1073e0640"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/source/IConfigurable.cpp",
+      "sha256": "f4af6f613eebffd920960106c3dd81c98328c8c4f16097e92b89b730b285093d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/source/IConfigurationManager.cpp",
+      "sha256": "bca26e1932919f9cb283b05fdd9ba8818cec66f05cf51544c882316b2e4100f9"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/source/IError.cpp",
+      "sha256": "844ba21fad1f696febba8261f8aab0ff0888dcac44dd298502e23b79156d8a78"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/source/IErrorNotifier.cpp",
+      "sha256": "5d2f19daaa1a97ba24ce31dc6ae72d729016c8b1cd269e0326fef9ede0760b5c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCommon/source/IUTF8String.cpp",
+      "sha256": "f351e43960d1a9f5a7eda497508c23244cfb8f34d925d0f7869dd237e09861a9"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IArrayNode.h",
+      "sha256": "b7c0762f12e1e2464c6be3c5e967e9142add1b8edfd959bace99ed64d19989da"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IClientDOMParser.h",
+      "sha256": "af00adb34a57f5f1b64088dfa97771b938fb21056250c366ea4b00c0060b5ea2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IClientDOMSerializer.h",
+      "sha256": "3dd12ae47af5fe68615e664e8cac6910b5e6cff05ef593bc8934280d7b892ad4"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/ICompositeNode.h",
+      "sha256": "006e3ba2263073ec9e3871a66fc276012d636ba91bb83854c4aee4ab3931d9fb"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/ICoreConfigurationManager.h",
+      "sha256": "04335eff05ef95d7b51e2ebca362119790d1e0e67371e11c48a496b9011907d6"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/ICoreObjectFactory.h",
+      "sha256": "1a6e4ed3c73cc3b5b2e81e03bdf20ad1304baa5c6b5fbbe8cde2bcda69ce183f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IDOMImplementationRegistry.h",
+      "sha256": "c8ab5fb06e6aa8ab9e3369614b5ab35a6acbcc4d9e7a49d7899a321411854da0"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IDOMParser.h",
+      "sha256": "5ff23417ebb1e4546aa1658dd43c13aa82ce510c3ac3df3afa5e9c01e22ab81f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IDOMSerializer.h",
+      "sha256": "4616abebd9fc39e5bbe9dbfeaea6c0e4352f884f1256691e29bce1aa64c38398"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IMetadata.h",
+      "sha256": "9f12f6ba5dbb99ee9a9c327baa6c0653dc7b8013643ad8a37332da05702c4870"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IMetadataConverterUtils.h",
+      "sha256": "97d9cc1649e0e45546be15a8d0dfd796a70758beadf176a35607c7b0df0c3130"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/INameSpacePrefixMap.h",
+      "sha256": "150bd3c6722ab871c000c93a6bdb55d081f06fe4a95163534de1f90e099325df"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/INode.h",
+      "sha256": "8d0e344797495253e3a2d1156e2d319464ca3205b1eb8fb5cbd1febd12229d64"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/INodeIterator.h",
+      "sha256": "ef994f3e468385760b654fdfe5d3099286cc2f8de611a0d4dafca5f34af4ef6c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IPath.h",
+      "sha256": "03a57af25fad0017cde68db1b3ebf403ba1836c0d8acc53cd4fe4be51dc4729d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IPathSegment.h",
+      "sha256": "d95ea5dab375361772087c6285a8f60391e4d037217e980ce30eb51708232c80"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/ISimpleNode.h",
+      "sha256": "d8401a324ce10e306cb6b790f1a257ea0045e9549dff30223c5869ffaa759ae7"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/Interfaces/IStructureNode.h",
+      "sha256": "5de9954001637a10d006794e457e76b6a10594a040f4fe412ef5caebc3ec5a79"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/XMPCoreDefines.h",
+      "sha256": "35664a8fc947c7b0cda2fcfa5385fe488c5844adcce17aba35f2d1785cd05dca"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/XMPCoreErrorCodes.h",
+      "sha256": "10c9bd5bbf2ffde61083443985a87c3c539e3e6a4799772cbeb4acc17179270b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/XMPCoreFwdDeclarations.h",
+      "sha256": "5ffc2e48e6dabef953a1df5b8bfcc2758cb11e44820322b7fbe9f545eb182a92"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/XMPCoreLatestInterfaceVersions.h",
+      "sha256": "7d2c33da1bf6f521a631c9f064d545ee89da2dd8a59fc7b3b03d0203a62dfae9"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IArrayNode.cpp",
+      "sha256": "bfcfa1af3e592f1710b842589e38547fe026a9a3667ab1869fc031336c530aab"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IClientDOMParser.cpp",
+      "sha256": "08c8aec2d2e250d3c55969ed0a03b3bf54ef2999144af5e70a2861b3f1bc96d8"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IClientDOMSerializer.cpp",
+      "sha256": "0100723c768f65ff2c791c14ea6d875b2e309fe3933dd1bc8beb5a14503494f3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/ICompositeNode.cpp",
+      "sha256": "717a7cfe63bf6a4aedd55fcca255aa2396beca57ae213a592de0353d4734aa80"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/ICoreConfigurationManager.cpp",
+      "sha256": "0f4a2bd9c734280711b7b04fd07f3826860ee206bd54400952ef67a6ced2311a"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/ICoreObjectFactory.cpp",
+      "sha256": "b9cf571a33f21daaa7751a3813d6ec1f071d7974d206ccb19b77aad185f62d5f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IDOMImplementationRegistry.cpp",
+      "sha256": "c7a143755bbbf2cee24a993d4da087c03c595555df17efda4ee8c1d6259516a7"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IDOMParser.cpp",
+      "sha256": "8a279b8d87b9154b9f1511402cd1951b91f02146fd03fcf692582247bbfebba6"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IDOMSerializer.cpp",
+      "sha256": "2bcafd517095c379d02d3f1cfc30f3e3bf32e2f5eb981460066273eb59f48189"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IMetadata.cpp",
+      "sha256": "b441690783f5c260d4ea2469d6cac9dcbafddfaa61783ce71d3a38ec446ef269"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IMetadataConverterUtils.cpp",
+      "sha256": "0f1aac171605492a8d0babb36a07d9cb187e1a42e9c4d458a4d1eb250b4cf0da"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/INameSpacePrefixMap.cpp",
+      "sha256": "0e37b2f13f8b5ead313c801c090356ea45a571f4fcffd3f3235aa85f97afef0e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/INode.cpp",
+      "sha256": "e4073bc07e21824c510634d3f973082d5ad2fd8bcca32f968407779c28ef5cf3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/INodeIterator.cpp",
+      "sha256": "06c5fb768dca3964176a93cff9d50d912400475e6fc045847a8af815eb3ae5cd"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IPath.cpp",
+      "sha256": "18f7a7952f33bf87661ca277e356376823932763401a1785e8e7e7cddaa3bedd"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IPathSegment.cpp",
+      "sha256": "36a60ddac2bcf8f5b0a7f90af0046cca15cb93ffb0917bcb6984014df908ec4a"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/ISimpleNode.cpp",
+      "sha256": "57ec775097db01f9191b968ed63106eb960201005c0f67f1a63ffb071bebbc69"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMPCore/source/IStructureNode.cpp",
+      "sha256": "7421b46237e295100296fde7bd7019e0d08f62824173043d0e867cb03c3f0343"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMP_Const.h",
+      "sha256": "135004ac4ce72f43ab0c151cf162b23e17fcbd7cdf6a69812aa13c1b760b04e5"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMP_Environment.h",
+      "sha256": "bfdb2b2b5ff96355f1e33fe8ff5b6570cac4369e7855547211d820a62224bc3f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMP_IO.hpp",
+      "sha256": "30942b17ab30be5038f40df705314207534f31d26918ab99f75e30df0c6a9171"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/XMP_Version.h",
+      "sha256": "fa1404d8fbca79479cd59581ccb2408b663c361d0d440db5ce430728386b5525"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/client-glue/TXMPFiles.incl_cpp",
+      "sha256": "ab873d482f9c476bc3b4c503f7e38e58329710869fa72ce4421d4824991c3e5c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/client-glue/TXMPIterator.incl_cpp",
+      "sha256": "4e80a769ae817e4d1632aaaa04e37133583cec8b73ccd6e1bfdd7a927b57dc31"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/client-glue/TXMPMeta.incl_cpp",
+      "sha256": "43be33980c293a3b806344ff51db2e1d8560ce0cda9afbaa733b6b5ad97b4961"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/client-glue/TXMPUtils.incl_cpp",
+      "sha256": "79ab4dbd32790ed0ea88ff63aa43247e0916f301a326fc675bc7d558142fd7d7"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/client-glue/WXMPFiles.hpp",
+      "sha256": "037e6b7563bddae1c1970677f1dda658a10f57051e85fe17513cb0efc3be7027"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/client-glue/WXMPIterator.hpp",
+      "sha256": "093480e7aebf2fc40299a21f5719e3886c82a28ce9057520218cd9e6a7af748f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/client-glue/WXMPMeta.hpp",
+      "sha256": "bbf23379c3c652e5af7b975f0d1d812aeee635981bfc3108c88057ef76da8a1f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/client-glue/WXMPUtils.hpp",
+      "sha256": "648f83748a7e7b87028cc2242c15cd699f3f453e69d9758ec95c98f99474c63b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/public/include/client-glue/WXMP_Common.hpp",
+      "sha256": "7b69a68cc9e6489238cfcba8838aeac5a472d2b194fa353c92ef3febebc669ad"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/Endian.h",
+      "sha256": "3052e38b46e7e6f7cd7fb85bb86ba3c40845d3fb6477d22f7404371703f138f1"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/EndianUtils.hpp",
+      "sha256": "39d42b5011b0a794e53864079536acd662b8f2c70d669e24a57c647f3924a045"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/ExpatAdapter.hpp",
+      "sha256": "36d5852a23ff130e4db4ff6fd5989e3ff39486cdec298eb1a63a054e9e9ddb77"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/Host_IO-POSIX.cpp",
+      "sha256": "7700b3ad0432cd3c7b8975d26d4104497daeaa1354f7a8758e790a363bc338d7"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/Host_IO-Win.cpp",
+      "sha256": "a8c69026024de6e6ec1e176090e374189850c1569878e72470357c068d75dff2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/Host_IO.hpp",
+      "sha256": "dca447b9ab0ef52757f9b814f4d71da7dc0635b17bd35fb955006a37d750cce2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/IOUtils.cpp",
+      "sha256": "dac21fe4aca189407bacafa0ac1ee5641481d5b2bb3e5f998d28709299cbe419"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/IOUtils.hpp",
+      "sha256": "a1df57f802e705e1a18ff8063cbc93d80fd9a3454a7fac577f9d92408e6d999e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/PerfUtils.cpp",
+      "sha256": "70b1601a44905aa38319d5c5bc8d86bb8d21754c8e86708d4081e9f359519b66"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/PerfUtils.hpp",
+      "sha256": "03916758855d00fe47c03141c21b27f31dd6f0121c065575f471f6062a5b2db3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/SafeStringAPIs.cpp",
+      "sha256": "37479ed43a7667d2e43df39bc1865c74d77675288e441c8204eb01dd62047143"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/SafeStringAPIs.h",
+      "sha256": "8bc254456cceea7aaabba91f3d27cf058d0394927e005000ec87551ee98f65ec"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/SafeTypes.h",
+      "sha256": "2f106f495e5bb3c9b400984b81bdd29a9c700bd2bf807b3440a43b34b45b02b2"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/SuppressSAL.h",
+      "sha256": "1633b569b2e2bf1eb4d2d333cd5bdde115b6de2effa0c61dca3227031b1e557d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/UnicodeConversions.cpp",
+      "sha256": "a316210b25457e798883b44edd895b65f58c0f4f528a923b23d3b015b9ce6d3c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/UnicodeConversions.hpp",
+      "sha256": "8d69f83e9238f43b1d0dc4eec66fcad4c1c19ffc0f8f252f80dbb21094522cf9"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/UnicodeInlines.incl_cpp",
+      "sha256": "fad1600925df86e2851ce6ac37fedf66cd044bbe2d01cc59f054b0019bd925a3"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/XIO.cpp",
+      "sha256": "633ca7d8c3c02232f9fff1f957e51d347a74de65ff02cb337ed4361b8caa8944"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/XIO.hpp",
+      "sha256": "f018a6fd5fb2b72ba495bb129db1c4b4c68d1c728c8c63b6412aae2cf6ebf76f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/XMLParserAdapter.hpp",
+      "sha256": "e52367112926b3d5cf84c1bf8bb29882d7866f423935a73b868eb25de43bc100"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/XML_Node.cpp",
+      "sha256": "f6d632d83582de30e50fc98a077c168cabd1d90680abccf958a6036c3c2704b1"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/XMPFiles_IO.cpp",
+      "sha256": "4001d877c2eb7a741afc65b5bbf52f974f538c752ec88aa618a9b801c86667b8"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/XMPFiles_IO.hpp",
+      "sha256": "ca95f0aaa388384e05e6f0f9ae18d14709a00b7d7090dc96a0a86c1cce9d8237"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/XMP_LibUtils.cpp",
+      "sha256": "4062689a5162b1e71dd698d57a4bac08f26df6b60f9bac21882a989c84710570"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/XMP_LibUtils.hpp",
+      "sha256": "8ce996be63269a1d23a3e7c77b82acae02791b6f117b74dec354503c01ee3d0c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/XMP_ProgressTracker.cpp",
+      "sha256": "518b8924a00001e1710a8f0eee6e9ff7942ee4c5301685d2e236e9a48b0be4e7"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/source/XMP_ProgressTracker.hpp",
+      "sha256": "cf4f0e9f4e5b7d5d4959a747458df41919ee4799ee47239ca3c8f5111c9a7a31"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/Makefile.am",
+      "sha256": "f0a9b25eee893830ec487ac29bec3cd96a673ddeb7e11f0a2417c9a386cf90e1"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/ascii.h",
+      "sha256": "5ce49460794894b78f97060f634c129d13f2e9cc9b8dacd829f4be2dbc6e0649"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/asciitab.h",
+      "sha256": "5792cb56f285c8876b988d875a70d49019bc7e6d5ebcd0f8224b24e695301832"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/expat.h",
+      "sha256": "17cd1fc3b4c61d00de96091ceed0a3721d5bac9755c6d04e89d9f8a79d037c12"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/expat_external.h",
+      "sha256": "2249eae72c6bc9021b7110267507cca98ff6a269fb8b5af5bcb508858e83bfc1"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/fallthrough.h",
+      "sha256": "5e42477487bca7e7caac6b832ab940f39a1a20b8765c945374e4f6c2670f55b6"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/hash_table.h",
+      "sha256": "ad93851f86df1f4e8f85488dbac53cab3539e59d701ad747c7beea354d69e0dc"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/iasciitab.h",
+      "sha256": "a9cd6f2cf5199ae3c29d22ee4913736fcd984f62132146a0352c88549700e83f"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/internal.h",
+      "sha256": "0123d00963768b5779544cc54dcccad311824b192a38d3489c4fb1fbbfa33b17"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/latin1tab.h",
+      "sha256": "b0daf8a75c690e895421f765ddb2ae2fbc1ba14694e06a3215dba84f1ff3427d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/libexpat.def.cmake",
+      "sha256": "3be6f98774580420c8563a9aee487ecf13b35f418144c3659fcce5d877199bb5"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/libexpat.map.in",
+      "sha256": "d6a82f557e605a876ed47c68128763b5b930d8dedaf3917a2051727e49a72668"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/memory_sanitizer.h",
+      "sha256": "377ca054fdc531360f42a5cb7c522bcbf88b6c67aebc2e29544c37d14e836bde"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/nametab.h",
+      "sha256": "8f78e64f11e2b23df8b32cb5528cfeda6215acd6abf6bcf1ad59fdc7b1ffd105"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_arc4random.c",
+      "sha256": "33b936335d0bbe1bb36b0da65d82e2d656fef9cf2e49660101c74a3f4f9d5c37"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_arc4random.h",
+      "sha256": "dd1a23b22604b61e1942e9fccdefe4d876cdf55477cd2e61904e50af162c15bf"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_arc4random_buf.c",
+      "sha256": "e9a72469deea3c7faed0fd45e3ac7d81e8ce4e63b52ef7bb647baf71f3d0fd78"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_arc4random_buf.h",
+      "sha256": "fccc4650a76f0b4df0b1123abeb248087a22d4eba9acbd1188cd44e21de4377b"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_dev_urandom.c",
+      "sha256": "4d2a204c94285b0c459397619acfca5a8f5d690fbd8f419ac45879074e6afebd"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_dev_urandom.h",
+      "sha256": "65a0bf3666927824029dd52dc4b6af3218719999ab9f45db8d8406645960f5ab"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_getentropy.c",
+      "sha256": "ba99df7b694ff0b62d2871cc13b87e75d1a715af6045102ee7aff120ec1ae332"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_getentropy.h",
+      "sha256": "8a122afb95decf1fcf960cf92004d0305d7c9154f84c1ac739e67ef554e02e59"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_getrandom.c",
+      "sha256": "7d813973f1b021bd6576820180df180d3b07e5c47072ce083b7cb2029bcaed6d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_getrandom.h",
+      "sha256": "06738fafa3ec5b0148a699efeaa55aa80b8956b78a95bf5f78fcd9e0be998c48"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_rand_s.c",
+      "sha256": "39ae3d8d337517ae2db5935a501cc9d6f55cc12e8ba552c03ea78eda6bdc2200"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/random_rand_s.h",
+      "sha256": "941134a3796e544bf44c428cd1e1553506c9f344a5c0c4479a8a819745a0c0ff"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/siphash.h",
+      "sha256": "12ecc9915bccb793ea8bb543cc7d002e226f4e4d6b97ec9839dca41cbe4e2e27"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/utf8tab.h",
+      "sha256": "3fa349a3a19143366e80a58d9aa950152ef9cd7903f557f971051410b47f335c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/winconfig.h",
+      "sha256": "0ab6446eb98abc492ae341ef7607b535e44dedf52633fdc7c6e1a1361aec3922"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/xcsinc.c",
+      "sha256": "1210979a688301412f46e058d0497fa3c1c63c296c2e015834cda0f0b314875d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/xmlparse.c",
+      "sha256": "73e23fc6220bc12f13eda7022444f6d4d1027aaf025cc7e8d4284c3c297d37d7"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/xmlrole.c",
+      "sha256": "b1ad87cc3c0d4722358a7dfb1642df7f62066d1613a0a56dc9289e7112fb3f0c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/xmlrole.h",
+      "sha256": "8a0b61cd6efcd7427acbc86759e9013e7a61755097a1f82cbb2a79c011af5ee5"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/xmltok.c",
+      "sha256": "47ffd58f56f61284fd84cecd94ddad4c79cde922f57994c1525f8df1eb9272eb"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/xmltok.h",
+      "sha256": "623dea24bc27712e2e205a0c0517c79e211234f8d1051fe46d780839f754cf9e"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/xmltok_impl.c",
+      "sha256": "4dcd7ae88dd90bbc89d0e41ba6affb46a107ee28df3b49cb84cdf228b7cc7981"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/xmltok_impl.h",
+      "sha256": "a5053c69219d12788088de9bd670537e1c784302766c331afe6b253460d0417d"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/expat/lib/xmltok_ns.c",
+      "sha256": "ea723a3470d3eed5c4a4e873bec2f996c605326fad25709b45452664261c5465"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/zuid/interfaces/MD5.cpp",
+      "sha256": "b85004983e4667fe23dcab12473b1d1e34479a26c0f43cde635c58f37d19848c"
+    },
+    {
+      "path": "Sources/XMPBridge/Vendor/XMPToolkit/third-party/zuid/interfaces/MD5.h",
+      "sha256": "ebe9f8f35cd4794c797ccf9f7bf018549a1f3678683b80c0397c0db64d07550d"
+    },
+    {
+      "path": "Sources/XMPBridge/XMPBridge.mm",
+      "sha256": "50fe93d6f3344abcc5fa2fffa47a557352988f551667fb411d874aab5950d5e7"
+    },
+    {
+      "path": "Sources/XMPBridge/include/XMPBridge.h",
+      "sha256": "b46ffd6d61e658ad04f07773bfc3ef1d8f8ae2f5e87b3f785fce7f4f7d6d6892"
+    },
+    {
+      "path": "Tests/AppStorePackageVerification/main.swift",
+      "sha256": "351e382691fb41367ed30c0b1fdead543b38a00be1852e7ae3205625a0f21e00"
+    },
+    {
+      "path": "Tests/LouppeTests/AccessibilityTests.swift",
+      "sha256": "2f6a6c88e3e7e1a5db45a5d64e07fd3f16d6fdc4dc442c412edbf81f6453edee"
+    },
+    {
+      "path": "Tests/LouppeTests/AppleRawDecoderTests.swift",
+      "sha256": "62d0c355ec00662a7a5e0f95a16cb05037d937e3baadddaa3172ce9e8c30bac0"
+    },
+    {
+      "path": "Tests/LouppeTests/AudioCancellationTests.swift",
+      "sha256": "ac9a637b0aa1b7402919c4df6d821906e71cf06baf1bb3a1a905a64de4b987a9"
+    },
+    {
+      "path": "Tests/LouppeTests/AudioSupportTests.swift",
+      "sha256": "49ea05bf97690ca9e3e8944394f4c9b277d8f5f8262ecfdb090e385ac0cf7a4a"
+    },
+    {
+      "path": "Tests/LouppeTests/BrowserSelectionTests.swift",
+      "sha256": "2f9441f45d1c2681982a0a4419f9125bc587b4975624e8e7c6a17d4ccd7a552c"
+    },
+    {
+      "path": "Tests/LouppeTests/CameraQualityWarningTests.swift",
+      "sha256": "c72ed13de59e5e2dd2d5f9307c62e370bcf5f0f6acbc20a860c6941ce2343a91"
+    },
+    {
+      "path": "Tests/LouppeTests/CaptureDateEvidenceTests.swift",
+      "sha256": "5f1b7fca8200ec7cab34e01e87a18fb5026ee86bfd99844ead62e2707fff9410"
+    },
+    {
+      "path": "Tests/LouppeTests/CleanUpWorkerSafetyTests.swift",
+      "sha256": "8bd71d8334dc89b4f0958c04a2dfcda717203f00ae42386c4a56f7f89b11612b"
+    },
+    {
+      "path": "Tests/LouppeTests/CompactSessionPersistenceTests.swift",
+      "sha256": "b5a2c8d9c7e3dbea67a0c1a9ee82e4a4e9854368266926a9b6fb786607504b13"
+    },
+    {
+      "path": "Tests/LouppeTests/ConnectedDrivesTests.swift",
+      "sha256": "3a7e843ad44c5cd47cfe9a1f9e9b2d49a79e21325a19508f0494ec6b39d36b46"
+    },
+    {
+      "path": "Tests/LouppeTests/DuplicateBurstAnalysisTests.swift",
+      "sha256": "7cf2ed2aaf6623aaf507334c74d3aa280f734d0893e25a9ffb327357cb81cc10"
+    },
+    {
+      "path": "Tests/LouppeTests/DuplicateBurstWorkerTests.swift",
+      "sha256": "b761405e0acc04652adc7968c979b04a5341474a2bdac3c8c8d9e0e83b64f633"
+    },
+    {
+      "path": "Tests/LouppeTests/DurableFileIOTests.swift",
+      "sha256": "ad98e46a89781cd9ad63b65c00c0b7c81aaa2afb87bca24036ac467e0a048082"
+    },
+    {
+      "path": "Tests/LouppeTests/EarlyUserFeedbackTests.swift",
+      "sha256": "9956d98cef5ba0b8849148529f46a27228c3427f721ae8a95f09123b427b6e14"
+    },
+    {
+      "path": "Tests/LouppeTests/ExportDestinationValidatorTests.swift",
+      "sha256": "bf32af36e93ac3d33de9e90a7fbd0c8df1b9f1fc08182bbad5c8355ddb6cc8c6"
+    },
+    {
+      "path": "Tests/LouppeTests/ExportSelectionConfigurationTests.swift",
+      "sha256": "3d98f6ba03fd470dc1b9c354c10a3ab9923216e6fc57841a4ab0a6db40262c4b"
+    },
+    {
+      "path": "Tests/LouppeTests/ExportWorkerSafetyTests.swift",
+      "sha256": "08e40193e8ae5a28125844c3343e3383919811ab86d996fb4743f7a379629bee"
+    },
+    {
+      "path": "Tests/LouppeTests/FileOperationJournalTests.swift",
+      "sha256": "3897df6c4d8b08d892202478c006571260fda9d064e88125f92e48a8b7c1392c"
+    },
+    {
+      "path": "Tests/LouppeTests/FileSafetyAuditRegressionTests.swift",
+      "sha256": "6a0365df93598b043e6163a278dc278a1203557188ffd931fa328d226dd6d6f0"
+    },
+    {
+      "path": "Tests/LouppeTests/FileVolumeAcceptanceTests.swift",
+      "sha256": "24ed4e47ef73f53743460ad83d686e30e0977e5e358dbf6bb5d93a9add287e65"
+    },
+    {
+      "path": "Tests/LouppeTests/FilterDisclosureHitTests.swift",
+      "sha256": "2b400ccc55f8b0ca5f6b8e50d8f7005be87a375f051a0f588226441bfa034f94"
+    },
+    {
+      "path": "Tests/LouppeTests/FolderHierarchyTests.swift",
+      "sha256": "9cd642a97cfafdc807ec08881876e52fd081d20c8fba15d21606d1614d127340"
+    },
+    {
+      "path": "Tests/LouppeTests/FolderScannerFilenamePolicyTests.swift",
+      "sha256": "7893e373599a2e510ae203ccd46bc32ef6cc1e5008645cbebe2552a4b32211e3"
+    },
+    {
+      "path": "Tests/LouppeTests/FolderScannerIntegrityTests.swift",
+      "sha256": "309229d66153a8b6bd65e9d74ab1e90771efb4179dee078301f26e8cfcf922e4"
+    },
+    {
+      "path": "Tests/LouppeTests/GalleryVideoAccessibilityTests.swift",
+      "sha256": "0f83ea19d2bb7ff4523a2b6f085018fa5870ca53e2b5655dbd0a053e04de38d5"
+    },
+    {
+      "path": "Tests/LouppeTests/GridControlGestureTests.swift",
+      "sha256": "7d5de25ec147e6b6748f7fb1c593ff40146250b3c5a3dfafb91f4616fc4a319e"
+    },
+    {
+      "path": "Tests/LouppeTests/HistogramResourceTests.swift",
+      "sha256": "97d7def9f6d5a6d394c0905d9279a4d10cae1643441b185594039d5b58d8b73a"
+    },
+    {
+      "path": "Tests/LouppeTests/HistogramTests.swift",
+      "sha256": "fa11fbc7791615a59cf3c8d67c5f28b58c7230561ee10a27174254a217b38759"
+    },
+    {
+      "path": "Tests/LouppeTests/HotkeyTests.swift",
+      "sha256": "495e61c264e6f82ab5515f406c726a0b899d9d50488e0bc9aa54fe757bc27b95"
+    },
+    {
+      "path": "Tests/LouppeTests/ImagePipelineCacheTests.swift",
+      "sha256": "3a7ea0b40856c0f36ddf3fb1438da5b8383dc8dd2cf3e985371390c63a0dc06e"
+    },
+    {
+      "path": "Tests/LouppeTests/LocalizationTests.swift",
+      "sha256": "9b1536f22226e9fadf8e46f899522697e73f728c758b961ec01e4499ce9fcd8c"
+    },
+    {
+      "path": "Tests/LouppeTests/LouppeQualityResourceTests.swift",
+      "sha256": "33e16c00efe4548a4750671af541f1a1f41a2ad843be1420dc8b0181dacff5f9"
+    },
+    {
+      "path": "Tests/LouppeTests/LouppeSpeedIOTests.swift",
+      "sha256": "db1687b755e1f32607283b789d05bc14c042a3d7468be180d39f754e05d2151d"
+    },
+    {
+      "path": "Tests/LouppeTests/LouppeSpeedMediaTests.swift",
+      "sha256": "11cbe5ae11d4b8e4fd5ac52e80688e42b61b1f40221f77421112f6fb264463cf"
+    },
+    {
+      "path": "Tests/LouppeTests/LouppeSpeedPersistenceTests.swift",
+      "sha256": "8d0fc7bba7a4551932347d6429397ed8d35a361e93d188327432393daf7ae24d"
+    },
+    {
+      "path": "Tests/LouppeTests/LouppeSpeedQualityResourceTests.swift",
+      "sha256": "48f419210ba703e3a031b660c9d05be2b352c269465b957632740cabba1f3de4"
+    },
+    {
+      "path": "Tests/LouppeTests/LouppeSpeedRAWTests.swift",
+      "sha256": "e40597464097de144ee328c03b02d56eec0bd0fff1d2fc9f381b765f2294e67c"
+    },
+    {
+      "path": "Tests/LouppeTests/LouppeSpeedScanTests.swift",
+      "sha256": "e4185743d87ed8cbfad111fb81ce27890a91c757e3e81659108cc80b09603e5d"
+    },
+    {
+      "path": "Tests/LouppeTests/LouppeSpeedSessionTests.swift",
+      "sha256": "6f709cd24709f5fbcd6be806a7ab5711903721d5f4da5b4aa4005dfd9de3f8ae"
+    },
+    {
+      "path": "Tests/LouppeTests/MainWindowLayoutTests.swift",
+      "sha256": "c1b47ef6244280dc5a97b2b93f4823d7deaa205aa8ae5220db63e11cee516b31"
+    },
+    {
+      "path": "Tests/LouppeTests/MediaNumericSafetyTests.swift",
+      "sha256": "4c21e223499f21552627a4a4ab5bfd1c2cd193f3b3d6662276a64f1e4e203dab"
+    },
+    {
+      "path": "Tests/LouppeTests/MediaPerformanceTests.swift",
+      "sha256": "64b2e3aa0931111a8bdc4d37b4852fab618669b173caf5ff4cdcebdb12596207"
+    },
+    {
+      "path": "Tests/LouppeTests/MediaRevisionTests.swift",
+      "sha256": "d2d331a182751d028b510e2f5f522d633981a17cf88f812ce26f18baffdd8c62"
+    },
+    {
+      "path": "Tests/LouppeTests/MultiDestinationExportTests.swift",
+      "sha256": "268b4f0d69ff75baaeaeafdedde9bb28cad497a7936a7264f000d184ae75c86d"
+    },
+    {
+      "path": "Tests/LouppeTests/NumericFilterDraftTests.swift",
+      "sha256": "e54cbd76d8f49118b83ad91680f8c1a0dacdd51d4284dfdccd5ad191c0af2ee2"
+    },
+    {
+      "path": "Tests/LouppeTests/PairComponentCleanUpScopeTests.swift",
+      "sha256": "73bc49bcdd170849bb6506d7b11f24f391fbe1e5d015efe68232e4fcb217eae4"
+    },
+    {
+      "path": "Tests/LouppeTests/PreparedSessionMetadataOrderingTests.swift",
+      "sha256": "1a87c8456ac09d457fa61887a0132355e0fcfbc0723f79e9dd79c58fffdcfeff"
+    },
+    {
+      "path": "Tests/LouppeTests/QualityCueSchedulingTests.swift",
+      "sha256": "22d23750959c2824bdbcb9266504e7dcd50d3424b7860b556faff45c019bb430"
+    },
+    {
+      "path": "Tests/LouppeTests/QualityCueSessionTests.swift",
+      "sha256": "2b1c1b32c8dcf749648a7b7cebffb27dc28f8a76df013a4febf682ef70dc7dbb"
+    },
+    {
+      "path": "Tests/LouppeTests/QualityCueWorkPolicyTests.swift",
+      "sha256": "1292a0a9714cb787ff37015a7e5044e09ef2e9fa3f7f0df4dc3a16361672dae0"
+    },
+    {
+      "path": "Tests/LouppeTests/RAWJPEGPaletteTests.swift",
+      "sha256": "2692b3c6f6bfa3ac2af2980737e68c7d4fd2b9f2e597d7f5b1b208eb87d435a9"
+    },
+    {
+      "path": "Tests/LouppeTests/RAWJPEGXMPResolutionTests.swift",
+      "sha256": "0510276e95b4ad49274b20a62706a6f3d1bc5adbdd238ccf2ffc5be548928307"
+    },
+    {
+      "path": "Tests/LouppeTests/RawDisplayTests.swift",
+      "sha256": "99f73b751102ffeb269b533f31032d1080859fc7261e992ac9beb28c196592bc"
+    },
+    {
+      "path": "Tests/LouppeTests/RecoveryGatingTests.swift",
+      "sha256": "0e507a2c5c2ed90a88add1b3ba62c9fc765bfaf99cbaa2b17a13eba0069522a0"
+    },
+    {
+      "path": "Tests/LouppeTests/ReviewGuidanceTests.swift",
+      "sha256": "e1518062d71eedae3e602f337d3792212d89f7c4c25c0a905df86e94458e3c0b"
+    },
+    {
+      "path": "Tests/LouppeTests/ReviewPreferencesTests.swift",
+      "sha256": "7e95eef9a9d683963ead477f396204b671ebba66504266884174a05f25d3954b"
+    },
+    {
+      "path": "Tests/LouppeTests/SecurityScopedAccessTests.swift",
+      "sha256": "4ef8b172488a2d4ed55e445d696a8beada9dbf1330fe2fdfe7a61537c84ebd25"
+    },
+    {
+      "path": "Tests/LouppeTests/SelectionStateTests.swift",
+      "sha256": "22fe2648109c971985e7900c0adf9fbacb52f47e605af5e1df6044bb89f7298d"
+    },
+    {
+      "path": "Tests/LouppeTests/SessionDurabilityTests.swift",
+      "sha256": "8f46bbb74d0ade445ab990842fbdd15924c290e124b90612ce20c103802ba9a7"
+    },
+    {
+      "path": "Tests/LouppeTests/SessionPerformanceIntegrationTests.swift",
+      "sha256": "13ace97c839f711865f35d979d5c271ce0d033426b82b03aeb64f6accd04e1f3"
+    },
+    {
+      "path": "Tests/LouppeTests/SessionRatingRecoveryTests.swift",
+      "sha256": "1d0abf87ec5bbce8025e6ffcd4169e290800327cf1b61301e11584665696b640"
+    },
+    {
+      "path": "Tests/LouppeTests/SettingsLayoutTests.swift",
+      "sha256": "e869c7021db47deb5e19cf7168eb71df7945b8f0977a010ee95d1f14f7de9b00"
+    },
+    {
+      "path": "Tests/LouppeTests/SourceOrganizationTests.swift",
+      "sha256": "4cc9db0931b6a26e64047b36cfce499bce55815dd19157f38989988f7b2d7185"
+    },
+    {
+      "path": "Tests/LouppeTests/SpeedBenchmarkSupport.swift",
+      "sha256": "ccfbad575ea3e2ad6eb9fb0fd6ab22e79e97ab141e196306f9eb02b6e69f9833"
+    },
+    {
+      "path": "Tests/LouppeTests/TextPreviewTests.swift",
+      "sha256": "bfcb8a77c1a63fe94d8cf50570834125935bbd11f25fed4fb7645c42eaa9cb65"
+    },
+    {
+      "path": "Tests/LouppeTests/TipStoreTests.swift",
+      "sha256": "486fa64cb5ce3ecedb7acb283d81dc0c0adea44ac0b0b66bae99edbce28b4d9d"
+    },
+    {
+      "path": "Tests/LouppeTests/VideoPlayerViewTests.swift",
+      "sha256": "e21c7eb1a2383f2f4504e2eea2bb9d4c768a0eb8e2c51b7e7a89e5eb71f48f27"
+    },
+    {
+      "path": "Tests/LouppeTests/ViewSwitchTests.swift",
+      "sha256": "d4acb6884697cafc3c8943fb71f7f132d08e09c925fedc781740bbc29aac901a"
+    },
+    {
+      "path": "Tests/LouppeTests/XMPFilterSortExportTests.swift",
+      "sha256": "45b7371a1d3343fcb65a6fbba9f9a85068b4362ce3d3ba1275088b0127af2f1c"
+    },
+    {
+      "path": "Tests/LouppeTests/XMPNativeMetadataTests.swift",
+      "sha256": "0e0563f5d8bf4238f5ee150e3a86b6c636ad279550c0231be08b2145d396d67b"
+    },
+    {
+      "path": "Tests/LouppeTests/XMPPhase5Tests.swift",
+      "sha256": "51a6f98041a02932ef32eb95b1b620e497a60911cfcddc2c03690393c6ebb447"
+    },
+    {
+      "path": "Tests/LouppeTests/XMPPhase6Tests.swift",
+      "sha256": "7a701d92316b7e21b1904af7d84af5baa7d8fc6deb45ca1a2d3ede0dd5b5713b"
+    },
+    {
+      "path": "Tests/LouppeTests/XMPPhase7Tests.swift",
+      "sha256": "7b820ccf7f996bcce556ab4a743945d8f4f2284d793e0187459844368430ed1c"
+    },
+    {
+      "path": "Tests/LouppeTests/XMPPublicationIdentityTests.swift",
+      "sha256": "3df212849953eb5807a44b6b54a665804f3c60ec58bb9a04e3072d3d1c9bff54"
+    },
+    {
+      "path": "Tests/LouppeTests/XMPReviewFixTests.swift",
+      "sha256": "a17c29eb13c71de32313884bd3b0c33e0debd673b8287206c58271c4d2b3abcb"
+    },
+    {
+      "path": "Tests/LouppeTests/XMPSecurityTests.swift",
+      "sha256": "563be5612688d71c152174c24f4716050d6df58bf70b012fb807fd6d98020ff7"
+    },
+    {
+      "path": "Tests/LouppeTests/ZoomInteractionTests.swift",
+      "sha256": "3795cf13cbec80c970b7b3c591aad63f588f55d5b23f34218f4e6e09dfbe3544"
+    },
+    {
+      "path": "Tests/LouppeTests/ZoomTests.swift",
+      "sha256": "ba794dec552fced7c38bc8345b26dd9aa6a7fb257781d8af4a4214c372541f2b"
+    },
+    {
+      "path": "Tests/LouppeTests/ZoomTransitionTests.swift",
+      "sha256": "8dc8e3127f4fc787c6fea8808aa6d37389fe7639309dd720502f0307a9b9d361"
+    },
+    {
+      "path": "Tests/PerformanceChecks/XMPPublicationStubs.swift",
+      "sha256": "68b600691e9bf17f72b47539648a4498873711b80e4af985e16c14bc5bd459b7"
+    },
+    {
+      "path": "Tests/PerformanceChecks/main.swift",
+      "sha256": "7d10e1895409e082d0490a5997aed2320402b8fe6ae17d5a26ba3a229ea794cd"
+    },
+    {
+      "path": "Tests/ScrollbarChecks/main.swift",
+      "sha256": "4aa6edb7dac93c5dae3ffe92f78ca47d1c5395221ff35f42adf325b0600f1455"
+    },
+    {
+      "path": "Tests/VideoChecks/main.swift",
+      "sha256": "5acf96db52ebc76175dda21e0f667c6fb7bd86e0049ab4ac555f010bd912420c"
+    },
+    {
+      "path": "Tests/compare_speed_results.py",
+      "sha256": "bdc246eb277dd73d3c5434c68e1505c234cbccc0ac4f71a64d636c92de590370"
+    },
+    {
+      "path": "Tests/run_file_volume_remount_check.py",
+      "sha256": "4ab7a7568b8e37112fc31db30c442305ca1537675c0c9525b4af50aec89f17ba"
+    },
+    {
+      "path": "Tests/run_performance_checks.sh",
+      "sha256": "aa26a12f069af92eb402eabcb466ebd59bd100fc98c689bde1e22194a365356e"
+    },
+    {
+      "path": "Tests/run_resource_bundle_checks.sh",
+      "sha256": "8b6e11c8817a04d51a9c1e4789d91aeeee64c0f8156763289d75ac97f06ddb68"
+    },
+    {
+      "path": "Tests/run_scrollbar_checks.sh",
+      "sha256": "9205a1dcdf3e3a7448a2c5e975802506e20ba6b79b06db4894a1e35ff4c4c519"
+    },
+    {
+      "path": "Tests/run_speed_tests.sh",
+      "sha256": "49ee296077fb5e1a1436961133e48d6da783d386d097130158407b76c9f30694"
+    },
+    {
+      "path": "Tests/run_video_checks.sh",
+      "sha256": "8da4579823645b5c1762f7fa779275ae35fdfe08d6c2a0a290c301a7d5ed7c20"
+    }
+  ]
+}

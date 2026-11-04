@@ -20,7 +20,7 @@ final class SourceOrganizationTests: XCTestCase {
         XCTAssertEqual(restored.fileCountDescription(for: .rename), "1 file restored")
     }
 
-    func testMetadataRenameBuildsStableSortableNamesAndPreservesExtensions() throws {
+    func testMetadataRenameUsesPreferredDateAndPreservesExtensions() throws {
         let fixture = try makeFixture(named: "MetadataRename")
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let firstURL = try mediaFile("DSC_9002.NEF", under: fixture.photos)
@@ -74,8 +74,8 @@ final class SourceOrganizationTests: XCTestCase {
             $0.destination.lastPathComponent
         }
         XCTAssertEqual(names, [
-            "2026-09-04_14-32-17_Sony-ILCE-7RM5_002.NEF",
-            "2026-09-04_14-32-16_Sony-ILCE-7RM5_001.JPG",
+            "\(FileRenamingPlanner.safeGeneratedPart(AppDateFormat.day(firstDate)))_14-32-17_Sony-ILCE-7RM5_002.NEF",
+            "\(FileRenamingPlanner.safeGeneratedPart(AppDateFormat.day(secondDate)))_14-32-16_Sony-ILCE-7RM5_001.JPG",
         ])
         XCTAssertTrue(result.mappings.allSatisfy {
             $0.source.deletingLastPathComponent()
@@ -606,6 +606,78 @@ final class SourceOrganizationTests: XCTestCase {
         }
         XCTAssertEqual(store.currentItem?.displayName, "Original.png")
         XCTAssertEqual(store.currentItem?.rating, .yes)
+        XCTAssertEqual(try Data(contentsOf: source), png)
+    }
+
+    /// Release review 4 November 2026: Undo of a decision followed at once by
+    /// Undo of a rename must not let the restore's rescan reload the older
+    /// saved decision before the decision Undo is saved.
+    @MainActor
+    func testDoubleUndoAfterRenameKeepsUnsavedDecisionUndo() async throws {
+        let fixture = try makeFixture(named: "RenameDoubleUndoSave")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let source = fixture.photos.appendingPathComponent("Original.png")
+        let png = try XCTUnwrap(Data(base64Encoded:
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        ))
+        try png.write(to: source)
+        let store = SessionStore(
+            persistence: SessionPersistence(
+                backupDirectory: fixture.root.appendingPathComponent("Backup")
+            ),
+            saveTrailingDelay: 0.4,
+            saveMaximumDelay: 0.8,
+            operationJournalDirectory: fixture.journals
+        )
+        store.openFolder(fixture.photos)
+        try await waitUntil {
+            if case .ready = store.phase { return store.items.count == 1 }
+            return false
+        }
+        let originalID = try XCTUnwrap(store.currentItem?.id)
+        store.presentSingleFileRenaming(itemID: originalID)
+        let snapshot = try XCTUnwrap(
+            store.sourceFileRenamingPlanningSnapshot(scope: .selected)
+        )
+        let plan = try SourceOrganizationPlanner.makePlan(
+            sourceFolder: snapshot.sourceFolder,
+            selectedItems: snapshot.selectedItems,
+            familyContextItems: snapshot.familyContextItems,
+            configuration: FileRenamingPlanner.sourceConfiguration(
+                customBaseName: "Renamed"
+            ),
+            knownOriginFolderPathBytesByFileID:
+                snapshot.knownOriginFolderPathBytesByFileID
+        )
+        let destination = fixture.photos.appendingPathComponent("Renamed.png")
+        store.startSourceRename(plan)
+        try await waitUntil {
+            if case .ready = store.phase {
+                return !store.isFileOperationRunning
+                    && FileManager.default.fileExists(atPath: destination.path)
+            }
+            return false
+        }
+        XCTAssertEqual(store.currentItem?.rating, .undecided)
+
+        // Yes reaches the sidecar before the two Undos.
+        store.rate(.yes, at: 0)
+        try await Task.sleep(for: .seconds(1.5))
+        XCTAssertEqual(store.currentItem?.rating, .yes)
+
+        store.undo()
+        XCTAssertEqual(store.currentItem?.rating, .undecided)
+        store.undo()
+        try await waitUntil {
+            if case .ready = store.phase {
+                return !store.isFileOperationRunning
+                    && FileManager.default.fileExists(atPath: source.path)
+            }
+            return false
+        }
+        XCTAssertEqual(store.currentItem?.displayName, "Original.png")
+        XCTAssertEqual(store.currentItem?.rating, .undecided,
+                       "the restore must not reload the older saved Yes")
         XCTAssertEqual(try Data(contentsOf: source), png)
     }
 

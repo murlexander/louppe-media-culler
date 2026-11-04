@@ -1,0 +1,165 @@
+{
+  "generatedAt" : "2026-10-13T03:10:33Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 1.438292,
+      "medianMS" : 1.288458,
+      "minMS" : 1.210292,
+      "name" : "burst.input.full-production-shape",
+      "p95MS" : 1.438292,
+      "samplesMS" : [
+        1.438292,
+        1.24525,
+        1.288458,
+        1.328125,
+        1.312,
+        1.210292,
+        1.264
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.192792,
+      "medianMS" : 0.165917,
+      "minMS" : 0.157833,
+      "name" : "burst.input.metadata-only-hypothesis",
+      "p95MS" : 0.192792,
+      "samplesMS" : [
+        0.166125,
+        0.157833,
+        0.192792,
+        0.165917,
+        0.168083,
+        0.15975,
+        0.159833
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 0.141334,
+      "medianMS" : 0.111458,
+      "minMS" : 0.110375,
+      "name" : "burst.input.metadata-only-production",
+      "p95MS" : 0.141334,
+      "samplesMS" : [
+        0.141334,
+        0.112041,
+        0.117792,
+        0.110375,
+        0.110792,
+        0.111458,
+        0.111292
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 13.541542,
+      "medianMS" : 12.906917,
+      "minMS" : 12.579458,
+      "name" : "burst.input.full-production-shape",
+      "p95MS" : 13.541542,
+      "samplesMS" : [
+        13.541542,
+        12.906917,
+        12.579458,
+        12.812417,
+        12.91375,
+        13.328125,
+        12.715917
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 2.092416,
+      "medianMS" : 1.592583,
+      "minMS" : 1.579,
+      "name" : "burst.input.metadata-only-hypothesis",
+      "p95MS" : 2.092416,
+      "samplesMS" : [
+        1.582042,
+        1.579,
+        1.587125,
+        2.092416,
+        1.631958,
+        1.622458,
+        1.592583
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1.298542,
+      "medianMS" : 1.2235,
+      "minMS" : 1.101041,
+      "name" : "burst.input.metadata-only-production",
+      "p95MS" : 1.298542,
+      "samplesMS" : [
+        1.2235,
+        1.13275,
+        1.101041,
+        1.193916,
+        1.28275,
+        1.249375,
+        1.298542
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 132.652916,
+      "medianMS" : 127.5185,
+      "minMS" : 125.223291,
+      "name" : "burst.input.full-production-shape",
+      "p95MS" : 132.652916,
+      "samplesMS" : [
+        132.652916,
+        127.657042,
+        126.96875,
+        127.5185,
+        127.89575,
+        125.793416,
+        125.223291
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 19.560791,
+      "medianMS" : 19.034458,
+      "minMS" : 17.924709,
+      "name" : "burst.input.metadata-only-hypothesis",
+      "p95MS" : 19.560791,
+      "samplesMS" : [
+        19.560791,
+        19.079791,
+        18.208666,
+        18.396709,
+        19.034458,
+        17.924709,
+        19.367333
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 16.5075,
+      "medianMS" : 15.139708,
+      "minMS" : 14.509208,
+      "name" : "burst.input.metadata-only-production",
+      "p95MS" : 16.5075,
+      "samplesMS" : [
+        16.5075,
+        16.306917,
+        14.802042,
+        15.139708,
+        15.679792,
+        14.509208,
+        15.137334
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "burst-input-allocation",
+  "warmups" : 1
+}

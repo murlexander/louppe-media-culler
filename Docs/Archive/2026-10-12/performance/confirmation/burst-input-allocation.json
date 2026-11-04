@@ -1,0 +1,46 @@
+{
+  "generatedAt" : "2026-10-13T02:33:42Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 100000,
+      "maxMS" : 140.418708,
+      "medianMS" : 126.17525,
+      "minMS" : 124.279958,
+      "name" : "burst.input.full-production-shape",
+      "p95MS" : 140.418708,
+      "samplesMS" : [
+        129.698167,
+        140.418708,
+        137.157958,
+        126.17525,
+        125.208334,
+        124.279958,
+        124.968375
+      ]
+    },
+    {
+      "count" : 100000,
+      "maxMS" : 19.344541,
+      "medianMS" : 17.794,
+      "minMS" : 17.053375,
+      "name" : "burst.input.metadata-only-hypothesis",
+      "p95MS" : 19.344541,
+      "samplesMS" : [
+        19.344541,
+        17.053375,
+        17.794,
+        17.7855,
+        17.836875,
+        17.3295,
+        17.81825
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "burst-input-allocation",
+  "warmups" : 1
+}

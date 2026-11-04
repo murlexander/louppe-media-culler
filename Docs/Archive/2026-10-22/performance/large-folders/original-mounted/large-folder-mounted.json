@@ -1,0 +1,428 @@
+{
+  "generatedAt" : "2026-10-22T02:04:49Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 3,
+  "rows" : [
+    {
+      "count" : 1000,
+      "maxMS" : 138.438667,
+      "medianMS" : 136.6645,
+      "minMS" : 131.71325,
+      "name" : "grid.jump-cycle.middle.including-reset",
+      "p95MS" : 138.438667,
+      "samplesMS" : [
+        138.438667,
+        136.6645,
+        131.71325
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 69.503167,
+      "medianMS" : 68.512167,
+      "minMS" : 68.354125,
+      "name" : "grid.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 69.503167,
+      "samplesMS" : [
+        69.503167,
+        68.512167,
+        68.354125
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 239.619416,
+      "medianMS" : 204.290042,
+      "minMS" : 203.606958,
+      "name" : "grid.jump-cycle.tail.including-reset",
+      "p95MS" : 239.619416,
+      "samplesMS" : [
+        239.619416,
+        204.290042,
+        203.606958
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 113.161583,
+      "medianMS" : 108.520417,
+      "minMS" : 106.692125,
+      "name" : "grid.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 113.161583,
+      "samplesMS" : [
+        113.161583,
+        108.520417,
+        106.692125
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 639.441875,
+      "medianMS" : 157.911208,
+      "minMS" : 106.792083,
+      "name" : "grid.jump-cycle.reverse.including-reset",
+      "p95MS" : 639.441875,
+      "samplesMS" : [
+        157.911208,
+        106.792083,
+        639.441875
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 82.994375,
+      "medianMS" : 60.124333,
+      "minMS" : 54.310291,
+      "name" : "grid.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 82.994375,
+      "samplesMS" : [
+        60.124333,
+        54.310291,
+        82.994375
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 246.297542,
+      "medianMS" : 218.293959,
+      "minMS" : 213.056833,
+      "name" : "grid.jump-cycle.head.including-reset",
+      "p95MS" : 246.297542,
+      "samplesMS" : [
+        246.297542,
+        213.056833,
+        218.293959
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 119.37575,
+      "medianMS" : 106.251708,
+      "minMS" : 102.490959,
+      "name" : "grid.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 119.37575,
+      "samplesMS" : [
+        119.37575,
+        102.490959,
+        106.251708
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 78.70775,
+      "medianMS" : 66.424375,
+      "minMS" : 66.415458,
+      "name" : "browser.jump-cycle.middle.including-reset",
+      "p95MS" : 78.70775,
+      "samplesMS" : [
+        66.424375,
+        78.70775,
+        66.415458
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 37.024708,
+      "medianMS" : 34.845375,
+      "minMS" : 34.37275,
+      "name" : "browser.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 37.024708,
+      "samplesMS" : [
+        34.37275,
+        37.024708,
+        34.845375
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 126.872708,
+      "medianMS" : 124.033292,
+      "minMS" : 120.898459,
+      "name" : "browser.jump-cycle.tail.including-reset",
+      "p95MS" : 126.872708,
+      "samplesMS" : [
+        124.033292,
+        120.898459,
+        126.872708
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 67.461167,
+      "medianMS" : 66.718458,
+      "minMS" : 63.258084,
+      "name" : "browser.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 67.461167,
+      "samplesMS" : [
+        67.461167,
+        63.258084,
+        66.718458
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 91.257333,
+      "medianMS" : 54.133084,
+      "minMS" : 52.72025,
+      "name" : "browser.jump-cycle.reverse.including-reset",
+      "p95MS" : 91.257333,
+      "samplesMS" : [
+        91.257333,
+        52.72025,
+        54.133084
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 28.394416,
+      "medianMS" : 27.589584,
+      "minMS" : 25.125583,
+      "name" : "browser.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 28.394416,
+      "samplesMS" : [
+        28.394416,
+        27.589584,
+        25.125583
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 144.361041,
+      "medianMS" : 125.381916,
+      "minMS" : 120.175209,
+      "name" : "browser.jump-cycle.head.including-reset",
+      "p95MS" : 144.361041,
+      "samplesMS" : [
+        144.361041,
+        125.381916,
+        120.175209
+      ]
+    },
+    {
+      "count" : 1000,
+      "maxMS" : 75.137542,
+      "medianMS" : 56.686042,
+      "minMS" : 54.822958,
+      "name" : "browser.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 75.137542,
+      "samplesMS" : [
+        75.137542,
+        56.686042,
+        54.822958
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 917.522416,
+      "medianMS" : 915.824666,
+      "minMS" : 899.421083,
+      "name" : "grid.jump-cycle.middle.including-reset",
+      "p95MS" : 917.522416,
+      "samplesMS" : [
+        915.824666,
+        917.522416,
+        899.421083
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 464.701208,
+      "medianMS" : 461.169833,
+      "minMS" : 458.276667,
+      "name" : "grid.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 464.701208,
+      "samplesMS" : [
+        458.276667,
+        464.701208,
+        461.169833
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 2106.4916670000002,
+      "medianMS" : 1976.3072499999998,
+      "minMS" : 1972.606959,
+      "name" : "grid.jump-cycle.tail.including-reset",
+      "p95MS" : 2106.4916670000002,
+      "samplesMS" : [
+        2106.4916670000002,
+        1972.606959,
+        1976.3072499999998
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1208.816792,
+      "medianMS" : 1067.627292,
+      "minMS" : 1053.121584,
+      "name" : "grid.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 1208.816792,
+      "samplesMS" : [
+        1208.816792,
+        1053.121584,
+        1067.627292
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1826.2635,
+      "medianMS" : 1580.710459,
+      "minMS" : 1495.651625,
+      "name" : "grid.jump-cycle.reverse.including-reset",
+      "p95MS" : 1826.2635,
+      "samplesMS" : [
+        1826.2635,
+        1580.710459,
+        1495.651625
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 961.280292,
+      "medianMS" : 753.661375,
+      "minMS" : 751.334041,
+      "name" : "grid.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 961.280292,
+      "samplesMS" : [
+        961.280292,
+        753.661375,
+        751.334041
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 2007.534125,
+      "medianMS" : 1971.060833,
+      "minMS" : 1950.393083,
+      "name" : "grid.jump-cycle.head.including-reset",
+      "p95MS" : 2007.534125,
+      "samplesMS" : [
+        2007.534125,
+        1971.060833,
+        1950.393083
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 932.981917,
+      "medianMS" : 928.34125,
+      "minMS" : 913.581,
+      "name" : "grid.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 932.981917,
+      "samplesMS" : [
+        932.981917,
+        928.34125,
+        913.581
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 548.316167,
+      "medianMS" : 542.124542,
+      "minMS" : 537.469667,
+      "name" : "browser.jump-cycle.middle.including-reset",
+      "p95MS" : 548.316167,
+      "samplesMS" : [
+        537.469667,
+        542.124542,
+        548.316167
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 283.143458,
+      "medianMS" : 282.135959,
+      "minMS" : 276.3315,
+      "name" : "browser.input-to-matching-pixels.middle.warm-after-first",
+      "p95MS" : 283.143458,
+      "samplesMS" : [
+        276.3315,
+        282.135959,
+        283.143458
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1248.077041,
+      "medianMS" : 1243.034416,
+      "minMS" : 1191.242417,
+      "name" : "browser.jump-cycle.tail.including-reset",
+      "p95MS" : 1248.077041,
+      "samplesMS" : [
+        1248.077041,
+        1243.034416,
+        1191.242417
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 685.295875,
+      "medianMS" : 682.908042,
+      "minMS" : 639.719375,
+      "name" : "browser.input-to-matching-pixels.tail.warm-after-first",
+      "p95MS" : 685.295875,
+      "samplesMS" : [
+        685.295875,
+        682.908042,
+        639.719375
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1113.580917,
+      "medianMS" : 931.777125,
+      "minMS" : 774.13325,
+      "name" : "browser.jump-cycle.reverse.including-reset",
+      "p95MS" : 1113.580917,
+      "samplesMS" : [
+        1113.580917,
+        931.777125,
+        774.13325
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 559.8045,
+      "medianMS" : 463.162666,
+      "minMS" : 372.426959,
+      "name" : "browser.input-to-matching-pixels.reverse.warm-after-first",
+      "p95MS" : 559.8045,
+      "samplesMS" : [
+        559.8045,
+        463.162666,
+        372.426959
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 1249.643291,
+      "medianMS" : 1240.574208,
+      "minMS" : 1225.644291,
+      "name" : "browser.jump-cycle.head.including-reset",
+      "p95MS" : 1249.643291,
+      "samplesMS" : [
+        1240.574208,
+        1249.643291,
+        1225.644291
+      ]
+    },
+    {
+      "count" : 10000,
+      "maxMS" : 581.5035,
+      "medianMS" : 571.15825,
+      "minMS" : 567.183583,
+      "name" : "browser.input-to-matching-pixels.head.warm-after-first",
+      "p95MS" : 581.5035,
+      "samplesMS" : [
+        567.183583,
+        581.5035,
+        571.15825
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "large-folder-mounted",
+  "warmups" : 1
+}

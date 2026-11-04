@@ -1,0 +1,72 @@
+Fetching binary artifact https://github.com/sparkle-project/Sparkle/releases/download/2.10.0/Sparkle-for-Swift-Package-Manager.zip from cache
+Fetched https://github.com/sparkle-project/Sparkle/releases/download/2.10.0/Sparkle-for-Swift-Package-Manager.zip from cache (0.53s)
+Building for production...
+[0/43] /Users/alexander_markin/Documents/code/louppe/app/.build/large-original-source/.build/arm64-apple-macosx/release/LouppePackageTests.derived/runner.swift
+[1/43] Write swift-version--58304C5D6DBC2206.txt
+[2/43] Compiling XMPMeta2-GetSet.cpp
+[3/43] Compiling XMPUtils2.cpp
+[4/43] Compiling MD5.cpp
+[5/43] Compiling UnicodeConversions.cpp
+[6/43] Compiling XML_Node.cpp
+[7/43] Compiling XMP_LibUtils.cpp
+[8/43] Compiling XMPUtils-FileInfo.cpp
+[9/43] Compiling XMPUtils.cpp
+[10/43] Compiling XMPBridge XMPBridge.mm
+[11/43] Compiling XMPMeta-Serialize.cpp
+[12/43] Compiling XMPIterator2.cpp
+[13/43] Compiling XMPMeta.cpp
+[14/43] Compiling XMPMeta-GetSet.cpp
+[15/43] Compiling XMPMeta-Parse.cpp
+[16/43] Compiling WXMPIterator.cpp
+[17/43] Compiling XMPIterator.cpp
+[18/43] Compiling WXMPUtils.cpp
+[19/43] Copying Sparkle.framework
+[20/43] Copying Localizable.strings
+[26/43] Copying Info.plist
+[26/43] Write sources
+[26/43] Compiling WXMPMeta.cpp
+[26/43] Write sources
+[31/43] Compiling random_arc4random_buf.c
+[32/43] Compiling xmlrole.c
+[33/43] Compiling ExpatAdapter.cpp
+[34/43] Compiling CoreObjectFactoryImpl.cpp
+[35/43] Compiling XMPCore_Impl.cpp
+[36/43] Compiling ParseRDF.cpp
+[37/43] Compiling xmltok.c
+[38/43] Compiling xmlparse.c
+[40/44] Compiling Louppe AppBuildInfo.swift
+[40/44] Write Objects.LinkFileList
+[41/44] Linking Louppe
+[43/45] Compiling LouppeTests AccessibilityTests.swift
+[44/46] Compiling LouppePackageTests runner.swift
+[44/46] Write Objects.LinkFileList
+[45/46] Linking LouppePackageTests
+Build complete! (170.39s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-22 3:41:31.521 AM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-22 3:41:31.530 AM.
+Test Suite 'LouppeSpeedFirstUseTests' started at 2026-10-22 3:41:31.530 AM.
+Test Case '-[LouppeTests.LouppeSpeedFirstUseTests testMountedOpeningFirstUsefulPixelsAndFullReadiness]' started.
+Test Case '-[LouppeTests.LouppeSpeedFirstUseTests testMountedOpeningFirstUsefulPixelsAndFullReadiness]' passed (55.298 seconds).
+Test Suite 'LouppeSpeedFirstUseTests' passed at 2026-10-22 3:42:26.828 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 55.298 (55.298) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-22 3:42:26.828 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 55.298 (55.298) seconds
+Test Suite 'Selected tests' passed at 2026-10-22 3:42:26.828 AM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 55.298 (55.308) seconds
+SPEED jpeg-generated.first-useful-pixels.warm-local n=1000 median=356.141ms p95=370.347ms
+SPEED jpeg-generated.fully-ready-state.warm-local n=1000 median=356.146ms p95=370.353ms
+SPEED jpeg-generated.ready-current-pixels.warm-local n=1000 median=356.163ms p95=370.367ms
+SPEED jpeg-generated.main-publication.warm-local n=1000 median=0.000ms p95=0.000ms
+SPEED raw-jpeg-clones.first-useful-pixels.warm-local n=2000 median=908.399ms p95=983.879ms
+SPEED raw-jpeg-clones.fully-ready-state.warm-local n=2000 median=908.410ms p95=983.890ms
+SPEED raw-jpeg-clones.ready-current-pixels.warm-local n=2000 median=908.425ms p95=983.919ms
+SPEED raw-jpeg-clones.main-publication.warm-local n=2000 median=0.000ms p95=0.000ms
+SPEED jpeg-generated.first-useful-pixels.warm-local n=10000 median=1535.515ms p95=1591.097ms
+SPEED jpeg-generated.fully-ready-state.warm-local n=10000 median=1535.523ms p95=1591.103ms
+SPEED jpeg-generated.ready-current-pixels.warm-local n=10000 median=1535.546ms p95=1591.119ms
+SPEED jpeg-generated.main-publication.warm-local n=10000 median=0.000ms p95=0.000ms
+SPEED raw-jpeg-clones.first-useful-pixels.warm-local n=20000 median=6729.332ms p95=6763.953ms
+SPEED raw-jpeg-clones.fully-ready-state.warm-local n=20000 median=6729.340ms p95=6763.959ms
+SPEED raw-jpeg-clones.ready-current-pixels.warm-local n=20000 median=6729.359ms p95=6763.974ms
+SPEED raw-jpeg-clones.main-publication.warm-local n=20000 median=0.000ms p95=0.000ms

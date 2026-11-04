@@ -1,5 +1,5 @@
+import AppKit
 import SwiftUI
-import UniformTypeIdentifiers
 
 /// The start screen: pick a folder (or a recent one) to begin a session.
 struct WelcomeView: View {
@@ -10,24 +10,25 @@ struct WelcomeView: View {
     private let helpFooterHeight: CGFloat = 16 + 28 + 24
     @StateObject private var connectedDrives: ConnectedDrivesStore
     @Environment(\.openWindow) private var openWindow
-    @State private var isFolderDropTarget = false
-    @State private var folderDropError: String?
+    var isFolderDropTarget = false
     @State private var isNewSessionConfirmationPresented = false
 
     init(
         store: SessionStore,
         availableScreenWidth: CGFloat = NSScreen.main?.visibleFrame.width ?? 1280,
         connectedDrives: ConnectedDrivesStore = ConnectedDrivesStore(),
-        scrollsVertically: Bool = false
+        scrollsVertically: Bool = false,
+        isFolderDropTarget: Bool = false
     ) {
         self.store = store
         self.availableScreenWidth = availableScreenWidth
         self.scrollsVertically = scrollsVertically
+        self.isFolderDropTarget = isFolderDropTarget
         _connectedDrives = StateObject(wrappedValue: connectedDrives)
     }
 
     // Keep the common case to two quiet columns. Additional drive columns
-    // use the display's available width instead of hiding drives in an overflow.
+    // fit the available width: the display on launch, the retained window on Back.
     private var driveColumnCount: Int {
         let recentWidth: CGFloat = store.recentFolders.isEmpty ? 0 : 300
         let available = availableScreenWidth - 64 - recentWidth
@@ -72,38 +73,29 @@ struct WelcomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .overlay(alignment: .bottomTrailing) {
-            Button {
+            HelpLink {
                 openWindow(id: LouppeHelpWindow.id)
-            } label: {
-                Image(systemName: "questionmark.circle")
-                    .font(.title3)
-                    .frame(width: 28, height: 28)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.louppeAccent)
-            .accessibilityLabel("Quick Start and supported formats")
-            .help("Quick Start and supported formats")
+            .frame(width: 28, height: 28)
+            .accessibilityLabel(L10n.text("Quick Start and supported formats"))
+            .help(L10n.text("Quick Start and supported formats"))
             .padding(24)
         }
         .onAppear { connectedDrives.start() }
+        .task { await store.pinnedFolders.refresh() }
         .onDisappear { connectedDrives.stop() }
         .contentShape(Rectangle())
-        .onDrop(
-            of: [UTType.fileURL.identifier],
-            isTargeted: $isFolderDropTarget,
-            perform: openDroppedFolder
-        )
         .alert(
-            "Open as a New Session?",
+            L10n.text("Open as a New Session?"),
             isPresented: $isNewSessionConfirmationPresented
         ) {
-            Button("Open as New Session", role: .destructive) {
+            Button(L10n.text("Open as New Session"), role: .destructive) {
                 store.openIdentityConflictAsNewSession()
             }
-            Button("Cancel", role: .cancel) {}
+            Button(L10n.text("Cancel"), role: .cancel) {}
         } message: {
             Text(
-                "This replaces the saved Louppe decisions for this folder and opens the current files unrated. Your photos and videos are not changed."
+                L10n.text("This replaces this folder’s saved decisions and opens its files unrated. Photos and videos stay unchanged.")
             )
         }
         .toolbar { LaunchToolbarTitle() }
@@ -116,17 +108,24 @@ struct WelcomeView: View {
                 Button {
                     store.promptForSourceFolder()
                 } label: {
-                    Label("Choose Media Folder…", systemImage: "folder")
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
+                    Label(L10n.text("Open Folder…"), systemImage: "folder")
+                        .frame(maxWidth: .infinity)
                 }
                 .controlSize(.large)
+                .frame(maxWidth: 320)
                 .keyboardShortcut("o")
+
+                Button { store.presentPhotosLibrary() } label: {
+                    Label(L10n.text("Open Apple Photos…"), systemImage: "photo.on.rectangle")
+                        .frame(maxWidth: .infinity)
+                }
+                .controlSize(.large)
+                .frame(maxWidth: 320)
 
                 Label(
                     isFolderDropTarget
-                        ? "Release to open this folder"
-                        : "or drag a media folder in this window",
+                        ? L10n.text("Release to open this folder")
+                        : L10n.text("or drag a media folder in this window"),
                     systemImage: isFolderDropTarget
                         ? "folder.badge.plus"
                         : "arrow.down.doc"
@@ -138,15 +137,7 @@ struct WelcomeView: View {
             }
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Open a media folder")
-            .accessibilityHint("Choose a folder or drag one anywhere in this window to start reviewing it")
-
-            if let folderDropError {
-                Text(folderDropError)
-                    .font(.callout)
-                    .foregroundStyle(.orange)
-                    .multilineTextAlignment(.center)
-            }
+            .accessibilityLabel(L10n.text("Source"))
 
             if let error = store.scanError {
                 VStack(spacing: 8) {
@@ -160,22 +151,29 @@ struct WelcomeView: View {
                         .multilineTextAlignment(.center)
 
                     if store.canOpenMismatchedSessionAnyway {
-                        Button("Open Anyway") {
+                        Button(L10n.text("Open Anyway")) {
                             store.openMismatchedSessionAnyway()
                         }
                         .accessibilityHint(
-                            "Loads saved ratings after checking they match the files in this folder"
+                            L10n.text("Loads saved ratings after checking they match the files in this folder")
                         )
                     } else if store.canOpenIdentityConflictAsNewSession {
-                        Button("Open as New Session") {
+                        Button(L10n.text("Open as New Session")) {
                             isNewSessionConfirmationPresented = true
                         }
                         .accessibilityHint(
-                            "Forgets saved decisions for this folder and opens the current files unrated"
+                            L10n.text("Forgets saved decisions for this folder and opens the current files unrated")
                         )
                     }
                 }
             }
+
+            Divider()
+            PinnedFoldersSection(
+                pins: store.pinnedFolders,
+                open: store.openPinnedFolder,
+                reconnect: store.reconnectPinnedFolder
+            )
 
             if !store.recentFolders.isEmpty || hasConnectedDrives {
                 Divider()
@@ -198,7 +196,7 @@ struct WelcomeView: View {
 
     private var recentFolders: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Recent folders")
+            Text(L10n.text("Recent folders"))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             VStack(spacing: 4) {
@@ -213,7 +211,7 @@ struct WelcomeView: View {
                         )
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Open \(url.path)")
+                    .accessibilityLabel(L10n.text("Open \(url.path)"))
                     .help(url.path)
                 }
             }
@@ -228,48 +226,98 @@ struct WelcomeView: View {
         return path
     }
 
-    private func openDroppedFolder(_ providers: [NSItemProvider]) -> Bool {
-        guard let provider = providers.first(where: {
-            $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
-        }) else {
-            return false
-        }
 
-        provider.loadItem(
-            forTypeIdentifier: UTType.fileURL.identifier,
-            options: nil
-        ) { item, _ in
-            let url: URL?
-            if let urlItem = item as? URL {
-                url = urlItem
-            } else if let urlItem = item as? NSURL {
-                url = urlItem as URL
-            } else if let data = item as? Data {
-                url = URL(dataRepresentation: data, relativeTo: nil)
-            } else {
-                url = nil
-            }
+}
 
-            Task { @MainActor in
-                guard let url else {
-                    folderDropError = "Louppe couldn't read the dropped folder. Please try again."
-                    return
+/// The bookmark, availability and error publications belong to the pins owner,
+/// rather than depending on SessionStore to forward nested object changes.
+private struct PinnedFoldersSection: View {
+    @ObservedObject var pins: PinnedFoldersStore
+    let open: (PinnedFolder) -> Void
+    let reconnect: (PinnedFolder) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text(L10n.text("Pinned folders"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                if pins.isWorking {
+                    ProgressView().controlSize(.mini)
+                        .accessibilityLabel(L10n.text("Updating pinned folders"))
                 }
-
-                var isDirectory = ObjCBool(false)
-                guard FileManager.default.fileExists(
-                    atPath: url.path,
-                    isDirectory: &isDirectory
-                ), isDirectory.boolValue else {
-                    folderDropError = "Drop a folder containing photos, videos, audio, or text files, not an individual file."
-                    return
+                Spacer(minLength: 0)
+                Button(action: chooseFolderToPin) {
+                    Label(L10n.text("Pin Folder…"), systemImage: "pin")
                 }
+                .controlSize(.small)
+                .help(L10n.text("Choose a folder to pin without opening it."))
+            }
+            if pins.folders.isEmpty {
+                Text(L10n.text("Choose Pin Folder… to add a shortcut."))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(pins.folders) { pin in
+                HStack(spacing: 8) {
+                    Button {
+                        if pin.availability == .available { open(pin) }
+                        else { reconnect(pin) }
+                    } label: {
+                        WelcomeSourceRow(
+                            name: pin.name,
+                            detail: pin.availability == .available ? pin.path : pin.availability.status,
+                            symbol: pin.availability == .available ? "pin.fill" : "externaldrive.badge.exclamationmark"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(pin.availability == .available
+                        ? L10n.text("Open \(pin.name)") : L10n.text("Locate \(pin.name)…"))
+                    .accessibilityValue(pin.availability.status)
+                    .help(pin.path + "\n" + pin.availability.status)
 
-                folderDropError = nil
-                store.openFolder(url)
+                    Menu {
+                        if pin.availability == .available {
+                            Button(L10n.text("Open Folder")) { open(pin) }
+                        }
+                        Button(L10n.text("Locate Folder…")) { reconnect(pin) }
+                        Divider()
+                        Button(L10n.text("Unpin Folder")) {
+                            Task { await pins.unpin(id: pin.id) }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .accessibilityLabel(L10n.text("Actions for \(pin.name)"))
+                    .help(L10n.text("Open, locate, or unpin this folder"))
+                }
+            }
+            if let message = pins.statusMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        return true
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .disabled(pins.isWorking)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L10n.text("Pinned folders"))
+    }
+
+    private func chooseFolderToPin() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = false
+        panel.message = L10n.text("Choose a folder to pin without opening it.")
+        panel.prompt = L10n.text("Pin Folder")
+        if panel.runModal() == .OK, let url = panel.url {
+            Task { await pins.pinSelectedFolder(url: url) }
+        }
     }
 }
 
@@ -287,7 +335,7 @@ struct ConnectedDrivesView: View {
     var body: some View {
         if !drives.drives.isEmpty || drives.statusMessage != nil {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Connected drives")
+                Text(L10n.text("Connected drives"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 HStack(alignment: .top, spacing: 16) {
@@ -327,9 +375,9 @@ struct ConnectedDrivesView: View {
         }
         .buttonStyle(.plain)
         .disabled(drives.openingDriveID != nil)
-        .accessibilityLabel("Choose a media folder on \(drive.name)")
+        .accessibilityLabel(L10n.text("Choose a media folder on \(drive.name)"))
         .accessibilityValue(drive.capacityDescription)
-        .help("Choose a folder on \(drive.name)…\n\(drive.capacityDescription)")
+        .help(L10n.text("Choose a folder on \(drive.name)…\n\(drive.capacityDescription)"))
     }
 }
 
@@ -379,15 +427,15 @@ struct ScanningView: View {
         VStack(spacing: 10) {
             ProgressView()
                 .controlSize(.large)
-                .accessibilityLabel("Scanning media")
+                .accessibilityLabel(L10n.text("Scanning media"))
                 .accessibilityValue(progressText)
 
-            Text("Scanning “\(folderName)”…")
+            Text(L10n.text("Scanning “\(folderName)”…"))
                 .font(.headline)
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .help(folderPath)
-                .accessibilityLabel("Scanning \(folderPath)")
+                .accessibilityLabel(L10n.text("Scanning \(folderPath)"))
 
             Text(progressText)
                 .foregroundStyle(.secondary)
@@ -402,11 +450,11 @@ struct ScanningView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "xmark")
                             .accessibilityHidden(true)
-                        Text("Cancel Scan")
+                        Text(L10n.text("Cancel Scan"))
                     }
                 }
                 .keyboardShortcut(.cancelAction)
-                .help("Cancel scanning and return to the start screen (Esc)")
+                .help(L10n.text("Cancel scanning and return to the start screen (Esc)"))
             }
             LaunchToolbarTitle()
         }
@@ -417,7 +465,7 @@ struct ScanningView: View {
     }
 
     private var folderName: String {
-        guard let folder = store.sourceFolder else { return "Folder" }
+        guard let folder = store.sourceFolder else { return L10n.text("Folder") }
         return folder.lastPathComponent.isEmpty ? folder.path : folder.lastPathComponent
     }
 
@@ -426,8 +474,8 @@ struct ScanningView: View {
     }
 
     private var progressText: String {
-        guard found > 0 else { return "Looking for media…" }
-        return found == 1 ? "1 item found" : "\(found.formatted()) items found"
+        guard found > 0 else { return L10n.text("Looking for media…") }
+        return found == 1 ? L10n.text("1 item found") : L10n.text("\(found.formatted()) items found")
     }
 }
 

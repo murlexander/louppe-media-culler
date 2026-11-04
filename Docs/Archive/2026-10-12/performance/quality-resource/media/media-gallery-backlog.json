@@ -1,0 +1,352 @@
+{
+  "generatedAt" : "2026-10-13T04:06:42Z",
+  "os" : "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryBytes" : 17179869184,
+  "processors" : 10,
+  "repetitions" : 7,
+  "rows" : [
+    {
+      "count" : 1,
+      "maxMS" : 53.4275,
+      "medianMS" : 50.579625,
+      "minMS" : 35.038625,
+      "name" : "mirrored_gallery_backlog_0_with_init_drain_cleanup",
+      "p95MS" : 53.4275,
+      "samplesMS" : [
+        35.038625,
+        37.11625,
+        45.218833,
+        50.579625,
+        50.724625,
+        51.126666,
+        53.4275
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 51.646417,
+      "medianMS" : 49.342167,
+      "minMS" : 34.275083,
+      "name" : "gallery.full-ready.backlog-0",
+      "p95MS" : 51.646417,
+      "samplesMS" : [
+        34.275083,
+        36.039833,
+        44.083958,
+        49.608792,
+        49.342167,
+        49.956375,
+        51.646417
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 18.442708,
+      "medianMS" : 17.679625,
+      "minMS" : 17.354667,
+      "name" : "gallery.thumbnail-ready.backlog-0",
+      "p95MS" : 18.442708,
+      "samplesMS" : [
+        17.813333,
+        17.705041,
+        17.679625,
+        18.442708,
+        17.428167,
+        17.505708,
+        17.354667
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 51.646417,
+      "medianMS" : 49.342167,
+      "minMS" : 34.275083,
+      "name" : "gallery.mirrored-publication.backlog-0",
+      "p95MS" : 51.646417,
+      "samplesMS" : [
+        34.275083,
+        36.039833,
+        44.083958,
+        49.608792,
+        49.342167,
+        49.956375,
+        51.646417
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 0,
+      "medianMS" : 0,
+      "minMS" : 0,
+      "name" : "gallery.delay-after-full.backlog-0",
+      "p95MS" : 0,
+      "samplesMS" : [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 623.554625,
+      "medianMS" : 593.1945,
+      "minMS" : 590.096958,
+      "name" : "mirrored_gallery_backlog_128_with_init_drain_cleanup",
+      "p95MS" : 623.554625,
+      "samplesMS" : [
+        590.096958,
+        593.1945,
+        623.554625,
+        597.932334,
+        593.3555,
+        591.353625,
+        591.542292
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 47.733208,
+      "medianMS" : 44.201875,
+      "minMS" : 42.8745,
+      "name" : "gallery.full-ready.backlog-128",
+      "p95MS" : 47.733208,
+      "samplesMS" : [
+        46.979917,
+        47.733208,
+        42.8745,
+        43.481583,
+        44.201875,
+        43.658833,
+        46.372
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 612.954583,
+      "medianMS" : 581.774708,
+      "minMS" : 579.887084,
+      "name" : "gallery.thumbnail-ready.backlog-128",
+      "p95MS" : 612.954583,
+      "samplesMS" : [
+        579.887084,
+        581.774708,
+        612.954583,
+        587.293333,
+        582.716958,
+        581.702625,
+        581.05125
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 612.954583,
+      "medianMS" : 581.774708,
+      "minMS" : 579.887084,
+      "name" : "gallery.mirrored-publication.backlog-128",
+      "p95MS" : 612.954583,
+      "samplesMS" : [
+        579.887084,
+        581.774708,
+        612.954583,
+        587.293333,
+        582.716958,
+        581.702625,
+        581.05125
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 570.080083,
+      "medianMS" : 538.043792,
+      "minMS" : 532.907167,
+      "name" : "gallery.delay-after-full.backlog-128",
+      "p95MS" : 570.080083,
+      "samplesMS" : [
+        532.907167,
+        534.0415,
+        570.080083,
+        543.81175,
+        538.515083,
+        538.043792,
+        534.67925
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 139.427083,
+      "medianMS" : 138.401834,
+      "minMS" : 129.156,
+      "name" : "mounted_gallery_backlog_0_with_init_drain_cleanup",
+      "p95MS" : 139.427083,
+      "samplesMS" : [
+        129.156,
+        131.981917,
+        138.992875,
+        139.140833,
+        138.155208,
+        139.427083,
+        138.401834
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 133.675791,
+      "medianMS" : 132.890208,
+      "minMS" : 89.43575,
+      "name" : "gallery.production-full-ready.backlog-0",
+      "p95MS" : 133.675791,
+      "samplesMS" : [
+        89.43575,
+        126.670166,
+        98.450167,
+        133.273709,
+        133.090667,
+        133.675791,
+        132.890208
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 18.1185,
+      "medianMS" : 17.589792,
+      "minMS" : 17.244709,
+      "name" : "gallery.production-thumbnail-ready.backlog-0",
+      "p95MS" : 18.1185,
+      "samplesMS" : [
+        17.589792,
+        17.397541,
+        17.85625,
+        17.519792,
+        17.244709,
+        18.1185,
+        17.88475
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 133.679541,
+      "medianMS" : 132.895667,
+      "minMS" : 98.452334,
+      "name" : "gallery.production-mounted-publication.backlog-0",
+      "p95MS" : 133.679541,
+      "samplesMS" : [
+        124.122958,
+        126.675625,
+        98.452334,
+        133.279209,
+        133.095709,
+        133.679541,
+        132.895667
+      ]
+    },
+    {
+      "count" : 1,
+      "maxMS" : 34.687208,
+      "medianMS" : 0.005459000000001879,
+      "minMS" : 0.00216700000000003,
+      "name" : "gallery.production-delay-after-full.backlog-0",
+      "p95MS" : 34.687208,
+      "samplesMS" : [
+        34.687208,
+        0.005459000000001879,
+        0.00216700000000003,
+        0.005500000000012051,
+        0.0050420000000030996,
+        0.0037499999999965894,
+        0.005459000000001879
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 611.406333,
+      "medianMS" : 594.204458,
+      "minMS" : 592.231292,
+      "name" : "mounted_gallery_backlog_128_with_init_drain_cleanup",
+      "p95MS" : 611.406333,
+      "samplesMS" : [
+        611.406333,
+        605.203,
+        596.973041,
+        594.204458,
+        592.231292,
+        593.934417,
+        592.903459
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 133.411375,
+      "medianMS" : 125.787875,
+      "minMS" : 120.185916,
+      "name" : "gallery.production-full-ready.backlog-128",
+      "p95MS" : 133.411375,
+      "samplesMS" : [
+        125.206459,
+        133.411375,
+        131.160625,
+        127.423875,
+        123.092875,
+        120.185916,
+        125.787875
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 597.6115,
+      "medianMS" : 582.3375,
+      "minMS" : 580.481416,
+      "name" : "gallery.production-thumbnail-ready.backlog-128",
+      "p95MS" : 597.6115,
+      "samplesMS" : [
+        597.6115,
+        591.179167,
+        584.619292,
+        582.3375,
+        580.481416,
+        582.161166,
+        581.082875
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 133.416125,
+      "medianMS" : 125.791583,
+      "minMS" : 120.190958,
+      "name" : "gallery.production-mounted-publication.backlog-128",
+      "p95MS" : 133.416125,
+      "samplesMS" : [
+        125.211167,
+        133.416125,
+        131.16575,
+        127.428917,
+        123.098333,
+        120.190958,
+        125.791583
+      ]
+    },
+    {
+      "count" : 129,
+      "maxMS" : 0.005457999999990193,
+      "medianMS" : 0.005041999999988889,
+      "minMS" : 0.0037080000000031532,
+      "name" : "gallery.production-delay-after-full.backlog-128",
+      "p95MS" : 0.005457999999990193,
+      "samplesMS" : [
+        0.004708000000007928,
+        0.004750000000001364,
+        0.005124999999992497,
+        0.0050420000000030996,
+        0.005457999999990193,
+        0.005041999999988889,
+        0.0037080000000031532
+      ]
+    }
+  ],
+  "schemaVersion" : 1,
+  "suite" : "media-gallery-backlog",
+  "warmups" : 1
+}

@@ -1,0 +1,47 @@
+2026-10-13T02:29:07Z
+544f6222a499b316d419797e358c232fd56e410a
+ M CHANGELOG.md
+ M Docs/DEVELOPMENT_DETAILS.md
+ M README.md
+ M Sources/Louppe/DuplicateBurstAnalysis.swift
+ M Sources/Louppe/Resources/ar.lproj/Localizable.strings
+ M Sources/Louppe/Resources/en.lproj/Localizable.strings
+ M Sources/Louppe/Resources/es.lproj/Localizable.strings
+ M Sources/Louppe/Resources/hi.lproj/Localizable.strings
+ M Sources/Louppe/Resources/pt.lproj/Localizable.strings
+ M Sources/Louppe/Resources/zh-Hans.lproj/Localizable.strings
+ M Sources/Louppe/SessionStore.swift
+ M Sources/Louppe/UpdaterViews.swift
+ M Sources/Louppe/Views/FilterView.swift
+ M Sources/Louppe/Views/SessionView.swift
+ M Tests/LouppeTests/DuplicateBurstAnalysisTests.swift
+?? Tests/LouppeTests/LouppeSpeedIOTests.swift
+?? Tests/LouppeTests/LouppeSpeedMediaTests.swift
+?? Tests/LouppeTests/LouppeSpeedPersistenceTests.swift
+?? Tests/LouppeTests/LouppeSpeedScanTests.swift
+?? Tests/LouppeTests/LouppeSpeedSessionTests.swift
+?? Tests/LouppeTests/SpeedBenchmarkSupport.swift
+?? Tests/compare_speed_results.py
+?? Tests/run_speed_tests.sh
+ CHANGELOG.md                                       |  2 +
+ Docs/DEVELOPMENT_DETAILS.md                        | 11 ++--
+ README.md                                          |  7 ++-
+ Sources/Louppe/DuplicateBurstAnalysis.swift        | 23 +++++++-
+ .../Louppe/Resources/ar.lproj/Localizable.strings  | 14 +++--
+ .../Louppe/Resources/en.lproj/Localizable.strings  | 14 +++--
+ .../Louppe/Resources/es.lproj/Localizable.strings  | 14 +++--
+ .../Louppe/Resources/hi.lproj/Localizable.strings  | 14 +++--
+ .../Louppe/Resources/pt.lproj/Localizable.strings  | 14 +++--
+ .../Resources/zh-Hans.lproj/Localizable.strings    | 14 +++--
+ Sources/Louppe/SessionStore.swift                  | 12 +++-
+ Sources/Louppe/UpdaterViews.swift                  | 61 +++++++++++++++++++-
+ Sources/Louppe/Views/FilterView.swift              | 67 +---------------------
+ Sources/Louppe/Views/SessionView.swift             | 19 ++++--
+ .../LouppeTests/DuplicateBurstAnalysisTests.swift  | 44 ++++++++++++--
+ 15 files changed, 213 insertions(+), 117 deletions(-)
+bf770ab39092f873b7624ac600d80cb4a23a65be7f3d867e930ce9438a1898b7  -
+Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)
+Target: arm64-apple-macosx27.0.0
+Xcode 27.0
+Build version 27A266a
+arm64

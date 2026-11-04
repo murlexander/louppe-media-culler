@@ -1,5 +1,31 @@
 import Foundation
 
+/// Allocation-free cue membership, aligned with the four optional rules.
+struct QualityCueMatch: OptionSet, Sendable {
+    let rawValue: UInt8
+
+    init(rawValue: UInt8) {
+        self.rawValue = rawValue
+    }
+
+    static let highISO = Self(rawValue: 1 << 0)
+    static let slowShutter = Self(rawValue: 1 << 1)
+    static let highlightClipping = Self(rawValue: 1 << 2)
+    static let shadowClipping = Self(rawValue: 1 << 3)
+
+    init(_ kinds: Set<QualityCueKind>) {
+        self = []
+        for kind in kinds {
+            switch kind {
+            case .highISO: insert(.highISO)
+            case .slowShutter: insert(.slowShutter)
+            case .highlightClipping: insert(.highlightClipping)
+            case .shadowClipping: insert(.shadowClipping)
+            }
+        }
+    }
+}
+
 /// Per-app preferences for optional camera-quality cues. These live
 /// in UserDefaults, deliberately separate from the folder-bound review
 /// session, so changing a threshold never writes a sidecar or affects a photo.
@@ -9,6 +35,10 @@ struct CameraQualityWarningPreferences: Equatable, Sendable {
         static let isHighISOEnabled = "cameraQualityWarnings.isHighISOEnabled"
         static let isSlowShutterEnabled = "cameraQualityWarnings.isSlowShutterEnabled"
         static let isClippingEnabled = "cameraQualityWarnings.isClippingEnabled"
+        static let isHighlightClippingEnabled = "cameraQualityWarnings.isHighlightClippingEnabled"
+        static let isShadowClippingEnabled = "cameraQualityWarnings.isShadowClippingEnabled"
+        static let highlightPercentageThreshold = "cameraQualityWarnings.highlightPercentageThreshold"
+        static let shadowPercentageThreshold = "cameraQualityWarnings.shadowPercentageThreshold"
         static let highISOThreshold = "cameraQualityWarnings.highISOThreshold"
         static let slowShutterThreshold = "cameraQualityWarnings.slowShutterThreshold"
         static let clippingPercentageThreshold = "cameraQualityWarnings.clippingPercentageThreshold"
@@ -21,10 +51,30 @@ struct CameraQualityWarningPreferences: Equatable, Sendable {
     var isEnabled: Bool
     var isHighISOEnabled: Bool
     var isSlowShutterEnabled: Bool
-    var isClippingEnabled: Bool
+    var isHighlightClippingEnabled: Bool
+    var isShadowClippingEnabled: Bool
+    // Compatibility for callers and old preference domains. New controls use
+    // the independent rules; legacy values seed each rule only once.
+    var isClippingEnabled: Bool {
+        get { isHighlightClippingEnabled && isShadowClippingEnabled }
+        set { isHighlightClippingEnabled = newValue; isShadowClippingEnabled = newValue }
+    }
     var highISOThreshold: Double
     var slowShutterThreshold: Double
-    var clippingPercentageThreshold: Double
+    var highlightPercentageThreshold: Double
+    var shadowPercentageThreshold: Double
+    var clippingPercentageThreshold: Double {
+        get { highlightPercentageThreshold }
+        set { highlightPercentageThreshold = newValue; shadowPercentageThreshold = newValue }
+    }
+
+    var needsHistogram: Bool {
+        isEnabled && (isHighlightClippingEnabled || isShadowClippingEnabled)
+    }
+
+    var hasEnabledRules: Bool {
+        isEnabled && (isHighISOEnabled || isSlowShutterEnabled || needsHistogram)
+    }
 
     init(
         isEnabled: Bool = true,
@@ -33,23 +83,42 @@ struct CameraQualityWarningPreferences: Equatable, Sendable {
         isClippingEnabled: Bool = true,
         highISOThreshold: Double = Self.defaultHighISOThreshold,
         slowShutterThreshold: Double = Self.defaultSlowShutterThreshold,
-        clippingPercentageThreshold: Double = Self.defaultClippingPercentageThreshold
+        clippingPercentageThreshold: Double = Self.defaultClippingPercentageThreshold,
+        isHighlightClippingEnabled: Bool? = nil,
+        isShadowClippingEnabled: Bool? = nil,
+        highlightPercentageThreshold: Double? = nil,
+        shadowPercentageThreshold: Double? = nil
     ) {
         self.isEnabled = isEnabled
         self.isHighISOEnabled = isHighISOEnabled
         self.isSlowShutterEnabled = isSlowShutterEnabled
-        self.isClippingEnabled = isClippingEnabled
+        self.isHighlightClippingEnabled = isHighlightClippingEnabled ?? isClippingEnabled
+        self.isShadowClippingEnabled = isShadowClippingEnabled ?? isClippingEnabled
         self.highISOThreshold = Self.validISOThreshold(highISOThreshold)
         self.slowShutterThreshold = Self.validSlowShutterThreshold(
             slowShutterThreshold
         )
-        self.clippingPercentageThreshold = Self.validClippingThreshold(
-            clippingPercentageThreshold
+        self.highlightPercentageThreshold = Self.validClippingThreshold(
+            highlightPercentageThreshold ?? clippingPercentageThreshold
+        )
+        self.shadowPercentageThreshold = Self.validClippingThreshold(
+            shadowPercentageThreshold ?? clippingPercentageThreshold
         )
     }
 
     static func load(from defaults: UserDefaults = .standard) -> Self {
-        Self(
+        // Persist the split only when absent, preserving every legacy cutoff
+        // and disabled flag. Later launches never overwrite independent edits.
+        for key in [Keys.isHighlightClippingEnabled, Keys.isShadowClippingEnabled]
+            where defaults.object(forKey: key) == nil {
+            defaults.set(bool(for: Keys.isClippingEnabled, in: defaults, fallback: true), forKey: key)
+        }
+        for key in [Keys.highlightPercentageThreshold, Keys.shadowPercentageThreshold]
+            where defaults.object(forKey: key) == nil {
+            defaults.set(double(for: Keys.clippingPercentageThreshold, in: defaults,
+                                fallback: defaultClippingPercentageThreshold), forKey: key)
+        }
+        return Self(
             isEnabled: bool(
                 for: Keys.isEnabled,
                 in: defaults,
@@ -72,7 +141,11 @@ struct CameraQualityWarningPreferences: Equatable, Sendable {
                 for: Keys.clippingPercentageThreshold,
                 in: defaults,
                 fallback: defaultClippingPercentageThreshold
-            )
+            ),
+            isHighlightClippingEnabled: defaults.bool(forKey: Keys.isHighlightClippingEnabled),
+            isShadowClippingEnabled: defaults.bool(forKey: Keys.isShadowClippingEnabled),
+            highlightPercentageThreshold: defaults.double(forKey: Keys.highlightPercentageThreshold),
+            shadowPercentageThreshold: defaults.double(forKey: Keys.shadowPercentageThreshold)
         )
     }
 
@@ -80,7 +153,10 @@ struct CameraQualityWarningPreferences: Equatable, Sendable {
         defaults.set(isEnabled, forKey: Keys.isEnabled)
         defaults.set(isHighISOEnabled, forKey: Keys.isHighISOEnabled)
         defaults.set(isSlowShutterEnabled, forKey: Keys.isSlowShutterEnabled)
-        defaults.set(isClippingEnabled, forKey: Keys.isClippingEnabled)
+        defaults.set(isHighlightClippingEnabled, forKey: Keys.isHighlightClippingEnabled)
+        defaults.set(isShadowClippingEnabled, forKey: Keys.isShadowClippingEnabled)
+        defaults.set(highlightPercentageThreshold, forKey: Keys.highlightPercentageThreshold)
+        defaults.set(shadowPercentageThreshold, forKey: Keys.shadowPercentageThreshold)
         defaults.set(highISOThreshold, forKey: Keys.highISOThreshold)
         defaults.set(slowShutterThreshold, forKey: Keys.slowShutterThreshold)
         defaults.set(
@@ -143,17 +219,17 @@ enum CameraQualityThresholdInput: Sendable {
 
     var accessibilityLabel: String {
         switch self {
-        case .highISO: return "High ISO threshold"
-        case .slowShutter: return "Slow shutter threshold in seconds"
-        case .clipping: return "Clipping threshold in percent"
+        case .highISO: return L10n.text("High ISO threshold")
+        case .slowShutter: return L10n.text("Slow shutter threshold in seconds")
+        case .clipping: return L10n.text("Clipping threshold in percent")
         }
     }
 
     var inputHelp: String {
         switch self {
-        case .highISO: return "ISO 100–1,000,000. Press Return to apply."
-        case .slowShutter: return "1/8000–60 seconds. Enter a fraction such as 1/30 or seconds such as 2.5. Press Return to apply."
-        case .clipping: return "0.1–100%. Press Return to apply."
+        case .highISO: return L10n.text("ISO 100–1,000,000. Press Return to apply.")
+        case .slowShutter: return L10n.text("1/8000–60 seconds. Enter a fraction such as 1/30 or seconds such as 2.5. Press Return to apply.")
+        case .clipping: return L10n.text("0.1–100%. Press Return to apply.")
         }
     }
 
@@ -242,19 +318,14 @@ enum CameraQualityThresholdInput: Sendable {
 /// One non-blocking cue in the Info panel. The cue describes a review
 /// condition; it never changes review metadata or makes a quality verdict.
 struct CameraQualityWarning: Equatable, Identifiable, Sendable {
-    enum Kind: String, Sendable {
-        case highISO
-        case slowShutter
-        case highlightClipping
-        case shadowClipping
-    }
+    typealias Kind = QualityCueKind
 
     static let renderedClippingSourceDescription =
-        "Rendered image estimate — measured from the displayed preview."
+        L10n.text("Rendered image estimate — measured from a scaled rendered preview.")
     static let rawClippingSourceDescription =
-        "RAW decode — measured from a scaled Core Image decode of RAW sensor data, not a camera-maker per-photosite histogram."
+        L10n.text("RAW decode — scaled Core Image decode of sensor data, not a camera-maker per-photosite histogram.")
     static let clippingSettingsDescription =
-        "Clipping cues use a scaled Core Image RAW decode when supported, with a rendered image estimate as the fallback. The RAW result is not a camera-maker per-photosite histogram."
+        L10n.text("Clipping cues use a scaled Core Image RAW decode when supported, otherwise a rendered-image estimate. RAW results are not camera-maker per-photosite histograms.")
 
     let kind: Kind
     let measuredValue: Double
@@ -267,7 +338,7 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
 
         var label: String {
             switch self {
-            case .cameraMetadata: return "Camera metadata"
+            case .cameraMetadata: return L10n.text("Camera metadata")
             case .histogram(let source): return source.detailLabel
             }
         }
@@ -275,7 +346,7 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
         var description: String {
             switch self {
             case .cameraMetadata:
-                return "Camera metadata"
+                return L10n.text("Camera metadata")
             case .histogram(.renderedPreview):
                 return CameraQualityWarning.renderedClippingSourceDescription
             case .histogram(.rawDecode):
@@ -286,30 +357,73 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
 
     var id: Kind { kind }
 
-    var title: String {
-        switch kind {
-        case .highISO: return "High ISO"
-        case .slowShutter: return "Slow shutter"
-        case .highlightClipping: return "Highlight clipping"
-        case .shadowClipping: return "Shadow clipping"
-        }
-    }
+    var title: String { kind.title }
 
     var detail: String {
         switch kind {
         case .highISO:
-            return "ISO \(Self.iso(measuredValue)) (warning at ISO \(CameraQualityThresholdInput.highISO.format(threshold)) or above)"
+            return L10n.text("ISO \(Self.iso(measuredValue)) (warning at ISO \(CameraQualityThresholdInput.highISO.format(threshold)) or above)")
         case .slowShutter:
-            return "\(Self.shutter(measuredValue)) (warning at \(CameraQualityThresholdInput.slowShutter.format(threshold))s or slower)"
+            return L10n.text("\(Self.shutter(measuredValue)) (warning at \(CameraQualityThresholdInput.slowShutter.format(threshold))s or slower)")
         case .highlightClipping:
-            return "\(Self.percentage(measuredValue)) near white (warning at \(CameraQualityThresholdInput.clipping.format(threshold))% or more)"
+            return L10n.text("\(Self.percentage(measuredValue)) near white (warning at \(CameraQualityThresholdInput.clipping.format(threshold))% or more)")
         case .shadowClipping:
-            return "\(Self.percentage(measuredValue)) near black (warning at \(CameraQualityThresholdInput.clipping.format(threshold))% or more)"
+            return L10n.text("\(Self.percentage(measuredValue)) near black (warning at \(CameraQualityThresholdInput.clipping.format(threshold))% or more)")
+        }
+    }
+
+    var compactValue: String {
+        switch kind {
+        case .highISO: return "ISO \(Self.iso(measuredValue))"
+        case .slowShutter: return Self.shutter(measuredValue)
+        case .highlightClipping, .shadowClipping: return Self.percentage(measuredValue)
+        }
+    }
+
+    var exactDetail: String {
+        switch kind {
+        case .highISO:
+            return L10n.text("Measured ISO \(CameraQualityThresholdInput.highISO.format(measuredValue)); threshold ≥ ISO \(CameraQualityThresholdInput.highISO.format(threshold)).")
+        case .slowShutter:
+            return L10n.text("Measured \(CameraQualityThresholdInput.slowShutter.format(measuredValue)) s; threshold ≥ \(CameraQualityThresholdInput.slowShutter.format(threshold)) s.")
+        case .highlightClipping, .shadowClipping:
+            return L10n.text("Measured \(CameraQualityThresholdInput.clipping.format(measuredValue))%; threshold ≥ \(CameraQualityThresholdInput.clipping.format(threshold))%.")
         }
     }
 
     var accessibilityLabel: String {
-        "\(title). \(detail). Source: \(source.description). Review cue only."
+        L10n.text("\(title). \(exactDetail). Source: \(source.description). Review cue only.")
+    }
+
+    /// Numeric classification shared by filters and displayed warnings. Only
+    /// the displayed primary owns paired metadata and revision-bound analysis.
+    static func matchingKinds(
+        for item: PhotoItem,
+        analysis: HistogramAnalysis?,
+        preferences: CameraQualityWarningPreferences
+    ) -> QualityCueMatch {
+        guard preferences.isEnabled, item.mediaKind == .photo else { return [] }
+        var matches: QualityCueMatch = []
+        if preferences.isHighISOEnabled,
+           let iso = MediaNumeric.iso(item.iso), iso >= preferences.highISOThreshold {
+            matches.insert(.highISO)
+        }
+        if preferences.isSlowShutterEnabled,
+           let shutter = MediaNumeric.shutterSpeed(item.shutterSpeed),
+           shutter >= preferences.slowShutterThreshold {
+            matches.insert(.slowShutter)
+        }
+        if let analysis {
+            if preferences.isHighlightClippingEnabled,
+               analysis.highlightPercentage >= preferences.highlightPercentageThreshold {
+                matches.insert(.highlightClipping)
+            }
+            if preferences.isShadowClippingEnabled,
+               analysis.shadowPercentage >= preferences.shadowPercentageThreshold {
+                matches.insert(.shadowClipping)
+            }
+        }
+        return matches
     }
 
     static func warnings(
@@ -318,14 +432,11 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
         analysisSource: HistogramAnalysisSource = .renderedPreview,
         preferences: CameraQualityWarningPreferences
     ) -> [Self] {
-        guard preferences.isEnabled, item.mediaKind == .photo else { return [] }
+        let matches = matchingKinds(for: item, analysis: analysis, preferences: preferences)
+        guard !matches.isEmpty else { return [] }
         var warnings: [Self] = []
 
-        // A paired projection has one displayed primary file (the RAW when an
-        // unambiguous RAW+JPEG match is grouped). Its metadata and its
-        // content-keyed luminance analysis are the only correct source here.
-        if preferences.isHighISOEnabled,
-           let iso = MediaNumeric.iso(item.iso), iso >= preferences.highISOThreshold {
+        if matches.contains(.highISO), let iso = item.iso {
             warnings.append(
                 Self(
                     kind: .highISO,
@@ -335,9 +446,7 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
                 )
             )
         }
-        if preferences.isSlowShutterEnabled,
-           let shutter = MediaNumeric.shutterSpeed(item.shutterSpeed),
-           shutter >= preferences.slowShutterThreshold {
+        if matches.contains(.slowShutter), let shutter = item.shutterSpeed {
             warnings.append(
                 Self(
                     kind: .slowShutter,
@@ -347,23 +456,23 @@ struct CameraQualityWarning: Equatable, Identifiable, Sendable {
                 )
             )
         }
-        if preferences.isClippingEnabled, let analysis {
-            if analysis.highlightPercentage >= preferences.clippingPercentageThreshold {
+        if let analysis {
+            if matches.contains(.highlightClipping) {
                 warnings.append(
                     Self(
                         kind: .highlightClipping,
                         measuredValue: analysis.highlightPercentage,
-                        threshold: preferences.clippingPercentageThreshold,
+                        threshold: preferences.highlightPercentageThreshold,
                         source: .histogram(analysisSource)
                     )
                 )
             }
-            if analysis.shadowPercentage >= preferences.clippingPercentageThreshold {
+            if matches.contains(.shadowClipping) {
                 warnings.append(
                     Self(
                         kind: .shadowClipping,
                         measuredValue: analysis.shadowPercentage,
-                        threshold: preferences.clippingPercentageThreshold,
+                        threshold: preferences.shadowPercentageThreshold,
                         source: .histogram(analysisSource)
                     )
                 )

@@ -1,0 +1,390 @@
+[0/1] Planning build
+Building for production...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/5] Compiling LouppeTests AccessibilityTests.swift
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedIOTests.swift:41:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+39 |             var sequence: UInt64 = 0
+40 |             var results: [SessionPersistence.SaveResult] = []
+41 |             try await report.measureAsync(name: "save.durable-sidecar-and-backup", count: count) {
+   |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+42 |                 sequence += 1
+43 |                 let session = SessionSnapshotCapture(sourcePath: folder.path, items: items, retainedEntries: [], originPaths: [:]).makeSession()
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedIOTests.swift:48:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+46 |             XCTAssertTrue(results.allSatisfy { $0 == .savedToSidecar })
+47 |             var read = await persistence.read(for: folder)
+48 |             try await report.measureAsync(name: "reopen.durable-session", count: count) {
+   |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+49 |                 read = await persistence.read(for: folder)
+50 |             }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedMediaTests.swift:41:9: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 39 |         XCTAssertNotNil(full)
+ 40 |
+ 41 |         try report.measure(name: "thumbnail_memory_hit_1000", count: 1_000) {
+    |         `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 42 |             var hits = 0
+ 43 |             for _ in 0..<1_000 {
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedMediaTests.swift:48:9: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 46 |             XCTAssertEqual(hits, 1_000)
+ 47 |         }
+ 48 |         try report.measure(name: "full_memory_hit_1000", count: 1_000) {
+    |         `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 49 |             var hits = 0
+ 50 |             for _ in 0..<1_000 {
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedMediaTests.swift:56:9: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 54 |         }
+ 55 |
+ 56 |         try await report.measureAsync(name: "thumbnail_disk_hit_16_including_pipeline_init", count: fixture.items.count) {
+    |         `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 57 |             let pipeline = ImagePipeline(testingDiskCacheRoot: warmRoot)
+ 58 |             var hits = 0
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedMediaTests.swift:235:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+233 |         }
+234 |         for delay in [RawHistogramPipeline.analysisDelayNanoseconds, UInt64(0)] {
+235 |             try await report.measureAsync(name: "synthetic_raw_4_in_2_item_batches_dwell_\(delay / 1_000_000)ms", count: items.count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+236 |                 let counter = SpeedMediaDecodeCounter()
+237 |                 let pipeline = RawHistogramPipeline(delayNanoseconds: delay) { _ in
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedPersistenceTests.swift:21:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 19 |             ]
+ 20 |             var latest = capture(items, retained: retained)
+ 21 |             try report.measure(name: "snapshot.main-capture.unpaired", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 22 |                 latest = capture(items, retained: retained)
+ 23 |             }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedPersistenceTests.swift:28:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 26 |             items[0].primaryFile.setRating(.no, ratedAt: Date(timeIntervalSince1970: 999))
+ 27 |             var built = frozen.makeSession()
+ 28 |             try await report.measureAsync(name: "snapshot.detached-entry-build.unpaired", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 29 |                 built = await Task.detached(priority: .utility) { frozen.makeSession() }.value
+ 30 |             }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedPersistenceTests.swift:106:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+104 |             )
+105 |             var groups: [DuplicateBurstAnalysis.Group] = []
+106 |             try report.measure(name: "groups.exact.pairs", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+107 |                 groups = exact.groups(for: .exactDuplicates, visualDistance: 8, burstInterval: 2)
+108 |             }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedPersistenceTests.swift:121:17: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+119 |                     analyzedExactFileCount: 0, analyzedVisualPhotoCount: count
+120 |                 )
+121 |                 try report.measure(name: "groups.similar.\(distribution)", count: count) {
+    |                 `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+122 |                     groups = visual.groups(for: .likelySimilarPhotos, visualDistance: 8, burstInterval: 2)
+123 |                 }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedPersistenceTests.swift:150:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+148 |             var full: [DuplicateBurstAnalysis.Input] = []
+149 |             var metadataOnly: [DuplicateBurstAnalysis.Input] = []
+150 |             try report.measure(name: "burst.input.full-production-shape", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+151 |                 full = items.map { item in
+152 |                     let files = item.individualFiles
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedPersistenceTests.swift:163:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+161 |                 }
+162 |             }
+163 |             try report.measure(name: "burst.input.metadata-only-hypothesis", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+164 |                 metadataOnly = items.map { item in
+165 |                     .init(id: item.id, mediaKind: item.mediaKind, captureDate: item.captureDate,
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedScanTests.swift:57:17: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 55 |                 var result: [(primary: URL, paired: URL?)] = []
+ 56 |                 let workload = paired ? "raw-jpeg" : "distinct-stems"
+ 57 |                 try report.measure(name: "pairing.\(workload).production", count: count) {
+    |                 `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 58 |                     result = FolderScanner.pairFiles(
+ 59 |                         urls, pairingMode: mode, caseSensitiveNames: false
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedScanTests.swift:63:17: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 61 |                 }
+ 62 |                 XCTAssertEqual(signatures(result), expectedSignatures)
+ 63 |                 try report.measure(name: "pairing.\(workload).no-global-sort", count: count) {
+    |                 `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 64 |                     result = pairFilesWithoutGlobalSort(urls, mode: mode, caseSensitive: false)
+ 65 |                 }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedScanTests.swift:95:21: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 93 |                     let direction = ascending ? "ascending" : "descending"
+ 94 |                     let name = "metadata.\(key).\(direction)"
+ 95 |                     try report.measure(name: "\(name).production", count: count) {
+    |                     `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 96 |                         production.rebuildSort(items, sort: sort)
+ 97 |                     }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedScanTests.swift:100:21: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 98 |                     XCTAssertEqual(production.sortedIndices, expected)
+ 99 |                     var candidate: [Int] = []
+100 |                     try report.measure(name: "\(name).stable-buckets", count: count) {
+    |                     `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+101 |                         candidate = metadataBucketSort(items, sort: sort)
+102 |                     }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedSessionTests.swift:34:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 32 |             var publishes = 0
+ 33 |             let subscription = store.objectWillChange.sink { _ in publishes += 1 }
+ 34 |             try report.measure(name: "review.rating.default-sort", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 35 |                 store.toggleRating(at: count / 2)
+ 36 |             }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedSessionTests.swift:43:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 41 |
+ 42 |             store.sort = PhotoSort(key: .decision, ascending: true)
+ 43 |             try report.measure(name: "review.rating.decision-sort", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 44 |                 store.toggleRating(at: count / 2)
+ 45 |             }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedSessionTests.swift:53:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 51 |             store.sort = PhotoSort(key: .starRating, ascending: false)
+ 52 |             var star: StarRating = .one
+ 53 |             try report.measure(name: "review.stars.star-sort", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 54 |                 star = star == .one ? .five : .one
+ 55 |                 store.setStarRating(star, at: count / 2)
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedSessionTests.swift:65:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 63 |             var filter = PhotoFilter()
+ 64 |             filter.excludedDecisionStates = [.no]
+ 65 |             try report.measure(name: "filter.decision.projection-and-groups", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 66 |                 index.applyFilter(filter, to: store.items, sort: PhotoSort(), isGroupingEnabled: true)
+ 67 |             }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedSessionTests.swift:74:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 72 |             let selectedIDs = Set(store.selectedIndices.map { store.items[$0].id })
+ 73 |             var ascending = false
+ 74 |             try report.measure(name: "sort-menu.camera.full-store", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 75 |                 ascending.toggle()
+ 76 |                 store.sort = PhotoSort(key: .camera, ascending: ascending)
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedSessionTests.swift:81:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 79 |             let expectedOrder = store.visibleIndices
+ 80 |             ascending.toggle()
+ 81 |             try report.measure(name: "sort-menu.camera.prepared-only-hypothesis", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 82 |                 ascending.toggle()
+ 83 |                 let sort = PhotoSort(key: .camera, ascending: ascending)
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedSessionTests.swift:99:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+ 97 |
+ 98 |             var text = ""
+ 99 |             try report.measure(name: "quality.coverage.unmeasured-read", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+100 |                 text = store.qualityCueCoverageSummary
+101 |             }
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedSessionTests.swift:104:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+102 |             XCTAssertFalse(text.isEmpty)
+103 |             var highISO = false
+104 |             try report.measure(name: "filter.quality.switch-metadata-cue", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+105 |                 highISO.toggle()
+106 |                 store.filter.selectedQualityCues = highISO ? [.highISO] : [.slowShutter]
+
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/LouppeSpeedSessionTests.swift:112:13: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+110 |             store.filter.selectedQualityCues = []
+111 |             var current = 0
+112 |             try report.measure(name: "navigation.100-steps", count: count) {
+    |             `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+113 |                 for _ in 0..<100 { store.goNext() }
+114 |                 current = store.currentIndex
+
+[#UnnecessaryEffectMarker]: <https://docs.swift.org/compiler/documentation/diagnostics/unnecessary-effect-marker>
+[4/6] Compiling LouppePackageTests runner.swift
+[4/6] Write Objects.LinkFileList
+[5/6] Linking LouppePackageTests
+Build complete! (29.17s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-12 10:29:38.718 PM.
+Test Suite 'LouppePackageTests.xctest' started at 2026-10-12 10:29:38.725 PM.
+Test Suite 'LouppeSpeedIOTests' started at 2026-10-12 10:29:38.725 PM.
+Test Case '-[LouppeTests.LouppeSpeedIOTests testRealJPEGScanAndDurableSaveReopen]' started.
+Test Case '-[LouppeTests.LouppeSpeedIOTests testRealJPEGScanAndDurableSaveReopen]' passed (1.571 seconds).
+Test Suite 'LouppeSpeedIOTests' passed at 2026-10-12 10:29:40.296 PM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.571 (1.571) seconds
+Test Suite 'LouppeSpeedMediaTests' started at 2026-10-12 10:29:40.297 PM.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testAlreadyCancelledThumbnailWork]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testAlreadyCancelledThumbnailWork]' passed (1.325 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testConcurrentSameRevisionThumbnailRequests]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testConcurrentSameRevisionThumbnailRequests]' passed (0.194 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testGalleryThumbnailDependencyUnderBacklog]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testGalleryThumbnailDependencyUnderBacklog]' passed (5.363 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testMediaDecodeAndCachePaths]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testMediaDecodeAndCachePaths]' passed (3.234 seconds).
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testRawHistogramBatchDwellFloor]' started.
+Test Case '-[LouppeTests.LouppeSpeedMediaTests testRawHistogramBatchDwellFloor]' passed (11.463 seconds).
+Test Suite 'LouppeSpeedMediaTests' passed at 2026-10-12 10:30:01.877 PM.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 21.580 (21.580) seconds
+Test Suite 'LouppeSpeedPersistenceTests' started at 2026-10-12 10:30:01.877 PM.
+Test Case '-[LouppeTests.LouppeSpeedPersistenceTests testBurstInputConstructionHypothesis]' started.
+Test Case '-[LouppeTests.LouppeSpeedPersistenceTests testBurstInputConstructionHypothesis]' passed (2.900 seconds).
+Test Case '-[LouppeTests.LouppeSpeedPersistenceTests testCompletedGroupConstructionDistributions]' started.
+Test Case '-[LouppeTests.LouppeSpeedPersistenceTests testCompletedGroupConstructionDistributions]' passed (3.261 seconds).
+Test Case '-[LouppeTests.LouppeSpeedPersistenceTests testSnapshotCaptureAndDetachedConstruction]' started.
+Test Case '-[LouppeTests.LouppeSpeedPersistenceTests testSnapshotCaptureAndDetachedConstruction]' passed (1.309 seconds).
+Test Case '-[LouppeTests.LouppeSpeedPersistenceTests testSnapshotJSONFormattingHypothesis]' started.
+Test Case '-[LouppeTests.LouppeSpeedPersistenceTests testSnapshotJSONFormattingHypothesis]' passed (40.688 seconds).
+Test Suite 'LouppeSpeedPersistenceTests' passed at 2026-10-12 10:30:50.035 PM.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 48.158 (48.158) seconds
+Test Suite 'LouppeSpeedScanTests' started at 2026-10-12 10:30:50.035 PM.
+Test Case '-[LouppeTests.LouppeSpeedScanTests testFiniteMetadataBucketSort]' started.
+Test Case '-[LouppeTests.LouppeSpeedScanTests testFiniteMetadataBucketSort]' passed (19.274 seconds).
+Test Case '-[LouppeTests.LouppeSpeedScanTests testPairingWithoutGlobalSort]' started.
+Test Case '-[LouppeTests.LouppeSpeedScanTests testPairingWithoutGlobalSort]' passed (42.253 seconds).
+Test Suite 'LouppeSpeedScanTests' passed at 2026-10-12 10:31:51.562 PM.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 61.527 (61.527) seconds
+Test Suite 'LouppeSpeedSessionTests' started at 2026-10-12 10:31:51.562 PM.
+Test Case '-[LouppeTests.LouppeSpeedSessionTests testReviewHotPathsAndCoverage]' started.
+Test Case '-[LouppeTests.LouppeSpeedSessionTests testReviewHotPathsAndCoverage]' passed (24.720 seconds).
+Test Suite 'LouppeSpeedSessionTests' passed at 2026-10-12 10:32:16.282 PM.
+	 Executed 1 test, with 0 failures (0 unexpected) in 24.720 (24.720) seconds
+Test Suite 'LouppePackageTests.xctest' passed at 2026-10-12 10:32:16.282 PM.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 157.554 (157.556) seconds
+Test Suite 'Selected tests' passed at 2026-10-12 10:32:16.282 PM.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 157.554 (157.564) seconds
+SPEED scan.jpeg.warm-filesystem n=100 median=8.490ms p95=9.026ms
+SPEED save.durable-sidecar-and-backup n=100 median=12.023ms p95=13.443ms
+SPEED reopen.durable-session n=100 median=2.482ms p95=2.538ms
+SPEED scan.jpeg.warm-filesystem n=1000 median=86.409ms p95=87.831ms
+SPEED save.durable-sidecar-and-backup n=1000 median=24.006ms p95=25.458ms
+SPEED reopen.durable-session n=1000 median=20.715ms p95=21.386ms
+SPEED already_cancelled_32_unique_thumbnails_including_disk_drain n=32 median=146.639ms p95=147.174ms
+MEDIA_HYPOTHESIS already_cancelled_unique_requests=32 completed_per_sample=[32, 32, 32, 32, 32, 32, 32, 32] disk_entries_per_sample=[32, 32, 32, 32, 32, 32, 32, 32]
+SPEED same_revision_32_thumbnail_waiters_including_disk_drain n=32 median=18.512ms p95=18.806ms
+SPEED mirrored_gallery_backlog_0_with_init_drain_cleanup n=1 median=35.880ms p95=41.316ms
+MEDIA_BACKLOG mirrored_orchestration=true task_start_counter=true deterministic_queue_order=false backlog=0 full_ready_ms=[52.753917, 35.007958, 33.442209, 33.010167, 32.61225, 38.712167, 38.460083, 40.447208] thumbnail_ready_ms=[17.56925, 17.562208, 17.217125, 16.945708, 17.4735, 20.992417, 18.196333, 17.500708] publication_ms=[52.753917, 35.007958, 33.442209, 33.010167, 32.61225, 38.712167, 38.460083, 40.447208] delay_after_full_ms=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+SPEED mirrored_gallery_backlog_128_with_init_drain_cleanup n=129 median=592.498ms p95=639.086ms
+MEDIA_BACKLOG mirrored_orchestration=true task_start_counter=true deterministic_queue_order=false backlog=128 full_ready_ms=[48.066042, 35.751583, 35.212458, 72.394791, 34.283583, 42.33675, 35.824125, 34.816291] thumbnail_ready_ms=[588.582208, 578.294458, 577.859041, 629.114875, 583.870916, 586.225333, 582.014917, 576.183583] publication_ms=[588.582208, 578.294458, 577.859041, 629.114875, 583.870916, 586.225333, 582.014917, 576.183583] delay_after_full_ms=[540.516166, 542.542875, 542.6465830000001, 556.720084, 549.587333, 543.8885829999999, 546.190792, 541.367292]
+SPEED jpeg_source_decode_320px_os_cache_warm n=1 median=17.072ms p95=17.701ms
+SPEED jpeg_source_decode_4096px_os_cache_warm n=1 median=40.610ms p95=44.638ms
+SPEED thumbnail_memory_hit_1000 n=1000 median=2.297ms p95=2.591ms
+SPEED full_memory_hit_1000 n=1000 median=2.314ms p95=2.355ms
+SPEED thumbnail_disk_hit_16_including_pipeline_init n=16 median=11.209ms p95=11.672ms
+SPEED thumbnail_source_16_including_pipeline_init_and_disk_drain n=16 median=278.132ms p95=295.337ms
+SPEED synthetic_raw_4_in_2_item_batches_dwell_700ms n=4 median=1431.284ms p95=1450.971ms
+SPEED synthetic_raw_4_in_2_item_batches_dwell_0ms n=4 median=0.288ms p95=0.317ms
+SPEED burst.input.full-production-shape n=1000 median=1.268ms p95=1.687ms
+SPEED burst.input.metadata-only-hypothesis n=1000 median=0.153ms p95=0.167ms
+SPEED burst.input.full-production-shape n=10000 median=12.602ms p95=13.613ms
+SPEED burst.input.metadata-only-hypothesis n=10000 median=1.607ms p95=1.761ms
+SPEED burst.input.full-production-shape n=100000 median=125.537ms p95=134.454ms
+SPEED burst.input.metadata-only-hypothesis n=100000 median=18.527ms p95=18.881ms
+SPEED groups.exact.pairs n=1000 median=0.210ms p95=0.217ms
+SPEED groups.similar.equal n=1000 median=0.565ms p95=0.634ms
+SPEED groups.similar.paired-random n=1000 median=1.301ms p95=1.536ms
+SPEED groups.similar.random n=1000 median=1.345ms p95=1.448ms
+SPEED groups.exact.pairs n=10000 median=2.476ms p95=2.761ms
+SPEED groups.similar.equal n=10000 median=6.005ms p95=6.645ms
+SPEED groups.similar.paired-random n=10000 median=13.856ms p95=14.995ms
+SPEED groups.similar.random n=10000 median=14.819ms p95=16.419ms
+SPEED groups.exact.pairs n=100000 median=23.092ms p95=54.999ms
+SPEED groups.similar.equal n=100000 median=69.173ms p95=76.671ms
+SPEED groups.similar.paired-random n=100000 median=139.253ms p95=140.612ms
+SPEED groups.similar.random n=100000 median=105.550ms p95=108.666ms
+SPEED snapshot.main-capture.unpaired n=1000 median=0.089ms p95=0.090ms
+SPEED snapshot.detached-entry-build.unpaired n=1000 median=0.189ms p95=0.207ms
+SPEED snapshot.main-capture.unpaired n=10000 median=1.114ms p95=1.327ms
+SPEED snapshot.detached-entry-build.unpaired n=10000 median=1.478ms p95=1.542ms
+SPEED snapshot.main-capture.unpaired n=100000 median=16.417ms p95=17.770ms
+SPEED snapshot.detached-entry-build.unpaired n=100000 median=14.867ms p95=16.526ms
+SPEED json.encode.pretty-sorted n=1000 median=12.705ms p95=12.834ms
+SPEED json.encode.compact-sorted n=1000 median=12.164ms p95=12.422ms
+SPEED json.encode.compact n=1000 median=11.320ms p95=15.696ms
+SPEED_JSON_BYTES count=1000 pretty=937587 compactSorted=637164 compact=637164
+SPEED json.encode.pretty-sorted n=10000 median=125.179ms p95=130.197ms
+SPEED json.encode.compact-sorted n=10000 median=117.795ms p95=118.509ms
+SPEED json.encode.compact n=10000 median=107.917ms p95=110.034ms
+SPEED_JSON_BYTES count=10000 pretty=9384088 compactSorted=6383665 compact=6383665
+SPEED json.encode.pretty-sorted n=100000 median=1252.840ms p95=1283.450ms
+SPEED json.encode.compact-sorted n=100000 median=1179.065ms p95=1196.485ms
+SPEED json.encode.compact n=100000 median=1077.169ms p95=1092.483ms
+SPEED_JSON_BYTES count=100000 pretty=94029089 compactSorted=64028666 compact=64028666
+SPEED metadata.decision.ascending.production n=1000 median=0.617ms p95=0.633ms
+SPEED metadata.decision.ascending.stable-buckets n=1000 median=0.112ms p95=0.113ms
+SPEED metadata.decision.descending.production n=1000 median=0.615ms p95=0.624ms
+SPEED metadata.decision.descending.stable-buckets n=1000 median=0.112ms p95=0.114ms
+SPEED metadata.starRating.ascending.production n=1000 median=0.850ms p95=0.865ms
+SPEED metadata.starRating.ascending.stable-buckets n=1000 median=0.113ms p95=0.114ms
+SPEED metadata.starRating.descending.production n=1000 median=0.851ms p95=0.885ms
+SPEED metadata.starRating.descending.stable-buckets n=1000 median=0.112ms p95=0.113ms
+SPEED metadata.colorLabel.ascending.production n=1000 median=1.015ms p95=1.025ms
+SPEED metadata.colorLabel.ascending.stable-buckets n=1000 median=0.118ms p95=0.120ms
+SPEED metadata.colorLabel.descending.production n=1000 median=1.017ms p95=1.031ms
+SPEED metadata.colorLabel.descending.stable-buckets n=1000 median=0.118ms p95=0.123ms
+SPEED metadata.decision.ascending.production n=10000 median=11.338ms p95=12.616ms
+SPEED metadata.decision.ascending.stable-buckets n=10000 median=1.115ms p95=2.478ms
+SPEED metadata.decision.descending.production n=10000 median=9.670ms p95=11.445ms
+SPEED metadata.decision.descending.stable-buckets n=10000 median=1.215ms p95=2.209ms
+SPEED metadata.starRating.ascending.production n=10000 median=15.823ms p95=16.297ms
+SPEED metadata.starRating.ascending.stable-buckets n=10000 median=1.788ms p95=2.094ms
+SPEED metadata.starRating.descending.production n=10000 median=15.824ms p95=17.010ms
+SPEED metadata.starRating.descending.stable-buckets n=10000 median=1.120ms p95=1.442ms
+SPEED metadata.colorLabel.ascending.production n=10000 median=16.640ms p95=17.705ms
+SPEED metadata.colorLabel.ascending.stable-buckets n=10000 median=1.166ms p95=1.717ms
+SPEED metadata.colorLabel.descending.production n=10000 median=16.585ms p95=17.487ms
+SPEED metadata.colorLabel.descending.stable-buckets n=10000 median=1.284ms p95=2.729ms
+SPEED metadata.decision.ascending.production n=100000 median=177.954ms p95=189.399ms
+SPEED metadata.decision.ascending.stable-buckets n=100000 median=37.118ms p95=38.174ms
+SPEED metadata.decision.descending.production n=100000 median=171.979ms p95=175.170ms
+SPEED metadata.decision.descending.stable-buckets n=100000 median=34.402ms p95=37.324ms
+SPEED metadata.starRating.ascending.production n=100000 median=243.410ms p95=258.529ms
+SPEED metadata.starRating.ascending.stable-buckets n=100000 median=34.309ms p95=37.815ms
+SPEED metadata.starRating.descending.production n=100000 median=242.416ms p95=243.635ms
+SPEED metadata.starRating.descending.stable-buckets n=100000 median=35.012ms p95=36.712ms
+SPEED metadata.colorLabel.ascending.production n=100000 median=254.703ms p95=257.015ms
+SPEED metadata.colorLabel.ascending.stable-buckets n=100000 median=35.271ms p95=37.166ms
+SPEED metadata.colorLabel.descending.production n=100000 median=255.342ms p95=258.331ms
+SPEED metadata.colorLabel.descending.stable-buckets n=100000 median=35.087ms p95=36.397ms
+SPEED pairing.distinct-stems.production n=1000 median=11.347ms p95=18.178ms
+SPEED pairing.distinct-stems.no-global-sort n=1000 median=8.527ms p95=9.017ms
+SPEED pairing.raw-jpeg.production n=1000 median=9.553ms p95=10.149ms
+SPEED pairing.raw-jpeg.no-global-sort n=1000 median=6.767ms p95=7.169ms
+SPEED pairing.distinct-stems.production n=10000 median=107.469ms p95=110.902ms
+SPEED pairing.distinct-stems.no-global-sort n=10000 median=81.802ms p95=85.394ms
+SPEED pairing.raw-jpeg.production n=10000 median=96.870ms p95=97.426ms
+SPEED pairing.raw-jpeg.no-global-sort n=10000 median=64.743ms p95=66.734ms
+SPEED pairing.distinct-stems.production n=100000 median=1350.863ms p95=1397.347ms
+SPEED pairing.distinct-stems.no-global-sort n=100000 median=935.588ms p95=949.911ms
+SPEED pairing.raw-jpeg.production n=100000 median=1174.515ms p95=1200.951ms
+SPEED pairing.raw-jpeg.no-global-sort n=100000 median=708.884ms p95=722.869ms
+SPEED review.rating.default-sort n=1000 median=0.025ms p95=0.030ms
+SPEED review.rating.decision-sort n=1000 median=1.181ms p95=1.430ms
+SPEED review.stars.star-sort n=1000 median=1.396ms p95=2.198ms
+SPEED filter.decision.projection-and-groups n=1000 median=0.865ms p95=0.991ms
+SPEED sort-menu.camera.full-store n=1000 median=7.970ms p95=9.256ms
+SPEED sort-menu.camera.prepared-only-hypothesis n=1000 median=6.002ms p95=6.588ms
+SPEED quality.coverage.unmeasured-read n=1000 median=0.709ms p95=1.334ms
+SPEED filter.quality.switch-metadata-cue n=1000 median=1.264ms p95=2.299ms
+SPEED navigation.100-steps n=1000 median=3.466ms p95=3.755ms
+SPEED review.rating.default-sort n=10000 median=0.024ms p95=0.027ms
+SPEED review.rating.decision-sort n=10000 median=14.318ms p95=15.376ms
+SPEED review.stars.star-sort n=10000 median=10.920ms p95=12.266ms
+SPEED filter.decision.projection-and-groups n=10000 median=8.927ms p95=9.689ms
+SPEED sort-menu.camera.full-store n=10000 median=77.281ms p95=81.562ms
+SPEED sort-menu.camera.prepared-only-hypothesis n=10000 median=52.525ms p95=55.884ms
+SPEED quality.coverage.unmeasured-read n=10000 median=7.850ms p95=7.971ms
+SPEED filter.quality.switch-metadata-cue n=10000 median=11.100ms p95=20.658ms
+SPEED navigation.100-steps n=10000 median=3.944ms p95=4.301ms
+SPEED review.rating.default-sort n=100000 median=0.024ms p95=0.027ms
+SPEED review.rating.decision-sort n=100000 median=169.255ms p95=172.272ms
+SPEED review.stars.star-sort n=100000 median=128.886ms p95=133.655ms
+SPEED filter.decision.projection-and-groups n=100000 median=85.537ms p95=108.581ms
+SPEED sort-menu.camera.full-store n=100000 median=971.246ms p95=981.049ms
+SPEED sort-menu.camera.prepared-only-hypothesis n=100000 median=710.460ms p95=775.220ms
+SPEED quality.coverage.unmeasured-read n=100000 median=78.920ms p95=82.963ms
+SPEED filter.quality.switch-metadata-cue n=100000 median=114.257ms p95=197.299ms
+SPEED navigation.100-steps n=100000 median=3.704ms p95=4.211ms

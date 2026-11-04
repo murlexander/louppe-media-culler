@@ -1,0 +1,27 @@
+
+full-tests.log
+Build complete! (17,90 sec)
+/Users/developer/Documents/code/louppe/app/Tests/LouppeTests/ConnectedDrivesTests.swift:217: -[LouppeTests.ConnectedDrivesTests testHostedDriveRowsExposeCapacityAndNativeChooseAction] : Test skipped - SwiftUI's XCTest host has no in-process accessibility children; verify the native test preview with computer use.
+Executed 34 tests, with 0 failures (0 unexpected) in 2.690 (2.694) seconds
+Executed 524 tests, with 1 test skipped and 0 failures (0 unexpected) in 22.669 (22.716) seconds
+Test Suite 'All tests' passed at 2026-09-29 9:58:33.369 PM.
+Executed 524 tests, with 1 test skipped and 0 failures (0 unexpected) in 22.669 (22.718) seconds
+
+strict-build.log
+Build complete! (13,28 sec)
+
+store-build.log
+Build complete! (23,96 sec)
+
+performance-checks.log
+Performance checks passed (75/75)
+
+scrollbar-checks.log
+Scrollbar checks passed (10/10); reserved gutter: 17.0 pt
+
+video-checks.log
+Media checks passed
+
+package-build.log
+Build complete! (75,02 sec)
+Release preflight passed for Louppe 1.10.0 (12).

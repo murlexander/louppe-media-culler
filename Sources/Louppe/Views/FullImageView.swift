@@ -3,12 +3,14 @@ import AppKit
 
 /// The big central image in the Gallery view, with fit / 100% / phone-size zoom.
 struct FullImageView: View {
+    @Environment(\.mediaReadAccess) private var mediaReadAccess
     private static let navigationDebounceNanoseconds: UInt64 = 40_000_000
     @Environment(\.openWindow) private var openWindow
     @AppStorage(RawDisplayMode.preferenceKey) private var rawDisplayMode = RawDisplayMode.fast
     @AppStorage(AppleRawDecoder.preferenceKey) private var rawDecoder = AppleRawDecoder.appleDefault
 
     let item: PhotoItem
+    private let imagePipeline: ImagePipeline
     @Binding var zoomMode: ZoomMode
     let showsClippingWarnings: Bool
     let actualSizeViewport: ActualSizeViewport
@@ -57,6 +59,11 @@ struct FullImageView: View {
         let decoder: AppleRawDecoder
     }
 
+    private struct StandInLoadID: Hashable {
+        let preview: PreviewLoadID
+        let fullIsLoaded: Bool
+    }
+
     private var displayMode: RawDisplayMode {
         fallbackRevision == item.contentRevision ? .fast : rawDisplayMode
     }
@@ -73,9 +80,11 @@ struct FullImageView: View {
         onFittedScaleMeasured: @escaping (CGFloat, PhotoContentRevision, ZoomMode) -> Void = { _, _, _ in },
         onZoomFromFit: @escaping (CGFloat, NormalizedImagePosition, CGPoint, PhotoContentRevision) -> Void = { _, _, _, _ in },
         onRepresentation: @escaping (PhotoRepresentation, PhotoContentRevision) -> Void = { _, _ in },
-        onLoading: @escaping (Bool) -> Void = { _ in }
+        onLoading: @escaping (Bool) -> Void = { _ in },
+        imagePipeline: ImagePipeline = .shared
     ) {
         self.item = item
+        self.imagePipeline = imagePipeline
         self._zoomMode = zoomMode
         self.showsClippingWarnings = showsClippingWarnings
         self.actualSizeViewport = actualSizeViewport
@@ -100,13 +109,13 @@ struct FullImageView: View {
         self._clippingDecoder = State(initialValue: decoder)
         self._loadedDisplayMode = State(initialValue: mode)
         self._clippingDisplayMode = State(initialValue: mode)
-        let cachedFull = ImagePipeline.shared.cachedFullImage(for: item, mode: mode, decoder: decoder)
+        let cachedFull = imagePipeline.cachedFullImage(for: item, mode: mode, decoder: decoder)
         self._image = State(initialValue: cachedFull)
         self._clippingImage = State(
             initialValue: ClippingPreviewPipeline.shared.cachedImage(for: item, mode: mode, decoder: decoder)
         )
         if cachedFull == nil, !mode.rendersRAW(for: item) {
-            self._preview = State(initialValue: ImagePipeline.shared.cachedThumbnail(for: item))
+            self._preview = State(initialValue: imagePipeline.cachedThumbnail(for: item))
         }
     }
 
@@ -117,10 +126,10 @@ struct FullImageView: View {
         let currentLoad = imageRevision == contentRevision && loadedDisplayMode == mode && loadedDecoder == rawDecoder
         let displayedImage = currentLoad
             ? image
-            : ImagePipeline.shared.cachedFullImage(for: item, mode: mode, decoder: rawDecoder)
+            : imagePipeline.cachedFullImage(for: item, mode: mode, decoder: rawDecoder)
         let displayedPreview = rendersRAW ? nil : currentLoad
             ? preview
-            : ImagePipeline.shared.cachedThumbnail(for: item)
+            : imagePipeline.cachedThumbnail(for: item)
         let displayedClippingImage = clippingRevision == contentRevision && clippingDisplayMode == mode && clippingDecoder == rawDecoder
             ? clippingImage
             : ClippingPreviewPipeline.shared.cachedImage(for: item, mode: mode, decoder: rawDecoder)
@@ -133,12 +142,12 @@ struct FullImageView: View {
         Group {
             if !item.isSupported {
                 ContentUnavailableView {
-                    Label("File isn't supported", systemImage: "doc.questionmark")
+                    Label(L10n.text("File isn't supported"), systemImage: "doc.questionmark")
                 } description: {
-                    Text("Louppe can't preview \(item.fileTypeLabel) files yet. You can still rate it — \(item.displayName)")
+                    Text(L10n.text("No preview for \(item.fileTypeLabel). You can still rate it — \(item.displayName)"))
                 } actions: {
-                    Button("Show in Finder") { showInFinder() }
-                    Button("Supported Formats") {
+                    Button(L10n.text("Show in Finder")) { showInFinder() }
+                    Button(L10n.text("Supported Formats")) {
                         openWindow(id: LouppeHelpWindow.id)
                     }
                 }
@@ -212,24 +221,24 @@ struct FullImageView: View {
                 case .fit, .small:
                     if currentLoad, failedToLoad {
                         ContentUnavailableView {
-                            Label(rendersRAW ? "RAW unavailable" : "Can't preview this photo", systemImage: "exclamationmark.triangle")
+                            Label(rendersRAW ? L10n.text("RAW unavailable") : L10n.text("Can't preview this photo"), systemImage: "exclamationmark.triangle")
                         } description: {
                             if rendersRAW {
                                 Text(rawDecoder.failureMessage)
                             } else {
-                                Text("Louppe couldn't read \(item.displayName). The file may be unavailable or in a format this Mac can't decode. You can still rate it.")
+                                Text(L10n.text("Can’t read \(item.displayName). It may be unavailable or unsupported by this Mac. You can still rate it."))
                             }
                         } actions: {
-                            Button(rendersRAW ? "Retry RAW" : "Retry Preview") {
+                            Button(rendersRAW ? L10n.text("Retry RAW") : L10n.text("Retry Preview")) {
                                 previewRetryGeneration &+= 1
                             }
                             if rendersRAW {
                                 if rawDecoder == .raw9 {
-                                    Button("Use Apple Default") { rawDecoder = .appleDefault }
+                                    Button(L10n.text("Use Apple Default")) { rawDecoder = .appleDefault }
                                 }
-                                Button("Use Preview") { fallbackRevision = contentRevision }
+                                Button(L10n.text("Use Preview")) { fallbackRevision = contentRevision }
                             }
-                            Button("Show in Finder") { showInFinder() }
+                            Button(L10n.text("Show in Finder")) { showInFinder() }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if let presentationPreview {
@@ -268,13 +277,13 @@ struct FullImageView: View {
         .overlay {
             if zoomMode == .actual, item.isRaw, actualRenderingFailed {
                 VStack(spacing: 8) {
-                    Text("RAW unavailable").font(.callout)
+                    Text(L10n.text("RAW unavailable")).font(.callout)
                     Text(rawDecoder.failureMessage).font(.caption).frame(maxWidth: 320)
-                    Button("Retry RAW") { previewRetryGeneration &+= 1 }
+                    Button(L10n.text("Retry RAW")) { previewRetryGeneration &+= 1 }
                     if rawDecoder == .raw9 {
-                        Button("Use Apple Default") { rawDecoder = .appleDefault }
+                        Button(L10n.text("Use Apple Default")) { rawDecoder = .appleDefault }
                     }
-                    Button("Use Preview") {
+                    Button(L10n.text("Use Preview")) {
                         fallbackRevision = contentRevision
                         onZoomToFit()
                     }
@@ -310,14 +319,14 @@ struct FullImageView: View {
             let requestedItem = item
             let decoder = rawDecoder
             let requestedRevision = requestedItem.contentRevision
-            let cachedFull = ImagePipeline.shared.cachedFullImage(
+            let cachedFull = imagePipeline.cachedFullImage(
                 for: requestedItem, mode: mode, decoder: decoder
             )
             loadedDisplayMode = mode
             loadedDecoder = decoder
             image = cachedFull
             preview = cachedFull == nil && !rendersRAW
-                ? ImagePipeline.shared.cachedThumbnail(for: requestedItem)
+                ? imagePipeline.cachedThumbnail(for: requestedItem)
                 : nil
             failedToLoad = false
             imageRevision = requestedRevision
@@ -332,23 +341,42 @@ struct FullImageView: View {
             else { return }
             onLoading(true)
             defer { onLoading(false) }
-            async let full = ImagePipeline.shared.fullImage(
-                for: requestedItem, mode: mode, decoder: decoder
+            let loaded = await imagePipeline.fullImage(
+                for: requestedItem, mode: mode, decoder: decoder, sourceAccess: mediaReadAccess
             )
-            if !rendersRAW, preview == nil,
-               let thumb = await ImagePipeline.shared.thumbnail(
-                   for: requestedItem
-               ),
-               !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode,
-               imageRevision == requestedRevision,
-               image == nil {
-                preview = thumb
-            }
-            let loaded = await full
             guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode, imageRevision == requestedRevision
             else { return }
             image = loaded
             failedToLoad = (loaded == nil)
+        }
+        .task(id: StandInLoadID(
+            preview: PreviewLoadID(
+                contentRevision: contentRevision,
+                retryGeneration: previewRetryGeneration,
+                mode: mode,
+                decoder: rawDecoder
+            ),
+            fullIsLoaded: currentLoad && image != nil
+        )) {
+            // The stand-in has its own task: a busy thumbnail lane must never
+            // hold up publication or loading settlement of the full preview.
+            // Publishing full pixels also retires an unneeded stand-in waiter.
+            let requestedItem = item
+            let requestedRevision = requestedItem.contentRevision
+            let decoder = rawDecoder
+            guard requestedItem.isSupported, !rendersRAW,
+                  imagePipeline.cachedFullImage(for: requestedItem, mode: mode, decoder: decoder) == nil,
+                  imagePipeline.cachedThumbnail(for: requestedItem) == nil
+            else { return }
+            try? await Task.sleep(nanoseconds: Self.navigationDebounceNanoseconds)
+            guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode,
+                  loadedDecoder == decoder, imageRevision == requestedRevision, image == nil
+            else { return }
+            let thumb = await imagePipeline.thumbnail(for: requestedItem, sourceAccess: mediaReadAccess)
+            guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode,
+                  loadedDecoder == decoder, imageRevision == requestedRevision, image == nil
+            else { return }
+            preview = thumb
         }
         .task(
             id: ClippingLoadID(
@@ -384,7 +412,7 @@ struct FullImageView: View {
             onLoading(true)
             defer { onLoading(false) }
             let loaded = await ClippingPreviewPipeline.shared.image(
-                for: requestedItem, mode: mode, decoder: decoder
+                for: requestedItem, mode: mode, decoder: decoder, sourceAccess: mediaReadAccess
             )
             guard !Task.isCancelled, rawDecoder == decoder, clippingDisplayMode == mode,
                   clippingRevision == requestedRevision else { return }
@@ -394,12 +422,13 @@ struct FullImageView: View {
 
     private var fittedRepresentation: PhotoRepresentation {
         let mode = displayMode
-        guard mode.rendersRAW(for: item) else { return .preview }
+        let ready: PhotoRepresentation = mode.rendersRAW(for: item) ? .raw : .preview
+        let loading: PhotoRepresentation = mode.rendersRAW(for: item) ? .loadingRAW : .loadingPreview
         guard loadedDisplayMode == mode, loadedDecoder == rawDecoder, imageRevision == item.contentRevision else {
-            return ImagePipeline.shared.cachedFullImage(for: item, mode: mode, decoder: rawDecoder) == nil ? .loadingRAW : .raw
+            return imagePipeline.cachedFullImage(for: item, mode: mode, decoder: rawDecoder) == nil ? loading : ready
         }
-        if image != nil { return .raw }
-        return failedToLoad ? .unavailable : .loadingRAW
+        if image != nil { return ready }
+        return failedToLoad ? .unavailable : loading
     }
 
     private func showInFinder() {
@@ -420,7 +449,7 @@ struct FullImageView: View {
         let revision = item.contentRevision
         let decoder = rawDecoder
         Task { @MainActor in
-            let source = await HighResolutionImagePipeline.shared.source(for: requestedItem, decoder: decoder)
+            let source = await HighResolutionImagePipeline.shared.source(for: requestedItem, decoder: decoder, sourceAccess: mediaReadAccess)
             guard generation == fittedPinchGeneration,
                   rawDecoder == decoder,
                   revision == item.contentRevision,
@@ -449,6 +478,7 @@ struct FullImageView: View {
 /// Displays exactly the fitted image rectangle so only the photo—not its
 /// letterboxed surroundings—owns the location-aware double-click gesture.
 private struct ZoomableFittedImage: View {
+    @Environment(\.mediaReadAccess) private var mediaReadAccess
     @Environment(\.displayScale) private var displayScale
     let item: PhotoItem
     let mode: ZoomMode
@@ -512,8 +542,12 @@ private struct ZoomableFittedImage: View {
                         x: imageFrame.midX,
                         y: imageFrame.midY
                     )
+                    .accessibilityLabel(item.displayName)
+                    .accessibilityAction(named: Text(L10n.text("View at 100%"))) {
+                        onDoubleClick(.center)
+                    }
                     .accessibilityHint(
-                        "Double-click to inspect this point at 100 percent."
+                        L10n.text("Double-click to inspect this point at 100 percent.")
                     )
             }
             Color.clear.frame(width: 0, height: 0)
@@ -524,7 +558,7 @@ private struct ZoomableFittedImage: View {
         }
         .task(id: HighResolutionImagePipeline.sourceKey(for: item, decoder: decoder)) {
             let revision = item.contentRevision
-            let source = await HighResolutionImagePipeline.shared.source(for: item, decoder: decoder)
+            let source = await HighResolutionImagePipeline.shared.source(for: item, decoder: decoder, sourceAccess: mediaReadAccess)
             guard !Task.isCancelled else { return }
             measuredRevision = revision
             sourcePixelSize = source?.pixelSize
@@ -595,6 +629,7 @@ final class FittedImageDoubleClickView: NSView {
     private var magnificationFactor: CGFloat = 1
     private var lastPinchPosition: NormalizedImagePosition?
     private var pinchIsActive = false
+    private let touchActions = DirectTouchClickActions()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -607,6 +642,12 @@ final class FittedImageDoubleClickView: NSView {
     }
 
     private func installMagnificationRecognizer() {
+        touchActions.doubleTap = { [weak self] point in
+            guard let self, let position = FittedImageGeometry.normalizedPosition(at: point, in: self.bounds)
+            else { return }
+            self.onDoubleClick(position)
+        }
+        touchActions.install(on: self)
         // NSResponder's begin/endGesture callbacks are no longer delivered.
         // The recognizer owns the complete native pinch lifecycle, including
         // cancelled gestures, without replacing this view mid-gesture.
