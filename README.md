@@ -32,7 +32,7 @@ Requires **Apple silicon and macOS 14 or newer**. Intel Macs are unsupported.
 - [User guide](Docs/USER_GUIDE.md) — usage, Apple Photos, file handling, and shortcuts.
 - [Developer docs](Docs/DEVELOPMENT.md) — setup, architecture, tests, and releases.
 - [Version history](CHANGELOG.md)
-- [Contact Alex](mailto:a@alex-markin.com) · [Privacy](https://louppe.eu/privacy/#app)
+- [Contact Alex](mailto:a@alex-markin.com) · [Privacy](https://louppe.eu/privacy/#app) · [Security](SECURITY.md)
 
 In the app, open **Help → Louppe Help** for a quick reference and your current
 keyboard shortcuts.
