@@ -160,26 +160,29 @@ struct MetadataDecisionButton: View {
     }
 }
 
+/// Color labels are rounded squares so a green or red label never reads as
+/// the round ✓ / ✗ decision badge.
 struct ColorLabelMark: View {
+    static let shape = RoundedRectangle(cornerRadius: 3.5, style: .continuous)
     let state: PhotoItemColorLabelState
 
     var body: some View {
         Group {
             switch state {
             case .none:
-                Circle()
-                    .stroke(Color.secondary, lineWidth: 1.5)
+                Self.shape
+                    .strokeBorder(Color.secondary, lineWidth: 1.5)
             case .label(let label):
                 // A filled Shape keeps its explicit label color inside Menu
                 // labels; SF Symbols inherit the app's purple menu tint.
-                Circle()
+                Self.shape
                     .fill(label.swatchColor)
             case .mixed:
-                Image(systemName: "circle.lefthalf.filled")
+                Image(systemName: "square.lefthalf.filled")
                     .foregroundStyle(Color.louppeAccent)
             }
         }
-        .frame(width: 13, height: 13)
+        .frame(width: 12, height: 12)
         .accessibilityHidden(true)
     }
 }
@@ -207,7 +210,8 @@ struct MetadataBadgeStrip: View {
                     } else {
                         ColorLabelMark(state: colorLabelState)
                             .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
-                            .background(.black.opacity(0.68), in: Circle())
+                            .background(.black.opacity(0.68),
+                                        in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                     }
                 }
             }

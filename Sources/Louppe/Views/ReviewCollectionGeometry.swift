@@ -202,7 +202,7 @@ struct ReviewCollectionGeometry {
 struct ReviewGridCaption: View {
     let title: String
     var body: some View {
-        Text(title).font(.caption2).foregroundStyle(.secondary)
+        Text(title).font(.caption).foregroundStyle(.secondary)
             .lineLimit(1).truncationMode(.middle).frame(maxWidth: .infinity)
     }
 }
@@ -223,4 +223,47 @@ struct ReviewGroupHeader: View {
         .padding(.horizontal, style == .browser ? 0 : 4)
         .padding(.vertical, style == .browser ? 3 : 4)
     }
+}
+
+/// The photo and every tile adornment share this centered aspect-fit rectangle.
+/// Unknown or nonvisual media keeps the original square slot.
+enum TileMediaGeometry {
+    static func fittedRect(in slot: CGRect, imageSize: CGSize?) -> CGRect {
+        guard let imageSize, imageSize.width.isFinite, imageSize.height.isFinite,
+              imageSize.width > 0, imageSize.height > 0 else { return slot }
+        let scale = min(slot.width / imageSize.width, slot.height / imageSize.height)
+        let size = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
+        return CGRect(x: slot.midX - size.width / 2, y: slot.midY - size.height / 2,
+                      width: size.width, height: size.height)
+    }
+
+    static func imageSize(for item: PhotoItem, loadedImage: NSImage?) -> CGSize? {
+        guard item.hasVisualPreview else { return nil }
+        return item.videoDimensions ?? loadedImage?.size
+    }
+}
+
+/// Accepts the unchanged square proposal, placing its single decorated photo
+/// inside it without per-cell geometry readers or layout preferences.
+struct TilePhotoLayout: Layout {
+    let imageSize: CGSize?
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        proposal.replacingUnspecifiedDimensions(by: CGSize(width: 102, height: 102))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rect = TileMediaGeometry.fittedRect(in: bounds, imageSize: imageSize)
+        for subview in subviews {
+            subview.place(at: CGPoint(x: rect.midX, y: rect.midY), anchor: .center,
+                          proposal: ProposedViewSize(rect.size))
+        }
+    }
+}
+
+/// Only mounted Grid cells report their displayed size. Retained thumbnail
+/// pixels may outlive NSCache entries, so drag ownership must use these sizes.
+@MainActor
+final class GridTileImageSizes {
+    var sizes: [PhotoContentRevision: CGSize] = [:]
 }

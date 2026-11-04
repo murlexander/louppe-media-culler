@@ -135,6 +135,7 @@ struct GridCollectionContent: View, Equatable {
         let groups: [PreparedSessionIndex.VisibleGroup]
     }
     @State private var projectionCache = ReviewCollectionProjectionCache<ProjectionSource>()
+    @State private var tileImageSizes = GridTileImageSizes()
     @Environment(\.layoutDirection) private var layoutDirection
     let store: SessionStore
     let groups: [PreparedSessionIndex.VisibleGroup]
@@ -192,7 +193,15 @@ struct GridCollectionContent: View, Equatable {
                     })
                     return GridRubberBandHitTest.shouldTrackCanvasDrag(
                         startingAt: point, tileFrames: frames, playableVideoIndices: playable,
-                        rightToLeft: layoutDirection == .rightToLeft)
+                        rightToLeft: layoutDirection == .rightToLeft,
+                        imageSizes: Dictionary(uniqueKeysWithValues: frames.keys.compactMap { index in
+                            guard store.items.indices.contains(index) else { return nil }
+                            let item = store.items[index]
+                            guard let size = tileImageSizes.sizes[item.contentRevision]
+                                ?? TileMediaGeometry.imageSize(for: item, loadedImage: ImagePipeline.shared.cachedThumbnail(for: item))
+                            else { return nil }
+                            return (index, size)
+                        }))
                 },
                 changed: { rect, frames in
                     store.setSelection(Set(frames.filter { $0.value.intersects(rect) }.map(\.key)))
@@ -201,7 +210,8 @@ struct GridCollectionContent: View, Equatable {
             )
         ) { entry in
             AnyView(GridCell(store: store, index: entry.index, id: entry.id,
-                             onPointerCurrentChange: onPointerCurrentChange))
+                             onPointerCurrentChange: onPointerCurrentChange,
+                             tileImageSizes: tileImageSizes))
         }
     }
 }
@@ -215,6 +225,7 @@ private struct GridCell: View {
     let index: Int
     let id: String
     let onPointerCurrentChange: () -> Void
+    let tileImageSizes: GridTileImageSizes
 
     var body: some View {
         if store.items.indices.contains(index), store.items[index].id == id {
@@ -226,16 +237,6 @@ private struct GridCell: View {
             )
             VStack(spacing: 3) {
                 ZStack {
-                    ThumbnailView(
-                        item: item,
-                        isCurrent: index == store.currentIndex,
-                        isSelected: store.selectedIndices.contains(index),
-                        showsRatingBadge: false,
-                        videoPlayback: store.videoPlayback
-                    )
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-
                     // A representable has a 100x100 default ideal size. Keep
                     // it in an overlay so it receives the media square's real
                     // size without participating in the Grid cell's layout.
@@ -272,6 +273,18 @@ private struct GridCell: View {
                             )
                         }
 
+                    ThumbnailView(
+                        item: item,
+                        isCurrent: index == store.currentIndex,
+                        isSelected: store.selectedIndices.contains(index),
+                        showsRatingBadge: false,
+                        videoPlayback: store.videoPlayback,
+                        tileOverlay: AnyView(tileControls(item: item, actions: actions)),
+                        onImageSizeChange: { revision, size in
+                            tileImageSizes.sizes[revision] = size
+                        }
+                    )
+
                     if item.isPlayableMedia {
                         Button {
                             if index != store.currentIndex {
@@ -299,41 +312,8 @@ private struct GridCell: View {
                             : L10n.text("Play \(L10n.label(item.mediaKind.singularLabel))"))
                     }
                 }
-                // Keep the rating control above the photo's selection gesture
-                // so its click never falls through and changes two things.
-                .overlay(alignment: .topTrailing) {
-                    Button {
-                        actions.cycleRating()
-                    } label: {
-                        RatingBadge(
-                            rating: item.rating,
-                            isMixed: item.hasMixedRatings,
-                            size: TileBadgeLayout.height
-                        )
-                        .frame(
-                            width: TileBadgeLayout.decisionTargetSize,
-                            height: TileBadgeLayout.decisionTargetSize,
-                            alignment: .topTrailing
-                        )
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!store.canRate)
-                    .padding(TileBadgeLayout.inset)
-                    .help(L10n.text("Change Yes/No decision"))
-                    .accessibilityLabel(L10n.text("Change decision for \(item.displayName)"))
-                    .accessibilityValue(
-                        MediaTileAccessibility.ratingDescription(
-                            for: item.ratingState
-                        )
-                    )
-                }
                 .frame(maxWidth: .infinity)
                 .aspectRatio(1, contentMode: .fit)
-                .overlay(alignment: .bottomLeading) {
-                    QualityCueTileIcons(store: store, item: item)
-                        .padding(TileBadgeLayout.inset)
-                }
 
                 ReviewGridCaption(title: item.displayName)
                     .accessibilityHidden(true)
@@ -350,6 +330,42 @@ private struct GridCell: View {
                 MediaTileContextMenu(store: store, index: index, revision: item.contentRevision, open: actions.openInGallery)
             }
         }
+    }
+
+    private func tileControls(item: PhotoItem, actions: GridCellActions) -> some View {
+        Color.clear
+            .allowsHitTesting(false)
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    actions.cycleRating()
+                } label: {
+                    RatingBadge(
+                        rating: item.rating,
+                        isMixed: item.hasMixedRatings,
+                        size: TileBadgeLayout.height
+                    )
+                    .frame(
+                        width: TileBadgeLayout.decisionTargetSize,
+                        height: TileBadgeLayout.decisionTargetSize,
+                        alignment: .topTrailing
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!store.canRate)
+                .padding(TileBadgeLayout.inset)
+                .help(L10n.text("Change Yes/No decision"))
+                .accessibilityLabel(L10n.text("Change decision for \(item.displayName)"))
+                .accessibilityValue(
+                    MediaTileAccessibility.ratingDescription(
+                        for: item.ratingState
+                    )
+                )
+            }
+            .overlay(alignment: .bottomLeading) {
+                QualityCueTileIcons(store: store, item: item)
+                    .padding(TileBadgeLayout.inset)
+            }
     }
 }
 
@@ -500,7 +516,7 @@ struct GridCellActions {
 
 /// Classifies the starting point of a Grid drag from the tile geometry already
 /// needed for selection. Control locations are deterministic within each
-/// square media tile, so this avoids one GeometryReader and preference value
+/// fitted photo rectangle, so this avoids one GeometryReader and preference value
 /// per rendered control while keeping native Button drags out of rubber-band
 /// selection.
 enum GridRubberBandHitTest {
@@ -514,7 +530,8 @@ enum GridRubberBandHitTest {
         startingAt point: CGPoint,
         tileFrames: [Int: CGRect],
         playableVideoIndices: Set<Int>,
-        rightToLeft: Bool = false
+        rightToLeft: Bool = false,
+        imageSizes: [Int: CGSize] = [:]
     ) -> Bool {
         guard let (index, tileFrame) = tileFrames.first(where: {
             $0.value.contains(point)
@@ -525,13 +542,14 @@ enum GridRubberBandHitTest {
 
         // GridCell's media area is a square at the top of the cell; the
         // filename beneath it remains an ordinary selection-canvas target.
-        let mediaFrame = CGRect(
+        let slotFrame = CGRect(
             x: tileFrame.minX,
             y: tileFrame.minY,
             width: tileFrame.width,
             height: tileFrame.width
         )
-        guard mediaFrame.contains(point) else { return true }
+        guard slotFrame.contains(point) else { return true }
+        let mediaFrame = TileMediaGeometry.fittedRect(in: slotFrame, imageSize: imageSizes[index])
 
         let ratingFrame = CGRect(
             x: rightToLeft ? mediaFrame.minX : mediaFrame.maxX - ratingControlRegionSize,
@@ -544,10 +562,10 @@ enum GridRubberBandHitTest {
             let cueRegionHeight = TileBadgeLayout.cueTargetHeight + TileBadgeLayout.inset
             let cueFrame = CGRect(
                 x: rightToLeft
-                    ? mediaFrame.maxX - min(TileBadgeLayout.maximumCueRowWidth + TileBadgeLayout.inset, mediaFrame.width)
+                    ? mediaFrame.maxX - (TileBadgeLayout.maximumCueRowWidth + TileBadgeLayout.inset)
                     : mediaFrame.minX,
                 y: mediaFrame.maxY - cueRegionHeight,
-                width: min(TileBadgeLayout.maximumCueRowWidth + TileBadgeLayout.inset, mediaFrame.width),
+                width: TileBadgeLayout.maximumCueRowWidth + TileBadgeLayout.inset,
                 height: cueRegionHeight
             )
             if cueFrame.contains(point) { return false }

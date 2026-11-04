@@ -87,6 +87,8 @@ struct ThumbnailView: View {
     /// Grid supplies its own interactive badge above the tile's click target.
     var showsRatingBadge: Bool = true
     var videoPlayback: VideoPlaybackController?
+    private let tileOverlay: AnyView
+    private let onImageSizeChange: ((PhotoContentRevision, CGSize?) -> Void)?
     /// Scalar projections make metadata changes visible to SwiftUI even
     /// though the PhotoItem's lock-backed storage reference stays identical.
     private let ratingState: PhotoItemRatingState
@@ -100,13 +102,17 @@ struct ThumbnailView: View {
         isCurrent: Bool,
         isSelected: Bool = false,
         showsRatingBadge: Bool = true,
-        videoPlayback: VideoPlaybackController? = nil
+        videoPlayback: VideoPlaybackController? = nil,
+        tileOverlay: AnyView = AnyView(EmptyView()),
+        onImageSizeChange: ((PhotoContentRevision, CGSize?) -> Void)? = nil
     ) {
         self.item = item
         self.isCurrent = isCurrent
         self.isSelected = isSelected
         self.showsRatingBadge = showsRatingBadge
         self.videoPlayback = videoPlayback
+        self.tileOverlay = tileOverlay
+        self.onImageSizeChange = onImageSizeChange
         self.ratingState = item.ratingState
         self.starRatingState = item.starRatingState
         self.colorLabelState = item.colorLabelState
@@ -129,82 +135,94 @@ struct ThumbnailView: View {
         let displayedImage = retainedImage.revision == revision
             ? retainedImage.image
             : ImagePipeline.shared.cachedThumbnail(for: item)
-        ZStack {
-            Group {
-                if let reference = item.primaryFile.photosMedia {
-                    PhotosThumbnailView(reference: reference)
-                } else if item.isText {
-                    VStack(spacing: 8) {
-                        Image(systemName: "doc.text")
-                            .font(.system(size: 28, weight: .light))
-                        Text(item.fileTypeLabel)
-                            .font(.system(size: 14, design: .serif))
-                    }
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.appBackground)
-                } else if item.isAudio, item.audioIsPlayable {
-                    AudioThumbnail(item: item)
-                } else if !item.isSupported {
-                    UnsupportedThumbnail(item: item)
-                } else if let displayedImage {
-                    Image(nsImage: displayedImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .clipShape(
-                            RoundedRectangle(cornerRadius: thumbnailCornerRadius)
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    RoundedRectangle(cornerRadius: thumbnailCornerRadius)
-                        .fill(Color(nsColor: .quaternaryLabelColor))
-                        .overlay {
-                            Image(systemName: "photo")
-                                .foregroundStyle(.secondary)
+        let imageSize = TileMediaGeometry.imageSize(for: item, loadedImage: displayedImage)
+        TilePhotoLayout(imageSize: imageSize) {
+            ZStack {
+                Group {
+                    if let reference = item.primaryFile.photosMedia {
+                        PhotosThumbnailView(reference: reference)
+                    } else if item.isText {
+                        VStack(spacing: 8) {
+                            Image(systemName: "doc.text")
+                                .font(.system(size: 28, weight: .light))
+                            Text(item.fileTypeLabel)
+                                .font(.system(size: 14, design: .serif))
                         }
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.appBackground)
+                    } else if item.isAudio, item.audioIsPlayable {
+                        AudioThumbnail(item: item)
+                    } else if !item.isSupported {
+                        UnsupportedThumbnail(item: item)
+                    } else if let displayedImage {
+                        Image(nsImage: displayedImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .clipShape(
+                                RoundedRectangle(cornerRadius: thumbnailCornerRadius)
+                            )
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        RoundedRectangle(cornerRadius: thumbnailCornerRadius)
+                            .fill(Color(nsColor: .quaternaryLabelColor))
+                            .overlay {
+                                Image(systemName: "photo")
+                                    .foregroundStyle(.secondary)
+                            }
+                    }
+                }
+                if let videoPlayback, item.isVideo, item.videoIsPlayable {
+                    GridVideoPlaybackOverlay(
+                        item: item,
+                        playback: videoPlayback
+                    )
                 }
             }
-            if let videoPlayback, item.isVideo, item.videoIsPlayable {
-                GridVideoPlaybackOverlay(
-                    item: item,
-                    playback: videoPlayback
-                )
+            .overlay {
+                RoundedRectangle(cornerRadius: thumbnailCornerRadius)
+                    .strokeBorder(borderColor, style: StrokeStyle(
+                        lineWidth: 3,
+                        dash: differentiateWithoutColor && isSelected && !isCurrent ? [4, 3] : []
+                    ))
             }
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: thumbnailCornerRadius)
-                .strokeBorder(borderColor, style: StrokeStyle(
-                    lineWidth: 3,
-                    dash: differentiateWithoutColor && isSelected && !isCurrent ? [4, 3] : []
-                ))
-        }
-        .overlay(alignment: .topTrailing) {
-            if showsRatingBadge {
-                RatingBadge(
-                    rating: ratingState.effectiveRating,
-                    isMixed: ratingState == .mixed,
-                    size: TileBadgeLayout.height
-                )
-                .padding(TileBadgeLayout.inset)
+            .overlay(alignment: .topTrailing) {
+                if showsRatingBadge {
+                    RatingBadge(
+                        rating: ratingState.effectiveRating,
+                        isMixed: ratingState == .mixed,
+                        size: TileBadgeLayout.height
+                    )
+                    .padding(TileBadgeLayout.inset)
+                }
             }
-        }
-        .overlay(alignment: .bottomTrailing) {
-            if item.isVideo || item.isAudio {
-                MediaDurationBadge(
-                    duration: item.duration,
-                    mediaKind: item.mediaKind
+            .overlay(alignment: .bottomTrailing) {
+                if item.isVideo || item.isAudio {
+                    MediaDurationBadge(
+                        duration: item.duration,
+                        mediaKind: item.mediaKind
+                    )
+                        .padding(TileBadgeLayout.inset)
+                }
+            }
+            .overlay(alignment: .topLeading) {
+                MetadataBadgeStrip(
+                    starRatingState: starRatingState,
+                    colorLabelState: colorLabelState,
+                    showsColorNames: differentiateWithoutColor
                 )
                     .padding(TileBadgeLayout.inset)
             }
+            .allowsHitTesting(showsRatingBadge)
+            .accessibilityHidden(!showsRatingBadge)
+            .overlay { tileOverlay }
         }
-        .overlay(alignment: .topLeading) {
-            MetadataBadgeStrip(
-                starRatingState: starRatingState,
-                colorLabelState: colorLabelState,
-                showsColorNames: differentiateWithoutColor
-            )
-                .padding(TileBadgeLayout.inset)
+        .onChange(of: imageSize, initial: true) { _, size in onImageSizeChange?(revision, size) }
+        .onChange(of: revision) { old, new in
+            onImageSizeChange?(old, nil)
+            onImageSizeChange?(new, imageSize)
         }
+        .onDisappear { onImageSizeChange?(revision, nil) }
         #if LOUPPE_TEST_SEAMS
         .background {
             ThumbnailRenderMarker(revision: revision, hasImage: displayedImage != nil)
@@ -361,7 +379,8 @@ struct RatingBadge: View {
                     Image(systemName: "circle.dashed")
                         .resizable().scaledToFit()
                         .fontWeight(.semibold)
-                        .foregroundStyle(contrast == .increased ? Color.primary : Color.secondary)
+                        .foregroundStyle(.white)
+                        .background(.black.opacity(contrast == .increased ? 0.85 : 0.55), in: Circle())
                 }
             }
         }

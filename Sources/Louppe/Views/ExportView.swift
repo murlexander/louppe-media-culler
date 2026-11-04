@@ -291,7 +291,7 @@ struct ExportView: View {
                                     )
                                 ) {
                                     HStack(spacing: 7) {
-                                        Circle()
+                                        ColorLabelMark.shape
                                             .fill(label.swatchColor)
                                             .frame(width: 10, height: 10)
                                         Text(label.localizedDisplayName)

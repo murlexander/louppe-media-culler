@@ -25,32 +25,32 @@ struct HistogramSection: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
-            ZStack(alignment: .topTrailing) {
-                chart
-                    .frame(height: Self.chartHeight)
-
-                if !loadFailed, store.viewMode == .gallery {
-                    clippingButton
-                        .padding(.top, 2)
-                        .padding(.trailing, 2)
-                }
-
+        VStack(alignment: .leading, spacing: 6) {
+            // A header row keeps the clipping toggle off the chart's data,
+            // matching the other captioned Info sections.
+            HStack(alignment: .center, spacing: 6) {
+                Text(L10n.text("Histogram"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityAddTraits(.isHeader)
                 if let sourceLabel {
                     Text(sourceLabel)
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
-                        .padding(.top, 3)
-                        .padding(.leading, 3)
-                        .frame(
-                            maxWidth: .infinity,
-                            maxHeight: .infinity,
-                            alignment: .topLeading
-                        )
                         .accessibilityHidden(true)
-                        .allowsHitTesting(false)
+                }
+                Spacer(minLength: 4)
+                if !loadFailed, store.viewMode == .gallery {
+                    clippingButton
+                        // Keep the 36-point target without growing the row.
+                        .padding(.vertical, -10)
+                        .padding(.trailing, -8)
                 }
             }
+            .frame(height: 16)
+
+            chart
+                .frame(height: Self.chartHeight)
         }
         .frame(maxWidth: .infinity)
     }
@@ -89,8 +89,9 @@ struct HistogramSection: View {
         Button {
             store.toggleClippingWarnings()
         } label: {
-            Image(systemName: "circle.lefthalf.filled")
-                .font(.system(size: 15, weight: .semibold))
+            // Distinct from the half-filled "Mixed" decision symbol.
+            Image(systemName: "sun.max.trianglebadge.exclamationmark")
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(
                     store.showClippingWarnings
                         ? Color.louppeAccent
@@ -159,16 +160,6 @@ private struct LuminanceHistogramView: View {
             context.fill(
                 warningPath,
                 with: .color(Color.secondary.opacity(0.82))
-            )
-            context.stroke(
-                Path(CGRect(
-                    x: 0,
-                    y: size.height - 0.5,
-                    width: size.width,
-                    height: 0.5
-                )),
-                with: .color(Color.secondary.opacity(0.35)),
-                lineWidth: 0.5
             )
         }
     }

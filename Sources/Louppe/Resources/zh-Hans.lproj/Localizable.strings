@@ -2146,3 +2146,4 @@
 "Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media." = "使用“显示”菜单或命令面板切换边栏内容、展开文件夹或前往文件夹。文件夹导航会跳过未直接包含媒体的文件夹。";
 
 "Checking folder…" = "正在检查文件夹…";
+"Histogram" = "直方图";

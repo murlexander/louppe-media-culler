@@ -147,6 +147,11 @@ struct FilterView: View {
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    // Second-pass filters (stars, labels) come first.
+                    starsSection
+                    Divider()
+                    colorSection
+                    Divider()
                     qualitySection
                     Divider()
                     captureBurstsSection
@@ -154,10 +159,6 @@ struct FilterView: View {
                     dateSection
                     Divider()
                     decisionSection
-                    Divider()
-                    starsSection
-                    Divider()
-                    colorSection
 
                     if store.availableMediaKinds.count > 1 {
                         Divider()
@@ -322,7 +323,8 @@ struct FilterView: View {
     }
 
     private var decisionSection: some View {
-        FilterDisclosureSection(title: L10n.text("Decision details"), isExpanded: $decisionExpanded) {
+        FilterDisclosureSection(title: L10n.text("Decision details"), isExpanded: $decisionExpanded,
+                                isActive: !store.filter.excludedDecisionStates.isEmpty) {
             VStack(alignment: .leading, spacing: 7) {
                 metadataToggle(
                     L10n.text("Yes"),
@@ -353,7 +355,8 @@ struct FilterView: View {
     }
 
     private var starsSection: some View {
-        FilterDisclosureSection(title: L10n.text("Star rating"), isExpanded: $starsExpanded) {
+        FilterDisclosureSection(title: L10n.text("Star rating"), isExpanded: $starsExpanded,
+                                isActive: !store.filter.excludedStarStates.isEmpty) {
             VStack(alignment: .leading, spacing: 7) {
                 metadataToggle(
                     L10n.text("Unrated"),
@@ -380,7 +383,8 @@ struct FilterView: View {
     }
 
     private var colorSection: some View {
-        FilterDisclosureSection(title: L10n.text("Color label"), isExpanded: $colorExpanded) {
+        FilterDisclosureSection(title: L10n.text("Color label"), isExpanded: $colorExpanded,
+                                isActive: !store.filter.excludedColorStates.isEmpty) {
             VStack(alignment: .leading, spacing: 7) {
                 metadataToggle(
                     L10n.text("None"),
@@ -396,7 +400,7 @@ struct FilterView: View {
                         )
                     ) {
                         HStack(spacing: 7) {
-                            Circle()
+                            ColorLabelMark.shape
                                 .fill(label.swatchColor)
                                 .frame(width: 10, height: 10)
                             labeledCount(label.localizedDisplayName, store.colorCount(label))
@@ -1427,6 +1431,8 @@ struct FilterView: View {
 struct FilterDisclosureSection<Content: View>: View {
     let title: String
     @Binding var isExpanded: Bool
+    /// Shows that this collapsed section currently narrows the results.
+    var isActive = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.layoutDirection) private var layoutDirection
     private let content: Content
@@ -1434,9 +1440,11 @@ struct FilterDisclosureSection<Content: View>: View {
     init(
         title: String,
         isExpanded: Binding<Bool>,
+        isActive: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
+        self.isActive = isActive
         _isExpanded = isExpanded
         self.content = content()
     }
@@ -1456,6 +1464,11 @@ struct FilterDisclosureSection<Content: View>: View {
                     Text(title)
                         .font(.subheadline.weight(.semibold))
                     Spacer(minLength: 0)
+                    if isActive {
+                        Text(L10n.text("Filtered"))
+                            .font(.caption)
+                            .foregroundStyle(Color.louppeAccent)
+                    }
                 }
                 .padding(.top, 12)
                 .padding(.bottom, isExpanded ? 6 : 12)

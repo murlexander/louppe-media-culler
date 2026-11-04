@@ -446,7 +446,7 @@ struct OrganizeSourceView: View {
     ) -> some View {
         SheetForm(title: outcome.title(for: .organization)) {
             Text(outcome.fileCountDescription(for: .organization))
-                .foregroundStyle(.secondary)
+                .font(.headline)
             if let message = store.organizationError ?? outcome.message {
                 Text(message)
                     .fixedSize(horizontal: false, vertical: true)
@@ -461,6 +461,11 @@ struct OrganizeSourceView: View {
             }
         } actions: {
             HStack(spacing: 12) {
+                // The same step as ⌘Z, offered where the result is shown.
+                if outcome.succeeded, !outcome.wasUndo, store.canUndo {
+                    Button(L10n.text("Undo")) { store.undo() }
+                        .disabled(store.isFileOperationRunning)
+                }
                 Spacer()
                 Button(L10n.text("Done")) {
                     store.isOrganizePresented = false

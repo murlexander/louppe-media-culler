@@ -150,20 +150,18 @@ private struct BrowserRow: View {
                     item: item,
                     isCurrent: item.id == store.currentItem?.id,
                     isSelected: store.selectedIndices.contains(index),
-                    // Read the decision in this observed row instead of
-                    // hiding it inside a child whose PhotoItem storage
-                    // identity does not change when the decision changes.
-                    showsRatingBadge: false
+                    // This observed row rebuilds the thumbnail's scalar
+                    // metadata snapshots when shared file decisions change.
+                    showsRatingBadge: true,
+                    tileOverlay: AnyView(
+                        Color.clear.allowsHitTesting(false)
+                            .overlay(alignment: .bottomLeading) {
+                                QualityCueTileIcons(store: store, item: item)
+                                    .padding(TileBadgeLayout.inset)
+                            }
+                    )
                 )
                 .frame(width: 102, height: 102)
-                .overlay(alignment: .topTrailing) {
-                    RatingBadge(
-                        rating: item.rating,
-                        isMixed: item.hasMixedRatings,
-                        size: TileBadgeLayout.height
-                    )
-                    .padding(TileBadgeLayout.inset)
-                }
                 .onTapGesture {
                     // ⇧-click: range · ⌘-click: add/remove · click: jump.
                     store.handleThumbnailClick(at: index, plainClick: onPlainClick)
@@ -189,10 +187,6 @@ private struct BrowserRow: View {
                         store.toggleSelection(of: index)
                     }
                 )
-                .overlay(alignment: .bottomLeading) {
-                    QualityCueTileIcons(store: store, item: item)
-                        .padding(TileBadgeLayout.inset)
-                }
                 // Stable ID also retires thumbnail state when a reuse host rebinds.
                 .id(item.id)
                 .contextMenu {

@@ -359,7 +359,7 @@ struct RenameFilesView: View {
     private func outcomeView(_ outcome: SourceOrganizationOutcome) -> some View {
         SheetForm(title: outcome.title(for: .rename)) {
             Text(outcome.fileCountDescription(for: .rename))
-                .foregroundStyle(.secondary)
+                .font(.headline)
             if let message = store.organizationError ?? outcome.message {
                 Text(message)
                     .fixedSize(horizontal: false, vertical: true)
@@ -373,6 +373,11 @@ struct RenameFilesView: View {
             }
         } actions: {
             HStack(spacing: 12) {
+                // The same step as ⌘Z, offered where the result is shown.
+                if outcome.succeeded, !outcome.wasUndo, store.canUndo {
+                    Button(L10n.text("Undo")) { store.undo() }
+                        .disabled(store.isFileOperationRunning)
+                }
                 Spacer()
                 Button(L10n.text("Done")) { store.isRenamePresented = false }
                     .keyboardShortcut(.defaultAction)

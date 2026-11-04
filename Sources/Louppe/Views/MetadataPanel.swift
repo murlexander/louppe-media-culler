@@ -47,8 +47,9 @@ struct MetadataPanel: View {
         let isEligible: Bool
     }
 
-    private let shootingLabels = ["Aperture", "Shutter", "ISO"]
-    private let secondaryShootingLabels = ["Focal length", "Exposure comp.", "White balance"]
+    // Camera-display order: focal length, aperture, shutter, ISO on one line.
+    private let shootingLabels = ["Focal length", "Aperture", "Shutter", "ISO"]
+    private let secondaryShootingLabels = ["Exposure comp.", "White balance"]
     private let promotedLabels = [
         "Filename", "Camera", "Lens", "Aperture", "Shutter", "ISO",
         "Focal length", "Exposure comp.", "White balance"
@@ -668,6 +669,7 @@ struct MetadataPanel: View {
                         }
                         if emphasized {
                             settingValue(for: field)
+                                .minimumScaleFactor(0.75)
                         } else {
                             Text(field.value)
                                 .font(.callout.weight(.medium))
@@ -702,7 +704,13 @@ struct MetadataPanel: View {
                 .lineLimit(1)
                 .textSelection(.enabled)
         case "ISO":
-            return Text("ISO\(Text(value).font(largeFont))")
+            return Text("ISO\u{2009}\(Text(value).font(largeFont))")
+                .font(smallFont)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .textSelection(.enabled)
+        case "Focal length" where value.hasSuffix(" mm"):
+            return Text("\(Text(String(value.dropLast(3))).font(largeFont))\u{2009}mm")
                 .font(smallFont)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
