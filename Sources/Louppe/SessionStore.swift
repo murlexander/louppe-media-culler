@@ -421,7 +421,11 @@ final class SessionStore: ObservableObject {
     /// This prevents a temporarily disconnected/moved original from losing
     /// its decision merely because another photo triggered an automatic save.
     private var retainedMissingSessionEntries: [SessionEntry] = []
-    @Published private(set) var sessionRecoveryEntries: [SessionRecoveryEntry] = []
+    /// Recovery verification resolves one record per file. A `@Published`
+    /// array copies the whole history on every element write, which made
+    /// batch recovery quadratic, so writes publish explicitly and mutate in place.
+    private var sessionRecoveryEntryStorage: [SessionRecoveryEntry] = []
+    var sessionRecoveryEntries: [SessionRecoveryEntry] { sessionRecoveryEntryStorage }
     @Published var isSessionRecoveryPresented = false
     @Published private(set) var isSessionRecoveryNoticeDismissed = false
     @Published private(set) var sessionContentCheck: SessionContentCheckState = .idle
@@ -505,6 +509,10 @@ final class SessionStore: ObservableObject {
     }
     /// Indices into `items` that pass the current filter, in the chosen sort order.
     @Published private(set) var visibleIndices: [Int] = []
+    /// Advances whenever review metadata or the visible projection changes,
+    /// including background recovery. Live scope summaries (the Export sheet)
+    /// refresh on it until their inputs freeze.
+    @Published private(set) var reviewStateRevision: UInt64 = 0
     /// Same visible order, split into runs of the active sort key's value
     /// (days, cameras, subfolders…) for the Grid view. Rebuilt only when
     /// filter/sort/session structure changes, not on selection drag.
@@ -899,6 +907,14 @@ final class SessionStore: ObservableObject {
         case organization(SourceOrganizationUndoRecord)
     }
     private var undoStack: [UndoStep] = []
+    static let undoStepLimit = 500
+    /// Metadata steps keep complete per-file before-images (72 bytes each).
+    /// 500 whole-folder batches of 100k RAW+JPEG pairs would retain 6.7 GiB,
+    /// so their history also has a byte budget, charged by reserved capacity.
+    /// This is the single owner of the value: 256 MiB, pending owner approval.
+    static let undoMetadataByteBudgetDefault = 256 << 20
+    /// Tests may lower it; production keeps the default.
+    var undoMetadataByteBudget = SessionStore.undoMetadataByteBudgetDefault
     private var saveDebounce: DispatchWorkItem?
     private var foregroundDeferredSaveTask: Task<Void, Never>?
     private var saveDeadline: DispatchWorkItem?
@@ -940,6 +956,28 @@ final class SessionStore: ObservableObject {
         return true
     }
     private var filterDebounce: DispatchWorkItem?
+    /// Verified recovery results waiting to be applied as one batch. Metadata
+    /// and the visible projection change together inside that batch, so no
+    /// command, selection, navigation or scope capture can observe one without
+    /// the other. Unapplied results are simply not restored yet.
+    private struct VerifiedContentResult {
+        let file: PhotoFile
+        let result: Result<SessionVerifiedFile, any Error>
+        let recordIndices: [Int]
+    }
+    private var pendingContentResults: [VerifiedContentResult] = []
+    private var pendingContentResultsOwner: (scan: UInt64, content: UInt64)?
+    private var pendingContentResultsWork: DispatchWorkItem?
+    private var contentResultsNotBefore = ContinuousClock.now
+    private var contentResultsNeedCheckpoint = false
+    private var isApplyingContentResults = false
+    private var contentResultsNeedProjection = false
+    /// Minimum interval between recovery batches; tests lengthen it to hold results.
+    var recoveryBatchMinimumInterval: Duration = .milliseconds(100)
+#if DEBUG
+    private(set) var recoveryBatchesAppliedForTesting = 0
+    var pendingRecoveryResultCountForTesting: Int { pendingContentResults.count }
+#endif
     private var prefetchDebounce: DispatchWorkItem?
     private var fullImagePrefetchTask: Task<Void, Never>?
     private var highResolutionPrefetchTask: Task<Void, Never>?
@@ -1424,6 +1462,22 @@ final class SessionStore: ObservableObject {
             previousIndex: currentIndex,
             pairComponents: false
         ))
+    }
+
+    /// Retained Undo history for memory measurements and eviction tests.
+    var undoStepCountForTesting: Int { undoStack.count }
+    var undoRetainedMetadataChangesForTesting: Int {
+        undoStack.reduce(0) { total, step in
+            guard case .metadata(_, let changes, _) = step else { return total }
+            return total + changes.count
+        }
+    }
+    static var undoMetadataChangeStrideForTesting: Int {
+        MemoryLayout<MetadataChange>.stride
+    }
+    /// Bytes charged against the budget: reserved capacity, not element count.
+    var undoRetainedMetadataBytesForTesting: Int {
+        undoStack.reduce(0) { $0 + Self.retainedUndoBytes($1) }
     }
 #endif
 
@@ -1983,6 +2037,104 @@ final class SessionStore: ObservableObject {
         applyFilter()
     }
 
+    /// Recovery verifies one file per worker result. Applying and projecting
+    /// each one rebuilt the whole session under a metadata sort or filter
+    /// (quadratic: 5,000 files took 28 s on the main actor). Results instead
+    /// apply in batches: at most one per interval (at least 100 ms and four
+    /// times the last batch's cost, the latter capped at 1 s), immediately for
+    /// an explicitly confirmed restoration, and at completion. Each batch
+    /// changes metadata, counts and the projection in one main-actor turn.
+    private func enqueueVerifiedContentResult(
+        _ result: VerifiedContentResult, scan: UInt64, generation: UInt64, immediately: Bool
+    ) {
+        if let owner = pendingContentResultsOwner, owner != (scan, generation) {
+            discardPendingContentResults()
+        }
+        pendingContentResults.append(result)
+        pendingContentResultsOwner = (scan, generation)
+        let now = ContinuousClock.now
+        if immediately || now >= contentResultsNotBefore {
+            applyVerifiedContentResults()
+            return
+        }
+        guard pendingContentResultsWork == nil else { return }
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.pendingContentResultsWork = nil
+            self.applyVerifiedContentResults()
+        }
+        pendingContentResultsWork = work
+        let delay = now.duration(to: contentResultsNotBefore).components
+        let milliseconds = Int(delay.seconds) * 1_000 + Int(delay.attoseconds / 1_000_000_000_000_000) + 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(milliseconds), execute: work)
+    }
+
+    /// Unapplied results stay pending file IDs, so a later check repeats them.
+    private func discardPendingContentResults() {
+        pendingContentResultsWork?.cancel()
+        pendingContentResultsWork = nil
+        pendingContentResults = []
+        pendingContentResultsOwner = nil
+    }
+
+    private func applyVerifiedContentResults() {
+        pendingContentResultsWork?.cancel()
+        pendingContentResultsWork = nil
+        let batch = pendingContentResults
+        let owner = pendingContentResultsOwner
+        pendingContentResults = []
+        pendingContentResultsOwner = nil
+        guard !batch.isEmpty, let owner,
+              owner.scan == scanGeneration, owner.content == sessionContentGeneration,
+              !isFileOperationRunning, !isPreparingForTermination,
+              case .ready = phase else { return }
+        let start = ContinuousClock.now
+        isApplyingContentResults = true
+        for entry in batch {
+            let file = entry.file
+            let recordIndices = entry.recordIndices
+            switch entry.result {
+            case .success(let verified):
+                if let proof = verified.proof { sessionContentProofs[file.id] = proof }
+                sessionRecoveryAttemptedIDs.formUnion(recordIndices.map { sessionRecoveryEntries[$0].id })
+                applySessionRecovery(to: file, verified: verified, recordIndices: recordIndices)
+                sessionRecoveryConfirmations.subtract(recordIndices.map { sessionRecoveryEntries[$0].id })
+                if let proof = verified.proof,
+                   let current = sessionFile(forID: file.id),
+                   !SessionRecoveryPolicy.isUntouched(current.metadataSnapshot),
+                   sessionContentCapturedProofs[file.id]?.identity != proof.identity {
+                    contentResultsNeedCheckpoint = true
+                }
+            case .failure:
+                sessionContentFailures.insert(file.id)
+            }
+            sessionContentPendingFileIDs.remove(file.id)
+            // Identity-only restoration queues its portable proof afterward.
+            if case .success(.identity) = entry.result,
+               let current = sessionFile(forID: file.id),
+               !SessionRecoveryPolicy.isUntouched(current.metadataSnapshot),
+               sessionContentProofs[file.id]?.identity != current.scannedIdentity {
+                sessionContentPendingFileIDs.insert(file.id)
+            }
+        }
+        isApplyingContentResults = false
+        if contentResultsNeedProjection {
+            contentResultsNeedProjection = false
+            // A pending structural rebuild re-sorts these values itself.
+            if sort.key.isReviewMetadata, !itemStructureNeedsRebuild {
+                preparedIndex.rebuildPreparedSort(items, sort: sort)
+            }
+            applyFilter(preservingCurrent: true)
+        }
+        objectWillChange.send()
+        let cost = start.duration(to: .now)
+        contentResultsNotBefore = ContinuousClock.now
+            + max(recoveryBatchMinimumInterval, min(.seconds(1), cost * 4))
+#if DEBUG
+        recoveryBatchesAppliedForTesting += 1
+#endif
+    }
+
     private func rebuildStructuralIndices() {
         rebuildFileItemIndex()
         preparedIndex.rebuildItems(items, sort: sort)
@@ -2038,8 +2190,17 @@ final class SessionStore: ObservableObject {
     }
 
     private func sessionFile(forID id: String) -> PhotoFile? {
-        guard let index = itemIndexByFileID[id], items.indices.contains(index) else { return nil }
-        return items[index].individualFiles.first { $0.id == id }
+        guard let index = itemIndexByFileID[id] else { return nil }
+        return Self.physicalFile(id: id, at: index, in: items)
+    }
+
+    /// Batch paths pass one borrowed `items` value: each `@Published` read and
+    /// `individualFiles` array costs more than the lookup itself at 100k files.
+    private static func physicalFile(id: String, at index: Int, in items: [PhotoItem]) -> PhotoFile? {
+        guard items.indices.contains(index) else { return nil }
+        if items[index].primaryFile.id == id { return items[index].primaryFile }
+        if let paired = items[index].pairedFile, paired.id == id { return paired }
+        return nil
     }
 
     private func applyGroupedReviewLayoutIfNeeded() {
@@ -2339,16 +2500,22 @@ final class SessionStore: ObservableObject {
                 || !filter.excludedStarStates.isEmpty
                 || !filter.excludedColorStates.isEmpty
         }
-        if changesSort {
-            preparedIndex.rebuildPreparedSort(items, sort: sort)
+        if isApplyingContentResults, changesSort || changesFilter {
+            // The recovery batch projects once after its last file.
+            contentResultsNeedProjection = true
+        } else {
+            if changesSort {
+                preparedIndex.rebuildPreparedSort(items, sort: sort)
+            }
+            if changesSort || changesFilter {
+                applyFilter(preservingCurrent: preservingCurrent)
+            }
         }
-        if changesSort || changesFilter {
-            applyFilter(preservingCurrent: preservingCurrent)
-        }
-        objectWillChange.send()
+        reviewStateRevision &+= 1
     }
 
     private func publishPreparedVisibility() {
+        reviewStateRevision &+= 1
         visibleIndices = preparedIndex.visibleIndices
         visibleGroups = preparedIndex.visibleGroups
         gridGroups = preparedIndex.visibleGridGroups
@@ -3392,7 +3559,8 @@ final class SessionStore: ObservableObject {
         durableSessionChangeGeneration = 0
         sessionChangeGeneration = 0
         let loaded = restoration.items
-        sessionRecoveryEntries = restoration.sessionRecoveryEntries
+        objectWillChange.send()
+        sessionRecoveryEntryStorage = restoration.sessionRecoveryEntries
         sessionContentProofs = restoration.sessionContentProofs
         retainedMissingSessionEntries = restoration.retainedMissingSessionEntries
         if restoration.requiresNewSessionConfirmation {
@@ -3826,11 +3994,12 @@ final class SessionStore: ObservableObject {
 
     /// Applies one rating to several photos as a single undoable step.
     private func applyRating(_ rating: Rating, to targets: [Int]) {
+        // One borrowed value: metadata lives in shared storage, so this never
+        // copies or republishes items, and avoids a `@Published` read per file.
+        let items = self.items
         let valid = targets.filter { items.indices.contains($0) }
         guard !valid.isEmpty else { return }
-        let changes = valid.flatMap { index in
-            items[index].metadataSnapshots.map { MetadataChange(previous: $0) }
-        }
+        let changes = Self.metadataChanges(for: valid, in: items)
         pushUndo(.metadata(.decision, changes, previousFileID: currentItemID))
         let now = Date()
         // Ratings live in shared lock-backed storage whose reference identity
@@ -3846,6 +4015,20 @@ final class SessionStore: ObservableObject {
         }
         publishMetadataMutation(.decision, affectedFileIDs: changes.map { $0.previous.fileID })
         scheduleSave()
+    }
+
+    /// Complete per-physical-file before-images, primary then paired file.
+    private static func metadataChanges(for indices: [Int], in items: [PhotoItem]) -> [MetadataChange] {
+        // One slot per photo; pairs grow it. Undo charges the actual capacity.
+        var changes: [MetadataChange] = []
+        changes.reserveCapacity(indices.count)
+        for index in indices {
+            changes.append(MetadataChange(previous: items[index].primaryFile.metadataSnapshot))
+            if let paired = items[index].pairedFile {
+                changes.append(MetadataChange(previous: paired.metadataSnapshot))
+            }
+        }
+        return changes
     }
 
     private func setRating(_ rating: Rating, atIndex index: Int, recordUndo: Bool) {
@@ -3882,11 +4065,10 @@ final class SessionStore: ObservableObject {
     }
 
     private func applyStarRating(_ rating: StarRating?, to targets: [Int]) {
+        let items = self.items
         let valid = targets.filter { items.indices.contains($0) }
         guard !valid.isEmpty else { return }
-        let changes = valid.flatMap { index in
-            items[index].metadataSnapshots.map { MetadataChange(previous: $0) }
-        }
+        let changes = Self.metadataChanges(for: valid, in: items)
         pushUndo(.metadata(.stars, changes, previousFileID: currentItemID))
         let now = Date()
         for index in valid {
@@ -3913,11 +4095,10 @@ final class SessionStore: ObservableObject {
     }
 
     private func applyColorLabel(_ label: PhotoColorLabel?, to targets: [Int]) {
+        let items = self.items
         let valid = targets.filter { items.indices.contains($0) }
         guard !valid.isEmpty else { return }
-        let changes = valid.flatMap { index in
-            items[index].metadataSnapshots.map { MetadataChange(previous: $0) }
-        }
+        let changes = Self.metadataChanges(for: valid, in: items)
         pushUndo(.metadata(.color, changes, previousFileID: currentItemID))
         let now = Date()
         for index in valid {
@@ -3948,6 +4129,7 @@ final class SessionStore: ObservableObject {
     func clearAllRatings() {
         guard !isFileOperationRunning else { return }
         isClearAllRatingsConfirmationPresented = false
+        let items = self.items
         let scoped = archiveActionIndices.map { items[$0] }
         let changes = scoped.flatMap { item -> [MetadataChange] in
             guard item.hasAnyRating else { return [] }
@@ -3961,14 +4143,15 @@ final class SessionStore: ObservableObject {
         let now = Date()
         // A deliberate clear is newer review work, including after reopen.
         // Leave already-undecided RAW/JPEG components and their dates alone.
+        let isFolderScoped = archiveScopeIndices != nil
         for item in scoped {
-            let oldState = item.ratingState
+            let oldState = isFolderScoped ? item.ratingState : nil
             for file in item.individualFiles where file.rating != .undecided {
                 file.setRating(.undecided, ratedAt: now)
             }
-            if archiveScopeIndices != nil { transitionRatingCount(from: oldState, to: item.ratingState) }
+            if let oldState { transitionRatingCount(from: oldState, to: item.ratingState) }
         }
-        if archiveScopeIndices == nil {
+        if !isFolderScoped {
             ratingTally = (0, 0, items.count)
             mixedRatingCount = 0
         }
@@ -4050,7 +4233,23 @@ final class SessionStore: ObservableObject {
 
     private func pushUndo(_ step: UndoStep) {
         undoStack.append(step)
-        if undoStack.count > 500 { undoStack.removeFirst() }
+        if undoStack.count > Self.undoStepLimit { undoStack.removeFirst() }
+        // Evict the oldest metadata steps first, keeping metadata history a
+        // contiguous newest suffix. The newest step always survives, and file
+        // operation steps (Clean Up, Organize, Rename) keep only the step limit.
+        var retained = undoStack.reduce(0) { $0 + Self.retainedUndoBytes($1) }
+        while retained > undoMetadataByteBudget,
+              let oldest = undoStack.indices.dropLast().first(where: {
+                  if case .metadata = undoStack[$0] { return true }
+                  return false
+              }) {
+            retained -= Self.retainedUndoBytes(undoStack.remove(at: oldest))
+        }
+    }
+
+    private static func retainedUndoBytes(_ step: UndoStep) -> Int {
+        guard case .metadata(_, let changes, _) = step else { return 0 }
+        return changes.capacity * MemoryLayout<MetadataChange>.stride
     }
 
     func undo() {
@@ -4066,19 +4265,22 @@ final class SessionStore: ObservableObject {
         setSelectionIndices([])
         switch step {
         case .metadata(let dimension, let changes, let previousFileID):
+            let items = self.items
             let indexedChanges: [(index: Int, change: MetadataChange)] =
                 changes.compactMap { change in
                     guard let index = itemIndexByFileID[change.previous.fileID],
                           items.indices.contains(index) else { return nil }
                     return (index: index, change: change)
                 }
-            var previousDecisionStates: [Int: PhotoItemRatingState] = [:]
-            var previousStarStates: [Int: PhotoItemStarRatingState] = [:]
-            var previousColorStates: [Int: PhotoItemColorLabelState] = [:]
-            for (index, _) in indexedChanges {
-                previousDecisionStates[index] = items[index].ratingState
-                previousStarStates[index] = items[index].starRatingState
-                previousColorStates[index] = items[index].colorLabelState
+            // Distinct items in first-change order, with their states before
+            // this Undo. Dense marks avoid three hashed maps per batch file.
+            var isAffected = [Bool](repeating: false, count: items.count)
+            var affected: [(index: Int, decision: PhotoItemRatingState,
+                            stars: PhotoItemStarRatingState, color: PhotoItemColorLabelState)] = []
+            for (index, _) in indexedChanges where !isAffected[index] {
+                isAffected[index] = true
+                let state = items[index].metadataState
+                affected.append((index, state.decision, state.stars, state.color))
             }
             for (index, change) in indexedChanges {
                 switch dimension {
@@ -4088,35 +4290,20 @@ final class SessionStore: ObservableObject {
                 case .all: items[index].restoreMetadata(change.previous)
                 }
             }
-            for (index, previousState) in previousDecisionStates {
+            for previous in affected {
+                let index = previous.index
                 switch dimension {
                 case .decision:
-                    transitionRatingCount(from: previousState, to: items[index].ratingState)
+                    transitionRatingCount(from: previous.decision, to: items[index].ratingState)
                 case .stars:
-                    if let old = previousStarStates[index] {
-                        transitionStarCount(from: old, to: items[index].starRatingState)
-                    }
+                    transitionStarCount(from: previous.stars, to: items[index].starRatingState)
                 case .color:
-                    if let old = previousColorStates[index] {
-                        transitionColorCount(from: old, to: items[index].colorLabelState)
-                    }
+                    transitionColorCount(from: previous.color, to: items[index].colorLabelState)
                 case .all:
-                    transitionRatingCount(
-                        from: previousState,
-                        to: items[index].ratingState
-                    )
-                    if let old = previousStarStates[index] {
-                        transitionStarCount(
-                            from: old,
-                            to: items[index].starRatingState
-                        )
-                    }
-                    if let old = previousColorStates[index] {
-                        transitionColorCount(
-                            from: old,
-                            to: items[index].colorLabelState
-                        )
-                    }
+                    let state = items[index].metadataState
+                    transitionRatingCount(from: previous.decision, to: state.decision)
+                    transitionStarCount(from: previous.stars, to: state.stars)
+                    transitionColorCount(from: previous.color, to: state.color)
                 }
             }
             restoreCurrentFile(
@@ -4126,14 +4313,17 @@ final class SessionStore: ObservableObject {
             if !indexedChanges.isEmpty {
                 let changedIDs = indexedChanges.map { $0.change.previous.fileID }
                 for id in changedIDs {
-                    guard let file = sessionFile(forID: id),
+                    // Only files with recovery history need the untouched check.
+                    guard let records = sessionRecoveryRecordIndicesByFileID[id],
+                          let file = sessionFile(forID: id),
                           SessionRecoveryPolicy.isUntouched(file.metadataSnapshot) else { continue }
                     // Undo intentionally returned this file to an empty current
                     // decision. Retain older decisions as history, rather than
                     // letting a pending check reverse the user's Undo.
-                    for index in sessionRecoveryRecordIndicesByFileID[id] ?? []
+                    for index in records
                         where sessionRecoveryEntries[index].resolvedFileID == nil {
-                        sessionRecoveryEntries[index].resolvedFileID = id
+                        objectWillChange.send()
+                        sessionRecoveryEntryStorage[index].resolvedFileID = id
                         sessionRecoveryConfirmations.remove(sessionRecoveryEntries[index].id)
                     }
                 }
@@ -6213,8 +6403,9 @@ final class SessionStore: ObservableObject {
 
     func keepCurrentSessionDecisions(_ ids: Set<UUID>) {
         guard !isFileOperationRunning, !isPreparingForTermination else { return }
-        for index in sessionRecoveryEntries.indices where ids.contains(sessionRecoveryEntries[index].id) {
-            sessionRecoveryEntries[index].resolvedFileID = sessionRecoveryEntries[index].entry.filename
+        objectWillChange.send()
+        for index in sessionRecoveryEntryStorage.indices where ids.contains(sessionRecoveryEntryStorage[index].id) {
+            sessionRecoveryEntryStorage[index].resolvedFileID = sessionRecoveryEntryStorage[index].entry.filename
             sessionRecoveryConfirmations.remove(sessionRecoveryEntries[index].id)
         }
         // History remains in the sidecar. This only dismisses pending attention.
@@ -6228,6 +6419,7 @@ final class SessionStore: ObservableObject {
     }
 
     private func pauseSessionContentChecks() {
+        discardPendingContentResults()
         sessionContentGeneration &+= 1
         sessionContentTask?.cancel()
         sessionContentTask = nil
@@ -6236,7 +6428,8 @@ final class SessionStore: ObservableObject {
 
     private func resetSessionRecovery() {
         pauseSessionContentChecks()
-        sessionRecoveryEntries = []
+        objectWillChange.send()
+        sessionRecoveryEntryStorage = []
         isSessionRecoveryPresented = false
         isSessionRecoveryNoticeDismissed = false
         sessionContentProofs = [:]
@@ -6259,8 +6452,10 @@ final class SessionStore: ObservableObject {
               !isLegacySessionMigrationConfirmationPresented,
               sessionContentTask == nil else { return }
         var todo: [PhotoFile] = []
+        let items = self.items
         for id in sessionContentPendingFileIDs {
-            guard let file = sessionFile(forID: id), file.scannedIdentity != nil,
+            guard let index = itemIndexByFileID[id],
+                  let file = Self.physicalFile(id: id, at: index, in: items), file.scannedIdentity != nil,
                   !sessionContentFailures.contains(id) else {
                 sessionContentPendingFileIDs.remove(id)
                 continue
@@ -6295,7 +6490,6 @@ final class SessionStore: ObservableObject {
         sessionContentCheck = .checking(done: 0, total: todo.count)
         sessionContentTask = Task { @MainActor [weak self] in
             defer { lease?.stop() }
-            var needsCheckpoint = false
             for (offset, file) in todo.enumerated() {
                 guard await ForegroundWorkCoordinator.shared.waitForBackgroundAdmission(),
                       !Task.isCancelled else { return }
@@ -6330,38 +6524,22 @@ final class SessionStore: ObservableObject {
                       !self.isFileOperationRunning,
                       !self.isPreparingForTermination,
                       case .ready = self.phase else { return }
-                switch result {
-                case .success(let verified):
-                    if let proof = verified.proof { self.sessionContentProofs[file.id] = proof }
-                    self.sessionRecoveryAttemptedIDs.formUnion(recordIndices.map { self.sessionRecoveryEntries[$0].id })
-                    self.applySessionRecovery(to: file, verified: verified, recordIndices: recordIndices)
-                    self.sessionRecoveryConfirmations.subtract(recordIndices.map { self.sessionRecoveryEntries[$0].id })
-                    if let proof = verified.proof,
-                       let current = self.sessionFile(forID: file.id),
-                       !SessionRecoveryPolicy.isUntouched(current.metadataSnapshot),
-                       self.sessionContentCapturedProofs[file.id]?.identity != proof.identity {
-                        needsCheckpoint = true
-                    }
-                case .failure:
-                    self.sessionContentFailures.insert(file.id)
-                }
-                self.sessionContentPendingFileIDs.remove(file.id)
-                // Identity-only restoration queues its portable proof afterward.
-                if case .success(.identity) = result,
-                   let current = self.sessionFile(forID: file.id),
-                   !SessionRecoveryPolicy.isUntouched(current.metadataSnapshot),
-                   self.sessionContentProofs[file.id]?.identity != current.scannedIdentity {
-                    self.sessionContentPendingFileIDs.insert(file.id)
-                }
+                self.enqueueVerifiedContentResult(
+                    VerifiedContentResult(file: file, result: result, recordIndices: recordIndices),
+                    scan: scan, generation: generation, immediately: isConfirmed)
                 self.sessionContentCheck = .checking(done: offset + 1, total: todo.count)
             }
             guard let self, self.sessionContentGeneration == generation else { return }
+            self.applyVerifiedContentResults()
             self.sessionContentTask = nil
             self.sessionContentCheck = .finished
             // Unrated fingerprints ride the next real save. Only newly proven
             // reviewed files need a checkpoint; never duplicate an optional
             // initial save or replace the existing coalescing authority.
-            if needsCheckpoint { self.scheduleSave(markChanged: false) }
+            if self.contentResultsNeedCheckpoint {
+                self.contentResultsNeedCheckpoint = false
+                self.scheduleSave(markChanged: false)
+            }
             // An explicit restoration is immediate; prepare its portable
             // fingerprint afterward, while normal reviewing remains available.
             self.startSessionContentChecks()
@@ -6404,7 +6582,8 @@ final class SessionStore: ObservableObject {
         // Organization origins describe the old physical file's location and
         // are deliberately not inherited by a copied/restored file.
         sessionRecoveryConfirmations.remove(sessionRecoveryEntries[index].id)
-        sessionRecoveryEntries[index].resolvedFileID = file.id
+        objectWillChange.send()
+        sessionRecoveryEntryStorage[index].resolvedFileID = file.id
         if confirmed.isEmpty { automaticallyRestoredSessionFiles += 1 }
         transitionRatingCount(from: oldDecision, to: items[itemIndex].ratingState)
         transitionStarCount(from: oldStars, to: items[itemIndex].starRatingState)

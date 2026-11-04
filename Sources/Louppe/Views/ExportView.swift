@@ -151,6 +151,14 @@ struct ExportView: View {
             refreshSelectionSnapshot()
             refreshRoutingEvaluation()
         }
+        // Background recovery can restore decisions or change the filtered
+        // membership while the summary is open. Follow it until Export,
+        // routing or XMP preparation freezes its inputs.
+        .onChange(of: store.reviewStateRevision) {
+            guard acceptsLiveScopeChanges else { return }
+            refreshSelectionSnapshot()
+            refreshRoutingEvaluation()
+        }
         .sheet(item: $conflictResolver) { presentation in
             XMPConflictResolverView(
                 conflicts: presentation.conflicts,
@@ -176,6 +184,16 @@ struct ExportView: View {
         case .summary, .awaitingXMPConfirmation, .awaitingMultiDestinationConfirmation, .finished, .failed:
             return true
         default: return false
+        }
+    }
+
+    /// Only the editable summary follows live session changes; validation,
+    /// confirmations and running work keep the inputs they captured.
+    private var acceptsLiveScopeChanges: Bool {
+        guard exporter.state == .summary else { return false }
+        switch store.xmpPublicationState {
+        case .idle, .finished, .failed: return true
+        case .preflighting, .awaitingConfirmation, .publishing, .cancelling: return false
         }
     }
 

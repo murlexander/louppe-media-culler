@@ -57,6 +57,11 @@ struct PreparedSessionIndex: Sendable {
     private var chronologicalIndices: [Int]?
     private var cameraRanks: StringSortRanks?
     private var lensRanks: StringSortRanks?
+    /// Item-indexed bucket ranks from the latest finite metadata sort. Ranks map
+    /// one-to-one to that key's group values, so grouping compares bytes
+    /// instead of reading lock-backed metadata twice more per visible photo.
+    /// Any sort rebuild replaces them; every review-metadata change re-sorts.
+    private var metadataSortRanks: (key: PhotoSort.Key, ranks: [UInt8])?
     private var hasPreparedPresentation = false
     private var preparedGroupingKey: PhotoSort.Key?
     private(set) var itemIndexByID: [String: Int] = [:]
@@ -102,6 +107,7 @@ struct PreparedSessionIndex: Sendable {
         chronologicalIndices = nil
         cameraRanks = nil
         lensRanks = nil
+        metadataSortRanks = nil
         hasPreparedPresentation = false
     }
 
@@ -116,6 +122,7 @@ struct PreparedSessionIndex: Sendable {
         defer {
             Self.signposter.endInterval("Sort Session", interval)
         }
+        metadataSortRanks = nil
         if sort == PhotoSort() {
             sortedIndices = preparedChronologicalOrder(for: items)
             return
@@ -251,6 +258,7 @@ struct PreparedSessionIndex: Sendable {
         )
         let bucketCount = sort.key == .decision ? valueCount : valueCount + 2
         var buckets = Array(repeating: [Int](), count: bucketCount)
+        var ranks = [UInt8](repeating: 0, count: items.count)
         for index in chronological {
             let metadata = items[index].metadataState
             let rank: Int
@@ -283,11 +291,20 @@ struct PreparedSessionIndex: Sendable {
                 preconditionFailure("A finite metadata key is required")
             }
             buckets[rank].append(index)
+            ranks[index] = UInt8(rank)
         }
         var result: [Int] = []
         result.reserveCapacity(items.count)
         for bucket in buckets { result.append(contentsOf: bucket) }
         sortedIndices = result
+        metadataSortRanks = (sort.key, ranks)
+    }
+
+    /// Ranks prepared by the latest sort for this exact grouping key.
+    private func preparedMetadataRanks(for key: PhotoSort.Key, itemCount: Int) -> [UInt8]? {
+        guard let metadataSortRanks, metadataSortRanks.key == key,
+              metadataSortRanks.ranks.count == itemCount else { return nil }
+        return metadataSortRanks.ranks
     }
 
     /// Compare each distinct directory only once, then sort by small ranks.
@@ -397,8 +414,17 @@ struct PreparedSessionIndex: Sendable {
     /// (for example, rating every visible photo Yes). Verify their actual
     /// values before reusing group identities, titles and position maps.
     private func mutableGroupsAreUnchanged(for items: [PhotoItem], key: PhotoSort.Key?) -> Bool {
-        guard let key, key == .decision || key == .starRating || key == .colorLabel else {
+        guard let key, key.isReviewMetadata else {
             return true
+        }
+        if let ranks = preparedMetadataRanks(for: key, itemCount: items.count) {
+            // Equal ranks share one value; the first member proves which.
+            return visibleGroups.allSatisfy { group in
+                guard let first = group.indices.first,
+                      key.groupID(for: items[first]) == group.id else { return false }
+                let rank = ranks[first]
+                return group.indices.allSatisfy { ranks[$0] == rank }
+            }
         }
         return visibleGroups.allSatisfy { group in
             group.indices.allSatisfy { key.groupID(for: items[$0]) == group.id }
@@ -544,6 +570,21 @@ struct PreparedSessionIndex: Sendable {
             )
         }
 
+        if let ranks = preparedMetadataRanks(for: key, itemCount: items.count) {
+            var previousRank: UInt8?
+            for index in visibleIndices {
+                let rank = ranks[index]
+                if let previousRank, previousRank != rank {
+                    closeRun()
+                    run = []
+                }
+                run.append(index)
+                previousRank = rank
+            }
+            closeRun()
+            return groups
+        }
+
         for index in visibleIndices {
             let item = items[index]
             if let previousItem, !key.sameGroup(previousItem, item) {
@@ -555,6 +596,13 @@ struct PreparedSessionIndex: Sendable {
         }
         closeRun()
         return groups
+    }
+}
+
+extension PhotoSort.Key {
+    /// Decision, stars and color: mutable review values with finite buckets.
+    var isReviewMetadata: Bool {
+        self == .decision || self == .starRating || self == .colorLabel
     }
 }
 
