@@ -1,10 +1,10 @@
 # App Store listing and search (ASO) — 4 November 2026
 
-Live Store version: 1.12.0 (Ready for Sale). No version is in Prepare for
-Submission, so only promotional text changed now. Everything else waits for the
-next Store version (1.13). The applied promotional text describes 1.12; the
-final metadata below targets 1.13 and includes its features. Do not publish the
-1.13 copy against 1.12.
+Live Store version: 1.12.0 (Ready for Sale). On 4 November a macOS **1.13.0
+draft** (Prepare for Submission, not submitted) was created in App Store Connect
+with all final metadata below for 11 localizations and the 88 new screenshots.
+It still needs the 1.13 Store build, review notes check, and submission. The 6
+original locales keep their 1.10-era preview videos.
 
 ## Baseline (13 Oct – 2 Nov 2026)
 
@@ -101,9 +101,9 @@ apart from paid and AI culling apps. It affects conversion, not search.
 
 ## Staged for the next Store version
 
-Enter these when the 1.13 version record exists, before submitting it. Name
-and subtitle are App Information fields; keywords, description, and
-screenshots are version fields. New locales are added on the version page.
+Entered in the 1.13.0 draft on 4 November (name and subtitle on App
+Information; keywords, description, promotional text, What's New and
+screenshots on the version). Source of truth: `app-store-1.13/metadata.json`.
 
 ### Final metadata for 1.13
 
