@@ -1,5 +1,11 @@
 # Version History
 
+## 1.13.1 (16) — 2026-11-04
+
+- Show the Photos permission prompt in Louppe's language: Spanish, Portuguese, Hindi, Arabic or Simplified Chinese.
+- Show the XMP "quit and reopen Louppe" namespace-limit message in your language.
+- Count thumbnail-cache files that could not be deleted and wait longer before retrying, instead of rescanning the cache after every few thumbnails.
+
 ## 1.13.0 (15) — 2026-11-04
 
 - Update Expat to 2.9.0 for parser security fixes and Sparkle to 2.10.1, preserving bounded XMP parsing and the existing updater policy.
