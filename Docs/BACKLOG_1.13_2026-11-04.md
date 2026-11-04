@@ -36,7 +36,8 @@ same-named items in different folders no longer share an ID.
 Tests: `ExportPreflightTests`, `ExportRoutingPreviewTests` (measurement opt-in),
 validator cancellation. Routed Review → Back → Review → Copy after cancelled,
 refused and stopped attempts keeps every folder-access start matched by a stop.
-Open: a real slow destination, the signed sandbox build, VoiceOver on the lazy list.
+Open (carried to the [backlog](../BACKLOG.md#manual-acceptance-needs-hardware-or-alex)): a real slow destination, the signed sandbox
+build, VoiceOver on the lazy list.
 
 ## Review projection and Undo (AUD-06, AUD-17)
 
@@ -75,7 +76,8 @@ and Quit discard unapplied results, which stay queued for re-verification.
 Export's editable summary refreshes on review changes until its inputs freeze.
 Undo charges reserved storage (unpaired sessions reserve one slot per photo).
 
-Open: date-grouped projection/filter (~100–130 ms at 100k), the content-check
+Open (carried to the [backlog](../BACKLOG.md#agent-work) and its manual section):
+date-grouped projection/filter (~100–130 ms at 100k), the content-check
 queue walk inside Select All, real hashing on removable media, mounted UI under
 recovery load.
 
@@ -134,6 +136,7 @@ allows the 32-write pending cap (it failed identically on `5e6b2c0`).
   cancel, failure, retry, revocation and dropped tasks.
 
 Image passes cover 512 MB images on the internal SSD with local journals only.
+Physical-volume checks are carried to the [backlog](../BACKLOG.md#manual-acceptance-needs-hardware-or-alex).
 
 ## Toolchain and dependencies (toolchain backend, AUD-20)
 

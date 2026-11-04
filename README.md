@@ -2,7 +2,7 @@
 
 Open-source media viewer and culling app for Mac.
 
-![Louppe Gallery with an apple-tree photograph, RAW+JPEG pairing, camera settings and histogram](Docs/Media/2026-09-26/gallery-info.png)
+![Louppe Gallery showing a Fujifilm RAW of a tea glass on a windowsill, with stars, color label, quality cues, RAW histogram and camera settings in Info](Docs/Media/2026-11-04/gallery-info.png)
 
 Browse photos without importing a library, choose which to keep, and copy
 keepers or send rejects to Trash. Review RAW+JPEG, video, audio, and read-only

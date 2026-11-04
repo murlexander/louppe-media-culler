@@ -177,9 +177,9 @@ Arabic Copy sheet keeps some LTR control order.
 
 ## Other next-version items (not done here)
 
-- **Ratings:** there are 0, and the app never asks. Add Apple's `requestReview`
-  after a completed Copy or session, rate-limited. Ratings affect ranking and
-  conversion.
+- **Ratings:** done in 1.13. The Store build asks once per version through
+  Apple's standard prompt after three successful Copies on two different days
+  ([APP_STORE.md](APP_STORE.md#rating-requests)); there were 0 ratings before it.
 - Keep the website's App Store links tagged (`ct=`). Web Referrer is already the
   second-largest source.
 

@@ -114,9 +114,17 @@ second delivery at 20:34 failed processing as a duplicate of build 15; App Store
 Connect has exactly one valid build 15. Export compliance was answered as Apple
 system cryptography only. The version was submitted and shows **Waiting for
 Review** after reload, releasing automatically after approval. The 1.10-era
-preview videos were removed from the 1.13 draft. Every Transporter delivery
-since 1.10 has shown "1 issue" warnings that were not read; 1.10–1.12 reached
-sale with them. See [the listing record](APP_STORE_LISTING.md).
+preview videos were removed from the 1.13 draft. See [the listing record](APP_STORE_LISTING.md).
+
+Apple's emails for the two deliveries explain the Transporter "1 issue" warnings:
+
+- **ITMS-90189: Redundant Binary Upload** is the duplicate 20:34 delivery, which
+  Apple rejected because build 15 already existed. No action.
+- **ITMS-90889: Cannot be used with TestFlight because the bundle … is missing a
+  provisioning profile.** Non-blocking for App Store review and present since
+  1.10; 1.10–1.12 reached sale with it. TestFlight stays out of scope (Alex,
+  4 November 2026); the [backlog](../BACKLOG.md#distribution) records what a
+  provisioning profile would take.
 
 Artifacts are retained in ignored `dist/release-preparation/1.13.0-15-2026-11-04/`.
 
@@ -126,5 +134,6 @@ Apple review is pending (Waiting for Review). Physical SD/exFAT reconnect, unplu
 power loss, network volumes, VoiceOver task walkthroughs, physical
 touch/trackpad and Dock dragging, ISO/JIS/IME input, older macOS, the signed
 Store sandbox runtime (stale/revoked grants), battery energy and the multi-camera
-RAW corpus remain unverified, as in the [backlog](../BACKLOG.md) and the
+RAW corpus remain unverified. They are carried forward, with owners, to the
+[backlog's manual acceptance section](../BACKLOG.md#manual-acceptance-needs-hardware-or-alex); see also the
 [1.13 backlog record](BACKLOG_1.13_2026-11-04.md).

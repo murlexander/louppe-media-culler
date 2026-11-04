@@ -38,7 +38,7 @@ loading indicator while Louppe checks the folder. Photos added or removed since
 the last visit appear correctly when checking finishes; decisions and file
 actions become available then. Pinning does not copy your originals.
 
-![Louppe Grid comparing street scenes, architecture, reflections and still life, with a photo selected in purple](Media/2026-09-26/grid-overview.png)
+![Louppe Grid of Greek landscape RAWs grouped by date, with decisions, stars and color labels on each photo and the first photo selected in purple](Media/2026-11-04/grid-overview.png)
 
 *Grid for comparing and selecting frames.*
 
@@ -233,7 +233,7 @@ source tag. The **X** overlay measures the displayed rendering.
 
 **Filter → Quality cues** finds High ISO, Slow shutter, Near-white and Near-black
 areas. Set their switches and thresholds in **Settings → General → Quality Cues**; cues
-appear inside Browser/Grid tiles and below the Info histogram. Checks prioritize
+appear inside Browser/Grid tiles and above the Info histogram. Checks prioritize
 photos you view and pace the remaining folder in the background. Use **Pause checks**
 and **Resume checks** in Filter; Pause stays in effect until you resume. Cues never
 set decisions.

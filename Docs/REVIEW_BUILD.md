@@ -1,9 +1,9 @@
 # Local review builds
 
-The current local installation is the single `/Applications/Louppe.app`, a local
-ad-hoc 1.13.0 (15) build installed on 30 October at Alex's request. It uses
-the official identifier
-`com.alexandermarkin.louppe`. Future local installs replace that copy; do not
+The current local installation is the single `/Applications/Louppe.app`: the
+published, notarized 1.13.0 (15) release archive, installed on 4 November 2026
+([release record](RELEASE_1.13_PREPARATION_2026-11-04.md)). It uses the official
+identifier `com.alexandermarkin.louppe`. Future local installs replace that copy; do not
 install a second review app unless requested. The separate packaging workflow
 below remains available for an explicitly requested isolated review artifact.
 
