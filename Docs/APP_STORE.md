@@ -21,6 +21,8 @@ Optional iCloud downloads use PhotoKit after the person enables them. The app
 requests no broad Pictures, Movies, Music, Full Disk Access, camera, microphone,
 contacts, or accessibility permissions.
 
+Listing text, keywords, localizations, and search measurement: [APP_STORE_LISTING.md](APP_STORE_LISTING.md).
+
 ## Release-note copy
 
 App Store release notes must not mention Revolut or the GitHub version, and must
