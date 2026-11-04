@@ -59,13 +59,15 @@ else
 fi
 # Sparkle is a public, checksum-pinned binary. Do not ask macOS Keychain for
 # unrelated github.com credentials while downloading it.
-BUILD_ARGUMENTS=(--disable-keychain --build-system native -c release)
+# LOUPPE_SCRATCH_PATH may keep build products outside a File Provider folder.
+SCRATCH_PATH="${LOUPPE_SCRATCH_PATH:-.build}"
+BUILD_ARGUMENTS=(--disable-keychain --build-system native --scratch-path "$SCRATCH_PATH" -c release)
 if $APP_STORE; then
     BUILD_ARGUMENTS+=(-Xswiftc -DAPP_STORE)
-    LOUPPE_APP_STORE=1 swift build "${BUILD_ARGUMENTS[@]}"
-else
-    swift build "${BUILD_ARGUMENTS[@]}"
+    export LOUPPE_APP_STORE=1
 fi
+swift build "${BUILD_ARGUMENTS[@]}"
+BIN_PATH="$(swift build "${BUILD_ARGUMENTS[@]}" --show-bin-path)"
 
 OUTPUT_APP="dist/Louppe.app"
 OUTPUT_ARCHIVE="dist/Louppe.zip"
@@ -79,8 +81,8 @@ APP_DIR="$STAGING_ROOT/Louppe.app"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources" \
     "$APP_DIR/Contents/Frameworks"
 
-cp .build/release/Louppe "$APP_DIR/Contents/MacOS/Louppe"
-ditto --noextattr --noqtn .build/release/Louppe_Louppe.bundle \
+cp "$BIN_PATH/Louppe" "$APP_DIR/Contents/MacOS/Louppe"
+ditto --noextattr --noqtn "$BIN_PATH/Louppe_Louppe.bundle" \
     "$APP_DIR/Contents/Resources/Louppe_Louppe.bundle"
 # SwiftPM writes localization metadata but no resource-bundle identifier.
 # Stamp it before signing so App Store validation accepts the nested bundle.
@@ -154,7 +156,7 @@ cp ThirdPartyLicenses/Expat-MIT.txt \
 cp PrivacyInfo.xcprivacy "$APP_DIR/Contents/Resources/PrivacyInfo.xcprivacy"
 
 if ! $APP_STORE; then
-    SPARKLE_FRAMEWORK="$(find .build/artifacts -type d \
+    SPARKLE_FRAMEWORK="$(find "$SCRATCH_PATH/artifacts" -type d \
         -path '*/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework' \
         -print -quit)"
     if [[ -z "$SPARKLE_FRAMEWORK" ]]; then

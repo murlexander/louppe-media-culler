@@ -16,8 +16,15 @@ Use full Xcode with the current macOS SDK. From the root of your clone:
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --disable-keychain
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-keychain --build-system native
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-keychain
 ```
+
+These use SwiftPM's default backend; Xcode 27 deprecates `--build-system native`.
+The default backend ad-hoc signs debug and test bundles, so a checkout in iCloud
+Documents or another File Provider folder must build elsewhere: add
+`--scratch-path /private/tmp/louppe-build`. `build_app.sh` and the speed runner
+still use the native backend; `LOUPPE_SCRATCH_PATH=/private/tmp/louppe-build-release`
+keeps packaging products outside the folder too.
 
 Sparkle is a public, checksum-pinned dependency; the XMP parser sources are vendored.
 The guides below cover affected checks and local app packaging. Optional hardware,

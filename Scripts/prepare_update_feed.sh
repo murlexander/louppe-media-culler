@@ -18,7 +18,7 @@ if [[ ! -f "$ARCHIVE" ]]; then
     exit 1
 fi
 
-SPARKLE_TOOLS="$(find .build/artifacts -type d \
+SPARKLE_TOOLS="$(find "${LOUPPE_SCRATCH_PATH:-.build}/artifacts" -type d \
     -path '*/Sparkle/bin' -print -quit)"
 if [[ -z "$SPARKLE_TOOLS" || ! -x "$SPARKLE_TOOLS/generate_appcast" ]]; then
     echo "Sparkle's release tools were not found. Run swift package --disable-keychain resolve first." >&2

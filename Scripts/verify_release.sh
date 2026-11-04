@@ -222,7 +222,7 @@ xattr -cr "$VERIFIED_APP"
 verify_app_bundle "$VERIFIED_APP" "the loose app's"
 
 if ! $APP_STORE; then
-    SPARKLE_TOOLS="$(find .build/artifacts -type d -path '*/Sparkle/bin' -print -quit)"
+    SPARKLE_TOOLS="$(find "${LOUPPE_SCRATCH_PATH:-.build}/artifacts" -type d -path '*/Sparkle/bin' -print -quit)"
     [[ -n "$SPARKLE_TOOLS" && -x "$SPARKLE_TOOLS/sign_update" ]] \
         || fail "Sparkle's verification tool is missing."
     if $PUBLISHING; then
