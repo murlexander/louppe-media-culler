@@ -279,6 +279,7 @@ private struct GridCell: View {
                         isSelected: store.selectedIndices.contains(index),
                         showsRatingBadge: false,
                         videoPlayback: store.videoPlayback,
+                        mediaAlignment: .bottom,
                         tileOverlay: AnyView(tileControls(item: item, actions: actions)),
                         onImageSizeChange: { revision, size in
                             tileImageSizes.sizes[revision] = size
@@ -548,8 +549,10 @@ enum GridRubberBandHitTest {
             width: tileFrame.width,
             height: tileFrame.width
         )
-        guard slotFrame.contains(point) else { return true }
-        let mediaFrame = TileMediaGeometry.fittedRect(in: slotFrame, imageSize: imageSizes[index])
+        // Grid photos rest on the caption, so a short panorama's decision
+        // target can extend below the slot; test controls before the caption.
+        let mediaFrame = TileMediaGeometry.fittedRect(in: slotFrame, imageSize: imageSizes[index],
+                                                      alignment: .bottom)
 
         let ratingFrame = CGRect(
             x: rightToLeft ? mediaFrame.minX : mediaFrame.maxX - ratingControlRegionSize,
@@ -582,6 +585,7 @@ enum GridRubberBandHitTest {
             if playbackFrame.contains(point) { return false }
         }
 
+        // Everything else, including the filename, is selection canvas.
         return true
     }
 }

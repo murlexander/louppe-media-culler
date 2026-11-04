@@ -451,7 +451,8 @@ struct MetadataPanel: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!store.canRenameSource)
-                .help(L10n.text("Click to edit filename"))
+                // Lead with the full name: the heading truncates in the middle.
+                .help("\(item.displayName)\n\(L10n.text("Click to edit filename"))")
                 .accessibilityLabel(item.displayName)
                 .accessibilityHint(L10n.text("Click to edit the filename in place."))
             }
@@ -658,26 +659,42 @@ struct MetadataPanel: View {
         emphasized: Bool = false
     ) -> some View {
         if !rowFields.isEmpty {
-            HStack(alignment: .top, spacing: 4) {
-                ForEach(rowFields) { field in
-                    VStack(spacing: 2) {
-                        if showLabels {
-                            Text(displayLabel(for: field))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                        if emphasized {
-                            settingValue(for: field)
-                                .minimumScaleFactor(0.75)
-                        } else {
-                            Text(field.value)
-                                .font(.callout.weight(.medium))
-                            .foregroundStyle(.primary)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
+            // Four camera values on one line when they fit; otherwise two rows.
+            ViewThatFits(in: .horizontal) {
+                metadataFieldsLine(rowFields, showLabels: showLabels, emphasized: emphasized)
+                VStack(spacing: 10) {
+                    let half = (rowFields.count + 1) / 2
+                    metadataFieldsLine(Array(rowFields.prefix(half)), showLabels: showLabels, emphasized: emphasized)
+                    metadataFieldsLine(Array(rowFields.dropFirst(half)), showLabels: showLabels, emphasized: emphasized)
                 }
+            }
+        }
+    }
+
+    private func metadataFieldsLine(
+        _ rowFields: [MetadataField],
+        showLabels: Bool,
+        emphasized: Bool
+    ) -> some View {
+        HStack(alignment: .top, spacing: 4) {
+            ForEach(rowFields) { field in
+                VStack(spacing: 2) {
+                    if showLabels {
+                        Text(displayLabel(for: field))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    if emphasized {
+                        settingValue(for: field)
+                            .fixedSize()
+                    } else {
+                        Text(field.value)
+                            .font(.callout.weight(.medium))
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .frame(maxWidth: .infinity)
             }
         }
     }

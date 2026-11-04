@@ -87,6 +87,7 @@ struct ThumbnailView: View {
     /// Grid supplies its own interactive badge above the tile's click target.
     var showsRatingBadge: Bool = true
     var videoPlayback: VideoPlaybackController?
+    private let mediaAlignment: TileMediaAlignment
     private let tileOverlay: AnyView
     private let onImageSizeChange: ((PhotoContentRevision, CGSize?) -> Void)?
     /// Scalar projections make metadata changes visible to SwiftUI even
@@ -103,6 +104,7 @@ struct ThumbnailView: View {
         isSelected: Bool = false,
         showsRatingBadge: Bool = true,
         videoPlayback: VideoPlaybackController? = nil,
+        mediaAlignment: TileMediaAlignment = .center,
         tileOverlay: AnyView = AnyView(EmptyView()),
         onImageSizeChange: ((PhotoContentRevision, CGSize?) -> Void)? = nil
     ) {
@@ -111,6 +113,7 @@ struct ThumbnailView: View {
         self.isSelected = isSelected
         self.showsRatingBadge = showsRatingBadge
         self.videoPlayback = videoPlayback
+        self.mediaAlignment = mediaAlignment
         self.tileOverlay = tileOverlay
         self.onImageSizeChange = onImageSizeChange
         self.ratingState = item.ratingState
@@ -136,7 +139,7 @@ struct ThumbnailView: View {
             ? retainedImage.image
             : ImagePipeline.shared.cachedThumbnail(for: item)
         let imageSize = TileMediaGeometry.imageSize(for: item, loadedImage: displayedImage)
-        TilePhotoLayout(imageSize: imageSize) {
+        TilePhotoLayout(imageSize: imageSize, alignment: mediaAlignment) {
             ZStack {
                 Group {
                     if let reference = item.primaryFile.photosMedia {
@@ -374,13 +377,13 @@ struct RatingBadge: View {
                         .resizable().scaledToFit()
                         .foregroundStyle(Color(nsColor: Self.noSymbolColor), Color(nsColor: Self.noFillColor))
                 case .undecided:
-                    // An open dashed ring reads as "not decided yet" without
-                    // color and stays visible over both chrome and photos.
-                    Image(systemName: "circle.dashed")
+                    // An open ring reads as "not decided yet" without color.
+                    // It stays quieter than ✓ / ✗ yet visible over photos.
+                    Image(systemName: "circle")
                         .resizable().scaledToFit()
                         .fontWeight(.semibold)
-                        .foregroundStyle(.white)
-                        .background(.black.opacity(contrast == .increased ? 0.85 : 0.55), in: Circle())
+                        .foregroundStyle(.white.opacity(contrast == .increased ? 1 : 0.9))
+                        .background(.black.opacity(contrast == .increased ? 0.8 : 0.4), in: Circle())
                 }
             }
         }

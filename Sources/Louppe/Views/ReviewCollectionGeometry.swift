@@ -225,15 +225,24 @@ struct ReviewGroupHeader: View {
     }
 }
 
-/// The photo and every tile adornment share this centered aspect-fit rectangle.
+/// Vertical placement of a fitted photo in its square slot (top-left origin).
+/// Grid rests photos on their filename caption; the filmstrip centers them.
+enum TileMediaAlignment: Sendable {
+    case center
+    case bottom
+}
+
+/// The photo and every tile adornment share this aspect-fit rectangle.
 /// Unknown or nonvisual media keeps the original square slot.
 enum TileMediaGeometry {
-    static func fittedRect(in slot: CGRect, imageSize: CGSize?) -> CGRect {
+    static func fittedRect(in slot: CGRect, imageSize: CGSize?,
+                           alignment: TileMediaAlignment = .center) -> CGRect {
         guard let imageSize, imageSize.width.isFinite, imageSize.height.isFinite,
               imageSize.width > 0, imageSize.height > 0 else { return slot }
         let scale = min(slot.width / imageSize.width, slot.height / imageSize.height)
         let size = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
-        return CGRect(x: slot.midX - size.width / 2, y: slot.midY - size.height / 2,
+        let y = alignment == .bottom ? slot.maxY - size.height : slot.midY - size.height / 2
+        return CGRect(x: slot.midX - size.width / 2, y: y,
                       width: size.width, height: size.height)
     }
 
@@ -247,13 +256,14 @@ enum TileMediaGeometry {
 /// inside it without per-cell geometry readers or layout preferences.
 struct TilePhotoLayout: Layout {
     let imageSize: CGSize?
+    var alignment: TileMediaAlignment = .center
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         proposal.replacingUnspecifiedDimensions(by: CGSize(width: 102, height: 102))
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let rect = TileMediaGeometry.fittedRect(in: bounds, imageSize: imageSize)
+        let rect = TileMediaGeometry.fittedRect(in: bounds, imageSize: imageSize, alignment: alignment)
         for subview in subviews {
             subview.place(at: CGPoint(x: rect.midX, y: rect.midY), anchor: .center,
                           proposal: ProposedViewSize(rect.size))

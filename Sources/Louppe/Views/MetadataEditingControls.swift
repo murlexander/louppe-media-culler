@@ -118,7 +118,8 @@ struct MetadataEditingControls: View {
         case .mixed:
             return .secondary
         default:
-            return Color(nsColor: .tertiaryLabelColor)
+            // Available empty stars stay readable, not disabled-looking.
+            return .secondary
         }
     }
 
