@@ -199,14 +199,12 @@ struct MetadataPanel: View {
                 nanoseconds: Self.inspectionDebounceNanoseconds
             )
             guard !Task.isCancelled else { return }
-            let current = item
-            let authority = sourceAccess
-            let loaded = await Task.detached(priority: .userInitiated) {
-                let lease = authority?.begin()
-                defer { withExtendedLifetime(lease) {} }
-                return MetadataExtractor.fields(for: current)
-            }.value
-            guard !Task.isCancelled,
+            // The bounded reader retires this waiter on navigation; a queued
+            // read never starts, and a running one keeps its own grant lease.
+            let loaded = await MetadataDetailPipeline.shared.fields(
+                for: item, sourceAccess: sourceAccess
+            )
+            guard let loaded, !Task.isCancelled,
                   fieldsRevision == requestedRevision else { return }
             fields = loaded
         }

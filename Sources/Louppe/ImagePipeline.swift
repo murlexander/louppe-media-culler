@@ -78,6 +78,24 @@ final class ImagePipeline: @unchecked Sendable {
     private var diskWriteBytes = 0
     private var diskDrainScheduled = false
     private var diskWriteWaiters: [CheckedContinuation<Void, Never>] = []
+    /// The 512 MiB disk ceiling. A pass that finds more evicts the oldest
+    /// entries down to the ceiling minus one live-maintenance interval.
+    static let diskCacheByteLimit: Int64 = 512 * 1024 * 1024
+    /// Live enforcement between daily passes: bytes this process may write
+    /// before its first pass, and the eviction hysteresis below the ceiling.
+    static let liveMaintenanceWriteInterval: Int64 = 64 * 1024 * 1024
+    private let diskByteLimit: Int64
+    private let liveMaintenanceInterval: Int64?
+    private let maintenanceRecordsDefaults: Bool
+    // Guarded by diskWriteLock. One maintenance pass at a time; later passes
+    // start from completed writes, never from per-thumbnail directory walks.
+    private var maintenanceRunning = false
+    private var knownDiskBytes: Int64?
+    private var diskBytesSinceMaintenance: Int64 = 0
+    private var maintenancePassCount = 0
+    private var maintenanceStartCount = 0
+    private var activeMaintenancePasses = 0
+    private var peakMaintenancePasses = 0
 
     private enum DecodeKind: Hashable { case thumbnail, full }
     private struct DecodeRequest: Hashable {
@@ -156,12 +174,16 @@ final class ImagePipeline: @unchecked Sendable {
         thumbnailConcurrency: Int? = nil,
         fullConcurrency: Int? = nil,
         foregroundWork: ForegroundWorkCoordinator = .shared,
+        diskCacheByteLimit: Int64 = ImagePipeline.diskCacheByteLimit,
+        liveMaintenanceWriteInterval: Int64? = nil,
         decoder: (@Sendable (URL, CGFloat) -> CGImage?)? = nil
     ) {
         self.init(
             diskCacheRoot: testingDiskCacheRoot,
             schedulesMaintenance: false,
             foregroundWork: foregroundWork,
+            diskCacheByteLimit: diskCacheByteLimit,
+            liveMaintenanceWriteInterval: liveMaintenanceWriteInterval,
             testingDecoder: decoder
         )
         if let thumbnailConcurrency {
@@ -195,6 +217,8 @@ final class ImagePipeline: @unchecked Sendable {
         diskCacheRoot: URL,
         schedulesMaintenance: Bool,
         foregroundWork: ForegroundWorkCoordinator = .shared,
+        diskCacheByteLimit: Int64 = ImagePipeline.diskCacheByteLimit,
+        liveMaintenanceWriteInterval: Int64? = nil,
         testingDiskWriter: (@Sendable (CGImage, URL) -> Void)? = nil,
         testingDecoder: (@Sendable (URL, CGFloat) -> CGImage?)? = nil
     ) {
@@ -202,6 +226,12 @@ final class ImagePipeline: @unchecked Sendable {
         self.diskCacheRoot = diskCacheRoot
         self.testingDecoder = testingDecoder
         self.testingDiskWriter = testingDiskWriter
+        diskByteLimit = max(1, diskCacheByteLimit)
+        // Test hosts never prune unless a focused test injects small limits.
+        liveMaintenanceInterval = schedulesMaintenance
+            ? Self.liveMaintenanceWriteInterval
+            : liveMaintenanceWriteInterval.map { max(1, $0) }
+        maintenanceRecordsDefaults = schedulesMaintenance
         thumbCache.countLimit = 1200
         thumbCache.totalCostLimit = 256 * 1024 * 1024
         fullCache.countLimit = 8
@@ -219,12 +249,7 @@ final class ImagePipeline: @unchecked Sendable {
             // Gallery rendering, and the first Grid switch uncontested I/O;
             // one delayed daily pass is sufficient for a 90-day cache.
             diskQueue.asyncAfter(deadline: .now() + 30) { [weak self] in
-                guard let self else { return }
-                Task.detached(priority: .utility) {
-                    if await self.pruneDiskCacheWithAdmission() {
-                        UserDefaults.standard.set(Date(), forKey: Self.lastDiskPruneDefaultsKey)
-                    }
-                }
+                self?.startMaintenanceIfIdle()
             }
         }
     }
@@ -529,21 +554,24 @@ final class ImagePipeline: @unchecked Sendable {
             _ = await foregroundWork.waitForBackgroundAdmission()
             await withCheckedContinuation { continuation in
                 diskQueue.async { [self] in
-                    autoreleasepool {
+                    let written: Int64 = autoreleasepool {
                         if let testingDiskWriter {
                             testingDiskWriter(write.image, write.url)
-                        } else {
-                            let rep = NSBitmapImageRep(cgImage: write.image)
-                            if let jpeg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.8]) {
-                                try? jpeg.write(to: write.url, options: .atomic)
-                            }
+                            return Int64((try? write.url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
                         }
+                        let rep = NSBitmapImageRep(cgImage: write.image)
+                        guard let jpeg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.8]),
+                              (try? jpeg.write(to: write.url, options: .atomic)) != nil else { return 0 }
+                        return Int64(jpeg.count)
                     }
-                    diskWriteLock.withLock {
+                    let startsMaintenance = diskWriteLock.withLock {
                         diskWriteBytes -= Self.cost(of: write.image)
                         diskWrites.removeValue(forKey: write.url)
                         diskWriteOrder.removeFirst()
+                        diskBytesSinceMaintenance += written
+                        return claimLiveMaintenanceLocked()
                     }
+                    if startsMaintenance { runClaimedMaintenance() }
                     continuation.resume()
                 }
             }
@@ -817,12 +845,62 @@ final class ImagePipeline: @unchecked Sendable {
         return elapsed >= 24 * 60 * 60
     }
 
+    /// Called under diskWriteLock after a completed write. Before this process
+    /// knows the cache total, one interval of writes starts a pass; afterwards
+    /// a pass starts only when the known total plus later writes exceeds the
+    /// ceiling. The flag prevents overlapping launch and live passes.
+    private func claimLiveMaintenanceLocked() -> Bool {
+        guard let interval = liveMaintenanceInterval, !maintenanceRunning else { return false }
+        let due = knownDiskBytes.map { $0 + diskBytesSinceMaintenance > diskByteLimit }
+            ?? (diskBytesSinceMaintenance >= interval)
+        if due { maintenanceRunning = true }
+        return due
+    }
+
+    private func startMaintenanceIfIdle() {
+        let claimed = diskWriteLock.withLock {
+            guard !maintenanceRunning else { return false }
+            maintenanceRunning = true
+            return true
+        }
+        if claimed { runClaimedMaintenance() }
+    }
+
+    private func runClaimedMaintenance() {
+        Task.detached(priority: .utility) { [self] in
+            diskWriteLock.withLock {
+                diskBytesSinceMaintenance = 0
+                maintenanceStartCount += 1
+                activeMaintenancePasses += 1
+                peakMaintenancePasses = max(peakMaintenancePasses, activeMaintenancePasses)
+            }
+            let result = await pruneDiskCacheWithAdmission()
+            let continues = diskWriteLock.withLock {
+                activeMaintenancePasses -= 1
+                maintenanceRunning = false
+                maintenancePassCount += 1
+                // Writes during the pass may already be in the walked total;
+                // counting them again only makes the next pass earlier.
+                knownDiskBytes = result.succeeded ? result.remainingBytes : nil
+                // Writes that finished during the pass could not claim it; chain
+                // one more pass now rather than waiting for a later write.
+                return result.succeeded && claimLiveMaintenanceLocked()
+            }
+            if result.succeeded, maintenanceRecordsDefaults {
+                UserDefaults.standard.set(Date(), forKey: Self.lastDiskPruneDefaultsKey)
+            }
+            if continues { runClaimedMaintenance() }
+        }
+    }
+
     /// One utility task and one serial-queue batch at a time. Admission has a
     /// fixed maximum deferral, so repeated interaction cannot starve pruning.
     private func pruneDiskCacheWithAdmission(
         onBatch: (@Sendable (Int) -> Void)? = nil
-    ) async -> Bool {
-        let pass = DiskCachePrunePass(root: diskCacheRoot)
+    ) async -> (succeeded: Bool, remainingBytes: Int64) {
+        let pass = DiskCachePrunePass(root: diskCacheRoot, limit: diskByteLimit,
+                                      target: Self.evictionTarget(limit: diskByteLimit,
+                                                                  interval: liveMaintenanceInterval))
         while await foregroundWork.waitForBackgroundAdmission() {
             let done = await withCheckedContinuation { continuation in
                 diskQueue.async {
@@ -831,22 +909,42 @@ final class ImagePipeline: @unchecked Sendable {
                     continuation.resume(returning: done)
                 }
             }
-            if done { return pass.succeeded }
+            if done { return (pass.succeeded, pass.remainingBytes) }
         }
-        return false
+        return (false, pass.remainingBytes)
+    }
+
+    /// Hysteresis keeps a full cache from walking its directory after every
+    /// few writes; tiny injected limits keep at least half of the ceiling.
+    static func evictionTarget(limit: Int64, interval: Int64?) -> Int64 {
+        max(limit / 2, limit - (interval ?? liveMaintenanceWriteInterval))
     }
 
     #if DEBUG
     func pruneDiskCacheForTesting(onBatch: (@Sendable (Int) -> Void)? = nil) async -> Bool {
-        await pruneDiskCacheWithAdmission(onBatch: onBatch)
+        await pruneDiskCacheWithAdmission(onBatch: onBatch).succeeded
     }
+
+    var diskMaintenanceForTesting: (running: Bool, passes: Int, knownBytes: Int64?) {
+        diskWriteLock.withLock { (maintenanceRunning, maintenancePassCount, knownDiskBytes) }
+    }
+
+    func startDiskMaintenanceForTesting() { startMaintenanceIfIdle() }
+
+    /// Claimed passes, including any not yet running their first batch.
+    var diskMaintenanceStartsForTesting: Int {
+        diskWriteLock.withLock { maintenanceStartCount + (maintenanceRunning && activeMaintenancePasses == 0 ? 1 : 0) }
+    }
+
+    var diskMaintenancePeakConcurrencyForTesting: Int { diskWriteLock.withLock { peakMaintenancePasses } }
     #endif
 
     /// Synchronous compatibility boundary for cache-policy tests. Production
     /// always uses the admitted, bounded batches above, off the main actor.
     @discardableResult
     static func pruneDiskCache(at root: URL) -> Bool {
-        let pass = DiskCachePrunePass(root: root)
+        let pass = DiskCachePrunePass(root: root, limit: diskCacheByteLimit,
+                                      target: evictionTarget(limit: diskCacheByteLimit, interval: nil))
         while !pass.processBatch() {}
         return pass.succeeded
     }
@@ -856,6 +954,8 @@ final class ImagePipeline: @unchecked Sendable {
     private final class DiskCachePrunePass: @unchecked Sendable {
         static let batchLimit = 64
         private let root: URL
+        private let limit: Int64
+        private let target: Int64
         private let fm = FileManager()
         private let keys: Set<URLResourceKey> = [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey]
         private let cutoff = Date().addingTimeInterval(-90 * 24 * 60 * 60)
@@ -868,7 +968,13 @@ final class ImagePipeline: @unchecked Sendable {
         private(set) var succeeded = true
         private(set) var lastBatchCount = 0
 
-        init(root: URL) { self.root = root }
+        init(root: URL, limit: Int64, target: Int64) {
+            self.root = root
+            self.limit = limit
+            self.target = min(limit, max(0, target))
+        }
+
+        var remainingBytes: Int64 { total }
 
         func processBatch() -> Bool {
             lastBatchCount = 0
@@ -888,7 +994,7 @@ final class ImagePipeline: @unchecked Sendable {
                         enumerated = true
                         enumerator = nil
                         files.sort { $0.date < $1.date }
-                        return total <= 512 * 1024 * 1024 || !succeeded
+                        return total <= limit || !succeeded
                     }
                     lastBatchCount += 1
                     guard let values = try? url.resourceValues(forKeys: keys),
@@ -904,14 +1010,16 @@ final class ImagePipeline: @unchecked Sendable {
                 }
                 return false
             }
-            while evictionIndex < files.count && total > 512 * 1024 * 1024
+            // Only an over-limit total reaches eviction. Evicting to the lower
+            // target means the next live pass needs another interval of writes.
+            while evictionIndex < files.count && total > target
                     && lastBatchCount < Self.batchLimit {
                 let file = files[evictionIndex]
                 evictionIndex += 1
                 lastBatchCount += 1
                 if (try? fm.removeItem(at: file.url)) != nil { total -= file.size }
             }
-            return total <= 512 * 1024 * 1024 || evictionIndex == files.count
+            return total <= target || evictionIndex == files.count
         }
     }
 }

@@ -442,6 +442,90 @@ enum MetadataExtractor {
 
 }
 
+/// Info's EXIF detail reads. Each request owns one waiter and one operation.
+/// Navigation retires its waiter; a queued read that loses its waiter never
+/// starts. A running synchronous ImageIO read keeps its lane until it exits,
+/// so abandoned readers on slow media stay bounded by the lane width.
+/// One lane: on serialized slow media, the former unbounded detached reads
+/// filled every cooperative thread and delayed the final photo's fields ~3 s.
+final class MetadataDetailPipeline: @unchecked Sendable {
+    static let shared = MetadataDetailPipeline()
+    static let laneLimit = 1
+
+    private final class Pending {
+        let continuation: CheckedContinuation<[MetadataField]?, Never>
+        let operation: BlockOperation
+        init(continuation: CheckedContinuation<[MetadataField]?, Never>, operation: BlockOperation) {
+            self.continuation = continuation
+            self.operation = operation
+        }
+    }
+
+    private let queue = OperationQueue()
+    private let lock = NSLock()
+    private var pending: [UUID: Pending] = [:]
+    private let reader: @Sendable (PhotoItem) -> [MetadataField]
+
+    init(
+        concurrency: Int = MetadataDetailPipeline.laneLimit,
+        reader: @escaping @Sendable (PhotoItem) -> [MetadataField] = { MetadataExtractor.fields(for: $0) }
+    ) {
+        self.reader = reader
+        queue.name = "louppe.metadata.detail"
+        queue.maxConcurrentOperationCount = max(1, concurrency)
+        queue.qualityOfService = .userInitiated
+    }
+
+    /// Returns nil only when the caller was cancelled before a result.
+    func fields(for item: PhotoItem, sourceAccess: MediaReadAccess?) async -> [MetadataField]? {
+        let id = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                lock.lock()
+                guard !Task.isCancelled else {
+                    lock.unlock()
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let readAccess = MediaOperationReadAccess(sourceAccess)
+                let operation = BlockOperation()
+                // Queued cancellation may skip the execution block entirely.
+                operation.completionBlock = { readAccess.finish() }
+                operation.addExecutionBlock { [weak self, weak operation] in
+                    guard let self, let operation, !operation.isCancelled else { return }
+                    defer { readAccess.finish() }
+                    let fields = autoreleasepool { self.reader(item) }
+                    self.finish(id, result: fields)
+                }
+                pending[id] = Pending(continuation: continuation, operation: operation)
+                lock.unlock()
+                queue.addOperation(operation)
+            }
+        } onCancel: { [weak self] in
+            self?.finish(id, result: nil, cancelling: true)
+        }
+    }
+
+    private func finish(_ id: UUID, result: [MetadataField]?, cancelling: Bool = false) {
+        let request = lock.withLock { pending.removeValue(forKey: id) }
+        guard let request else { return }
+        if cancelling { request.operation.cancel() }
+        request.continuation.resume(returning: result)
+    }
+
+    #if DEBUG
+    var pendingCountForTesting: Int { lock.withLock { pending.count } }
+
+    func waitForIdleForTesting() async {
+        await withCheckedContinuation { continuation in
+            let barrier = BlockOperation { continuation.resume() }
+            for operation in queue.operations { barrier.addDependency(operation) }
+            queue.addOperation(barrier)
+        }
+    }
+    #endif
+}
+
 #if DEBUG
 /// Counts exact metadata-field reads for unique content revisions in hosted
 /// regression tests. The release app has no probe or counting overhead.

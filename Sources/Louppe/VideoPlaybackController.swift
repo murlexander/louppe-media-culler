@@ -367,8 +367,10 @@ final class VideoPlaybackController: ObservableObject {
         sourceRevision: MediaSourceRevision
     ) {
         removeObservers()
+        // The macOS 27 SDK deprecates the Swift string aliases. These names are
+        // the same exported constants, available since macOS 10.7.
         endObserver.replace(with: NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemDidPlayToEndTime,
+            forName: AVPlayerItem.didPlayToEndTimeNotification,
             object: playerItem,
             queue: .main
         ) { [weak self] _ in
@@ -381,7 +383,7 @@ final class VideoPlaybackController: ObservableObject {
             }
         })
         failureObserver.replace(with: NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemFailedToPlayToEndTime,
+            forName: AVPlayerItem.failedToPlayToEndTimeNotification,
             object: playerItem,
             queue: .main
         ) { [weak self] notification in
