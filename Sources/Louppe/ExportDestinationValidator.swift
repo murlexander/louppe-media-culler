@@ -135,11 +135,10 @@ enum ExportDestinationValidator {
             let (sum, overflowed) = partial.addingReportingOverflow(item.totalFileSize)
             return overflowed ? Int64.max : sum
         }
-        let canRenameWithinVolume = mode == .move
-            && moveCanUseAtomicRename(
-                items: items,
-                destinationVolumeIdentifier:
-                    values?.volumeIdentifier as? AnyHashable
+        let canRenameWithinVolume = try mode == .move
+            && volumeIdentifiersAllowAtomicMove(
+                source: cancellableSourceVolumeIdentifiers(for: items),
+                destination: values?.volumeIdentifier as? AnyHashable
             )
         if mode == .move, !canRenameWithinVolume {
             throw ValidationError.crossVolumeMove
@@ -393,6 +392,21 @@ enum ExportDestinationValidator {
             source: sourceIdentifiers,
             destination: destinationVolumeIdentifier
         )
+    }
+
+    /// Move preflight asks every physical source for its volume. Large or slow
+    /// selections run this in a detached task; stop promptly when cancelled.
+    private static func cancellableSourceVolumeIdentifiers(
+        for items: [PhotoItem]
+    ) throws -> [AnyHashable?] {
+        var identifiers: [AnyHashable?] = []
+        for item in items {
+            if Task.isCancelled { throw CancellationError() }
+            for url in item.allURLs {
+                identifiers.append(volumeIdentifier(at: url))
+            }
+        }
+        return identifiers
     }
 
     private static func volumeIdentifier(at url: URL) -> AnyHashable? {

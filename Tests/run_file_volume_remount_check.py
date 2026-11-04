@@ -2,7 +2,8 @@
 """Opt-in disk-image detach/remount coordinator for FileVolumeAcceptanceTests.
 
 Usage: python3 Tests/run_file_volume_remount_check.py MOUNT apfs|exfat IMAGE
-Only Louppe-named disposable mounts backed by /private/tmp/louppe-readiness
+Build the tests first with `--build-system native` into LOUPPE_TEST_SCRATCH
+(default /private/tmp/louppe-readiness-persistence-build). Only Louppe-named disposable mounts backed by /private/tmp/louppe-readiness
 images are accepted. No physical disks are detached or formatted.
 """
 import os, pathlib, plistlib, subprocess, sys, time, uuid
@@ -19,7 +20,9 @@ handoff = root / ('remount-' + fs_name + '-' + str(uuid.uuid4()))
 handoff.mkdir()
 logpath = root / ('remount-' + fs_name + '.log')
 env = dict(os.environ, DEVELOPER_DIR='/Applications/Xcode.app/Contents/Developer', LOUPPE_FILE_VOLUME_ROOT=mount, LOUPPE_FILE_VOLUME_FS=fs_name, LOUPPE_FILE_VOLUME_HANDOFF=str(handoff))
-command = ['swift', 'test', '--disable-keychain', '--scratch-path', '/private/tmp/louppe-readiness-persistence-build', '--skip-build', '--filter', 'FileVolumeAcceptanceTests/testDiskImageRemountKeepsOfflineRatingsAndOriginalBytes']
+scratch = os.environ.get('LOUPPE_TEST_SCRATCH', '/private/tmp/louppe-readiness-persistence-build')
+assert scratch.startswith('/private/tmp/')
+command = ['swift', 'test', '--disable-keychain', '--build-system', 'native', '--scratch-path', scratch, '--skip-build', '--filter', 'FileVolumeAcceptanceTests/testDiskImageRemountKeepsOfflineRatingsAndOriginalBytes']
 with logpath.open('w') as log:
     process = subprocess.Popen(command, cwd=str(pathlib.Path(__file__).resolve().parent.parent), env=env, stdout=log, stderr=subprocess.STDOUT)
     detached = False

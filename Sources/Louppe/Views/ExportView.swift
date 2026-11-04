@@ -60,6 +60,8 @@ struct ExportView: View {
                 switch exporter.state {
                 case .summary:
                     summaryView
+                case .validatingDestination:
+                    destinationValidationView
                 case .preparingXMP(let mode):
                     xmpExportPreparationView(mode: mode)
                 case .awaitingXMPConfirmation(let confirmation):
@@ -179,6 +181,7 @@ struct ExportView: View {
 
     private var isWorking: Bool {
         if store.isXMPPublicationRunning { return true }
+        if case .validatingDestination = exporter.state { return true }
         if case .preparingXMP = exporter.state { return true }
         if case .preparingMultiDestination = exporter.state { return true }
         if case .working = exporter.state { return true }
@@ -899,56 +902,7 @@ struct ExportView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
 
-            Group {
-                LazyVStack(alignment: .leading, spacing: 14) {
-                    ForEach(plan.routes) { route in
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("\(route.route.predicate.displayName) → \(route.destination.path)")
-                                .font(.subheadline.weight(.semibold))
-                            Text((route.itemCount == 1 ? (route.mediaFileCount == 1 ? L10n.text("\(route.itemCount) item · \(route.mediaFileCount) media file") : L10n.text("\(route.itemCount) item · \(route.mediaFileCount) media files")) : (route.mediaFileCount == 1 ? L10n.text("\(route.itemCount) items · \(route.mediaFileCount) media file") : L10n.text("\(route.itemCount) items · \(route.mediaFileCount) media files"))))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            ForEach(route.files) { file in
-                                Text(filePreviewText(file))
-                                    .font(.caption.monospaced())
-                                    .foregroundStyle(file.role == .media ? .primary : .secondary)
-                                    .textSelection(.enabled)
-                            }
-                        }
-                        Divider()
-                    }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(L10n.text("Unmatched — not copied"))
-                            .font(.subheadline.weight(.semibold))
-                        if plan.unmatchedNames.isEmpty {
-                            Text(L10n.text("Every current item is routed exactly once."))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            ForEach(plan.unmatchedNames, id: \.self) { name in
-                                Text(name)
-                                    .font(.caption.monospaced())
-                                    .textSelection(.enabled)
-                            }
-                        }
-                    }
-                    if let xmp = plan.xmpPlan {
-                        Divider()
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(L10n.text("XMP sidecars"))
-                                .font(.subheadline.weight(.semibold))
-                            Text((xmp.applicationPacketCount == 1 ? L10n.text("\(xmp.existingRecognizedPacketCount) existing · \(xmp.count(.create)) to create · \(xmp.count(.update)) to update · \(xmp.applicationPacketCount) application packet copied unchanged") : L10n.text("\(xmp.existingRecognizedPacketCount) existing · \(xmp.count(.create)) to create · \(xmp.count(.update)) to update · \(xmp.applicationPacketCount) application packets copied unchanged")))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            if !xmp.issueFamilies.isEmpty {
-                                Text((xmp.issueFamilies.count == 1 ? L10n.text("\(xmp.issueFamilies.count) sidecar family is skipped after safety checks; listed media files still copy.") : L10n.text("\(xmp.issueFamilies.count) sidecar families are skipped after safety checks; listed media files still copy.")))
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                            }
-                        }
-                    }
-                }
-            }
+            MultiDestinationPlanPreviewList(plan: plan)
 
             Text(L10n.text("Completed copies stay at their destinations after interruption. Originals stay unchanged."))
                 .font(.caption)
@@ -965,20 +919,6 @@ struct ExportView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(Color.louppeFilledAccent)
             }
-        }
-    }
-
-    private func filePreviewText(
-        _ file: MultiDestinationExportPlan.RoutePreview.FilePreview
-    ) -> String {
-        let copy = file.sourcePath == file.destinationPath
-            ? file.sourcePath
-            : "\(file.sourcePath) → \(file.destinationPath)"
-        switch file.role {
-        case .media: return copy
-        case .applicationXMP: return L10n.text("\(copy) (XMP application packet)")
-        case .preparedXMP: return L10n.text("\(copy) (prepared XMP sidecar)")
-        case .retiredXMPSource: return L10n.text("\(copy) (XMP safety record)")
         }
     }
 
@@ -1621,6 +1561,18 @@ struct ExportView: View {
         }
     }
 
+    /// Read-only destination preflight; nothing has been written yet.
+    private var destinationValidationView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .accessibilityLabel(L10n.text("Checking folder…"))
+            Text(L10n.text("Checking folder…"))
+                .font(.headline)
+            Button(L10n.text("Cancel")) { exporter.cancelDestinationValidation() }
+                .keyboardShortcut(.cancelAction)
+        }
+    }
+
     private func xmpExportPreparationView(mode: ExportMode) -> some View {
         VStack(spacing: 12) {
             ProgressView()
@@ -1896,6 +1848,100 @@ struct ExportView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(Color.louppeFilledAccent)
             }
+        }
+    }
+}
+
+/// Exact routing Copy preview. Every file and unmatched item is its own lazy
+/// row, so a 10k-file route realizes only rows near the visible area while
+/// retaining each exact source/destination path, role, and unmatched name.
+struct MultiDestinationPlanPreviewList: View {
+    let plan: MultiDestinationExportPlan
+
+    var body: some View {
+        LazyVStack(alignment: .leading, spacing: 0) {
+            ForEach(plan.routes) { route in
+                Section {
+                    ForEach(route.files) { file in
+                        Text(Self.filePreviewText(file))
+                            .font(.caption.monospaced())
+                            .foregroundStyle(file.role == .media ? .primary : .secondary)
+                            .textSelection(.enabled)
+                            .padding(.top, 5)
+                    }
+                    Divider()
+                        .padding(.vertical, 14)
+                } header: {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("\(route.route.predicate.displayName) → \(route.destination.path)")
+                            .font(.subheadline.weight(.semibold))
+                            .accessibilityAddTraits(.isHeader)
+                        Text(Self.routeCountText(route))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Section {
+                if plan.unmatchedNames.isEmpty {
+                    Text(L10n.text("Every current item is routed exactly once."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 3)
+                } else {
+                    // Offsets, not names, identify rows: unmatched items in
+                    // different subfolders can share a display name.
+                    ForEach(plan.unmatchedNames.indices, id: \.self) { index in
+                        Text(plan.unmatchedNames[index])
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                            .padding(.top, 3)
+                    }
+                }
+            } header: {
+                Text(L10n.text("Unmatched — not copied"))
+                    .font(.subheadline.weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
+            }
+            if let xmp = plan.xmpPlan {
+                Divider()
+                    .padding(.vertical, 14)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L10n.text("XMP sidecars"))
+                        .font(.subheadline.weight(.semibold))
+                        .accessibilityAddTraits(.isHeader)
+                    Text((xmp.applicationPacketCount == 1 ? L10n.text("\(xmp.existingRecognizedPacketCount) existing · \(xmp.count(.create)) to create · \(xmp.count(.update)) to update · \(xmp.applicationPacketCount) application packet copied unchanged") : L10n.text("\(xmp.existingRecognizedPacketCount) existing · \(xmp.count(.create)) to create · \(xmp.count(.update)) to update · \(xmp.applicationPacketCount) application packets copied unchanged")))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if !xmp.issueFamilies.isEmpty {
+                        Text((xmp.issueFamilies.count == 1 ? L10n.text("\(xmp.issueFamilies.count) sidecar family is skipped after safety checks; listed media files still copy.") : L10n.text("\(xmp.issueFamilies.count) sidecar families are skipped after safety checks; listed media files still copy.")))
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+        }
+    }
+
+    static func routeCountText(
+        _ route: MultiDestinationExportPlan.RoutePreview
+    ) -> String {
+        route.itemCount == 1
+            ? (route.mediaFileCount == 1 ? L10n.text("\(route.itemCount) item · \(route.mediaFileCount) media file") : L10n.text("\(route.itemCount) item · \(route.mediaFileCount) media files"))
+            : (route.mediaFileCount == 1 ? L10n.text("\(route.itemCount) items · \(route.mediaFileCount) media file") : L10n.text("\(route.itemCount) items · \(route.mediaFileCount) media files"))
+    }
+
+    static func filePreviewText(
+        _ file: MultiDestinationExportPlan.RoutePreview.FilePreview
+    ) -> String {
+        let copy = file.sourcePath == file.destinationPath
+            ? file.sourcePath
+            : "\(file.sourcePath) → \(file.destinationPath)"
+        switch file.role {
+        case .media: return copy
+        case .applicationXMP: return L10n.text("\(copy) (XMP application packet)")
+        case .preparedXMP: return L10n.text("\(copy) (prepared XMP sidecar)")
+        case .retiredXMPSource: return L10n.text("\(copy) (XMP safety record)")
         }
     }
 }

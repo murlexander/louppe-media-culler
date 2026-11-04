@@ -605,6 +605,7 @@ enum ExportWorker {
                 journalFailure: false, requiresRecovery: false,
                 failureMessage: error.localizedDescription, xmpSummary: xmpSummary)
         }
+        let inFileCopy = InFileCopyMonitor(isCancelled: isCancelled)
         let protectedCopier: FileCopier = { source, temporary in
             let key = try XMPExactFileSystemPath(url: temporary).parent.bytes
             guard let directory = boundDirectories[key] else {
@@ -614,8 +615,15 @@ enum ExportWorker {
             if let fileCopier { // Fault injection for the existing worker tests.
                 try fileCopier(source, temporary)
                 try directory.binding.requireCurrentPath()
+                // Injected copiers write through pathnames, so flush their
+                // result here. The production copier already full-syncs the
+                // created descriptor before returning.
+                try DurableFileIO.syncFile(at: temporary, fullSync: true)
             } else {
-                try directory.copy(from: source, to: temporary)
+                // Report bytes within a large file and honor a confirmed
+                // Stop between writes instead of after the whole file.
+                try directory.copy(from: source, to: temporary,
+                                   progress: inFileCopy.report)
             }
         }
         let writer: FileOperationJournal.Writer
@@ -657,7 +665,7 @@ enum ExportWorker {
             )
         }
         var reporter = ThrottledProgress(total: plan.totalFiles, callback: progress)
-        var byteReporter = ThrottledByteProgress(
+        let byteReporter = ThrottledByteProgress(
             total: plan.totalTransferBytes,
             callback: byteProgress
         )
@@ -736,6 +744,11 @@ enum ExportWorker {
                             try writer.requireUnchangedSource(at: fileIndex)
                             try directory.write(preparedContents, to: temporary)
                         } else {
+                            let limit = file.transferByteCount
+                            inFileCopy.onBytes = { copied in
+                                byteReporter.setInFlight(copied, limit: limit)
+                            }
+                            defer { inFileCopy.onBytes = nil }
                             try copySourceWithReconnectRetry(
                                 writer: writer,
                                 fileIndex: fileIndex,
@@ -748,10 +761,9 @@ enum ExportWorker {
                         touched.location = .temporary(temporary)
                         touched.identity = try FileOperationJournal
                             .captureIdentity(at: temporary)
-                        try DurableFileIO.syncFile(
-                            at: temporary,
-                            fullSync: true
-                        )
+                        // Every writer above has already full-synced the
+                        // temporary's contents. Make its directory entry
+                        // durable before the staged checkpoint names it.
                         try DurableFileIO.syncDirectory(
                             temporary.deletingLastPathComponent(),
                             fullSync: true
@@ -775,6 +787,13 @@ enum ExportWorker {
                         }
                     } catch {
                         if case SourceReconnectError.cancelled = error {
+                            cancelled = true
+                            observedCancellationReason = cancellationReason()
+                                ?? .unrecorded
+                        } else if error is DurableFileIO.CopyStopped {
+                            // A confirmed Stop interrupted this file's data
+                            // copy. Its partial is recorded and removed below
+                            // exactly like any other incomplete copy.
                             cancelled = true
                             observedCancellationReason = cancellationReason()
                                 ?? .unrecorded
@@ -863,13 +882,11 @@ enum ExportWorker {
                             at: temporary,
                             includeStatusChange: false
                         )
+                        // `publish` renames inside the held destination
+                        // folder and full-syncs that same directory before
+                        // returning; the temporary always shares its parent.
                         try directory.publish(from: temporary, to: file.target)
                         touched.location = .destination
-                        try DurableFileIO.syncRenameDirectories(
-                            from: temporary,
-                            to: file.target,
-                            fullSync: true
-                        )
                         touched.identity = try verifiedIdentity(
                             matching: identity,
                             at: file.target
@@ -934,6 +951,8 @@ enum ExportWorker {
                 touchedForItem.append(touched)
                 if case .destination = touched.location {
                     byteReporter.advance(by: file.transferByteCount)
+                } else {
+                    byteReporter.clearInFlight()
                 }
                 reporter.advance()
                 if failed { break }
@@ -1216,7 +1235,7 @@ enum ExportWorker {
             )
         }
         var reporter = ThrottledProgress(total: plan.totalFiles, callback: progress)
-        var byteReporter = ThrottledByteProgress(
+        let byteReporter = ThrottledByteProgress(
             total: plan.totalTransferBytes,
             callback: byteProgress
         )
@@ -2426,40 +2445,85 @@ enum ExportWorker {
 /// Coalesces transfer-byte progress for Export without changing the existing
 /// physical-file progress contract shared with Clean Up. A rollback reports
 /// immediately so the visible amount never claims a safely removed copy.
-private struct ThrottledByteProgress {
+/// In-flight bytes of the file being copied are shown separately and are
+/// retracted at once if that file does not reach its destination.
+private final class ThrottledByteProgress {
     let total: Int64
     let callback: ExportWorker.ByteProgress
     private(set) var completed: Int64 = 0
+    private var inFlight: Int64 = 0
     private var lastReport = Date.distantPast
+    private var lastReported: Int64 = -1
 
     init(total: Int64, callback: @escaping ExportWorker.ByteProgress) {
         self.total = max(0, total)
         self.callback = callback
     }
 
-    mutating func advance(by amount: Int64) {
+    private var visible: Int64 {
+        let (sum, overflowed) = completed.addingReportingOverflow(inFlight)
+        return min(overflowed ? Int64.max : sum, total)
+    }
+
+    func advance(by amount: Int64) {
         let amount = max(0, amount)
+        inFlight = 0
         let (sum, overflowed) = completed.addingReportingOverflow(amount)
         completed = min(overflowed ? Int64.max : sum, total)
         reportIfNeeded(force: completed == total)
     }
 
-    mutating func retract(by amount: Int64) {
+    /// Bytes written so far for the current file, capped at its planned size.
+    func setInFlight(_ amount: Int64, limit: Int64) {
+        inFlight = min(max(0, amount), max(0, limit))
+        reportIfNeeded(force: false)
+    }
+
+    func clearInFlight() {
+        guard inFlight != 0 else { return }
+        inFlight = 0
+        reportIfNeeded(force: true)
+    }
+
+    func retract(by amount: Int64) {
+        inFlight = 0
         completed = max(0, completed - max(0, amount))
         reportIfNeeded(force: true)
     }
 
-    mutating func finish() {
+    func finish() {
+        inFlight = 0
         guard completed != total else { return }
         completed = total
         reportIfNeeded(force: true)
     }
 
-    private mutating func reportIfNeeded(force: Bool) {
+    private func reportIfNeeded(force: Bool) {
         guard total > 0 else { return }
+        let value = visible
+        // In-flight and completion updates can name the same amount; repeat
+        // nothing the photographer has already seen.
+        guard value != lastReported else { return }
         let now = Date()
         guard force || now.timeIntervalSince(lastReport) >= 0.1 else { return }
-        callback(completed, total)
+        callback(value, total)
         lastReport = now
+        lastReported = value
+    }
+}
+
+/// Carries one worker's within-file copy progress and Stop check into the
+/// synchronous descriptor copy. Only the worker thread touches `onBytes`.
+private final class InFileCopyMonitor: @unchecked Sendable {
+    let isCancelled: @Sendable () -> Bool
+    var onBytes: ((Int64) -> Void)?
+
+    init(isCancelled: @escaping @Sendable () -> Bool) {
+        self.isCancelled = isCancelled
+    }
+
+    func report(_ copied: Int64) -> Bool {
+        onBytes?(copied)
+        return !isCancelled()
     }
 }
