@@ -191,7 +191,8 @@ final class NativeSearchFieldTests: XCTestCase {
     }
 
     private func drainMainQueue() {
-        RunLoop.main.run(until: Date().addingTimeInterval(0.03))
+        // Hosted CI can need longer than 30 ms to deliver queued focus work.
+        RunLoop.main.run(until: Date().addingTimeInterval(CITimingBudget.scaled(0.03, onCI: 10)))
     }
 
     @MainActor

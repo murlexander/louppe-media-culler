@@ -260,9 +260,11 @@ final class ArchiveFoldersOutlineTests: XCTestCase {
         }
         XCTAssertEqual(fixture.outline.numberOfRows, 1 + 3 + 5_000, "All Media plus top-level folders")
         print("10k-folder expand \(expand), unchanged update \(ratingUpdate), collapse \(collapse)")
-        XCTAssertLessThan(expand, .seconds(2))
-        XCTAssertLessThan(collapse, .seconds(2))
-        XCTAssertLessThan(ratingUpdate, .milliseconds(50), "an unchanged update skips expansion work")
+        // Hosted CI measured 3.0–10.0 s for unchanged outline code; budgets stay strict locally.
+        XCTAssertLessThan(expand, CITimingBudget.scaled(.seconds(2), onCI: 10))
+        XCTAssertLessThan(collapse, CITimingBudget.scaled(.seconds(2), onCI: 10))
+        XCTAssertLessThan(ratingUpdate, CITimingBudget.scaled(.milliseconds(50), onCI: 10),
+                          "an unchanged update skips expansion work")
     }
 
     func testPaneSplitterDragsInBothDirectionsResetsAndIsAnAccessibleSplitter() throws {

@@ -147,7 +147,7 @@ final class ViewSwitchTests: XCTestCase {
 
         XCTAssertLessThan(
             warmElapsed,
-            .milliseconds(1_500),
+            CITimingBudget.scaled(.milliseconds(1_500), onCI: 4),
             "warm view switches should never wait on media I/O or rebuild every control geometry"
         )
         XCTAssertEqual(store.viewMode, .gallery)
