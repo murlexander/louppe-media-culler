@@ -97,6 +97,8 @@ final class CullingShowcaseVisualTests: XCTestCase {
             store.showMetadataPanel = true
             try await capture(FilterView(store: store), name: "filter-\(suffix)",
                               size: CGSize(width: 340, height: 560), scheme: scheme, defaults: defaults, output: output)
+            try await capture(SortView(store: store), name: "sort-\(suffix)",
+                              size: CGSize(width: 340, height: 440), scheme: scheme, defaults: defaults, output: output)
             try await capture(ActionPaletteView(store: store), name: "palette-\(suffix)",
                               size: CGSize(width: 560, height: 480), scheme: scheme, defaults: defaults, output: output)
             store.items = []

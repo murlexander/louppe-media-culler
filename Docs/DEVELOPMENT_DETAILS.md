@@ -606,7 +606,7 @@ precedence over remembered scope/position.
   and shortcut Settings. Keep immediate binding updates, native editing and IME
   ownership, one-shot focus requests scoped to the attached key window, and
   palette commands in its field delegate. Do not add a second key monitor.
-  Sort uses grouped native Pickers; shortcut Add uses a native Menu and mounts
+  Sort uses native menu Pickers in Filter's compact popover layout; shortcut Add uses a native Menu and mounts
   its recorder after menu tracking ends. Welcome uses the system `HelpLink`.
   `FloatingControlSurface` shares macOS 26+ glass between photo zoom and floating
   video transport, regular material on older systems, and an opaque bordered

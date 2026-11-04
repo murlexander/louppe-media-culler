@@ -1,19 +1,18 @@
 import SwiftUI
 
-/// Native sort and grouping settings with separate grouped-review commands.
-/// It only reorders what's shown and never touches ratings.
+/// Sort and grouping settings with separate grouped-review commands, in the
+/// same compact popover layout as Filter. It only reorders what's shown and
+/// never touches ratings.
 struct SortView: View {
     @ObservedObject var store: SessionStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(L10n.text("Sort"))
                 .font(.headline)
-                .padding(.horizontal, 14)
-                .padding(.top, 14)
 
-            LouppeSettingsForm {
-                Section {
+            VStack(alignment: .leading, spacing: 8) {
+                pickerRow(L10n.text("Sort by")) {
                     Picker(L10n.text("Sort by"), selection: $store.sort.key) {
                         sortOption(L10n.text("Date taken"), .captureDate)
                         sortOption(L10n.text("Name"), .name)
@@ -39,63 +38,71 @@ struct SortView: View {
                                    disabled: store.availableVideoCodecs.count <= 1)
                     }
                     .accessibilityIdentifier("louppe.sortKey")
+                }
 
+                pickerRow(L10n.text("Order")) {
                     Picker(L10n.text("Order"), selection: $store.sort.ascending) {
                         Text(store.sort.key.ascendingLabel).tag(true)
                         Text(store.sort.key.descendingLabel).tag(false)
                     }
                     .accessibilityIdentifier("louppe.sortOrder")
-
-                    Toggle(L10n.text("Divide into groups"), isOn: $store.isGroupingEnabled)
-                        // Name sorting never divides: every file name is unique.
-                        .disabled(store.sort.key == .name)
                 }
 
-                Section {
-                    // Entering a group may first run asynchronous analysis, so
-                    // these are explicit commands rather than an optimistic selection.
-                    reviewModeButton(.exactDuplicates)
-                    reviewModeButton(.likelySimilarPhotos)
+                Toggle(L10n.text("Divide into groups"), isOn: $store.isGroupingEnabled)
+                    // Name sorting never divides: every file name is unique.
+                    .disabled(store.sort.key == .name)
+            }
 
-                    if store.isGroupedReviewActive {
-                        Button(L10n.text("Return to Normal Review")) {
-                            store.exitGroupedReview()
-                        }
-                    }
-                    if store.groupedReviewMode == .likelySimilarPhotos {
-                        similarityControl
-                    }
-                } header: {
-                    Text(L10n.text("Review groups"))
-                } footer: {
-                    Text(L10n.text("Grouping never changes ratings, originals, Clean Up, or Export."))
-                }
+            Divider()
 
-                Section {
-                    if store.isDuplicateBurstAnalysisRunning {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text(L10n.text("Analyzing locally…"))
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Button(L10n.text("Cancel")) {
-                                store.cancelDuplicateBurstAnalysis()
-                            }
-                        }
-                    } else {
-                        Button(
-                            store.duplicateBurstAnalysisState == .ready
-                                ? L10n.text("Refresh Local Analysis")
-                                : L10n.text("Analyze Folder Locally")
-                        ) {
-                            store.analyzeDuplicateAndBurstGroups()
-                        }
-                        .disabled(store.items.isEmpty || store.isFileOperationRunning || store.photosBatch?.mediaSession != nil)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L10n.text("Review groups"))
+                    .font(.subheadline.weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
+                // Entering a group may first run asynchronous analysis, so
+                // these are explicit commands rather than an optimistic selection.
+                reviewModeButton(.exactDuplicates)
+                reviewModeButton(.likelySimilarPhotos)
+
+                if store.isGroupedReviewActive {
+                    Button(L10n.text("Return to Normal Review")) {
+                        store.exitGroupedReview()
                     }
-                } footer: {
-                    Text(store.duplicateBurstAnalysisSummary)
+                    .buttonStyle(.borderless)
                 }
+                if store.groupedReviewMode == .likelySimilarPhotos {
+                    similarityControl
+                }
+                caption(L10n.text("Grouping never changes ratings, originals, Clean Up, or Export."))
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 6) {
+                if store.isDuplicateBurstAnalysisRunning {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text(L10n.text("Analyzing locally…"))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button(L10n.text("Cancel")) {
+                            store.cancelDuplicateBurstAnalysis()
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                } else {
+                    Button(
+                        store.duplicateBurstAnalysisState == .ready
+                            ? L10n.text("Refresh Local Analysis")
+                            : L10n.text("Analyze Folder Locally")
+                    ) {
+                        store.analyzeDuplicateAndBurstGroups()
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(store.items.isEmpty || store.isFileOperationRunning || store.photosBatch?.mediaSession != nil)
+                }
+                caption(store.duplicateBurstAnalysisSummary)
             }
 
             Divider()
@@ -104,11 +111,34 @@ struct SortView: View {
                 Button(L10n.text("Done")) { store.isSortPresented = false }
                     .keyboardShortcut(.cancelAction)
             }
-            .padding(14)
         }
-        .frame(width: 380, height: 560)
+        .toggleStyle(LouppeToggleStyle(.checkbox))
+        .padding(14)
+        .frame(width: 340)
+        .fixedSize(horizontal: false, vertical: true)
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
+    }
+
+    /// A compact leading label with a trailing menu, as in Filter's rows.
+    private func pickerRow<Control: View>(_ title: String, @ViewBuilder control: () -> Control) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .layoutPriority(1)
+            Spacer(minLength: 8)
+            // One width keeps both menus aligned; long names truncate natively.
+            control()
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(width: 180, alignment: .trailing)
+        }
+    }
+
+    private func caption(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func sortOption(_ label: String, _ key: PhotoSort.Key, disabled: Bool = false) -> some View {
@@ -116,9 +146,19 @@ struct SortView: View {
     }
 
     private func reviewModeButton(_ mode: DuplicateBurstAnalysis.ReviewMode) -> some View {
-        Button(mode.displayName) {
+        Button {
             store.enterGroupedReview(mode)
+        } label: {
+            HStack(spacing: 6) {
+                Text(mode.displayName)
+                if store.groupedReviewMode == mode {
+                    Image(systemName: "checkmark")
+                        .font(.caption.weight(.semibold))
+                        .accessibilityHidden(true)
+                }
+            }
         }
+        .buttonStyle(.borderless)
         .disabled(store.items.isEmpty || store.isFileOperationRunning || store.photosBatch?.mediaSession != nil)
         .help(mode.shortDescription)
         .accessibilityAddTraits(store.groupedReviewMode == mode ? .isSelected : [])

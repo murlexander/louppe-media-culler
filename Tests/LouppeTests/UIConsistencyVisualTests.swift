@@ -110,7 +110,7 @@ final class UIConsistencyVisualTests: XCTestCase {
                               size: CGSize(width: 340, height: 560), scheme: scheme,
                               defaults: defaults, output: output)
             try await capture(SortView(store: store), name: "sort-\(suffix)",
-                              size: CGSize(width: 380, height: 560), scheme: scheme,
+                              size: CGSize(width: 340, height: 440), scheme: scheme,
                               defaults: defaults, output: output)
             try await capture(ExportView(store: store), name: "export-summary-\(suffix)",
                               size: CGSize(width: 640, height: 620), scheme: scheme,

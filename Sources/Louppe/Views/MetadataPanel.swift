@@ -47,9 +47,9 @@ struct MetadataPanel: View {
         let isEligible: Bool
     }
 
-    // Camera-display order: focal length, aperture, shutter, ISO on one line.
-    private let shootingLabels = ["Focal length", "Aperture", "Shutter", "ISO"]
-    private let secondaryShootingLabels = ["Exposure comp.", "White balance"]
+    // Large camera-display values; focal length leads the labeled row below.
+    private let shootingLabels = ["Aperture", "Shutter", "ISO"]
+    private let secondaryShootingLabels = ["Focal length", "Exposure comp.", "White balance"]
     private let promotedLabels = [
         "Filename", "Camera", "Lens", "Aperture", "Shutter", "ISO",
         "Focal length", "Exposure comp.", "White balance"
@@ -340,7 +340,7 @@ struct MetadataPanel: View {
         }
 
         if let cameraLensText {
-            metadataValue(cameraLensText, emphasized: true)
+            cameraLensLine(cameraLensText)
         }
 
         if hasCameraLensInfo && hasShootingInfo {
@@ -659,7 +659,7 @@ struct MetadataPanel: View {
         emphasized: Bool = false
     ) -> some View {
         if !rowFields.isEmpty {
-            // Four camera values on one line when they fit; otherwise two rows.
+            // All values on one line when they fit; otherwise two rows.
             ViewThatFits(in: .horizontal) {
                 metadataFieldsLine(rowFields, showLabels: showLabels, emphasized: emphasized)
                 VStack(spacing: 10) {
@@ -727,12 +727,6 @@ struct MetadataPanel: View {
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .textSelection(.enabled)
-        case "Focal length" where value.hasSuffix(" mm"):
-            return Text("\(Text(String(value.dropLast(3))).font(largeFont))\u{2009}mm")
-                .font(smallFont)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .textSelection(.enabled)
         default:
             return Text(value)
                 .font(largeFont)
@@ -748,6 +742,25 @@ struct MetadataPanel: View {
         case "White balance": return L10n.text("WB")
         default: return L10n.label(field.label)
         }
+    }
+
+    /// Camera and lens on one line when they fit; otherwise each on its own
+    /// line, wrapping long lens names instead of clipping them.
+    private func cameraLensLine(_ text: String) -> some View {
+        ViewThatFits(in: .horizontal) {
+            Text(text)
+                .font(.subheadline)
+                .lineLimit(1)
+                .fixedSize()
+                .frame(maxWidth: .infinity)
+                .textSelection(.enabled)
+            VStack(spacing: 2) {
+                if let cameraName { metadataValue(cameraName, emphasized: true) }
+                if let lensName { metadataValue(lensName, emphasized: true) }
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .combine)
     }
 
     private func metadataValue(_ value: String, emphasized: Bool = false) -> some View {

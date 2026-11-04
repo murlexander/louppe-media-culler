@@ -42,9 +42,10 @@
 - Lay out Grid like a contact sheet: photos rest on their filenames, and the selection ring, decision, stars, color label and quality cues sit on the photo itself in Grid, Browser and Apple Photos reviews.
 - Show undecided items with an open ring instead of a faint dot, and draw color labels as squares so a green or red label never looks like a decision. Empty stars in Info no longer look disabled.
 - Show which Decision filter is active with a native segmented control, list Stars and Color first, and mark collapsed filter sections that are narrowing results.
-- Show quality cues before the histogram in Info, move the clipping-overlay button into the histogram header, and put focal length, aperture, shutter speed and ISO on one line. Hover over a long filename to see all of it.
+- Show quality cues before the histogram in Info, move the clipping-overlay button into the histogram header, and wrap long camera and lens names instead of clipping them. Hover over a long filename to see all of it.
 - Mark which decisions an Export includes with a check, not only a color. Show Command Palette shortcuts as keycaps.
 - Make Rename and Organize results compact, with the file count first and an Undo button.
+- Lay out the Sort popover like Filter, with compact menus, a checkbox for groups, and plain review-group commands.
 - App Store version: after three successful Copies on two different days, ask once per version for an App Store rating using Apple's standard prompt. The counters stay on the Mac; the direct download never asks.
 - Align folder, rename, playback, and Info wording, and mark Clear All Decisions with an ellipsis because it asks for confirmation.
 - Open Welcome at the smallest size that fits its contents; keep a larger size only after dragging a window edge, and restore the chosen review window size when reopening photos.

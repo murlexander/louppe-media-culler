@@ -20,10 +20,13 @@ There is no separate support team. The sole contact is Alex Markin at
   only for concrete needs; reuse existing state owners and documented bridges.
 - Always prefer the most modern native macOS controls and presentation available
   on the running system. Use system containers and adaptive styles instead of
-  recreating or freezing older appearances. Configuration forms use the native
-  grouped Form presentation shared with Settings: leading labels, trailing
-  values, and automatic picker/toggle styling. Keep semantic differences such
-  as multi-selection checkboxes and action menus. Build with the current SDK,
+  recreating or freezing older appearances. Settings and configuration sheets
+  use the native grouped Form presentation: leading labels, trailing values,
+  and automatic picker/toggle styling. Toolbar popovers (Sort, Filter) share
+  Filter's compact layout instead: bold title, compact rows and checkboxes,
+  Divider-separated sections, 14-point margins, 340-point width, and a footer
+  with Done trailing. Keep semantic differences such as multi-selection
+  checkboxes and action menus. Build with the current SDK,
   preserve supported older macOS versions with availability-gated fallbacks,
   and respect accessibility settings.
 - For direct touch, follow [macOS input guidance](Docs/MACOS_INPUT.md). Keep
