@@ -1,16 +1,17 @@
 # Louppe app backlog
 
-Updated on 4 November 2026 after the 1.13 release. **1.13.0 (15) is published**
-on GitHub, Sparkle and Homebrew (4 November 2026); the App Store build is
-**Waiting for Review**. **1.13.1 (16) is prepared and held** until Apple approves
-1.13. Implemented changes belong in [CHANGELOG.md](CHANGELOG.md); this backlog
+Updated on 5 November 2026. **1.13.1 (16) is published** on GitHub, Sparkle and
+Homebrew ([release record](Docs/RELEASE_1.13.1_PREPARATION_2026-11-04.md)). In
+the App Store, the 1.13.0 (15) submission was withdrawn and 1.13.1 replaces it.
+Implemented changes belong in [CHANGELOG.md](CHANGELOG.md); this backlog
 contains unfinished work only.
 
-[1.13.1 held release](#1131-held-release) ·
+[Release procedure](#release-procedure) ·
 [Manual acceptance](#manual-acceptance-needs-hardware-or-alex) ·
 [Agent work](#agent-work) · [Later and research](#later-and-research)
 
 [App guide](Docs/DEVELOPMENT.md) · [Website backlog](https://github.com/murlexander/louppe-website/blob/main/BACKLOG.md) ·
+[1.13.1 release record](Docs/RELEASE_1.13.1_PREPARATION_2026-11-04.md) ·
 [1.13 release record](Docs/RELEASE_1.13_PREPARATION_2026-11-04.md) ·
 [1.13 backlog record](Docs/BACKLOG_1.13_2026-11-04.md)
 
@@ -25,49 +26,39 @@ AUD-05, 09, 10, 11, 12, 13, 14, 15, 17 and 21; and the agent-runnable parts of
 AUD-03, 18, 19, 20, 28 and 29. Their remaining hardware and people checks are
 listed once under Manual acceptance.
 
-## 1.13.1 held release
+## Release procedure
 
-Three fixes from the 1.13 release review, each with tests: failed thumbnail-cache
-deletions are counted and backed off; Photos permission text is localized in all
-six languages (direct and Store builds); the XMP namespace-capacity error is
-localized. `VERSION` is 1.13.1 (16) with an open CHANGELOG entry.
+The 1.13 and 1.13.1 releases followed these steps; reuse them for the next
+version (see [UPDATES.md](Docs/UPDATES.md), [APP_STORE.md](Docs/APP_STORE.md) and
+the [1.13.1 record](Docs/RELEASE_1.13.1_PREPARATION_2026-11-04.md)). A new Store
+submission replaces one still in review, so coordinate with the App Store session.
 
-**Hold.** Do not tag, notarize, publish or submit 1.13.1 while 1.13.0 (15) is
-Waiting for Review or In Review: a new Store submission would cancel or restart
-that review.
-
-**Release steps after Apple approves 1.13.0** (follow [UPDATES.md](Docs/UPDATES.md),
-[APP_STORE.md](Docs/APP_STORE.md) and the [1.13 record](Docs/RELEASE_1.13_PREPARATION_2026-11-04.md)):
-
-1. Confirm App Store Connect shows 1.13.0 approved or released. On a clean `main`,
-   `git fetch origin`; `gh release list` shows v1.13.0 as Latest.
-2. Set the heading to `## 1.13.1 (16) — <date>`, commit, push fast-forward to
-   `origin`, and wait for green CI.
-3. Run the full suite, the window-raising suites (idle ≥ 300 s), the four install
+1. Bump `VERSION` once, finalize `## <version> (<build>) — <date>`, push
+   fast-forward to `origin` (never the `murlexander` remote) and wait for green CI.
+2. Run the full suite, the window-raising suites (idle ≥ 300 s), the four install
    gates and `Tests/run_performance_checks.sh` on that commit.
-4. `./build_app.sh --developer-id 'Developer ID Application: SAMO DANNI EOOD (P6F95J4ZPA)'`,
+3. `./build_app.sh --developer-id 'Developer ID Application: SAMO DANNI EOOD (P6F95J4ZPA)'`,
    `./Scripts/notarize_release.sh --keychain-profile louppe-notary`,
    `./Scripts/prepare_update_feed.sh`, `./Scripts/verify_release.sh --publishing`.
-   Copy the app, ZIP, notarization files and feed to
-   `dist/release-preparation/1.13.1-16-<date>/direct/`.
-5. `git tag -a v1.13.1 <commit> -m "Louppe 1.13.1 (16)"`, push the tag, then
-   `gh release create v1.13.1 <ZIP> --title "Louppe v1.13.1" --notes-file <notes> --verify-tag --latest`.
-   Commit and push `appcast.xml`. Rerun the Homebrew workflow if it loses the push
-   race with the feed commit. Check the public ZIP hash, feed bytes, both Sparkle
-   signatures and the latest-download redirect.
-6. Idle-gated, upgrade an isolated public 1.13.0 copy with the retained headless
-   Sparkle driver (`dist/release-preparation/1.13.0-15-2026-11-04/headless-update.swift`
-   and `run-idle-checks.sh`; update the version paths) and compare `Contents/`.
-7. Replace `/Applications/Louppe.app` with the released archive after the install
-   gates pass; quit Louppe by PID only if it is running; preserve preferences.
-8. In a detached checkout of the tag: `./build_app.sh --app-store`,
+   Keep the app, ZIP, notarization files and feed in
+   `dist/release-preparation/<version>-<build>-<date>/direct/`.
+4. `git tag -a v<version> <commit>`, push the tag, `gh release create v<version>
+   <ZIP> --title "Louppe v<version>" --notes-file <notes> --verify-tag --latest`,
+   then commit and push `appcast.xml`. Rerun the Homebrew workflow if it loses the
+   push race with the feed commit. Check the public ZIP hash, feed bytes, both
+   Sparkle signatures, latest-download and the six website pages.
+5. Idle-gated, upgrade an isolated copy of the previous public archive with the
+   retained headless Sparkle driver (`headless-update.swift`, `run-idle-checks.sh`
+   in the newest release-preparation folder; update the paths) and compare `Contents/`.
+6. Replace `/Applications/Louppe.app` with the released archive after the install
+   gates; quit Louppe by PID only if it is running; preserve preferences.
+7. In a detached checkout of the tag: `./build_app.sh --app-store`,
    `./Scripts/verify_release.sh --app-store`, `./Scripts/package_app_store.sh
    --application-identity 'Apple Distribution: SAMO DANNI EOOD (P6F95J4ZPA)'
    --installer-identity '3rd Party Mac Developer Installer: SAMO DANNI EOOD (P6F95J4ZPA)'`.
-   Alex delivers the package in Transporter (Add Package → Deliver). Create
-   version 1.13.1 in App Store Connect, attach build 16, answer export compliance
-   (Apple system cryptography only), add What's New without Revolut/GitHub, submit.
-9. Write `Docs/RELEASE_1.13.1_PREPARATION_<date>.md` and update this backlog.
+   Hand the pkg path, SHA-256, size and commit to the App Store session; Alex
+   clicks Deliver in Transporter.
+8. Write `Docs/RELEASE_<version>_PREPARATION_<date>.md` and update this backlog.
 
 ## Manual acceptance (needs hardware or Alex)
 
@@ -113,9 +104,9 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 ### Distribution
 
-- [ ] **Apple review of 1.13.0 (15).** Submitted 4 November 2026; Waiting for
-  Review with automatic release. Respond to any review request, then run the
-  1.13.1 steps above. 1.12.0 went live on the Store on 22 October 2026.
+- [ ] **Apple review of 1.13.1 (16).** The 1.13.0 (15) submission was withdrawn;
+  the App Store session submits 1.13.1 with automatic release. Respond to any
+  review request. 1.12.0 went live on the Store on 22 October 2026.
 - [ ] **TestFlight — out of scope (Alex, 4 November 2026).** Every delivery shows
   ITMS-90889: the bundle has no provisioning profile. Enabling TestFlight needs a
   Mac App Store provisioning profile for `com.alexandermarkin.louppe` (team
