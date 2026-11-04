@@ -911,8 +911,18 @@ final class SessionStore: ObservableObject {
     /// Metadata steps keep complete per-file before-images (72 bytes each).
     /// 500 whole-folder batches of 100k RAW+JPEG pairs would retain 6.7 GiB,
     /// so their history also has a byte budget, charged by reserved capacity.
-    /// This is the single owner of the value: 256 MiB, pending owner approval.
-    static let undoMetadataByteBudgetDefault = 256 << 20
+    /// It scales with physical memory (approved by Alex, 4 November 2026):
+    /// 256 MiB up to 16 GB, then about 2% of memory, at most 2 GiB.
+    nonisolated static let undoMetadataByteBudgetFloor = 256 << 20
+    nonisolated static let undoMetadataByteBudgetCap = 2 << 30
+    nonisolated static func undoMetadataByteBudgetLimit(physicalMemory: UInt64) -> Int {
+        guard physicalMemory > 16 << 30 else { return undoMetadataByteBudgetFloor }
+        let scaled = physicalMemory / 50
+        return Int(min(UInt64(undoMetadataByteBudgetCap),
+                       max(UInt64(undoMetadataByteBudgetFloor), scaled)))
+    }
+    static let undoMetadataByteBudgetDefault = undoMetadataByteBudgetLimit(
+        physicalMemory: ProcessInfo.processInfo.physicalMemory)
     /// Tests may lower it; production keeps the default.
     var undoMetadataByteBudget = SessionStore.undoMetadataByteBudgetDefault
     private var saveDebounce: DispatchWorkItem?

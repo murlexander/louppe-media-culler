@@ -520,3 +520,37 @@ final class ReviewProjectionRetentionTests: XCTestCase {
         XCTAssertTrue(condition(), file: file, line: line)
     }
 }
+
+/// The metadata Undo limit scales with physical memory: a 256 MiB floor up to
+/// 16 GB, then about 2% of memory, capped at 2 GiB.
+@MainActor
+final class UndoMetadataBudgetTests: XCTestCase {
+    private let gib: UInt64 = 1 << 30
+    private let mib = 1 << 20
+
+    func testSmallMacsKeepTheFloor() {
+        for memory in [UInt64(0), 4 * gib, 8 * gib, 16 * gib] {
+            XCTAssertEqual(SessionStore.undoMetadataByteBudgetLimit(physicalMemory: memory), 256 * mib)
+        }
+    }
+
+    func testLargerMacsUseAboutTwoPercent() {
+        XCTAssertEqual(SessionStore.undoMetadataByteBudgetLimit(physicalMemory: 32 * gib), Int(32 * gib / 50))
+        XCTAssertEqual(SessionStore.undoMetadataByteBudgetLimit(physicalMemory: 64 * gib), Int(64 * gib / 50))
+        XCTAssertEqual(SessionStore.undoMetadataByteBudgetLimit(physicalMemory: 32 * gib) / mib, 655)
+        XCTAssertEqual(SessionStore.undoMetadataByteBudgetLimit(physicalMemory: 64 * gib) / mib, 1_310)
+        // Just above 16 GB the scaled value is already above the floor.
+        XCTAssertGreaterThan(SessionStore.undoMetadataByteBudgetLimit(physicalMemory: 16 * gib + 1), 256 * mib)
+    }
+
+    func testVeryLargeMacsAreCapped() {
+        for memory in [128 * gib, 192 * gib, 512 * gib, UInt64.max] {
+            XCTAssertEqual(SessionStore.undoMetadataByteBudgetLimit(physicalMemory: memory), 2 << 30)
+        }
+    }
+
+    func testDefaultMatchesThisMac() {
+        XCTAssertEqual(SessionStore.undoMetadataByteBudgetDefault,
+                       SessionStore.undoMetadataByteBudgetLimit(physicalMemory: ProcessInfo.processInfo.physicalMemory))
+    }
+}

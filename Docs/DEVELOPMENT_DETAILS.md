@@ -399,8 +399,9 @@ are independent; XCTest defaults use disposable storage.
   and operation scopes never see a lagging projection. Pause, file operations,
   folder changes and Quit discard unapplied results, which stay queued for
   re-verification. `reviewStateRevision` refreshes Export's editable summary.
-- Decision/star/color Undo stays within `undoMetadataByteBudgetDefault` (256 MiB,
-  charged by reserved capacity): oldest metadata steps are dropped first, the
+- Decision/star/color Undo stays within `undoMetadataByteBudgetDefault`, charged
+  by reserved capacity. `undoMetadataByteBudgetLimit(physicalMemory:)` gives
+  256 MiB up to 16 GB, then 2% of physical memory, capped at 2 GiB: oldest metadata steps are dropped first, the
   newest is kept, single-photo edits keep 500 steps. Clean Up, Organize and Rename
   steps are never dropped for memory; they follow only the 500-step limit.
 - Reset/recompute `visibleIndices` in the same turn as replacing/emptying

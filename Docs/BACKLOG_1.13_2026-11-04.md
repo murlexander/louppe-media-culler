@@ -57,9 +57,11 @@ edits re-read the item list per file; grouped metadata sorts re-read buckets.
 
 Undo costs 72 bytes per changed file; a whole-folder step at 100k pairs is
 13.7 MiB, so 500 steps could reach ~6.7 GiB. Decision, star and color Undo now
-stays within 256 MiB, a limit Alex approved on 4 November. Single-photo edits
-still keep 500 steps. Very large edits keep fewer: about 18 whole-folder edits at
-100k RAW+JPEG pairs. When the limit is reached, the oldest of these steps are
+stays within a memory limit that scales with the Mac (Alex, 4 November): 256 MiB
+up to 16 GB of memory, then about 2% of memory, at most 2 GiB — roughly 650 MiB on
+32 GB, 1.3 GiB on 64 GB and 2 GiB on 128 GB or more. Single-photo edits still keep
+500 steps. Very large edits keep fewer: at 100k RAW+JPEG pairs about 18
+whole-folder edits on a 16 GB Mac, about 47 on 32 GB and up to 149 at the cap. When the limit is reached, the oldest of these steps are
 dropped first and the newest is always kept. Clean Up, Organize and Rename steps
 are never dropped for memory; they follow only the 500-step limit. 10k photos ×
 500 whole-folder steps: 687 → 255 MiB retained.

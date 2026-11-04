@@ -279,9 +279,10 @@ safety/native checks. Local stage medians are not whole-app speedups.
   and peak RSS before choosing byte-based eviction. Preserve Mixed/independent
   physical decisions, per-photo Undo and journaled operation Undo.
   4 November: 72 bytes per changed file; a 100k-pair whole-folder step is 13.7 MiB,
-  so 500 steps could reach ~6.7 GiB. Decision/star/color Undo now stays within
-  256 MiB (approved by Alex, 4 November): single-photo edits keep 500 steps, about
-  18 whole-folder edits remain at 100k pairs, oldest dropped first. Clean Up,
+  so 500 steps could reach ~6.7 GiB. Decision/star/color Undo now stays within a
+  memory-scaled limit (Alex, 4 November): 256 MiB up to 16 GB, then ~2% of memory,
+  at most 2 GiB. Single-photo edits keep 500 steps; at 100k pairs a 16 GB Mac keeps
+  about 18 whole-folder edits, oldest dropped first. Clean Up,
   Organize and Rename steps are never dropped for memory. 10k × 500 steps:
   687 → 255 MiB retained.
 - [ ] **AUD-09 — Live disk-thumbnail enforcement.** Delayed daily pruning,
