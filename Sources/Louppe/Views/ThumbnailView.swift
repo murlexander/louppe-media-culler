@@ -12,6 +12,38 @@ enum TileBadgeLayout {
     static let decisionTargetSize: CGFloat = 40
     static let cueTargetHeight: CGFloat = 36
     static let maximumCueRowWidth: CGFloat = 4 * height + 3 * spacing
+
+    /// The Grid decision target in a photo's local, leading-to-trailing frame.
+    /// It sits at the photo's top trailing corner, and on short photos (wide
+    /// panoramas) it grows upward instead of below the photo, where the
+    /// filename caption owns the clicks.
+    static func decisionTarget(inPhoto photo: CGRect) -> CGRect {
+        let bottom = min(photo.minY + inset + decisionTargetSize, photo.maxY)
+        return CGRect(x: photo.maxX - inset - decisionTargetSize, y: bottom - decisionTargetSize,
+                      width: decisionTargetSize, height: decisionTargetSize)
+    }
+
+    /// The visible decision badge: the photo's top trailing corner, raised
+    /// above a photo too short to hold it, never over the caption below.
+    static func decisionBadge(inPhoto photo: CGRect) -> CGRect {
+        let top = min(photo.minY + inset, photo.maxY - height - 2)
+        return CGRect(x: photo.maxX - inset - height, y: top, width: height, height: height)
+    }
+}
+
+/// Places the Grid decision target (first subview) and its badge (second)
+/// from `TileBadgeLayout`, so layout and drag hit testing share one rule.
+struct DecisionBadgeLayout: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        proposal.replacingUnspecifiedDimensions()
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rects = [TileBadgeLayout.decisionTarget(inPhoto: bounds), TileBadgeLayout.decisionBadge(inPhoto: bounds)]
+        for (subview, rect) in zip(subviews, rects) {
+            subview.place(at: rect.origin, anchor: .topLeading, proposal: ProposedViewSize(rect.size))
+        }
+    }
 }
 
 /// A realized cell owns validated pixels even after the shared NSCache evicts

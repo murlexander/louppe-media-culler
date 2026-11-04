@@ -336,32 +336,32 @@ private struct GridCell: View {
     private func tileControls(item: PhotoItem, actions: GridCellActions) -> some View {
         Color.clear
             .allowsHitTesting(false)
-            .overlay(alignment: .topTrailing) {
-                Button {
-                    actions.cycleRating()
-                } label: {
+            .overlay {
+                DecisionBadgeLayout {
+                    Button {
+                        actions.cycleRating()
+                    } label: {
+                        Color.clear.contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!store.canRate)
+                    .help(L10n.text("Change Yes/No decision"))
+                    .accessibilityLabel(L10n.text("Change decision for \(item.displayName)"))
+                    .accessibilityValue(
+                        MediaTileAccessibility.ratingDescription(
+                            for: item.ratingState
+                        )
+                    )
+
                     RatingBadge(
                         rating: item.rating,
                         isMixed: item.hasMixedRatings,
                         size: TileBadgeLayout.height
                     )
-                    .frame(
-                        width: TileBadgeLayout.decisionTargetSize,
-                        height: TileBadgeLayout.decisionTargetSize,
-                        alignment: .topTrailing
-                    )
-                    .contentShape(Rectangle())
+                    .opacity(store.canRate ? 1 : 0.5)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
                 }
-                .buttonStyle(.plain)
-                .disabled(!store.canRate)
-                .padding(TileBadgeLayout.inset)
-                .help(L10n.text("Change Yes/No decision"))
-                .accessibilityLabel(L10n.text("Change decision for \(item.displayName)"))
-                .accessibilityValue(
-                    MediaTileAccessibility.ratingDescription(
-                        for: item.ratingState
-                    )
-                )
             }
             .overlay(alignment: .bottomLeading) {
                 QualityCueTileIcons(store: store, item: item)
@@ -549,14 +549,16 @@ enum GridRubberBandHitTest {
             width: tileFrame.width,
             height: tileFrame.width
         )
-        // Grid photos rest on the caption, so a short panorama's decision
-        // target can extend below the slot; test controls before the caption.
+        guard slotFrame.contains(point) else { return true }
         let mediaFrame = TileMediaGeometry.fittedRect(in: slotFrame, imageSize: imageSizes[index],
                                                       alignment: .bottom)
 
+        // The same target GridCell lays out, widened by the shared inset
+        // toward the photo's top trailing corner.
+        let target = TileBadgeLayout.decisionTarget(inPhoto: mediaFrame)
         let ratingFrame = CGRect(
             x: rightToLeft ? mediaFrame.minX : mediaFrame.maxX - ratingControlRegionSize,
-            y: mediaFrame.minY,
+            y: target.minY - TileBadgeLayout.inset,
             width: ratingControlRegionSize,
             height: ratingControlRegionSize
         )

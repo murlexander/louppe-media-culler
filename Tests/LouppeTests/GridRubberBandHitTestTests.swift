@@ -37,6 +37,27 @@ final class GridRubberBandHitTestTests: XCTestCase {
                        CGRect(x: 40, y: 20, width: 120, height: 180))
     }
 
+    func testDecisionTargetStaysAbovePhotoBottom() {
+        // A normal photo: target and badge at its top trailing corner.
+        let photo = CGRect(x: 0, y: 0, width: 180, height: 120)
+        XCTAssertEqual(TileBadgeLayout.decisionTarget(inPhoto: photo), CGRect(x: 134, y: 6, width: 40, height: 40))
+        XCTAssertEqual(TileBadgeLayout.decisionBadge(inPhoto: photo), CGRect(x: 154, y: 6, width: 20, height: 20))
+        // A 6:1 panorama 30 points high: the target grows upward and never
+        // passes the photo's bottom edge, where the filename caption starts.
+        let panorama = CGRect(x: 0, y: 150, width: 180, height: 30)
+        let target = TileBadgeLayout.decisionTarget(inPhoto: panorama)
+        XCTAssertEqual(target.maxY, panorama.maxY)
+        XCTAssertEqual(target.height, TileBadgeLayout.decisionTargetSize)
+        XCTAssertTrue(target.contains(CGPoint(x: 160, y: 170)))
+        let badge = TileBadgeLayout.decisionBadge(inPhoto: panorama)
+        XCTAssertEqual(badge.minY, panorama.minY + TileBadgeLayout.inset)
+        XCTAssertTrue(target.contains(badge))
+        // Too short for the badge: it rises above the photo, not over the caption.
+        let sliver = CGRect(x: 0, y: 190, width: 180, height: 10)
+        XCTAssertLessThanOrEqual(TileBadgeLayout.decisionBadge(inPhoto: sliver).maxY, sliver.maxY)
+        XCTAssertTrue(TileBadgeLayout.decisionTarget(inPhoto: sliver).contains(TileBadgeLayout.decisionBadge(inPhoto: sliver)))
+    }
+
     func testMissingAndInvalidAspectKeepFullSlot() {
         for size in [nil, .zero, CGSize(width: CGFloat.infinity, height: 1), CGSize(width: 1, height: -1)] as [CGSize?] {
             XCTAssertEqual(TileMediaGeometry.fittedRect(in: slot, imageSize: size), slot)
@@ -52,8 +73,9 @@ final class GridRubberBandHitTestTests: XCTestCase {
         let landscape = CGSize(width: 18, height: 1)
         let portrait = CGSize(width: 1, height: 18)
         // The visible landscape is only ten points high (y 190...200), but its
-        // controls keep their 40/36-point targets below and above that band.
-        XCTAssertFalse(tracks(CGPoint(x: 150, y: 210), size: landscape), "decision target may reach into the caption")
+        // controls keep 40/36-point targets, grown upward inside the slot.
+        XCTAssertFalse(tracks(CGPoint(x: 150, y: 170), size: landscape), "decision target grows above the photo")
+        XCTAssertTrue(tracks(CGPoint(x: 150, y: 210), size: landscape), "the caption keeps its own clicks")
         XCTAssertFalse(tracks(CGPoint(x: 30, y: 170), size: landscape))
         // A narrow portrait keeps the decision target to its inside/left and
         // the entire four-cue row to its inside/right, with RTL mirrored.
