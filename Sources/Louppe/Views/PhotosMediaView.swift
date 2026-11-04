@@ -4,13 +4,17 @@ import SwiftUI
 /// separately hosted collection cells do not inherit parent SwiftUI environments.
 struct PhotosThumbnailView: View {
     let reference: PhotosMediaReference
+    /// Reports the loaded image's size so tile badges can follow the photo.
+    /// Only real sizes are reported: a reload keeps the last known aspect.
+    var onImageSize: ((CGSize) -> Void)? = nil
     @ObservedObject private var access: PhotosMediaAccess
     @Environment(\.displayScale) private var displayScale
     @State private var image: NSImage?
     @State private var failure: String?
     @State private var retry: UInt64 = 0
-    init(reference: PhotosMediaReference) {
+    init(reference: PhotosMediaReference, onImageSize: ((CGSize) -> Void)? = nil) {
         self.reference = reference
+        self.onImageSize = onImageSize
         self.access = reference.session.access
     }
     var body: some View {
@@ -36,6 +40,7 @@ struct PhotosThumbnailView: View {
                     let result = try await reference.session.image(assetID: reference.assetID, pixels: pixels)
                     try Task.checkCancellation()
                     image = result.image
+                    if result.pixels.width > 0, result.pixels.height > 0 { onImageSize?(result.pixels) }
                 } catch is CancellationError {} catch { if !Task.isCancelled { failure = error.localizedDescription } }
             }
         }

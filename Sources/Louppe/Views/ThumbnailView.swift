@@ -97,6 +97,8 @@ struct ThumbnailView: View {
     private let colorLabelState: PhotoItemColorLabelState
 
     @State private var retainedImage: ThumbnailImageState
+    /// Apple Photos tiles load through their own session, not ImagePipeline.
+    @State private var photosImageSize: (revision: PhotoContentRevision, size: CGSize)?
 
     init(
         item: PhotoItem,
@@ -138,12 +140,17 @@ struct ThumbnailView: View {
         let displayedImage = retainedImage.revision == revision
             ? retainedImage.image
             : ImagePipeline.shared.cachedThumbnail(for: item)
-        let imageSize = TileMediaGeometry.imageSize(for: item, loadedImage: displayedImage)
+        let imageSize = item.primaryFile.photosMedia != nil
+            ? (photosImageSize?.revision == revision ? photosImageSize?.size : nil)
+            : TileMediaGeometry.imageSize(for: item, loadedImage: displayedImage)
         TilePhotoLayout(imageSize: imageSize, alignment: mediaAlignment) {
             ZStack {
                 Group {
                     if let reference = item.primaryFile.photosMedia {
-                        PhotosThumbnailView(reference: reference)
+                        PhotosThumbnailView(reference: reference) { size in
+                            photosImageSize = (revision, size)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: thumbnailCornerRadius))
                     } else if item.isText {
                         VStack(spacing: 8) {
                             Image(systemName: "doc.text")
