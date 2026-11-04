@@ -684,6 +684,7 @@ struct MetadataPanel: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                     if emphasized {
                         settingValue(for: field)
