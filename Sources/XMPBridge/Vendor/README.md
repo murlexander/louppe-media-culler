@@ -30,8 +30,16 @@ in the loose bundle and extracted archive.
 Louppe's only XMPCore source changes are the `ExpatAdapter` resource counters:
 128 nested elements, 250,000 allocated nodes (including attributes and text
 nodes), 1,024 attributes per element, 1,024 namespace declarations per packet,
-and 64 MiB of decoded names/text. The callback stops Expat before allocating
-beyond a budget, then reports an ordinary parse error. Limits cover all bridge
-entry points and stream chunks. The macOS config keeps `XML_DTD` undefined,
+and 64 MiB of decoded names/text. XMPCore also keeps every parsed namespace URI
+and prefix in its process-wide table for the app's lifetime. Louppe therefore
+limits URIs to 1,024 bytes and prefixes to 64 (common published prefixes are
+under 16), and parsing may add at most 4,096 new namespaces or 1 MiB of their
+names per launch. Without that budget, six 16 MiB packets retained 293 MiB and
+36,000 short namespaces slowed each later 45 KB packet to 24 s. Once the launch
+budget is spent, packets with unfamiliar namespaces fail with a distinct message
+asking the user to quit and reopen Louppe; built-in Adobe namespaces and those
+already read keep working. The callback stops Expat before
+allocating beyond a budget, then reports an ordinary parse error. Limits cover
+all bridge entry points and stream chunks. The macOS config keeps `XML_DTD` undefined,
 sets `XML_GE=0`, and uses the platform's `arc4random_buf`. Do not discard these
 local changes when updating Adobe's unchanged upstream revision.

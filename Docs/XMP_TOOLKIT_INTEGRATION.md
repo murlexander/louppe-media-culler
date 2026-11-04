@@ -16,6 +16,33 @@ adapter changes are in the vendor README.
 Every source/binary distribution must include complete
 `ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt` and `ThirdPartyLicenses/Expat-MIT.txt`.
 
+## 4 November 2026 dependency review (1.13)
+
+- Sparkle 2.10.1 archive SHA-256 matches `Package.swift`; it is the latest
+  release. All GitHub advisories affect 2.9.5 or earlier.
+- All 39 vendored Expat files, and Adobe's include-layout copy, are
+  byte-identical to the official `expat-2.9.0.tar.xz` (recorded SHA-256). `COPYING` and Adobe's
+  `LICENSE` match `ThirdPartyLicenses/`.
+- 275 of 278 vendored XMP Toolkit files match the pinned revision. The other
+  three are the recorded Louppe patches: `expat_config.h`, `ExpatAdapter.hpp`
+  and `ExpatAdapter.cpp`. Adobe has published no commit since the pin and no
+  GitHub advisory. Its latest indexed bulletin, APSB25-34, was fixed in
+  2025.03, before the pin. Adobe's bulletin index (October 2026 onward is in its
+  Trust Center) refused automated access; that check remains manual.
+- Expat 2.10.0 (2 November) fixes four CVEs. None is reachable here:
+  XMPCore never calls `XML_ParserReset` or creates external-entity subparsers;
+  `XML_GE=0` plus the DOCTYPE ban prevent entity expansion; and the
+  `storeAtts` overflow needs over a billion attributes, beyond the 64 MiB input
+  limit. Update during the next scheduled dependency refresh.
+- Fixed one exposure: XMPCore's process-wide namespace table grew without bound
+  (see the [vendor README](../Sources/XMPBridge/Vendor/README.md)).
+  `XMPSecurityTests` now covers entity expansion, external DTDs, undeclared
+  entities, malformed UTF-8 repair, amplified repair, oversized input, large
+  attributes, namespace URI/prefix limits and both per-launch budgets
+  (count and retained bytes) at every bridge entry. After exhaustion, the
+  Adobe Bridge, Lightroom Classic and previously read darktable fixtures still
+  parse; an unread Capture One namespace gets the quit-and-reopen message.
+
 ## Production distribution decision
 
 `Sources/XMPBridge/Vendor/` contains the reviewed XMPCore/Expat subset.
