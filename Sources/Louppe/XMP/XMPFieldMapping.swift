@@ -7,9 +7,13 @@ enum XMPFieldMappingError: LocalizedError, Equatable {
     case serialization(String)
     case verification(String)
     case propertyMissing(String)
+    /// The per-launch namespace budget is spent; the packet may be valid.
+    case namespaceCapacityExhausted
 
     var errorDescription: String? {
         switch self {
+        case .namespaceCapacityExhausted:
+            return L10n.text("Louppe has read too many different XMP namespaces since it opened. Quit and reopen Louppe to read this sidecar. Its metadata was left unchanged; you can still export the media without XMP.")
         case .invalidPacket(let message),
              .serialization(let message),
              .verification(let message),
@@ -231,6 +235,8 @@ enum XMPFieldMapping {
             return .serialization(message)
         case LouppeXMPStatusPropertyMissing:
             return .propertyMissing(message)
+        case LouppeXMPStatusNamespaceCapacityExhausted:
+            return .namespaceCapacityExhausted
         default:
             return .invalidPacket(message)
         }

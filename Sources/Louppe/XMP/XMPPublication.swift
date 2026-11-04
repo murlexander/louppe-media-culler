@@ -754,7 +754,8 @@ enum XMPPublicationPlanner {
             switch mapping {
             case .ownershipConflict:
                 return .externalModificationConflict
-            case .invalidPacket, .serialization, .verification, .propertyMissing:
+            case .invalidPacket, .serialization, .verification, .propertyMissing,
+                 .namespaceCapacityExhausted:
                 return .malformedXMP
             }
         }

@@ -51,7 +51,10 @@ typedef enum LouppeXMPStatus {
     LouppeXMPStatusSerializationFailed = 4,
     LouppeXMPStatusVerificationFailed = 5,
     LouppeXMPStatusPropertyMissing = 6,
-    LouppeXMPStatusOwnershipConflict = 7
+    LouppeXMPStatusOwnershipConflict = 7,
+    // The packet needs a namespace beyond the per-launch parse budget. The
+    // packet itself may be valid; quitting and reopening Louppe resets it.
+    LouppeXMPStatusNamespaceCapacityExhausted = 8
 } LouppeXMPStatus;
 
 typedef enum LouppeXMPChangeMask {

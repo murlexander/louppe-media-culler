@@ -499,6 +499,7 @@
 "Louppe found no verified byte-identical files to group." = "Louppe 未找到经验证内容字节完全相同、可供分组的文件。";
 "Louppe found session data for this folder but couldn't read it safely. The file was left untouched; fix its permissions or restore a valid backup, then try again." = "Louppe 找到了此文件夹的会话数据，但无法安全读取。文件未被修改；请修复权限或恢复有效备份，然后重试。";
 "Louppe found {0} photos or videos with the same names as saved session entries, but not the same physical files{1}. To protect the old ratings, Louppe did not apply them to these files. Restore the original files, or choose Open as New Session to forget the saved decisions for this folder and review the current files." = "Louppe 找到 {0} 个与保存记录同名的照片或视频，但不是同一批实际文件{1}。为保护旧评分，未将其应用于这些文件。请恢复原始文件，或选择作为新会话打开，忘记此文件夹的保存决定并审阅当前文件。";
+"Louppe has read too many different XMP namespaces since it opened. Quit and reopen Louppe to read this sidecar. Its metadata was left unchanged; you can still export the media without XMP." = "Louppe 自打开以来已读取过多不同的 XMP 命名空间。请退出并重新打开 Louppe 以读取此附属文件。其元数据未被修改；仍可不带 XMP 导出媒体。";
 "Louppe is safely transferring files or writing metadata" = "Louppe 正在安全传输文件或写入元数据";
 "Louppe kept your saved ratings: the new snapshot failed a safety check. Cancel Quit to keep this session open. Quit without saving discards your latest changes." = "Louppe 保留了已保存的评分：新快照未通过安全检查。选择取消退出可保持此会话打开。不保存并退出会丢弃最新更改。";
 "Louppe recorded the interruption and keeps verified completed copies. Wait for recovery to check unfinished work before another file operation." = "Louppe 已记录中断并保留验证完成的副本。下一次文件操作前，请等待恢复检查未完成的工作。";

@@ -74,6 +74,7 @@ final class XMPSecurityTests: XCTestCase {
         _ data: Data,
         _ label: String,
         message: String? = nil,
+        capacityExhausted: Bool = false,
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
@@ -87,6 +88,13 @@ final class XMPSecurityTests: XCTestCase {
         ]
         for (entry, attempt) in attempts {
             XCTAssertThrowsError(try attempt(), "\(label): \(entry)", file: file, line: line) { error in
+                if capacityExhausted {
+                    XCTAssertEqual(error as? XMPFieldMappingError, .namespaceCapacityExhausted,
+                                   "\(label): \(entry)", file: file, line: line)
+                    XCTAssertEqual(error.localizedDescription, Self.capacityText(L10n.language),
+                                   "\(label): \(entry)", file: file, line: line)
+                    return
+                }
                 guard case .invalidPacket(let text) = error as? XMPFieldMappingError else {
                     return XCTFail("\(label): \(entry) must fail while parsing: \(error)", file: file, line: line)
                 }
@@ -294,8 +302,39 @@ final class XMPSecurityTests: XCTestCase {
             .appendingPathComponent("Fixtures/XMP/\(name)"))
     }
 
+    private static let capacityKey = "Louppe has read too many different XMP namespaces since it opened. Quit and reopen Louppe to read this sidecar. Its metadata was left unchanged; you can still export the media without XMP."
+
+    private static func capacityText(_ language: String) -> String {
+        L10n.render(L10n.Message(stringLiteral: capacityKey), language: language)
+    }
+
+    /// The parser's English capacity text is replaced by the app catalog; the
+    /// separate "too complex" packet text stays an ordinary invalid packet.
+    func testNamespaceCapacityErrorIsLocalizedAndDistinctFromMalformedPackets() {
+        let error = XMPFieldMappingError.namespaceCapacityExhausted
+        XCTAssertEqual(error.localizedDescription, Self.capacityText(L10n.language))
+        XCTAssertEqual(XMPPublicationPlanner.category(for: error), .malformedXMP)
+        let english = Self.capacityText("en")
+        XCTAssertEqual(english, Self.capacityKey)
+        var translations: Set<String> = [english]
+        for language in L10n.supportedLanguages where language != "en" {
+            let text = Self.capacityText(language)
+            XCTAssertNotEqual(text, english, language)
+            for token in ["Louppe", "XMP"] { XCTAssertTrue(text.contains(token), "\(language): \(token)") }
+            translations.insert(text)
+        }
+        XCTAssertEqual(translations.count, L10n.supportedLanguages.count)
+
+        assertRejectedEverywhere(
+            Data(packet("<t:value xmlns:\(String(repeating: "p", count: 65))=\"urn:louppe-test:distinct\">ok</t:value>").utf8),
+            "oversized prefix", message: "too complex"
+        )
+        XCTAssertThrowsError(try XMPFieldMapping.merge(packet: Data("<x:xmpmeta".utf8), metadata: metadata)) { error in
+            guard case .invalidPacket = error as? XMPFieldMappingError else { return XCTFail("\(error)") }
+        }
+    }
+
     private func exhaustNamespaceRegistry(byBytes: Bool) throws {
-        let capacityMessage = "Quit and reopen Louppe"
         let baseline = Data(packet("<t:value>ok</t:value>").utf8)
         _ = try XMPFieldMapping.merge(packet: baseline, metadata: metadata)
         // A vendor namespace first read before exhaustion stays readable.
@@ -321,7 +360,8 @@ final class XMPSecurityTests: XCTestCase {
                 _ = try XMPFieldMapping.merge(packet: fresh(round), metadata: metadata)
                 acceptedRounds += 1
             } catch {
-                XCTAssertTrue(error.localizedDescription.contains(capacityMessage), "\(error)")
+                XCTAssertEqual(error as? XMPFieldMappingError, .namespaceCapacityExhausted, "\(error)")
+                XCTAssertEqual(error.localizedDescription, Self.capacityText(L10n.language))
                 break
             }
         }
@@ -345,7 +385,7 @@ final class XMPSecurityTests: XCTestCase {
             // short vendor namespace still does.
             assertRejectedEverywhere(
                 Data(packet("<t:value xmlns:z=\"\(uri(99, 0))\">ok</t:value>").utf8),
-                "long namespace after the byte budget", message: capacityMessage
+                "long namespace after the byte budget", capacityExhausted: true
             )
             XCTAssertNoThrow(try XMPFieldMapping.inspectExistingChanges(
                 packet: fixture("capture-one.xmp"), metadata: metadata
@@ -353,11 +393,11 @@ final class XMPSecurityTests: XCTestCase {
         } else {
             // Capture One's namespace was never read in this process.
             assertRejectedEverywhere(
-                try fixture("capture-one.xmp"), "unread vendor namespace after the budget", message: capacityMessage
+                try fixture("capture-one.xmp"), "unread vendor namespace after the budget", capacityExhausted: true
             )
             assertRejectedEverywhere(
                 Data(packet("<t:value xmlns:z=\"urn:louppe-registry:after\">ok</t:value>").utf8),
-                "new namespace after the budget", message: capacityMessage
+                "new namespace after the budget", capacityExhausted: true
             )
         }
         // Individually malformed packets keep the ordinary message.

@@ -86,6 +86,30 @@ LouppeXMPStatus caughtFailure(
     return status;
 }
 
+// ExpatAdapter.cpp reports the process-wide namespace budget with this fixed
+// message. Packet contents never reach it, so it identifies that case; the
+// app replaces the English text with a localized message.
+constexpr const char *kNamespaceCapacityMessagePrefix =
+    "Louppe has read too many different XMP namespaces since it opened.";
+
+LouppeXMPStatus caughtXMPFailure(const XMP_Error &error, char **errorMessage) {
+    const char *message = error.GetErrMsg();
+    const bool capacityExhausted = error.GetID() == kXMPErr_BadXML
+        && message != nullptr
+        && std::strncmp(
+            message,
+            kNamespaceCapacityMessagePrefix,
+            std::strlen(kNamespaceCapacityMessagePrefix)
+        ) == 0;
+    return caughtFailure(
+        capacityExhausted
+            ? LouppeXMPStatusNamespaceCapacityExhausted
+            : LouppeXMPStatusParseFailed,
+        message,
+        errorMessage
+    );
+}
+
 bool validMetadata(const LouppeXMPMetadata &metadata) {
     if (metadata.stars < 0 || metadata.stars > 5) return false;
     if (
@@ -579,9 +603,7 @@ LouppeXMPStatus LouppeXMPRoundTrip(
         if (status != LouppeXMPStatusOK) return status;
         return serialize(packet, output, errorMessage);
     } catch (const XMP_Error &error) {
-        return caughtFailure(
-            LouppeXMPStatusParseFailed, error.GetErrMsg(), errorMessage
-        );
+        return caughtXMPFailure(error, errorMessage);
     } catch (const std::exception &error) {
         return caughtFailure(
             LouppeXMPStatusParseFailed, error.what(), errorMessage
@@ -656,9 +678,7 @@ LouppeXMPStatus LouppeXMPMerge(
         output->length = serialized.size();
         return LouppeXMPStatusOK;
     } catch (const XMP_Error &error) {
-        return caughtFailure(
-            LouppeXMPStatusParseFailed, error.GetErrMsg(), errorMessage
-        );
+        return caughtXMPFailure(error, errorMessage);
     } catch (const std::exception &error) {
         return caughtFailure(
             LouppeXMPStatusSerializationFailed, error.what(), errorMessage
@@ -710,9 +730,7 @@ LouppeXMPStatus LouppeXMPVerify(
         }
         return LouppeXMPStatusOK;
     } catch (const XMP_Error &error) {
-        return caughtFailure(
-            LouppeXMPStatusParseFailed, error.GetErrMsg(), errorMessage
-        );
+        return caughtXMPFailure(error, errorMessage);
     } catch (const std::exception &error) {
         return caughtFailure(
             LouppeXMPStatusParseFailed, error.what(), errorMessage
@@ -778,9 +796,7 @@ LouppeXMPStatus LouppeXMPReadProperty(
         }
         return LouppeXMPStatusOK;
     } catch (const XMP_Error &error) {
-        return caughtFailure(
-            LouppeXMPStatusParseFailed, error.GetErrMsg(), errorMessage
-        );
+        return caughtXMPFailure(error, errorMessage);
     } catch (const std::exception &error) {
         return caughtFailure(
             LouppeXMPStatusParseFailed, error.what(), errorMessage
@@ -829,9 +845,7 @@ LouppeXMPStatus LouppeXMPInspectChanges(
         *changeMask = inspectChanges(packet, metadata);
         return LouppeXMPStatusOK;
     } catch (const XMP_Error &error) {
-        return caughtFailure(
-            LouppeXMPStatusParseFailed, error.GetErrMsg(), errorMessage
-        );
+        return caughtXMPFailure(error, errorMessage);
     } catch (const std::exception &error) {
         return caughtFailure(
             LouppeXMPStatusParseFailed, error.what(), errorMessage
