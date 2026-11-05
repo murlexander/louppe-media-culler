@@ -2,7 +2,10 @@
 
 Live Store version: 1.12.0 (Ready for Sale). macOS **1.13.1 (16)** was submitted
 on 5 November 2026 and is **Waiting for Review**, releasing automatically after
-approval. It replaced the 1.13.0 (15) submission of 4 November, which was removed
+approval. Later on 5 November it was removed from review once more to replace
+all 88 screenshots with active-window recaptures from 1.13.1 (the first set
+showed Louppe as an inactive window), then resubmitted at 02:55 UTC with the
+same build and export compliance. It replaced the 1.13.0 (15) submission of 4 November, which was removed
 from review before Apple reviewed it; the same draft was renamed 1.13.1, so it
 keeps all final metadata below for 11 localizations, the 88 new screenshots, no
 preview videos (the 1.10-era previews were removed), the 1.12 review notes with
@@ -162,8 +165,9 @@ plural duplicates, or repeated name/subtitle/category words.
 
 ### Screenshots (order and captions)
 
-Produced 4 November 2026 from authentic 1.13.0 (15) captures and Alex's own
-photographs (no people): `media-library/2026-11-04-store/` (README, sources
+Produced 4 November 2026 from authentic captures and Alex's own photographs
+(no people); recaptured 5 November from 1.13.1 (`db6e707`) with Louppe as the
+active window, same scenes and captions: `media-library/2026-11-04-store/` (README, sources
 with hashes, captions for all 11 locales, validation). Eight 2880×1800 images
 per locale:
 
