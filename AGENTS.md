@@ -257,8 +257,9 @@ when Computer Use is available.
   Commit directly to `main` only when asked; after an exceptional branch is merged,
   delete it locally and on GitHub. External contributors use branches in their
   own forks and open pull requests against this repository's `main`.
-- `dist/` and `.build/` are gitignored build products; `AppIcon/` holds the
-  source glyph and the built `.icns` (both tracked).
+- `dist/` and `.build/` are gitignored build products. `Packaging/` holds the
+  tracked bundle inputs: entitlements, the privacy manifest, `AppIcon/` (source
+  glyph and built `.icns`), localized `InfoPlist/` strings and third-party licenses.
 
 ## Standalone checkouts and local project layout
 

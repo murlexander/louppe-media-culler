@@ -73,7 +73,7 @@ codesign --verify --deep --strict "$SIGNED_APP"
 [[ ! -e "$SIGNED_APP/Contents/embedded.provisionprofile" ]] \
     || fail "The current sandbox-only product needs no provisioning profile. Rebuild without the unexpected profile."
 codesign --force --options runtime --timestamp --sign "$APPLICATION_HASH" \
-    --entitlements "$PWD/Louppe.entitlements" "$SIGNED_APP"
+    --entitlements "$PWD/Packaging/Louppe.entitlements" "$SIGNED_APP"
 
 verify_signed_app() {
     local bundle="$1"

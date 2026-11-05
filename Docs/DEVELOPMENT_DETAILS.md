@@ -177,8 +177,8 @@ folders are removed at the next preparation. At most the active and preparing
 batch are retained during normal operation; failed filesystem cleanup remains
 best effort. Permissions require `NSPhotoLibraryUsageDescription` and the Photos entitlement
 in every bundle, including the hardened-runtime Developer ID product. Direct
-builds use `Louppe.direct.entitlements`; Store builds retain their sandbox and
-selected-folder entitlements in `Louppe.entitlements`.
+builds use `Packaging/Louppe.direct.entitlements`; Store builds retain their sandbox and
+selected-folder entitlements in `Packaging/Louppe.entitlements`.
 
 ## File operations and recovery
 

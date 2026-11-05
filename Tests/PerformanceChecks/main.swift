@@ -658,7 +658,7 @@ struct PerformanceChecks {
         )
         defer { try? FileManager.default.removeItem(at: folder) }
         let fixture = try Data(contentsOf: URL(
-            fileURLWithPath: "AppIcon/AppIcon.iconset/icon_16x16.png"
+            fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_16x16.png"
         ))
         for index in 0..<250 {
             let stem = String(format: "IMG_%04d", index)
@@ -3637,7 +3637,7 @@ struct PerformanceChecks {
                 }
             }
         }
-        let fixtureURL = URL(fileURLWithPath: "AppIcon/AppIcon.iconset/icon_16x16.png")
+        let fixtureURL = URL(fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_16x16.png")
         let fixture = try Data(contentsOf: fixtureURL)
         let fm = FileManager.default
         let names = ["A.png", "B.png", "C.png"]
@@ -3750,7 +3750,7 @@ struct PerformanceChecks {
                 }
             }
         }
-        let fixtureURL = URL(fileURLWithPath: "AppIcon/AppIcon.iconset/icon_16x16.png")
+        let fixtureURL = URL(fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_16x16.png")
         let fixture = try Data(contentsOf: fixtureURL)
         try fixture.write(to: folder.appendingPathComponent("SHOT.NEF"))
         try fixture.write(to: folder.appendingPathComponent("SHOT.JPG"))

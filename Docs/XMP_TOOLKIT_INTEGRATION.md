@@ -14,7 +14,7 @@ It declares Expat 2.5.0; Louppe uses patched `R_2_9_0`. Checksums and bounded-tr
 adapter changes are in the vendor README.
 
 Every source/binary distribution must include complete
-`ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt` and `ThirdPartyLicenses/Expat-MIT.txt`.
+`Packaging/ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt` and `Packaging/ThirdPartyLicenses/Expat-MIT.txt`.
 
 ## 4 November 2026 dependency review (1.13)
 
@@ -22,7 +22,7 @@ Every source/binary distribution must include complete
   release. All GitHub advisories affect 2.9.5 or earlier.
 - All 39 vendored Expat files, and Adobe's include-layout copy, are
   byte-identical to the official `expat-2.9.0.tar.xz` (recorded SHA-256). `COPYING` and Adobe's
-  `LICENSE` match `ThirdPartyLicenses/`.
+  `LICENSE` match `Packaging/ThirdPartyLicenses/`.
 - 275 of 278 vendored XMP Toolkit files match the pinned revision. The other
   three are the recorded Louppe patches: `expat_config.h`, `ExpatAdapter.hpp`
   and `ExpatAdapter.cpp`. Adobe has published no commit since the pin and no

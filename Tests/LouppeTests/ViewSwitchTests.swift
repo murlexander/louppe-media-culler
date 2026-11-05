@@ -18,7 +18,7 @@ final class ViewSwitchTests: XCTestCase {
         )
         defer { try? FileManager.default.removeItem(at: folder) }
         let fixture = repositoryRoot.appendingPathComponent(
-            "AppIcon/AppIcon.iconset/icon_128x128.png"
+            "Packaging/AppIcon/AppIcon.iconset/icon_128x128.png"
         )
         let baseDate = Date(timeIntervalSince1970: 1_700_000_000)
         var items: [PhotoItem] = []

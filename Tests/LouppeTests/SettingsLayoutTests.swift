@@ -12,7 +12,7 @@ final class SettingsLayoutTests: XCTestCase {
         let repository = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let data = try Data(contentsOf: repository.appendingPathComponent(
-            "AppIcon/Appearance.xcassets/LouppeAccent.colorset/Contents.json"))
+            "Packaging/AppIcon/Appearance.xcassets/LouppeAccent.colorset/Contents.json"))
         let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let colors = try XCTUnwrap(catalog["colors"] as? [[String: Any]])
         XCTAssertEqual(colors.count, 4)

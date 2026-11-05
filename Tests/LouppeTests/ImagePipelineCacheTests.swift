@@ -354,7 +354,7 @@ final class ImagePipelineCacheTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .appendingPathComponent(
-                "AppIcon/AppIcon.iconset/icon_128x128.png"
+                "Packaging/AppIcon/AppIcon.iconset/icon_128x128.png"
             )
     }
 

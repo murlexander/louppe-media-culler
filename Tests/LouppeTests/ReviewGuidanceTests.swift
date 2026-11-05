@@ -77,7 +77,7 @@ final class ReviewGuidanceTests: XCTestCase {
         let backup = root.appendingPathComponent("Backup", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.createDirectory(at: photos, withIntermediateDirectories: true)
-        let source = URL(fileURLWithPath: "AppIcon/AppIcon.iconset/icon_16x16.png")
+        let source = URL(fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_16x16.png")
         try Data(contentsOf: source).write(to: photos.appendingPathComponent("A.png"))
 
         let store = SessionStore(

@@ -552,7 +552,7 @@ final class VolumeStableCacheIdentityTests: XCTestCase {
         try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
                                                 withIntermediateDirectories: true)
         let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-            .deletingLastPathComponent().appendingPathComponent("AppIcon/AppIcon.iconset/icon_128x128.png")
+            .deletingLastPathComponent().appendingPathComponent("Packaging/AppIcon/AppIcon.iconset/icon_128x128.png")
         try FileManager.default.copyItem(at: fixture, to: destination)
     }
 

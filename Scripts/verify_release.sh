@@ -77,10 +77,10 @@ verify_app_bundle() {
         || fail "$label has no compiled Louppe accent color."
     [[ "$(plist_value "$bundle" LSMultipleInstancesProhibited)" == "true" ]] \
         || fail "$label must prohibit a second app instance during file operations."
-    cmp -s ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt \
+    cmp -s Packaging/ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt \
         "$bundle/Contents/Resources/XMPCore License.txt" \
         || fail "$label does not contain the reviewed XMPCore license."
-    cmp -s ThirdPartyLicenses/Expat-MIT.txt \
+    cmp -s Packaging/ThirdPartyLicenses/Expat-MIT.txt \
         "$bundle/Contents/Resources/Expat License.txt" \
         || fail "$label does not contain the reviewed Expat license."
     "$PWD/Scripts/resource_bundle_metadata.sh" --verify \
@@ -112,7 +112,7 @@ print("\n".join(key for key in plistlib.load(open(sys.argv[1], "rb"))
         usage_strings="$bundle/Contents/Resources/$locale.lproj/InfoPlist.strings"
         [[ -f "$usage_strings" ]] || fail "$label $locale permission text is missing."
         plutil -lint "$usage_strings" >/dev/null || fail "$label $locale permission text is malformed."
-        cmp -s "AppResources/InfoPlist/$locale.lproj/InfoPlist.strings" "$usage_strings" \
+        cmp -s "Packaging/InfoPlist/$locale.lproj/InfoPlist.strings" "$usage_strings" \
             || fail "$label $locale permission text differs from source."
         for usage_key in "${usage_keys[@]}"; do
             localized_usage="$(plutil -extract "$usage_key" raw -o - "$usage_strings" 2>/dev/null)" \
@@ -124,7 +124,7 @@ print("\n".join(key for key in plistlib.load(open(sys.argv[1], "rb"))
             fi
         done
     done
-    cmp -s PrivacyInfo.xcprivacy "$bundle/Contents/Resources/PrivacyInfo.xcprivacy" \
+    cmp -s Packaging/PrivacyInfo.xcprivacy "$bundle/Contents/Resources/PrivacyInfo.xcprivacy" \
         || fail "$label does not contain the reviewed privacy manifest."
     plutil -lint "$bundle/Contents/Resources/PrivacyInfo.xcprivacy" >/dev/null \
         || fail "$label privacy manifest is invalid."

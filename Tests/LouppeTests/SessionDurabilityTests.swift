@@ -926,7 +926,7 @@ final class SessionDurabilityTests: XCTestCase {
             to: fixture.root.appendingPathComponent("Original.png")
         )
         let replacementFixture = URL(
-            fileURLWithPath: "AppIcon/AppIcon.iconset/icon_32x32.png"
+            fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_32x32.png"
         )
         try Data(contentsOf: replacementFixture).write(to: source)
 
@@ -1220,7 +1220,7 @@ final class SessionDurabilityTests: XCTestCase {
         try FileManager.default.moveItem(at: original, to: renamed)
         try Data(
             contentsOf: URL(
-                fileURLWithPath: "AppIcon/AppIcon.iconset/icon_32x32.png"
+                fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_32x32.png"
             )
         ).write(to: original)
 
@@ -2487,7 +2487,7 @@ final class SessionDurabilityTests: XCTestCase {
         )
         let source = folder.appendingPathComponent("A.png")
         try Data(contentsOf: URL(
-            fileURLWithPath: "AppIcon/AppIcon.iconset/icon_16x16.png"
+            fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_16x16.png"
         )).write(to: source)
         let backup = root.appendingPathComponent("Backup", isDirectory: true)
         let persistence = SessionPersistence(backupDirectory: backup)
@@ -2858,7 +2858,7 @@ final class SessionDurabilityTests: XCTestCase {
         )
         try Data(
             contentsOf: URL(
-                fileURLWithPath: "AppIcon/AppIcon.iconset/icon_16x16.png"
+                fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_16x16.png"
             )
         ).write(
             to: nestedFolder.appendingPathComponent("A.png")
@@ -3519,7 +3519,7 @@ final class SessionDurabilityTests: XCTestCase {
             withIntermediateDirectories: true
         )
         let source = URL(
-            fileURLWithPath: "AppIcon/AppIcon.iconset/icon_16x16.png"
+            fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_16x16.png"
         )
         try Data(contentsOf: source).write(
             to: photos.appendingPathComponent("A.png")

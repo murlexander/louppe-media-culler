@@ -24,7 +24,7 @@ handwritten XML merging or broaden it to XMPFiles. When updating either input,
 repeat the isolation proof, review the source manifest, update both revision
 records and licenses, and rerun the packet and hostile-filesystem suites.
 
-Every app includes `ThirdPartyLicenses/` texts; release verification checks them
+Every app includes `Packaging/ThirdPartyLicenses/` texts; release verification checks them
 in the loose bundle and extracted archive.
 
 Louppe's only XMPCore source changes are the `ExpatAdapter` resource counters:

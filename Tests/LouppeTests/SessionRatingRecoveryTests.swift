@@ -17,7 +17,7 @@ final class SessionRatingRecoveryTests: XCTestCase {
         let photos = root.appendingPathComponent("Photos")
         try FileManager.default.createDirectory(at: photos, withIntermediateDirectories: true)
         let fixture = Fixture(root: root, photos: photos, backups: root.appendingPathComponent("Backups"))
-        let source = URL(fileURLWithPath: "AppIcon/AppIcon.iconset/icon_32x32.png")
+        let source = URL(fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_32x32.png")
         try Data(contentsOf: source).write(to: fixture.a)
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
         return fixture
@@ -50,7 +50,7 @@ final class SessionRatingRecoveryTests: XCTestCase {
         let bytes = try Data(contentsOf: fixture.a)
         try FileManager.default.moveItem(at: fixture.a, to: fixture.root.appendingPathComponent("Original.png"))
         if changed {
-            try Data(contentsOf: URL(fileURLWithPath: "AppIcon/AppIcon.iconset/icon_16x16.png")).write(to: fixture.a)
+            try Data(contentsOf: URL(fileURLWithPath: "Packaging/AppIcon/AppIcon.iconset/icon_16x16.png")).write(to: fixture.a)
         } else { try bytes.write(to: fixture.a) }
     }
 

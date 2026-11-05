@@ -17,7 +17,7 @@ use security-scoped bookmarks. Export destinations retain access while a
 recovery journal needs it; completing or retiring that record releases access.
 Opening Apple Photos requests Photos library permission. The Photos entitlement
 and usage description are required; review never issues library change requests.
-Edit the prompt in `AppResources/InfoPlist/*.lproj`; English fills Info.plist.
+Edit the prompt in `Packaging/InfoPlist/*.lproj`; English fills Info.plist.
 Optional iCloud downloads use PhotoKit after the person enables them. The app
 requests no broad Pictures, Movies, Music, Full Disk Access, camera, microphone,
 contacts, or accessibility permissions.
@@ -85,7 +85,7 @@ UserDefaults counters stay on the Mac. The direct download has no review flow.
 
 `./Scripts/verify_release.sh --app-store` checks the loose app and archive
 independently: sandbox, selected-folder read/write and bookmark entitlements;
-valid `PrivacyInfo.xcprivacy`; no Sparkle framework, link, or feed key;
+valid `Packaging/PrivacyInfo.xcprivacy`; no Sparkle framework, link, or feed key;
 matching version/build, Photography category, and both third-party notices.
 
 The manifest declares no tracking or collection. Its reasons cover selected

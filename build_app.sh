@@ -128,8 +128,8 @@ ACTOOL="/Applications/Xcode.app/Contents/Developer/usr/bin/actool"
     echo "Xcode's asset compiler is required to build the app icon." >&2
     exit 1
 }
-ditto --noextattr --noqtn AppIcon/AppIcon.icon "$ICON_SOURCE"
-ditto --noextattr --noqtn AppIcon/Appearance.xcassets "$ACCENT_SOURCE"
+ditto --noextattr --noqtn Packaging/AppIcon/AppIcon.icon "$ICON_SOURCE"
+ditto --noextattr --noqtn Packaging/AppIcon/Appearance.xcassets "$ACCENT_SOURCE"
 xattr -cr "$ICON_SOURCE"
 xattr -cr "$ACCENT_SOURCE"
 mkdir -p "$ICON_OUTPUT"
@@ -149,14 +149,14 @@ mkdir -p "$ICON_OUTPUT"
 cp "$ICON_OUTPUT/AppIcon.icns" "$APP_DIR/Contents/Resources/AppIcon.icns"
 cp "$ICON_OUTPUT/Assets.car" "$APP_DIR/Contents/Resources/Assets.car"
 cp CHANGELOG.md "$APP_DIR/Contents/Resources/Version History.md"
-cp ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt \
+cp Packaging/ThirdPartyLicenses/XMPCore-BSD-3-Clause.txt \
     "$APP_DIR/Contents/Resources/XMPCore License.txt"
-cp ThirdPartyLicenses/Expat-MIT.txt \
+cp Packaging/ThirdPartyLicenses/Expat-MIT.txt \
     "$APP_DIR/Contents/Resources/Expat License.txt"
-cp PrivacyInfo.xcprivacy "$APP_DIR/Contents/Resources/PrivacyInfo.xcprivacy"
+cp Packaging/PrivacyInfo.xcprivacy "$APP_DIR/Contents/Resources/PrivacyInfo.xcprivacy"
 # macOS reads permission prompts from the main bundle's InfoPlist.strings;
 # SwiftPM's resource bundle cannot localize them.
-INFOPLIST_STRINGS="AppResources/InfoPlist"
+INFOPLIST_STRINGS="Packaging/InfoPlist"
 for language in en es zh-Hans hi pt ar; do
     plutil -lint "$INFOPLIST_STRINGS/$language.lproj/InfoPlist.strings" >/dev/null
     mkdir -p "$APP_DIR/Contents/Resources/$language.lproj"
@@ -292,7 +292,7 @@ plutil -insert NSPhotoLibraryUsageDescription -string \
 
 xattr -cr "$APP_DIR"
 if $APP_STORE; then
-    codesign --force --sign - --entitlements "$PWD/Louppe.entitlements" "$APP_DIR"
+    codesign --force --sign - --entitlements "$PWD/Packaging/Louppe.entitlements" "$APP_DIR"
 elif [[ -n "$DEVELOPER_IDENTITY" ]]; then
     # Sparkle's distributed helpers are ad-hoc signed. Re-sign each nested code
     # object from the inside out, preserving the Downloader service entitlement,
@@ -313,10 +313,10 @@ elif [[ -n "$DEVELOPER_IDENTITY" ]]; then
         --sign "$DEVELOPER_IDENTITY" \
         "$APP_DIR/Contents/Frameworks/Sparkle.framework"
     codesign --force --options runtime --timestamp \
-        --entitlements "$PWD/Louppe.direct.entitlements" \
+        --entitlements "$PWD/Packaging/Louppe.direct.entitlements" \
         --sign "$DEVELOPER_IDENTITY" "$APP_DIR"
 else
-    codesign --force --sign - --entitlements "$PWD/Louppe.direct.entitlements" "$APP_DIR"
+    codesign --force --sign - --entitlements "$PWD/Packaging/Louppe.direct.entitlements" "$APP_DIR"
 fi
 codesign --verify --deep --strict "$APP_DIR"
 
