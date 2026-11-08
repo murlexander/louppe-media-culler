@@ -1,5 +1,9 @@
 # Version History
 
+## 1.13.2 (17) — 2026-11-08
+
+- Update Expat to 2.10.0 for four upstream parser security fixes, preserving the existing XMP resource limits and disabled DTD/general entities.
+
 ## 1.13.1 (16) — 2026-11-04
 
 - Show the Photos permission prompt in Louppe's language: Spanish, Portuguese, Hindi, Arabic or Simplified Chinese.
