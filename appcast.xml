@@ -6,24 +6,22 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>Louppe</title>
         <item>
-            <title>1.13.1</title>
-            <pubDate>Wed, 04 Nov 2026 23:56:01 +0100</pubDate>
-            <link>https://github.com/murlexander/louppe-media-culler/releases/tag/v1.13.1</link>
-            <sparkle:version>16</sparkle:version>
-            <sparkle:shortVersionString>1.13.1</sparkle:shortVersionString>
+            <title>1.13.2</title>
+            <pubDate>Sun, 08 Nov 2026 17:01:44 +0100</pubDate>
+            <link>https://github.com/murlexander/louppe-media-culler/releases/tag/v1.13.2</link>
+            <sparkle:version>17</sparkle:version>
+            <sparkle:shortVersionString>1.13.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description sparkle:format="markdown"><![CDATA[
-- Show the Photos permission prompt in Louppe's language: Spanish, Portuguese, Hindi, Arabic or Simplified Chinese.
-- Show the XMP "quit and reopen Louppe" namespace-limit message in your language.
-- Count thumbnail-cache files that could not be deleted and wait longer before retrying, instead of rescanning the cache after every few thumbnails.
+- Update Expat to 2.10.0 for four upstream parser security fixes, preserving the existing XMP resource limits and disabled DTD/general entities.
 
 ]]></description>
-            <enclosure url="https://github.com/murlexander/louppe-media-culler/releases/download/v1.13.1/Louppe.zip" length="8840986" type="application/octet-stream" sparkle:edSignature="gr7ECYyGIKIVHw9+8UF1KklxY3BobETv0rdp8D4ex7RwNEUbxXG3uLuoLn3Jp0u8ButV7ZG7KqUJE1PuabTlBA=="/>
+            <enclosure url="https://github.com/murlexander/louppe-media-culler/releases/download/v1.13.2/Louppe.zip" length="8841087" type="application/octet-stream" sparkle:edSignature="QMwRxLVz26MCjtrBiVx58wcOy7m4ChM2UH6dbgeQWiUr8UpBvxvu4hnJ80VsEB+FzpG5lmA2zCbVykmOMtUMAQ=="/>
         </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: xN0llsINwAqkmWdBuLhi3kamYwUs4GR+J8SzVyS12m889wetFtUFNXDZb7M/163AgMDZafunL8IXZX5hqFCLAQ==
-length: 1644
+edSignature: H8S4OhIL8gfgVb2YG/HgGR/c0uQVz5H0eqB1TNM9Ywht5iNgynb7GKwTnMeYbnHxFb13BPEXtMmdYcNWHqI+CA==
+length: 1442
 -->
