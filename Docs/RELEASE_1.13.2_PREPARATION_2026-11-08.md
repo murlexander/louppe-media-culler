@@ -7,7 +7,7 @@ Alex authorized publication in the weekly maintenance chat. The active 1.14 sess
 ## Verification
 
 - Security source: [Quality 42473513401](https://github.com/murlexander/louppe-media-culler/actions/runs/42473513401) passed strict build, full XCTest, recovery/performance, scrolling, video and packaging.
-- Exact release: [Quality 42497493529](https://github.com/murlexander/louppe-media-culler/actions/runs/42497493529) is pending.
+- Exact release: [Quality 42497493529](https://github.com/murlexander/louppe-media-culler/actions/runs/42497493529) passed all checks.
 - Local strict build and 103 focused XMP/hostile-filesystem tests passed. Store compilation and 104 affected tests passed with the documented `APP_STORE` compiler flag; an initial invocation omitted that flag and failed before correction.
 - Release-history, staged and working-tree credential scans passed. An all-refs scan reported three public client-side identifiers from unrelated retained website history (Ahrefs tracking and Stripe publishable identifiers), absent from release ancestry; those values are not reproduced here.
 
