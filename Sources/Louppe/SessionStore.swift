@@ -173,7 +173,18 @@ final class SessionStore: ObservableObject {
     }
     @Published private(set) var openingProgress: SessionOpeningProgress?
     private(set) var openingMetrics: SessionOpeningMetrics?
-    @Published private(set) var openingSession: OpeningSessionState?
+    /// Read-only browse state while a large folder opens. SessionView renders
+    /// it with the Ready toolbar; its changes are forwarded so that toolbar
+    /// (view picker, Browser toggle, progress) follows user navigation.
+    @Published private(set) var openingSession: OpeningSessionState? {
+        didSet {
+            guard openingSession !== oldValue else { return }
+            openingSessionChanges = openingSession?.objectWillChange.sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+        }
+    }
+    private var openingSessionChanges: AnyCancellable?
     var openingWorkerHooksForTesting = SessionOpeningWorker.Hooks()
     /// Optional metadata-cache write after Ready. Close never waits for it;
     /// Quit cancels it. One commit runs at a time; a newer opening replaces
@@ -181,6 +192,22 @@ final class SessionStore: ObservableObject {
     private var metadataIndexCommitTask: Task<Void, Never>?
     private var pendingMetadataIndexCommit: (commit: SessionOpeningMetadataCommit,
                                              access: SecurityScopedFolderAccess?)?
+
+    #if LOUPPE_TEST_SEAMS
+    /// Mounts a read-only opening without a worker. Authoritative items stay
+    /// as the caller left them; real openings keep them empty.
+    func presentOpeningSessionForTesting(_ state: OpeningSessionState) {
+        phase = .scanning(found: state.items.count)
+        openingSession = state
+    }
+
+    /// Simulates final publication: the opening state retires in the same
+    /// turn as Ready, as in `finishScan`.
+    func finishOpeningSessionForTesting() {
+        openingSession = nil
+        phase = .ready
+    }
+    #endif
 
     func waitForMetadataIndexCommitForTesting() async {
         while let task = metadataIndexCommitTask {
@@ -1108,6 +1135,7 @@ final class SessionStore: ObservableObject {
     @Published private(set) var availableFilmSimulations: [FujiFilmSimulation] = []
     @Published private(set) var availableSubfolders: [String] = []
     @Published private(set) var availableCaptureDates: [Date] = []
+    @Published private(set) var availableCaptureYears: [CaptureYear] = []
     @Published private(set) var captureDateRange: ClosedRange<Date>?
     @Published private(set) var apertureRange: ClosedRange<Double>?
     @Published private(set) var shutterRange: ClosedRange<Double>?
@@ -1123,6 +1151,7 @@ final class SessionStore: ObservableObject {
     @Published private(set) var videoCodecCounts: [String: Int] = [:]
     @Published private(set) var subfolderCounts: [String: Int] = [:]
     @Published private(set) var captureDateCounts: [Date: Int] = [:]
+    @Published private(set) var captureYearCounts: [CaptureYear: Int] = [:]
     @Published private(set) var unknownDateCount = 0
 
     var availableVideoResolutions: [String] {
@@ -1512,13 +1541,15 @@ final class SessionStore: ObservableObject {
     var mixedColorCount: Int { mixedColorCountStorage }
 
     /// Reset remains available when the date UI is in its non-default mode or
-    /// retains hidden day exclusions, even if those choices currently show all
-    /// photos and therefore do not light the toolbar's active-filter glyph.
+    /// retains hidden day/year exclusions, even if those choices currently show
+    /// all photos and therefore do not light the toolbar's active-filter glyph.
     var filterCanReset: Bool {
         filter.isActive
             || filter.dateMode != .range
             || !filter.excludedDates.isEmpty
             || filter.excludesUnknownDate
+            || !filter.excludedYears.isEmpty
+            || filter.excludesUnknownYear
     }
 
     var currentItem: PhotoItem? {
@@ -1552,6 +1583,15 @@ final class SessionStore: ObservableObject {
 
     var isGroupedReviewActive: Bool {
         groupedReviewMode != .off
+    }
+
+    /// True when the order differs from the Settings default, or a Sort-panel
+    /// review group (duplicates, similar photos) is on. Bursts count as a filter.
+    var isSortActive: Bool {
+        let preferences = ReviewPreferences.load(from: reviewDefaults)
+        return sort != preferences.defaultSort
+            || isGroupingEnabled != preferences.isGroupingEnabled
+            || (isGroupedReviewActive && groupedReviewMode != .captureBursts)
     }
 
     var isDuplicateBurstAnalysisRunning: Bool {
@@ -2569,6 +2609,8 @@ final class SessionStore: ObservableObject {
         availableSubfolders = facets.availableSubfolders
         availableCaptureDates = facets.availableCaptureDates
         captureDateCounts = facets.captureDateCounts
+        availableCaptureYears = facets.availableCaptureYears
+        captureYearCounts = facets.captureYearCounts
         unknownDateCount = facets.unknownDateCount
         captureDateRange = facets.captureDateRange
         apertureRange = facets.apertureRange
@@ -2627,9 +2669,12 @@ final class SessionStore: ObservableObject {
         updated.excludedVideoCodecs.formIntersection(availableVideoCodecs)
         updated.excludedSubfolders.formIntersection(availableSubfolders)
         updated.excludedDates.formIntersection(availableCaptureDates)
+        updated.excludedYears.formIntersection(availableCaptureYears)
 
         if let available = captureDateRange {
-            if updated.dateMode == .range, updated.dateEnabled {
+            // A narrowed Range survives refreshes in every mode, clamped to
+            // the new span; untouched bounds expand to it.
+            if updated.dateRangeIsNarrowed || (updated.dateMode == .range && updated.dateEnabled) {
                 updated.dateFrom = Self.clamp(updated.dateFrom, to: available)
                 updated.dateTo = Self.clamp(updated.dateTo, to: available)
             } else {
@@ -2637,7 +2682,7 @@ final class SessionStore: ObservableObject {
                 updated.dateTo = available.upperBound
             }
         }
-        updated.dateEnabled = dateFilterHasEffect(updated)
+        normalizeDateFilter(&updated)
 
         let aperture = Self.synchronizedNumericRange(
             from: updated.apertureFrom,
@@ -2740,11 +2785,27 @@ final class SessionStore: ObservableObject {
         filter = updated
     }
 
-    private func dateFilterHasEffect(_ candidate: PhotoFilter) -> Bool {
+    /// Recompute the Range-narrowed marker and the current mode's effect after
+    /// any date edit, mode switch or refresh.
+    func normalizeDateFilter(_ filter: inout PhotoFilter) {
+        filter.dateRangeIsNarrowed = dateRangeIsNarrowed(filter)
+        filter.dateEnabled = dateFilterHasEffect(filter)
+    }
+
+    private func dateRangeIsNarrowed(_ candidate: PhotoFilter) -> Bool {
+        guard let available = captureDateRange else { return false }
+        return candidate.dateFrom != available.lowerBound || candidate.dateTo != available.upperBound
+    }
+
+    /// Whether `candidate`'s current date mode narrows this session; the
+    /// other modes' retained choices are ignored until selected again.
+    func dateFilterHasEffect(_ candidate: PhotoFilter) -> Bool {
         switch candidate.dateMode {
         case .range:
-            guard let available = captureDateRange else { return false }
-            return candidate.dateFrom != available.lowerBound || candidate.dateTo != available.upperBound
+            return dateRangeIsNarrowed(candidate)
+        case .specificYears:
+            return !candidate.excludedYears.isEmpty
+                || (unknownDateCount > 0 && candidate.excludesUnknownYear)
         case .specificDates:
             return !candidate.excludedDates.isEmpty
                 || (unknownDateCount > 0 && candidate.excludesUnknownDate)
@@ -2792,6 +2853,7 @@ final class SessionStore: ObservableObject {
         availableFilmSimulations = []
         availableSubfolders = []
         availableCaptureDates = []
+        availableCaptureYears = []
         captureDateRange = nil
         apertureRange = nil
         shutterRange = nil
@@ -2807,6 +2869,7 @@ final class SessionStore: ObservableObject {
         videoCodecCounts = [:]
         subfolderCounts = [:]
         captureDateCounts = [:]
+        captureYearCounts = [:]
         unknownDateCount = 0
     }
 
@@ -6189,6 +6252,13 @@ final class SessionStore: ObservableObject {
 
     func toggleViewMode() {
         viewMode = (viewMode == .gallery) ? .grid : .gallery
+    }
+
+    /// Q and the toolbar while a folder opens. Like `toggleBrowser`, it acts
+    /// only in Gallery; there is no Folders pane before Ready.
+    func toggleOpeningBrowser() {
+        guard case .scanning = phase, openingSession?.viewMode == .gallery else { return }
+        showBrowser.toggle()
     }
 
     /// The Browser column exists only in the Gallery view, so its toolbar

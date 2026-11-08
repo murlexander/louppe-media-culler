@@ -608,7 +608,7 @@ extension PhotoSort.Key {
 
 private extension PreparedPhotoFilter {
     /// Inspect the prepared predicate rather than UI flags: invalid ranges,
-    /// whitespace-only queries and untouched specific-date sets are neutral.
+    /// whitespace-only queries and untouched specific-date/year sets are neutral.
     var isUnrestricted: Bool {
         excludedMediaKinds.isEmpty && excludedTypes.isEmpty
             && excludedCameras.isEmpty && excludedLenses.isEmpty
@@ -617,6 +617,7 @@ private extension PreparedPhotoFilter {
             && excludedDecisionStates.isEmpty && excludedStarStates.isEmpty
             && excludedColorStates.isEmpty && dateRange == nil
             && (!usesSpecificDates || (excludedDates.isEmpty && !excludesUnknownDate))
+            && (!usesSpecificYears || (excludedYears.isEmpty && !excludesUnknownYear))
             && apertureRange == nil && shutterRange == nil && isoRange == nil
             && durationRange == nil && videoFrameRateRange == nil && searchTokens.isEmpty
     }

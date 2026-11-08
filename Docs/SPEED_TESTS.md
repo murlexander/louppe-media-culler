@@ -96,6 +96,7 @@ No private media or source filenames enter the JSON reports.
 | Optional RAW | Apple Default preview and histogram on a copied camera RAW, with source integrity checks |
 | Opening | Complete discovery/pairing, metadata, identity checks, saved decisions and worker-derived preparation on supplied disposable folders |
 | Large projection | Camera/lens distinct ranks, comparator equivalence, unrestricted and unchanged presentation reuse |
+| Opening session view | Full offscreen `SessionView` during opening, per-batch metadata apply/layout/display at 500 and 5000 files, unchanged collection generations, approximate Ready handoff |
 | Mounted large folders | Real 1k/10k generated JPEGs, Grid/Browser jumps to matching-revision pixels, native vertical wheel gates, process RSS and main-actor scheduling gaps |
 | First use | Real RootView opening through matching-revision visible pixels, complete readiness and final current pixels; saved decisions and original bytes verified |
 | Contention | Mounted navigation during production cues, fingerprint work and save activity; injected fingerprint delay is labelled separately |

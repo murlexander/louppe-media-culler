@@ -856,7 +856,6 @@
 "Search media" = "मीडिया खोजें";
 "Search name, type, camera, lens…" = "खोज नाम, प्रकार, कैमरा, लेंस ...";
 "Search shortcuts or actions" = "खोज शॉर्टकट या क्रियाएँ";
-"Search: “{0}”" = "खोज: \"{0}\"";
 "Securing copied files" = "कॉपी की गई फ़ाइलों को सुरक्षित करना";
 "Securing moved files" = "स्थानांतरित फ़ाइलें सुरक्षित कर रहे हैं";
 "Seek Video Backward 0.5 Seconds" = "वीडियो बैकवर्ड 0.5 सेकंड";
@@ -971,7 +970,6 @@
 "Source folder" = "स्रोत फ़ोल्डर";
 "Source folder organized" = "स्रोत फ़ोल्डर व्यवस्थित हुआ";
 "Source: {0}" = "स्रोत: {0}";
-"Specific dates" = "विशिष्ट तिथियां";
 "Star rating" = "स्टार रेटिंग";
 "Star ratings" = "स्टार रेटिंग";
 "Stars" = "स्टार";
@@ -1660,7 +1658,6 @@
 "{0} photos without a capture date" = "{0} फ़ोटो की कैप्चर तारीख नहीं है";
 "1 media item without a capture date" = "1 मीडिया आइटम की कैप्चर तारीख नहीं है";
 "{0} media items without a capture date" = "{0} मीडिया आइटम की कैप्चर तारीख नहीं है";
-"Filters: {0}" = "फ़िल्टर: {0}";
 "Metadata (XMP) complete" = "मेटाडेटा (XMP) पूरा हुआ";
 "1 file renamed" = "1 फ़ाइल का नाम बदला गया";
 "{0} files renamed" = "{0} फ़ाइलों के नाम बदले गए";

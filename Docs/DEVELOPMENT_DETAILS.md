@@ -53,7 +53,8 @@ it to every view.
 | `Sources/Louppe/Views/RootView.swift` | Phase switch (welcome/scanning/session), `Color.appBackground` |
 | `Sources/Louppe/Views/WelcomeView.swift` | Start screen + cancellable scanning progress |
 | `Sources/Louppe/Views/SessionView.swift` | Toolbar (incl. sort menu), export sheet, shared trailing Info panel, **all single-key hotkeys** (`handleKey`) |
-| `Sources/Louppe/Views/FilterView.swift` | Toolbar filter popover: metadata search, date range, subfolder / file-type / camera / lens toggles |
+| `Sources/Louppe/Views/FilterView.swift` | Toolbar filter popover: metadata search, subfolder / file-type / camera / lens toggles |
+| `Sources/Louppe/Views/FilterDateSection.swift` | Filter's Date taken section: range, year, or individual-date modes with independent choices |
 | `Sources/Louppe/Views/GalleryView.swift` | Gallery media layout: Browser / photo |
 | `Sources/Louppe/Views/BrowserView.swift` | Optional vertical thumbnail Browser with day separators |
 | `Sources/Louppe/Views/GridView.swift` | Grid view, day-grouped rows, click-to-rate, rubber-band selection |
@@ -381,6 +382,9 @@ are independent; XCTest defaults use disposable storage.
   progress coalesces into one latest value, published at most every 100 ms.
   A complete, restored inventory may mount a separate read-only opening state;
   phase stays scanning and authoritative items stay empty until final validation.
+  `SessionView` renders it with the Ready toolbar and panes, reading only the
+  opening state and view preferences; rating, sort, filter, file and save
+  controls stay disabled, and the session menus stay unavailable until Ready.
   Pinned opens can mount that state earlier from the existing metadata cache,
   after checking root identity. This provisional projection may be incomplete or
   stale, contains no decisions, and shows the shared toolbar activity indicator.
@@ -903,6 +907,14 @@ precedence over remembered scope/position.
   frames update without rebuilding the collection projection. Reuse clears old
   roots before assigning new entries. Read-only opening supplies the same native
   bridge from its separate state owner. See `Docs/PERFORMANCE.md`.
+- While a folder opens, `RootView` keeps one `SessionView` (and its single key
+  monitor) mounted from the first opening preview through Ready. Its toolbar
+  keeps Ready's arrangement: Folder cancels the opening, the Gallery/Grid picker,
+  Browser and Info stay live, and Filter, Sort, Undo, Clear All, Clean Up and
+  Export are disabled (`SessionToolbarAvailability`). `handleKey` accepts only
+  navigation, Gallery/Grid, Browser, Info and Esc (clear selection, then cancel);
+  every other key passes through. Info uses MetadataPanel's layout over
+  scan-time fields, disabled until Ready, without starting its pipelines.
 - Grid control drags use existing tile frames and fixed Rating/Play regions;
   avoid per-control `GeometryReader`. Every native multi-click Button activation
   cycles rating once. `GridImmediateClickSurface` commits the first mouse-up

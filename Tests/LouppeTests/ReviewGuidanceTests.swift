@@ -59,15 +59,20 @@ final class ReviewGuidanceTests: XCTestCase {
         XCTAssertEqual(store.items[0].rating, .yes)
     }
 
-    func testFilterSummaryNamesOnlyActiveChoices() {
-        var filter = PhotoFilter()
-        filter.searchText = "birthday"
-        filter.excludedDecisionStates = [.no, .undecided, .mixed]
-        filter.excludedTypes = ["RAW"]
-        XCTAssertEqual(
-            filter.reviewSummary,
-            "Filters: Search: “birthday” · Decision: Yes · File type"
-        )
+    func testSortIsActiveOnlyAwayFromSettingsDefault() throws {
+        let suite = "LouppeSortActive-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SessionStore(reviewDefaults: defaults)
+
+        XCTAssertFalse(store.isSortActive)
+        store.sort.ascending.toggle()
+        XCTAssertTrue(store.isSortActive)
+        store.sort.ascending.toggle()
+        store.isGroupingEnabled.toggle()
+        XCTAssertTrue(store.isSortActive)
+        store.isGroupingEnabled.toggle()
+        XCTAssertFalse(store.isSortActive)
     }
 
     func testSaveLabelDoesNotCallAChangedSessionSavedUntilWriteCompletes() async throws {

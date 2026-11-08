@@ -1,5 +1,12 @@
 # Version History
 
+## 1.14.0 (18) — 2026-11-08
+
+- Show the normal toolbar, Browser and Info panel while a large folder opens, with controls greyed out until all photo details load, so the view no longer jumps when review begins.
+- Filter dates by Range, Year or Date in a full-width chooser; each mode keeps its choices when you switch.
+- Drop the status-bar filter menu; the purple Filter button already shows an active filter. Sort now turns purple too when it differs from your default or Duplicates/Similar review is on.
+- Remove brief stalls of up to 0.1 seconds while photo details load in folders with tens of thousands of photos.
+
 ## 1.13.2 (17) — 2026-11-08
 
 - Update Expat to 2.10.0 for four upstream parser security fixes, preserving the existing XMP resource limits and disabled DTD/general entities.

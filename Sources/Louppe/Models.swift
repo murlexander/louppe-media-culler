@@ -305,6 +305,39 @@ struct CaptureDateEvidence: Equatable, Sendable {
     }
 }
 
+/// A calendar year with its era, so repeated era years such as Heisei 6 and
+/// Reiwa 6 in the Japanese calendar stay distinct. Eras ascend chronologically.
+struct CaptureYear: Hashable, Comparable, Sendable {
+    let era: Int32
+    let year: Int32
+
+    init(era: Int, year: Int) {
+        self.era = Int32(clamping: era)
+        self.year = Int32(clamping: year)
+    }
+
+    init(_ date: Date, calendar: Calendar) {
+        let components = calendar.dateComponents([.era, .year], from: date)
+        self.init(era: components.era ?? 0, year: components.year ?? 0)
+    }
+
+    static func < (lhs: CaptureYear, rhs: CaptureYear) -> Bool {
+        (lhs.era, lhs.year) < (rhs.era, rhs.year)
+    }
+
+    /// A noon inside this era-year for labels. An era that begins mid-year
+    /// (Reiwa 1) does not contain January 1, so December 31 is tried next.
+    func representativeDate(in calendar: Calendar) -> Date? {
+        for (month, day) in [(1, 1), (12, 31)] {
+            let components = DateComponents(era: Int(era), year: Int(year), month: month, day: day, hour: 12)
+            if let date = calendar.date(from: components), CaptureYear(date, calendar: calendar) == self {
+                return date
+            }
+        }
+        return nil
+    }
+}
+
 /// One physical media file and everything Louppe learned about it.
 ///
 /// RAW+JPEG pairing is a presentation choice, so the individual files retain
@@ -330,6 +363,8 @@ struct PhotoFile: Identifiable, Sendable {
     let captureDate: Date?
     let captureDateEvidence: CaptureDateEvidence?
     let captureDay: Date?
+    /// Era and year of `captureDate`, cached for the Year filter.
+    let captureYear: CaptureYear?
     let cameraModel: String?
     let lensModel: String?
     let filmSimulation: FujiFilmSimulation?
@@ -406,7 +441,8 @@ struct PhotoFile: Identifiable, Sendable {
         starsChangedAt: Date? = nil,
         colorLabel: PhotoColorLabel? = nil,
         colorChangedAt: Date? = nil,
-        photosMedia: PhotosMediaReference? = nil
+        photosMedia: PhotosMediaReference? = nil,
+        calendar: Calendar = .current
     ) {
         let displayName = url.lastPathComponent
         let format = Self.makeFileTypeLabel(url: url, mediaKind: mediaKind)
@@ -432,7 +468,8 @@ struct PhotoFile: Identifiable, Sendable {
         self.captureDate = captureDateEvidence?.date ?? captureDate
         self.captureDateEvidence = captureDateEvidence
             ?? captureDate.map { CaptureDateEvidence(date: $0, source: .unspecified) }
-        self.captureDay = self.captureDate.map { Calendar.current.startOfDay(for: $0) }
+        self.captureDay = self.captureDate.map { calendar.startOfDay(for: $0) }
+        self.captureYear = self.captureDate.map { CaptureYear($0, calendar: calendar) }
         self.cameraModel = cameraModel
         self.lensModel = lensModel
         self.filmSimulation = filmSimulation
@@ -755,6 +792,7 @@ struct PhotoItem: Identifiable, Sendable {
     var captureDate: Date? { primaryFile.captureDate }
     var captureDateEvidence: CaptureDateEvidence? { primaryFile.captureDateEvidence }
     var captureDay: Date? { primaryFile.captureDay }
+    var captureYear: CaptureYear? { primaryFile.captureYear }
     var cameraModel: String? { primaryFile.cameraModel }
     var lensModel: String? { primaryFile.lensModel }
     /// Pairing keeps the primary file authoritative, just like camera/exposure.
@@ -1962,6 +2000,7 @@ enum MetadataFormat {
 
 enum DateFilterMode: Hashable {
     case range
+    case specificYears
     case specificDates
 }
 
@@ -2008,6 +2047,13 @@ struct PhotoFilter: Equatable {
     /// newly discovered values included after a future structural refresh.
     var excludedDates: Set<Date> = []
     var excludesUnknownDate = false
+    /// Year mode keeps its own exclusions, independent of the day list.
+    var excludedYears: Set<CaptureYear> = []
+    var excludesUnknownYear = false
+    /// Whether the stored Range bounds narrow the folder span, kept while
+    /// another mode is active so a structural refresh clamps rather than
+    /// resets them. `SessionStore.normalizeDateFilter` maintains it.
+    var dateRangeIsNarrowed = false
     var apertureEnabled = false
     var apertureFrom = 0.0
     var apertureTo = 0.0
@@ -2085,6 +2131,9 @@ struct PreparedPhotoFilter {
     let usesSpecificDates: Bool
     let excludedDates: Set<Date>
     let excludesUnknownDate: Bool
+    let usesSpecificYears: Bool
+    let excludedYears: Set<CaptureYear>
+    let excludesUnknownYear: Bool
     let apertureRange: ClosedRange<Double>?
     let shutterRange: ClosedRange<Double>?
     let isoRange: ClosedRange<Double>?
@@ -2107,6 +2156,9 @@ struct PreparedPhotoFilter {
         usesSpecificDates = filter.dateEnabled && filter.dateMode == .specificDates
         excludedDates = filter.excludedDates
         excludesUnknownDate = filter.excludesUnknownDate
+        usesSpecificYears = filter.dateEnabled && filter.dateMode == .specificYears
+        excludedYears = filter.excludedYears
+        excludesUnknownYear = filter.excludesUnknownYear
         if filter.dateEnabled, filter.dateMode == .range,
            let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: filter.dateTo)) {
             dateRange = calendar.startOfDay(for: filter.dateFrom)..<end
@@ -2177,6 +2229,13 @@ struct PreparedPhotoFilter {
             if let day = item.captureDay {
                 if excludedDates.contains(day) { return false }
             } else if excludesUnknownDate {
+                return false
+            }
+        }
+        if usesSpecificYears {
+            if let year = item.captureYear {
+                if excludedYears.contains(year) { return false }
+            } else if excludesUnknownYear {
                 return false
             }
         }

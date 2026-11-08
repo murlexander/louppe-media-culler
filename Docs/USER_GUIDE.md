@@ -38,6 +38,11 @@ loading indicator while Louppe checks the folder. Photos added or removed since
 the last visit appear correctly when checking finishes; decisions and file
 actions become available then. Pinning does not copy your originals.
 
+Large folders open in the normal review window as soon as their files are
+listed. Browse in Gallery or Grid and show Browser or Info while the toolbar
+counts loaded photo details. Decisions, sorting, filters and file actions stay
+greyed out until loading finishes. Esc clears the selection, then cancels.
+
 ![Louppe Grid of Greek landscape RAWs grouped by date, with decisions, stars and color labels on each photo and the first photo selected in purple](Media/2026-11-04/grid-overview.png)
 
 *Grid for comparing and selecting frames.*
@@ -153,7 +158,8 @@ unavailable originals must be made accessible in Photos first.
 ## Review and file handling
 
 - Filter and sort by decisions, stars, colors, dates, folders, camera details,
-  file types, and media properties.
+  file types, and media properties. **Filter → Date taken** narrows by range,
+  year, or individual dates; each choice is kept when you switch between them.
 - Fuji film simulation appears in Info and **Filter → Film simulation**. Include
   any combination of the recorded simulations, including monochrome and ACROS
   variants; hidden photos keep their decisions. **All** restores that facet.

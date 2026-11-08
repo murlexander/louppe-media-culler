@@ -42,6 +42,23 @@ enum AppDateFormat {
         yearFormatter.string(from: date)
     }
 
+    /// A whole year for the filter's year list, e.g. "2024", in the calendar
+    /// that produced `CaptureYear`. Unlike `year(Date)`, this never inherits a
+    /// short style's two-digit year.
+    static func year(_ year: CaptureYear) -> String {
+        format(year, with: fullYearFormatter)
+    }
+
+    static func year(_ year: CaptureYear, calendar: Calendar, locale: Locale) -> String {
+        format(year, with: makeFullYearFormatter(calendar: calendar, locale: locale))
+    }
+
+    private static func format(_ year: CaptureYear, with formatter: DateFormatter) -> String {
+        guard let calendar = formatter.calendar,
+              let date = year.representativeDate(in: calendar) else { return String(year.year) }
+        return formatter.string(from: date)
+    }
+
     /// Built once per launch; a mid-session change to the Mac's region
     /// settings needs a relaunch. Deliberately NOT the POSIX locale used for
     /// EXIF parsing: display formatting should follow the user's system,
@@ -88,6 +105,39 @@ enum AppDateFormat {
         ) ?? "y"
         return formatter
     }()
+
+    /// Matches `PhotoFile.captureYear`, which uses `Calendar.current`.
+    private static let fullYearFormatter = makeFullYearFormatter(calendar: .current, locale: .current)
+
+    /// "y" is the unpadded full year in the calendar's digits. Japanese era
+    /// years repeat (Heisei 6, Reiwa 6), so that calendar also shows the era.
+    private static func makeFullYearFormatter(calendar: Calendar, locale: Locale) -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.calendar = calendar
+        formatter.timeZone = calendar.timeZone
+        switch calendar.identifier {
+        case .japanese:
+            formatter.dateFormat = DateFormatter.dateFormat(fromTemplate: "Gy", options: 0, locale: locale) ?? "G y"
+        case let id where isCyclic(id):
+            // Cyclic years repeat every 60 years; "r" (related Gregorian
+            // year) keeps them distinct, e.g. "1964(jia-chen)".
+            var components = Locale.Components(locale: locale)
+            components.calendar = calendar.identifier
+            let pattern = DateFormatter.dateFormat(
+                fromTemplate: "rU", options: 0, locale: Locale(components: components)) ?? "r(U)"
+            formatter.dateFormat = pattern.contains("r") ? pattern : "r " + pattern
+        default:
+            formatter.dateFormat = "y"
+        }
+        return formatter
+    }
+
+    private static func isCyclic(_ identifier: Calendar.Identifier) -> Bool {
+        if identifier == .chinese { return true }
+        if #available(macOS 26.0, *) { return identifier == .dangi }
+        return false
+    }
 
     /// Only style-based DateFormatters honor macOS's custom Date format
     /// picker. Read that resolved pattern, then keep its year/month spelling

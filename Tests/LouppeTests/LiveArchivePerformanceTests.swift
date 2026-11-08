@@ -193,14 +193,15 @@ final class LiveArchivePerformanceTests: XCTestCase {
 @MainActor
 private final class ArchiveOpeningMount {
     let authority: MediaReadAccess
-    private var host: NSHostingView<OpeningSessionView>?
+    private var host: NSHostingView<OpeningSessionContent>?
     private var window: NSWindow?
     private var revisions: Set<PhotoContentRevision> = []
     init(authority: MediaReadAccess) { self.authority = authority }
     func show(_ snapshot: OpeningSessionSnapshot) {
         revisions = Set(snapshot.items.map(\.contentRevision))
         let state = OpeningSessionState(snapshot: snapshot, viewMode: .grid, sourceAccess: authority)
-        let host = NSHostingView(rootView: OpeningSessionView(state: state, cancel: {}))
+        let host = NSHostingView(rootView: OpeningSessionContent(state: state, showsBrowser: true,
+                                                                  showsInfo: true, gridThumbnailSize: 170))
         let window = NSWindow(contentRect: .init(x: 0, y: 0, width: 1100, height: 720),
             styleMask: [.titled, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false

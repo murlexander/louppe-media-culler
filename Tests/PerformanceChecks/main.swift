@@ -16,6 +16,7 @@ struct PerformanceChecks {
         try preparedFilterMatchesFoldedMetadataTokens()
         try preparedFilterUsesWholeDayBounds()
         try preparedFilterUsesSpecificDateCheckboxes()
+        try preparedFilterUsesSpecificYearCheckboxes()
         try preparedFilterUsesInclusiveExposureRanges()
         try neutralFullRangesKeepUnknownMetadataVisible()
         try mediaKindFilterSeparatesPhotosVideosAndAudio()
@@ -143,6 +144,28 @@ struct PerformanceChecks {
         let prepared = PreparedPhotoFilter(filter)
         try expect(prepared.matches(first), "an included calendar day should remain visible")
         try expect(!prepared.matches(second), "an unchecked calendar day should be excluded")
+        try expect(!prepared.matches(unknown), "the unknown-date checkbox should exclude undated photos")
+    }
+
+    private static func preparedFilterUsesSpecificYearCheckboxes() throws {
+        let calendar = Calendar.current
+        guard let firstCapture = calendar.date(from: DateComponents(year: 2025, month: 12, day: 31, hour: 18)),
+              let secondCapture = calendar.date(from: DateComponents(year: 2026, month: 1, day: 1, hour: 9)) else {
+            throw CheckFailure("could not construct specific-year test values")
+        }
+        let first = makeItem(id: "FIRST.JPG", captureDate: firstCapture)
+        let second = makeItem(id: "SECOND.JPG", captureDate: secondCapture)
+        let unknown = makeItem(id: "UNKNOWN.JPG")
+        var filter = PhotoFilter()
+        filter.dateEnabled = true
+        filter.dateMode = .specificYears
+        filter.excludedYears = [CaptureYear(secondCapture, calendar: calendar)]
+        filter.excludesUnknownYear = true
+        // Day choices belong to Date mode and stay inert in Year mode.
+        filter.excludedDates = [calendar.startOfDay(for: firstCapture)]
+        let prepared = PreparedPhotoFilter(filter)
+        try expect(prepared.matches(first), "an included calendar year should remain visible")
+        try expect(!prepared.matches(second), "an unchecked calendar year should be excluded")
         try expect(!prepared.matches(unknown), "the unknown-date checkbox should exclude undated photos")
     }
 

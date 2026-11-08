@@ -856,7 +856,6 @@
 "Search media" = "Buscar mídia";
 "Search name, type, camera, lens…" = "Buscar por nome, tipo, câmera, lente…";
 "Search shortcuts or actions" = "Buscar atalhos ou ações";
-"Search: “{0}”" = "Pesquisar: “{0}”";
 "Securing copied files" = "Protegendo arquivos copiados";
 "Securing moved files" = "Protegendo os arquivos movidos";
 "Seek Video Backward 0.5 Seconds" = "Retroceder 0.5 segundos no vídeo";
@@ -971,7 +970,6 @@
 "Source folder" = "Pasta de origem";
 "Source folder organized" = "Pasta de origem organizada";
 "Source: {0}" = "Origem: {0}";
-"Specific dates" = "Datas específicas";
 "Star rating" = "Avaliação por estrelas";
 "Star ratings" = "Avaliações por estrelas";
 "Stars" = "Estrelas";
@@ -1660,7 +1658,6 @@
 "{0} photos without a capture date" = "{0} fotos sem data de captura";
 "1 media item without a capture date" = "1 item de mídia sem data de captura";
 "{0} media items without a capture date" = "{0} itens de mídia sem data de captura";
-"Filters: {0}" = "Filtros: {0}";
 "Metadata (XMP) complete" = "Metadados (XMP) concluídos";
 "1 file renamed" = "1 arquivo renomeado";
 "{0} files renamed" = "{0} arquivos renomeados";

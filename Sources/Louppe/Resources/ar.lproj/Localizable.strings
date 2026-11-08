@@ -856,7 +856,6 @@
 "Search media" = "البحث في الوسائط";
 "Search name, type, camera, lens…" = "ابحث بالاسم أو النوع أو الكاميرا أو العدسة…";
 "Search shortcuts or actions" = "البحث عن اختصارات أو إجراءات";
-"Search: “{0}”" = "البحث: «{0}»";
 "Securing copied files" = "تأمين الملفات المنسخة";
 "Securing moved files" = "جارٍ تأمين الملفات المنقولة";
 "Seek Video Backward 0.5 Seconds" = "إرجاع الفيديو 0.5 ثانية";
@@ -971,7 +970,6 @@
 "Source folder" = "المجلد المصدر";
 "Source folder organized" = "نُظّم المجلد المصدر";
 "Source: {0}" = "المصدر: {0}";
-"Specific dates" = "تواريخ محددة";
 "Star rating" = "تقييم النجوم";
 "Star ratings" = "تقييمات النجوم";
 "Stars" = "النجوم";
@@ -1660,7 +1658,6 @@
 "{0} photos without a capture date" = "{0} صور دون تاريخ التقاط";
 "1 media item without a capture date" = "عنصر وسائط واحد دون تاريخ التقاط";
 "{0} media items without a capture date" = "{0} عناصر وسائط دون تاريخ التقاط";
-"Filters: {0}" = "التصفية: {0}";
 "Metadata (XMP) complete" = "اكتملت البيانات الوصفية (XMP)";
 "1 file renamed" = "أُعيدت تسمية ملف واحد";
 "{0} files renamed" = "أُعيدت تسمية {0} ملفات";

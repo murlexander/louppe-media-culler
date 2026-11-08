@@ -186,10 +186,15 @@ restoration, derived preparation and publication. Progress uses one coalesced sl
 and one 100 ms publication task rather than a UI task per file batch.
 
 After complete inventory, pairing, saved-decision restoration and preview identity
-validation, a separate `OpeningSessionState` can mount read-only Gallery/Grid.
-`SessionStore.items` remains empty and phase remains scanning. Navigation and
-selection belong to the opening state; ratings, file operations and saves wait
-for the final validated publication. Inventory order stays fixed during metadata
+validation, a separate `OpeningSessionState` can mount read-only Gallery/Grid
+inside the Ready `SessionView` (`OpeningSessionContent`), with the same toolbar,
+Browser and Info layout. `SessionStore.items` remains empty and phase remains
+scanning. Navigation and selection belong to the opening state; ratings, sort,
+filter, file operations and saves wait for the final validated publication, and
+their toolbar controls use the native disabled style. Info shows scan-time fields
+only; `MetadataPanel` and its detail/histogram/audio reads mount at Ready. The
+toolbar count reads the opening state's ready-metadata total, which changes once
+per accepted 100 ms batch. Inventory order stays fixed during metadata
 work. Conflicts, migration confirmation and retained rescan filters suppress this
 preview. Final publication transfers current/selected physical IDs and a separate
 physical viewport anchor with its top offset. Consume the receipt only after native
@@ -200,10 +205,19 @@ Each executing media read holds independent source access
 through worker exit, including cancelled waiters. See the
 [large-folder record](LARGE_FOLDERS_2026-10-22.md).
 
+`LouppeSpeedOpeningSessionViewTests` mounts the full `SessionView` (bridged toolbar,
+Browser, Info) offscreen over a synthetic 1k/10k/100k opening and times each
+500/5000-file metadata batch (`applyMetadata` + layout/display). It asserts the
+collection projection and geometry generations stay unchanged. Optimized,
+8 November 2026: about 9 ms of view work per batch regardless of folder size,
+plus about 6 µs per accepted file; `readyItems` growth adds 20–100 ms rehash
+spikes at 24,576/49,152/98,304 ready files.
+
 Pinned opens first decode the existing bounded metadata snapshot and can publish
 a provisional `OpeningSessionState` before discovery. No additional disk cache,
-photo copies, saved badges or write authority are added. The toolbar uses the
-same small activity indicator as Ready, labeled Checking folder. Missing, invalid
+photo copies, saved badges or write authority are added. The toolbar status uses
+the same small activity indicator as Ready, labeled Checking folder, without a
+count. Missing, invalid
 or empty caches use the fresh-inventory preview above. Cached observations may
 omit uncached files and include removed files until Ready. The full scan,
 restoration and final barriers still run; navigation handoff rejects changed
@@ -729,7 +743,7 @@ Welcome drive discovery has one serial actor/coalesced refreshes. While visible,
 refresh on topology/activation and every 30 seconds; stop polling on departure.
 No per-volume tasks or recursive media scans.
 
-Cache locale-folded `PhotoItem.searchableText`, capture day, aperture, shutter,
+Cache locale-folded `PhotoItem.searchableText`, capture day/year, aperture, shutter,
 ISO, video resolution, frame rate, and codec at scan. Filters/sorts never reopen
 files. Compare `captureDay` directly in `sameGroup`; avoid per-pair
 `Calendar.current`. One `PreparedPhotoFilter` prepares query, whole-day bounds,

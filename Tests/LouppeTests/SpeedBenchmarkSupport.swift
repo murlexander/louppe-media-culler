@@ -101,6 +101,15 @@ final class SpeedReport {
         record(name: name, count: count, samples: samplesMS)
     }
 
+    /// Per-event observations within one run (for example, one per metadata
+    /// batch). The sample count follows the workload, not the repetition count.
+    func recordObservations(name: String, count: Int, samplesMS: [Double]) throws {
+        guard !samplesMS.isEmpty, samplesMS.allSatisfy({ $0.isFinite && $0 >= 0 }) else {
+            throw NSError(domain: "LouppeSpeed", code: 4, userInfo: [NSLocalizedDescriptionKey: "Observations must be non-empty and finite"])
+        }
+        record(name: name, count: count, samples: samplesMS)
+    }
+
     private func record(name: String, count: Int, samples: [Double]) {
         let sorted = samples.sorted()
         let middle = sorted.count / 2

@@ -162,7 +162,8 @@ final class StagedBrowseTests: XCTestCase {
         store.openFolder(root)
         try await eventually { store.openingSession != nil && gate.entered }
         let opening = try XCTUnwrap(store.openingSession)
-        let host = NSHostingView(rootView: OpeningSessionView(state: opening, cancel: store.cancelScan))
+        // The opening renders inside the Ready SessionView, not a separate screen.
+        let host = NSHostingView(rootView: SessionView(store: store))
         let window = NSWindow(contentRect: CGRect(x: 80, y: 80, width: 1000, height: 680),
                               styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -172,16 +173,26 @@ final class StagedBrowseTests: XCTestCase {
         host.layoutSubtreeIfNeeded()
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertFalse(markers(in: host).isEmpty)
+        // Info is visible, but MetadataPanel (and its detail, histogram and
+        // audio reads) waits for Ready; so do Ready's Gallery and Grid.
+        XCTAssertTrue(store.showMetadataPanel)
+        XCTAssertTrue(sessionMarkers(in: host).isEmpty)
         opening.viewMode = .grid
         host.layoutSubtreeIfNeeded()
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertFalse(markers(in: host).isEmpty)
+        XCTAssertTrue(sessionMarkers(in: host).isEmpty)
         XCTAssertTrue(store.items.isEmpty)
         XCTAssertFalse(store.canRate)
+        XCTAssertFalse(SessionView(store: store).toolbarAvailability.export)
     }
 
     private func markers(in view: NSView) -> [ThumbnailRenderMarker.MarkerView] {
         (view as? ThumbnailRenderMarker.MarkerView).map { [$0] } ?? view.subviews.flatMap(markers)
+    }
+
+    private func sessionMarkers(in view: NSView) -> [SessionRenderMarker.MarkerView] {
+        (view as? SessionRenderMarker.MarkerView).map { [$0] } ?? view.subviews.flatMap(sessionMarkers)
     }
     #endif
 

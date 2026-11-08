@@ -1571,6 +1571,151 @@ final class HotkeyTests: XCTestCase {
         XCTAssertNotEqual(store.viewMode, initialMode)
     }
 
+#if LOUPPE_TEST_SEAMS
+    func testOpeningRoutesOnlyNavigationViewBrowserInfoAndEscape() {
+        let (store, opening) = openingStore(itemCount: 4)
+        let view = SessionView(store: store)
+        let ownedKeys: [(UInt16, String, NSEvent.ModifierFlags)] = [
+            (3, "f", []), (2, "d", []), (15, "r", []), (20, "3", []), (29, "0", []),
+            (6, "z", []), (14, "e", []), (7, "x", []), (1, "s", []),
+            (51, "\u{8}", [.command]), (0, "a", [.command]), (6, "z", [.command]),
+            (3, "f", [.command]), (40, "k", [.command]), (14, "e", [.command]), (15, "r", [.command]),
+        ]
+        for (code, characters, modifiers) in ownedKeys {
+            XCTAssertFalse(view.handleKey(keyEvent(code: code, characters: characters, modifiers: modifiers),
+                                          context: .focusedSession), "\(modifiers) \(characters)")
+        }
+        XCTAssertFalse(store.isFilterPresented)
+        XCTAssertFalse(store.isActionPalettePresented)
+        XCTAssertFalse(store.isExportPresented)
+        XCTAssertFalse(store.isClearAllRatingsConfirmationPresented)
+        XCTAssertNil(store.pendingCleanUp)
+        XCTAssertTrue(opening.selectedIDs.isEmpty)
+        XCTAssertTrue(store.items.isEmpty)
+        XCTAssertEqual(store.viewMode, .gallery)
+
+        // Arrows browse the opening inventory without touching the store.
+        XCTAssertTrue(view.handleKey(keyEvent(code: 124, characters: "\u{F703}"), context: .focusedSession))
+        XCTAssertEqual(opening.currentItem?.id, opening.items[1].id)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 123, characters: "\u{F702}"), context: .focusedSession))
+        XCTAssertEqual(opening.currentItem?.id, opening.items[0].id)
+
+        // Q and W change only view preferences.
+        let showsInfo = store.showMetadataPanel
+        XCTAssertTrue(view.handleKey(keyEvent(code: 13, characters: "w"), context: .focusedSession))
+        XCTAssertEqual(store.showMetadataPanel, !showsInfo)
+        XCTAssertTrue(store.showBrowser)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 12, characters: "q"), context: .focusedSession))
+        XCTAssertFalse(store.showBrowser)
+
+        // G and Tab switch the opening view; Ready adopts it at publication.
+        XCTAssertTrue(view.handleKey(keyEvent(code: 5, characters: "g"), context: .focusedSession))
+        XCTAssertEqual(opening.viewMode, .grid)
+        XCTAssertEqual(store.viewMode, .gallery)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 48, characters: "\t"), context: .focusedSession))
+        XCTAssertEqual(opening.viewMode, .gallery)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 12, characters: "q"), context: .focusedSession))
+        XCTAssertTrue(store.showBrowser)
+        // Browser is a Gallery shortcut, as in Ready; Grid has no Folders yet.
+        opening.viewMode = .grid
+        XCTAssertFalse(view.handleKey(keyEvent(code: 12, characters: "q"), context: .focusedSession))
+        XCTAssertFalse(view.handleKey(keyEvent(code: 17, characters: "t"), context: .focusedSession))
+        XCTAssertEqual(opening.viewMode, .grid)
+        XCTAssertTrue(store.showBrowser)
+        // Grid rows move by the rendered column count.
+        opening.setGridColumnCount(2)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 125, characters: "\u{F701}"), context: .focusedSession))
+        XCTAssertEqual(opening.currentItem?.id, opening.items[2].id)
+        opening.viewMode = .gallery
+
+        // Native control focus keeps arrows and Escape; modal UI keeps all.
+        let controlFocus = SessionKeyRoutingContext(sessionOwnsEvent: true, hasModalPresentation: false,
+                                                    focusedResponderOwnsNavigation: true)
+        XCTAssertFalse(view.handleKey(keyEvent(code: 124, characters: "\u{F703}"), context: controlFocus))
+        XCTAssertFalse(view.handleKey(keyEvent(code: 53, characters: "\u{1B}"), context: controlFocus))
+        XCTAssertFalse(view.handleKey(keyEvent(code: 5, characters: "g"),
+                                      context: .init(sessionOwnsEvent: true, hasModalPresentation: true)))
+        XCTAssertEqual(opening.viewMode, .gallery)
+
+        // Esc clears the opening selection first, then cancels the opening.
+        opening.select(opening.items[2].id)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 53, characters: "\u{1B}"), context: .focusedSession))
+        XCTAssertTrue(opening.selectedIDs.isEmpty)
+        XCTAssertNotNil(store.openingSession)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 53, characters: "\u{1B}"), context: .focusedSession))
+        XCTAssertNil(store.openingSession)
+        guard case .welcome = store.phase else { return XCTFail("Esc must cancel the opening") }
+    }
+
+    func testOpeningToolbarKeepsOnlyCancelViewBrowserAndInfoLive() {
+        let (store, opening) = openingStore(itemCount: 3)
+        let view = SessionView(store: store)
+        XCTAssertTrue(view.isOpening)
+        XCTAssertEqual(view.toolbarAvailability, SessionToolbarAvailability(
+            folder: true, filter: false, sort: false, viewPicker: true, undo: false, clearAll: false,
+            leadingPaneToggle: true, info: true, cleanUp: false, export: false))
+        // No folder tree before Ready, so Grid hides the leading-pane toggle.
+        opening.viewMode = .grid
+        XCTAssertFalse(view.toolbarAvailability.leadingPaneToggle)
+
+        let ready = readyStore(itemCount: 3, firstItemIsVideo: false)
+        ready.rate(.yes)
+        let readyAvailability = SessionView(store: ready).toolbarAvailability
+        XCTAssertTrue(readyAvailability.filter && readyAvailability.sort && readyAvailability.undo)
+        XCTAssertTrue(readyAvailability.clearAll && readyAvailability.export && readyAvailability.leadingPaneToggle)
+    }
+
+    func testOpeningToReadyKeepsOneLiveSessionMonitor() {
+        _ = NSApplication.shared
+        let baselineMonitorCount = SessionKeyMonitorTestProbe.activeMonitorCount
+        let (store, opening) = openingStore(itemCount: 3)
+        let frame = NSRect(x: 0, y: 0, width: 900, height: 620)
+        let host = NSHostingView(rootView: RootView(store: store))
+        host.frame = frame
+        let window = NSWindow(contentRect: frame, styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        window.contentView = host
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
+        SessionKeyMonitorTestProbe.overrideKeyWindow(with: window)
+        defer {
+            window.contentView = nil
+            window.orderOut(nil)
+            SessionKeyMonitorTestProbe.overrideKeyWindow(with: nil)
+        }
+        XCTAssertTrue(waitForCondition {
+            SessionKeyMonitorTestProbe.activeMonitorCount == baselineMonitorCount + 1
+        })
+
+        // Real AppKit events reach the opening branch; F stays inert.
+        sendKeyEvent(code: 3, characters: "f", in: window)
+        sendKeyEvent(code: 5, characters: "g", in: window)
+        XCTAssertEqual(opening.viewMode, .grid)
+        XCTAssertTrue(store.items.isEmpty)
+
+        let ready = readyStore(itemCount: 3, firstItemIsVideo: false)
+        store.items = ready.items
+        store.sort = PhotoSort(key: .name, ascending: true)
+        store.finishOpeningSessionForTesting()
+        XCTAssertFalse(waitForCondition(timeout: 0.2) {
+            SessionKeyMonitorTestProbe.activeMonitorCount != baselineMonitorCount + 1
+        }, "The handoff must neither drop nor duplicate the session monitor")
+
+        sendKeyEvent(code: 3, characters: "f", in: window)
+        XCTAssertEqual(store.items[0].rating, .yes)
+        XCTAssertEqual(store.currentIndex, 1)
+    }
+
+    private func openingStore(itemCount: Int) -> (SessionStore, OpeningSessionState) {
+        let items = readyStore(itemCount: itemCount, firstItemIsVideo: false).items
+        let store = SessionStore()
+        let opening = OpeningSessionState(snapshot: OpeningSessionSnapshot(items: items),
+                                          viewMode: .gallery, sourceAccess: nil)
+        store.presentOpeningSessionForTesting(opening)
+        return (store, opening)
+    }
+#endif
+
     private func readyStore(
         itemCount: Int,
         firstItemIsVideo: Bool,

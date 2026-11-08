@@ -856,7 +856,6 @@
 "Search media" = "搜索媒体";
 "Search name, type, camera, lens…" = "搜索名称、类型、相机、镜头…";
 "Search shortcuts or actions" = "搜索快捷键或操作";
-"Search: “{0}”" = "搜索：“{0}”";
 "Securing copied files" = "正在确保已复制文件的安全";
 "Securing moved files" = "正在确保已移动文件的安全";
 "Seek Video Backward 0.5 Seconds" = "视频后退 0.5 秒";
@@ -971,7 +970,6 @@
 "Source folder" = "源文件夹";
 "Source folder organized" = "源文件夹已整理";
 "Source: {0}" = "源位置：{0}";
-"Specific dates" = "具体日期";
 "Star rating" = "星级评分";
 "Star ratings" = "星级评分";
 "Stars" = "星级";
@@ -1670,7 +1668,6 @@
 
 "{0} media items without a capture date" = "{0} 个媒体项目没有拍摄日期";
 
-"Filters: {0}" = "筛选条件：{0}";
 
 "Metadata (XMP) complete" = "元数据（XMP）写入完成";
 

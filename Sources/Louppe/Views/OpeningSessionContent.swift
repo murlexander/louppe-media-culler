@@ -1,74 +1,73 @@
 import SwiftUI
 import AppKit
 
-/// Temporary browse surface: immutable inventory, fitted photos and local
-/// selection only. SessionView and its mutation/shortcut machinery mount at Ready.
-struct OpeningSessionView: View {
+/// SessionView's main content while a large folder opens: the Ready layout
+/// (Browser, fitted photo or Grid, Info) over the immutable opening inventory.
+/// It holds no store reference; SessionView passes in the view preferences.
+/// Ratings, file work and Ready-only media pipelines wait for publication.
+struct OpeningSessionContent: View {
     @ObservedObject var state: OpeningSessionState
-    let cancel: () -> Void
+    let showsBrowser: Bool
+    let showsInfo: Bool
+    let gridThumbnailSize: CGFloat
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                Spacer()
-                Picker(L10n.text("View"), selection: $state.viewMode) {
-                    Text(L10n.text("Gallery")).tag(ViewMode.gallery)
-                    Text(L10n.text("Grid")).tag(ViewMode.grid)
-                }
-                .pickerStyle(.segmented)
-                .tint(Color.louppeFilledAccent)
-                .frame(width: 150)
-                Button(L10n.text("Cancel"), action: cancel)
+        HStack(spacing: 0) {
+            if state.viewMode == .gallery, showsBrowser {
+                OpeningCollection(state: state, surface: .browser, thumbnailSize: gridThumbnailSize)
+                    .frame(width: BrowserView.width)
+                Divider()
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            Divider()
-            HStack(spacing: 0) {
+            Group {
                 if state.viewMode == .grid {
-                    OpeningCollection(state: state, surface: .grid)
-                } else {
-                    HStack(spacing: 0) {
-                        OpeningCollection(state: state, surface: .browser)
-                            .frame(width: BrowserView.width)
-                        Divider()
-                        if let item = state.currentItem {
-                            VStack(spacing: 8) {
-                                OpeningPhotoView(item: item, sourceAccess: state.sourceAccess, fitted: true)
-                                Text(item.displayName).font(.callout).lineLimit(1)
-                            }
-                            .padding(12)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                    }
+                    OpeningCollection(state: state, surface: .grid, thumbnailSize: gridThumbnailSize)
+                } else if let item = state.currentItem {
+                    OpeningPhotoView(item: item, sourceAccess: state.sourceAccess, fitted: true)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(item.displayName)
+                        .accessibilityAddTraits(.isImage)
                 }
-                if let item = state.currentItem {
-                    Divider()
-                    OpeningDetails(item: item, isReady: state.metadataIsReady(for: item.id))
-                        .frame(width: 250)
-                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+            if showsInfo, let item = state.currentItem {
+                Divider()
+                OpeningDetails(item: item, isReady: state.metadataIsReady(for: item.id))
+                    .frame(width: SessionView.infoPanelWidth)
+                    .transition(.move(edge: .trailing))
             }
         }
         .background(Color.appBackground)
-        .focusable()
-        .onMoveCommand { direction in
-            switch direction {
-            case .left: state.moveCurrent(by: -1)
-            case .right: state.moveCurrent(by: 1)
-            case .up: state.moveCurrent(by: state.viewMode == .grid ? -state.gridColumnCount : -1)
-            case .down: state.moveCurrent(by: state.viewMode == .grid ? state.gridColumnCount : 1)
-            @unknown default: break
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 8) {
-                    Text(L10n.text(state.isCached ? "Checking folder…" : "Loading photo details…"))
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    SessionActivityIndicator(isActive: true,
-                        label: L10n.text(state.isCached ? "Checking folder…" : "Loading photo details…"))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("openingSession")
+    }
+}
+
+/// Ready's centered toolbar status, showing opening progress instead.
+struct OpeningSessionStatus: View {
+    @ObservedObject var state: OpeningSessionState
+
+    private var title: String {
+        L10n.text(state.isCached ? "Checking folder…" : "Loading photo details…")
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            VStack(spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                // Cached observations may omit files, so their count would mislead.
+                if !state.isCached {
+                    Text(verbatim: "\(state.readyMetadataCount.formatted()) / \(state.items.count.formatted())")
+                        .font(.caption)
+                        .monospacedDigit()
                 }
             }
+            .foregroundStyle(.secondary)
+            SessionActivityIndicator(isActive: true, label: title)
         }
-        .accessibilityIdentifier("openingSession")
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -86,31 +85,52 @@ struct SessionActivityIndicator: View {
     }
 }
 
+/// MetadataPanel's layout over scan-time fields only. MetadataPanel itself
+/// is not mounted: its tasks start detail, histogram and audio reads.
+/// Contents stay greyed (secondary/tertiary text) until Ready.
 private struct OpeningDetails: View {
     let item: PhotoItem
     let isReady: Bool
 
     var body: some View {
-        ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: 12) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
                 if !isReady {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
-                        Text(L10n.text("Loading photo details…")).font(.callout)
+                        Text(L10n.text("Loading photo details…"))
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
                     }
                     .accessibilityElement(children: .combine)
                 }
-                ForEach(MetadataExtractor.openingFields(for: item)) { field in
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(L10n.label(field.label)).font(.caption).foregroundStyle(.secondary)
-                        Text(verbatim: field.value).font(.callout).textSelection(.enabled)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(item.displayName)
+                        .font(.title3.weight(.semibold))
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                        .foregroundStyle(.secondary)
+                    Divider()
+                    ForEach(MetadataExtractor.openingFields(for: item).filter { $0.label != "Filename" }) { field in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(L10n.label(field.label))
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                            Text(verbatim: field.value)
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
                     }
-                    .accessibilityElement(children: .combine)
                 }
+                // Plain Text ignores `.disabled`; one step down the system
+                // hierarchy (primary→secondary→tertiary) greys it until Ready.
+                .disabled(true)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .background(Color.appBackground)
         .accessibilityIdentifier("openingDetails")
     }
 }
@@ -118,11 +138,13 @@ private struct OpeningDetails: View {
 private struct OpeningCollection: View {
     @ObservedObject var state: OpeningSessionState
     let surface: OpeningViewportSurface
+    let thumbnailSize: CGFloat
     @State private var controller = ReviewCollectionController()
 
     var body: some View {
         GeometryReader { geometry in
-            OpeningCollectionContent(state: state, surface: surface, controller: controller)
+            OpeningCollectionContent(state: state, surface: surface, thumbnailSize: thumbnailSize,
+                                     controller: controller)
             .equatable()
             .onAppear {
                 controller.onViewportChange = { receipt in
@@ -137,6 +159,7 @@ private struct OpeningCollection: View {
                 updateColumns(width: geometry.size.width)
             }
             .onChange(of: geometry.size.width) { _, width in updateColumns(width: width) }
+            .onChange(of: thumbnailSize) { _, _ in updateColumns(width: geometry.size.width) }
             .onChange(of: state.keyboardNavigationGeneration) {
                 if let id = state.currentItem?.id { controller.follow(id: id) }
             }
@@ -145,18 +168,20 @@ private struct OpeningCollection: View {
 
     private func updateColumns(width: CGFloat) {
         guard surface == .grid else { return }
+        // Same column arithmetic as GridView, so arrows match the tiles.
         let content = max(1, width - PersistentVerticalScroller.gutterWidth - 18)
-        state.setGridColumnCount(max(1, Int((content + 10) / 180)))
+        state.setGridColumnCount(max(1, Int((content + 10) / (thumbnailSize + 10))))
     }
 }
 
 private struct OpeningCollectionContent: View, Equatable {
     let state: OpeningSessionState
     let surface: OpeningViewportSurface
+    let thumbnailSize: CGFloat
     let controller: ReviewCollectionController
 
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.state === rhs.state && lhs.surface == rhs.surface
+        lhs.state === rhs.state && lhs.surface == rhs.surface && lhs.thumbnailSize == rhs.thumbnailSize
     }
 
     var body: some View {
@@ -165,7 +190,7 @@ private struct OpeningCollectionContent: View, Equatable {
         }
         let projection = ReviewCollectionProjection(sections: [ReviewCollectionSection(id: "opening", title: nil, entries: entries)])
         ReviewCollection(projection: projection,
-                         style: surface == .browser ? .browser : .grid(thumbnailSize: 170),
+                         style: surface == .browser ? .browser : .grid(thumbnailSize: thumbnailSize),
                          controller: controller) { entry in
             if state.items.indices.contains(entry.index) {
                 AnyView(OpeningCell(state: state, item: state.items[entry.index], surface: surface))
@@ -252,7 +277,7 @@ private struct OpeningPhotoView: View {
                 }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: fitted ? 0 : 6))
         .background {
             #if LOUPPE_TEST_SEAMS
             ThumbnailRenderMarker(revision: item.contentRevision, hasImage: image != nil)

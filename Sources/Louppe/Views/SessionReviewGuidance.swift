@@ -27,44 +27,7 @@ struct SessionReviewStatus: View {
     }
 
     private var informationSummary: String {
-        var parts: [String] = []
-        if store.filter.isActive {
-            parts.append(store.filter.reviewSummary)
-        }
-        if store.isReviewComplete && !store.isGroupedReviewActive {
-            parts.append(L10n.text("Review complete: \(store.archiveYesCount) Yes · \(store.archiveNoCount) No"))
-        }
-        return parts.joined(separator: "  ·  ")
-    }
-}
-
-extension PhotoFilter {
-    var reviewSummary: String {
-        var parts: [String] = []
-        let search = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !search.isEmpty { parts.append(L10n.text("Search: “\(search)”")) }
-        if !excludedDecisionStates.isEmpty {
-            let choices: [(PhotoItemRatingState, String)] = [
-                (.yes, L10n.text("Yes")), (.no, L10n.text("No")), (.undecided, L10n.text("Undecided")), (.mixed, L10n.text("Mixed"))
-            ]
-            let included = choices.filter { !excludedDecisionStates.contains($0.0) }.map(\.1)
-            let decisions = included.isEmpty ? L10n.text("none") : included.joined(separator: ", ")
-            parts.append(L10n.text("Decision: \(decisions)"))
-        }
-        if !excludedStarStates.isEmpty { parts.append(L10n.text("Stars")) }
-        if !excludedColorStates.isEmpty { parts.append(L10n.text("Color")) }
-        if dateEnabled { parts.append(L10n.text("Date")) }
-        if !excludedTypes.isEmpty { parts.append(L10n.text("File type")) }
-        if !excludedMediaKinds.isEmpty { parts.append(L10n.text("Media type")) }
-        if !excludedSubfolders.isEmpty { parts.append(L10n.text("Subfolder")) }
-        if !excludedCameras.isEmpty { parts.append(L10n.text("Camera")) }
-        if !excludedLenses.isEmpty { parts.append(L10n.text("Lens")) }
-        if !excludedFilmSimulations.isEmpty { parts.append(L10n.text("Film simulation")) }
-        if apertureEnabled || shutterEnabled || isoEnabled { parts.append(L10n.text("Exposure")) }
-        if durationEnabled { parts.append(L10n.text("Duration")) }
-        if videoFrameRateEnabled || !excludedVideoResolutions.isEmpty || !excludedVideoCodecs.isEmpty {
-            parts.append(L10n.text("Video details"))
-        }
-        return L10n.text("Filters: \(parts.joined(separator: " · "))")
+        guard store.isReviewComplete && !store.isGroupedReviewActive else { return "" }
+        return L10n.text("Review complete: \(store.archiveYesCount) Yes · \(store.archiveNoCount) No")
     }
 }

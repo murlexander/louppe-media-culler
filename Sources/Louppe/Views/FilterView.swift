@@ -442,67 +442,7 @@ struct FilterView: View {
     // MARK: - Date
 
     private var dateSection: some View {
-        FilterDisclosureSection(title: L10n.text("Date taken"), isExpanded: $dateExpanded) {
-            VStack(alignment: .leading, spacing: 9) {
-                Picker(L10n.text("Date filter"), selection: dateModeBinding) {
-                    Text(L10n.text("Range")).tag(DateFilterMode.range)
-                    Text(L10n.text("Specific dates")).tag(DateFilterMode.specificDates)
-                }
-                .pickerStyle(.segmented)
-                .tint(Color.louppeFilledAccent)
-                .labelsHidden()
-
-                if store.filter.dateMode == .range {
-                    if store.captureDateRange != nil {
-                        DatePicker(
-                            L10n.text("From"),
-                            selection: dateFromBinding,
-                            in: dateFromLimits,
-                            displayedComponents: .date
-                        )
-                        .accessibilityLabel(L10n.text("Date taken from"))
-                        DatePicker(
-                            L10n.text("To"),
-                            selection: dateToBinding,
-                            in: dateToLimits,
-                            displayedComponents: .date
-                        )
-                        .accessibilityLabel(L10n.text("Date taken to"))
-                    } else {
-                        Text(L10n.text("This folder contains no dated items."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    VStack(alignment: .leading, spacing: 7) {
-                        HStack {
-                            Button(L10n.text("Select all"), action: selectAllDates)
-                            Button(L10n.text("Clear"), action: clearAllDates)
-                            Spacer()
-                        }
-                        .buttonStyle(.borderless)
-                        .controlSize(.small)
-
-                        LazyVStack(alignment: .leading, spacing: 7) {
-                            ForEach(store.availableCaptureDates, id: \.self) { date in
-                                Toggle(isOn: dateBinding(date)) {
-                                    labeledCount(
-                                        AppDateFormat.day(date),
-                                        store.captureDateCounts[date, default: 0]
-                                    )
-                                }
-                            }
-
-                            if store.unknownDateCount > 0 {
-                                Toggle(isOn: unknownDateBinding) {
-                                    labeledCount(L10n.text("Unknown date"), store.unknownDateCount)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        FilterDateSection(store: store, isExpanded: $dateExpanded)
     }
 
     // MARK: - Media
@@ -864,112 +804,6 @@ struct FilterView: View {
     }
 
     // MARK: - Filter bindings
-
-    private var dateModeBinding: Binding<DateFilterMode> {
-        Binding {
-            store.filter.dateMode
-        } set: { mode in
-            var filter = store.filter
-            filter.dateMode = mode
-            updateDateActivation(&filter)
-            store.filter = filter
-        }
-    }
-
-    private var dateFromBinding: Binding<Date> {
-        Binding {
-            store.filter.dateFrom
-        } set: { date in
-            var filter = store.filter
-            filter.dateFrom = date
-            updateDateActivation(&filter)
-            store.filter = filter
-        }
-    }
-
-    private var dateToBinding: Binding<Date> {
-        Binding {
-            store.filter.dateTo
-        } set: { date in
-            var filter = store.filter
-            filter.dateTo = date
-            updateDateActivation(&filter)
-            store.filter = filter
-        }
-    }
-
-    private var dateFromLimits: ClosedRange<Date> {
-        guard let available = store.captureDateRange else {
-            return store.filter.dateFrom...store.filter.dateFrom
-        }
-        let upper = min(max(store.filter.dateTo, available.lowerBound), available.upperBound)
-        return available.lowerBound...upper
-    }
-
-    private var dateToLimits: ClosedRange<Date> {
-        guard let available = store.captureDateRange else {
-            return store.filter.dateTo...store.filter.dateTo
-        }
-        let lower = max(min(store.filter.dateFrom, available.upperBound), available.lowerBound)
-        return lower...available.upperBound
-    }
-
-    private func dateBinding(_ date: Date) -> Binding<Bool> {
-        Binding {
-            !store.filter.excludedDates.contains(date)
-        } set: { isIncluded in
-            var filter = store.filter
-            if isIncluded {
-                filter.excludedDates.remove(date)
-            } else {
-                filter.excludedDates.insert(date)
-            }
-            updateDateActivation(&filter)
-            store.filter = filter
-        }
-    }
-
-    private var unknownDateBinding: Binding<Bool> {
-        Binding {
-            !store.filter.excludesUnknownDate
-        } set: { isIncluded in
-            var filter = store.filter
-            filter.excludesUnknownDate = !isIncluded
-            updateDateActivation(&filter)
-            store.filter = filter
-        }
-    }
-
-    private func selectAllDates() {
-        var filter = store.filter
-        filter.excludedDates = []
-        filter.excludesUnknownDate = false
-        updateDateActivation(&filter)
-        store.filter = filter
-    }
-
-    private func clearAllDates() {
-        var filter = store.filter
-        filter.excludedDates = Set(store.availableCaptureDates)
-        filter.excludesUnknownDate = true
-        updateDateActivation(&filter)
-        store.filter = filter
-    }
-
-    private func updateDateActivation(_ filter: inout PhotoFilter) {
-        switch filter.dateMode {
-        case .range:
-            guard let available = store.captureDateRange else {
-                filter.dateEnabled = false
-                return
-            }
-            filter.dateEnabled = filter.dateFrom != available.lowerBound
-                || filter.dateTo != available.upperBound
-        case .specificDates:
-            filter.dateEnabled = !filter.excludedDates.isEmpty
-                || (store.unknownDateCount > 0 && filter.excludesUnknownDate)
-        }
-    }
 
     private func exclusionBinding(
         _ label: String,
@@ -1414,6 +1248,16 @@ struct FilterView: View {
     }
 
     private func labeledCount(_ label: String, _ count: Int) -> some View {
+        FilterCountLabel(label: label, count: count)
+    }
+}
+
+/// A facet label with its trailing item count.
+struct FilterCountLabel: View {
+    let label: String
+    let count: Int
+
+    var body: some View {
         HStack {
             Text(label)
                 .lineLimit(1)

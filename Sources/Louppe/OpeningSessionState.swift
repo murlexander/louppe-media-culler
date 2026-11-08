@@ -34,6 +34,9 @@ final class OpeningSessionState: ObservableObject {
     let sourceAccess: MediaReadAccess?
     private let indexByID: [String: Int]
     private var readyItems: [String: PhotoItem] = [:]
+    /// Observable without its own publisher: `applyMetadata` sends one
+    /// `objectWillChange` per accepted batch, and the store drains batches at
+    /// most every 100 ms, so the toolbar count never updates per file.
     private(set) var readyMetadataCount = 0
     @Published private(set) var currentIndex: Int
     @Published private(set) var selectedIDs: Set<String> = []
@@ -54,6 +57,9 @@ final class OpeningSessionState: ObservableObject {
             snapshot.items.firstIndex { $0.individualFiles.contains { $0.id == id } }
         } ?? snapshot.items.firstIndex { $0.rating == .undecided } ?? 0
         readyMetadataCount = snapshot.items.count { $0.primaryFile.metadataIsLoaded }
+        // Sized once: growing rehashes the whole table on the main actor
+        // (about 100 ms near 100k items) in the middle of a metadata batch.
+        readyItems.reserveCapacity(snapshot.items.count - readyMetadataCount)
         self.viewMode = viewMode
         self.sourceAccess = sourceAccess
     }
@@ -117,6 +123,21 @@ final class OpeningSessionState: ObservableObject {
         guard !items.isEmpty else { return }
         select(items[min(max(currentIndex + offset, 0), items.count - 1)].id)
         keyboardNavigationGeneration &+= 1
+    }
+
+    /// Moves by one row in Grid and by one item in Gallery.
+    func moveVertically(by rows: Int) {
+        moveCurrent(by: viewMode == .grid ? rows * gridColumnCount : rows)
+    }
+
+    func toggleViewMode() { viewMode = viewMode == .gallery ? .grid : .gallery }
+
+    /// Esc's first stage. Keeps the current photo, like Ready.
+    func clearSelection() -> Bool {
+        guard !selectedIDs.isEmpty else { return false }
+        selectedIDs = []
+        selectionAnchor = nil
+        return true
     }
 
     func setGridColumnCount(_ count: Int) { gridColumnCount = max(1, count) }

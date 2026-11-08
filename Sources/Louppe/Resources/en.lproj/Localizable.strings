@@ -856,7 +856,6 @@
 "Search media" = "Search media";
 "Search name, type, camera, lens…" = "Search name, type, camera, lens…";
 "Search shortcuts or actions" = "Search shortcuts or actions";
-"Search: “{0}”" = "Search: “{0}”";
 "Securing copied files" = "Securing copied files";
 "Securing moved files" = "Securing moved files";
 "Seek Video Backward 0.5 Seconds" = "Seek Video Backward 0.5 Seconds";
@@ -971,7 +970,6 @@
 "Source folder" = "Source folder";
 "Source folder organized" = "Source folder organized";
 "Source: {0}" = "Source: {0}";
-"Specific dates" = "Specific dates";
 "Star rating" = "Star rating";
 "Star ratings" = "Star ratings";
 "Stars" = "Stars";
@@ -1660,7 +1658,6 @@
 "{0} photos without a capture date" = "{0} photos without a capture date";
 "1 media item without a capture date" = "1 media item without a capture date";
 "{0} media items without a capture date" = "{0} media items without a capture date";
-"Filters: {0}" = "Filters: {0}";
 "Metadata (XMP) complete" = "Metadata (XMP) complete";
 "1 file renamed" = "1 file renamed";
 "{0} files renamed" = "{0} files renamed";

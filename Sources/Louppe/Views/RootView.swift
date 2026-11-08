@@ -83,8 +83,13 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            switch store.phase {
-            case .welcome:
+            // A large folder's opening and Ready share one SessionView, so the
+            // toolbar, panes and key monitor stay mounted across publication.
+            if windowLayout == .session {
+                SessionView(store: store)
+            } else if case .scanning(let found) = store.phase {
+                ScanningView(store: store, found: found)
+            } else {
                 WelcomeView(
                     store: store,
                     availableScreenWidth: welcomeLayoutWidth,
@@ -95,14 +100,6 @@ struct RootView: View {
                     ),
                     isFolderDropTarget: isFolderDropTarget
                 )
-            case .scanning(let found):
-                if let opening = store.openingSession {
-                    OpeningSessionView(state: opening, cancel: store.cancelScan)
-                } else {
-                    ScanningView(store: store, found: found)
-                }
-            case .ready:
-                SessionView(store: store)
             }
         }
         .onAppear { folderOpening.store = store }

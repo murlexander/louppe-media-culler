@@ -18,8 +18,17 @@ import AppKit
 ///   ⌘F Filter search · ⌘K Command Palette
 ///   ⌘⌫ trash selection (no confirmation — ⌘Z restores)
 ///   (⇧-click range and ⌘-click add/remove live in the thumbnail views)
+///
+/// While a large folder opens (`store.openingSession != nil`, phase scanning)
+/// the same view renders the read-only opening state so the toolbar and panes
+/// stay put at Ready. During opening SessionView may only *read*
+/// `store.openingSession` and the view preferences (view mode, Browser,
+/// Info); toggling Browser/Info and Gallery/Grid are the only writes. Every
+/// rating, file, sort, filter and save control stays disabled until final
+/// validated publication; `store.items` stays empty meanwhile.
 struct SessionView: View {
     @ObservedObject var store: SessionStore
+    static let infoPanelWidth: CGFloat = 280
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("louppe.showQuickStart") private var showQuickStart = true
     @AppStorage(ReviewShortcutPreferences.preferenceKey) private var shortcutSettings = ""
@@ -44,8 +53,52 @@ struct SessionView: View {
         return [reviewHint, commandHint].filter { !$0.isEmpty }.joined(separator: " / ")
     }
 
+    private var opening: OpeningSessionState? { store.openingSession }
+    var isOpening: Bool { opening != nil }
+
+    /// The opening state owns Gallery/Grid until Ready adopts it.
+    private var effectiveViewMode: ViewMode { opening?.viewMode ?? store.viewMode }
+
+    /// The archive folder index is published only at Ready.
+    private var hasLeadingPaneFolders: Bool { !isOpening && store.hasArchiveFolders }
+
+    private var isLeadingPaneVisible: Bool {
+        guard let opening else { return store.isLeadingPaneVisible }
+        return store.showBrowser && opening.viewMode == .gallery
+    }
+
+    /// Enablement for toolbar controls. During opening only Folder (cancel),
+    /// the view picker, Browser and Info stay live; everything that could
+    /// rate, sort, filter, save or touch files is disabled.
+    var toolbarAvailability: SessionToolbarAvailability {
+        let opening = isOpening
+        return SessionToolbarAvailability(
+            folder: !store.isFileOperationRunning,
+            filter: !opening,
+            sort: !opening,
+            viewPicker: true,
+            undo: !opening && !store.isFileOperationRunning && store.canUndo,
+            clearAll: !opening && !store.isFileOperationRunning && store.archiveRatedCount > 0,
+            leadingPaneToggle: effectiveViewMode == .gallery || hasLeadingPaneFolders,
+            info: true,
+            cleanUp: !opening && store.canCleanUp,
+            export: !opening && store.canExport
+        )
+    }
+
+    private var viewModeSelection: Binding<ViewMode> {
+        guard let opening else { return $store.viewMode }
+        return Binding(get: { opening.viewMode }, set: { opening.viewMode = $0 })
+    }
+
     private var reviewShortcutContext: ReviewShortcutContext {
-        ReviewShortcutContext(
+        if let opening {
+            // No playback or seeking starts before Ready.
+            return ReviewShortcutContext(viewMode: opening.viewMode,
+                                         mediaKind: opening.currentItem?.mediaKind,
+                                         isPlayable: false, canSeekVideo: false)
+        }
+        return ReviewShortcutContext(
             viewMode: store.viewMode,
             mediaKind: store.currentItem?.mediaKind,
             isPlayable: store.currentItem?.isPlayableMedia == true,
@@ -55,11 +108,14 @@ struct SessionView: View {
 
     var body: some View {
         mainContent
+            // Guards Ready itself; the phase change starts it after opening.
             .onAppear { store.startQualityCueAnalysis() }
             .overlay { cleanUpProgressOverlay }
             .toolbar { toolbarContent }
             .navigationTitle("")
-            .focusedSceneValue(\.louppeSessionStore, store)
+            // Menu commands stay unavailable until Ready, as before this
+            // view rendered the opening.
+            .focusedSceneValue(\.louppeSessionStore, isOpening ? nil : store)
             .background {
                 SessionKeyEventMonitor { event, sessionWindow in
                     let context = liveKeyRoutingContext(
@@ -339,8 +395,13 @@ struct SessionView: View {
     }
 
     private var hasReviewStatusDetails: Bool {
-        showQuickStart || store.filter.isActive
+        showQuickStart
             || (store.isReviewComplete && !store.isGroupedReviewActive)
+    }
+
+    @ViewBuilder
+    private var principalStatus: some View {
+        if let opening { OpeningSessionStatus(state: opening) } else { statusText }
     }
 
     private var statusText: some View {
@@ -398,7 +459,19 @@ struct SessionView: View {
         .contentShape(Rectangle())
     }
 
+    @ViewBuilder
     private var mainContent: some View {
+        if let opening {
+            OpeningSessionContent(state: opening,
+                                  showsBrowser: isLeadingPaneVisible,
+                                  showsInfo: store.showMetadataPanel,
+                                  gridThumbnailSize: store.gridThumbSize)
+        } else {
+            readyContent
+        }
+    }
+
+    private var readyContent: some View {
         VStack(spacing: 0) {
             if store.isGroupedReviewActive {
                 groupedReviewBanner
@@ -442,7 +515,7 @@ struct SessionView: View {
                 if store.showMetadataPanel, let item = store.currentItem {
                     Divider()
                     MetadataPanel(store: store, item: item)
-                        .frame(width: 280)
+                        .frame(width: Self.infoPanelWidth)
                         .transition(.move(edge: .trailing))
                 }
             }
@@ -541,7 +614,7 @@ struct SessionView: View {
             // Current folder: click it to return to the start screen and pick
             // another folder (the session is saved first).
             Button {
-                store.closeSession()
+                if isOpening { store.cancelScan() } else { store.closeSession() }
             } label: {
                 Label(store.photosBatch?.snapshot.title ?? store.sourceFolder?.lastPathComponent ?? L10n.text("Folder"),
                       systemImage: store.photosBatch == nil ? "folder" : "photo.on.rectangle")
@@ -550,9 +623,11 @@ struct SessionView: View {
                     .truncationMode(.middle)
                     .frame(maxWidth: 220)
             }
-            .disabled(store.isFileOperationRunning)
+            .disabled(!toolbarAvailability.folder)
             .accessibilityLabel(store.photosBatch?.snapshot.title ?? L10n.text("Current folder: \(store.sourceFolder?.path ?? "none")"))
-            .help(store.photosBatch == nil ? (store.sourceFolder?.path ?? L10n.text("Choose another media folder (⌘O)")) : L10n.text("Close Photos review"))
+            .help(isOpening
+                ? L10n.text("Cancel scanning and return to the start screen (Esc)")
+                : store.photosBatch == nil ? (store.sourceFolder?.path ?? L10n.text("Choose another media folder (⌘O)")) : L10n.text("Close Photos review"))
 
         }
 
@@ -564,10 +639,11 @@ struct SessionView: View {
             Button {
                 store.isFilterPresented.toggle()
             } label: {
-                Image(systemName: store.isFilterActive
-                    ? "line.3.horizontal.decrease.circle.fill"
-                    : "line.3.horizontal.decrease.circle")
-                    .foregroundStyle(store.isFilterActive ? Color.louppeAccent : Color.primary)
+                ToolbarStateIcon(
+                    systemName: store.isFilterActive
+                        ? "line.3.horizontal.decrease.circle.fill"
+                        : "line.3.horizontal.decrease.circle",
+                    isActive: store.isFilterActive)
             }
             .popover(isPresented: $store.isFilterPresented, arrowEdge: .bottom) {
                 FilterView(store: store)
@@ -575,19 +651,22 @@ struct SessionView: View {
             .accessibilityLabel(L10n.text("Filter Media"))
             .accessibilityValue(store.isFilterActive ? L10n.text("Active") : L10n.text("Not active"))
             .help(L10n.text("Filter media by date, type, duration, subfolder, camera, or lens"))
+            .disabled(!toolbarAvailability.filter)
 
             Button {
                 store.isSortPresented.toggle()
             } label: {
-                Image(systemName: "arrow.up.arrow.down")
+                ToolbarStateIcon(systemName: "arrow.up.arrow.down", isActive: store.isSortActive)
             }
             .popover(isPresented: $store.isSortPresented, arrowEdge: .bottom) {
                 SortView(store: store)
             }
             .accessibilityLabel(L10n.text("Sort Media"))
+            .accessibilityValue(store.isSortActive ? L10n.text("Active") : L10n.text("Not active"))
             .help(L10n.text("Sort media by date, name, type, duration, or metadata"))
+            .disabled(!toolbarAvailability.sort)
 
-            Picker(L10n.text("View"), selection: $store.viewMode) {
+            Picker(L10n.text("View"), selection: viewModeSelection) {
                 Image(systemName: "photo")
                     .accessibilityLabel(L10n.text("Gallery"))
                     .tag(ViewMode.gallery)
@@ -598,17 +677,18 @@ struct SessionView: View {
             .pickerStyle(.segmented)
             .tint(Color.louppeFilledAccent)
             .help(L10n.text("Switch between Gallery and Grid views (\(toolbarShortcutHint(for: .grid)))"))
+            .disabled(!toolbarAvailability.viewPicker)
         }
 
         // Session status stays centered and opts out of a glass capsule.
         if #available(macOS 26.0, *) {
             ToolbarItem(placement: .principal) {
-                statusText
+                principalStatus
             }
             .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItem(placement: .principal) {
-                statusText
+                principalStatus
             }
         }
 
@@ -618,7 +698,7 @@ struct SessionView: View {
             } label: {
                 Image(systemName: "arrow.uturn.backward")
             }
-            .disabled(store.isFileOperationRunning || !store.canUndo)
+            .disabled(!toolbarAvailability.undo)
             .accessibilityLabel(L10n.text("Undo"))
             .help(L10n.text("Undo the last decision, stars, color label, or clean-up (\(toolbarShortcutHint(for: .undo, command: .undo)))"))
             Button {
@@ -626,7 +706,7 @@ struct SessionView: View {
             } label: {
                 Image(systemName: "eraser")
             }
-            .disabled(store.isFileOperationRunning || store.archiveRatedCount == 0)
+            .disabled(!toolbarAvailability.clearAll)
             .accessibilityLabel(L10n.text("Clear All Decisions"))
             .help(store.archiveScopeIndices == nil
                 ? L10n.text("Clear all Yes/No decisions (\(toolbarShortcutHint(for: .clear)))")
@@ -639,18 +719,18 @@ struct SessionView: View {
 
         ToolbarItemGroup {
             // Grid exposes the folder tree; Gallery shares the pane with Browser.
-            if store.viewMode == .gallery || store.hasArchiveFolders {
+            if toolbarAvailability.leadingPaneToggle {
                 Button {
                     withAnimation(reduceMotion ? nil : .default) {
-                        store.toggleLeadingPane()
+                        if isOpening { store.toggleOpeningBrowser() } else { store.toggleLeadingPane() }
                     }
                 } label: {
-                    Image(systemName: store.isLeadingPaneVisible ? "sidebar.squares.left" : "sidebar.left")
+                    Image(systemName: isLeadingPaneVisible ? "sidebar.squares.left" : "sidebar.left")
                 }
-                .accessibilityLabel((store.hasArchiveFolders && store.archiveLeadingPane == .folders) || store.viewMode == .grid
-                    ? (store.isLeadingPaneVisible ? L10n.text("Hide Folders") : L10n.text("Show Folders"))
+                .accessibilityLabel((hasLeadingPaneFolders && store.archiveLeadingPane == .folders) || effectiveViewMode == .grid
+                    ? (isLeadingPaneVisible ? L10n.text("Hide Folders") : L10n.text("Show Folders"))
                     : (store.showBrowser ? L10n.text("Hide Browser") : L10n.text("Show Browser")))
-                .help((store.hasArchiveFolders && store.archiveLeadingPane == .folders) || store.viewMode == .grid
+                .help((hasLeadingPaneFolders && store.archiveLeadingPane == .folders) || effectiveViewMode == .grid
                     ? L10n.text("Show or hide Folders (\(toolbarShortcutHint(for: .folders)))")
                     : L10n.text("Show or hide the Browser in the Gallery view (\(toolbarShortcutHint(for: .browser)))"))
             }
@@ -664,6 +744,7 @@ struct SessionView: View {
                 store.showMetadataPanel ? L10n.text("Hide Info") : L10n.text("Show Info")
             )
             .help(L10n.text("Show or hide media information (\(toolbarShortcutHint(for: .info)))"))
+            .disabled(!toolbarAvailability.info)
         }
 
         if #available(macOS 26.0, *) {
@@ -687,7 +768,7 @@ struct SessionView: View {
             } label: {
                 Image(systemName: "trash")
             }
-            .disabled(!store.canCleanUp)
+            .disabled(!toolbarAvailability.cleanUp)
             .menuIndicator(.hidden)
             .tint(Color.primary)
             .accessibilityLabel(L10n.text("Clean Up"))
@@ -709,7 +790,7 @@ struct SessionView: View {
                     // Nudge up a touch to visually center the share glyph.
                     .offset(y: -1)
             }
-            .disabled(!store.canExport)
+            .disabled(!toolbarAvailability.export)
             .buttonStyle(.borderedProminent)
             .tint(Color.louppeFilledAccent)
             .buttonBorderShape(.circle)
@@ -740,10 +821,17 @@ struct SessionView: View {
     ) -> Bool {
         guard context.sessionOwnsEvent,
               !context.hasModalPresentation,
-              !store.isSessionCommandPresentationActive,
-              case .ready = store.phase
+              !store.isSessionCommandPresentationActive
         else {
             return false
+        }
+        let openingState: OpeningSessionState?
+        switch store.phase {
+        case .ready: openingState = nil
+        case .scanning:
+            guard let opening else { return false }
+            openingState = opening
+        case .welcome: return false
         }
 
         // With macOS Keyboard Navigation enabled, the first Tab must enter
@@ -778,6 +866,14 @@ struct SessionView: View {
         let shortcut = (shortcutPreferences ?? shortcuts).match(
             for: event, context: reviewShortcutContext
         )
+
+        if let openingState {
+            return handleOpeningKey(
+                event, opening: openingState, context: context, shortcut: shortcut,
+                acceptsReviewModifiers: acceptsReviewModifiers,
+                acceptsNavigationModifiers: acceptsNavigationModifiers
+            )
+        }
 
         if store.isFileOperationRunning {
             // Only unmodified, explicitly safe view controls stay live. Every
@@ -945,6 +1041,44 @@ struct SessionView: View {
         return performReviewShortcut(shortcut.action)
     }
 
+    /// While a folder opens, only read-only navigation, the view switch,
+    /// Browser, Info and Esc route. Ratings, stars, Clear, Undo, Export,
+    /// Command shortcuts and ⌘⌫ pass through untouched until Ready.
+    private func handleOpeningKey(
+        _ event: NSEvent,
+        opening: OpeningSessionState,
+        context: SessionKeyRoutingContext,
+        shortcut: ReviewShortcutMatch?,
+        acceptsReviewModifiers: Bool,
+        acceptsNavigationModifiers: Bool
+    ) -> Bool {
+        guard context.acceptsReviewShortcuts, acceptsReviewModifiers else { return false }
+        if event.keyCode == 53 {                              // Esc: selection, then Cancel
+            guard context.acceptsNavigationShortcuts,
+                  acceptsNavigationModifiers else { return false }
+            if !opening.clearSelection() { store.cancelScan() }
+            return true
+        }
+        guard let shortcut else { return false }
+        if shortcut.requiresNavigationFocus {
+            guard context.acceptsNavigationShortcuts,
+                  acceptsNavigationModifiers else { return false }
+        }
+        switch shortcut.action {
+        case .previous: opening.moveCurrent(by: -1)
+        case .next: opening.moveCurrent(by: 1)
+        case .previousRow: opening.moveVertically(by: -1)
+        case .nextRow: opening.moveVertically(by: 1)
+        case .grid: opening.toggleViewMode()
+        case .browser:
+            withAnimation(reduceMotion ? nil : .default) { store.toggleOpeningBrowser() }
+        case .info:
+            withAnimation(reduceMotion ? nil : .default) { store.showMetadataPanel.toggle() }
+        default: return false
+        }
+        return true
+    }
+
     private func performReviewShortcut(_ shortcut: ReviewShortcutAction) -> Bool {
         switch shortcut {
         case .yes: store.rate(.yes); return true
@@ -1036,6 +1170,22 @@ struct SessionView: View {
         )
     }
 
+}
+
+/// Which toolbar controls accept input. Pure so tests can check the opening
+/// contract without a live NSToolbar.
+struct SessionToolbarAvailability: Equatable {
+    let folder: Bool
+    let filter: Bool
+    let sort: Bool
+    let viewPicker: Bool
+    let undo: Bool
+    let clearAll: Bool
+    /// Visibility, not enablement: Grid shows it only with a folder tree.
+    let leadingPaneToggle: Bool
+    let info: Bool
+    let cleanUp: Bool
+    let export: Bool
 }
 
 /// Inputs that must be true before a session-wide keyboard shortcut is even
@@ -1379,5 +1529,20 @@ struct CleanUpMenuItems: View {
 
     private func cleanUpScopeLabel(_ title: String, scope: CleanUpScope) -> Text {
         Text("\(title) (\(store.cleanUpScopeCount(for: scope)))")
+    }
+}
+
+/// Filter/Sort toolbar glyph: accent when active. Inactive icons keep the
+/// native style so `.disabled` dims them like the other toolbar buttons.
+private struct ToolbarStateIcon: View {
+    let systemName: String
+    let isActive: Bool
+
+    var body: some View {
+        if isActive {
+            Image(systemName: systemName).foregroundStyle(Color.louppeAccent)
+        } else {
+            Image(systemName: systemName)
+        }
     }
 }

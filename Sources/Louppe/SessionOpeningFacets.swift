@@ -27,6 +27,9 @@ struct SessionOpeningFacets: Sendable {
     let availableSubfolders: [String]
     let availableCaptureDates: [Date]
     let captureDateCounts: [Date: Int]
+    /// Ascending calendar years; undated items share `unknownDateCount`.
+    let availableCaptureYears: [CaptureYear]
+    let captureYearCounts: [CaptureYear: Int]
     let unknownDateCount: Int
     let captureDateRange: ClosedRange<Date>?
     let apertureRange: ClosedRange<Double>?
@@ -54,6 +57,7 @@ struct SessionOpeningFacets: Sendable {
         var videoCodecs: [String: Int] = [:]
         var subfolders: [String: Int] = [:]
         var dates: [Date: Int] = [:]
+        var years: [CaptureYear: Int] = [:]
         var unknownDates = 0
         var minimumAperture: Double?
         var maximumAperture: Double?
@@ -100,6 +104,7 @@ struct SessionOpeningFacets: Sendable {
             subfolders[item.subfolderLabel, default: 0] += 1
             if let day = item.captureDay {
                 dates[day, default: 0] += 1
+                if let year = item.captureYear { years[year, default: 0] += 1 }
             } else {
                 unknownDates += 1
             }
@@ -174,6 +179,8 @@ struct SessionOpeningFacets: Sendable {
         let sortedDates = dates.keys.sorted()
         availableCaptureDates = sortedDates
         captureDateCounts = dates
+        availableCaptureYears = years.keys.sorted()
+        captureYearCounts = years
         unknownDateCount = unknownDates
         captureDateRange = sortedDates.first.flatMap { first in
             sortedDates.last.map { first...$0 }
