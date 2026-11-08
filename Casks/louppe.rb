@@ -1,6 +1,6 @@
 cask "louppe" do
-  version "1.13.1"
-  sha256 "8584fa839e277cc2668ea61409485dab7e9353b542b3dc7575d450e7ddce75b7"
+  version "1.13.2"
+  sha256 "8e9d55ce9cd4ded6733357ea6db15e1e51933451fd1eda7c311355d19bccff40"
 
   url "https://github.com/murlexander/louppe-media-culler/releases/download/v#{version}/Louppe.zip",
       verified: "github.com/murlexander/louppe-media-culler/"
