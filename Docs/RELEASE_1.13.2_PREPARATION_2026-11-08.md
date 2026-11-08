@@ -26,7 +26,8 @@ Developer ID signing and Apple notarization passed. Accepted request: `b29f573e-
 The Store app and package pass their preflights, contain no Sparkle, and use SAMO DANNI EOOD's Apple Distribution and Mac Installer Distribution identities (P6F95J4ZPA).
 
 - PKG: 7,740,157 bytes, SHA-256 `acf7e0c34634d63942667207db6ebba71185eb0d4570b2146e884baaa8510f0c`.
-- App Store Connect is signed out in T3's Default profile. Upload, current Store state, metadata and review submission are unverified; no authentication configuration changed. Alex has been asked for that sign-in while direct publication proceeds independently.
+- Alex completed sign-in to T3's Default profile on 8 November. The current Store release is 1.13.1 (16), Ready for Distribution. Created the 1.13.2 draft and verified all 11 security-note translations, exact prior promotional text, unchanged descriptions/keywords, and 88 inherited screenshots. Added the security-update review note and a 33,273,155-byte subset of existing sample media; media bytes are unchanged. Automatic release after approval and existing ratings are preserved.
+- Transporter is connected to the existing SAMO DANNI EOOD account and displays 1.13.2 (17), ready to Deliver. That web-content button is absent from AX; background coordinate input fails with `noWindowsAvailable`. Foreground control was not authorized, so Alex was asked to click Deliver or grant that brief handoff. Upload, build selection, export-compliance confirmation and final review submission remain pending. No authentication configuration was changed.
 - Store What's New: “Includes security fixes for XMP sidecar parsing.” No GitHub or payment reference is needed.
 
 Artifacts and logs are retained in ignored `dist/release-preparation/1.13.2-17-2026-11-08/`. The canonical installed development app remains unchanged. Existing hardware, older-macOS and assistive-technology acceptance limits remain in the project backlog; no new claim is made for those checks.

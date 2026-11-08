@@ -1,8 +1,10 @@
 # App Store listing and search (ASO) — 4 November 2026
 
-Live Store version: 1.12.0 (Ready for Sale). macOS **1.13.1 (16)** was submitted
-on 5 November 2026 and is **Waiting for Review**, releasing automatically after
-approval. Later on 5 November it was removed from review once more to replace
+Current Store state, verified 8 November: **1.13.1 (16) is Ready for Distribution**. Security update **1.13.2 (17) is Prepare for Submission**. Its 11 localized security notes and exact existing promotional text are saved; descriptions, keywords, 88 screenshots, automatic release and existing ratings are preserved. Review notes identify the parser maintenance update. The attached `sample-media.zip` is a 33,273,155-byte subset of the unchanged existing review files, below the browser transfer limit.
+
+The signed 1.13.2 package is staged in Transporter under SAMO DANNI EOOD. Its Deliver button requires foreground input: background coordinate control returns `noWindowsAvailable`, and the button is absent from AX. Alex was asked to click Deliver or permit a brief foreground handoff. No build upload, attachment to this draft, export-compliance confirmation or review submission is claimed yet. See [1.13.2 release record](RELEASE_1.13.2_PREPARATION_2026-11-08.md).
+
+Previous submission state (5 November): live version was 1.12.0 (Ready for Sale). macOS **1.13.1 (16)** was submitted on 5 November 2026 and was **Waiting for Review**, releasing automatically after approval. Later on 5 November it was removed from review once more to replace
 all 88 screenshots with active-window recaptures from 1.13.1 (the first set
 showed Louppe as an inactive window), then resubmitted at 02:55 UTC with the
 same build and export compliance. It replaced the 1.13.0 (15) submission of 4 November, which was removed
