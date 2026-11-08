@@ -16,7 +16,10 @@ Alex authorized publication in the weekly maintenance chat. The active 1.14 sess
 Developer ID signing and Apple notarization passed. Accepted request: `b29f573e-9631-45e0-b364-9cab5213fb08`. The ticket is stapled; loose and archived apps pass strict signatures, Gatekeeper and publishing preflight. Both archive and feed signatures verify.
 
 - ZIP: 8,841,087 bytes, SHA-256 `8e9d55ce9cd4ded6733357ea6db15e1e51933451fd1eda7c311355d19bccff40`.
-- GitHub draft: v1.13.2, exact source `24f4766`, exact ZIP verified by GitHub digest. Publication, public feed, Homebrew and real update verification remain pending.
+- [GitHub v1.13.2](https://github.com/murlexander/louppe-media-culler/releases/tag/v1.13.2) is public and Latest. Tag resolves to exact source `24f4766`; the downloaded public ZIP matches the signed artifact byte for byte.
+- Signed feed commit `ad15ef8` is public; the actual updater URL serves byte-identical XML and its signature verifies.
+- [Homebrew workflow 42499055423](https://github.com/murlexander/louppe-media-culler/actions/runs/42499055423) passed and committed `bf3599e`, setting cask version 1.13.2 and the exact ZIP hash.
+- A real headless Sparkle update installed 1.13.2 (17) over an isolated copy of the public 1.13.1 (16) app. All 8,841,087 bytes downloaded; updated Contents match the release exactly, strict signatures/Gatekeeper/stapling pass, preferences are preserved, and no app was relaunched. The installed 1.14 development app was not touched.
 
 ## App Store
 
