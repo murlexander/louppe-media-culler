@@ -7,9 +7,9 @@ Pinned inputs:
 - Adobe XMP Toolkit SDK revision
   `7093513bd3caaad29da01db0f275d88a39d6bcc2` (BSD 3-Clause)
 - libexpat revision
-  `a76b1174c1ea52abb639a4c69d52b630a8a106a2` (MIT, Expat 2.9.0)
-  from upstream tag `R_2_9_0`; release archive SHA-256
-  `1e6371862cc31999b368c3b89b49994f0677e1bab5f1b2b85ae3741f5d803051`
+  `a70841d9ffa64ddde29ab824ed6305035ebe4c47` (MIT, Expat 2.10.0)
+  from upstream tag `R_2_10_0`; release archive SHA-256
+  `c624ba2998fc65df1163a49641ff3f9ab73138b11641d92c86bee0fb01b1bc7f`
 
 The `XMPToolkit` tree contains the headers required by the exact `.cpp` source
 manifest in `Package.swift`: the legacy XMPCore implementation, its common
