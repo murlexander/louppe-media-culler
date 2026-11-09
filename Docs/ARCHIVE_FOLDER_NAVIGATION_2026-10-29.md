@@ -381,7 +381,7 @@ installed as the official `/Applications/Louppe.app` and the dated review copy
 went to the Trash. See the consolidation entry in `Docs/REVIEW_BUILD.md`.
 Archive-opening performance work and instant pinned opening were subsequently
 completed and checked on the connected exFAT archive, including remounts. See
-[the final installed-build verification](REVIEW_BUILD.md#latest-recorded-review).
+the final installed-build verification (`git show fa92304:Docs/REVIEW_BUILD.md`).
 
 ### Still open
 

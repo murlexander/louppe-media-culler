@@ -1,5 +1,14 @@
 import Foundation
 
+/// Background smoke launches neither activate the app nor remember test folders.
+enum LouppeLaunchEnvironment {
+    static func isBackgroundLaunch(
+        in environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Bool {
+        environment["LOUPPE_BACKGROUND_LAUNCH"] == "1"
+    }
+}
+
 /// Foundation's scope operations stay injectable so tests can enforce balanced
 /// ownership without pretending an unsandboxed test process has picker grants.
 struct SecurityScopedResourceAccess: Sendable {
@@ -115,7 +124,8 @@ enum SecurityScopedFolderBookmarks {
 
     static func load(
         from defaults: UserDefaults = .standard,
-        operations: Operations = .live
+        operations: Operations = .live,
+        environment: [String: String] = ProcessInfo.processInfo.environment
     ) -> [URL] {
         let entries = storedEntries(forKey: recentsKey, from: defaults)
             ?? (defaults.stringArray(forKey: legacyPathsKey) ?? []).map {
@@ -135,7 +145,7 @@ enum SecurityScopedFolderBookmarks {
                 urls.append(url)
             }
         }
-        if updated != entries {
+        if updated != entries && !LouppeLaunchEnvironment.isBackgroundLaunch(in: environment) {
             store(updated, forKey: recentsKey, to: defaults)
             defaults.set(updated.map(\.path), forKey: legacyPathsKey)
         }
@@ -145,8 +155,10 @@ enum SecurityScopedFolderBookmarks {
     static func save(
         _ urls: [URL],
         to defaults: UserDefaults = .standard,
-        operations: Operations = .live
+        operations: Operations = .live,
+        environment: [String: String] = ProcessInfo.processInfo.environment
     ) {
+        guard !LouppeLaunchEnvironment.isBackgroundLaunch(in: environment) else { return }
         let previous = storedEntries(forKey: recentsKey, from: defaults) ?? []
         let saved = entries(for: urls, preserving: previous, operations: operations)
         store(saved, forKey: recentsKey, to: defaults)

@@ -10,6 +10,7 @@ import XCTest
 @MainActor
 final class MountedLargeListInvalidationTests: XCTestCase {
     func testMountedGridDoesNotReconstructCollectionForCurrentOrSelection() async throws {
+        try requireForegroundUI()
         let store = readyStore()
         store.viewMode = .grid
         var constructions = 0
@@ -59,6 +60,7 @@ final class MountedLargeListInvalidationTests: XCTestCase {
     }
 
     func testMountedBrowserDoesNotReconstructCollectionForCurrentOrSelection() async throws {
+        try requireForegroundUI()
         let store = readyStore()
         var constructions = 0
         var snapshots: [BrowserCollectionContent] = []

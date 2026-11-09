@@ -265,6 +265,7 @@ final class ConnectedDrivesTests: XCTestCase {
     }
 
     func testHostedDriveRowsExposeCapacityAndNativeChooseAction() async throws {
+        try requireForegroundUI()
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.regular)
         let card = drive()

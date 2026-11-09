@@ -7,6 +7,11 @@ import XCTest
 
 @MainActor
 final class StagedViewportHandoffTests: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try requireForegroundUI()
+    }
+
     func testMountedOpeningHandsOffManualAnchorSeparatelyFromCurrentAfterFinalReorder() async throws {
         _ = NSApplication.shared
         let root = URL(fileURLWithPath: "/private/tmp/louppe-anchor-\(UUID())", isDirectory: true)

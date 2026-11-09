@@ -240,6 +240,31 @@ if ! $APP_STORE; then
     [[ -f "$APPCAST" ]] || fail "appcast.xml is missing."
 fi
 
+# Build numbers must advance across release branches; the exact published pair
+# remains valid when re-verifying an immutable release.
+if $PUBLISHING; then
+    python3 -I - "$APPCAST" "$MARKETING_VERSION" "$BUILD_NUMBER" <<'PY_BUILD_ORDER' \
+        || fail "VERSION reuses a published build number for a different release."
+import re
+import sys
+import xml.etree.ElementTree as ET
+
+sparkle = "{http://www.andymatuschak.org/xml-namespaces/sparkle}"
+published = []
+for item in ET.parse(sys.argv[1]).getroot().findall("./channel/item"):
+    enclosure = item.find("enclosure")
+    build = (enclosure.get(sparkle + "version") if enclosure is not None else None) or item.findtext(sparkle + "version")
+    version = (enclosure.get(sparkle + "shortVersionString") if enclosure is not None else None) or item.findtext(sparkle + "shortVersionString")
+    if build is None or re.fullmatch(r"[1-9][0-9]*", build) is None:
+        sys.exit("Publishing feed has a missing or invalid build number.")
+    published.append((version, int(build)))
+current = (sys.argv[2], int(sys.argv[3]))
+highest = max((build for _, build in published), default=0)
+if current[1] <= highest and current not in published:
+    sys.exit(f"Build {current[1]} must exceed the published maximum {highest}.")
+PY_BUILD_ORDER
+fi
+
 CHECK_DIR="$(mktemp -d /private/tmp/Louppe-preflight.XXXXXX)"
 trap 'rm -rf "$CHECK_DIR"' EXIT
 # File Provider metadata can immediately reappear on dist/. Verify a clean

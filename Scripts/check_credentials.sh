@@ -1,7 +1,15 @@
 #!/bin/zsh
-# Scan repository history locally; never send the source to a scanning service.
+# Scan HEAD history and local edits; --all-refs explicitly audits every ref.
+# Never send the source to a scanning service.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+log_opts="HEAD"
+case "$#:${1:-}" in
+    0:) ;;
+    1:--all-refs) log_opts="--all" ;;
+    *) echo "Usage: Scripts/check_credentials.sh [--all-refs]" >&2; exit 2 ;;
+esac
 
 readonly version="8.30.1"
 case "$(uname -m)" in
@@ -26,7 +34,12 @@ curl --fail --silent --show-error --location --retry 3 \
     --output "$archive"
 print -r -- "$checksum  $archive" | shasum -a 256 --check --status
 tar -xzf "$archive" -C "$scan_directory" gitleaks
-"$scan_directory/gitleaks" git --redact --no-banner --log-opts="--all" .
-# Also check staged and unstaged tracked edits when run before committing.
-"$scan_directory/gitleaks" git --pre-commit --staged --redact --no-banner .
-"$scan_directory/gitleaks" git --pre-commit --redact --no-banner .
+result=0
+echo "Credential scan: history ($log_opts)"
+"$scan_directory/gitleaks" git --redact --no-banner --log-opts="$log_opts" . || result=$?
+# Always check staged and unstaged tracked edits, even if history contains a hit.
+echo "Credential scan: staged changes"
+"$scan_directory/gitleaks" git --pre-commit --staged --redact --no-banner . || result=$?
+echo "Credential scan: working-tree changes"
+"$scan_directory/gitleaks" git --pre-commit --redact --no-banner . || result=$?
+exit "$result"

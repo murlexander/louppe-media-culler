@@ -54,7 +54,7 @@ struct LouppeApp: App {
                     _ = tipStore
                     #endif
                     // Background smoke launches must leave the user's focus alone.
-                    if ProcessInfo.processInfo.environment["LOUPPE_BACKGROUND_LAUNCH"] != "1" {
+                    if !LouppeLaunchEnvironment.isBackgroundLaunch() {
                         NSApp.activate(ignoringOtherApps: true)
                     }
                     // Optional launch argument for testing:

@@ -50,6 +50,7 @@ final class NumericFilterDraftTests: XCTestCase {
     }
 
     func testOpeningWaitingAndClosingRealFilterPreservesAllPreciseCutoffs() async throws {
+        try requireForegroundUI()
         _ = NSApplication.shared
         let store = SessionStore()
         store.items = [makeItem("min", duration: 5, aperture: 1.4, shutter: 0.000123, iso: 100, fps: 24),

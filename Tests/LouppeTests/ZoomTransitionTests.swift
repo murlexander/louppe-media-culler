@@ -32,6 +32,7 @@ final class ZoomTransitionTests: XCTestCase {
     }
 
     func testGalleryLoadingSettlesAfterRepeatedZoomModeChanges() async throws {
+        try requireForegroundUI()
         let fixture = try Fixture()
         defer { fixture.close() }
         let store = SessionStore()
@@ -58,6 +59,7 @@ final class ZoomTransitionTests: XCTestCase {
     }
 
     func testLiveFittedPinchDoesNotPaintOverBrowser() async throws {
+        try requireForegroundUI()
         let fixture = try Fixture()
         defer { fixture.close() }
         let store = SessionStore()

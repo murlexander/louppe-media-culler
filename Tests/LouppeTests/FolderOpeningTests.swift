@@ -87,6 +87,7 @@ final class FolderOpeningTests: XCTestCase {
     }
 
     func testDockOpenBeforeSceneMountIsBufferedUntilLaunchCompletes() async throws {
+        try requireForegroundUI()
         _ = NSApplication.shared
         let folder = try makeFolder()
         defer { try? FileManager.default.removeItem(at: folder) }

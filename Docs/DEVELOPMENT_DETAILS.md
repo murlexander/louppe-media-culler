@@ -184,6 +184,29 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
 
 ## File operations and recovery
 
+- Sanctioned moves of originals. Originals are never modified or deleted, and
+  never move without an explicit, confirmed command. Export's default mode only
+  copies. Four owner-requested exceptions: (1) Clean Up in `SessionStore`
+  (2026-07-13) moves rejected files to the macOS Trash via
+  `FileManager.trashItem` — never a permanent delete — behind a confirmation
+  dialog, with ⌘Z restoring the whole batch; no *single-key* hotkey for it
+  (⌘⌫ trashing the selection without a dialog is the one sanctioned
+  shortcut — Finder parallel, ⌘Z restores). (2) The Export dialog's
+  **Move to…** mode (2026-07-21) transfers the chosen ratings' files to a
+  user-selected folder after an explicit mode choice and an in-dialog
+  warning; moved photos leave the session, the move is not undoable, and the
+  files stay intact at the destination. (3) **Organize Source Folder…**
+  (2026-08-17) moves a confirmed All/Filtered/Selected scope inside the opened
+  source folder according to its previewed metadata hierarchy; it retains old
+  folders, never overwrites or renames a collision, and ⌘Z restores file
+  locations during the open session. (4) **Rename Files…** and the Info-panel
+  pencil (2026-09-04) rename original filename stems inside their current
+  folders after an exact preview or explicit single-name submission. Extensions
+  and contents never change; RAW+JPEG and recognized XMP names follow as one
+  journaled family, shared generated names get per-name numbers when Sequence
+  is off, remaining collisions and `.acr` companions block the plan, and ⌘Z
+  restores the prior names during the open session. No other code path may
+  move originals; nothing ever hard-deletes.
 - Export preflight and worker preparation read exclusive-rename capability from
   the bound parent descriptor. Valid unsupported capability refuses Copy/Export
   Move before media or journals exist; unknown capability keeps the checked
@@ -708,6 +731,15 @@ precedence over remembered scope/position.
   localized entries and menu identity before traversing; structural/tracking
   events always bypass that cache. SessionView keeps sole ownership of shortcut
   routing and its existing focus/presentation gates.
+- Session key monitor. `SessionView`'s local monitor is the sole owner of session
+  Command shortcuts; do not add duplicate menu `.keyboardShortcut` equivalents
+  that bypass its window/focus gates. Review letters remain active after
+  ordinary controls, but keyboard-focused controls keep Space, Tab, Escape, and
+  arrows; editing or selecting text and modal UI keep every key. Preserve
+  VoiceOver, Fn/Globe, Help, and unsupported modifier chords. Its monitor token
+  belongs to the AppKit bridge attached to the live session window; do not move
+  it back into SwiftUI `@State` with independent `onAppear`/`onDisappear`
+  callbacks.
 
 - Localization uses `L10n.text` with complete English messages and numbered
   interpolation slots, plus UTF-8 `Localizable.strings` in `Resources/*.lproj`.
@@ -945,6 +977,13 @@ precedence over remembered scope/position.
   Column navigation uses the same available width across resizing and thumbnail
   changes. Native regressions include short/long grids, Info, RTL, display scales,
   thumbnail sizes, and horizontal bounds; exclude hidden cached tile frames.
+  Include large windows (1512 points) with Info visible so the Grid's last
+  column cannot hide under the scrollbar. Hiding the horizontal scroller or
+  disabling elasticity alone does not lock the axis; never fix it by clipping
+  thumbnails or disabling scrolling. Don't replace input tests with assertions
+  about hidden scrollers or pre-constrained bounds. For scroll/layout changes,
+  check both views in the installed app with horizontal and diagonal gestures
+  when the desktop is handed over; otherwise report that check as not run.
   Run BrowserScrollTests, GridScrollTests and PersistentVerticalScrollerTests
   before every installation; exercise unconstrained offsets and pixel wheel/
   momentum events as well as settled geometry and vertical follow-navigation.
@@ -964,3 +1003,54 @@ precedence over remembered scope/position.
   is visual. Share dropped-item validation/errors across every phase.
 - Square thumbnails letterbox (`fit`) to preserve the whole photo and prevent
   portrait overflow.
+
+## Agent environment
+
+Facts about the toolchain and macOS that agents keep rediscovering. Machine
+state (permissions, lock, running copies) changes; `Scripts/doctor.sh` probes it
+live instead.
+
+- Use full Xcode with its own SDK. The Command Line Tools lack XCTest and the
+  SwiftUI macro plugin, and an inherited Command Line Tools `SDKROOT` fails the
+  build even when `DEVELOPER_DIR` is right. `Scripts/lib/xcode_env.sh` pins both;
+  never work around toolchain errors with an older SDK, which compiles out
+  current SwiftUI styling.
+- `swift build`/`swift test` use SwiftPM's default backend; Xcode 27 deprecates
+  `--build-system native`, which only `build_app.sh` and the speed runner keep.
+  Build products must live outside the iCloud/File Provider folder
+  (`--scratch-path`, set by `xcode_env.sh` per checkout).
+- iCloud reattaches Finder metadata to bundles in `dist/` after signing, which
+  breaks `codesign --verify`. Verify and install from a copy staged outside iCloud
+  (`install_local.sh` does). Fixture copies made inside iCloud can inherit hidden
+  flags; copy fixtures to `/private/tmp`.
+- `swift test -c release` does not compile (tests use debug-only hooks). Measure
+  optimized timing with the packaged app or `Tests/run_speed_tests.sh`.
+- Fixed-format `DateFormatter` parsing needs `Locale(identifier: "en_US_POSIX")`;
+  otherwise a 12-hour system clock setting makes it return nil.
+- Offscreen captures (hidden window plus `cacheDisplay`) render the inactive
+  window appearance: grey traffic lights and muted selection. Session toolbars
+  appear only when hosted in `NSHostingController` with
+  `sceneBridgingOptions = [.toolbars, .title]`. `capture_ui.sh` handles both.
+  Never order windows front or fake activation to get accent colors.
+- Launch Services hands `open` to an already-running instance and drops the new
+  environment. Before trusting a launch check, confirm the PID's executable path.
+  `LOUPPE_BACKGROUND_LAUNCH=1` launches without activating and keeps the opened
+  folder out of Recents.
+- The official app identity shares the user's preferences, Recents and folder
+  grants. Smoke launches use disposable folders and the background launch. A
+  separate review identity has its own grants and pins, so anything pinned there
+  must be reconnected in the official app.
+- Accessibility trust and Screen Recording are separate permissions. Without
+  Screen Recording `screencapture` fails, though app-bound screenshots from some
+  agent tools still work. Probe once per session; don't trust an older note.
+- While the screen is locked, AX window queries return the application element
+  and hit-tests fail; diagnose the lock (`doctor.sh`) before suspecting code.
+  Synthetic CGEvents reset the system idle timer, so idle time can't detect a
+  returning user after you have posted events.
+- Driving the live app with AX or CGEvents takes the desktop: only after the
+  owner hands it over, with Louppe frontmost and owning the target point before
+  any positional event. Switch views with the toolbar Gallery/Grid segments
+  (AXPress), not Tab, which moves focus. Close any menu, sheet or Accessibility
+  Inspector you opened before handing the desktop back.
+- Scripts run in zsh without the agent's interactive helpers: quote globs
+  (`--include='*.swift'`), and use `grep`/`find`, since `rg` may be missing.

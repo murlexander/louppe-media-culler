@@ -5,6 +5,11 @@ import XCTest
 
 @MainActor
 final class ViewSwitchTests: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try requireForegroundUI()
+    }
+
     func testRepeatedGalleryGridSwitchesRenderTailMediaAndStayInteractive() async throws {
         _ = NSApplication.shared
         let folder = FileManager.default.temporaryDirectory

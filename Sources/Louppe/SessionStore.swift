@@ -7396,6 +7396,7 @@ final class SessionStore: ObservableObject {
     }
 
     private func addToRecents(_ url: URL) {
+        guard !LouppeLaunchEnvironment.isBackgroundLaunch() else { return }
         var folders = recentFolders
         folders.removeAll { $0.standardizedFileURL == url.standardizedFileURL }
         folders.insert(url, at: 0)

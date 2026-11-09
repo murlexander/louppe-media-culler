@@ -6,6 +6,11 @@ import XCTest
 
 @MainActor
 final class FilterDisclosureHitTests: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try requireForegroundUI()
+    }
+
     func testCollapsedHeaderClicksReachTheFullPaddedRowInBothDirections() throws {
         for direction in [LayoutDirection.leftToRight, .rightToLeft] {
             let state = DisclosureHitState()

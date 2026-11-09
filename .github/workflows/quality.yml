@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
 
       - name: Redacted credential scan
-        run: ./Scripts/check_credentials.sh
+        run: ./Scripts/check_credentials.sh --all-refs
 
       - name: Report Apple toolchain
         run: |
@@ -44,6 +44,8 @@ jobs:
             -Xswiftc -warnings-as-errors
 
       - name: XCTest
+        env:
+          LOUPPE_FOREGROUND_UI: "1"
         run: swift test --disable-keychain
 
       - name: Deterministic logic and recovery checks

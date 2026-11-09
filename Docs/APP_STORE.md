@@ -135,17 +135,53 @@ selected certificate, and Apple's MacDistributionInstaller trust policy
 label a valid submission certificate “Development”; it is diagnostic text,
 not the certificate-type gate. No Keychain trust overrides are needed.
 
-Upload that package through App Store Connect and complete metadata, export
-compliance, and review notes. Never upload the direct-download ZIP. Legacy
+Upload that package with Transporter and complete metadata, export
+compliance, and review notes in App Store Connect. Never upload the
+direct-download ZIP. Legacy
 `3rd Party Mac Developer Application:` identities are also accepted; Developer
 ID identities are refused. [Apple signing](https://developer.apple.com/documentation/xcode/creating-distribution-signed-code-for-the-mac)
 and [packaging](https://developer.apple.com/documentation/xcode/packaging-mac-software-for-distribution)
 describe these certificate requirements.
 
+## Upload with Transporter
+
+Delivery is one click by the owner; agents can't confirm Transporter's list
+without taking the desktop. Hand over exactly this:
+
+1. Open Transporter, choose **+** (Add Package), press ⌘⇧G and paste the
+   package path.
+2. Click **Deliver** once, then reply “delivered”.
+
+Then check App Store Connect for the build. `open -g -a Transporter <pkg>` adds
+nothing while Transporter has no window, so never report a package as queued
+unless you saw it in the list. A second upload of the same build number fails
+processing; the first delivery is unaffected.
+
+## Screenshots
+
+Store and website screenshots come from a committed SHA after UI work has
+stopped (`git log <sha>..origin/main -- Sources/Louppe/Views` is empty), and
+they must show the **active** window: colored traffic lights, accent-colored
+selection, live Liquid Glass. Offscreen captures (`Scripts/capture_ui.sh`)
+always render inactive, so they are for layout review only. Active captures need
+the desktop: schedule them with the owner. Check every image's window chrome
+before uploading.
+
+## App Store Connect facts
+
+- A browser sign-in lasts about a day. Batch every App Store Connect task right
+  after one, rather than spreading them over days.
+- A screenshot stuck in processing (`UPLOAD_COMPLETE`) recovers when you delete
+  it, upload it again and restore the order.
+- The public lookup API and product page lag App Store Connect by up to a day;
+  check review status in App Store Connect itself.
+- Submitting a new build replaces one still in review and restarts the queue.
+- Before retrying a dropped submission, check for a half-created one.
+
 ## Release gate
 
 ```sh
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-keychain
+Scripts/test.sh --full --foreground    # with the desktop handed over; otherwise CI must have passed on this exact SHA
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./Tests/run_performance_checks.sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./build_app.sh --app-store
 ./Scripts/package_app_store.sh --application-identity '…' --installer-identity '…'

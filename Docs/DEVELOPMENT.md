@@ -15,16 +15,27 @@ normal development. Read [AGENTS.md](../AGENTS.md) before changing code.
 Use full Xcode with the current macOS SDK. From the root of your clone:
 
 ```sh
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --disable-keychain
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-keychain
+Scripts/doctor.sh                  # toolchain, checkout and desktop state (read-only)
+Scripts/test.sh --filter <regex>   # or --gates, --full; add --foreground only with the desktop
+Scripts/install_local.sh           # gates, build, verified install, background launch check
+Scripts/capture_ui.sh --list       # offscreen screenshots of named UI states
 ```
 
-These use SwiftPM's default backend; Xcode 27 deprecates `--build-system native`.
-The default backend ad-hoc signs debug and test bundles, so a checkout in iCloud
-Documents or another File Provider folder must build elsewhere: add
-`--scratch-path /private/tmp/louppe-build`. `build_app.sh` and the speed runner
-still use the native backend; `LOUPPE_SCRATCH_PATH=/private/tmp/louppe-build-release`
-keeps packaging products outside the folder too.
+The scripts source `Scripts/lib/xcode_env.sh`, which sets `DEVELOPER_DIR` and
+`SDKROOT` to full Xcode and puts build products in
+`/private/tmp/louppe-build-<checkout>` (`LOUPPE_SCRATCH_PATH`; release builds use
+`LOUPPE_RELEASE_SCRATCH_PATH`). Plain SwiftPM works too:
+`swift test --disable-keychain --scratch-path /private/tmp/louppe-build`. Keep
+`--scratch-path` when the checkout is in iCloud Documents or another File
+Provider folder, because the default backend ad-hoc signs debug and test
+bundles. Xcode 27 deprecates `--build-system native`; only `build_app.sh` and the
+speed runner still use it.
+
+Tests that activate the app or make windows key skip unless
+`LOUPPE_FOREGROUND_UI=1` (`test.sh --foreground`; CI sets it). A few older tests
+still order windows onscreen without taking focus. The app writes `.louppe_session.json` into
+an opened folder within a few seconds; launch checks use disposable media,
+`-openFolder`, and `LOUPPE_BACKGROUND_LAUNCH=1` (no activation, no Recents entry).
 
 Sparkle is a public, checksum-pinned dependency; the XMP parser sources are vendored.
 The guides below cover affected checks and local app packaging. Optional hardware,
@@ -47,12 +58,13 @@ The [1.11 record](RELEASE_1.11_PREPARATION_2026-10-15.md) retains its Store subm
 
 ## Local review build
 
-Run `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./Scripts/build_review.sh`
+Only when the owner asks for an isolated review copy, run
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./Scripts/build_review.sh`
 to create `dist/louppe - to review.app` and its ZIP. Its identity, preferences,
 and window state are separate from `Louppe.app`; automatic updates are off.
 `VERSION` still supplies its version. Ratings use the compatible
 `.louppe_session.json`, so experiment with copies of media. See
-[the review record](REVIEW_BUILD.md).
+[review builds](REVIEW_BUILD.md).
 
 ## Utilities
 
@@ -62,7 +74,10 @@ Homebrew maintenance, and credential/localization checks. Shared resource/servic
 helpers are used by packaging.
 
 `Tests/run_performance_checks.sh`, `run_scrollbar_checks.sh`, `run_video_checks.sh`,
-and `run_resource_bundle_checks.sh` cover native/filesystem contracts.
+and `run_resource_bundle_checks.sh` cover native/filesystem contracts. The last
+two performance checks make a real Trash/restore round trip on disposable files;
+in a restricted sandbox, rerun them with permission to use the Trash
+(`LOUPPE_SKIP_REAL_TRASH=1` skips them, as CI does).
 `Tests/run_file_volume_remount_check.py` uses disposable volume images.
 Speed runners and comparisons are described in the speed-test guide above.
 
