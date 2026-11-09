@@ -8,6 +8,7 @@
 - Remove brief stalls of up to 0.1 seconds while photo details load in folders with tens of thousands of photos.
 - Line up Connected drives with Pinned folders on the start screen when there are no recent folders, instead of showing them off-center.
 - Show a thick purple line where a dragged row will land when reordering Rename filename parts or Organize folder levels.
+- Center the Grid's Play button on the video again; since 1.13 it sat near the top edge of wide clips.
 - Rename Files numbers files that would share a name instead of blocking: with only Date taken, each day's files become 2026.02.20_001, _002, and so on. Unique names stay unchanged.
 
 ## 1.13.2 (17) — 2026-11-08

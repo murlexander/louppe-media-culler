@@ -285,33 +285,6 @@ private struct GridCell: View {
                             tileImageSizes.sizes[revision] = size
                         }
                     )
-
-                    if item.isPlayableMedia {
-                        Button {
-                            if index != store.currentIndex {
-                                onPointerCurrentChange()
-                                store.setIndex(index)
-                            }
-                            store.videoPlayback.toggle(item)
-                        } label: {
-                            Image(systemName: store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
-                                ? "pause.fill"
-                                : "play.fill")
-                                .frame(width: 18, height: 18)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.louppeFilledAccent)
-                        .buttonBorderShape(.circle)
-                        .tint(.black.opacity(0.62))
-                        .foregroundStyle(.white)
-                        .controlSize(.large)
-                        .help(store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
-                            ? L10n.text("Pause \(L10n.label(item.mediaKind.singularLabel))")
-                            : L10n.text("Play \(L10n.label(item.mediaKind.singularLabel))"))
-                        .accessibilityLabel(store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
-                            ? L10n.text("Pause \(L10n.label(item.mediaKind.singularLabel))")
-                            : L10n.text("Play \(L10n.label(item.mediaKind.singularLabel))"))
-                    }
                 }
                 .frame(maxWidth: .infinity)
                 .aspectRatio(1, contentMode: .fit)
@@ -367,6 +340,40 @@ private struct GridCell: View {
                 QualityCueTileIcons(store: store, item: item)
                     .padding(TileBadgeLayout.inset)
             }
+            .overlay { playbackButton(item: item) }
+    }
+
+    /// Centered on the fitted media, not the square slot: Grid tiles
+    /// bottom-align media, so the slot center can sit on a landscape
+    /// clip's top edge. Matches GridRubberBandHitTest's playback frame.
+    @ViewBuilder
+    private func playbackButton(item: PhotoItem) -> some View {
+        if item.isPlayableMedia {
+            Button {
+                if index != store.currentIndex {
+                    onPointerCurrentChange()
+                    store.setIndex(index)
+                }
+                store.videoPlayback.toggle(item)
+            } label: {
+                Image(systemName: store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
+                    ? "pause.fill"
+                    : "play.fill")
+                    .frame(width: 18, height: 18)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color.louppeFilledAccent)
+            .buttonBorderShape(.circle)
+            .tint(.black.opacity(0.62))
+            .foregroundStyle(.white)
+            .controlSize(.large)
+            .help(store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
+                ? L10n.text("Pause \(L10n.label(item.mediaKind.singularLabel))")
+                : L10n.text("Play \(L10n.label(item.mediaKind.singularLabel))"))
+            .accessibilityLabel(store.videoPlayback.isActive(item) && store.videoPlayback.isPlaying
+                ? L10n.text("Pause \(L10n.label(item.mediaKind.singularLabel))")
+                : L10n.text("Play \(L10n.label(item.mediaKind.singularLabel))"))
+        }
     }
 }
 

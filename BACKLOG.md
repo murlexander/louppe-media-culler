@@ -227,3 +227,6 @@ These are deferred ideas, not committed implementation scope for 1.13.
 
 - Keep one neutral photo background; custom backgrounds are not planned.
 - XMP export supports Capture One. Further integration needs a separate proposal.
+- Grid keeps bottom-aligned media on the filename, contact-sheet style (Alex,
+  9 November 2026). Overlays and hit tests follow the fitted media frame, not
+  the square slot.
