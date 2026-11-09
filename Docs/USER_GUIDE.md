@@ -180,7 +180,9 @@ unavailable originals must be made accessible in Photos first.
   filename parts into order; dates follow the Mac’s preferred format with safe
   filename separators. Extensions stay unchanged and recognized RAW+JPEG/XMP
   families follow. **⌘Z** restores renamed files and organized locations during
-  the open session. Name collisions never overwrite another file.
+  the open session. Without **Sequence**, files that would share a name get a
+  number per shared name, oldest first (`2026.02.20_001`), skipping names
+  already in the folder. Name collisions never overwrite another file.
 - Export Copy and Move support All Media, Filtered, and Selected scopes.
   **Route copies to multiple folders** previews decision, stars, color,
   file-type, or media-type rules before copying.

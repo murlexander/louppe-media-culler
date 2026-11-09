@@ -374,7 +374,7 @@ final class SourceOrganizationTests: XCTestCase {
         })
     }
 
-    func testMetadataRenameWithoutSequenceBlocksDuplicateGeneratedStem() throws {
+    func testMetadataRenameWithoutSequenceNumbersDuplicateGeneratedStem() throws {
         let fixture = try makeFixture(named: "DuplicateMetadataStem")
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let raw = try mediaFile("A.NEF", under: fixture.photos)
@@ -398,10 +398,18 @@ final class SourceOrganizationTests: XCTestCase {
             ),
             knownOriginFolderPathBytesByFileID: [:]
         )
-        XCTAssertFalse(result.canExecute)
-        XCTAssertTrue(result.collisions.contains {
-            $0.message.contains("same stem")
-        })
+        // A shared stem would form a false RAW + JPEG pair; each file gets
+        // its own conflict number instead of blocking the rename.
+        XCTAssertTrue(
+            result.canExecute,
+            result.collisions.map(\.message).joined(separator: " | ")
+        )
+        let stems = result.mappings.filter(\.isMedia).map {
+            ($0.destination.lastPathComponent as NSString)
+                .deletingPathExtension
+        }
+        XCTAssertEqual(Set(stems.map { $0.suffix(4) }), ["_001", "_002"])
+        XCTAssertEqual(Set(stems.map { $0.dropLast(4) }).count, 1)
     }
 
     func testDateTakenOnlyPresetEnablesNoOtherFolderLevel() {

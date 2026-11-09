@@ -2128,3 +2128,5 @@
 
 "Checking folder…" = "جارٍ التحقق من المجلد…";
 "Histogram" = "المدرج التكراري";
+"Numbered 1 file that shared a name." = "رُقّم ملف واحد كان يشترك في الاسم.";
+"Numbered {0} files that shared a name." = "رُقّمت ملفات تشترك في الاسم ({0}).";

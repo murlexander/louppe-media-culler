@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct OrganizeSourceView: View {
     @ObservedObject var store: SessionStore
@@ -14,7 +13,7 @@ struct OrganizeSourceView: View {
     @State private var planningTask: Task<Void, Never>?
     @State private var planningCancelFlag:
         SourceOrganizationPlanningCancelFlag?
-    @State private var draggedKind: SourceOrganizationLevelKind?
+    @State private var levelDrag = ReorderDragState<SourceOrganizationLevelKind>()
 
     init(store: SessionStore) {
         self.store = store
@@ -197,20 +196,15 @@ struct OrganizeSourceView: View {
             }
         }
         .contentShape(Rectangle())
-        .onDrag {
-            guard level.isEnabled else { return NSItemProvider() }
-            draggedKind = level.kind
-            return NSItemProvider(object: level.kind.rawValue as NSString)
+        .reorderableRow(
+            level.kind,
+            in: configuration.levels.map(\.kind),
+            state: $levelDrag,
+            isDraggable: level.isEnabled
+        ) { source, offset in
+            configuration.levels.move(
+                fromOffsets: IndexSet(integer: source), toOffset: offset)
         }
-        .onDrop(
-            of: [UTType.text],
-            delegate: OrganizationLevelDropDelegate(
-                destination: level.kind,
-                dragged: $draggedKind,
-                levels: $configuration.levels,
-                reduceMotion: reduceMotion
-            )
-        )
         .accessibilityElement(children: .contain)
         .accessibilityHint(
             level.isEnabled
@@ -575,36 +569,5 @@ struct OrganizeSourceView: View {
                 planningError = error.localizedDescription
             }
         }
-    }
-}
-
-private struct OrganizationLevelDropDelegate: DropDelegate {
-    let destination: SourceOrganizationLevelKind
-    @Binding var dragged: SourceOrganizationLevelKind?
-    @Binding var levels: [SourceOrganizationLevel]
-    let reduceMotion: Bool
-
-    func dropEntered(info: DropInfo) {
-        guard let dragged,
-              dragged != destination,
-              let from = levels.firstIndex(where: { $0.kind == dragged }),
-              let to = levels.firstIndex(where: { $0.kind == destination }),
-              levels[from].isEnabled,
-              levels[to].isEnabled else { return }
-        withAnimation(reduceMotion ? nil : .default) {
-            levels.move(
-                fromOffsets: IndexSet(integer: from),
-                toOffset: to > from ? to + 1 : to
-            )
-        }
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        dragged = nil
-        return true
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
     }
 }

@@ -48,7 +48,7 @@ it to every view.
 | `Sources/Louppe/ExportDestinationValidator.swift` | Export preflight: source-tree exclusion, destination permission and capacity |
 | `Sources/Louppe/SourceOrganization.swift` | Pure source-folder hierarchy/rename, exact-path collision/XMP-family preflight, and preview planning |
 | `Sources/Louppe/SourceOrganizationWorker.swift` | Journaled source-folder moves/renames, exact directory creation, and in-session undo restoration |
-| `Sources/Louppe/FileRenaming.swift` | Pure filename recipes, preferred-date/fixed-time rendering, sanitization, sequencing, and source-rename configuration |
+| `Sources/Louppe/FileRenaming.swift` | Pure filename recipes, preferred-date/fixed-time rendering, sanitization, sequencing, conflict numbering, and source-rename configuration |
 | `Sources/Louppe/Models.swift` | Physical `PhotoFile` records, projected `PhotoItem` groups, ratings/filter models, sidecar codables |
 | `Sources/Louppe/Views/RootView.swift` | Phase switch (welcome/scanning/session), `Color.appBackground` |
 | `Sources/Louppe/Views/WelcomeView.swift` | Start screen + cancellable scanning progress |
@@ -69,6 +69,7 @@ it to every view.
 | `Sources/Louppe/Views/ExportView.swift` | Export dialog (mode + rating tiles → progress → done) |
 | `Sources/Louppe/Views/OrganizeSourceView.swift` | Source-folder scope, draggable folder levels, preview, confirmation, progress, and outcome sheet |
 | `Sources/Louppe/Views/RenameFilesView.swift` | Single-family and metadata-batch source rename preview, confirmation, progress, and outcome sheet |
+| `Sources/Louppe/Views/ReorderableRows.swift` | Shared drag-to-reorder for form rows: accent insertion line at the target gap and the matching move |
 | `Tests/PerformanceChecks/main.swift` | Dependency-free search, ordered persistence, restoration-merge, and export copy/move regression checks |
 
 Read `Docs/PERFORMANCE.md` before changing concurrency, caches, filtering, or Clean Up.

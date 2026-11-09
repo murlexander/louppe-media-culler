@@ -205,6 +205,222 @@ enum FileRenamingPlanner {
         }
     }
 
+    /// Metadata names without the Sequence part number only the files whose
+    /// generated names would clash. Custom names stay explicit and block.
+    static func numbersConflictingNames(_ naming: SourceFileNaming) -> Bool {
+        guard case .metadata(let configuration) = naming else { return false }
+        return !configuration.enabledParts.contains { $0.kind == .sequence }
+    }
+
+    /// `base_001`: the planner's part separator and the Sequence padding.
+    /// The base is shortened, never the number, to stay within 180 bytes.
+    static func numberedBaseName(
+        _ base: String,
+        number: Int,
+        width: Int
+    ) -> String {
+        let suffix = "_" + String(format: "%0*d", width, number)
+        return truncateFilenameBase(
+            base,
+            limit: max(1, 180 - suffix.utf8.count)
+        ) + suffix
+    }
+
+    /// One physical file considered for conflict numbering. Keys are stems
+    /// compared as the destination volume compares filenames.
+    struct ConflictNumberingFile: Sendable {
+        /// Files of one unit keep one number: a RAW+JPEG pair, or files that
+        /// already share a stem in one folder (one XMP family).
+        let unit: Int
+        let directory: XMPExactFileSystemPath
+        let currentStemKey: String
+        let generatedStemKey: String
+    }
+
+    struct ConflictNumber: Equatable, Sendable {
+        let number: Int
+        let width: Int
+    }
+
+    /// Numbers every unit whose generated stem is shared with another unit
+    /// or with an untouched entry in the same folder. Units are numbered per
+    /// conflicting stem in `unitOrder`, skipping numbers already present on
+    /// disk; a unit already holding a free number of its group keeps it, so
+    /// repeating a rename changes nothing. Unique names receive no number.
+    static func conflictNumbers(
+        files: [ConflictNumberingFile],
+        unitOrder: [Int],
+        entryStemKeys: (XMPExactFileSystemPath) -> [String]
+    ) -> [Int: ConflictNumber] {
+        struct StemKey: Hashable {
+            let directory: XMPExactFileSystemPath
+            let stem: String
+        }
+        let rankByUnit = Dictionary(
+            unitOrder.enumerated().map { ($0.element, $0.offset) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        func rank(_ unit: Int) -> Int { rankByUnit[unit] ?? Int.max }
+        func ordered(_ lhs: Int, _ rhs: Int) -> Bool {
+            rank(lhs) != rank(rhs) ? rank(lhs) < rank(rhs) : lhs < rhs
+        }
+
+        // Units whose generated stems meet in one folder form one group.
+        var groupParent: [Int: Int] = [:]
+        func find(_ unit: Int) -> Int {
+            var root = unit
+            while let parent = groupParent[root], parent != root {
+                root = parent
+            }
+            groupParent[unit] = root
+            return root
+        }
+        var unitByGeneratedKey: [StemKey: Int] = [:]
+        for file in files {
+            if groupParent[file.unit] == nil {
+                groupParent[file.unit] = file.unit
+            }
+            let key = StemKey(
+                directory: file.directory, stem: file.generatedStemKey
+            )
+            if let other = unitByGeneratedKey[key] {
+                let left = find(other)
+                let right = find(file.unit)
+                if left != right { groupParent[right] = left }
+            } else {
+                unitByGeneratedKey[key] = file.unit
+            }
+        }
+
+        var groupUnits: [Int: Set<Int>] = [:]
+        var groupKeys: [Int: Set<StemKey>] = [:]
+        var keysByUnit: [Int: Set<StemKey>] = [:]
+        var currentOwnerByKey: [StemKey: Int] = [:]
+        for file in files {
+            let group = find(file.unit)
+            let generated = StemKey(
+                directory: file.directory, stem: file.generatedStemKey
+            )
+            groupUnits[group, default: []].insert(file.unit)
+            groupKeys[group, default: []].insert(generated)
+            keysByUnit[file.unit, default: []].insert(generated)
+            currentOwnerByKey[StemKey(
+                directory: file.directory, stem: file.currentStemKey
+            )] = file.unit
+        }
+
+        // `stem_<digits>` splits into its stem and number.
+        func numbered(_ stem: String) -> (stem: String, number: Int)? {
+            guard let separator = stem.lastIndex(of: "_") else { return nil }
+            let digits = stem[stem.index(after: separator)...]
+            guard !digits.isEmpty, digits.count <= 9,
+                  digits.allSatisfy({ $0.isASCII && $0.isNumber }),
+                  let value = Int(digits) else { return nil }
+            return (String(stem[..<separator]), value)
+        }
+
+        struct DirectoryEntries {
+            var stems = Set<String>()
+            /// Numbers already used after each stem, with the entry's stem.
+            var numbered: [String: [(entry: String, number: Int)]] = [:]
+        }
+        var entriesByDirectory: [XMPExactFileSystemPath: DirectoryEntries] = [:]
+        func entries(_ directory: XMPExactFileSystemPath) -> DirectoryEntries {
+            if let cached = entriesByDirectory[directory] { return cached }
+            var listed = DirectoryEntries()
+            for stem in entryStemKeys(directory) {
+                listed.stems.insert(stem)
+                if let parts = numbered(stem) {
+                    listed.numbered[parts.stem, default: []]
+                        .append((stem, parts.number))
+                }
+            }
+            entriesByDirectory[directory] = listed
+            return listed
+        }
+
+        // A stem conflicts with disk only through an entry that no unit of
+        // its own group owns already (its current stem or XMP family).
+        var numberedGroups: [Int] = []
+        var plannedNumbers: [StemKey: Set<Int>] = [:]
+        func plan(_ stem: String, in directory: XMPExactFileSystemPath) {
+            guard let parts = numbered(stem) else { return }
+            plannedNumbers[
+                StemKey(directory: directory, stem: parts.stem), default: []
+            ].insert(parts.number)
+        }
+        for (group, keys) in groupKeys {
+            let units = groupUnits[group] ?? []
+            let conflictsOnDisk = keys.contains { key in
+                if let owner = currentOwnerByKey[key], units.contains(owner) {
+                    return false
+                }
+                return entries(key.directory).stems.contains(key.stem)
+            }
+            if units.count > 1 || conflictsOnDisk {
+                numberedGroups.append(group)
+            } else {
+                for key in keys { plan(key.stem, in: key.directory) }
+            }
+        }
+        numberedGroups.sort { lhs, rhs in
+            let left = groupUnits[lhs]?.min(by: ordered) ?? lhs
+            let right = groupUnits[rhs]?.min(by: ordered) ?? rhs
+            return ordered(left, right)
+        }
+
+        var result: [Int: ConflictNumber] = [:]
+        for group in numberedGroups {
+            let units = (groupUnits[group] ?? []).sorted(by: ordered)
+            var occupied = Set<Int>()
+            var claimByUnit: [Int: Int] = [:]
+            for key in groupKeys[group] ?? [] {
+                let used = entries(key.directory).numbered[key.stem] ?? []
+                for (entry, value) in used {
+                    let owner = currentOwnerByKey[StemKey(
+                        directory: key.directory, stem: entry
+                    )]
+                    if let owner, units.contains(owner) {
+                        claimByUnit[owner] = min(
+                            claimByUnit[owner] ?? value, value
+                        )
+                    } else {
+                        // Another family's current name, including one this
+                        // rename moves away: the worker never swaps names.
+                        occupied.insert(value)
+                    }
+                }
+                occupied.formUnion(plannedNumbers[key] ?? [])
+            }
+            var numberByUnit: [Int: Int] = [:]
+            var taken = Set<Int>()
+            for unit in units {
+                guard let claim = claimByUnit[unit],
+                      !occupied.contains(claim),
+                      taken.insert(claim).inserted else { continue }
+                numberByUnit[unit] = claim
+            }
+            var next = 1
+            for unit in units where numberByUnit[unit] == nil {
+                while occupied.contains(next) || taken.contains(next) {
+                    next += 1
+                }
+                numberByUnit[unit] = next
+                taken.insert(next)
+            }
+            let width = sequenceWidth(for: taken.max() ?? units.count)
+            for unit in units {
+                guard let value = numberByUnit[unit] else { continue }
+                result[unit] = ConflictNumber(number: value, width: width)
+                let suffix = "_" + String(format: "%0*d", width, value)
+                for key in keysByUnit[unit] ?? [] {
+                    plan(key.stem + suffix, in: key.directory)
+                }
+            }
+        }
+        return result
+    }
+
     static func filenameComponent(
         baseName: String,
         preservingExtensionOf original: Data
@@ -295,13 +511,16 @@ enum FileRenamingPlanner {
         return output
     }
 
-    private static func truncateFilenameBase(_ value: String) -> String {
-        guard value.utf8.count > 180 else { return value }
+    private static func truncateFilenameBase(
+        _ value: String,
+        limit: Int = 180
+    ) -> String {
+        guard value.utf8.count > limit else { return value }
         var result = ""
         var bytes = 0
         for character in value {
             let count = String(character).utf8.count
-            guard bytes + count <= 180 else { break }
+            guard bytes + count <= limit else { break }
             result.append(character)
             bytes += count
         }

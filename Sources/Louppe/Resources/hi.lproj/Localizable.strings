@@ -2128,3 +2128,5 @@
 
 "Checking folder…" = "फ़ोल्डर की जाँच हो रही है…";
 "Histogram" = "हिस्टोग्राम";
+"Numbered 1 file that shared a name." = "समान नाम वाली 1 फ़ाइल को क्रमांक दिया गया।";
+"Numbered {0} files that shared a name." = "समान नाम वाली {0} फ़ाइलों को क्रमांक दिए गए।";

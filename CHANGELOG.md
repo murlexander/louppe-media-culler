@@ -6,6 +6,9 @@
 - Filter dates by Range, Year or Date in a full-width chooser; each mode keeps its choices when you switch.
 - Drop the status-bar filter menu; the purple Filter button already shows an active filter. Sort now turns purple too when it differs from your default or Duplicates/Similar review is on.
 - Remove brief stalls of up to 0.1 seconds while photo details load in folders with tens of thousands of photos.
+- Line up Connected drives with Pinned folders on the start screen when there are no recent folders, instead of showing them off-center.
+- Show a thick purple line where a dragged row will land when reordering Rename filename parts or Organize folder levels.
+- Rename Files numbers files that would share a name instead of blocking: with only Date taken, each day's files become 2026.02.20_001, _002, and so on. Unique names stay unchanged.
 
 ## 1.13.2 (17) — 2026-11-08
 

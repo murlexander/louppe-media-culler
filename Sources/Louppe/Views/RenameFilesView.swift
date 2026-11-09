@@ -8,8 +8,7 @@ struct RenameFilesView: View {
     @State private var scope: SourceOrganizationScope = .selected
     @State private var metadataConfiguration = FileRenamingConfiguration.initial
     @State private var customBaseName: String
-    @State private var partDragID = UUID().uuidString
-    @State private var targetedPart: FileRenamingPartKind?
+    @State private var partDrag = ReorderDragState<FileRenamingPartKind>()
     @State private var plan: SourceOrganizationPlan?
     @State private var planningError: String?
     @State private var isPlanning = false
@@ -175,33 +174,14 @@ struct RenameFilesView: View {
         }
         .contentShape(Rectangle())
         .opacity(part.isEnabled ? 1 : 0.62)
-        .overlay {
-            if targetedPart == part.kind {
-                RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(Color.louppeAccent, lineWidth: 2)
-                    .allowsHitTesting(false)
-            }
-        }
-        // Scope text transfers to this sheet; unrelated text and drags from
-        // another rename window cannot reorder its configuration.
-        .draggable("\(partDragID):\(part.kind.rawValue)")
-        .dropDestination(for: String.self) { payloads, _ in
-            guard payloads.count == 1,
-                  payloads[0].hasPrefix(partDragID + ":"),
-                  let source = FileRenamingPartKind(rawValue:
-                    String(payloads[0].dropFirst(partDragID.count + 1)))
-            else { return false }
-            var changed = false
-            withAnimation(reduceMotion ? nil : .default) {
-                changed = metadataConfiguration.movePart(source, to: part.kind)
-            }
-            return changed
-        } isTargeted: { targeted in
-            if targeted {
-                targetedPart = part.kind
-            } else if targetedPart == part.kind {
-                targetedPart = nil
-            }
+        .reorderableRow(
+            part.kind,
+            in: metadataConfiguration.parts.map(\.kind),
+            state: $partDrag,
+            sectionEdges: .all
+        ) { source, offset in
+            metadataConfiguration.parts.move(
+                fromOffsets: IndexSet(integer: source), toOffset: offset)
         }
         .contextMenu {
             Button(L10n.text("Move \(part.kind.label) earlier")) {
@@ -271,6 +251,11 @@ struct RenameFilesView: View {
                     if plan.sidecarFileCount > 0 {
                         summary(L10n.text("\(plan.sidecarFileCount) XMP"))
                     }
+                }
+                if plan.autoNumberedFileCount > 0 {
+                    summary(plan.autoNumberedFileCount == 1
+                        ? L10n.text("Numbered 1 file that shared a name.")
+                        : L10n.text("Numbered \(plan.autoNumberedFileCount) files that shared a name."))
                 }
             }
 

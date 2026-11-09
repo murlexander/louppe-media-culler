@@ -2128,3 +2128,5 @@
 
 "Checking folder…" = "Verificando pasta…";
 "Histogram" = "Histograma";
+"Numbered 1 file that shared a name." = "1 arquivo com nome repetido foi numerado.";
+"Numbered {0} files that shared a name." = "{0} arquivos com nome repetido foram numerados.";

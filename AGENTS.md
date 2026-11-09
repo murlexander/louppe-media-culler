@@ -110,7 +110,8 @@ session state and is passed to every view. Slow I/O stays off the main actor.
   pencil (2026-09-04) rename original filename stems inside their current
   folders after an exact preview or explicit single-name submission. Extensions
   and contents never change; RAW+JPEG and recognized XMP names follow as one
-  journaled family, collisions and `.acr` companions block the plan, and ⌘Z
+  journaled family, shared generated names get per-name numbers when Sequence
+  is off, remaining collisions and `.acr` companions block the plan, and ⌘Z
   restores the prior names during the open session. No other code path may move originals;
   nothing ever hard-deletes.
 - Activate `FileOperationJournal` before the first filesystem change in

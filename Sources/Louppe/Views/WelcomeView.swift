@@ -41,6 +41,14 @@ struct WelcomeView: View {
         return hasConnectedDrives && !store.recentFolders.isEmpty ? 300 + drivesWidth : max(392, drivesWidth)
     }
 
+    // Without recent folders, drive columns stretch to the full section width
+    // so a single column lines up with Pinned folders instead of floating.
+    private var driveColumnWidth: CGFloat {
+        guard store.recentFolders.isEmpty else { return 280 }
+        let gaps = CGFloat(driveColumnCount - 1) * 16
+        return max(280, (sourcesWidth - gaps) / CGFloat(driveColumnCount))
+    }
+
     private var hasConnectedDrives: Bool {
         !connectedDrives.drives.isEmpty || connectedDrives.statusMessage != nil
     }
@@ -183,11 +191,16 @@ struct WelcomeView: View {
                             .frame(width: hasConnectedDrives ? 280 : 392)
                     }
                     if hasConnectedDrives {
-                        ConnectedDrivesView(drives: connectedDrives, columnCount: driveColumnCount) { directory in
+                        ConnectedDrivesView(
+                            drives: connectedDrives,
+                            columnCount: driveColumnCount,
+                            columnWidth: driveColumnWidth
+                        ) { directory in
                             store.promptForSourceFolder(initialDirectory: directory)
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -326,6 +339,7 @@ private struct PinnedFoldersSection: View {
 struct ConnectedDrivesView: View {
     @ObservedObject var drives: ConnectedDrivesStore
     var columnCount: Int = 1
+    var columnWidth: CGFloat = 280
     let chooseFolder: (URL) -> Void
 
     private var rowsPerColumn: Int {
@@ -345,7 +359,7 @@ struct ConnectedDrivesView: View {
                                 driveButton(drive)
                             }
                         }
-                        .frame(width: 280)
+                        .frame(width: columnWidth)
                     }
                 }
                 if let message = drives.statusMessage {

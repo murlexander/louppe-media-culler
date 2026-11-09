@@ -2128,3 +2128,5 @@
 
 "Checking folder…" = "Checking folder…";
 "Histogram" = "Histogram";
+"Numbered 1 file that shared a name." = "Numbered 1 file that shared a name.";
+"Numbered {0} files that shared a name." = "Numbered {0} files that shared a name.";

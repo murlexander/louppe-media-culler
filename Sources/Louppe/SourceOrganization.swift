@@ -280,6 +280,8 @@ struct SourceOrganizationPlan: Sendable {
     let alreadyOrganizedItemCount: Int
     let sidecarFileCount: Int
     let excludedACRCompanionCount: Int
+    /// Media files whose generated name received a conflict number.
+    var autoNumberedFileCount = 0
 
     var changeKind: SourceFileChangeKind { configuration.changeKind }
 
@@ -478,6 +480,20 @@ enum SourceOrganizationPlanner {
                         for: representativeItems.count
                     )
                 )
+        }
+        var autoNumberedFileCount = 0
+        if FileRenamingPlanner.numbersConflictingNames(
+            configuration.fileNaming
+        ) {
+            autoNumberedFileCount = try numberConflictingBaseNames(
+                &generatedBaseNameByItemIndex,
+                selectedItems: selectedItems,
+                families: disjointSet,
+                representativeIndexByRoot: representativeIndexByRoot,
+                sequenceByRepresentativeID: sequenceByRepresentativeID,
+                caseSensitive: volumeUsesCaseSensitiveNames,
+                isCancelled: isCancelled
+            )
         }
 
         func reserve(
@@ -997,8 +1013,123 @@ enum SourceOrganizationPlanner {
             movingFileCount: movingMediaFiles + sidecarFiles,
             alreadyOrganizedItemCount: alreadyOrganizedItems,
             sidecarFileCount: sidecarFiles,
-            excludedACRCompanionCount: excludedACR.count
+            excludedACRCompanionCount: excludedACR.count,
+            autoNumberedFileCount: autoNumberedFileCount
         )
+    }
+
+    /// Appends a per-conflict number to generated names that would clash.
+    /// Returns the number of media files that received one.
+    private static func numberConflictingBaseNames(
+        _ baseNames: inout [Int: String?],
+        selectedItems: [PhotoItem],
+        families: DisjointSet,
+        representativeIndexByRoot: [Int: Int],
+        sequenceByRepresentativeID: [String: Int],
+        caseSensitive: Bool,
+        isCancelled: () -> Bool
+    ) throws -> Int {
+        func stemKey(_ bytes: Data) -> String {
+            let name = String(decoding: bytes, as: UTF8.self)
+            guard !caseSensitive else { return name }
+            return name.precomposedStringWithCanonicalMapping
+                .lowercased(with: Locale(identifier: "en_US_POSIX"))
+        }
+        // Files already sharing a stem in one folder form one XMP family
+        // and keep a shared stem, just like a RAW+JPEG pair.
+        var families = families
+        var units = families
+        var paths: [[XMPExactFileSystemPath]] = []
+        var firstItemByCurrentStem: [String: Int] = [:]
+        for (index, item) in selectedItems.enumerated() {
+            if isCancelled() { throw CancellationError() }
+            let itemPaths = try item.individualFiles.map {
+                try XMPExactFileSystemPath(url: $0.url)
+            }
+            paths.append(itemPaths)
+            for path in itemPaths {
+                let key = path.parent.bytes.base64EncodedString() + "/"
+                    + stemKey(FileRenamingPlanner.stemBytes(
+                        of: path.lastComponentBytes
+                    ))
+                if let first = firstItemByCurrentStem[key] {
+                    units.union(first, index)
+                } else {
+                    firstItemByCurrentStem[key] = index
+                }
+            }
+        }
+
+        var files: [FileRenamingPlanner.ConflictNumberingFile] = []
+        var rankByUnit: [Int: Int] = [:]
+        for index in selectedItems.indices {
+            guard let base = baseNames[index] ?? nil else { continue }
+            let unit = units.find(index)
+            let representative = selectedItems[
+                representativeIndexByRoot[families.find(index)] ?? index
+            ]
+            let rank = sequenceByRepresentativeID[representative.id]
+                ?? Int.max
+            rankByUnit[unit] = min(rankByUnit[unit] ?? rank, rank)
+            for path in paths[index] {
+                files.append(FileRenamingPlanner.ConflictNumberingFile(
+                    unit: unit,
+                    directory: path.parent,
+                    currentStemKey: stemKey(FileRenamingPlanner.stemBytes(
+                        of: path.lastComponentBytes
+                    )),
+                    generatedStemKey: stemKey(Data(base.utf8))
+                ))
+            }
+        }
+        let unitOrder = rankByUnit.keys.sorted {
+            let left = rankByUnit[$0] ?? Int.max
+            let right = rankByUnit[$1] ?? Int.max
+            return left != right ? left < right : $0 < $1
+        }
+        let numbers = FileRenamingPlanner.conflictNumbers(
+            files: files,
+            unitOrder: unitOrder
+        ) { directory in
+            directoryEntryNames(directory).map {
+                stemKey(FileRenamingPlanner.stemBytes(of: $0))
+            }
+        }
+        var numberedFiles = 0
+        for (index, item) in selectedItems.enumerated() {
+            guard let number = numbers[units.find(index)],
+                  let base = baseNames[index] ?? nil else { continue }
+            baseNames[index] = FileRenamingPlanner.numberedBaseName(
+                base,
+                number: number.number,
+                width: number.width
+            )
+            numberedFiles += item.individualFiles.count
+        }
+        return numberedFiles
+    }
+
+    /// Exact entry names of one folder. An unreadable folder yields none;
+    /// every planned target is still checked before it is reserved.
+    private static func directoryEntryNames(
+        _ directory: XMPExactFileSystemPath
+    ) -> [Data] {
+        guard let stream = directory.withFileSystemRepresentation({
+            opendir($0)
+        }) else { return [] }
+        defer { closedir(stream) }
+        var names: [Data] = []
+        while let entry = readdir(stream) {
+            let length = Int(entry.pointee.d_namlen)
+            let name = withUnsafePointer(to: &entry.pointee.d_name) {
+                $0.withMemoryRebound(to: UInt8.self, capacity: length) {
+                    Data(bytes: $0, count: length)
+                }
+            }
+            if name == Data(".".utf8) || name == Data("..".utf8) { continue }
+            names.append(name)
+        }
+        return names
     }
 
     static func relativeParentBytes(

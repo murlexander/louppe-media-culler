@@ -2145,3 +2145,5 @@
 
 "Checking folder…" = "正在检查文件夹…";
 "Histogram" = "直方图";
+"Numbered 1 file that shared a name." = "已为 1 个重名文件添加编号。";
+"Numbered {0} files that shared a name." = "已为 {0} 个重名文件添加编号。";

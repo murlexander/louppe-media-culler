@@ -2128,3 +2128,5 @@
 
 "Checking folder…" = "Comprobando carpeta…";
 "Histogram" = "Histograma";
+"Numbered 1 file that shared a name." = "Se numeró 1 archivo que compartía nombre.";
+"Numbered {0} files that shared a name." = "Se numeraron {0} archivos que compartían nombre.";
