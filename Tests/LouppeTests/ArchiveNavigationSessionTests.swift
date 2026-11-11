@@ -338,6 +338,8 @@ final class ArchiveNavigationSessionTests: XCTestCase {
         try await ready(store)
         store.selectArchiveFolder("A")
         store.setArchiveIncludesDescendants(false)
+        store.rate(.no, at: try XCTUnwrap(store.visibleIndices.first))
+        assertCleanUpAvailabilityMatchesFresh(store)
         let snapshot = try XCTUnwrap(store.sourceFileRenamingPlanningSnapshot(scope: .all))
         let plan = try SourceOrganizationPlanner.makePlan(sourceFolder: snapshot.sourceFolder,
             selectedItems: snapshot.selectedItems, familyContextItems: snapshot.familyContextItems,
@@ -351,6 +353,13 @@ final class ArchiveNavigationSessionTests: XCTestCase {
         XCTAssertEqual(store.archiveSelectedFolderID, "A")
         XCTAssertEqual(store.currentItem?.primaryFile.id, "A/Renamed.txt")
         XCTAssertEqual(try String(contentsOf: fixture.media.appendingPathComponent("A/Renamed.txt"), encoding: .utf8), "A/one.txt")
+        assertCleanUpAvailabilityMatchesFresh(store)
+        store.filter.searchText = "one"
+        store.flushPendingFilter()
+        XCTAssertTrue(store.visibleIndices.isEmpty)
+        assertCleanUpAvailabilityMatchesFresh(store)
+        store.filter.searchText = ""
+        store.flushPendingFilter()
         let renamedGeneration = store.archiveFolderIndex?.generation
         store.undo()
         try await until { store.archiveFolderIndex?.generation != renamedGeneration && !store.isFileOperationRunning }
@@ -358,6 +367,7 @@ final class ArchiveNavigationSessionTests: XCTestCase {
         XCTAssertEqual(store.archiveSelectedFolderID, "A")
         XCTAssertEqual(store.visibleIndices.map { store.items[$0].primaryFile.id }, ["A/one.txt"])
         XCTAssertEqual(try String(contentsOf: fixture.media.appendingPathComponent("B/three.txt"), encoding: .utf8), "B/three.txt")
+        assertCleanUpAvailabilityMatchesFresh(store)
         store.isRenamePresented = false
         await finish(store)
     }

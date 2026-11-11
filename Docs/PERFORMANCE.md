@@ -827,8 +827,21 @@ Rating changes use `transitionRatingCount` or deliberately replace batch tallies
 ## Clean Up lifecycle
 
 Pair-component scope tests its own displayed index. Separate never borrows
-partner inclusion; Together shares the pair index. Counts/enablement use the
-worker snapshot predicate.
+partner inclusion; Together shares the pair index. Confirmation counts and
+operations use fresh worker snapshots. Menu availability uses main-actor counters
+for All (the archive folder scope), Filtered, and Selected.
+One byte per displayed item records conservative decision and physical-pair-member
+eligibility. Structural rebuilds refresh it after pairing and the physical-file map;
+item replacement/reset clears it. Decision publications update only affected
+displayed indices, including keyboard/menu edits, clear, Undo, and recovery. Mixed
+pairs have no rating-based eligibility; content revisions are not decision keys.
+
+Archive-scope changes rebuild All counters and membership. Visibility publication
+rebuilds Filtered and Selected; explicit selection changes rebuild Selected, and
+current-item changes rebuild it only for the empty-selection fallback. Changing
+the Clean Up scope selects existing counters. Each menu enablement read is O(1),
+with no candidate set construction or metadata walk. These counters never select
+files for confirmation, Trash, or Undo; those paths resolve and validate afresh.
 
 1. Main actor resolves indices and snapshots values.
 2. `CleanUpWorker` runs Trash/restore, throttling progress to about 100 ms/50 files.

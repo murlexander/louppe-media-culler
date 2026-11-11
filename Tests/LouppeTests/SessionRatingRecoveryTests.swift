@@ -135,8 +135,13 @@ final class SessionRatingRecoveryTests: XCTestCase {
             XCTAssertEqual(reopen.pendingContentFileIDsForTesting, pendingFiles)
             XCTAssertEqual(reopen.structuralIndexGenerationForTesting, structuralGeneration)
         }
+        assertCleanUpAvailabilityMatchesFresh(reopen)
+        reopen.cleanUpScope = .all
+        XCTAssertFalse(reopen.hasCleanUpTargets(for: .trashNo))
         reopen.restoreSessionRecoveryEntries([record.id])
         try await finished(reopen)
+        assertCleanUpAvailabilityMatchesFresh(reopen)
+        XCTAssertTrue(reopen.hasCleanUpTargets(for: .trashNo))
         XCTAssertEqual(reopen.items.first?.rating, .no)
         XCTAssertEqual(try read(f).recoveryEntries?.first?.resolvedFileID, "A.png")
     }
@@ -299,8 +304,10 @@ final class SessionRatingRecoveryTests: XCTestCase {
         try await ready(session)
         try await finished(session)
         let record = try XCTUnwrap(session.pendingSessionRecoveryEntries.first)
+        assertCleanUpAvailabilityMatchesFresh(session)
         session.restoreSessionRecoveryEntries([record.id])
         try await finished(session)
+        assertCleanUpAvailabilityMatchesFresh(session)
         let pair = try XCTUnwrap(session.items.first { $0.pairedFile != nil })
         XCTAssertEqual(pair.primaryFile.rating, .yes)
         XCTAssertEqual(pair.pairedFile?.rating, .no)

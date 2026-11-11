@@ -236,6 +236,7 @@ final class ReviewProjectionRetentionTests: XCTestCase {
         try await waitAsync { await gate.calls >= 7 }
         try await wait { store.pendingRecoveryResultCountForTesting == 5 }
         XCTAssertEqual(store.automaticallyRestoredSessionFiles, 1)
+        assertCleanUpAvailabilityMatchesFresh(store)
         let batchesBeforeCommands = store.recoveryBatchesAppliedForTesting
 
         // Pending results are not restored yet: metadata, counts and the
@@ -269,6 +270,7 @@ final class ReviewProjectionRetentionTests: XCTestCase {
         let revision = store.reviewStateRevision
         await gate.open()
         try await wait { store.sessionContentCheck == .finished }
+        assertCleanUpAvailabilityMatchesFresh(store)
         XCTAssertEqual(store.automaticallyRestoredSessionFiles, count)
         XCTAssertEqual(store.pendingRecoveryResultCountForTesting, 0)
         XCTAssertLessThan(store.recoveryBatchesAppliedForTesting, batchesBeforeCommands + 5,

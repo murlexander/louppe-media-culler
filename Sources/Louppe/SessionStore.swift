@@ -228,6 +228,7 @@ final class SessionStore: ObservableObject {
         didSet {
             cancelNeighbourPrefetch()
             cachedSelectionSummary = nil
+            resetCleanUpAvailability()
             preparedIndex.invalidateItemOrder()
             itemStructureNeedsRebuild = true
             invalidateQualityCueAnalysis()
@@ -236,6 +237,7 @@ final class SessionStore: ObservableObject {
     @Published var currentIndex: Int = 0 {
         didSet {
             if currentIndex != oldValue {
+                if selectedIndices.isEmpty { rebuildSelectedCleanUpAvailability() }
                 // A dormant surface's opening anchor must never override
                 // navigation performed after the authoritative session mounts.
                 if case .ready = phase { openingViewportReceipts.removeAll() }
@@ -294,7 +296,9 @@ final class SessionStore: ObservableObject {
     /// refreshes only its visible rows.
     var archiveFolderProgressRevision = 0
     @Published var archiveNavigationWarning: String?
-    var archiveScopeIndices: [Int]?
+    var archiveScopeIndices: [Int]? {
+        didSet { rebuildArchiveCleanUpAvailability() }
+    }
     var archiveScopeReviewStates: [Int: PhotoItemRatingState] = [:]
     var archiveScopeReviewCounts = (yes: 0, no: 0, mixed: 0)
     @Published var archiveNavigationCanReset = false
@@ -556,6 +560,7 @@ final class SessionStore: ObservableObject {
     @Published private(set) var selectedIndices: Set<Int> = [] {
         didSet {
             cachedSelectionSummary = nil
+            rebuildSelectedCleanUpAvailability()
             if selectedIndices != oldValue {
                 qualityCueSelectionOrder = nil
                 qualityCueSelectionCursor = 0
@@ -1462,6 +1467,10 @@ final class SessionStore: ObservableObject {
         rebuildDerivedData()
         applyFilter()
     }
+
+    /// Keep worker-backed Store tests inside disposable Trash/journal folders.
+    var makeCleanUpFileManagerForTesting: (@Sendable () -> FileManager)?
+    var cleanUpJournalDirectoryForTesting: URL?
 
     /// Apply an already-completed disposable worker outcome without touching
     /// the user's Trash or journal during model-focused regression tests.
@@ -2524,6 +2533,9 @@ final class SessionStore: ObservableObject {
         preservingCurrent: Bool = false
     ) {
         sessionContentPendingFileIDs.formUnion(affectedFileIDs)
+        if dimension == .decision || dimension == .all {
+            updateCleanUpAvailability(affectedFileIDs: affectedFileIDs)
+        }
         if dimension == .decision || dimension == .all, archiveScopeIndices != nil {
             for index in Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] })
                 where archiveScopeReviewStates[index] != nil {
@@ -2573,6 +2585,8 @@ final class SessionStore: ObservableObject {
         visibleGroups = preparedIndex.visibleGroups
         gridGroups = preparedIndex.visibleGridGroups
         visibleGroupTitles = preparedIndex.visibleGroupTitles
+        rebuildFilteredCleanUpAvailability()
+        rebuildSelectedCleanUpAvailability()
     }
 
     /// Rebuild all values derived from session structure in one pass. Ratings
@@ -2650,6 +2664,7 @@ final class SessionStore: ObservableObject {
         } else {
             rawJPEGPairs = []
         }
+        rebuildCleanUpAvailability()
     }
 
     /// Folder-wide ranges are the neutral filter state. Existing narrowed
@@ -2834,6 +2849,7 @@ final class SessionStore: ObservableObject {
     }
 
     private func resetDerivedData() {
+        resetCleanUpAvailability()
         preparedIndex.reset()
         publishPreparedVisibility()
         ratingTally = (0, 0, 0)
@@ -4450,18 +4466,124 @@ final class SessionStore: ObservableObject {
         )
     }
 
-    /// Menu enablement only needs to know whether one target exists. Avoid
-    /// materializing the entire all-photo candidate array on every toolbar
-    /// refresh; the action itself still resolves an exact ordered snapshot.
-    private func cleanUpCandidatesContain(_ predicate: (Int) -> Bool) -> Bool {
-        switch cleanUpScope {
-        case .all:
-            if let scope = archiveScopeIndices { return scope.contains(where: predicate) }
-            return items.indices.contains(where: predicate)
-        case .filtered:
-            return visibleIndices.contains(where: predicate)
-        case .selected:
-            return effectiveSelection.contains(where: predicate)
+    /// Menu-only facts: one byte per displayed item. Pair bits refer to the
+    /// physical member's own displayed index; Mixed has neither decision bit.
+    /// Never use these facts to construct an operation or confirmation snapshot.
+    private enum CleanUpFact {
+        static let no: UInt8 = 1
+        static let notYes: UInt8 = 2
+        static let jpeg: UInt8 = 4
+        static let raw: UInt8 = 8
+
+        static func decision(_ state: PhotoItemRatingState) -> UInt8 {
+            switch state {
+            case .no: return no | notYes
+            case .undecided: return notYes
+            case .yes, .mixed: return 0
+            }
+        }
+    }
+
+    private struct CleanUpAvailability {
+        var no = 0
+        var notYes = 0
+        var jpeg = 0
+        var raw = 0
+
+        mutating func add(_ facts: UInt8, by delta: Int = 1) {
+            if facts & CleanUpFact.no != 0 { no += delta }
+            if facts & CleanUpFact.notYes != 0 { notYes += delta }
+            if facts & CleanUpFact.jpeg != 0 { jpeg += delta }
+            if facts & CleanUpFact.raw != 0 { raw += delta }
+        }
+
+        func contains(_ mode: CleanUpMode) -> Bool {
+            switch mode {
+            case .trashNo: return no > 0
+            case .keepOnlyYes: return notYes > 0
+            case .pairedJPEGs: return jpeg > 0
+            case .pairedRAWs: return raw > 0
+            case .selection: return false // Independent of the action scope.
+            }
+        }
+    }
+
+    private var cleanUpFacts: [UInt8] = []
+    private var archiveCleanUpAvailability = CleanUpAvailability()
+    private var filteredCleanUpAvailability = CleanUpAvailability()
+    private var selectedCleanUpAvailability = CleanUpAvailability()
+    private var cleanUpArchiveMembership: Set<Int>?
+
+    private func resetCleanUpAvailability() {
+        cleanUpFacts = []
+        archiveCleanUpAvailability = CleanUpAvailability()
+        filteredCleanUpAvailability = CleanUpAvailability()
+        selectedCleanUpAvailability = CleanUpAvailability()
+        cleanUpArchiveMembership = nil
+    }
+
+    /// Structural boundary, after pairing and the physical-file map are ready.
+    private func rebuildCleanUpAvailability() {
+        cleanUpFacts = items.map { CleanUpFact.decision($0.ratingState) }
+        for pair in rawJPEGPairs {
+            if let index = itemIndexByFileID[pair.jpeg.id] { cleanUpFacts[index] |= CleanUpFact.jpeg }
+            if let index = itemIndexByFileID[pair.raw.id] { cleanUpFacts[index] |= CleanUpFact.raw }
+        }
+        rebuildArchiveCleanUpAvailability()
+        rebuildFilteredCleanUpAvailability()
+        rebuildSelectedCleanUpAvailability()
+    }
+
+    private func rebuildArchiveCleanUpAvailability() {
+        cleanUpArchiveMembership = archiveScopeIndices.map { Set($0) }
+        archiveCleanUpAvailability = CleanUpAvailability()
+        if let scope = archiveScopeIndices {
+            for index in scope where cleanUpFacts.indices.contains(index) {
+                archiveCleanUpAvailability.add(cleanUpFacts[index])
+            }
+        } else {
+            for facts in cleanUpFacts { archiveCleanUpAvailability.add(facts) }
+        }
+    }
+
+    private func rebuildFilteredCleanUpAvailability() {
+        filteredCleanUpAvailability = CleanUpAvailability()
+        for index in visibleIndices where cleanUpFacts.indices.contains(index) {
+            filteredCleanUpAvailability.add(cleanUpFacts[index])
+        }
+    }
+
+    private func rebuildSelectedCleanUpAvailability() {
+        selectedCleanUpAvailability = CleanUpAvailability()
+        for index in effectiveSelection where cleanUpFacts.indices.contains(index) {
+            selectedCleanUpAvailability.add(cleanUpFacts[index])
+        }
+    }
+
+    /// Ratings live in physical-file metadata, outside contentRevision/items'
+    /// didSet. Every published decision mutation (including recovery and Undo)
+    /// updates only its displayed indices and the scopes containing them.
+    private func updateCleanUpAvailability(affectedFileIDs: [String]) {
+        let selection = effectiveSelection
+        for index in Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] })
+            where cleanUpFacts.indices.contains(index) {
+            let old = cleanUpFacts[index]
+            let new = (old & (CleanUpFact.jpeg | CleanUpFact.raw))
+                | CleanUpFact.decision(items[index].ratingState)
+            guard old != new else { continue }
+            cleanUpFacts[index] = new
+            if cleanUpArchiveMembership?.contains(index) ?? true {
+                archiveCleanUpAvailability.add(old, by: -1)
+                archiveCleanUpAvailability.add(new)
+            }
+            if preparedIndex.location(forItemIndex: index) != nil {
+                filteredCleanUpAvailability.add(old, by: -1)
+                filteredCleanUpAvailability.add(new)
+            }
+            if selection.contains(index) {
+                selectedCleanUpAvailability.add(old, by: -1)
+                selectedCleanUpAvailability.add(new)
+            }
         }
     }
 
@@ -4524,28 +4646,15 @@ final class SessionStore: ObservableObject {
         }
     }
 
-    /// Whether a clean-up mode has anything to remove — drives the menu
-    /// items' enabled state. Short-circuits instead of building and counting
-    /// the whole target list on every toolbar render.
+    /// Constant-time menu availability. Structural, visibility, archive and
+    /// selection boundaries rebuild their counters; decisions update them in
+    /// place. Confirmation and execution always resolve fresh physical targets.
     func hasCleanUpTargets(for mode: CleanUpMode) -> Bool {
-        switch mode {
-        case .selection:
-            return !effectiveSelection.isEmpty
-        case .trashNo:
-            return cleanUpCandidatesContain { items[$0].rating == .no }
-        case .keepOnlyYes:
-            return cleanUpCandidatesContain {
-                !items[$0].hasMixedRatings && items[$0].rating != .yes
-            }
-        case .pairedJPEGs, .pairedRAWs:
-            let candidateIndices = Set(cleanUpCandidates)
-            return rawJPEGPairs.contains { pair in
-                let target = mode == .pairedJPEGs ? pair.jpeg : pair.raw
-                guard let index = itemIndexByFileID[target.id] else {
-                    return false
-                }
-                return candidateIndices.contains(index)
-            }
+        if mode == .selection { return !effectiveSelection.isEmpty }
+        switch cleanUpScope {
+        case .all: return archiveCleanUpAvailability.contains(mode)
+        case .filtered: return filteredCleanUpAvailability.contains(mode)
+        case .selected: return selectedCleanUpAvailability.contains(mode)
         }
     }
 
@@ -4679,8 +4788,19 @@ final class SessionStore: ObservableObject {
             uniqueKeysWithValues: rawJPEGPairs.map { ($0.raw.id, $0.jpeg) }
         )
 
+#if LOUPPE_TEST_SEAMS
+        let makeFileManagerForTesting = makeCleanUpFileManagerForTesting
+        let journalDirectoryForTesting = cleanUpJournalDirectoryForTesting
+#endif
         Task.detached(priority: .userInitiated) { [weak self] in
+#if LOUPPE_TEST_SEAMS
+            let result = CleanUpWorker.moveToTrash(
+                snapshots, journalDirectory: journalDirectoryForTesting,
+                fileManager: makeFileManagerForTesting?() ?? FileManager(), progress: progressReporter
+            )
+#else
             let result = CleanUpWorker.moveToTrash(snapshots, progress: progressReporter)
+#endif
             var preparedSurvivors: [PhotoItem] = []
             var survivorMetadataError: String?
             if mode == .pairedRAWs {
@@ -4895,8 +5015,17 @@ final class SessionStore: ObservableObject {
         cleanUpProgress = CleanUpProgress(action: .restoring, done: 0, total: total)
         let progressReporter = makeCleanUpProgressReporter(action: .restoring, generation: generation)
 
+#if LOUPPE_TEST_SEAMS
+        let journalDirectoryForTesting = cleanUpJournalDirectoryForTesting
+#endif
         Task.detached(priority: .userInitiated) { [weak self] in
+#if LOUPPE_TEST_SEAMS
+            let result = CleanUpWorker.restore(
+                snapshots, journalDirectory: journalDirectoryForTesting, progress: progressReporter
+            )
+#else
             let result = CleanUpWorker.restore(snapshots, progress: progressReporter)
+#endif
             await self?.finishUndoCleanUp(
                 result,
                 allRemovedIndices: Set(removed.map(\.index)),

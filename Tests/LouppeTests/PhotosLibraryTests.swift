@@ -68,6 +68,7 @@ final class PhotosLibraryTests: XCTestCase {
         XCTAssertFalse(store.photosBrowser.allowNetwork, "Downloads require an explicit choice.")
         store.openPhotosBatch(page: 800)
         try await wait { if case .ready = store.phase { return true }; return false }
+        assertCleanUpAvailabilityMatchesFresh(store)
         XCTAssertEqual(store.items.count, 5)
         XCTAssertEqual(store.photosBatch?.range.indices, 80_000..<80_005)
         let requested = await fixture.library.requestedRanges
@@ -91,12 +92,14 @@ final class PhotosLibraryTests: XCTestCase {
         XCTAssertEqual(checkpoint[assetID]?.stars, .five)
         XCTAssertEqual(checkpoint[assetID]?.color, .purple)
         XCTAssertFalse(FileManager.default.fileExists(atPath: try XCTUnwrap(store.sourceFolder).appendingPathComponent(SessionConstants.sidecarName).path))
+        assertCleanUpAvailabilityMatchesFresh(store)
         store.viewMode = .grid
         store.openPhotosBatch(page: 799, continuing: true)
         try await wait {
             guard case .ready = store.phase else { return false }
             return store.photosBatch?.range.page == 799 && store.items.count == 100 && !store.isFileOperationRunning
         }
+        assertCleanUpAvailabilityMatchesFresh(store)
         XCTAssertEqual(store.viewMode, .grid, "Next/Previous must preserve the review layout.")
         // A differently sized, overlapping selection recovers by Photos ID,
         // even though every temporary pathname and physical file has changed.
@@ -109,6 +112,7 @@ final class PhotosLibraryTests: XCTestCase {
             return store.photosBatch?.range.size == 50 && store.photosBatch?.range.page == 1600
                 && store.items.count == 5 && !store.isFileOperationRunning
         }
+        assertCleanUpAvailabilityMatchesFresh(store)
         let matching = try XCTUnwrap(store.items.first { item in
             store.photosBatch?.assetIDsByPath[item.primaryURL.path] == assetID
         })
@@ -125,9 +129,18 @@ final class PhotosLibraryTests: XCTestCase {
         let fixture = try Fixture(total: 2)
         defer { fixture.remove() }
         let store = fixture.store()
+        store.openFolder(fixture.ordinaryFolder)
+        try await wait { if case .ready = store.phase { return true }; return false }
+        store.rate(.yes, at: 0)
+        assertCleanUpAvailabilityMatchesFresh(store)
         await store.photosBrowser.load()
         store.openPhotosBatch(page: 0)
-        try await wait { if case .ready = store.phase { return true }; return false }
+        try await wait {
+            guard case .ready = store.phase else { return false }
+            return store.photosBatch != nil && store.items.count == 2
+                && !store.isSessionTransitioning && !store.photosBrowser.isOpening
+        }
+        assertCleanUpAvailabilityMatchesFresh(store)
         XCTAssertTrue(store.canRate)
         XCTAssertTrue(store.canExport)
         XCTAssertFalse(store.canCleanUp)
@@ -142,12 +155,19 @@ final class PhotosLibraryTests: XCTestCase {
         XCTAssertFalse(store.isRenamePresented)
         XCTAssertTrue(store.items.allSatisfy { FileManager.default.fileExists(atPath: $0.primaryURL.path) })
         store.rate(.no, at: 0)
+        assertCleanUpAvailabilityMatchesFresh(store)
         store.openFolder(fixture.ordinaryFolder)
         try await wait { store.photosBatch == nil && store.items.count == 1 && !store.isFileOperationRunning }
+        assertCleanUpAvailabilityMatchesFresh(store)
+        XCTAssertEqual(store.items.first?.rating, .yes)
         XCTAssertTrue(store.canCleanUp)
         XCTAssertTrue(store.canRenameSource)
         let decisions = try await fixture.decisions.load()
         XCTAssertTrue(decisions.values.contains { $0.rating == .no })
+        store.closeSession()
+        try await wait { store.sourceFolder == nil && store.items.isEmpty }
+        assertCleanUpAvailabilityMatchesFresh(store)
+        store.beginTerminationPreparation()
     }
 
     func testCancellationAndDownloadFailureKeepExistingSession() async throws {
