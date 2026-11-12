@@ -1081,7 +1081,7 @@ final class SessionStore: ObservableObject {
     private var latestReportedSaveSequence: UInt64 = 0
     private var persistenceAccess: SessionPersistence.AccessContext?
     private var scanGeneration: UInt64 = 0
-    private var folderOpenGeneration: UInt64 = 0
+    private(set) var folderOpenGeneration: UInt64 = 0
     private var cleanUpGeneration: UInt64 = 0
     private var xmpPublicationGeneration: UInt64 = 0
     private var xmpPublicationCancelFlag: XMPPublicationCancelFlag?

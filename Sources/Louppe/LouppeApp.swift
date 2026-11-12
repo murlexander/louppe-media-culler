@@ -516,7 +516,7 @@ final class LouppeApplicationDelegate: NSObject, NSApplicationDelegate {
             forClasses: [NSURL.self],
             options: [.urlReadingFileURLsOnly: true]
         ) as? [URL] ?? []
-        if let message = FolderOpening.validationError(for: urls) {
+        if let message = FolderOpening.requestError(for: urls) {
             error.pointee = message as NSString
             return
         }

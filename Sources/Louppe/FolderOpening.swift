@@ -9,7 +9,23 @@ final class FolderOpening: ObservableObject {
     @Published var error: String?
     weak var store: SessionStore?
 
-    static func validationError(for urls: [URL]) -> String? {
+    private var requestID = UUID()
+    private var requestFolderGeneration: UInt64?
+    private(set) var validationTask: Task<Void, Never>?
+    private let readDirectory: @Sendable (URL) throws -> Bool
+    private let resourceAccess: SecurityScopedResourceAccess
+
+    init(
+        readDirectory: @escaping @Sendable (URL) throws -> Bool = {
+            try $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true
+        },
+        resourceAccess: SecurityScopedResourceAccess = .live
+    ) {
+        self.readDirectory = readDirectory
+        self.resourceAccess = resourceAccess
+    }
+
+    static func requestError(for urls: [URL]) -> String? {
         guard urls.count == 1 else {
             return L10n.text("Open one folder at a time.")
         }
@@ -17,23 +33,59 @@ final class FolderOpening: ObservableObject {
         guard url.isFileURL else {
             return L10n.text("Drop a folder containing photos, videos, audio, or text files, not an individual file.")
         }
-        let hasAccess = url.startAccessingSecurityScopedResource()
-        defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
-        guard let values = try? url.resourceValues(forKeys: [.isDirectoryKey]) else {
-            return L10n.text("Louppe couldn't read the dropped folder. Please try again.")
-        }
-        guard values.isDirectory == true else {
-            return L10n.text("Drop a folder containing photos, videos, audio, or text files, not an individual file.")
-        }
         return nil
     }
 
     @discardableResult
     func open(_ urls: [URL]) -> String? {
-        if let message = Self.validationError(for: urls) {
+        let id = beginRequest()
+        if let message = Self.requestError(for: urls) ?? openingGateError() {
             error = message
             return message
         }
+        validateAndOpen(urls[0], requestID: id)
+        return nil
+    }
+
+    private func beginRequest() -> UUID {
+        requestID = UUID()
+        requestFolderGeneration = store?.folderOpenGeneration
+        validationTask?.cancel()
+        validationTask = nil
+        error = nil
+        return requestID
+    }
+
+    private func validateAndOpen(_ url: URL, requestID: UUID) {
+        guard let store else { return }
+        let sourceFolder = store.sourceFolder
+        let folderGeneration = store.folderOpenGeneration
+        let readDirectory = readDirectory
+        let resourceAccess = resourceAccess
+        validationTask = Task { [weak self, weak store] in
+            // This worker owns access until the filesystem call exits, even
+            // when a newer request retires its result during a slow read.
+            let message = await Task.detached(priority: .userInitiated) {
+                let hasAccess = resourceAccess.start(url)
+                defer { if hasAccess { resourceAccess.stop(url) } }
+                do {
+                    return try readDirectory(url) ? nil
+                        : L10n.text("Drop a folder containing photos, videos, audio, or text files, not an individual file.")
+                } catch {
+                    return L10n.text("Louppe couldn't read the dropped folder. Please try again.")
+                }
+            }.value
+            guard let self, let store, !Task.isCancelled,
+                  self.requestID == requestID, self.store === store,
+                  store.sourceFolder == sourceFolder,
+                  store.folderOpenGeneration == folderGeneration else { return }
+            self.error = message ?? self.openingGateError()
+            guard self.error == nil else { return }
+            store.openFolder(url)
+        }
+    }
+
+    private func openingGateError() -> String? {
         guard let store else { return nil }
         // Startup recovery already owns a deferred-open slot. Let it keep the
         // requested folder until recovery reaches its safe boundary.
@@ -50,10 +102,7 @@ final class FolderOpening: ObservableObject {
         } else {
             message = nil
         }
-        error = message
-        guard message == nil else { return message }
-        store.openFolder(urls[0])
-        return nil
+        return message
     }
 
     func openDroppedFolder(_ providers: [NSItemProvider]) -> Bool {
@@ -61,6 +110,7 @@ final class FolderOpening: ObservableObject {
               providers.allSatisfy({ $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }) else {
             return false
         }
+        let id = beginRequest()
         guard providers.count == 1, let provider = providers.first else {
             error = L10n.text("Open one folder at a time.")
             return true
@@ -75,11 +125,17 @@ final class FolderOpening: ObservableObject {
                 url = nil
             }
             Task { @MainActor in
+                guard self.requestID == id,
+                      self.store?.folderOpenGeneration == self.requestFolderGeneration else { return }
                 guard let url else {
                     self.error = L10n.text("Louppe couldn't read the dropped folder. Please try again.")
                     return
                 }
-                self.open([url])
+                if let message = Self.requestError(for: [url]) ?? self.openingGateError() {
+                    self.error = message
+                    return
+                }
+                self.validateAndOpen(url, requestID: id)
             }
         }
         return true

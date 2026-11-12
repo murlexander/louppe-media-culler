@@ -812,7 +812,11 @@ precedence over remembered scope/position.
   scoped access. Review builds omit the service to prevent duplicate commands
   and port collisions.
 - Dock opens and the whole main-window drop target share `FolderOpening`
-  validation and visible errors. The delegate buffers early folder events until
+  validation and visible errors. Directory reads run off-main with worker-owned
+  scoped access; request identity rejects retired results and operation/dialog
+  gates are checked again before opening. Finder services synchronously reject
+  malformed requests and report filesystem failures in the same visible banner.
+  The delegate buffers early folder events until
   launch and scene configuration are ready, then explicitly shows the main window.
   `public.folder` registration uses Viewer/Alternate, preserving Finder's default
   role. Modal UI and active file operations refuse replacement; `openFolder`
