@@ -1,17 +1,15 @@
 import SwiftUI
 
 /// The dark backdrop behind white badges drawn over media: duration, stars,
-/// color labels use `.glyph`, quality cues use `.qualityCue`, and color names
-/// use `.text`. Each badge keeps its own shape and ordinary opacity.
+/// color labels and quality cues use `.glyph`; color names use `.text`.
+/// Each badge keeps its own shape.
 enum MediaBadgeBackdropRole {
     case glyph
-    case qualityCue
     case text
 
     var opacity: Double {
         switch self {
-        case .glyph: 0.68
-        case .qualityCue: 0.72
+        case .glyph: 0.70
         case .text: 0.85
         }
     }

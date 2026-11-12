@@ -693,7 +693,7 @@ struct MetadataPanel: View {
                 // One element per setting, named in full: the visible label is
                 // abbreviated (Exp. comp., WB) or hidden in the hero row.
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel(Text("\(L10n.label(field.label)) \(field.value)"))
+                .accessibilityLabel(Text(verbatim: "\(L10n.label(field.label)) \(field.value)"))
             }
         }
     }

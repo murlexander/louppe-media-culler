@@ -262,7 +262,12 @@ private struct OpeningPhotoView: View {
 
     private var media: some View {
         ZStack {
-            Color.appBackground
+            if !fitted, image == nil {
+                RoundedRectangle(cornerRadius: ReviewTileMetrics.mediaCornerRadius)
+                    .fill(Color(nsColor: .quaternaryLabelColor))
+            } else {
+                Color.appBackground
+            }
             if let image {
                 Image(nsImage: image).resizable().aspectRatio(contentMode: .fit)
             } else {

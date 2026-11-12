@@ -316,7 +316,7 @@ struct MediaDurationBadge: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 5)
             .frame(height: TileBadgeLayout.height)
-            .mediaBadgeBackdrop(Capsule())
+            .mediaBadgeBackdrop(Capsule(), role: .glyph)
             .shadow(radius: 1)
             .accessibilityLabel(L10n.text("\(L10n.label(mediaKind.singularLabel)) duration: \(MediaDurationFormat.accessibility(duration))"))
     }
