@@ -2,7 +2,7 @@
 
 ## 1.14.0 (18) — 2026-11-08
 
-- Use the right singular and plural words in every language, and group large counts so they are easier to read.
+- Use the right singular and plural words in every language, and group large counts in Louppe's language so they are easier to read.
 - Show the next photo sooner when browsing, with faster fitted previews and lower memory use.
 - Keep Louppe responsive while checking folders opened from Finder, the Dock or a drop.
 - Offer Try Again if a video's audio or subtitle options cannot be loaded.
@@ -20,6 +20,11 @@
 - Show a thick purple line where a dragged row will land when reordering Rename filename parts or Organize folder levels.
 - Center the Grid's Play button on the video again; since 1.13 it sat near the top edge of wide clips.
 - Rename Files numbers files that would share a name instead of blocking: with only Date taken, each day's files become 2026.02.20_001, _002, and so on. Unique names stay unchanged.
+
+- Keep Undo from moving a file that another app changed or replaced after Rename or Organize.
+- Offer Undo when Rename or Organize finishes with some files left unchanged.
+- Keep the current photo in view in Browser and Grid after sorting or resizing the window.
+- Apply a just-typed search before decisions, stars and color labels, so they never reach photos the search hides.
 
 ## 1.13.2 (17) — 2026-11-08
 
