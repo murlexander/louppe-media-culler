@@ -509,7 +509,7 @@ final class SessionStore: ObservableObject {
     private var pinnedPositionFlushTask: Task<Void, Never>?
     private var pinnedPositionFlushID: UUID?
     private var activePinnedOpeningIdentity: PinnedFolderIdentity?
-    private var pinnedOpenGeneration: UInt64 = 0
+    private(set) var sourceOpenRequestGeneration: UInt64 = 0
     let videoPlayback = VideoPlaybackController()
 
     /// The toolbar filter. Views only render `visibleIndices`; `items` stays
@@ -2934,13 +2934,13 @@ final class SessionStore: ObservableObject {
 
     func presentPhotosLibrary() {
         guard !isFileOperationRunning, !isSessionCommandPresentationActive else { return }
-        pinnedOpenGeneration &+= 1
+        sourceOpenRequestGeneration &+= 1
         photosBrowser.reviewEntireSelection()
         isPhotosLibraryPresented = true
     }
 
     func cancelPhotosOpening() {
-        pinnedOpenGeneration &+= 1
+        sourceOpenRequestGeneration &+= 1
         photosOpeningTask?.cancel()
     }
 
@@ -2961,7 +2961,7 @@ final class SessionStore: ObservableObject {
     }
 
     private func openPhotos(snapshot: PhotosLibrarySnapshot, selection: PhotosReviewSelection, continuing: Bool = false) {
-        pinnedOpenGeneration &+= 1
+        sourceOpenRequestGeneration &+= 1
         pinnedFolderPreparation.cancel()
         guard !isFileOperationRunning,
               continuing || !photosBrowser.isLoading else { return }
@@ -3062,7 +3062,7 @@ final class SessionStore: ObservableObject {
         }
         try Task.checkCancellation()
         guard photosOpeningGeneration == openingGeneration else { throw CancellationError() }
-        pinnedOpenGeneration &+= 1
+        sourceOpenRequestGeneration &+= 1
         let previous = photosBatch
         photosBatch = batch
         photosBrowser.query = batch.snapshot.query
@@ -3079,8 +3079,15 @@ final class SessionStore: ObservableObject {
         if let previous { Task { await self.photosLibrary.remove(previous) } }
     }
 
+    /// External validation and bookmark resolution share request ordering even
+    /// before either has a folder ready to hand to `openFolder`.
+    func beginExternalFolderRequest() -> UInt64 {
+        sourceOpenRequestGeneration &+= 1
+        return sourceOpenRequestGeneration
+    }
+
     func openFolder(_ url: URL, expectedPinnedIdentity: PinnedFolderIdentity? = nil) {
-        pinnedOpenGeneration &+= 1
+        sourceOpenRequestGeneration &+= 1
         pinnedFolderPreparation.cancel()
         if isRecoveringInterruptedOperations {
             deferredFolderOpen = url
@@ -3131,7 +3138,7 @@ final class SessionStore: ObservableObject {
             SessionPersistence.LegacySidecarRelocationAuthorization? = nil,
         replaceSavedSession: Bool = false
     ) {
-        pinnedOpenGeneration &+= 1
+        sourceOpenRequestGeneration &+= 1
         activePinnedOpeningIdentity = expectedPinnedIdentity
         let standardizedURL = url.standardizedFileURL
         if let batch = photosBatch, batch.folder.standardizedFileURL != standardizedURL {
@@ -3827,7 +3834,7 @@ final class SessionStore: ObservableObject {
     /// Existing ratings survive: they're saved to the sidecar first,
     /// and the scan restores them by filename.
     func rescan() {
-        pinnedOpenGeneration &+= 1
+        sourceOpenRequestGeneration &+= 1
         if let batch = photosBatch {
             openPhotosBatch(page: batch.range.page, continuing: true)
             return
@@ -7419,11 +7426,11 @@ final class SessionStore: ObservableObject {
         guard !isFileOperationRunning, !isSessionTransitioning, !isPreparingForTermination,
               !isSessionCommandPresentationActive else { return }
         pinnedFolderPreparation.cancel()
-        pinnedOpenGeneration &+= 1
-        let generation = pinnedOpenGeneration
+        sourceOpenRequestGeneration &+= 1
+        let generation = sourceOpenRequestGeneration
         Task { @MainActor [weak self] in
             guard let self, let request = await self.pinnedFolders.prepareOpen(id: pin.id, reconnectingWith: url),
-                  self.pinnedOpenGeneration == generation,
+                  self.sourceOpenRequestGeneration == generation,
                   !self.isFileOperationRunning, !self.isSessionTransitioning, !self.isPreparingForTermination,
                   !self.isSessionCommandPresentationActive, NSApplication.shared.modalWindow == nil,
                   NSApplication.shared.mainWindow?.attachedSheet == nil else { return }
@@ -7589,7 +7596,7 @@ final class SessionStore: ObservableObject {
     // MARK: - Going back to the welcome screen
 
     func closeSession() {
-        pinnedOpenGeneration &+= 1
+        sourceOpenRequestGeneration &+= 1
         if hasXMPPublicationSessionState {
             guard !isSessionTransitioning,
                   activeFileOperation == nil,
@@ -7629,7 +7636,7 @@ final class SessionStore: ObservableObject {
     }
 
     private func finishClosingSession() {
-        pinnedOpenGeneration &+= 1
+        sourceOpenRequestGeneration &+= 1
         // The session just warmed this pin's caches; Welcome need not repeat it.
         if let pinID = currentPinnedFolderID { pinnedFolderPreparation.noteRecentlyOpened(pinID: pinID) }
         resetSessionRecovery()

@@ -11,6 +11,7 @@ final class FolderOpening: ObservableObject {
 
     private var requestID = UUID()
     private var requestFolderGeneration: UInt64?
+    private var requestSourceGeneration: UInt64?
     private(set) var validationTask: Task<Void, Never>?
     private let readDirectory: @Sendable (URL) throws -> Bool
     private let resourceAccess: SecurityScopedResourceAccess
@@ -50,6 +51,7 @@ final class FolderOpening: ObservableObject {
     private func beginRequest() -> UUID {
         requestID = UUID()
         requestFolderGeneration = store?.folderOpenGeneration
+        requestSourceGeneration = store?.beginExternalFolderRequest()
         validationTask?.cancel()
         validationTask = nil
         error = nil
@@ -60,6 +62,7 @@ final class FolderOpening: ObservableObject {
         guard let store else { return }
         let sourceFolder = store.sourceFolder
         let folderGeneration = store.folderOpenGeneration
+        let sourceGeneration = store.sourceOpenRequestGeneration
         let readDirectory = readDirectory
         let resourceAccess = resourceAccess
         validationTask = Task { [weak self, weak store] in
@@ -78,7 +81,8 @@ final class FolderOpening: ObservableObject {
             guard let self, let store, !Task.isCancelled,
                   self.requestID == requestID, self.store === store,
                   store.sourceFolder == sourceFolder,
-                  store.folderOpenGeneration == folderGeneration else { return }
+                  store.folderOpenGeneration == folderGeneration,
+                  store.sourceOpenRequestGeneration == sourceGeneration else { return }
             self.error = message ?? self.openingGateError()
             guard self.error == nil else { return }
             store.openFolder(url)
@@ -126,7 +130,8 @@ final class FolderOpening: ObservableObject {
             }
             Task { @MainActor in
                 guard self.requestID == id,
-                      self.store?.folderOpenGeneration == self.requestFolderGeneration else { return }
+                      self.store?.folderOpenGeneration == self.requestFolderGeneration,
+                      self.store?.sourceOpenRequestGeneration == self.requestSourceGeneration else { return }
                 guard let url else {
                     self.error = L10n.text("Louppe couldn't read the dropped folder. Please try again.")
                     return

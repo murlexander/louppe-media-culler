@@ -397,6 +397,9 @@ are independent; XCTest defaults use disposable storage.
   Replacement preserves projection/decisions and offers Rescan. After completed
   RAW Trash, failed JPEG enrichment keeps old evidence without reading fresh
   bytes, removes the absent RAW, and preserves Undo.
+- External-folder validation and pinned-folder bookmark resolution share one
+  source-request generation from request admission. A newer source choice retires
+  pending results before either request reaches discovery or save-before-switch.
 - The bridged scan cancellation flag spans persistence reads and final identity
   validation. Cancelled results cannot return Ready or save a sidecar.
 - Opening restores decisions and prepares facets, physical pairs and the initial
