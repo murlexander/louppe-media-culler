@@ -138,6 +138,8 @@ final class SessionDurabilityTests: XCTestCase {
         store.rate(.yes, at: 0)
         try await waitForDeferredSave(in: store)
 
+        let checkpointAwaited = expectation(description: "Quit is awaiting the active checkpoint")
+        store.onAwaitingPersistenceCheckpointForTesting = { checkpointAwaited.fulfill() }
         store.beginTerminationPreparation()
         let finalSave = Task { @MainActor in
             await store.saveSessionForTermination()
@@ -146,7 +148,7 @@ final class SessionDurabilityTests: XCTestCase {
         // Quit must await the active checkpoint instead of launching another
         // full snapshot alongside it. Once that older checkpoint completes,
         // the deferred rating is captured exactly once.
-        try await Task.sleep(nanoseconds: 30_000_000)
+        await fulfillment(of: [checkpointAwaited], timeout: 5)
         let callsBeforeActiveCheckpointCompletes =
             await persistence.saveCallCount()
         XCTAssertEqual(callsBeforeActiveCheckpointCompletes, 1)
@@ -248,6 +250,8 @@ final class SessionDurabilityTests: XCTestCase {
         try await waitForReadySession(store)
         try await waitForSaveCalls(1, in: persistence)
 
+        let checkpointAwaited = expectation(description: "Quit is awaiting the active checkpoint")
+        store.onAwaitingPersistenceCheckpointForTesting = { checkpointAwaited.fulfill() }
         store.beginTerminationPreparation()
         let completion = CompletionProbe()
         let termination = Task { @MainActor in
@@ -255,7 +259,7 @@ final class SessionDurabilityTests: XCTestCase {
             await completion.markFinished()
             return result
         }
-        try await Task.sleep(nanoseconds: 30_000_000)
+        await fulfillment(of: [checkpointAwaited], timeout: 5)
         let callsWhileCheckpointIsActive = await persistence.saveCallCount()
         let finishedBeforeCheckpoint = await completion.isFinished()
         XCTAssertFalse(
@@ -289,11 +293,13 @@ final class SessionDurabilityTests: XCTestCase {
         try await waitForReadySession(store)
         try await waitForSaveCalls(1, in: persistence)
 
+        let checkpointAwaited = expectation(description: "Quit is awaiting the active checkpoint")
+        store.onAwaitingPersistenceCheckpointForTesting = { checkpointAwaited.fulfill() }
         store.beginTerminationPreparation()
         let termination = Task { @MainActor in
             await store.saveSessionForTermination()
         }
-        try await Task.sleep(nanoseconds: 30_000_000)
+        await fulfillment(of: [checkpointAwaited], timeout: 5)
         let callsBeforeRelease = await persistence.saveCallCount()
         XCTAssertEqual(callsBeforeRelease, 1)
 

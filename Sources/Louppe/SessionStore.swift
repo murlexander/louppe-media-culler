@@ -986,6 +986,11 @@ final class SessionStore: ObservableObject {
         saveRequestedWhilePersistenceBusy
     }
 
+#if LOUPPE_TEST_SEAMS
+    /// Signals the actual checkpoint await, after optional navigation flushes.
+    var onAwaitingPersistenceCheckpointForTesting: (() -> Void)?
+#endif
+
     /// Deterministic test barrier for completion observers that run separately
     /// from a caller awaiting one specific persistence task.
     @discardableResult
@@ -7027,6 +7032,9 @@ final class SessionStore: ObservableObject {
             // completion observer must not enqueue a third write while this
             // method is suspended awaiting the current one.
             saveRequestedWhilePersistenceBusy = false
+#if LOUPPE_TEST_SEAMS
+            onAwaitingPersistenceCheckpointForTesting?()
+#endif
             let outcome = await task.value
             applyPersistenceResult(outcome.result, request: outcome.request)
             awaitedResult = outcome.result
