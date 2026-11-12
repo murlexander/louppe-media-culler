@@ -84,6 +84,14 @@ final class ActualSizeScrollView: NSScrollView {
     private var zoomAnimationTask: Task<Void, Never>?
     private var animatedViewportPosition: NormalizedImagePosition?
 
+#if LOUPPE_TEST_SEAMS
+    var onZoomAnimationFrameForTesting: ((CGFloat) -> Void)?
+
+    func waitForZoomAnimationForTesting() async {
+        await zoomAnimationTask?.value
+    }
+#endif
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         drawsBackground = false
@@ -434,6 +442,9 @@ final class ActualSizeScrollView: NSScrollView {
                 self.isApplyingViewport = false
                 self.canvas.setUsesSourceTiles(self.magnification >= 1)
                 self.canvas.updateVisibleRect(self.contentView.documentVisibleRect)
+#if LOUPPE_TEST_SEAMS
+                self.onZoomAnimationFrameForTesting?(self.magnification)
+#endif
             }
             guard let self else { return }
             self.zoomAnimationTask = nil

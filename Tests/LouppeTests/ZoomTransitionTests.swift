@@ -115,15 +115,19 @@ final class ZoomTransitionTests: XCTestCase {
             fixture.scroll.contentView.scroll(to: CGPoint(x: 70, y: 90))
             fixture.scroll.reflectScrolledClipView(fixture.scroll.contentView)
 
+            var frames: [CGFloat] = []
+            fixture.scroll.onZoomAnimationFrameForTesting = { frames.append($0) }
             fixture.viewport.reset() // The same explicit reset made by S.
             fixture.configure(scale: 1)
+            await fixture.scroll.waitForZoomAnimationForTesting()
             if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
-                try await Task.sleep(for: .milliseconds(60))
-                let intermediate = fixture.scroll.magnification
-                XCTAssertGreaterThan(intermediate, min(initialScale, 1))
-                XCTAssertLessThan(intermediate, max(initialScale, 1))
+                XCTAssertTrue(frames.contains { $0 > min(initialScale, 1) && $0 < max(initialScale, 1) },
+                              "Reset must render intermediate scales, even if the test resumes after completion")
+                for (previous, next) in zip([initialScale] + frames, frames) {
+                    XCTAssertLessThanOrEqual(abs(next - 1), abs(previous - 1),
+                                             "Each rendered frame must move toward 100%")
+                }
             }
-            try await Task.sleep(for: .milliseconds(350))
             XCTAssertEqual(fixture.scroll.magnification, 1, accuracy: 0.001)
             XCTAssertEqual(fixture.viewport.position.x, 0.5, accuracy: 0.003)
             XCTAssertEqual(fixture.viewport.position.y, 0.5, accuracy: 0.003)
