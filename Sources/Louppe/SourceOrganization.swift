@@ -1078,7 +1078,8 @@ enum SourceOrganizationPlanner {
                     currentStemKey: stemKey(FileRenamingPlanner.stemBytes(
                         of: path.lastComponentBytes
                     )),
-                    generatedStemKey: stemKey(Data(base.utf8))
+                    generatedStemKey: stemKey(Data(base.utf8)),
+                    generatedBaseName: base
                 ))
             }
         }
@@ -1089,10 +1090,25 @@ enum SourceOrganizationPlanner {
         }
         let numbers = FileRenamingPlanner.conflictNumbers(
             files: files,
-            unitOrder: unitOrder
+            unitOrder: unitOrder,
+            stemKey: { stemKey(Data($0.utf8)) }
         ) { directory in
-            directoryEntryNames(directory).map {
-                stemKey(FileRenamingPlanner.stemBytes(of: $0))
+            directoryEntryNames(directory).flatMap { name -> [String] in
+                let stem = FileRenamingPlanner.stemBytes(of: name)
+                var keys = [stemKey(stem)]
+                // Application packets reserve their media stem as well:
+                // `name.JPG.xmp` must prevent assigning `name` to a new family.
+                if String(decoding: FileRenamingPlanner.extensionBytes(of: name), as: UTF8.self)
+                    .lowercased() == ".xmp" {
+                    let mediaExtension = String(decoding:
+                        FileRenamingPlanner.extensionBytes(of: stem).dropFirst(),
+                        as: UTF8.self
+                    ).lowercased()
+                    if FolderScanner.recognizedExtensions.contains(mediaExtension) {
+                        keys.append(stemKey(FileRenamingPlanner.stemBytes(of: stem)))
+                    }
+                }
+                return keys
             }
         }
         var numberedFiles = 0

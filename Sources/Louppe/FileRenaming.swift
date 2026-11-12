@@ -235,6 +235,7 @@ enum FileRenamingPlanner {
         let directory: XMPExactFileSystemPath
         let currentStemKey: String
         let generatedStemKey: String
+        let generatedBaseName: String
     }
 
     struct ConflictNumber: Equatable, Sendable {
@@ -250,6 +251,7 @@ enum FileRenamingPlanner {
     static func conflictNumbers(
         files: [ConflictNumberingFile],
         unitOrder: [Int],
+        stemKey: (String) -> String,
         entryStemKeys: (XMPExactFileSystemPath) -> [String]
     ) -> [Int: ConflictNumber] {
         struct StemKey: Hashable {
@@ -294,7 +296,7 @@ enum FileRenamingPlanner {
 
         var groupUnits: [Int: Set<Int>] = [:]
         var groupKeys: [Int: Set<StemKey>] = [:]
-        var keysByUnit: [Int: Set<StemKey>] = [:]
+        var filesByUnit: [Int: [ConflictNumberingFile]] = [:]
         var currentOwnerByKey: [StemKey: Int] = [:]
         for file in files {
             let group = find(file.unit)
@@ -303,7 +305,7 @@ enum FileRenamingPlanner {
             )
             groupUnits[group, default: []].insert(file.unit)
             groupKeys[group, default: []].insert(generated)
-            keysByUnit[file.unit, default: []].insert(generated)
+            filesByUnit[file.unit, default: []].append(file)
             currentOwnerByKey[StemKey(
                 directory: file.directory, stem: file.currentStemKey
             )] = file.unit
@@ -372,49 +374,68 @@ enum FileRenamingPlanner {
         var result: [Int: ConflictNumber] = [:]
         for group in numberedGroups {
             let units = (groupUnits[group] ?? []).sorted(by: ordered)
-            var occupied = Set<Int>()
-            var claimByUnit: [Int: Int] = [:]
-            for key in groupKeys[group] ?? [] {
-                let used = entries(key.directory).numbered[key.stem] ?? []
-                for (entry, value) in used {
-                    let owner = currentOwnerByKey[StemKey(
-                        directory: key.directory, stem: entry
-                    )]
-                    if let owner, units.contains(owner) {
-                        claimByUnit[owner] = min(
-                            claimByUnit[owner] ?? value, value
-                        )
-                    } else {
-                        // Another family's current name, including one this
-                        // rename moves away: the worker never swaps names.
-                        occupied.insert(value)
-                    }
-                }
-                occupied.formUnion(plannedNumbers[key] ?? [])
-            }
+            let groupFiles = units.flatMap { filesByUnit[$0] ?? [] }
+            var width = sequenceWidth(for: units.count)
             var numberByUnit: [Int: Int] = [:]
-            var taken = Set<Int>()
-            for unit in units {
-                guard let claim = claimByUnit[unit],
-                      !occupied.contains(claim),
-                      taken.insert(claim).inserted else { continue }
-                numberByUnit[unit] = claim
-            }
-            var next = 1
-            for unit in units where numberByUnit[unit] == nil {
-                while occupied.contains(next) || taken.contains(next) {
-                    next += 1
+            while true {
+                // Numbering can shorten a long base. Reserve the names that
+                // will actually be emitted, including names from other groups.
+                let numberedKeys = Set(groupFiles.compactMap { file -> StemKey? in
+                    let rendered = stemKey(numberedBaseName(
+                        file.generatedBaseName, number: 1, width: width
+                    ))
+                    guard let parts = numbered(rendered) else { return nil }
+                    return StemKey(directory: file.directory, stem: parts.stem)
+                })
+                var occupied = Set<Int>()
+                var claimByUnit: [Int: Int] = [:]
+                for key in numberedKeys {
+                    let used = entries(key.directory).numbered[key.stem] ?? []
+                    for (entry, value) in used {
+                        let owner = currentOwnerByKey[StemKey(
+                            directory: key.directory, stem: entry
+                        )]
+                        if let owner, units.contains(owner) {
+                            claimByUnit[owner] = min(
+                                claimByUnit[owner] ?? value, value
+                            )
+                        } else {
+                            // Another family's current name, including one this
+                            // rename moves away: the worker never swaps names.
+                            occupied.insert(value)
+                        }
+                    }
+                    occupied.formUnion(plannedNumbers[key] ?? [])
                 }
-                numberByUnit[unit] = next
-                taken.insert(next)
+                numberByUnit = [:]
+                var taken = Set<Int>()
+                for unit in units {
+                    guard let claim = claimByUnit[unit],
+                          !occupied.contains(claim),
+                          taken.insert(claim).inserted else { continue }
+                    numberByUnit[unit] = claim
+                }
+                var next = 1
+                for unit in units where numberByUnit[unit] == nil {
+                    while occupied.contains(next) || taken.contains(next) {
+                        next += 1
+                    }
+                    numberByUnit[unit] = next
+                    taken.insert(next)
+                }
+                let requiredWidth = sequenceWidth(for: taken.max() ?? units.count)
+                guard requiredWidth > width else { break }
+                // Crossing 999, 9999, … shortens the base again. Recheck disk
+                // and planned names at that width before accepting any number.
+                width = requiredWidth
             }
-            let width = sequenceWidth(for: taken.max() ?? units.count)
             for unit in units {
                 guard let value = numberByUnit[unit] else { continue }
                 result[unit] = ConflictNumber(number: value, width: width)
-                let suffix = "_" + String(format: "%0*d", width, value)
-                for key in keysByUnit[unit] ?? [] {
-                    plan(key.stem + suffix, in: key.directory)
+                for file in filesByUnit[unit] ?? [] {
+                    plan(stemKey(numberedBaseName(
+                        file.generatedBaseName, number: value, width: width
+                    )), in: file.directory)
                 }
             }
         }

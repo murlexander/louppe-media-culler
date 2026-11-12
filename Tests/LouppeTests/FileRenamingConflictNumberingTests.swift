@@ -234,7 +234,122 @@ final class FileRenamingConflictNumberingTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: xmp), Data("edits".utf8))
     }
 
+    func testLongNamesSkipOccupiedShortenedNumberedStem() throws {
+        let prefix = String(repeating: "L", count: 176)
+        let base = prefix + "-end"
+        let occupied = photos.appendingPathComponent(prefix + "_001.tif")
+        try Data("untouched".utf8).write(to: occupied)
+        let items = [try item("A.JPG", camera: base), try item("B.PNG", camera: base)]
+
+        let plan = try makePlan(items, parts: [.camera])
+
+        XCTAssertTrue(plan.canExecute, messages(plan))
+        XCTAssertEqual(destinations(plan), [
+            "A.JPG": prefix + "_002.JPG", "B.PNG": prefix + "_003.PNG",
+        ])
+        try assertRunsAndUndoes(plan, items: items)
+        XCTAssertEqual(try Data(contentsOf: occupied), Data("untouched".utf8))
+    }
+
+    func testDifferentLongNamesReserveTheirActualShortenedOutputs() throws {
+        let prefix = String(repeating: "L", count: 176)
+        let items = [
+            try item("A.JPG", camera: prefix + "aaaa"),
+            try item("B.PNG", camera: prefix + "aaaa"),
+            try item("C.JPG", camera: prefix + "bbbb"),
+            try item("D.PNG", camera: prefix + "bbbb"),
+        ]
+
+        let plan = try makePlan(items, parts: [.camera])
+
+        XCTAssertTrue(plan.canExecute, messages(plan))
+        XCTAssertEqual(destinations(plan), [
+            "A.JPG": prefix + "_001.JPG", "B.PNG": prefix + "_002.PNG",
+            "C.JPG": prefix + "_003.JPG", "D.PNG": prefix + "_004.PNG",
+        ])
+        try assertRunsAndUndoes(plan, items: items)
+    }
+
+    func testGrowingNumberWidthRechecksTheFurtherShortenedStem() throws {
+        let prefix = String(repeating: "L", count: 176)
+        for number in 1...999 {
+            try Data("untouched".utf8).write(to: photos.appendingPathComponent(
+                prefix + String(format: "_%03d.tif", number)
+            ))
+        }
+        let shorterPrefix = String(prefix.dropLast())
+        let occupied = photos.appendingPathComponent(shorterPrefix + "_0001.tif")
+        try Data("also untouched".utf8).write(to: occupied)
+        let items = [
+            try item("A.JPG", camera: prefix + "-end"),
+            try item("B.JPG", camera: prefix + "-end"),
+        ]
+        let plan = try makePlan(items, parts: [.camera])
+        XCTAssertTrue(plan.canExecute, messages(plan))
+        XCTAssertEqual(destinations(plan), [
+            "A.JPG": shorterPrefix + "_0002.JPG", "B.JPG": shorterPrefix + "_0003.JPG",
+        ])
+        try assertRunsAndUndoes(plan, items: items)
+        XCTAssertEqual(try Data(contentsOf: occupied), Data("also untouched".utf8))
+    }
+
+    func testNumbersSkipUntouchedExtensionQualifiedSidecars() throws {
+        let occupied = photos.appendingPathComponent("SONY_001.JPG.xmp")
+        try Data("untouched sidecar".utf8).write(to: occupied)
+        try Data("application edits".utf8).write(to: photos.appendingPathComponent("A.JPG.xmp"))
+        let items = [try item("A.JPG", camera: "Sony"), try item("B.JPG", camera: "Sony")]
+
+        let plan = try makePlan(items, parts: [.camera])
+
+        XCTAssertTrue(plan.canExecute, messages(plan))
+        XCTAssertEqual(destinations(plan, includeSidecars: true), [
+            "A.JPG": "Sony_002.JPG", "A.JPG.xmp": "Sony_002.JPG.xmp",
+            "B.JPG": "Sony_003.JPG",
+        ])
+        try assertRunsAndUndoes(plan, items: items)
+        XCTAssertEqual(try Data(contentsOf: occupied), Data("untouched sidecar".utf8))
+        XCTAssertEqual(try Data(contentsOf: photos.appendingPathComponent("A.JPG.xmp")), Data("application edits".utf8))
+    }
+
+    func testUnicodeEquivalentNamesAndExistingNumericSuffixesStayDistinct() throws {
+        try Data("untouched".utf8).write(to: photos.appendingPathComponent("CAFE\u{301}_001.tif"))
+        let items = [
+            try item("A.JpG", camera: "Café"),
+            try item("B.PNG", camera: "Cafe\u{301}"),
+            try item("C.JPG", camera: "Café_002"),
+        ]
+        let plan = try makePlan(items, parts: [.camera])
+        XCTAssertTrue(plan.canExecute, messages(plan))
+        XCTAssertEqual(destinations(plan), [
+            "A.JpG": "Café_003.JpG", "B.PNG": "Cafe\u{301}_004.PNG", "C.JPG": "Café_002.JPG",
+        ])
+        try assertRunsAndUndoes(plan, items: items)
+    }
+
     // MARK: - Helpers
+
+    private func assertRunsAndUndoes(_ plan: SourceOrganizationPlan, items: [PhotoItem]) throws {
+        guard plan.canExecute else { return }
+        let result = SourceOrganizationWorker.organize(plan, journalDirectory: journals) { _, _ in }
+        XCTAssertEqual(result.failedItems, 0, result.failureMessage ?? "")
+        XCTAssertEqual(result.movedFiles, plan.movingFileCount)
+        let renamed = try items.map { item in
+            let target = try XCTUnwrap(plan.mappings.first { $0.source == item.primaryURL }?.destination)
+            return makeItem(id: target.lastPathComponent, url: target,
+                            date: item.captureDate, camera: item.cameraModel)
+        }
+        let repeated = try makePlan(renamed, parts: [.camera])
+        XCTAssertTrue(repeated.collisions.isEmpty, messages(repeated))
+        XCTAssertEqual(repeated.movingFileCount, 0, "Repeating a numbered rename must keep its names.")
+        let undo = SourceOrganizationWorker.undo(
+            try XCTUnwrap(result.undoRecord), currentItems: [], journalDirectory: journals
+        ) { _, _ in }
+        XCTAssertEqual(undo.failedItems, 0, undo.failureMessage ?? "")
+        XCTAssertEqual(undo.movedFiles, plan.movingFileCount)
+        for file in items.flatMap(\.individualFiles) {
+            XCTAssertEqual(try Data(contentsOf: file.url), Data(file.url.lastPathComponent.utf8))
+        }
+    }
 
     private func makePlan(
         _ items: [PhotoItem],

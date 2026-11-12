@@ -204,7 +204,8 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   folders after an exact preview or explicit single-name submission. Extensions
   and contents never change; RAW+JPEG and recognized XMP names follow as one
   journaled family, shared generated names get per-name numbers when Sequence
-  is off, remaining collisions and `.acr` companions block the plan, and ⌘Z
+  is off (reserving shortened names and extension-qualified XMP too), remaining
+  collisions and `.acr` companions block the plan, and ⌘Z
   restores the prior names during the open session. No other code path may
   move originals; nothing ever hard-deletes.
 - Export preflight and worker preparation read exclusive-rename capability from
