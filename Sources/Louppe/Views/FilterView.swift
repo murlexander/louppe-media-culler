@@ -366,7 +366,7 @@ struct FilterView: View {
                 )
                 ForEach(StarRating.allCases, id: \.self) { rating in
                     metadataToggle(
-                        rating == .one ? L10n.text("1 star") : "\(rating.count) stars",
+                        rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count) stars"),
                         count: store.starCount(rating),
                         value: PhotoItemStarRatingState.stars(rating),
                         set: \.excludedStarStates
