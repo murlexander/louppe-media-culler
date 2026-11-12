@@ -72,19 +72,25 @@ final class PopoverSurfaceTests: XCTestCase {
         let presented = try XCTUnwrap(popover, "The popover did not appear")
         for _ in 0..<15 { await pause() }
 
-        let content = try await SCShareableContent.currentProcess
-        let ids: Set<CGWindowID> = [CGWindowID(window.windowNumber), CGWindowID(presented.windowNumber)]
-        let filter = SCContentFilter(display: try XCTUnwrap(content.displays.first),
-                                     including: content.windows.filter { ids.contains($0.windowID) })
         let frame = presented.frame
-        let config = SCStreamConfiguration()
-        config.sourceRect = CGRect(x: frame.minX - screen.frame.minX, y: screen.frame.maxY - frame.maxY,
-                                   width: frame.width, height: frame.height)
-        config.width = Int(frame.width * 2)
-        config.height = Int(frame.height * 2)
-        config.showsCursor = false
-        let image = NSBitmapImageRep(cgImage: try await SCScreenshotManager.captureImage(
-            contentFilter: filter, configuration: config))
+        let captured: CGImage
+        do {
+            let content = try await SCShareableContent.currentProcess
+            let ids: Set<CGWindowID> = [CGWindowID(window.windowNumber), CGWindowID(presented.windowNumber)]
+            let filter = SCContentFilter(display: try XCTUnwrap(content.displays.first),
+                                         including: content.windows.filter { ids.contains($0.windowID) })
+            let config = SCStreamConfiguration()
+            config.sourceRect = CGRect(x: frame.minX - screen.frame.minX, y: screen.frame.maxY - frame.maxY,
+                                       width: frame.width, height: frame.height)
+            config.width = Int(frame.width * 2)
+            config.height = Int(frame.height * 2)
+            config.showsCursor = false
+            captured = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+        } catch where CITimingBudget.isCI {
+            // Hosted runners can't capture ("InvalidTransition"); on a Mac this stays a failure.
+            throw XCTSkip("ScreenCaptureKit is unavailable on this runner: \(error)")
+        }
+        let image = NSBitmapImageRep(cgImage: captured)
         func rgb(x: CGFloat, yFromTop: CGFloat) throws -> [CGFloat] {
             let color = try XCTUnwrap(image.colorAt(x: Int(x * 2), y: Int(yFromTop * 2))?.usingColorSpace(.deviceRGB))
             return [color.redComponent, color.greenComponent, color.blueComponent]
