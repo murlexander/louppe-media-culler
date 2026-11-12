@@ -466,6 +466,8 @@ are independent; XCTest defaults use disposable storage.
   paths to prevent nested organization layouts. Schema 7 adds content proof and
   recovery history.
 - Empty `selectedIndices` means the visible current photo through `effectiveSelection`.
+  Selection-wide decisions, stars and colors flush pending search before resolving
+  targets, so newly hidden files cannot receive an edit.
   Asynchronous cue/group completion preserves current identity; if it is hidden,
   Gallery asks for an explicit matching item and rating commands have no target.
   `SelectionState.itemIDs` owns stable selection; `selectedIndices` projects the

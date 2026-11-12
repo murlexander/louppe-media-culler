@@ -4088,6 +4088,7 @@ final class SessionStore: ObservableObject {
     /// selection stays so the user can keep cycling.
     func toggleRating(at index: Int) {
         guard canRate else { return }
+        flushPendingFilter()
         guard items.indices.contains(index) else { return }
         let next: Rating
         switch items[index].rating {
@@ -4110,6 +4111,7 @@ final class SessionStore: ObservableObject {
     /// whole selection in one undoable step.
     func rate(_ rating: Rating, at index: Int) {
         guard canRate else { return }
+        flushPendingFilter()
         guard items.indices.contains(index) else { return }
         if selectedIndices.count > 1, selectedIndices.contains(index) {
             applyRating(rating, to: selectedIndices.sorted())
@@ -4180,11 +4182,13 @@ final class SessionStore: ObservableObject {
     /// and the Info panel use this batch-aware entry point and never advance.
     func setStarRating(_ rating: StarRating?) {
         guard canRate else { return }
+        flushPendingFilter()
         applyStarRating(rating, to: effectiveSelection.sorted())
     }
 
     func setStarRating(_ rating: StarRating?, at index: Int) {
         guard canRate, items.indices.contains(index) else { return }
+        flushPendingFilter()
         let targets = selectedIndices.count > 1 && selectedIndices.contains(index)
             ? selectedIndices.sorted()
             : [index]
@@ -4210,11 +4214,13 @@ final class SessionStore: ObservableObject {
     /// Applies a color label independently of decision and stars.
     func setColorLabel(_ label: PhotoColorLabel?) {
         guard canRate else { return }
+        flushPendingFilter()
         applyColorLabel(label, to: effectiveSelection.sorted())
     }
 
     func setColorLabel(_ label: PhotoColorLabel?, at index: Int) {
         guard canRate, items.indices.contains(index) else { return }
+        flushPendingFilter()
         let targets = selectedIndices.count > 1 && selectedIndices.contains(index)
             ? selectedIndices.sorted()
             : [index]

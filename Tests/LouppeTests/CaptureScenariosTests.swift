@@ -32,6 +32,14 @@ final class CaptureScenariosTests: XCTestCase {
             fixture.ready(mode: .gallery)
             return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         },
+        Scenario(name: "session-search-stars", description: "Immediate star edit after search narrows the current photo and selection.") { fixture in
+            fixture.ready(mode: .grid)
+            fixture.store.setIndex(0)
+            fixture.store.filter.searchText = "PHOTO_0003"
+            fixture.store.setStarRating(.five)
+            fixture.store.flushPendingFilter()
+            return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
         Scenario(name: "welcome-recent", description: "Welcome with recent disposable folders and no connected drives.") { try $0.welcome(recent: true, drives: false) },
         Scenario(name: "welcome-drives", description: "Welcome with synthetic connected drives and no recent folders.") { try $0.welcome(recent: false, drives: true) },
         Scenario(name: "welcome-both", description: "Welcome with recent folders and synthetic connected drives.") { try $0.welcome(recent: true, drives: true) },
