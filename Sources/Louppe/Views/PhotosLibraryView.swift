@@ -27,20 +27,15 @@ struct PhotosLibraryView: View {
                 selection
             }
         } actions: {
-            HStack(spacing: 12) {
-                Spacer()
-                Button(L10n.text("Cancel"), role: .cancel) {
+            SheetActions {
+                SheetCancelButton(role: .cancel) {
                     if browser.isOpening { store.cancelPhotosOpening() }
                     else { dismiss() }
                 }
-                .keyboardShortcut(.cancelAction)
                 if !browser.isOpening {
-                    Button(L10n.text("Open")) {
+                    SheetPrimaryButton(L10n.text("Open"), isDefault: true) {
                         store.openPhotosSelection()
                     }
-                        .keyboardShortcut(.defaultAction)
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.louppeFilledAccent)
                         .disabled(browser.isLoading || browser.snapshot?.count == nil || browser.snapshot?.count == 0
                                   || browser.snapshot?.query != browser.query)
                 }

@@ -29,9 +29,13 @@ struct OrganizeSourceView: View {
     var body: some View {
         Group {
             if let progress = store.organizationProgress {
-                progressView(progress)
+                SourceFileOperationProgressView(
+                    progress: progress, headline: progress.title
+                )
             } else if let outcome = store.organizationOutcome {
-                outcomeView(outcome)
+                SourceFileOperationOutcomeView(
+                    store: store, outcome: outcome, kind: .organization
+                ) { store.isOrganizePresented = false }
             } else if isReviewingMove, let plan {
                 confirmationView(plan)
             } else {
@@ -104,7 +108,7 @@ struct OrganizeSourceView: View {
 
             previewSection
         } actions: {
-            HStack(spacing: 12) {
+            SheetActions {
                 if isPlanning {
                     ProgressView()
                         .controlSize(.small)
@@ -112,17 +116,11 @@ struct OrganizeSourceView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Spacer()
-                Button(L10n.text("Cancel"), role: .cancel) {
-                    store.isOrganizePresented = false
-                }
-                Button(reviewButtonTitle) {
+            } trailing: {
+                SheetCancelButton(role: .cancel) { store.isOrganizePresented = false }
+                SheetPrimaryButton(reviewButtonTitle, isDefault: true) {
                     isReviewingMove = true
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
-                .tint(Color.louppeAccent)
                 .disabled(!canReviewMove)
             }
         }
@@ -380,19 +378,13 @@ struct OrganizeSourceView: View {
                 }
             }
         } actions: {
-            HStack(spacing: 12) {
+            SheetActions {
                 Button(L10n.text("Back")) { isReviewingMove = false }
-                Spacer()
-                Button(L10n.text("Cancel"), role: .cancel) {
-                    store.isOrganizePresented = false
-                }
-                Button(L10n.text("Move Files")) {
+            } trailing: {
+                SheetCancelButton(role: .cancel) { store.isOrganizePresented = false }
+                SheetPrimaryButton(L10n.text("Move Files"), isDefault: true) {
                     store.startSourceOrganization(plan)
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
-                .tint(Color.louppeAccent)
             }
         }
     }
@@ -410,66 +402,6 @@ struct OrganizeSourceView: View {
             return 250
         }
         return 650
-    }
-
-    private func progressView(
-        _ progress: SourceOrganizationProgress
-    ) -> some View {
-        VStack(spacing: 16) {
-            ProgressView(
-                value: Double(progress.done),
-                total: Double(max(progress.total, 1))
-            )
-            .accessibilityLabel(progress.title)
-            .accessibilityValue(L10n.text("\(progress.done) of \(progress.total) files"))
-            .frame(width: 360)
-            Text(progress.title)
-                .font(.headline)
-            Text(L10n.text("\(progress.done) of \(progress.total) files"))
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-            Text(L10n.text("Keep Louppe open until file work finishes."))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(30)
-    }
-
-    private func outcomeView(
-        _ outcome: SourceOrganizationOutcome
-    ) -> some View {
-        SheetForm(title: outcome.title(for: .organization)) {
-            Text(outcome.fileCountDescription(for: .organization))
-                .font(.headline)
-            if let message = store.organizationError ?? outcome.message {
-                Text(message)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
-            } else if !outcome.wasUndo {
-                Text(L10n.text("Restore the previous layout with ⌘Z before closing this session."))
-                    .foregroundStyle(.secondary)
-            }
-            if case .scanning = store.phase {
-                ProgressView(L10n.text("Refreshing the session…"))
-                    .padding(.top, 8)
-            }
-        } actions: {
-            HStack(spacing: 12) {
-                // The same step as ⌘Z, offered where the result is shown.
-                if outcome.succeeded, !outcome.wasUndo, store.canUndo {
-                    Button(L10n.text("Undo")) { store.undo() }
-                        .disabled(store.isFileOperationRunning)
-                }
-                Spacer()
-                Button(L10n.text("Done")) {
-                    store.isOrganizePresented = false
-                }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
-                .disabled(store.isFileOperationRunning)
-            }
-        }
     }
 
     private func summaryValue(_ value: String) -> some View {

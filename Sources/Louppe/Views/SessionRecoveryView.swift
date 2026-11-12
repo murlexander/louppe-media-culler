@@ -4,13 +4,14 @@ struct SessionRecoveryBanner: View {
     @ObservedObject var store: SessionStore
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: store.pendingSessionRecoveryEntries.isEmpty
-                  ? "checkmark.circle" : "arrow.triangle.2.circlepath")
-                .foregroundStyle(Color.louppeAccent)
+        StatusBanner(
+            systemImage: store.pendingSessionRecoveryEntries.isEmpty
+                ? "checkmark.circle" : "arrow.triangle.2.circlepath",
+            dismissLabel: L10n.text("Dismiss notification"),
+            dismiss: store.dismissSessionRecoveryNotice
+        ) {
             Text(store.sessionRecoveryNotice)
-                .font(.callout)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        } actions: {
             if case .checking(let done, let total) = store.sessionContentCheck {
                 ProgressView(value: Double(done), total: Double(max(1, total)))
                     .frame(width: 70)
@@ -18,22 +19,7 @@ struct SessionRecoveryBanner: View {
             }
             Button(L10n.text("Check and Restore…")) { store.isSessionRecoveryPresented = true }
                 .disabled(store.isFileOperationRunning)
-            Button {
-                store.dismissSessionRecoveryNotice()
-            } label: {
-                Image(systemName: "xmark")
-                    .frame(width: 36, height: 36)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help(L10n.text("Dismiss notification"))
-            .accessibilityLabel(L10n.text("Dismiss notification"))
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity)
-        .background(Color.appBackground)
-        Divider()
     }
 }
 
@@ -119,22 +105,22 @@ struct SessionRecoveryView: View {
                     .disabled(selected.isEmpty)
                 Text(L10n.text("Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files."))
                     .font(.caption).foregroundStyle(.secondary)
-                HStack(spacing: 12) {
+                SheetActions {
                     Button(L10n.text("Keep Current Decisions")) {
                         store.keepCurrentSessionDecisions(selected)
                         selected = []
                         confirmsSamePhotos = false
                     }
                     .disabled(selected.isEmpty || store.isFileOperationRunning)
-                    Spacer()
-                    Button(L10n.text("Done")) { dismiss() }.keyboardShortcut(.cancelAction)
-                    Button(L10n.text("Restore Selected Decisions")) {
+                } trailing: {
+                    // Escape closes without restoring, and Return never
+                    // restores: the selection needs an explicit acknowledgment.
+                    SheetCancelButton(L10n.text("Done")) { dismiss() }
+                    SheetPrimaryButton(L10n.text("Restore Selected Decisions"), isDefault: false) {
                         store.restoreSessionRecoveryEntries(selected)
                         selected = []
                         confirmsSamePhotos = false
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.louppeFilledAccent)
                     .disabled(!hasRestorableSelection || !confirmsSamePhotos || store.isFileOperationRunning)
                 }
             }

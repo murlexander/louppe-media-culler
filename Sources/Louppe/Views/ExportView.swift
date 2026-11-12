@@ -376,11 +376,9 @@ struct ExportView: View {
                     }
                 }
             } actions: {
-                HStack(spacing: 12) {
-                    Spacer()
-                    Button(L10n.text("Cancel")) { store.isExportPresented = false }
-                        .keyboardShortcut(.cancelAction)
-                    Button(mode == .metadataXMP ? L10n.text("Review Sidecars…") : L10n.text("Choose Destination…")) {
+                SheetActions {
+                    SheetCancelButton { store.isExportPresented = false }
+                    SheetPrimaryButton(mode == .metadataXMP ? L10n.text("Review Sidecars…") : L10n.text("Choose Destination…"), isDefault: true) {
                         if mode == .metadataXMP {
                             store.prepareXMPPublication(
                                 selected: selectionSnapshot.selectedItems(from: store.items),
@@ -412,9 +410,6 @@ struct ExportView: View {
                             )
                         }
                     }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.louppeFilledAccent)
                     .disabled(
                         selectionSnapshot.itemCount == 0
                             || (mode != .metadataXMP && isCheckingExistingXMP)
@@ -644,11 +639,9 @@ struct ExportView: View {
             }
 
         } actions: {
-            HStack(spacing: 12) {
-                Spacer()
-                Button(L10n.text("Cancel")) { store.isExportPresented = false }
-                    .keyboardShortcut(.cancelAction)
-                Button(L10n.text("Review Copy Plan…")) {
+            SheetActions {
+                SheetCancelButton { store.isExportPresented = false }
+                SheetPrimaryButton(L10n.text("Review Copy Plan…"), isDefault: true) {
                     exporter.prepareMultiDestinationExport(
                         routes: routingRoutes,
                         items: scopedItems,
@@ -671,9 +664,6 @@ struct ExportView: View {
                         }
                     )
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
                 .disabled(!routingCanReview)
             }
         }
@@ -936,14 +926,11 @@ struct ExportView: View {
                 .multilineTextAlignment(.leading)
 
         } actions: {
-            HStack(spacing: 12) {
+            SheetActions {
                 Button(L10n.text("Back")) { exporter.backFromMultiDestinationConfirmation() }
                     .keyboardShortcut(.cancelAction)
-                Spacer()
-                Button(L10n.text("Start Copy")) { exporter.confirmMultiDestinationExport() }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.louppeFilledAccent)
+            } trailing: {
+                SheetPrimaryButton(L10n.text("Start Copy"), isDefault: true) { exporter.confirmMultiDestinationExport() }
             }
         }
     }
@@ -1334,12 +1321,8 @@ struct ExportView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
             } actions: {
-                HStack(spacing: 12) {
-                    Spacer()
-                    Button(L10n.text("OK")) { store.resetXMPPublication() }
-                        .keyboardShortcut(.defaultAction)
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.louppeFilledAccent)
+                SheetActions {
+                    SheetPrimaryButton(L10n.text("OK"), isDefault: true) { store.resetXMPPublication() }
                 }
             }
         }
@@ -1441,10 +1424,10 @@ struct ExportView: View {
             }
 
         } actions: {
-            HStack(spacing: 12) {
+            SheetActions {
                 Button(L10n.text("Back")) { store.resetXMPPublication() }
                     .keyboardShortcut(.cancelAction)
-                Spacer()
+            } trailing: {
                 if !plan.resolvableSameStemConflicts.isEmpty {
                     Button(L10n.text("Resolve RAW + JPEG Conflicts…")) {
                         conflictResolutionNotice = nil
@@ -1454,12 +1437,9 @@ struct ExportView: View {
                         )
                     }
                 }
-                Button(L10n.text("Write Sidecars")) {
+                SheetPrimaryButton(L10n.text("Write Sidecars"), isDefault: true) {
                     store.startXMPPublication(planID: plan.id)
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
                 .disabled(plan.publishableCount == 0)
             }
         }
@@ -1498,20 +1478,17 @@ struct ExportView: View {
                 }
             }
         } actions: {
-            HStack(spacing: 12) {
+            SheetActions {
                 if hasDetails {
                     Button(showXMPDetails ? L10n.text("Hide Details") : L10n.text("Show Details")) {
                         showXMPDetails.toggle()
                     }
                 }
-                Spacer()
-                Button(L10n.text("Done")) {
+            } trailing: {
+                SheetPrimaryButton(L10n.text("Done"), isDefault: true) {
                     store.resetXMPPublication()
                     store.isExportPresented = false
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
             }
         }
     }
@@ -1715,10 +1692,10 @@ struct ExportView: View {
                 .multilineTextAlignment(.leading)
 
         } actions: {
-            HStack(spacing: 12) {
+            SheetActions {
                 Button(L10n.text("Back")) { exporter.backFromXMPConfirmation() }
                     .keyboardShortcut(.cancelAction)
-                Spacer()
+            } trailing: {
                 if !plan.resolvableSameStemConflicts.isEmpty {
                     Button(L10n.text("Resolve RAW + JPEG Conflicts…")) {
                         conflictResolutionNotice = nil
@@ -1728,12 +1705,9 @@ struct ExportView: View {
                         )
                     }
                 }
-                Button(confirmation.mode == .copy ? L10n.text("Start Copy") : L10n.text("Start Move")) {
+                SheetPrimaryButton(confirmation.mode == .copy ? L10n.text("Start Copy") : L10n.text("Start Move"), isDefault: true) {
                     exporter.confirmXMPExport()
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
             }
         }
     }
@@ -1775,18 +1749,15 @@ struct ExportView: View {
                 }
             }
         } actions: {
-            HStack(spacing: 12) {
+            SheetActions {
                 Button(outcome.destinations.count > 1 ? L10n.text("Show First Folder") : L10n.text("Show in Finder")) {
                     exporter.revealInFinder(outcome.destination)
                 }
-                Spacer()
-                Button(L10n.text("Done")) {
+            } trailing: {
+                SheetPrimaryButton(L10n.text("Done"), isDefault: true) {
                     store.isExportPresented = false
                     exporter.reset()
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
             }
         }
     }
@@ -1874,14 +1845,10 @@ struct ExportView: View {
                 .accessibilityFocused($isExportResultFocused)
                 .onAppear { isExportResultFocused = true }
         } actions: {
-            HStack(spacing: 12) {
-                Spacer()
-                Button(L10n.text("OK")) {
+            SheetActions {
+                SheetPrimaryButton(L10n.text("OK"), isDefault: true) {
                     exporter.reset(keepingRoutingDestinations: true)
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
             }
         }
     }

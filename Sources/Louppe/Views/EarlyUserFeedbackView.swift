@@ -23,18 +23,13 @@ struct EarlyUserFeedbackView: View {
             Text(L10n.text("I don’t collect usage data. Tell me how you found Louppe, how you use it, and what to improve."))
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
-            HStack {
-                Spacer()
-                Button(L10n.text("Close")) { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                Button(L10n.text("Email me")) {
+            SheetActions {
+                SheetCancelButton(L10n.text("Close")) { dismiss() }
+                SheetPrimaryButton(L10n.text("Email me"), isDefault: true) {
                     if NSWorkspace.shared.open(EarlyUserFeedback.emailURL) {
                         dismiss()
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
-                .keyboardShortcut(.defaultAction)
             }
             .padding(.top, 8)
         }

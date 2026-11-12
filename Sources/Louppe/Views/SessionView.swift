@@ -475,7 +475,6 @@ struct SessionView: View {
         VStack(spacing: 0) {
             if store.isGroupedReviewActive {
                 groupedReviewBanner
-                Divider()
             }
             HStack(spacing: 0) {
                 if store.isLeadingPaneVisible {
@@ -526,10 +525,7 @@ struct SessionView: View {
     }
 
     private var groupedReviewBanner: some View {
-        HStack(spacing: 10) {
-            Image(systemName: groupedReviewSymbol)
-                .foregroundStyle(Color.louppeAccent)
-                .accessibilityHidden(true)
+        StatusBanner(systemImage: groupedReviewSymbol) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(store.groupedReviewMode.analysisTitle)
                     .font(.subheadline.weight(.semibold))
@@ -551,17 +547,13 @@ struct SessionView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
             }
-            Spacer(minLength: 8)
+        } actions: {
             Button(L10n.text("Normal Review")) {
                 store.exitGroupedReview()
             }
             .buttonStyle(.bordered)
             .accessibilityHint(L10n.text("Return to the normal filtered and sorted media list"))
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(Color.appBackground)
-        .accessibilityElement(children: .contain)
     }
 
     private var groupedReviewSymbol: String {

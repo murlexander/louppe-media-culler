@@ -51,9 +51,16 @@ struct RenameFilesView: View {
     var body: some View {
         Group {
             if let progress = store.organizationProgress {
-                progressView(progress)
+                SourceFileOperationProgressView(
+                    progress: progress,
+                    headline: progress.action == .restoring
+                        ? L10n.text("Restoring previous filenames…")
+                        : L10n.text("Renaming files…")
+                )
             } else if let outcome = store.organizationOutcome {
-                outcomeView(outcome)
+                SourceFileOperationOutcomeView(
+                    store: store, outcome: outcome, kind: .rename
+                ) { store.isRenamePresented = false }
             } else if isReviewing, let plan {
                 confirmationView(plan)
             } else if isSingle {
@@ -102,17 +109,11 @@ struct RenameFilesView: View {
 
             Section(L10n.text("Preview")) { preview }
         } actions: {
-            HStack(spacing: 12) {
+            SheetActions {
                 planningIndicator
-                Spacer()
-                Button(L10n.text("Cancel"), role: .cancel) {
-                    store.isRenamePresented = false
-                }
-                .keyboardShortcut(.cancelAction)
-                Button(L10n.text("Rename")) { runSingleRename() }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.louppeFilledAccent)
+            } trailing: {
+                SheetCancelButton(role: .cancel) { store.isRenamePresented = false }
+                SheetPrimaryButton(L10n.text("Rename"), isDefault: true) { runSingleRename() }
                     .disabled(plan?.canExecute != true || isPlanning)
             }
         }
@@ -139,17 +140,11 @@ struct RenameFilesView: View {
 
             Section(L10n.text("Preview")) { preview }
         } actions: {
-            HStack(spacing: 12) {
+            SheetActions {
                 planningIndicator
-                Spacer()
-                Button(L10n.text("Cancel"), role: .cancel) {
-                    store.isRenamePresented = false
-                }
-                .keyboardShortcut(.cancelAction)
-                Button(L10n.text("Review Rename…")) { isReviewing = true }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.louppeFilledAccent)
+            } trailing: {
+                SheetCancelButton(role: .cancel) { store.isRenamePresented = false }
+                SheetPrimaryButton(L10n.text("Review Rename…"), isDefault: true) { isReviewing = true }
                     .disabled(plan?.canExecute != true || isPlanning)
             }
         }
@@ -297,78 +292,18 @@ struct RenameFilesView: View {
                 .foregroundStyle(.secondary)
             }
         } actions: {
-            HStack(spacing: 12) {
+            SheetActions {
                 Button(L10n.text("Back")) { isReviewing = false }
-                Spacer()
-                Button(L10n.text("Cancel"), role: .cancel) {
-                    store.isRenamePresented = false
-                }
-                .keyboardShortcut(.cancelAction)
-                Button(
+            } trailing: {
+                SheetCancelButton(role: .cancel) { store.isRenamePresented = false }
+                SheetPrimaryButton(
                     plan.storageSafety.usesReducedDirectoryDurability
                         ? L10n.text("Rename Files Anyway")
-                        : L10n.text("Rename Files")
+                        : L10n.text("Rename Files"),
+                    isDefault: true
                 ) {
                     store.startSourceRename(plan)
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
-            }
-        }
-    }
-
-    private func progressView(_ progress: SourceOrganizationProgress) -> some View {
-        VStack(spacing: 16) {
-            ProgressView(
-                value: Double(progress.done),
-                total: Double(max(progress.total, 1))
-            )
-            .accessibilityLabel(progress.title)
-            .accessibilityValue(L10n.text("\(progress.done) of \(progress.total) files"))
-            .frame(width: 360)
-            Text(progress.action == .restoring
-                ? L10n.text("Restoring previous filenames…")
-                : L10n.text("Renaming files…"))
-                .font(.headline)
-            Text(L10n.text("\(progress.done) of \(progress.total) files"))
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-            Text(L10n.text("Keep Louppe open until file work finishes."))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(30)
-    }
-
-    private func outcomeView(_ outcome: SourceOrganizationOutcome) -> some View {
-        SheetForm(title: outcome.title(for: .rename)) {
-            Text(outcome.fileCountDescription(for: .rename))
-                .font(.headline)
-            if let message = store.organizationError ?? outcome.message {
-                Text(message)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
-            } else if !outcome.wasUndo {
-                Text(L10n.text("Restore previous filenames with ⌘Z before closing this session."))
-                    .foregroundStyle(.secondary)
-            }
-            if case .scanning = store.phase {
-                ProgressView(L10n.text("Refreshing the session…"))
-            }
-        } actions: {
-            HStack(spacing: 12) {
-                // The same step as ⌘Z, offered where the result is shown.
-                if outcome.succeeded, !outcome.wasUndo, store.canUndo {
-                    Button(L10n.text("Undo")) { store.undo() }
-                        .disabled(store.isFileOperationRunning)
-                }
-                Spacer()
-                Button(L10n.text("Done")) { store.isRenamePresented = false }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.louppeFilledAccent)
-                    .disabled(store.isFileOperationRunning)
             }
         }
     }

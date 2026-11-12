@@ -59,11 +59,9 @@ struct XMPConflictResolverView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
         } actions: {
-            HStack(spacing: 12) {
-                Spacer()
-                Button(L10n.text("Cancel")) { onCancel() }
-                    .keyboardShortcut(.cancelAction)
-                Button(L10n.text("Apply Resolutions")) {
+            SheetActions {
+                SheetCancelButton { onCancel() }
+                SheetPrimaryButton(L10n.text("Apply Resolutions"), isDefault: true) {
                     onApply(conflicts.map {
                         XMPConflictResolutionRequest(
                             conflict: $0,
@@ -71,9 +69,6 @@ struct XMPConflictResolverView: View {
                         )
                     })
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .tint(Color.louppeFilledAccent)
                 .disabled(!hasActionableChoice)
             }
         }

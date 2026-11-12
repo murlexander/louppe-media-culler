@@ -207,57 +207,40 @@ struct PhotosOrganizationView: View {
         }
     }
 
-    @ViewBuilder
     private var actions: some View {
-        HStack(spacing: 12) {
+        SheetActions {
+            if case .choosing = model.phase, review != nil {
+                Button(L10n.text("Back")) { review = nil }
+                    .disabled(submitted)
+            }
+        } trailing: {
             switch model.phase {
             case .loading:
-                Spacer()
-                dismissButton
+                SheetCancelButton(role: .cancel) { onDismiss() }
             case .choosing:
-                if review != nil {
-                    Button(L10n.text("Back")) { review = nil }
-                        .disabled(submitted)
-                }
-                Spacer()
-                dismissButton.disabled(submitted)
+                SheetCancelButton(role: .cancel) { onDismiss() }.disabled(submitted)
                 if let review {
-                    Button(L10n.text("Add to Album")) {
+                    SheetPrimaryButton(L10n.text("Add to Album"), isDefault: true) {
                         guard !submitted, currentReview == review else { return }
                         submitted = true
                         onConfirm(review.draft)
                     }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.louppeFilledAccent)
                     .disabled(submitted || currentReview != review)
                 } else {
-                    Button(L10n.text("Review")) { review = currentReview }
-                        .keyboardShortcut(.defaultAction)
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.louppeFilledAccent)
+                    SheetPrimaryButton(L10n.text("Review"), isDefault: true) { review = currentReview }
                         .disabled(currentReview == nil || submitted)
                 }
             case .working:
-                Spacer()
-                Button(cancellationRequested ? L10n.text("Cancelling…") : L10n.text("Cancel"), role: .cancel) {
+                SheetCancelButton(cancellationRequested ? L10n.text("Cancelling…") : L10n.text("Cancel"), role: .cancel) {
                     guard !cancellationRequested else { return }
                     cancellationRequested = true
                     onCancelWork()
                 }
-                .keyboardShortcut(.cancelAction)
                 .disabled(cancellationRequested)
             case .finished:
-                Spacer()
-                Button(L10n.text("Done")) { onDismiss() }
-                    .keyboardShortcut(.defaultAction)
+                SheetPrimaryButton(L10n.text("Done"), isDefault: true) { onDismiss() }
             }
         }
-    }
-
-    private var dismissButton: some View {
-        Button(L10n.text("Cancel"), role: .cancel) { onDismiss() }
-            .keyboardShortcut(.cancelAction)
     }
 
     private func count(for scope: SourceOrganizationScope) -> Int {

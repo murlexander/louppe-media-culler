@@ -67,6 +67,23 @@ final class CaptureScenariosTests: XCTestCase {
             XCTAssertEqual(opening.applyMetadata(ready.map { OpeningMetadataUpdate(item: $0) }), 4)
             fixture.store.presentOpeningSessionForTesting(opening)
             return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
+        Scenario(name: "sheet-rename", description: "Rename setup with generated photos and video; native grouped form and fixed actions.") { fixture in
+            fixture.ready(mode: .gallery)
+            return Surface(view: AnyView(RenameFilesView(store: fixture.store)), size: CGSize(width: 680, height: 650))
+        },
+        Scenario(name: "sheet-organize", description: "Organize setup with generated photos and video; native grouped form and fixed actions.") { fixture in
+            fixture.ready(mode: .gallery)
+            return Surface(view: AnyView(OrganizeSourceView(store: fixture.store)), size: CGSize(width: 680, height: 650))
+        },
+        Scenario(name: "session-recovery-warning", description: "Production interrupted-operation warning with distinct remedies over a disposable Gallery session.") { fixture in
+            fixture.ready(mode: .gallery)
+            var report = FileOperationJournal.RecoveryReport()
+            report.unresolvedOperations = 1
+            report.unresolvedFiles = 1
+            report.details = ["A file changed since the operation began."]
+            fixture.store.presentOperationRecoveryReportForTesting(report)
+            return Surface(view: AnyView(RootView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         }
     ]
 

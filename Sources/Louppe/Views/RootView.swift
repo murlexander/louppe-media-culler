@@ -110,19 +110,7 @@ struct RootView: View {
             perform: folderOpening.openDroppedFolder
         )
         .overlay {
-            if isFolderDropTarget {
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(Color.louppeAccent, lineWidth: 3)
-                    .padding(4)
-                    .overlay {
-                        Label(L10n.text("Release to open this folder"), systemImage: "folder.badge.plus")
-                            .font(.headline)
-                            .padding(14)
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-                    }
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
+            if isFolderDropTarget { FolderDropTargetOverlay() }
         }
         .sheet(isPresented: $store.isPhotosLibraryPresented) {
             PhotosLibraryView(store: store, browser: store.photosBrowser)
@@ -144,24 +132,15 @@ struct RootView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
                 if let error = folderOpening.error {
-                    HStack(spacing: 10) {
-                        Image(systemName: "folder.badge.questionmark")
-                            .foregroundStyle(.orange)
-                            .accessibilityHidden(true)
-                        Text(error).font(.callout)
-                        Spacer(minLength: 12)
-                        Button {
-                            folderOpening.error = nil
-                        } label: {
-                            Image(systemName: "xmark")
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(L10n.text("Dismiss"))
+                    StatusBanner(
+                        systemImage: "folder.badge.questionmark",
+                        emphasis: .warning,
+                        accessibilityAnnouncement: error,
+                        dismissLabel: L10n.text("Dismiss"),
+                        dismiss: { folderOpening.error = nil }
+                    ) {
+                        Text(error)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 9)
-                    .background(Color.appBackground)
-                    .overlay(alignment: .bottom) { Divider() }
                 }
                 if store.recoveryNeedsAttention {
                     RecoveryWarningBanner(
@@ -300,7 +279,33 @@ struct RootView: View {
     }
 }
 
+private struct FolderDropTargetOverlay: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .strokeBorder(Color.louppeAccent, lineWidth: 3)
+            .padding(4)
+            .overlay {
+                Label(L10n.text("Release to open this folder"), systemImage: "folder.badge.plus")
+                    .font(.headline)
+                    .padding(14)
+                    .modifier(FloatingControlSurface(
+                        shape: RoundedRectangle(cornerRadius: 10),
+                        reduceTransparency: reduceTransparency,
+                        contrast: contrast,
+                        role: .panel
+                    ))
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
 private struct InterruptedOperationRecoveryOverlay: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
     @AccessibilityFocusState private var isAccessibilityFocused: Bool
 
     var body: some View {
@@ -315,7 +320,12 @@ private struct InterruptedOperationRecoveryOverlay: View {
                 .foregroundStyle(.secondary)
         }
         .padding(28)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .modifier(FloatingControlSurface(
+            shape: RoundedRectangle(cornerRadius: 14),
+            reduceTransparency: reduceTransparency,
+            contrast: contrast,
+            role: .panel
+        ))
         .shadow(radius: 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.opacity(0.18))
@@ -330,30 +340,20 @@ private struct RecoveryWarningBanner: View {
     let canRetry: Bool
     let retry: () -> Void
     let keepFilesAsTheyAre: () -> Void
-    @AccessibilityFocusState private var isWarningFocused: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
-                .accessibilityHidden(true)
+        StatusBanner(
+            systemImage: "exclamationmark.triangle.fill",
+            emphasis: .warning,
+            accessibilityAnnouncement: L10n.text("Interrupted operation warning. \(message)")
+        ) {
             Text(message)
-                .font(.callout)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityLabel(L10n.text("Interrupted operation warning. \(message)"))
-                .accessibilityFocused($isWarningFocused)
-                .onAppear { isWarningFocused = true }
-            Spacer(minLength: 12)
+        } actions: {
             Button(L10n.text("Keep Files As They Are"), action: keepFilesAsTheyAre)
                 .disabled(!canRetry)
             Button(L10n.text("Retry Recovery"), action: retry)
                 .disabled(!canRetry)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .frame(maxWidth: .infinity)
-        .background(Color.appBackground)
-        .overlay(alignment: .bottom) { Divider() }
     }
 }
 
@@ -363,29 +363,19 @@ private struct PersistenceWarningBanner: View {
     let message: String
     let showsRetry: Bool
     let retry: () -> Void
-    @AccessibilityFocusState private var isWarningFocused: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
-                .accessibilityHidden(true)
+        StatusBanner(
+            systemImage: "exclamationmark.triangle.fill",
+            emphasis: .warning,
+            accessibilityAnnouncement: L10n.text("Session save warning. \(message)")
+        ) {
             Text(message)
-                .font(.callout)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityLabel(L10n.text("Session save warning. \(message)"))
-                .accessibilityFocused($isWarningFocused)
-                .onAppear { isWarningFocused = true }
-            Spacer(minLength: 12)
+        } actions: {
             if showsRetry {
                 Button(L10n.text("Retry Saving"), action: retry)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .frame(maxWidth: .infinity)
-        .background(Color.appBackground)
-        .overlay(alignment: .bottom) { Divider() }
     }
 }
 

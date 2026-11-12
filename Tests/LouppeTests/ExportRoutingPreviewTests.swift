@@ -150,7 +150,9 @@ final class ExportRoutingPreviewTests: XCTestCase {
             content
             Text("Completed copies stay at their destinations after interruption.")
         } actions: {
-            Button("Start Copy") {}
+            SheetActions {
+                Button("Start Copy") {}
+            }
         }
         .frame(width: 640, height: 620)
     }
