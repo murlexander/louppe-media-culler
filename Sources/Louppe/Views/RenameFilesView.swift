@@ -39,27 +39,22 @@ struct RenameFilesView: View {
         _customBaseName = State(initialValue: initialName)
     }
 
-    /// A finished rename with no error is a short confirmation, not a form.
-    private var sheetHeight: CGFloat {
-        if store.organizationProgress == nil, let outcome = store.organizationOutcome,
-           store.organizationError == nil, outcome.message == nil {
-            return 250
-        }
-        return isSingle ? 460 : 650
+    private var sheetTitle: String {
+        isSingle ? L10n.text("Rename File") : L10n.text("Rename Files")
     }
 
     var body: some View {
         Group {
             if let progress = store.organizationProgress {
                 SourceFileOperationProgressView(
-                    progress: progress,
+                    title: sheetTitle, progress: progress,
                     headline: progress.action == .restoring
                         ? L10n.text("Restoring previous filenames…")
                         : L10n.text("Renaming files…")
                 )
             } else if let outcome = store.organizationOutcome {
                 SourceFileOperationOutcomeView(
-                    store: store, outcome: outcome, kind: .rename
+                    store: store, outcome: outcome, kind: .rename, title: sheetTitle
                 ) { store.isRenamePresented = false }
             } else if isReviewing, let plan {
                 confirmationView(plan)
@@ -69,7 +64,7 @@ struct RenameFilesView: View {
                 metadataSetup
             }
         }
-        .frame(width: isSingle ? 540 : 680, height: sheetHeight)
+        .frame(width: isSingle ? 540 : 680, height: isSingle ? 460 : 650)
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
         .controlSize(.regular)
@@ -90,7 +85,7 @@ struct RenameFilesView: View {
     }
 
     private var singleSetup: some View {
-        SheetForm(title: L10n.text("Rename File"), layout: .grouped) {
+        SheetForm(title: sheetTitle, layout: .grouped) {
             Section(L10n.text("Name")) {
                 LabeledContent(L10n.text("New base name")) {
                     HStack(spacing: 6) {
@@ -120,7 +115,7 @@ struct RenameFilesView: View {
     }
 
     private var metadataSetup: some View {
-        SheetForm(title: L10n.text("Rename Files"), layout: .grouped) {
+        SheetForm(title: sheetTitle, layout: .grouped) {
             Section {
                 ArchiveActionScopeNote(store: store)
                 Picker(L10n.text("Apply to"), selection: $scope) {
@@ -280,7 +275,9 @@ struct RenameFilesView: View {
     }
 
     private func confirmationView(_ plan: SourceOrganizationPlan) -> some View {
-        SheetForm(title: plan.movingFileCount == 1 ? L10n.text("Rename 1 file?") : L10n.text("Rename \(plan.movingFileCount) files?")) {
+        SheetForm(title: sheetTitle) {
+            Text(plan.movingFileCount == 1 ? L10n.text("Rename 1 file?") : L10n.text("Rename \(plan.movingFileCount) files?"))
+                .font(.headline)
             preview
             Divider()
             Text(L10n.text("Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session."))

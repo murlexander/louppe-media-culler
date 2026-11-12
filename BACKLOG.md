@@ -82,6 +82,7 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 - [ ] **Keyboards and assistive technology.** Custom shortcuts in a real shoot;
   ISO/JIS/dead-key/IME input; VoiceOver walkthroughs of the Folders outline and
   the lazy Export routing list.
+- [ ] **File-tool sheets.** VoiceOver walkthrough of Export XMP retry and Rename/Organize/Export progress and results in LTR and RTL.
 - [ ] **Compatibility.** Runtime on older macOS (14, 15, 26); RAW 9 on older or
   unsupported Macs, missing resources, failed downloads and compressed Fuji RAFs;
   the signed Store sandbox with stale/revoked grants and card reconnect (AUD-03).

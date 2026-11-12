@@ -129,6 +129,12 @@ final class CaptureScenariosTests: XCTestCase {
             fixture.ready(mode: .gallery)
             fixture.store.presentSourceFileOperationForTesting(outcome: .init(movedFiles: 10, failedItems: 0, message: nil, wasUndo: false))
             return fixture.sheet(OrganizeSourceView(store: fixture.store))
+        },
+        Scenario(name: "sheet-photos-organize-progress", description: "Existing Photos progress sheet beside the file-operation sheets.") { fixture in
+            fixture.ready(mode: .gallery)
+            let model = PhotosOrganizationReviewModel(phase: .working(message: "Adding to Album…", completed: 4, total: 10))
+            return fixture.sheet(PhotosOrganizationView(model: model, onConfirm: { _ in },
+                onCancelWork: {}, onDismiss: {}, onReload: {}))
         }
 
     ]
@@ -201,7 +207,7 @@ final class CaptureScenariosTests: XCTestCase {
                     try self.selectSettingsTab(surface.settingsTab, in: controller)
                     if scenario.name == "sheet-export-xmp-failure" {
                         Task { @MainActor in
-                            try await Task.sleep(for: .milliseconds(200))
+                            try? await Task.sleep(for: .milliseconds(200))
                             let root = controller.view.window?.attachedSheet?.contentView ?? controller.view
                             for scroll in OffscreenCapture.descendants(of: root).compactMap({ $0 as? NSScrollView }) {
                                 guard let document = scroll.documentView else { continue }
@@ -216,8 +222,11 @@ final class CaptureScenariosTests: XCTestCase {
                         case "popover-filter": fixture.store.isFilterPresented = true
                         case "sheet-rename": fixture.store.isRenamePresented = true
                         case "sheet-organize": fixture.store.isOrganizePresented = true
-                        default:
-                            if scenario.name.hasPrefix("sheet-") { fixture.sheetIsPresented = true }
+                        case "sheet-export", "sheet-export-xmp-failure", "sheet-export-progress", "sheet-export-result",
+                             "sheet-rename-progress", "sheet-rename-result", "sheet-organize-progress", "sheet-organize-result",
+                             "sheet-photos-organize-progress":
+                            fixture.sheetPresentation.isPresented = true
+                        default: break
                         }
                     }
                 }
@@ -344,8 +353,8 @@ final class CaptureScenariosTests: XCTestCase {
     private enum CaptureError: Error { case invalidSelection(String), metadata }
 
     @MainActor
-    private final class Fixture: ObservableObject {
-        @Published var sheetIsPresented = false
+    private final class Fixture {
+        let sheetPresentation = CaptureSheetPresentation()
         let root: URL
         let media: URL
         let defaults: UserDefaults
@@ -360,7 +369,7 @@ final class CaptureScenariosTests: XCTestCase {
             guard ProcessInfo.processInfo.environment["LOUPPE_CAPTURE_LIVE"] == "1" else {
                 return Surface(view: AnyView(content), size: CGSize(width: 680, height: 650))
             }
-            return Surface(view: AnyView(CaptureSheetHost(fixture: self, content: AnyView(content))),
+            return Surface(view: AnyView(CaptureSheetHost(presentation: sheetPresentation, store: store, content: AnyView(content))),
                     size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         }
 
@@ -470,12 +479,20 @@ final class CaptureScenariosTests: XCTestCase {
 
 private extension CaptureScenariosTests {
     private struct CaptureSheetHost: View {
-        @ObservedObject var fixture: Fixture
+        @ObservedObject var presentation: CaptureSheetPresentation
+        let store: SessionStore
         let content: AnyView
 
         var body: some View {
-            SessionView(store: fixture.store)
-                .sheet(isPresented: $fixture.sheetIsPresented) { content }
+            SessionView(store: store)
+                .sheet(isPresented: $presentation.isPresented) { content }
         }
+    }
+}
+
+private extension CaptureScenariosTests {
+    @MainActor
+    final class CaptureSheetPresentation: ObservableObject {
+        @Published var isPresented = false
     }
 }
