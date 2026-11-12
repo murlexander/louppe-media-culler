@@ -220,8 +220,19 @@ private struct OpeningCell: View {
             let modifiers = NSEvent.modifierFlags
             state.select(item.id, extending: modifiers.contains(.shift), toggling: modifiers.contains(.command))
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .mediaTileAccessibility(
+            item: item,
+            isCurrent: state.currentItem?.id == item.id,
+            isSelected: isSelected,
+            showActionTitle: surface == .grid ? L10n.text("Make Current") : L10n.text("Show in Gallery"),
+            show: { state.select(item.id) },
+            open: { state.select(item.id); state.viewMode = .gallery },
+            canRate: false,
+            rate: { _ in },
+            setStars: { _ in },
+            setColor: { _ in },
+            toggleSelection: { state.select(item.id, toggling: true) }
+        )
     }
 }
 

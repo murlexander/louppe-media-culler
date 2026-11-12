@@ -13,6 +13,60 @@ final class AccessibilityStructureTests: XCTestCase {
         try await checkCollection(style: .grid(thumbnailSize: 170), rightToLeft: true)
     }
 
+    func testOpeningTilesExposeNamesAndReadOnlyActions() async throws {
+        for mode in [ViewMode.gallery, .grid] {
+            let items = (0..<4).map { index in
+                PhotoItem(id: "Opening-\(index).JPG", primaryURL: URL(fileURLWithPath: "/tmp/Opening-\(index).JPG"),
+                          pairedURL: nil, captureDate: nil, cameraModel: nil, lensModel: nil, fileSize: 1)
+            }
+            let state = OpeningSessionState(snapshot: .init(items: items), viewMode: mode, sourceAccess: nil)
+            let host = NSHostingView(rootView: OpeningSessionContent(state: state, showsBrowser: true,
+                showsInfo: false, gridThumbnailSize: 170).environment(\.accessibilityEnabled, true))
+            let window = NSWindow(contentRect: CGRect(x: -20_000, y: -20_000, width: 700, height: 500),
+                                  styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = host
+            window.setFrameOrigin(CGPoint(x: -20_000, y: -20_000))
+            window.orderBack(nil)
+            defer { window.contentView = nil; window.close() }
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(100))
+            host.layoutSubtreeIfNeeded()
+            let document = try XCTUnwrap(descendants(host).compactMap { $0 as? ReviewCollectionDocument }.first)
+            var children: [NSObject] = []
+            var visited = Set<ObjectIdentifier>()
+            func collect(_ object: NSObject) {
+                guard visited.insert(ObjectIdentifier(object)).inserted else { return }
+                children.append(object)
+                let selector = NSSelectorFromString("accessibilityChildren")
+                if object.responds(to: selector),
+                   let nested = object.perform(selector)?.takeUnretainedValue() as? [NSObject] { nested.forEach(collect) }
+            }
+            collect(document)
+            let labels = children.map { object -> String in
+                let selector = NSSelectorFromString("accessibilityLabel")
+                return object.responds(to: selector) ? (object.perform(selector)?.takeUnretainedValue() as? String ?? "<nil>") : "<no label>"
+            }
+            print("Opening \(mode) AX labels: \(labels)")
+            let second = try XCTUnwrap(children.first { object in
+                let selector = NSSelectorFromString("accessibilityLabel")
+                return object.responds(to: selector)
+                    && object.perform(selector)?.takeUnretainedValue() as? String == items[1].displayName
+            }, "Opening Browser and Grid tiles must expose filenames")
+            XCTAssertTrue(second.responds(to: NSSelectorFromString("accessibilityPerformPress")))
+            second.perform(NSSelectorFromString("accessibilityPerformPress"))
+            XCTAssertEqual(state.currentItem?.id, items[1].id)
+            XCTAssertEqual(state.selectedIDs, [items[1].id])
+            let actions = (second.value(forKey: "accessibilityCustomActions") as? [NSAccessibilityCustomAction]) ?? []
+            XCTAssertTrue(actions.contains { $0.name == "Open in Gallery" })
+            XCTAssertTrue(actions.contains { $0.name == "Add to Selection" || $0.name == "Remove from Selection" })
+            XCTAssertFalse(actions.contains { $0.name.contains("Decide") || $0.name.contains("Stars") || $0.name.contains("Label") })
+            XCTAssertTrue(items.allSatisfy { $0.rating == .undecided })
+            XCTAssertFalse(window.isKeyWindow)
+            XCTAssertFalse(NSApp.isActive)
+        }
+    }
+
     func testChangingDocumentTextSizePreservesNativeSelection() async throws {
         _ = NSApplication.shared
         let suite = "Louppe.AccessibilityTextSize.\(UUID())"
