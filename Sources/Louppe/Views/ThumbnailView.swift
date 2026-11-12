@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-private let thumbnailCornerRadius: CGFloat = 6
+private let thumbnailCornerRadius = ReviewTileMetrics.mediaCornerRadius
 
 /// Shared visible geometry for badges in Browser and Grid tiles.
 enum TileBadgeLayout {
@@ -110,7 +110,6 @@ struct ThumbnailRenderMarker: NSViewRepresentable {
 /// The whole photo fits inside the tile (letterboxed, never cropped).
 struct ThumbnailView: View {
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
-    @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.mediaReadAccess) private var mediaReadAccess
     let item: PhotoItem
     var isCurrent: Bool
@@ -221,13 +220,7 @@ struct ThumbnailView: View {
                     )
                 }
             }
-            .overlay {
-                RoundedRectangle(cornerRadius: thumbnailCornerRadius)
-                    .strokeBorder(borderColor, style: StrokeStyle(
-                        lineWidth: 3,
-                        dash: differentiateWithoutColor && isSelected && !isCurrent ? [4, 3] : []
-                    ))
-            }
+            .reviewTileSelectionOutline(isCurrent: isCurrent, isSelected: isSelected)
             .overlay(alignment: .topTrailing) {
                 if showsRatingBadge {
                     RatingBadge(
@@ -297,12 +290,6 @@ struct ThumbnailView: View {
             retainedImage.accept(loaded, revision: requestedRevision)
         }
     }
-
-    private var borderColor: Color {
-        if isCurrent { return .louppeAccent }
-        if isSelected { return .louppeAccent.opacity(contrast == .increased || differentiateWithoutColor ? 1 : 0.45) }
-        return .clear
-    }
 }
 
 private struct GridVideoPlaybackOverlay: View {
@@ -329,7 +316,7 @@ struct MediaDurationBadge: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 5)
             .frame(height: TileBadgeLayout.height)
-            .background(.black.opacity(0.68), in: Capsule())
+            .mediaBadgeBackdrop(Capsule())
             .shadow(radius: 1)
             .accessibilityLabel(L10n.text("\(L10n.label(mediaKind.singularLabel)) duration: \(MediaDurationFormat.accessibility(duration))"))
     }

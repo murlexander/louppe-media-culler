@@ -78,8 +78,12 @@ enum ReviewCollectionStyle: Equatable {
     case browser
     case grid(thumbnailSize: CGFloat)
 
-    var spacing: CGFloat { self == .browser ? 6 : 10 }
-    var topPadding: CGFloat { self == .browser ? 10 : 12 }
+    var spacing: CGFloat {
+        self == .browser ? ReviewCollectionMetrics.browserSpacing : ReviewCollectionMetrics.gridSpacing
+    }
+    var topPadding: CGFloat {
+        self == .browser ? ReviewCollectionMetrics.browserTopPadding : ReviewCollectionMetrics.gridTopPadding
+    }
 }
 
 /// Only section geometry is retained. Item rectangles are constant-time integer
@@ -119,17 +123,18 @@ struct ReviewCollectionGeometry {
         let available: CGFloat
         switch style {
         case .browser:
-            available = 102
+            available = ReviewCollectionMetrics.browserTileSize
             columns = 1
-            itemWidth = 102
-            itemHeight = 102
-            horizontalOrigin = 10
+            itemWidth = ReviewCollectionMetrics.browserTileSize
+            itemHeight = ReviewCollectionMetrics.browserTileSize
+            horizontalOrigin = ReviewCollectionMetrics.browserHorizontalInset
         case .grid(let thumbnailSize):
-            available = max(1, width - 18)
-            columns = max(1, Int((available + spacing) / (max(1, thumbnailSize) + spacing)))
-            itemWidth = min(thumbnailSize * 1.4, max(1, (available - CGFloat(columns - 1) * spacing) / CGFloat(columns)))
-            itemHeight = itemWidth + 3 + captionHeight
-            horizontalOrigin = (rightToLeft ? 6 : 12)
+            available = ReviewCollectionMetrics.gridAvailableWidth(clipWidth: width)
+            columns = ReviewCollectionMetrics.gridColumnCount(clipWidth: width, thumbnailSize: thumbnailSize)
+            itemWidth = min(thumbnailSize * ReviewCollectionMetrics.gridMaximumTileGrowth,
+                            max(1, (available - CGFloat(columns - 1) * spacing) / CGFloat(columns)))
+            itemHeight = itemWidth + ReviewCollectionMetrics.captionSpacing + captionHeight
+            horizontalOrigin = ReviewCollectionMetrics.gridLeadingOrigin(rightToLeft: rightToLeft)
                 + max(0, (available - CGFloat(columns) * itemWidth - CGFloat(columns - 1) * spacing) / 2)
         }
         var result: [Section] = []
@@ -138,7 +143,8 @@ struct ReviewCollectionGeometry {
             let range = projection.sectionRanges[index]
             let header: CGRect?
             if section.title != nil, !range.isEmpty {
-                header = CGRect(x: style == .browser ? 10 : (rightToLeft ? 6 : 12), y: y,
+                header = CGRect(x: style == .browser ? ReviewCollectionMetrics.browserHorizontalInset
+                                    : ReviewCollectionMetrics.gridLeadingOrigin(rightToLeft: rightToLeft), y: y,
                                 width: available, height: headerHeight)
                 y += headerHeight + spacing
             } else {
@@ -259,7 +265,8 @@ struct TilePhotoLayout: Layout {
     var alignment: TileMediaAlignment = .center
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        proposal.replacingUnspecifiedDimensions(by: CGSize(width: 102, height: 102))
+        let side = ReviewCollectionMetrics.browserTileSize
+        return proposal.replacingUnspecifiedDimensions(by: CGSize(width: side, height: side))
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {

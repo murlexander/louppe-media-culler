@@ -295,9 +295,11 @@ final class ReviewCollectionDocument: NSView {
             // synchronous SwiftUI fitting/layout passes on each new inventory.
             if measuredTemplates?.width != size.width || measuredTemplates?.style != style {
                 measuredTemplates = (size.width, style,
-                    measure(AnyView(ReviewGridCaption(title: "Ag")), width: max(1, size.width - 18)),
+                    measure(AnyView(ReviewGridCaption(title: "Ag")),
+                            width: ReviewCollectionMetrics.gridAvailableWidth(clipWidth: size.width)),
                     measure(AnyView(ReviewGroupHeader(title: "Ag", style: style)),
-                            width: style == .browser ? 102 : max(1, size.width - 18)))
+                            width: style == .browser ? ReviewCollectionMetrics.browserTileSize
+                                : ReviewCollectionMetrics.gridAvailableWidth(clipWidth: size.width)))
             }
             guard let templates = measuredTemplates else { return }
             realizedViewport = nil

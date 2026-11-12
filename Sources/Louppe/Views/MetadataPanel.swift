@@ -363,10 +363,7 @@ struct MetadataPanel: View {
         }
 
         ForEach(otherFields) { field in
-            VStack(alignment: .leading, spacing: 1) {
-                Text(L10n.label(field.label))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            LabeledReadout(label: L10n.label(field.label)) {
                 Text(field.value)
                     .font(.callout)
                     .textSelection(.enabled)
@@ -611,10 +608,7 @@ struct MetadataPanel: View {
     }
 
     private func selectionSummaryField(_ label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        LabeledReadout(label: label, spacing: 2) {
             Text(value)
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
@@ -696,13 +690,21 @@ struct MetadataPanel: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
+                // One element per setting, named in full: the visible label is
+                // abbreviated (Exp. comp., WB) or hidden in the hero row.
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(Text("\(L10n.label(field.label)) \(field.value)"))
             }
         }
     }
 
+    /// Camera-display sizes for the hero row's numbers and their units.
+    private static let heroValueSize: CGFloat = 18
+    private static let heroUnitSize: CGFloat = 12
+
     private func settingValue(for field: MetadataField) -> some View {
-        let largeFont = Font.system(size: 18, weight: .semibold)
-        let smallFont = Font.system(size: 12, weight: .semibold)
+        let largeFont = Font.system(size: Self.heroValueSize, weight: .semibold)
+        let smallFont = Font.system(size: Self.heroUnitSize, weight: .semibold)
         let value = field.value
 
         switch field.label {

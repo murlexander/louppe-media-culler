@@ -53,7 +53,7 @@ struct QualityCueTileIcons: View {
                         ForEach(cues) { cue in
                             Image(systemName: cue.kind.symbol)
                                 .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
-                                .background(.black.opacity(0.72), in: Circle())
+                                .mediaBadgeBackdrop(Circle(), role: .qualityCue)
                                 .accessibilityHidden(true)
                         }
                     }

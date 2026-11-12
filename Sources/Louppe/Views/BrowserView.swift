@@ -4,9 +4,8 @@ import SwiftUI
 /// of the Gallery view, with a small gray group label above each sort group
 /// (shooting day, camera, subfolder… depending on the active sort key).
 struct BrowserView: View {
-    /// Keep the original 122-point thumbnail column and add exactly enough
-    /// room for a native non-overlay scrollbar beside it.
-    static let width = 122 + PersistentVerticalScroller.gutterWidth
+    /// The padded thumbnail column plus a native non-overlay scrollbar gutter.
+    static let width = ReviewCollectionMetrics.browserWidth
 
     @ObservedObject var store: SessionStore
     @Environment(\.locale) private var locale
@@ -161,7 +160,8 @@ private struct BrowserRow: View {
                             }
                     )
                 )
-                .frame(width: 102, height: 102)
+                .frame(width: ReviewCollectionMetrics.browserTileSize,
+                       height: ReviewCollectionMetrics.browserTileSize)
                 .onTapGesture {
                     // ⇧-click: range · ⌘-click: add/remove · click: jump.
                     store.handleThumbnailClick(at: index, plainClick: onPlainClick)

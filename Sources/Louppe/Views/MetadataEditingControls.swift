@@ -207,12 +207,11 @@ struct MetadataBadgeStrip: View {
                             .lineLimit(1)
                             .padding(.horizontal, 5)
                             .frame(height: TileBadgeLayout.height)
-                            .background(.black.opacity(0.85), in: Capsule())
+                            .mediaBadgeBackdrop(Capsule(), role: .text)
                     } else {
                         ColorLabelMark(state: colorLabelState)
                             .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
-                            .background(.black.opacity(0.68),
-                                        in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .mediaBadgeBackdrop(RoundedRectangle(cornerRadius: 6, style: .continuous))
                     }
                 }
             }
@@ -249,6 +248,6 @@ struct MetadataBadgeStrip: View {
         .font(.system(size: TileBadgeLayout.iconSize, weight: .semibold))
         .padding(.horizontal, 5)
         .frame(height: TileBadgeLayout.height)
-        .background(.black.opacity(0.68), in: Capsule())
+        .mediaBadgeBackdrop(Capsule())
     }
 }

@@ -112,15 +112,11 @@ private struct OpeningDetails: View {
                         .foregroundStyle(.secondary)
                     Divider()
                     ForEach(MetadataExtractor.openingFields(for: item).filter { $0.label != "Filename" }) { field in
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(L10n.label(field.label))
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
+                        LabeledReadout(label: L10n.label(field.label), labelStyle: .tertiary) {
                             Text(verbatim: field.value)
                                 .font(.callout)
                                 .foregroundStyle(.secondary)
                         }
-                        .accessibilityElement(children: .combine)
                     }
                 }
                 // Plain Text ignores `.disabled`; one step down the system
@@ -168,9 +164,9 @@ private struct OpeningCollection: View {
 
     private func updateColumns(width: CGFloat) {
         guard surface == .grid else { return }
-        // Same column arithmetic as GridView, so arrows match the tiles.
-        let content = max(1, width - PersistentVerticalScroller.gutterWidth - 18)
-        state.setGridColumnCount(max(1, Int((content + 10) / (thumbnailSize + 10))))
+        state.setGridColumnCount(ReviewCollectionMetrics.gridColumnCount(
+            paneWidth: width, thumbnailSize: thumbnailSize
+        ))
     }
 }
 
@@ -207,22 +203,15 @@ private struct OpeningCell: View {
     let surface: OpeningViewportSurface
 
     var body: some View {
-        VStack(spacing: 3) {
-            OpeningPhotoView(item: item, sourceAccess: state.sourceAccess, fitted: false)
+        let isSelected = state.selectedIDs.contains(item.id)
+        VStack(spacing: ReviewCollectionMetrics.captionSpacing) {
+            OpeningPhotoView(item: item, sourceAccess: state.sourceAccess, fitted: false,
+                             isCurrent: state.currentItem?.id == item.id, isSelected: isSelected,
+                             mediaAlignment: surface == .grid ? .bottom : .center,
+                             showsRatingBadge: true)
                 .frame(maxWidth: .infinity)
                 .aspectRatio(1, contentMode: .fit)
-                .overlay(alignment: .topTrailing) {
-                    // Informational saved decision, never an interactive control.
-                    RatingBadge(rating: item.rating, isMixed: item.hasMixedRatings,
-                                size: TileBadgeLayout.height)
-                        .padding(TileBadgeLayout.inset)
-                }
             if surface == .grid { ReviewGridCaption(title: item.displayName) }
-        }
-        .background(state.selectedIDs.contains(item.id) ? Color.louppeAccent.opacity(0.12) : Color.clear)
-        .overlay {
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(state.currentItem?.id == item.id ? Color.louppeAccent : Color.clear, lineWidth: 2)
         }
         .contentShape(Rectangle())
         .onTapGesture(count: 2) { state.select(item.id); state.viewMode = .gallery }
@@ -231,7 +220,7 @@ private struct OpeningCell: View {
             state.select(item.id, extending: modifiers.contains(.shift), toggling: modifiers.contains(.command))
         }
         .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(state.selectedIDs.contains(item.id) ? .isSelected : [])
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -241,14 +230,24 @@ private struct OpeningPhotoView: View {
     let item: PhotoItem
     let sourceAccess: MediaReadAccess?
     let fitted: Bool
+    var isCurrent = false
+    var isSelected = false
+    let mediaAlignment: TileMediaAlignment
+    let showsRatingBadge: Bool
     @State private var thumbnail: ThumbnailImageState
     @State private var full: ThumbnailImageState
     @State private var didFinish = false
 
-    init(item: PhotoItem, sourceAccess: MediaReadAccess?, fitted: Bool) {
+    init(item: PhotoItem, sourceAccess: MediaReadAccess?, fitted: Bool,
+         isCurrent: Bool = false, isSelected: Bool = false,
+         mediaAlignment: TileMediaAlignment = .center, showsRatingBadge: Bool = false) {
         self.item = item
         self.sourceAccess = sourceAccess
         self.fitted = fitted
+        self.isCurrent = isCurrent
+        self.isSelected = isSelected
+        self.mediaAlignment = mediaAlignment
+        self.showsRatingBadge = showsRatingBadge
         _thumbnail = State(initialValue: .init(revision: item.contentRevision,
                                                image: ImagePipeline.shared.cachedThumbnail(for: item)))
         _full = State(initialValue: .init(revision: item.contentRevision,
@@ -261,7 +260,7 @@ private struct OpeningPhotoView: View {
         return thumbnail.revision == item.contentRevision ? thumbnail.image : nil
     }
 
-    var body: some View {
+    private var media: some View {
         ZStack {
             Color.appBackground
             if let image {
@@ -277,7 +276,30 @@ private struct OpeningPhotoView: View {
                 }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: fitted ? 0 : 6))
+        .clipShape(RoundedRectangle(cornerRadius: fitted ? 0 : ReviewTileMetrics.mediaCornerRadius))
+    }
+
+    var body: some View {
+        Group {
+            if fitted {
+                media
+            } else {
+                // Ready's tile placement and outline: around the fitted media.
+                TilePhotoLayout(imageSize: TileMediaGeometry.imageSize(for: item, loadedImage: image),
+                                alignment: mediaAlignment) {
+                    media
+                        .reviewTileSelectionOutline(isCurrent: isCurrent, isSelected: isSelected)
+                        .overlay(alignment: .topTrailing) {
+                            if showsRatingBadge {
+                                // Informational saved decision, never an interactive control.
+                                RatingBadge(rating: item.rating, isMixed: item.hasMixedRatings,
+                                            size: TileBadgeLayout.height)
+                                    .padding(TileBadgeLayout.inset)
+                            }
+                        }
+                }
+            }
+        }
         .background {
             #if LOUPPE_TEST_SEAMS
             ThumbnailRenderMarker(revision: item.contentRevision, hasImage: image != nil)

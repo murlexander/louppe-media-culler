@@ -11,29 +11,8 @@ struct GalleryView: View {
 
             ZStack {
                 Color.appBackground
-                if store.items.isEmpty {
-                    SessionEmptyView(
-                        reason: store.emptySessionReason,
-                        canUndo: store.canUndo
-                    )
-                } else if store.visibleIndices.isEmpty && store.isGroupedReviewActive {
-                    ContentUnavailableView(
-                        store.groupedReviewEmptyTitle,
-                        systemImage: "rectangle.3.group",
-                        description: Text(store.groupedReviewEmptyDescription)
-                    )
-                } else if store.visibleIndices.isEmpty && !store.archiveSelectedFolderID.isEmpty
-                            && (!store.filter.isActive || store.archiveScopeCount == 0) {
-                    // An empty folder stays empty without filters; don't suggest clearing them.
-                    ArchiveFolderEmptyView(store: store)
-                } else if store.visibleIndices.isEmpty && store.filter.isActive {
-                    ContentUnavailableView {
-                        Label(L10n.text("No items match the filter"), systemImage: "line.3.horizontal.decrease.circle")
-                    } description: {
-                        Text(L10n.text("Change or clear filters to show media."))
-                    } actions: {
-                        Button(L10n.text("Clear Filters")) { store.resetFilter() }
-                    }
+                if let emptyState = ReviewEmptyState(store: store) {
+                    ReviewEmptyStateView(store: store, state: emptyState)
                 } else if let item = store.currentItem {
                     if let reference = item.primaryFile.photosMedia {
                         PhotosGalleryView(store: store, item: item, reference: reference)

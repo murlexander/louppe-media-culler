@@ -25,34 +25,8 @@ struct GridView: View {
         let archiveGeneration = store.archiveViewportGeneration
         return GeometryReader { geometry in
             Group {
-                if store.items.isEmpty {
-                    SessionEmptyView(
-                        reason: store.emptySessionReason,
-                        canUndo: store.canUndo
-                    )
-                    .padding(.top, 80)
-                } else if store.visibleIndices.isEmpty
-                            && store.isGroupedReviewActive {
-                    ContentUnavailableView(
-                        store.groupedReviewEmptyTitle,
-                        systemImage: "rectangle.3.group",
-                        description: Text(store.groupedReviewEmptyDescription)
-                    )
-                    .padding(.top, 80)
-                } else if store.visibleIndices.isEmpty && !store.archiveSelectedFolderID.isEmpty
-                            && (!store.filter.isActive || store.archiveScopeCount == 0) {
-                    // An empty folder stays empty without filters; don't suggest clearing them.
-                    ArchiveFolderEmptyView(store: store)
-                } else if store.visibleIndices.isEmpty
-                            && store.filter.isActive {
-                    ContentUnavailableView {
-                        Label(L10n.text("No items match the filter"), systemImage: "line.3.horizontal.decrease.circle")
-                    } description: {
-                        Text(L10n.text("Change or clear filters to show media."))
-                    } actions: {
-                        Button(L10n.text("Clear Filters")) { store.resetFilter() }
-                    }
-                    .padding(.top, 80)
+                if let emptyState = ReviewEmptyState(store: store) {
+                    ReviewEmptyStateView(store: store, state: emptyState, topPadding: 80)
                 } else {
                     GridCollectionContent(
                         store: store,
@@ -108,18 +82,9 @@ struct GridView: View {
     }
 
     private func updateColumnCount(for width: CGFloat) {
-        // The legacy vertical scroller owns a real gutter inside the Grid's
-        // width. Exclude it so arrow-key columns match the rendered grid.
-        let contentWidth = max(
-            width
-                - 12
-                - 6
-                - PersistentVerticalScroller.gutterWidth,
-            1
-        )
-        let spacing: CGFloat = 10
-        let count = max(1, Int((contentWidth + spacing) / (store.gridThumbSize + spacing)))
-        store.setGridColumnCount(count)
+        store.setGridColumnCount(ReviewCollectionMetrics.gridColumnCount(
+            paneWidth: width, thumbnailSize: store.gridThumbSize
+        ))
     }
 
     private func suppressFollowForPointerAction() {
@@ -235,7 +200,7 @@ private struct GridCell: View {
                 index: index,
                 onPointerCurrentChange: onPointerCurrentChange
             )
-            VStack(spacing: 3) {
+            VStack(spacing: ReviewCollectionMetrics.captionSpacing) {
                 ZStack {
                     // A representable has a 100x100 default ideal size. Keep
                     // it in an overlay so it receives the media square's real
