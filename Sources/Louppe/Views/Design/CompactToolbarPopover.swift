@@ -41,7 +41,6 @@ struct CompactToolbarPopover<Content: View, FooterLeading: View, FooterActions: 
         .padding(14)
         .frame(width: 340, height: height)
         .fixedSize(horizontal: false, vertical: height == nil)
-        .background(Color.appBackground)
-        .tint(Color.louppeAccent)
+        .louppePopoverSurface()
     }
 }

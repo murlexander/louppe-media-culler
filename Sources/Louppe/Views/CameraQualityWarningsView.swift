@@ -68,9 +68,8 @@ struct QualityCueTileIcons: View {
                 .accessibilityValue(cues.map { "\($0.title): \($0.compactValue)" }.joined(separator: ", "))
                 .popover(isPresented: $showsDetails) {
                     QualityCueDetailsView(store: store, item: item, showsInspectionAction: true)
-                        .padding(12).frame(width: 300)
-                        .background(Color.appBackground)
-                        .tint(Color.louppeAccent)
+                        .padding(14).frame(width: 300)
+                        .louppePopoverSurface()
                 }
             }
         }

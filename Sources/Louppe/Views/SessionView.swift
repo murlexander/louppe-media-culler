@@ -413,6 +413,7 @@ struct SessionView: View {
                 .buttonStyle(.plain)
                 .popover(isPresented: $store.isReviewStatusPresented, arrowEdge: .bottom) {
                     SessionReviewStatus(store: store)
+                        .louppePopoverSurface()
                 }
                 .accessibilityLabel(L10n.text("Review progress and decision totals"))
                 .accessibilityValue("\(subtitle), \(store.sessionSaveStatus)")

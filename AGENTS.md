@@ -112,7 +112,9 @@ The owner and several agents often work on this checkout at the same time.
 ## UI conventions
 
 - Colors never change: one background, `Color.appBackground`, with `Divider()`
-  lines between regions (grouped Form sections keep their system surfaces). One
+  lines between regions (grouped Form sections keep their system surfaces).
+  Popovers are the exception: their content applies `louppePopoverSurface()`
+  (system thick material, arrow included), never `Color.appBackground`. One
   accent, `Color.louppeAccent` (#9853A6, global `.tint`), defined in
   `Sources/Louppe/Views/Design/Palette.swift`. Green and red mean yes/no in
   ratings; elsewhere they appear only as content colors (color labels), red

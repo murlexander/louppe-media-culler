@@ -97,6 +97,7 @@ final class SourceConventionsTests: XCTestCase {
         XCTAssertEqual(try bareEnglishCountCount(in: #"L10n.text(  "1 file"); let a = "1 item"; let b = "1/30 second""#), 1)
         XCTAssertEqual(try bareEnglishCountCount(in: #"Text("\(count) media files"); Text("2 items")"#), 2)
         XCTAssertEqual(try bareEnglishCountCount(in: #"L10n.text("\(count) media files"); L10n.text("2 items"); Text("\(name) files remain")"#), 0)
+        XCTAssertEqual(try bareEnglishCountCount(in: #"let a = "\(rating.count) stars"; L10n.text("\(rating.count) stars")"#), 1)
     }
 
     func testCompactPopoverWidthStaysInItsScaffold() throws {
@@ -109,10 +110,32 @@ final class SourceConventionsTests: XCTestCase {
         XCTAssertEqual(expression.numberOfMatches(in: source, range: NSRange(source.startIndex..., in: source)), 1)
     }
 
+    func testPopoversUseTheSharedSurface() throws {
+        // Popover content applies louppePopoverSurface(); Sort and Filter get it from their scaffold.
+        let scaffold = try String(contentsOf: repositoryRoot.appendingPathComponent(
+            "Sources/Louppe/Views/Design/CompactToolbarPopover.swift"), encoding: .utf8)
+        XCTAssertTrue(scaffold.contains(".louppePopoverSurface()"))
+        XCTAssertFalse(scaffold.contains("appBackground"))
+        let expression = try NSRegularExpression(
+            pattern: #"\.popover\s*\([^{]*\{(.*?)\n\s*\}"#, options: .dotMatchesLineSeparators)
+        var popovers = 0
+        for file in try swiftFiles(in: "Sources/Louppe") {
+            let source = try String(contentsOf: file, encoding: .utf8)
+            for match in expression.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
+                popovers += 1
+                let content = try XCTUnwrap(Range(match.range(at: 1), in: source).map { String(source[$0]) })
+                XCTAssertTrue(["louppePopoverSurface()", "SortView(", "FilterView("].contains { content.contains($0) },
+                              "\(relativePath(file)): \(content)")
+                XCTAssertFalse(content.contains("appBackground"), relativePath(file))
+            }
+        }
+        XCTAssertGreaterThanOrEqual(popovers, 4)
+    }
+
     private func bareEnglishCountCount(in source: String) throws -> Int {
         // Capture the optional L10n call with the whole literal, rather than matching its inner quote again.
         let expression = try NSRegularExpression(pattern:
-            #"(?:(L10n\s*\.\s*(?:text|label)\s*\(\s*))?"(?:1 [A-Za-z]+(?: [^"\\\n]*)?|(?:[0-9]+|\\\([^"\\\n]*\)) (?:items?|files?|folders?|media files?))""#)
+            #"(?:(L10n\s*\.\s*(?:text|label)\s*\(\s*))?"(?:1 [A-Za-z]+(?: [^"\\\n]*)?|(?:[0-9]+|\\\([^"\\\n]*\)) (?:items?|files?|folders?|media files?|stars?))""#)
         return expression.matches(in: source, range: NSRange(source.startIndex..., in: source))
             .filter { $0.range(at: 1).location == NSNotFound }.count
     }

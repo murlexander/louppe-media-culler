@@ -1018,6 +1018,7 @@ or font token scale. `SourceConventionsTests` guards these conventions.
 | [`Palette.swift`](../Sources/Louppe/Views/Design/Palette.swift) | App background, foreground accent and filled-control accent, including appearance/contrast variants. |
 | [`LouppeToggleStyle`](../Sources/Louppe/Views/Design/LouppeToggleStyle.swift) | Native automatic, checkbox or switch toggles with readable white ink. |
 | [`CompactToolbarPopover`](../Sources/Louppe/Views/Design/CompactToolbarPopover.swift) | Sort/Filter title, compact margins, width and fixed Done footer. |
+| [`louppePopoverSurface()`](../Sources/Louppe/Views/Design/PopoverSurface.swift) | Every popover's background (thick material, arrow included) and accent; 14-point margins. |
 | [`ValueMenu`](../Sources/Louppe/Views/Design/ValueMenu.swift) | Borderless current-value picker with primary ink and a 22-point minimum label target. |
 | [`LabeledReadout`](../Sources/Louppe/Views/Design/LabeledReadout.swift) | Caption/value pairs read as one accessibility element. |
 | [`MediaBadgeBackdrop`](../Sources/Louppe/Views/Design/MediaBadgeBackdrop.swift) | Dark media-overlay badge surfaces respecting contrast and transparency preferences. |

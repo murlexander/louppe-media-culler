@@ -21,7 +21,7 @@ struct SessionReviewStatus: View {
                 .help(L10n.text("Hide this tip. See Help > Louppe Help for shortcuts."))
             }
         }
-        .padding(16)
+        .padding(14)
         .frame(width: 320, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
     }
