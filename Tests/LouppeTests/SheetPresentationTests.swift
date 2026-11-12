@@ -148,7 +148,7 @@ final class SheetPresentationTests: XCTestCase {
 
     private func mount<V: View>(_ host: NSHostingView<V>, size: CGSize) -> NSWindow {
         _ = NSApplication.shared
-        let window = NSWindow(contentRect: NSRect(origin: NSPoint(x: -20_000, y: -20_000), size: size),
+        let window = TestWindow(contentRect: NSRect(origin: NSPoint(x: -20_000, y: -20_000), size: size),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
@@ -168,6 +168,31 @@ final class SheetPresentationTests: XCTestCase {
     }
 
     private func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+
+    /// Hosting a native control can resize and rescue a window onto a display.
+    /// Keep every frame change offscreen, while allowing local key equivalents.
+    private final class TestWindow: NSWindow {
+        override var canBecomeMain: Bool { false }
+
+        private func offscreen(_ frame: NSRect) -> NSRect {
+            var frame = frame
+            frame.origin.x = min(-20_000, (NSScreen.screens.map(\.frame.minX).min() ?? 0) - frame.width - 1_000)
+            frame.origin.y = min(-20_000, (NSScreen.screens.map(\.frame.minY).min() ?? 0) - frame.height - 1_000)
+            return frame
+        }
+
+        override func setFrame(_ frameRect: NSRect, display flag: Bool) {
+            super.setFrame(offscreen(frameRect), display: flag)
+        }
+
+        override func setFrameOrigin(_ point: NSPoint) {
+            super.setFrameOrigin(offscreen(frame).origin)
+        }
+
+        override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+            offscreen(frameRect)
+        }
+    }
 
     private struct GeometryProbe: NSViewRepresentable {
         final class Probe: NSView {}
