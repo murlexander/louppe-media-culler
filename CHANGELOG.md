@@ -4,6 +4,7 @@
 
 - Report failed XMP sidecar checks in Export with Try Again, preserving the XMP choice until a check succeeds.
 - Keep the Rename and Organize sheet title visible while files move.
+- Give Sort, Filter, quality-cue and review-status popovers one surface, arrow included: no lighter arrow or seam, and legible over bright photos.
 
 - Show the normal toolbar, Browser and Info panel while a large folder opens, with controls greyed out until all photo details load, so the view no longer jumps when review begins.
 - Filter dates by Range, Year or Date in a full-width chooser; each mode keeps its choices when you switch.
