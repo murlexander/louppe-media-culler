@@ -7,8 +7,7 @@ struct SessionRecoveryBanner: View {
         StatusBanner(
             systemImage: store.pendingSessionRecoveryEntries.isEmpty
                 ? "checkmark.circle" : "arrow.triangle.2.circlepath",
-            dismissLabel: L10n.text("Dismiss notification"),
-            dismiss: store.dismissSessionRecoveryNotice
+            dismissal: .init(label: L10n.text("Dismiss notification"), action: store.dismissSessionRecoveryNotice)
         ) {
             Text(store.sessionRecoveryNotice)
         } actions: {
@@ -116,7 +115,7 @@ struct SessionRecoveryView: View {
                     // Escape closes without restoring, and Return never
                     // restores: the selection needs an explicit acknowledgment.
                     SheetCancelButton(L10n.text("Done")) { dismiss() }
-                    SheetPrimaryButton(L10n.text("Restore Selected Decisions"), isDefault: false) {
+                    SheetPrimaryButton(L10n.text("Restore Selected Decisions"), runsOnReturn: false) {
                         store.restoreSessionRecoveryEntries(selected)
                         selected = []
                         confirmsSamePhotos = false

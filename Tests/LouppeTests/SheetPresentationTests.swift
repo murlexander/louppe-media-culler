@@ -15,8 +15,8 @@ final class SheetPresentationTests: XCTestCase {
                 Text("Preview")
             } actions: {
                 SheetActions {
-                    SheetCancelButton(role: .cancel) { cancelled += 1 }
-                    SheetPrimaryButton("Confirm", isDefault: true) { confirmed += 1 }
+                    SheetCancelButton { cancelled += 1 }
+                    SheetPrimaryButton("Confirm", runsOnReturn: true) { confirmed += 1 }
                         .disabled(!enabled)
                 }
             }.frame(width: 540, height: 300))
@@ -30,12 +30,49 @@ final class SheetPresentationTests: XCTestCase {
         }
     }
 
+    func testEscapeCancelsOrganizeConfirmationButGoesBackFromExportReview() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let defaultsName = "SheetPresentationTests.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+        let store = SessionStore(reviewDefaults: defaults)
+        let plan = try SourceOrganizationPlanner.makePlan(
+            sourceFolder: root, selectedItems: [], familyContextItems: [],
+            configuration: .initial(hasMultipleTopLevelFolders: false),
+            knownOriginFolderPathBytesByFileID: [:])
+        store.isOrganizePresented = true
+        let organize = NSHostingView(rootView: OrganizeSourceView(store: store).confirmationView(plan)
+            .frame(width: 680, height: 330))
+        let organizeWindow = mount(organize, size: CGSize(width: 680, height: 330))
+        defer { organizeWindow.close() }
+        XCTAssertTrue(organize.performKeyEquivalent(with: try key("\u{1b}", code: 53, window: organizeWindow)))
+        XCTAssertFalse(store.isOrganizePresented, "Cancel closes confirmation even when Back is also present")
+        XCTAssertFalse(store.isFileOperationRunning)
+
+        let exportPlan = MultiDestinationExportPlan(routes: [], unmatchedNames: [],
+            workerPlan: .init(items: []), xmpPlan: nil)
+        let exporter = ExportManager()
+        exporter.state = .awaitingMultiDestinationConfirmation(exportPlan)
+        store.isExportPresented = true
+        let export = NSHostingView(rootView: ExportView(store: store, exporter: exporter))
+        let exportWindow = mount(export, size: CGSize(width: 640, height: 620))
+        defer { exportWindow.close() }
+        XCTAssertEqual(exporter.state, .awaitingMultiDestinationConfirmation(exportPlan))
+        XCTAssertTrue(export.performKeyEquivalent(with: try key("\u{1b}", code: 53, window: exportWindow)))
+        settle(export)
+        XCTAssertEqual(exporter.state, .summary, "Back returns to setup")
+        XCTAssertTrue(store.isExportPresented, "Back keeps Export open")
+        XCTAssertFalse(store.isFileOperationRunning)
+    }
+
     func testRecoveryStyleConfirmationNeverRunsOnReturn() throws {
         var done = 0
         var restored = 0
         let host = NSHostingView(rootView: SheetActions {
             SheetCancelButton("Done") { done += 1 }
-            SheetPrimaryButton("Restore", isDefault: false) { restored += 1 }
+            SheetPrimaryButton("Restore", runsOnReturn: false) { restored += 1 }
         }.padding(24).frame(width: 540, height: 100))
         let window = mount(host, size: CGSize(width: 540, height: 100))
         defer { window.close() }
@@ -53,7 +90,7 @@ final class SheetPresentationTests: XCTestCase {
             } actions: {
                 SheetActions {
                     Text("Fixed actions").background(GeometryProbe())
-                    SheetPrimaryButton("Done", isDefault: true) {}
+                    SheetPrimaryButton("Done", runsOnReturn: true) {}
                 }
             }.frame(width: 540, height: 300).environment(\.layoutDirection, direction))
             let window = mount(host, size: CGSize(width: 540, height: 300))
@@ -76,7 +113,7 @@ final class SheetPresentationTests: XCTestCase {
             func banner(width: CGFloat) -> NSHostingView<some View> {
                 NSHostingView(rootView: StatusBanner(
                     systemImage: "exclamationmark.triangle.fill", emphasis: .warning,
-                    accessibilityAnnouncement: "Session save warning"
+                    voiceOverLabel: "Session save warning", focusOnAppear: true
                 ) {
                     Text(String(repeating: "The session could not be saved safely. ", count: 8))
                 } actions: {
@@ -99,45 +136,11 @@ final class SheetPresentationTests: XCTestCase {
         }
     }
 
-    func testSharedPresentationsKeepOwnedCallSitesAndSafetyGates() throws {
-        for name in ["ExportView", "RenameFilesView", "OrganizeSourceView", "PhotosLibraryView",
-                     "PhotosOrganizationView", "SessionRecoveryView", "XMPConflictResolverView", "EarlyUserFeedbackView"] {
-            XCTAssertTrue(try source(name).contains("SheetActions {"), name)
-        }
-        let recovery = try source("SessionRecoveryView")
-        XCTAssertTrue(recovery.contains("SheetPrimaryButton(L10n.text(\"Restore Selected Decisions\"), isDefault: false)"))
-        XCTAssertTrue(recovery.contains("!hasRestorableSelection || !confirmsSamePhotos || store.isFileOperationRunning"))
-        for name in ["RenameFilesView", "OrganizeSourceView"] {
-            let text = try source(name)
-            XCTAssertTrue(text.contains("SourceFileOperationProgressView("))
-            XCTAssertTrue(text.contains("else if let outcome = store.organizationOutcome"))
-            XCTAssertTrue(text.contains("SourceFileOperationOutcomeView("))
-            XCTAssertTrue(text.contains(".interactiveDismissDisabled(store.isFileOperationRunning)"))
-        }
-        let outcome = try source("Design/SourceFileOperationOutcomeView")
-        XCTAssertTrue(outcome.contains("outcome.succeeded, !outcome.wasUndo, store.canUndo"))
-        XCTAssertTrue(outcome.contains("store.organizationError ?? outcome.message"))
-        XCTAssertEqual(outcome.components(separatedBy: ".disabled(store.isFileOperationRunning)").count - 1, 2)
-        let banner = try source("Design/StatusBanner")
-        XCTAssertTrue(banner.contains(".padding(.horizontal, 14)"))
-        XCTAssertTrue(banner.contains(".padding(.vertical, 8)"))
-        XCTAssertTrue(banner.contains(".background(Color.appBackground)"))
-        XCTAssertTrue(banner.contains(".fixedSize(horizontal: false, vertical: true)"))
-        XCTAssertTrue(banner.contains(".accessibilityFocused($isMessageFocused)"))
-        let surface = try source("FloatingControlSurface")
-        XCTAssertTrue(surface.contains("if reduceTransparency"))
-        XCTAssertTrue(surface.contains("role == .controls, #available(macOS 26.0, *)"))
-        XCTAssertTrue(surface.contains("contrast == .increased"))
-        let root = try source("RootView")
-        XCTAssertEqual(root.components(separatedBy: "role: .panel").count - 1, 2)
-        XCTAssertFalse(root.contains(".background(.regularMaterial"))
-        XCTAssertTrue(try source("SessionView").contains("StatusBanner(systemImage: groupedReviewSymbol)"))
-    }
-
-    private func source(_ name: String) throws -> String {
+    func testRootDoesNotRecreateBannerMaterials() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
-        return try String(contentsOf: root.appendingPathComponent("Sources/Louppe/Views/\(name).swift"), encoding: .utf8)
+        let source = try String(contentsOf: root.appendingPathComponent("Sources/Louppe/Views/RootView.swift"), encoding: .utf8)
+        XCTAssertFalse(source.contains(".background(.regularMaterial"))
     }
 
     private func key(_ text: String, code: UInt16, window: NSWindow) throws -> NSEvent {

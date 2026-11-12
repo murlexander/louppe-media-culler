@@ -13,6 +13,60 @@ final class SourceConventionsTests: XCTestCase {
         try assertNoMatches(pattern, in: "Sources")
     }
 
+    func testInlineValuePickersBelongToValueMenu() throws {
+        for file in try swiftFiles(in: "Sources/Louppe")
+        where relativePath(file) != "Sources/Louppe/Views/Design/ValueMenu.swift" {
+            let source = try String(contentsOf: file, encoding: .utf8)
+            XCTAssertEqual(try inlineValueMenuCount(in: source), 0, relativePath(file))
+        }
+    }
+
+    func testValueMenuMatcherIgnoresActionMenusAndUnrelatedPickers() throws {
+        XCTAssertEqual(try inlineValueMenuCount(in: """
+            Menu { Picker("Sort", selection: $key) { Text("Name").tag(0) }
+                .pickerStyle(.inline).labelsHidden()
+            } label: { Text("Name") }
+            """), 1)
+        XCTAssertEqual(try inlineValueMenuCount(in: """
+            Menu("Pinned") { ForEach(pins) { pin in Button(pin.title) { open(pin) } } }
+            Picker("Mode", selection: $mode) { Text("Gallery").tag(0) }.pickerStyle(.inline)
+            Menu { Button("Parent") { open(parent) } } label: { Text("Folder") }
+            // Menu { Picker("Ignored") {}.pickerStyle(.inline) }
+            let text = "Menu { Picker {}.pickerStyle(.inline) }"
+            """), 0)
+        XCTAssertEqual(try inlineValueMenuCount(in: """
+            Menu("Value") {
+                Picker("Value", selection: Binding(get: { value }, set: { value = $0 })) {
+                    ForEach(options) { Text($0.title).tag($0) }
+                }.pickerStyle(.inline)
+            }
+            """), 1)
+    }
+
+    private func inlineValueMenuCount(in source: String) throws -> Int {
+        // Balance each Menu's content closure, so a later standalone inline
+        // Picker cannot turn an action menu into a false positive.
+        let nonCode = try NSRegularExpression(pattern: #""(?:\\.|[^"\\])*"|//[^\n]*|(?s:/\*.*?\*/)"#)
+        let code = nonCode.stringByReplacingMatches(in: source,
+            range: NSRange(source.startIndex..., in: source), withTemplate: " ") as NSString
+        let menus = try NSRegularExpression(pattern: #"\bMenu\s*(?:\([^{}]*\))?\s*\{"#)
+        let picker = try NSRegularExpression(pattern: #"\bPicker\s*\("#)
+        let inline = try NSRegularExpression(pattern: #"\.pickerStyle\s*\(\s*\.inline\s*\)"#)
+        return menus.matches(in: code as String, range: NSRange(location: 0, length: code.length)).filter { menu in
+            let start = NSMaxRange(menu.range)
+            var depth = 1
+            var end = start
+            while end < code.length, depth > 0 {
+                if code.character(at: end) == 123 { depth += 1 }
+                if code.character(at: end) == 125 { depth -= 1 }
+                end += 1
+            }
+            let range = NSRange(location: start, length: end - start)
+            return picker.firstMatch(in: code as String, range: range) != nil
+                && inline.firstMatch(in: code as String, range: range) != nil
+        }.count
+    }
+
     func testNoSystemAccentColor() throws {
         // Use Color.louppeAccent (or louppeFilledAccent for native white ink).
         try assertNoMatches(#"\baccentColor\b"#)
@@ -41,6 +95,8 @@ final class SourceConventionsTests: XCTestCase {
         XCTAssertEqual(try bareEnglishCountCount(in: #"let a = "1 file"; let b = Text("1 item"); let c = "1 Star""#), 3)
         XCTAssertEqual(try bareEnglishCountCount(in: #"L10n.text("1 file"); L10n.label( "1 item"); L10n.text("1 item found")"#), 0)
         XCTAssertEqual(try bareEnglishCountCount(in: #"L10n.text(  "1 file"); let a = "1 item"; let b = "1/30 second""#), 1)
+        XCTAssertEqual(try bareEnglishCountCount(in: #"Text("\(count) media files"); Text("2 items")"#), 2)
+        XCTAssertEqual(try bareEnglishCountCount(in: #"L10n.text("\(count) media files"); L10n.text("2 items"); Text("\(name) files remain")"#), 0)
     }
 
     func testCompactPopoverWidthStaysInItsScaffold() throws {
@@ -56,7 +112,7 @@ final class SourceConventionsTests: XCTestCase {
     private func bareEnglishCountCount(in source: String) throws -> Int {
         // Capture the optional L10n call with the whole literal, rather than matching its inner quote again.
         let expression = try NSRegularExpression(pattern:
-            #"(?:(L10n\s*\.\s*(?:text|label)\s*\(\s*))?"1 [A-Za-z]+(?: [^"\\\n]*)?""#)
+            #"(?:(L10n\s*\.\s*(?:text|label)\s*\(\s*))?"(?:1 [A-Za-z]+(?: [^"\\\n]*)?|(?:[0-9]+|\\\([^"\\\n]*\)) (?:items?|files?|folders?|media files?))""#)
         return expression.matches(in: source, range: NSRange(source.startIndex..., in: source))
             .filter { $0.range(at: 1).location == NSNotFound }.count
     }

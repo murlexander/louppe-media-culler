@@ -34,7 +34,7 @@ struct SourceFileOperationOutcomeView: View {
                         .disabled(store.isFileOperationRunning)
                 }
             } trailing: {
-                SheetPrimaryButton(L10n.text("Done"), isDefault: true, action: done)
+                SheetPrimaryButton(L10n.text("Done"), runsOnReturn: true, action: done)
                     .disabled(store.isFileOperationRunning)
             }
         }

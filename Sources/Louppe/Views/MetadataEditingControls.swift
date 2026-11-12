@@ -79,26 +79,28 @@ struct MetadataEditingControls: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 ColorLabelMark(state: color)
-                Menu {
-                    Button(L10n.text("None")) { store.setColorLabel(nil) }
-                    Divider()
-                    ForEach(PhotoColorLabel.allCases, id: \.self) { label in
-                        Button(label.localizedDisplayName) {
-                            store.setColorLabel(label)
+                ValueMenu(L10n.text("Color label"), value: colorLabelText(for: color), selection: Binding(
+                    get: { store.effectiveColorLabelState },
+                    set: { state in
+                        switch state {
+                        case .none: store.setColorLabel(nil)
+                        case .label(let label): store.setColorLabel(label)
+                        case .mixed: break
                         }
                     }
-                } label: {
-                    Text(colorLabelText(for: color))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
+                )) {
+                    if color == .mixed {
+                        Text(L10n.text("Mixed")).tag(PhotoItemColorLabelState.mixed).disabled(true)
+                        Divider()
+                    }
+                    Text(L10n.text("None")).tag(PhotoItemColorLabelState.none)
+                    Divider()
+                    ForEach(PhotoColorLabel.allCases, id: \.self) { label in
+                        Text(label.localizedDisplayName).tag(PhotoItemColorLabelState.label(label))
+                    }
                 }
-                .menuStyle(.button)
-                .buttonStyle(.borderless)
-                .tint(Color.louppeAccent)
                 .fixedSize()
                 .disabled(!store.canRate)
-                .accessibilityLabel(L10n.text("Color label"))
-                .accessibilityValue(colorLabelText(for: color))
             }
         }
     }

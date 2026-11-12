@@ -2,7 +2,9 @@ import SwiftUI
 
 /// The fixed action row of a `SheetForm`: optional leading items (Back, Undo,
 /// Show in Finder, a planning indicator), then the trailing Cancel and primary
-/// buttons. Callers retain their roles, keyboard shortcuts and disabled gates.
+/// buttons. Escape belongs to Cancel when the step shows one; otherwise it
+/// belongs to Back (Export review steps). Callers retain disabled gates and
+/// explicitly assign Back's cancel shortcut when no Cancel is present.
 struct SheetActions<Leading: View, Trailing: View>: View {
     @ViewBuilder var leading: () -> Leading
     @ViewBuilder var trailing: () -> Trailing
@@ -34,17 +36,15 @@ extension SheetActions where Leading == EmptyView {
 /// pending change to discard (Session recovery's Done).
 struct SheetCancelButton: View {
     let title: String
-    let role: ButtonRole?
     let action: () -> Void
 
-    init(_ title: String = L10n.text("Cancel"), role: ButtonRole? = nil, action: @escaping () -> Void) {
+    init(_ title: String = L10n.text("Cancel"), action: @escaping () -> Void) {
         self.title = title
-        self.role = role
         self.action = action
     }
 
     var body: some View {
-        Button(title, role: role, action: action)
+        Button(title, role: .cancel, action: action)
             .keyboardShortcut(.cancelAction)
     }
 }
@@ -53,25 +53,22 @@ struct SheetCancelButton: View {
 /// it; an acknowledgment gate alone must never imply a default action.
 struct SheetPrimaryButton: View {
     let title: String
-    let role: ButtonRole?
-    let isDefault: Bool
+    let runsOnReturn: Bool
     let action: () -> Void
 
     init(
         _ title: String,
-        role: ButtonRole? = nil,
-        isDefault: Bool,
+        runsOnReturn: Bool,
         action: @escaping () -> Void
     ) {
         self.title = title
-        self.role = role
-        self.isDefault = isDefault
+        self.runsOnReturn = runsOnReturn
         self.action = action
     }
 
     var body: some View {
-        Button(title, role: role, action: action)
-            .keyboardShortcut(isDefault ? .defaultAction : nil)
+        Button(title, action: action)
+            .keyboardShortcut(runsOnReturn ? .defaultAction : nil)
             .buttonStyle(.borderedProminent)
             .tint(Color.louppeFilledAccent)
     }

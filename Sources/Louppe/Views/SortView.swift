@@ -106,26 +106,14 @@ struct SortView: View {
     /// A compact leading label with a trailing menu, as in Filter's rows.
     private func pickerRow<Selection: Hashable, Options: View>(
         _ title: String, value: String, selection: Binding<Selection>, identifier: String,
-        @ViewBuilder options: () -> Options
+        @ViewBuilder options: @escaping () -> Options
     ) -> some View {
         HStack(spacing: 8) {
             Text(title)
                 .layoutPriority(1)
             Spacer(minLength: 8)
             // One width keeps both menus aligned; long names truncate natively.
-            Menu {
-                Picker(title, selection: selection, content: options)
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-            } label: {
-                Text(verbatim: value)
-                    .lineLimit(1)
-            }
-            .menuStyle(.button)
-            .buttonStyle(.borderless)
-            .labelsHidden()
-            .accessibilityLabel(title)
-            .accessibilityValue(value)
+            ValueMenu(title, value: value, selection: selection, options: options)
             .accessibilityIdentifier(identifier)
             .frame(width: 180, alignment: .trailing)
         }

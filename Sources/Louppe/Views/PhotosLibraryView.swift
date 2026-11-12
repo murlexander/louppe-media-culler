@@ -28,12 +28,12 @@ struct PhotosLibraryView: View {
             }
         } actions: {
             SheetActions {
-                SheetCancelButton(role: .cancel) {
+                SheetCancelButton {
                     if browser.isOpening { store.cancelPhotosOpening() }
                     else { dismiss() }
                 }
                 if !browser.isOpening {
-                    SheetPrimaryButton(L10n.text("Open"), isDefault: true) {
+                    SheetPrimaryButton(L10n.text("Open"), runsOnReturn: true) {
                         store.openPhotosSelection()
                     }
                         .disabled(browser.isLoading || browser.snapshot?.count == nil || browser.snapshot?.count == 0
@@ -88,7 +88,7 @@ struct PhotosLibraryView: View {
                 if browser.isLoading {
                     HStack { ProgressView().controlSize(.small); Text(L10n.text("Reading Photos selection…")) }
                 } else if let snapshot = browser.snapshot {
-                    Text(L10n.text("\(snapshot.count.formatted()) items match this selection."))
+                    Text(snapshot.count == 1 ? L10n.text("1 item matches this selection.") : L10n.text("\(snapshot.count.formatted()) items match this selection."))
                 }
             } footer: {
                 Text(L10n.text("Review images load as you browse. Photos may download source data for previews. Original detail and Copy request originals separately. Decisions stay in Louppe. Add to Album requires confirmation. Live Photos use their still image."))
@@ -102,8 +102,8 @@ struct PhotosLibraryView: View {
             if let progress = browser.progress {
                 ProgressView(value: Double(progress.completed) + progress.downloadFraction,
                              total: Double(max(1, progress.total)))
-                .accessibilityLabel(L10n.text("Preparing \(progress.completed.formatted()) of \(progress.total.formatted()) items…"))
-                Text(L10n.text("Preparing \(progress.completed.formatted()) of \(progress.total.formatted()) items…"))
+                .accessibilityLabel((progress.total == 1 ? L10n.text("Preparing \(progress.completed.formatted()) of 1 item…") : L10n.text("Preparing \(progress.completed.formatted()) of \(progress.total.formatted()) items…")))
+                Text((progress.total == 1 ? L10n.text("Preparing \(progress.completed.formatted()) of 1 item…") : L10n.text("Preparing \(progress.completed.formatted()) of \(progress.total.formatted()) items…")))
             } else {
                 ProgressView().controlSize(.small)
                 Text(L10n.text("Saving decisions before opening Photos…"))

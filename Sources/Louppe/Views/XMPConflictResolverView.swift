@@ -61,7 +61,7 @@ struct XMPConflictResolverView: View {
         } actions: {
             SheetActions {
                 SheetCancelButton { onCancel() }
-                SheetPrimaryButton(L10n.text("Apply Resolutions"), isDefault: true) {
+                SheetPrimaryButton(L10n.text("Apply Resolutions"), runsOnReturn: true) {
                     onApply(conflicts.map {
                         XMPConflictResolutionRequest(
                             conflict: $0,

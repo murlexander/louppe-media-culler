@@ -117,8 +117,8 @@ struct OrganizeSourceView: View {
                         .foregroundStyle(.secondary)
                 }
             } trailing: {
-                SheetCancelButton(role: .cancel) { store.isOrganizePresented = false }
-                SheetPrimaryButton(reviewButtonTitle, isDefault: true) {
+                SheetCancelButton { store.isOrganizePresented = false }
+                SheetPrimaryButton(reviewButtonTitle, runsOnReturn: true) {
                     isReviewingMove = true
                 }
                 .disabled(!canReviewMove)
@@ -269,9 +269,9 @@ struct OrganizeSourceView: View {
                         .help(example.path)
                 }
                 HStack(spacing: 10) {
-                    summaryValue(L10n.text("\(plan.previewGroups.count) folders"))
-                    summaryValue(L10n.text("\(plan.itemCount) items"))
-                    summaryValue(L10n.text("\(plan.mediaFileCount) media files"))
+                    summaryValue(plan.previewGroups.count == 1 ? L10n.text("1 folder") : L10n.text("\(plan.previewGroups.count) folders"))
+                    summaryValue(plan.itemCount == 1 ? L10n.text("1 item") : L10n.text("\(plan.itemCount) items"))
+                    summaryValue(plan.mediaFileCount == 1 ? L10n.text("1 media file") : L10n.text("\(plan.mediaFileCount) media files"))
                     if plan.sidecarFileCount > 0 {
                         summaryValue(L10n.text("\(plan.sidecarFileCount) XMP"))
                     }
@@ -322,7 +322,13 @@ struct OrganizeSourceView: View {
                     let oldFolderCount = Set(
                         plan.sourceItems.compactMap(\.subfolder)
                     ).count
-                    Text((oldFolderCount == 1 ? L10n.text("\(plan.movingItemCount) items will move out of \(oldFolderCount) existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.") : L10n.text("\(plan.movingItemCount) items will move out of \(oldFolderCount) existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.")))
+                    Text(plan.movingItemCount == 1
+                        ? (oldFolderCount == 1
+                            ? L10n.text("1 item will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.")
+                            : L10n.text("1 item will move out of \(oldFolderCount) existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten."))
+                        : (oldFolderCount == 1
+                            ? L10n.text("\(plan.movingItemCount) items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.")
+                            : L10n.text("\(plan.movingItemCount) items will move out of \(oldFolderCount) existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.")))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -341,7 +347,7 @@ struct OrganizeSourceView: View {
         }
     }
 
-    private func confirmationView(
+    func confirmationView(
         _ plan: SourceOrganizationPlan
     ) -> some View {
 
@@ -377,8 +383,8 @@ struct OrganizeSourceView: View {
             SheetActions {
                 Button(L10n.text("Back")) { isReviewingMove = false }
             } trailing: {
-                SheetCancelButton(role: .cancel) { store.isOrganizePresented = false }
-                SheetPrimaryButton(L10n.text("Move Files"), isDefault: true) {
+                SheetCancelButton { store.isOrganizePresented = false }
+                SheetPrimaryButton(L10n.text("Move Files"), runsOnReturn: true) {
                     store.startSourceOrganization(plan)
                 }
             }

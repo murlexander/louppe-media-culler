@@ -68,30 +68,18 @@ struct MediaTrackSelectionControls: View {
     private func trackPicker(_ title: String, group: AVMediaSelectionGroup, choice: Binding<Choice>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(verbatim: title).font(.subheadline.weight(.semibold))
-            Menu {
-                Picker(title, selection: Binding(
-                    get: { choice.wrappedValue },
-                    set: { select($0, in: group) }
-                )) {
-                    Text(verbatim: automaticTitle(in: group)).tag(Choice.automatic)
-                    if group.allowsEmptySelection {
-                        Text(L10n.text("Off")).tag(Choice.off)
-                    }
-                    ForEach(group.options, id: \.self) { option in
-                        Text(verbatim: option.displayName).tag(Choice.option(option))
-                    }
+            ValueMenu(title, value: choiceTitle(choice.wrappedValue, in: group), selection: Binding(
+                get: { choice.wrappedValue },
+                set: { select($0, in: group) }
+            )) {
+                Text(verbatim: automaticTitle(in: group)).tag(Choice.automatic)
+                if group.allowsEmptySelection {
+                    Text(L10n.text("Off")).tag(Choice.off)
                 }
-                .pickerStyle(.inline)
-                .labelsHidden()
-            } label: {
-                Text(verbatim: choiceTitle(choice.wrappedValue, in: group))
-                    .lineLimit(1)
+                ForEach(group.options, id: \.self) { option in
+                    Text(verbatim: option.displayName).tag(Choice.option(option))
+                }
             }
-            .menuStyle(.button)
-            .buttonStyle(.borderless)
-            .labelsHidden()
-            .accessibilityLabel(title)
-            .accessibilityValue(choiceTitle(choice.wrappedValue, in: group))
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

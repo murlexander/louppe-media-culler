@@ -112,8 +112,8 @@ struct RenameFilesView: View {
             SheetActions {
                 planningIndicator
             } trailing: {
-                SheetCancelButton(role: .cancel) { store.isRenamePresented = false }
-                SheetPrimaryButton(L10n.text("Rename"), isDefault: true) { runSingleRename() }
+                SheetCancelButton { store.isRenamePresented = false }
+                SheetPrimaryButton(L10n.text("Rename"), runsOnReturn: true) { runSingleRename() }
                     .disabled(plan?.canExecute != true || isPlanning)
             }
         }
@@ -143,8 +143,8 @@ struct RenameFilesView: View {
             SheetActions {
                 planningIndicator
             } trailing: {
-                SheetCancelButton(role: .cancel) { store.isRenamePresented = false }
-                SheetPrimaryButton(L10n.text("Review Rename…"), isDefault: true) { isReviewing = true }
+                SheetCancelButton { store.isRenamePresented = false }
+                SheetPrimaryButton(L10n.text("Review Rename…"), runsOnReturn: true) { isReviewing = true }
                     .disabled(plan?.canExecute != true || isPlanning)
             }
         }
@@ -235,14 +235,16 @@ struct RenameFilesView: View {
                         )
                     }
                     if changed.count > 6 {
-                        Text(L10n.text("…and \(changed.count - 6) more media files"))
+                        Text(changed.count - 6 == 1
+                            ? L10n.text("…and 1 more media file")
+                            : L10n.text("…and \(changed.count - 6) more media files"))
                             .foregroundStyle(.secondary)
                     }
                 }
 
                 HStack(spacing: 10) {
-                    summary(L10n.text("\(plan.movingItemCount) items"))
-                    summary(L10n.text("\(changed.count) media files"))
+                    summary(plan.movingItemCount == 1 ? L10n.text("1 item") : L10n.text("\(plan.movingItemCount) items"))
+                    summary(changed.count == 1 ? L10n.text("1 media file") : L10n.text("\(changed.count) media files"))
                     if plan.sidecarFileCount > 0 {
                         summary(L10n.text("\(plan.sidecarFileCount) XMP"))
                     }
@@ -278,7 +280,7 @@ struct RenameFilesView: View {
     }
 
     private func confirmationView(_ plan: SourceOrganizationPlan) -> some View {
-        SheetForm(title: L10n.text("Rename \(plan.movingFileCount) files?")) {
+        SheetForm(title: plan.movingFileCount == 1 ? L10n.text("Rename 1 file?") : L10n.text("Rename \(plan.movingFileCount) files?")) {
             preview
             Divider()
             Text(L10n.text("Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session."))
@@ -295,12 +297,12 @@ struct RenameFilesView: View {
             SheetActions {
                 Button(L10n.text("Back")) { isReviewing = false }
             } trailing: {
-                SheetCancelButton(role: .cancel) { store.isRenamePresented = false }
+                SheetCancelButton { store.isRenamePresented = false }
                 SheetPrimaryButton(
                     plan.storageSafety.usesReducedDirectoryDurability
                         ? L10n.text("Rename Files Anyway")
                         : L10n.text("Rename Files"),
-                    isDefault: true
+                    runsOnReturn: true
                 ) {
                     store.startSourceRename(plan)
                 }

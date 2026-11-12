@@ -52,6 +52,17 @@ struct ExportView: View {
     @State private var conflictResolver: XMPConflictResolverPresentation?
     @State private var conflictResolutionNotice: String?
 
+    init(store: SessionStore) {
+        self.store = store
+    }
+
+    #if LOUPPE_TEST_SEAMS
+    init(store: SessionStore, exporter: ExportManager) {
+        self.store = store
+        _exporter = StateObject(wrappedValue: exporter)
+    }
+    #endif
+
     var body: some View {
         VStack(spacing: 16) {
             if mode == .metadataXMP {
@@ -378,7 +389,7 @@ struct ExportView: View {
             } actions: {
                 SheetActions {
                     SheetCancelButton { store.isExportPresented = false }
-                    SheetPrimaryButton(mode == .metadataXMP ? L10n.text("Review Sidecars…") : L10n.text("Choose Destination…"), isDefault: true) {
+                    SheetPrimaryButton(mode == .metadataXMP ? L10n.text("Review Sidecars…") : L10n.text("Choose Destination…"), runsOnReturn: true) {
                         if mode == .metadataXMP {
                             store.prepareXMPPublication(
                                 selected: selectionSnapshot.selectedItems(from: store.items),
@@ -641,7 +652,7 @@ struct ExportView: View {
         } actions: {
             SheetActions {
                 SheetCancelButton { store.isExportPresented = false }
-                SheetPrimaryButton(L10n.text("Review Copy Plan…"), isDefault: true) {
+                SheetPrimaryButton(L10n.text("Review Copy Plan…"), runsOnReturn: true) {
                     exporter.prepareMultiDestinationExport(
                         routes: routingRoutes,
                         items: scopedItems,
@@ -854,7 +865,7 @@ struct ExportView: View {
             return L10n.text("Choose a destination folder for every route.")
         }
         if !routingEvaluation.overlappingItemIndices.isEmpty {
-            return (routingEvaluation.overlappingItemIndices.count == 1 ? L10n.text("\(routingEvaluation.overlappingItemIndices.count) item match more than one route: \(routingItemList(routingEvaluation.overlappingItemIndices)).") : L10n.text("\(routingEvaluation.overlappingItemIndices.count) items match more than one route: \(routingItemList(routingEvaluation.overlappingItemIndices))."))
+            return (routingEvaluation.overlappingItemIndices.count == 1 ? L10n.text("\(routingEvaluation.overlappingItemIndices.count) item matches more than one route: \(routingItemList(routingEvaluation.overlappingItemIndices)).") : L10n.text("\(routingEvaluation.overlappingItemIndices.count) items match more than one route: \(routingItemList(routingEvaluation.overlappingItemIndices))."))
         }
         if !routingEvaluation.emptyRouteIDs.isEmpty {
             return L10n.text("Each route must match at least one item.")
@@ -930,7 +941,7 @@ struct ExportView: View {
                 Button(L10n.text("Back")) { exporter.backFromMultiDestinationConfirmation() }
                     .keyboardShortcut(.cancelAction)
             } trailing: {
-                SheetPrimaryButton(L10n.text("Start Copy"), isDefault: true) { exporter.confirmMultiDestinationExport() }
+                SheetPrimaryButton(L10n.text("Start Copy"), runsOnReturn: true) { exporter.confirmMultiDestinationExport() }
             }
         }
     }
@@ -1322,7 +1333,7 @@ struct ExportView: View {
                     .textSelection(.enabled)
             } actions: {
                 SheetActions {
-                    SheetPrimaryButton(L10n.text("OK"), isDefault: true) { store.resetXMPPublication() }
+                    SheetPrimaryButton(L10n.text("OK"), runsOnReturn: true) { store.resetXMPPublication() }
                 }
             }
         }
@@ -1342,8 +1353,8 @@ struct ExportView: View {
                 total: Double(max(total, 1))
             )
             .accessibilityLabel(title)
-            .accessibilityValue(L10n.text("\(done) of \(total) sidecar families"))
-            Text(L10n.text("\(done) of \(total) sidecar families"))
+            .accessibilityValue((total == 1 ? L10n.text("\(done) of 1 sidecar family") : L10n.text("\(done) of \(total) sidecar families")))
+            Text((total == 1 ? L10n.text("\(done) of 1 sidecar family") : L10n.text("\(done) of \(total) sidecar families")))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Button(stopTitle) { store.cancelXMPPublication() }
@@ -1437,7 +1448,7 @@ struct ExportView: View {
                         )
                     }
                 }
-                SheetPrimaryButton(L10n.text("Write Sidecars"), isDefault: true) {
+                SheetPrimaryButton(L10n.text("Write Sidecars"), runsOnReturn: true) {
                     store.startXMPPublication(planID: plan.id)
                 }
                 .disabled(plan.publishableCount == 0)
@@ -1485,7 +1496,7 @@ struct ExportView: View {
                     }
                 }
             } trailing: {
-                SheetPrimaryButton(L10n.text("Done"), isDefault: true) {
+                SheetPrimaryButton(L10n.text("Done"), runsOnReturn: true) {
                     store.resetXMPPublication()
                     store.isExportPresented = false
                 }
@@ -1649,7 +1660,7 @@ struct ExportView: View {
 
             if changes.stars + changes.colors + changes.flags
                 + changes.keywords > 0 {
-                Text(L10n.text("Existing values to update: \(changes.stars) star, \(changes.colors) color, \(changes.flags) decision flag, \(changes.keywords) keyword set."))
+                Text(L10n.text("Existing non-empty values will change — stars: \(changes.stars), colors: \(changes.colors), flags: \(changes.flags), reserved decision keywords: \(changes.keywords)."))
                     .font(.caption)
                     .foregroundStyle(.orange)
                     .multilineTextAlignment(.leading)
@@ -1705,7 +1716,7 @@ struct ExportView: View {
                         )
                     }
                 }
-                SheetPrimaryButton(confirmation.mode == .copy ? L10n.text("Start Copy") : L10n.text("Start Move"), isDefault: true) {
+                SheetPrimaryButton(confirmation.mode == .copy ? L10n.text("Start Copy") : L10n.text("Start Move"), runsOnReturn: true) {
                     exporter.confirmXMPExport()
                 }
             }
@@ -1754,7 +1765,7 @@ struct ExportView: View {
                     exporter.revealInFinder(outcome.destination)
                 }
             } trailing: {
-                SheetPrimaryButton(L10n.text("Done"), isDefault: true) {
+                SheetPrimaryButton(L10n.text("Done"), runsOnReturn: true) {
                     store.isExportPresented = false
                     exporter.reset()
                 }
@@ -1846,7 +1857,7 @@ struct ExportView: View {
                 .onAppear { isExportResultFocused = true }
         } actions: {
             SheetActions {
-                SheetPrimaryButton(L10n.text("OK"), isDefault: true) {
+                SheetPrimaryButton(L10n.text("OK"), runsOnReturn: true) {
                     exporter.reset(keepingRoutingDestinations: true)
                 }
             }

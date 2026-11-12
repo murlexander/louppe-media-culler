@@ -2149,3 +2149,27 @@
 "Histogram" = "直方图";
 "Numbered 1 file that shared a name." = "已为 1 个重名文件添加编号。";
 "Numbered {0} files that shared a name." = "已为 {0} 个重名文件添加编号。";
+
+"…and 1 more media file" = "…还有 1 个媒体文件";
+
+"1 media file" = "1 个媒体文件";
+
+"Rename 1 file?" = "重命名 1 个文件？";
+
+"1 folder" = "1 个文件夹";
+
+"1 item matches this selection." = "1 个项目符合此选择。";
+
+"Preparing {0} of 1 item…" = "正在准备 {0} / 1 个项目…";
+
+"{0} of 1 item processed" = "已处理 {0} / 1 个项目";
+
+"{0} of 1 sidecar family" = "{0} / 1 个附属文件组";
+
+"{0} item matches more than one route: {1}." = "{0} 个项目符合多条路径：{1}。";
+
+"1 item will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "1 个项目将移出 1 个现有文件夹。已识别的 XMP 附属文件和已分组的 RAW+JPEG 文件将随媒体一起移动。不会覆盖任何内容。";
+
+"1 item will move out of {0} existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "1 个项目将移出 {0} 个现有文件夹。已识别的 XMP 附属文件和已分组的 RAW+JPEG 文件将随媒体一起移动。不会覆盖任何内容。";
+
+"{0} items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "{0} 个项目将移出 1 个现有文件夹。已识别的 XMP 附属文件和已分组的 RAW+JPEG 文件将随媒体一起移动。不会覆盖任何内容。";

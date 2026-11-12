@@ -72,9 +72,7 @@ struct RootView: View {
                     StatusBanner(
                         systemImage: "folder.badge.questionmark",
                         emphasis: .warning,
-                        accessibilityAnnouncement: error,
-                        dismissLabel: L10n.text("Dismiss"),
-                        dismiss: { folderOpening.error = nil }
+                        dismissal: .init(label: L10n.text("Dismiss"), action: { folderOpening.error = nil })
                     ) {
                         Text(error)
                     }
@@ -282,7 +280,8 @@ private struct RecoveryWarningBanner: View {
         StatusBanner(
             systemImage: "exclamationmark.triangle.fill",
             emphasis: .warning,
-            accessibilityAnnouncement: L10n.text("Interrupted operation warning. \(message)")
+            voiceOverLabel: L10n.text("Interrupted operation warning. \(message)"),
+            focusOnAppear: true
         ) {
             Text(message)
         } actions: {
@@ -305,7 +304,8 @@ private struct PersistenceWarningBanner: View {
         StatusBanner(
             systemImage: "exclamationmark.triangle.fill",
             emphasis: .warning,
-            accessibilityAnnouncement: L10n.text("Session save warning. \(message)")
+            voiceOverLabel: L10n.text("Session save warning. \(message)"),
+            focusOnAppear: true
         ) {
             Text(message)
         } actions: {

@@ -163,7 +163,7 @@ struct PhotosOrganizationView: View {
             if total > 0 {
                 ProgressView(value: Double(max(0, min(completed, total))), total: Double(total))
                     .accessibilityLabel(L10n.text("Album update progress"))
-                Text(L10n.text("\(max(0, completed).formatted()) of \(total.formatted()) items processed"))
+                Text(total == 1 ? L10n.text("\(max(0, completed).formatted()) of 1 item processed") : L10n.text("\(max(0, completed).formatted()) of \(total.formatted()) items processed"))
                     .monospacedDigit()
             } else {
                 ProgressView().controlSize(.small)
@@ -216,29 +216,29 @@ struct PhotosOrganizationView: View {
         } trailing: {
             switch model.phase {
             case .loading:
-                SheetCancelButton(role: .cancel) { onDismiss() }
+                SheetCancelButton { onDismiss() }
             case .choosing:
-                SheetCancelButton(role: .cancel) { onDismiss() }.disabled(submitted)
+                SheetCancelButton { onDismiss() }.disabled(submitted)
                 if let review {
-                    SheetPrimaryButton(L10n.text("Add to Album"), isDefault: true) {
+                    SheetPrimaryButton(L10n.text("Add to Album"), runsOnReturn: true) {
                         guard !submitted, currentReview == review else { return }
                         submitted = true
                         onConfirm(review.draft)
                     }
                     .disabled(submitted || currentReview != review)
                 } else {
-                    SheetPrimaryButton(L10n.text("Review"), isDefault: true) { review = currentReview }
+                    SheetPrimaryButton(L10n.text("Review"), runsOnReturn: true) { review = currentReview }
                         .disabled(currentReview == nil || submitted)
                 }
             case .working:
-                SheetCancelButton(cancellationRequested ? L10n.text("Cancelling…") : L10n.text("Cancel"), role: .cancel) {
+                SheetCancelButton(cancellationRequested ? L10n.text("Cancelling…") : L10n.text("Cancel")) {
                     guard !cancellationRequested else { return }
                     cancellationRequested = true
                     onCancelWork()
                 }
                 .disabled(cancellationRequested)
             case .finished:
-                SheetPrimaryButton(L10n.text("Done"), isDefault: true) { onDismiss() }
+                SheetPrimaryButton(L10n.text("Done"), runsOnReturn: true) { onDismiss() }
             }
         }
     }

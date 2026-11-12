@@ -37,6 +37,31 @@ final class ToolbarPopoverTests: XCTestCase {
         }
     }
 
+    func testValueMenuKeepsItsTargetAndAccessibleValueInBothDirections() async throws {
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let host = NSHostingView(rootView: ValueMenu("Order", value: "Newest", selection: .constant(true)) {
+                Text("Newest").tag(true)
+                Text("Oldest").tag(false).disabled(true)
+            }
+            .accessibilityIdentifier("louppe.testOrder")
+            .frame(width: 180)
+            .environment(\.layoutDirection, direction)
+            .environment(\.accessibilityEnabled, true))
+            let window = mount(host)
+            defer { window.close() }
+            try await Task.sleep(for: .milliseconds(100))
+            host.layoutSubtreeIfNeeded()
+            XCTAssertGreaterThanOrEqual(host.fittingSize.height, 22)
+            let elements = accessibilityElements(in: host)
+            let menu = try XCTUnwrap(elements.first { accessibilityString($0, "accessibilityIdentifier") == "louppe.testOrder" },
+                "\(elements.map { [String(describing: type(of: $0)), accessibilityString($0, "accessibilityIdentifier") ?? "-", accessibilityString($0, "accessibilityLabel") ?? "-", accessibilityString($0, "accessibilityValue") ?? "-"] })")
+            XCTAssertEqual(accessibilityString(menu, "accessibilityLabel"), "Order")
+            XCTAssertEqual(accessibilityString(menu, "accessibilityValue"), "Newest")
+            let frame = try XCTUnwrap(menu.value(forKey: "accessibilityFrame") as? NSValue).rectValue
+            XCTAssertGreaterThanOrEqual(frame.height, 22, "The accessible target must include the label's full minimum height")
+        }
+    }
+
     func testEscapeDismissesEachPopoverWithoutResettingItsState() throws {
         let suite = "ToolbarPopoverTests.Escape.\(UUID())"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -72,7 +97,6 @@ final class ToolbarPopoverTests: XCTestCase {
         let views = repository.appendingPathComponent("Sources/Louppe/Views")
         for file in ["SortView.swift", "FilterView.swift"] {
             let source = try String(contentsOf: views.appendingPathComponent(file), encoding: .utf8)
-            XCTAssertTrue(source.contains("CompactToolbarPopover("), "\(file) must use the toolbar scaffold")
             XCTAssertFalse(source.contains(".padding(14)"), "Popover margins belong to the scaffold")
             XCTAssertFalse(source.contains(".keyboardShortcut(.cancelAction)"), "Done belongs to the scaffold")
         }
@@ -83,6 +107,37 @@ final class ToolbarPopoverTests: XCTestCase {
             XCTAssertEqual(deprecated.numberOfMatches(in: source, range: NSRange(source.startIndex..., in: source)),
                            0, "\(file) must not reintroduce legacy dropdown styles")
         }
+    }
+
+    private func accessibilityString(_ object: NSObject, _ name: String) -> String? {
+        let selector = NSSelectorFromString(name)
+        guard object.responds(to: selector) else { return nil }
+        return object.perform(selector)?.takeUnretainedValue() as? String
+    }
+
+    private func accessibilityElements(in root: NSView) -> [NSObject] {
+        var result: [NSObject] = []
+        var visited: Set<ObjectIdentifier> = []
+        func walk(_ object: NSObject) {
+            guard visited.insert(ObjectIdentifier(object)).inserted else { return }
+            result.append(object)
+            let selector = NSSelectorFromString("accessibilityChildren")
+            if object.responds(to: selector),
+               let children = object.perform(selector)?.takeUnretainedValue() as? [NSObject] {
+                children.forEach(walk)
+            }
+            if let view = object as? NSView {
+                for child in NSAccessibility.unignoredChildren(from: [view]) {
+                    if let child = child as? NSObject { walk(child) }
+                }
+                view.subviews.forEach(walk)
+            }
+        }
+        for child in NSAccessibility.unignoredChildren(from: [root]) {
+            if let child = child as? NSObject { walk(child) }
+        }
+        walk(root)
+        return result
     }
 
     private func mount<V: View>(_ host: NSHostingView<V>) -> NSWindow {

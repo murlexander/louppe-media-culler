@@ -25,7 +25,7 @@ struct EarlyUserFeedbackView: View {
                 .textSelection(.enabled)
             SheetActions {
                 SheetCancelButton(L10n.text("Close")) { dismiss() }
-                SheetPrimaryButton(L10n.text("Email me"), isDefault: true) {
+                SheetPrimaryButton(L10n.text("Email me"), runsOnReturn: true) {
                     if NSWorkspace.shared.open(EarlyUserFeedback.emailURL) {
                         dismiss()
                     }

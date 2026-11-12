@@ -3,7 +3,7 @@ import SwiftUI
 /// One adaptive surface for controls floating above photo or video content.
 /// Input remains owned by the native buttons and sliders inside the surface.
 /// `.panel` is for passive status floating over the window (recovery, folder
-/// drop): it keeps regular material instead of interactive glass but shares the
+/// drop): it uses non-interactive glass on macOS 26+ and shares the
 /// Reduce Transparency and Increase Contrast fallbacks.
 struct FloatingControlSurface<Surface: InsettableShape>: ViewModifier {
     enum Role {
@@ -22,11 +22,18 @@ struct FloatingControlSurface<Surface: InsettableShape>: ViewModifier {
         if reduceTransparency {
             content.background(Color.appBackground, in: shape)
                 .overlay { border }
-        } else if role == .controls, #available(macOS 26.0, *) {
-            content.glassEffect(.regular.interactive(!reduceMotion), in: shape)
-                .overlay {
-                    if contrast == .increased { border }
-                }
+        } else if #available(macOS 26.0, *) {
+            if role == .panel {
+                content.glassEffect(.regular, in: shape)
+                    .overlay {
+                        if contrast == .increased { border }
+                    }
+            } else {
+                content.glassEffect(.regular.interactive(!reduceMotion), in: shape)
+                    .overlay {
+                        if contrast == .increased { border }
+                    }
+            }
         } else {
             content.background(.regularMaterial, in: shape)
                 .overlay {

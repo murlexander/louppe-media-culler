@@ -2132,3 +2132,27 @@
 "Histogram" = "Histograma";
 "Numbered 1 file that shared a name." = "Se numeró 1 archivo que compartía nombre.";
 "Numbered {0} files that shared a name." = "Se numeraron {0} archivos que compartían nombre.";
+
+"…and 1 more media file" = "…y 1 archivo multimedia más";
+
+"1 media file" = "1 archivo multimedia";
+
+"Rename 1 file?" = "¿Renombrar 1 archivo?";
+
+"1 folder" = "1 carpeta";
+
+"1 item matches this selection." = "1 elemento coincide con esta selección.";
+
+"Preparing {0} of 1 item…" = "Preparando {0} de 1 elemento…";
+
+"{0} of 1 item processed" = "{0} de 1 elemento procesado";
+
+"{0} of 1 sidecar family" = "{0} de 1 familia de archivos sidecar";
+
+"{0} item matches more than one route: {1}." = "{0} elemento coincide con más de una ruta: {1}.";
+
+"1 item will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "1 elemento se moverá fuera de 1 carpeta existente. Los archivos XMP reconocidos y los RAW+JPEG agrupados acompañan a sus archivos multimedia. No se sobrescribe nada.";
+
+"1 item will move out of {0} existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "1 elemento se moverá fuera de {0} carpetas existentes. Los archivos XMP reconocidos y los RAW+JPEG agrupados acompañan a sus archivos multimedia. No se sobrescribe nada.";
+
+"{0} items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "{0} elementos se moverán fuera de 1 carpeta existente. Los archivos XMP reconocidos y los RAW+JPEG agrupados acompañan a sus archivos multimedia. No se sobrescribe nada.";
