@@ -139,6 +139,62 @@ final class SourceOrganizationTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: xmp), Data("xmp metadata".utf8))
     }
 
+    func testRenameUndoNeverAdoptsReplacementAtCompletedDestination() throws {
+        try assertUndoRejectsChangedDestination(replaceFile: true)
+    }
+
+    func testRenameUndoNeverAdoptsRewrittenCompletedFile() throws {
+        try assertUndoRejectsChangedDestination(replaceFile: false)
+    }
+
+    private func assertUndoRejectsChangedDestination(replaceFile: Bool) throws {
+        let fixture = try makeFixture(named: "UndoIdentity")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let source = try mediaFile("A.JPG", under: fixture.photos)
+        let item = makeItem(id: "A.JPG", url: source)
+        let target = fixture.photos.appendingPathComponent("Renamed.JPG")
+        let preserved = fixture.root.appendingPathComponent("preserved-original.JPG")
+        let foreignContents = Data("externally changed contents".utf8)
+        let plan = try SourceOrganizationPlanner.makePlan(
+            sourceFolder: fixture.photos,
+            selectedItems: [item],
+            familyContextItems: [item],
+            configuration: FileRenamingPlanner.sourceConfiguration(
+                customBaseName: "Renamed"
+            ),
+            knownOriginFolderPathBytesByFileID: [:]
+        )
+        XCTAssertTrue(plan.canExecute)
+        let injection = CompletedDestinationChange()
+        let result = SourceOrganizationWorker.organize(
+            plan, journalDirectory: fixture.journals
+        ) { done, total in
+            // The move/checkpoint has completed, but the reverse plan has not
+            // yet captured its identities. Model another app changing that path.
+            guard done == total else { return }
+            injection.run {
+                if replaceFile {
+                    try FileManager.default.moveItem(at: target, to: preserved)
+                }
+                try foreignContents.write(to: target)
+            }
+        }
+        if let error = injection.error { throw error }
+        XCTAssertTrue(injection.injected)
+        XCTAssertEqual(result.movedFiles, 1)
+        let undo = SourceOrganizationWorker.undo(
+            try XCTUnwrap(result.undoRecord), currentItems: [],
+            journalDirectory: fixture.journals
+        ) { _, _ in }
+        XCTAssertEqual(undo.movedFiles, 0)
+        XCTAssertNotNil(undo.failureMessage)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: source.path))
+        XCTAssertEqual(try Data(contentsOf: target), foreignContents)
+        if replaceFile {
+            XCTAssertEqual(try Data(contentsOf: preserved), Data("A.JPG".utf8))
+        }
+    }
+
     func testMetadataRenameKeepsSeparateCrossFolderPairAtomic() throws {
         let fixture = try makeFixture(named: "SeparatePairRename")
         defer { try? FileManager.default.removeItem(at: fixture.root) }
@@ -1459,5 +1515,20 @@ final class SourceOrganizationTests: XCTestCase {
             }
             try await Task.sleep(for: .milliseconds(20))
         }
+    }
+}
+
+/// Progress callbacks are Sendable; synchronize the fault's one-shot state.
+private final class CompletedDestinationChange: @unchecked Sendable {
+    private let lock = NSLock()
+    private(set) var injected = false
+    private(set) var error: Error?
+
+    func run(_ change: () throws -> Void) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !injected else { return }
+        injected = true
+        do { try change() } catch { self.error = error }
     }
 }

@@ -278,6 +278,8 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
 - Organize checks scanner-visible names and hidden/package flags in preview and
   before moving. Sanitize generated hidden/package-like components and refuse
   unsafe explicit containers.
+- Rename/Organize undo retains the worker-confirmed destination identities;
+  never recapture a later occupant to establish undo ownership.
 
 ## Session persistence
 

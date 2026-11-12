@@ -79,9 +79,9 @@ enum SourceOrganizationWorker {
         let reverseItems: [ExportWorker.PlannedItem] = completedGroups.compactMap {
             group in
             let files = group.files.compactMap { file -> ExportWorker.PlannedFile? in
-                guard let identity = try? FileOperationJournal.captureIdentity(
-                    at: file.target
-                ) else { return nil }
+                guard let path = FileOperationJournal.exactPathBytes(for: file.target),
+                      let identity = result.completedFileIdentities[path]
+                else { return nil }
                 return ExportWorker.PlannedFile(
                     source: file.target,
                     target: file.source,

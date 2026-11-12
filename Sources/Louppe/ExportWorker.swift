@@ -80,6 +80,9 @@ enum ExportWorker {
         let requiresRecovery: Bool
         let failureMessage: String?
         let xmpSummary: XMPResultSummary?
+        /// Exact destination identities verified by this worker. Undo must
+        /// retain these receipts rather than adopt a later occupant by name.
+        var completedFileIdentities: [Data: FileOperationJournal.FileIdentity] = [:]
     }
 
     struct XMPResultSummary: Equatable, Sendable {
@@ -1241,6 +1244,7 @@ enum ExportWorker {
         )
         var movedItemIDs: [String] = []
         var movedFiles = 0
+        var completedFileIdentities: [Data: FileOperationJournal.FileIdentity] = [:]
         var failedPhotos = 0
         var inconsistentPhotos = 0
         var journalFailure = false
@@ -1640,6 +1644,12 @@ enum ExportWorker {
                 })
                 for touched in touchedForItem {
                     xmpSummary?.record(touched.file)
+                    if journalKind == .renameSource || journalKind == .organizeSource,
+                       touched.file.role != .retiredXMPSource,
+                       let path = FileOperationJournal.exactPathBytes(for: touched.file.target),
+                       let identity = touched.identity {
+                        completedFileIdentities[path] = identity
+                    }
                 }
                 if retirementCleanupFailed {
                     inconsistentPhotos += 1
@@ -1671,7 +1681,8 @@ enum ExportWorker {
                 ? failureMessage
                     ?? L10n.text("A source, destination, or file-safety checkpoint became unavailable during the move")
                 : nil,
-            xmpSummary: xmpSummary
+            xmpSummary: xmpSummary,
+            completedFileIdentities: completedFileIdentities
         )
     }
 
