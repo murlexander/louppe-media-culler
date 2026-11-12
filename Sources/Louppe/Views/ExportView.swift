@@ -90,6 +90,7 @@ struct ExportView: View {
                 }
             }
         }
+        .padding(usesFormLayout ? 0 : 24)
         .frame(width: 640, height: 620)
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
@@ -185,8 +186,18 @@ struct ExportView: View {
         }
     }
 
-    private var sheetTitle: String {
-        isRoutingCopies ? L10n.text("Route Copies") : L10n.text("Export")
+    private var usesFormLayout: Bool {
+        if mode == .metadataXMP {
+            switch store.xmpPublicationState {
+            case .idle, .awaitingConfirmation, .finished, .failed: return true
+            default: return false
+            }
+        }
+        switch exporter.state {
+        case .summary, .awaitingXMPConfirmation, .awaitingMultiDestinationConfirmation, .finished, .failed:
+            return true
+        default: return false
+        }
     }
 
     /// Only the editable summary follows live session changes; validation,
@@ -213,7 +224,7 @@ struct ExportView: View {
         if isRoutingCopies && mode == .copy {
             routingSummaryView
         } else {
-            SheetForm(title: sheetTitle, layout: .grouped) {
+            SheetForm(title: L10n.text("Export"), layout: .grouped) {
                 Section {
                     exportModePicker
 
@@ -899,7 +910,7 @@ struct ExportView: View {
     }
 
     private var multiDestinationPreparationView: some View {
-        SheetForm(title: sheetTitle) {
+        VStack(spacing: 12) {
             ProgressView()
                 .accessibilityLabel(L10n.text("Checking routing copy plan"))
             Text(L10n.text("Checking routing copy plan…"))
@@ -907,19 +918,16 @@ struct ExportView: View {
             Text(L10n.text("Checking destinations and filenames…"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-        } actions: {
-            SheetActions {
-                SheetCancelButton { exporter.cancelMultiDestinationPreparation() }
-            }
+                .multilineTextAlignment(.center)
+            Button(L10n.text("Cancel")) { exporter.cancelMultiDestinationPreparation() }
+                .keyboardShortcut(.cancelAction)
         }
     }
 
     private func multiDestinationConfirmationView(
         _ plan: MultiDestinationExportPlan
     ) -> some View {
-        SheetForm(title: sheetTitle) {
-            Text(L10n.text("Review Copy Plan"))
-                .font(.headline)
+        SheetForm(title: L10n.text("Review Copy Plan")) {
             Text((plan.totalFiles == 1 ? L10n.text("\(plan.totalFiles) file will be copied. Originals stay in place.") : L10n.text("\(plan.totalFiles) files will be copied. Originals stay in place.")))
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -1289,7 +1297,7 @@ struct ExportView: View {
                 stopTitle: L10n.text("Stop Writing")
             )
         case .cancelling:
-            SheetForm(title: sheetTitle) {
+            VStack(spacing: 12) {
                 ProgressView()
                     .accessibilityLabel(L10n.text("Stopping metadata work"))
                 Text(L10n.text("Stopping at a safe boundary…"))
@@ -1298,13 +1306,11 @@ struct ExportView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-            } actions: {
-                SheetActions {}
             }
         case .finished(let result):
             xmpFinishedView(result)
         case .failed(let message):
-            SheetForm(title: sheetTitle) {
+            SheetForm(title: L10n.text("Metadata (XMP)")) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 40))
                     .foregroundStyle(.secondary)
@@ -1325,7 +1331,7 @@ struct ExportView: View {
         total: Int,
         stopTitle: String
     ) -> some View {
-        SheetForm(title: sheetTitle) {
+        VStack(spacing: 12) {
             Text(title)
                 .font(.headline)
             ProgressView(
@@ -1337,17 +1343,14 @@ struct ExportView: View {
             Text((total == 1 ? L10n.text("\(done) of 1 sidecar family") : L10n.text("\(done) of \(total) sidecar families")))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-        } actions: {
-            SheetActions {
-                Button(stopTitle) { store.cancelXMPPublication() }
-            }
+            Button(stopTitle) { store.cancelXMPPublication() }
         }
     }
 
     private func xmpPreflightView(_ plan: XMPPublicationPlan) -> some View {
         let issues = plan.entries.filter { !$0.category.canPublish }
         let changes = plan.changeCounts
-        return SheetForm(title: sheetTitle) {
+        return SheetForm(title: L10n.text("Metadata (XMP)")) {
             Text(L10n.text("Ready to write with \(plan.profile.displayName)"))
                 .font(.headline)
 
@@ -1446,9 +1449,7 @@ struct ExportView: View {
             : result.isClean
                 ? L10n.text("Metadata (XMP) complete")
                 : L10n.text("Metadata (XMP) finished with problems")
-        return SheetForm(title: sheetTitle) {
-            Text(title)
-                .font(.headline)
+        return SheetForm(title: title) {
             VStack(spacing: 6) {
                 xmpCountRow(L10n.text("Created"), result.created)
                 xmpCountRow(L10n.text("Updated"), result.updated)
@@ -1542,7 +1543,7 @@ struct ExportView: View {
             fromByteCount: max(0, totalBytes),
             countStyle: .file
         )
-        return SheetForm(title: sheetTitle) {
+        return VStack(spacing: 12) {
             Text(isPhotos ? L10n.text("Downloading and copying originals…") : mode == .copy ? L10n.text("Copying media…") : L10n.text("Moving media…"))
                 .font(.headline)
             ProgressView(
@@ -1558,36 +1559,31 @@ struct ExportView: View {
                 Text(L10n.text("Progress counts original files. iCloud downloads may take longer."))
                     .font(.caption).foregroundStyle(.secondary)
             }
-        } actions: {
-            SheetActions {
-                if mode == .copy {
-                    Button(exporter.isCancellingCopy ? L10n.text("Stopping…") : L10n.text("Stop Copying…")) {
-                        exporter.requestCopyStopConfirmation()
-                    }
-                    .disabled(exporter.isCancellingCopy)
-                    .accessibilityFocused($isStopCopyingFocused)
-                    .onAppear { isStopCopyingFocused = true }
+            if mode == .copy {
+                Button(exporter.isCancellingCopy ? L10n.text("Stopping…") : L10n.text("Stop Copying…")) {
+                    exporter.requestCopyStopConfirmation()
                 }
+                .disabled(exporter.isCancellingCopy)
+                .accessibilityFocused($isStopCopyingFocused)
+                .onAppear { isStopCopyingFocused = true }
             }
         }
     }
 
     /// Read-only destination preflight; nothing has been written yet.
     private var destinationValidationView: some View {
-        SheetForm(title: sheetTitle) {
+        VStack(spacing: 12) {
             ProgressView()
                 .accessibilityLabel(L10n.text("Checking folder…"))
             Text(L10n.text("Checking folder…"))
                 .font(.headline)
-        } actions: {
-            SheetActions {
-                SheetCancelButton { exporter.cancelDestinationValidation() }
-            }
+            Button(L10n.text("Cancel")) { exporter.cancelDestinationValidation() }
+                .keyboardShortcut(.cancelAction)
         }
     }
 
     private func xmpExportPreparationView(mode: ExportMode) -> some View {
-        SheetForm(title: sheetTitle) {
+        VStack(spacing: 12) {
             ProgressView()
                 .accessibilityLabel(L10n.text("Checking XMP sidecars"))
             Text(L10n.text("Checking XMP sidecars…"))
@@ -1596,9 +1592,8 @@ struct ExportView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-        } actions: {
-            SheetActions {
-                Button(L10n.text("Stop Checking")) { exporter.cancelXMPPreparation() }
+            Button(L10n.text("Stop Checking")) {
+                exporter.cancelXMPPreparation()
             }
         }
     }
@@ -1608,9 +1603,7 @@ struct ExportView: View {
     ) -> some View {
         let plan = confirmation.plan
         let changes = plan.changeCounts
-        return SheetForm(title: sheetTitle) {
-            Text(confirmation.mode == .copy ? L10n.text("Copy with XMP") : L10n.text("Move with XMP"))
-                .font(.headline)
+        return SheetForm(title: confirmation.mode == .copy ? L10n.text("Copy with XMP") : L10n.text("Move with XMP")) {
             Text(L10n.text("Ready for \(confirmation.destination.lastPathComponent)"))
                 .font(.headline)
 
@@ -1717,10 +1710,8 @@ struct ExportView: View {
     }
 
     private func finishedView(outcome: ExportManager.Outcome) -> some View {
-        SheetForm(title: sheetTitle) {
-            VStack(alignment: .leading, spacing: 14) {
-                Text(finishedTitle(for: outcome))
-                    .font(.headline)
+        SheetForm(title: finishedTitle(for: outcome)) {
+            VStack(spacing: 14) {
                 Text(finishedMessage(for: outcome))
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -1841,7 +1832,7 @@ struct ExportView: View {
     }
 
     private func failedView(message: String) -> some View {
-        SheetForm(title: sheetTitle) {
+        SheetForm(title: L10n.text("Export")) {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)

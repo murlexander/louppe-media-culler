@@ -143,61 +143,6 @@ final class SheetPresentationTests: XCTestCase {
         XCTAssertFalse(source.contains(".background(.regularMaterial"))
     }
 
-    func testSourceOperationSheetsKeepSizeAndIgnoreEscapeDuringProgress() throws {
-        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
-            for rename in [false, true] {
-                let store = SessionStore()
-                store.isRenamePresented = rename
-                store.isOrganizePresented = !rename
-                let content = rename ? AnyView(RenameFilesView(store: store)) : AnyView(OrganizeSourceView(store: store))
-                let host = NSHostingView(rootView: content.environment(\.layoutDirection, direction))
-                let window = mount(host, size: CGSize(width: 680, height: 650))
-                defer { window.close() }
-                let setupSize = host.fittingSize
-                store.presentSourceFileOperationForTesting(progress: .init(action: .organizing, done: 4, total: 10))
-                settle(host)
-                XCTAssertEqual(host.fittingSize, setupSize)
-                XCTAssertNotNil(descendants(host).compactMap { $0 as? NSScrollView }.first,
-                                "Progress must retain the shared sheet's scrolling body")
-                _ = host.performKeyEquivalent(with: try key("\u{1b}", code: 53, window: window))
-                XCTAssertEqual(store.isRenamePresented, rename)
-                XCTAssertEqual(store.isOrganizePresented, !rename)
-                store.presentSourceFileOperationForTesting(outcome: .init(
-                    movedFiles: 10, failedItems: 0, message: nil, wasUndo: false))
-                settle(host)
-                XCTAssertEqual(host.fittingSize, setupSize, "A clean result must not shrink the sheet")
-            }
-        }
-    }
-
-    func testExportProgressKeepsSizeAndExistingEscapeCancellationPaths() throws {
-        let store = SessionStore()
-        store.isExportPresented = true
-        let exporter = ExportManager()
-        let host = NSHostingView(rootView: ExportView(store: store, exporter: exporter))
-        let window = mount(host, size: CGSize(width: 640, height: 620))
-        defer { window.close() }
-        let setupSize = host.fittingSize
-        for state in [ExportManager.State.preparingXMP(.copy), .preparingMultiDestination,
-                      .working(mode: .copy, completedBytes: 4, totalBytes: 10),
-                      .working(mode: .move, completedBytes: 4, totalBytes: 10)] {
-            exporter.state = state
-            settle(host)
-            XCTAssertEqual(host.fittingSize, setupSize)
-            XCTAssertNotNil(descendants(host).compactMap { $0 as? NSScrollView }.first)
-            _ = host.performKeyEquivalent(with: try key("\u{1b}", code: 53, window: window))
-            XCTAssertEqual(exporter.state, state == .preparingMultiDestination ? .summary : state,
-                           "Escape must preserve the existing preparation and worker cancellation paths")
-            XCTAssertTrue(store.isExportPresented)
-        }
-        exporter.state = .validatingDestination(.copy)
-        settle(host)
-        XCTAssertEqual(host.fittingSize, setupSize)
-        XCTAssertTrue(host.performKeyEquivalent(with: try key("\u{1b}", code: 53, window: window)))
-        XCTAssertEqual(exporter.state, .summary)
-        XCTAssertTrue(store.isExportPresented)
-    }
-
     private func key(_ text: String, code: UInt16, window: NSWindow) throws -> NSEvent {
         try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
             timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,

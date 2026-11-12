@@ -23,7 +23,6 @@ struct SheetActions<Leading: View, Trailing: View>: View {
             Spacer()
             trailing()
         }
-        .frame(minHeight: 24)
     }
 }
 

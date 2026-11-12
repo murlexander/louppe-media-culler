@@ -26,22 +26,17 @@ struct OrganizeSourceView: View {
         )
     }
 
-    private var sheetTitle: String { L10n.text("Organize Source Folder") }
-    private var sheetSubtitle: String {
-        L10n.text("Move media into folders built from review and capture metadata.")
-    }
-
     var body: some View {
         Group {
             if let progress = store.organizationProgress {
                 SourceFileOperationProgressView(
-                    title: sheetTitle, subtitle: sheetSubtitle,
+                    title: L10n.text("Organize Source Folder"),
+                    subtitle: L10n.text("Move media into folders built from review and capture metadata."),
                     progress: progress, headline: progress.title
                 )
             } else if let outcome = store.organizationOutcome {
                 SourceFileOperationOutcomeView(
-                    store: store, outcome: outcome, kind: .organization,
-                    title: sheetTitle, subtitle: sheetSubtitle
+                    store: store, outcome: outcome, kind: .organization
                 ) { store.isOrganizePresented = false }
             } else if isReviewingMove, let plan {
                 confirmationView(plan)
@@ -49,7 +44,7 @@ struct OrganizeSourceView: View {
                 setupView
             }
         }
-        .frame(width: 680, height: 650)
+        .frame(width: 680, height: confirmationSheetHeight)
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
         .controlSize(.regular)
@@ -67,7 +62,8 @@ struct OrganizeSourceView: View {
 
     private var setupView: some View {
         SheetForm(
-            title: sheetTitle, subtitle: sheetSubtitle,
+            title: L10n.text("Organize Source Folder"),
+            subtitle: L10n.text("Move media into folders built from review and capture metadata."),
             layout: .grouped
         ) {
             Section {
@@ -358,14 +354,11 @@ struct OrganizeSourceView: View {
     ) -> some View {
 
         return SheetForm(
-            title: sheetTitle, subtitle: sheetSubtitle
-        ) {
-            Text(plan.movingFileCount == 1 ? L10n.text("Move 1 file?") : L10n.text("Move \(plan.movingFileCount) files?"))
-                .font(.headline)
-            Text(plan.previewGroups.count == 1
+            title: plan.movingFileCount == 1 ? L10n.text("Move 1 file?") : L10n.text("Move \(plan.movingFileCount) files?"),
+            subtitle: plan.previewGroups.count == 1
                 ? L10n.text("Into 1 folder inside “\(plan.configuration.containerName)”")
-                : L10n.text("Into \(plan.previewGroups.count) folders inside “\(plan.configuration.containerName)”"))
-                .foregroundStyle(.secondary)
+                : L10n.text("Into \(plan.previewGroups.count) folders inside “\(plan.configuration.containerName)”")
+        ) {
             Text(L10n.text("Names and contents stay unchanged. Existing files are never overwritten."))
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -398,6 +391,21 @@ struct OrganizeSourceView: View {
                 }
             }
         }
+    }
+
+    private var confirmationSheetHeight: CGFloat {
+        if store.organizationProgress == nil,
+           store.organizationOutcome == nil,
+           isReviewingMove,
+           let plan {
+            return plan.storageSafety.usesReducedDirectoryDurability ? 410 : 330
+        }
+        // A finished move with no error is a short confirmation, not a form.
+        if store.organizationProgress == nil, let outcome = store.organizationOutcome,
+           store.organizationError == nil, outcome.message == nil {
+            return 250
+        }
+        return 650
     }
 
     private func summaryValue(_ value: String) -> some View {

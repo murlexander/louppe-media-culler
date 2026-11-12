@@ -13,6 +13,7 @@ struct SheetForm<Content: View, Actions: View>: View {
     let layout: SheetFormLayout
     @ViewBuilder var content: () -> Content
     @ViewBuilder var actions: () -> Actions
+    private var showsActions = true
 
     init(
         title: String,
@@ -61,15 +62,31 @@ struct SheetForm<Content: View, Actions: View>: View {
                 }
                 .scrollBounceBehavior(.basedOnSize)
             }
-            Divider()
-            actions()
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 14)
+            if showsActions {
+                Divider()
+                actions()
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+            }
         }
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
         .controlSize(.regular)
+    }
+}
+
+extension SheetForm where Actions == EmptyView {
+    /// A step with nothing to choose, such as progress that can't be cancelled,
+    /// keeps the header without an empty action row.
+    init(
+        title: String,
+        subtitle: String? = nil,
+        layout: SheetFormLayout = .scrolling,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.init(title: title, subtitle: subtitle, layout: layout, content: content) { EmptyView() }
+        showsActions = false
     }
 }

@@ -2,8 +2,8 @@
 
 ## 1.14.0 (18) — 2026-11-08
 
-- Keep Rename, Organize and Export sheet titles, action bars and sizes steady during progress and completion.
 - Report failed XMP sidecar checks in Export with Try Again, preserving the XMP choice until a check succeeds.
+- Keep the Rename and Organize sheet title visible while files move.
 
 - Show the normal toolbar, Browser and Info panel while a large folder opens, with controls greyed out until all photo details load, so the view no longer jumps when review begins.
 - Filter dates by Range, Year or Date in a full-width chooser; each mode keeps its choices when you switch.

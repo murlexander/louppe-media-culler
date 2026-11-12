@@ -6,15 +6,12 @@ struct SourceFileOperationOutcomeView: View {
     @ObservedObject var store: SessionStore
     let outcome: SourceOrganizationOutcome
     let kind: SourceFileChangeKind
-    let title: String
-    var subtitle: String? = nil
     let done: () -> Void
 
     var body: some View {
-        SheetForm(title: title, subtitle: subtitle) {
-            Text(outcome.title(for: kind))
-                .font(.headline)
+        SheetForm(title: outcome.title(for: kind)) {
             Text(outcome.fileCountDescription(for: kind))
+                .font(.headline)
             if let message = store.organizationError ?? outcome.message {
                 Text(message)
                     .fixedSize(horizontal: false, vertical: true)
