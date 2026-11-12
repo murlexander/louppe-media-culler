@@ -13,6 +13,15 @@ equivalence, real JPEG I/O and optional RAW measurements. See
 limits and the implementation acceptance list. These complement the existing
 75 safety checks.
 
+For checkpoint capture alone, run
+`Tests/run_performance_checks.sh --snapshot-only --optimized` (omit
+`--optimized` for the unoptimized comparison). It uses the same 100,000-file
+fixture, excludes one warmup, then prints seven main-actor capture and detached
+construction samples. `LOUPPE_SNAPSHOT_REPETITIONS` accepts 1–30 samples.
+The runner holds `~/.louppe-perf/measure.lock` during these measurements, waiting
+for an existing owner. Compare both revisions on the same Mac and toolchain;
+fixture setup and compilation are outside the timed regions.
+
 ## Disposable verification fixtures
 
 Performance fixtures use `/private/tmp`. On 7 October 2026, a Documents control

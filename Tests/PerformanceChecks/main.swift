@@ -4,6 +4,17 @@ import Foundation
 @main
 struct PerformanceChecks {
     static func main() async throws {
+        if let requested = ProcessInfo.processInfo.environment["LOUPPE_SNAPSHOT_REPETITIONS"],
+           let repetitions = Int(requested), (1...30).contains(repetitions) {
+            print("Snapshot warmup (excluded from samples)")
+            try await sessionSnapshotScaleBaseline()
+            for sample in 1...repetitions {
+                print("Snapshot sample \(sample)/\(repetitions)")
+                try await sessionSnapshotScaleBaseline()
+            }
+            print("Session snapshot checks passed (\(repetitions) samples)")
+            return
+        }
         // Reproduce this exact on-disk fixture without unrelated suite work.
         if let requested = ProcessInfo.processInfo.environment["LOUPPE_PAIRING_FIXTURE_REPEATS"],
            let repeats = Int(requested), (1...100).contains(repeats) {

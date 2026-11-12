@@ -1,12 +1,22 @@
 #!/bin/zsh
 set -euo pipefail
 cd "$(dirname "$0")/.."
+source "$PWD/Scripts/lib/xcode_env.sh"
+optimization=()
+snapshot_only=0
+for option in "$@"; do
+    case "$option" in
+        --optimized) optimization=(-O) ;;
+        --snapshot-only) snapshot_only=1 ;;
+        *) echo "Usage: $0 [--optimized] [--snapshot-only]" >&2; exit 2 ;;
+    esac
+done
 
 SDK="${SDKROOT:-$(xcrun --sdk macosx --show-sdk-path)}"
 
 mkdir -p .build/performance-checks/module-cache
 
-swiftc \
+swiftc "${optimization[@]}" \
     -sdk "$SDK" \
     -module-cache-path .build/performance-checks/module-cache \
     -D LOUPPE_TESTING \
@@ -73,4 +83,17 @@ swiftc \
     Tests/PerformanceChecks/main.swift \
     -o .build/performance-checks/LouppePerformanceChecks
 
+if (( snapshot_only )); then
+    lock="$HOME/.louppe-perf/measure.lock"
+    mkdir -p "$(dirname "$lock")"
+    if [[ -e "$lock" ]]; then echo "Waiting for snapshot measurement lock: $lock"; fi
+    until mkdir "$lock" 2>/dev/null; do sleep 1; done
+    trap 'rmdir "$lock"' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    export LOUPPE_SNAPSHOT_REPETITIONS="${LOUPPE_SNAPSHOT_REPETITIONS:-7}"
+    [[ "$LOUPPE_SNAPSHOT_REPETITIONS" == <-> ]] \
+        && (( LOUPPE_SNAPSHOT_REPETITIONS >= 1 && LOUPPE_SNAPSHOT_REPETITIONS <= 30 )) \
+        || { echo 'Snapshot repetitions must be 1–30.' >&2; exit 2; }
+fi
 .build/performance-checks/LouppePerformanceChecks
