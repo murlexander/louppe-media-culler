@@ -436,9 +436,11 @@ final class NextPhotoSpeedTests: XCTestCase {
         try await eventually { gate.started.count == 1 }
         try await Task.sleep(for: .milliseconds(200))
         XCTAssertEqual(gate.active, 1, "whole-image thumbnails start one at a time while the visible photo decodes")
-        // No visible decode arrives: the one-second cap restores the lane.
-        try await eventually { gate.started.count == 3 }
-        XCTAssertEqual(gate.active, 3)
+        // No visible decode arrives: the one-second cap restores the lane,
+        // which is only two wide on small machines such as CI runners.
+        let restored = min(3, ImagePipeline.thumbnailLaneWidth)
+        try await eventually { gate.started.count == restored }
+        XCTAssertEqual(gate.active, restored)
         gate.releaseAll()
         for task in thumbnails { _ = await task.value }
         // Other formats never yield.
