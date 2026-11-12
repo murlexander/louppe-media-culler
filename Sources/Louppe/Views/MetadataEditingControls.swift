@@ -92,7 +92,8 @@ struct MetadataEditingControls: View {
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                 }
-                .menuStyle(.borderlessButton)
+                .menuStyle(.button)
+                .buttonStyle(.borderless)
                 .tint(Color.louppeAccent)
                 .fixedSize()
                 .disabled(!store.canRate)

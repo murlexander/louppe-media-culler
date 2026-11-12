@@ -155,8 +155,6 @@ struct OrganizeSourceView: View {
                         Text(value.label).tag(value)
                     }
                 }
-                .pickerStyle(.menu)
-                .buttonStyle(.borderless)
                 .labelsHidden()
                 .frame(width: 120)
             }
@@ -173,8 +171,6 @@ struct OrganizeSourceView: View {
                         Text(dateGranularityLabel(value)).tag(value)
                     }
                 }
-                .pickerStyle(.menu)
-                .buttonStyle(.borderless)
                 .labelsHidden()
                 .frame(width: 210)
             }
