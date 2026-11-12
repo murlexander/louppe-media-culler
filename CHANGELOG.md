@@ -2,6 +2,12 @@
 
 ## 1.14.0 (18) — 2026-11-08
 
+- Use the right singular and plural words in every language, and group large counts so they are easier to read.
+- Show the next photo sooner when browsing, with faster fitted previews and lower memory use.
+- Keep Louppe responsive while checking folders opened from Finder, the Dock or a drop.
+- Offer Try Again if a video's audio or subtitle options cannot be loaded.
+- Keep Clean Up's menu commands responsive in large folders.
+- Align menus, dialog actions and status messages across review, Export, Rename and Organize. Give VoiceOver clearer labels for camera settings and photo quality warnings.
 - Report failed XMP sidecar checks in Export with Try Again, preserving the XMP choice until a check succeeds.
 - Keep the Rename and Organize sheet title visible while files move.
 - Give Sort, Filter, quality-cue and review-status popovers one surface, arrow included: no lighter arrow or seam, and legible over bright photos.
