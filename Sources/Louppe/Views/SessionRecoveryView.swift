@@ -14,7 +14,7 @@ struct SessionRecoveryBanner: View {
             if case .checking(let done, let total) = store.sessionContentCheck {
                 ProgressView(value: Double(done), total: Double(max(1, total)))
                     .frame(width: 70)
-                    .accessibilityLabel(L10n.text("Checking file contents: \(done) of \(total)"))
+                    .accessibilityLabel(L10n.text("Checking file contents: \(L10n.number(done)) of \(L10n.number(total))"))
             }
             Button(L10n.text("Check and Restore…")) { store.isSessionRecoveryPresented = true }
                 .disabled(store.isFileOperationRunning)
@@ -140,8 +140,8 @@ struct SessionRecoveryView: View {
             case .checking(let done, let total):
                 ProgressView(value: Double(done), total: Double(max(1, total)))
                     .frame(width: 100)
-                    .accessibilityLabel(L10n.text("Checking file contents: \(done) of \(total)"))
-                Text(L10n.text("Checking file contents: \(done) of \(total)"))
+                    .accessibilityLabel(L10n.text("Checking file contents: \(L10n.number(done)) of \(L10n.number(total))"))
+                Text(L10n.text("Checking file contents: \(L10n.number(done)) of \(L10n.number(total))"))
                 Spacer()
                 Button(L10n.text("Pause")) { store.toggleSessionContentChecks() }
             case .paused:

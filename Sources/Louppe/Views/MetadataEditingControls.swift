@@ -52,9 +52,7 @@ struct MetadataEditingControls: View {
                     .help(L10n.text("Clear stars"))
 
                     ForEach(StarRating.allCases, id: \.self) { rating in
-                        let title = rating == .one
-                            ? L10n.text("Set 1 Star")
-                            : L10n.text("Set \(rating.count) Stars")
+                        let title = L10n.plural("Set %lld Stars", rating.count)
                         Button {
                             store.setStarRating(rating)
                         } label: {

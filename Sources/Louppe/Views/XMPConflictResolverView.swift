@@ -247,7 +247,7 @@ struct XMPConflictResolverView: View {
 
     private func starsLabel(_ rating: StarRating?) -> String {
         guard let rating else { return L10n.text("Unrated") }
-        return rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count.formatted()) stars")
+        return L10n.plural("%lld stars", rating.count)
     }
 
     private func colorLabel(_ label: PhotoColorLabel?) -> String {

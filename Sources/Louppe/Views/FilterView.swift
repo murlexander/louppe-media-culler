@@ -97,7 +97,7 @@ struct FilterView: View {
             if let batch = store.photosBatch {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text(L10n.text("Apple Photos · \(batch.range.total.formatted()) items"))
+                        Text(L10n.plural("Apple Photos · %lld items", batch.range.total))
                             .font(.callout)
                         Spacer(minLength: 6)
                         Button(L10n.text("Choose Photos…")) { store.requestPhotosLibraryFromFilter() }
@@ -116,7 +116,7 @@ struct FilterView: View {
             }
             filterSections
         } footerLeading: {
-            Text(L10n.text("Showing \(store.visibleIndices.count.formatted()) of \(store.items.count.formatted())"))
+            Text(L10n.text("Showing \(L10n.number(store.visibleIndices.count)) of \(L10n.number(store.items.count))"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -366,7 +366,7 @@ struct FilterView: View {
                 )
                 ForEach(StarRating.allCases, id: \.self) { rating in
                     metadataToggle(
-                        rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count) stars"),
+                        L10n.plural("%lld stars", rating.count),
                         count: store.starCount(rating),
                         value: PhotoItemStarRatingState.stars(rating),
                         set: \.excludedStarStates
@@ -721,9 +721,9 @@ struct FilterView: View {
         }
         let count = store.rawJPEGPairCount
         if store.rawJPEGPairingMode == .together {
-            return count == 1 ? L10n.text("1 matching pair reviewed together.") : L10n.text("\(count) matching pairs reviewed together.")
+            return L10n.plural("%lld matching pairs reviewed together.", count)
         }
-        return count == 1 ? L10n.text("1 matching pair reviewed separately.") : L10n.text("\(count) matching pairs reviewed separately.")
+        return L10n.plural("%lld matching pairs reviewed separately.", count)
     }
 
     private var rawJPEGPairingBinding: Binding<Bool> {

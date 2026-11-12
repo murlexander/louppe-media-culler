@@ -226,8 +226,7 @@ struct SessionView: View {
 
     private var clearAllRatingsMessage: String {
         let count = store.archiveRatedCount
-        let items = itemsPhrase(count)
-        return L10n.text("Clear Yes/No decisions from \(items). Stars and color labels stay unchanged. Undo with ⌘Z.")
+        return L10n.plural("Clear Yes/No decisions from %lld items. Stars and color labels stay unchanged. Undo with ⌘Z.", count)
     }
 
     private var isCleanUpConfirmPresented: Binding<Bool> {
@@ -251,17 +250,13 @@ struct SessionView: View {
         switch store.legacySessionMigrationMissingFileCount {
         case 0:
             return L10n.text("Use Saved Decisions?")
-        case 1:
-            return L10n.text("A Saved File Is Missing")
         default:
-            return L10n.text("Saved Files Are Missing")
+            return L10n.plural("legacy-missing-files-title", store.legacySessionMigrationMissingFileCount)
         }
     }
 
     private var legacyMissingFilesActionTitle: String {
-        store.legacySessionMigrationMissingFileCount == 1
-            ? L10n.text("Open Folder and Forget Missing Item")
-            : L10n.text("Open Folder and Forget Missing Items")
+        L10n.plural("legacy-forget-missing-items", store.legacySessionMigrationMissingFileCount)
     }
 
     private var legacyMigrationMessage: String {
@@ -269,9 +264,7 @@ struct SessionView: View {
         guard count > 0 else {
             return L10n.text("These older decisions use filenames only. All saved filenames are present, but original files cannot be verified. Use Saved Decisions upgrades the session and binds decisions to current physical files. Close Folder changes nothing.")
         }
-        var message = count == 1
-            ? L10n.text("Older decisions refer to 1 file missing from this folder. Louppe cannot tell whether it was deleted intentionally or is temporarily unavailable. Open Folder and Forget Missing Item discards only that old saved decision, keeps present-file decisions, and upgrades the session. Close Folder changes nothing.")
-            : L10n.text("Older decisions refer to \(count) files missing from this folder. Louppe cannot tell whether they were deleted intentionally or are temporarily unavailable. Open Folder and Forget Missing Items discards only those old saved decisions, keeps present-file decisions, and upgrades the session. Close Folder changes nothing.")
+        var message = L10n.plural("Older decisions refer to %lld files missing from this folder. Louppe cannot tell whether they were deleted intentionally or are temporarily unavailable. Open Folder and Forget Missing Items discards only those old saved decisions, keeps present-file decisions, and upgrades the session. Close Folder changes nothing.", count)
         if store.legacySessionMigrationUsesUnownedBackup {
             message += L10n.text(" These decisions came from an older local backup not tied to this folder. Opening binds surviving filenames to the files currently here.")
         }
@@ -297,29 +290,26 @@ struct SessionView: View {
         let counts = store.cleanUpCounts(for: mode)
         switch mode {
         case .selection:
-            return L10n.text("Trash \(itemsPhrase(counts.photos))?")
+            return L10n.plural("Trash %lld items?", counts.photos)
         case .trashNo:
-            return L10n.text("Trash \(itemsPhrase(counts.photos)) marked No?")
+            return L10n.plural("Trash %lld items marked No?", counts.photos)
         case .keepOnlyYes:
-            return L10n.text("Trash \(itemsPhrase(counts.photos)) marked No or Undecided?")
+            return L10n.plural("Trash %lld items marked No or Undecided?", counts.photos)
         case .pairedJPEGs:
-            let noun = counts.photos == 1 ? L10n.text("JPEG from 1 RAW + JPEG pair") : L10n.text("JPEGs from \(counts.photos) RAW + JPEG pairs")
-            return L10n.text("Trash the \(noun)?")
+            return L10n.plural("Trash JPEG from %lld RAW + JPEG pairs?", counts.photos)
         case .pairedRAWs:
-            let noun = counts.photos == 1 ? L10n.text("RAW from 1 RAW + JPEG pair") : L10n.text("RAWs from \(counts.photos) RAW + JPEG pairs")
-            return L10n.text("Trash the \(noun)?")
+            return L10n.plural("Trash RAW from %lld RAW + JPEG pairs?", counts.photos)
         }
     }
 
     private func cleanUpMessage(for mode: CleanUpMode) -> String {
         let counts = store.cleanUpCounts(for: mode)
-        let files = counts.files == 1 ? L10n.text("1 file") : L10n.text("\(counts.files) files")
         let space = ByteCountFormatter.string(fromByteCount: counts.bytes, countStyle: .file)
         if mode == .pairedJPEGs || mode == .pairedRAWs {
             let removed = mode == .pairedJPEGs ? "JPEG" : "RAW"
             let retained = mode == .pairedJPEGs ? "RAW" : "JPEG"
             var parts = [
-                L10n.text("\(files) (about \(space)) will be moved to the Trash. The matching \(retained) files will stay in the folder."),
+                L10n.plural("%lld files (about %@) will be moved to the Trash. The matching %@ files will stay in the folder.", counts.files, arguments: [space, retained]),
                 L10n.text("Undo with ⌘Z before closing this session, while files remain in Trash. Emptying Trash permanently deletes them and may free that space.")
             ]
             switch store.cleanUpScope {
@@ -334,7 +324,7 @@ struct SessionView: View {
             return parts.joined(separator: "\n")
         }
         var parts = [
-            L10n.text("\(files) will be moved to the Trash (a RAW+JPEG pair counts as two), totaling about \(space). Undo with ⌘Z before closing this session, while files remain in Trash. Emptying Trash permanently deletes them and may free that space.")
+            L10n.plural("%lld files will be moved to the Trash (a RAW+JPEG pair counts as two), totaling about %@. Undo with ⌘Z before closing this session, while files remain in Trash. Emptying Trash permanently deletes them and may free that space.", counts.files, arguments: [space])
         ]
         switch mode {
         case .selection:
@@ -343,7 +333,7 @@ struct SessionView: View {
             parts.append(L10n.text("Within this scope, Yes and unrated items stay in the folder."))
         case .keepOnlyYes:
             let decisions = store.cleanUpDecisionBreakdown(for: mode)
-            parts.insert(L10n.text("Includes \(decisions.no) No and \(decisions.undecided) Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder."), at: 0)
+            parts.insert(L10n.plural("Includes %lld No and %lld Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.", counts: [decisions.no, decisions.undecided]), at: 0)
         case .pairedJPEGs, .pairedRAWs:
             break // These modes return through their dedicated message above.
         }
@@ -353,40 +343,35 @@ struct SessionView: View {
             switch store.cleanUpScope {
             case .all:
                 if store.isFilterActive {
-                    parts.append(L10n.text("All \(store.archiveScopeCount) folder items are considered, even those hidden by filters."))
+                    parts.append(L10n.plural("All %lld folder items are considered, even those hidden by filters.", store.archiveScopeCount))
                 }
             case .filtered:
                 if store.isFilterActive {
                     let hidden = store.archiveScopeCount - store.visibleIndices.count
-                    parts.append(L10n.text("Only \(store.visibleIndices.count) visible items are considered; \(hidden) hidden items stay untouched."))
+                    parts.append(L10n.plural("Only %lld visible items are considered; %lld hidden items stay untouched.", counts: [store.visibleIndices.count, hidden]))
                 }
             case .selected:
                 let count = store.cleanUpScopeCount(for: .selected)
-                let phrase = count == 1 ? L10n.text("1 selected item is") : L10n.text("\(count) selected items are")
-                parts.append(L10n.text("Only \(phrase) considered — every unselected item stays in the folder."))
+                parts.append(L10n.plural("Only %lld selected items are considered — every unselected item stays in the folder.", count))
             }
         }
         if let context = store.archiveScopeDescription { parts.append(context) }
         return parts.joined(separator: "\n")
     }
 
-    private func itemsPhrase(_ count: Int) -> String {
-        count == 1 ? L10n.text("1 item") : L10n.text("\(count) items")
-    }
-
     private var subtitle: String {
         guard !store.items.isEmpty else { return "" }
         let position = store.currentVisiblePosition.map { $0 + 1 } ?? 0
-        var text = L10n.text("Item \(position.formatted()) of \(store.visibleIndices.count.formatted())")
+        var text = L10n.text("Item \(L10n.number(position)) of \(L10n.number(store.visibleIndices.count))")
         if store.isFilterActive {
-            text += L10n.text(" (of \(store.archiveScopeCount.formatted()) total)")
+            text += L10n.text(" (of \(L10n.number(store.archiveScopeCount)) total)")
         }
-        text += L10n.text("  ·  \(store.archiveReviewedCount.formatted())/\(store.archiveScopeCount.formatted()) reviewed")
+        text += L10n.text("  ·  \(L10n.number(store.archiveReviewedCount))/\(L10n.number(store.archiveScopeCount)) reviewed")
         if store.archiveMixedCount > 0 {
-            text += L10n.text("  ·  \(store.archiveMixedCount.formatted()) mixed")
+            text += L10n.text("  ·  \(L10n.number(store.archiveMixedCount)) mixed")
         }
         if store.selectedIndices.count > 1 {
-            text += L10n.text("  ·  \(store.selectedIndices.count.formatted()) selected")
+            text += L10n.text("  ·  \(L10n.number(store.selectedIndices.count)) selected")
         }
         if store.isGroupedReviewActive {
             text += L10n.text("  ·  grouped review")
@@ -532,15 +517,11 @@ struct SessionView: View {
                     .font(.subheadline.weight(.semibold))
                 Group {
                     if store.groupedReviewMode == .captureBursts {
-                        Text(store.groupedReviewGroupCount == 1
-                             ? L10n.text("1 group")
-                             : L10n.text("\(store.groupedReviewGroupCount) groups"))
+                        Text(L10n.plural("%lld groups", store.groupedReviewGroupCount))
                             .help(store.groupedReviewExplanation)
                     } else {
                         Text(
-                            store.groupedReviewGroupCount == 1
-                                ? L10n.text("\(store.groupedReviewExplanation) 1 group is visible. Review only — nothing is changed automatically.")
-                                : L10n.text("\(store.groupedReviewExplanation) \(store.groupedReviewGroupCount) groups are visible. Review only — nothing is changed automatically.")
+                            L10n.plural("%@ %lld groups are visible. Review only — nothing is changed automatically.", store.groupedReviewGroupCount, arguments: [store.groupedReviewExplanation])
                         )
                     }
                 }
@@ -574,9 +555,9 @@ struct SessionView: View {
                     .font(.headline)
                 ProgressView(value: Double(progress.done), total: Double(max(progress.total, 1)))
                     .accessibilityLabel(progress.title)
-                    .accessibilityValue(L10n.text("\(progress.done) of \(progress.total) files"))
+                    .accessibilityValue(L10n.plural("%@ of %lld files", progress.total, arguments: [L10n.number(progress.done)]))
                     .frame(width: 280)
-                Text(L10n.text("\(progress.done) of \(progress.total) files"))
+                Text(L10n.plural("%@ of %lld files", progress.total, arguments: [L10n.number(progress.done)]))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()

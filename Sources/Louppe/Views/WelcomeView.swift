@@ -490,7 +490,7 @@ struct ScanningView: View {
 
     private var progressText: String {
         guard found > 0 else { return L10n.text("Looking for media…") }
-        return found == 1 ? L10n.text("1 item found") : L10n.text("\(found.formatted()) items found")
+        return L10n.plural("%lld items found", found)
     }
 }
 

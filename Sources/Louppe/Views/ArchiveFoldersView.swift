@@ -479,7 +479,7 @@ struct ArchiveFoldersView: NSViewRepresentable {
             completeWidth.constant = isComplete ? 12 : 0
             toolTip = isComplete ? name + "\n" + L10n.text("All reviewed") : name
             setAccessibilityIdentifier("archive.folder.\(id)")
-            var label = name + ", " + L10n.text("\(count) items")
+            var label = name + ", " + L10n.plural("%lld items", count)
             if isComplete { label += ", " + L10n.text("All reviewed") }
             nameField.setAccessibilityLabel(label)
         }

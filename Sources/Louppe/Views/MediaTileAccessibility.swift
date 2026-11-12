@@ -85,7 +85,7 @@ enum MediaTileAccessibility {
     static func starDescription(for state: PhotoItemStarRatingState) -> String {
         switch state {
         case .unrated: return L10n.text("No stars")
-        case .stars(let rating): return L10n.text("\(rating.count) stars")
+        case .stars(let rating): return L10n.plural("%lld stars", rating.count)
         case .mixed: return L10n.text("Mixed stars")
         }
     }
@@ -186,11 +186,11 @@ private struct MediaTileMetadataActionsModifier: ViewModifier {
         if isEnabled {
             content
                 .accessibilityAction(named: Text(L10n.text("Clear Stars"))) { setStars(nil) }
-                .accessibilityAction(named: Text(L10n.text("Set 1 Star"))) { setStars(.one) }
-                .accessibilityAction(named: Text(L10n.text("Set 2 Stars"))) { setStars(.two) }
-                .accessibilityAction(named: Text(L10n.text("Set 3 Stars"))) { setStars(.three) }
-                .accessibilityAction(named: Text(L10n.text("Set 4 Stars"))) { setStars(.four) }
-                .accessibilityAction(named: Text(L10n.text("Set 5 Stars"))) { setStars(.five) }
+                .accessibilityAction(named: Text(L10n.plural("Set %lld Stars", 1))) { setStars(.one) }
+                .accessibilityAction(named: Text(L10n.plural("Set %lld Stars", 2))) { setStars(.two) }
+                .accessibilityAction(named: Text(L10n.plural("Set %lld Stars", 3))) { setStars(.three) }
+                .accessibilityAction(named: Text(L10n.plural("Set %lld Stars", 4))) { setStars(.four) }
+                .accessibilityAction(named: Text(L10n.plural("Set %lld Stars", 5))) { setStars(.five) }
                 .accessibilityAction(named: Text(L10n.text("Clear Color Label"))) { setColor(nil) }
                 .accessibilityAction(named: Text(L10n.text("Set Red Label"))) { setColor(.red) }
                 .accessibilityAction(named: Text(L10n.text("Set Yellow Label"))) { setColor(.yellow) }

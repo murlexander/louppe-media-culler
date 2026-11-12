@@ -1010,9 +1010,7 @@ struct ActionPaletteView: View {
 
     private func starActions() -> [ActionPaletteAction] {
         StarRating.allCases.map { rating in
-            let title = rating == .one
-                ? L10n.text("Set 1 Star")
-                : L10n.text("Set \(rating.count) Stars")
+            let title = L10n.plural("Set %lld Stars", rating.count)
             return ActionPaletteAction(
                 id: "stars-\(rating.count)",
                 category: L10n.text("Review metadata"),

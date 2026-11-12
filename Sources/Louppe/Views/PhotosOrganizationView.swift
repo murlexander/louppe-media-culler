@@ -163,7 +163,7 @@ struct PhotosOrganizationView: View {
             if total > 0 {
                 ProgressView(value: Double(max(0, min(completed, total))), total: Double(total))
                     .accessibilityLabel(L10n.text("Album update progress"))
-                Text(total == 1 ? L10n.text("\(max(0, completed).formatted()) of 1 item processed") : L10n.text("\(max(0, completed).formatted()) of \(total.formatted()) items processed"))
+                Text(L10n.plural("%@ of %lld items processed", total, arguments: [L10n.number(max(0, completed))]))
                     .monospacedDigit()
             } else {
                 ProgressView().controlSize(.small)

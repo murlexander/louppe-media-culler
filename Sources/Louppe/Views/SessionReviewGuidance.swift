@@ -28,6 +28,6 @@ struct SessionReviewStatus: View {
 
     private var informationSummary: String {
         guard store.isReviewComplete && !store.isGroupedReviewActive else { return "" }
-        return L10n.text("Review complete: \(store.archiveYesCount) Yes · \(store.archiveNoCount) No")
+        return L10n.text("Review complete: \(L10n.number(store.archiveYesCount)) Yes · \(L10n.number(store.archiveNoCount)) No")
     }
 }

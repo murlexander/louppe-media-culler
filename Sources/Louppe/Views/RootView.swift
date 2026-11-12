@@ -198,16 +198,16 @@ struct RootView: View {
         } ?? ""
         var actions: [String] = []
         if report.preservedCopies > 0 {
-            actions.append(report.preservedCopies == 1 ? L10n.text("kept 1 completed copy at the destination") : L10n.text("kept \(report.preservedCopies) completed copies at the destination"))
+            actions.append(L10n.plural("kept %lld completed copies at the destination", report.preservedCopies))
         }
         if report.preservedMoves > 0 {
-            actions.append(report.preservedMoves == 1 ? L10n.text("kept 1 completed Move file at the destination") : L10n.text("kept \(report.preservedMoves) completed Move files at the destination"))
+            actions.append(L10n.plural("kept %lld completed Move files at the destination", report.preservedMoves))
         }
         if report.restoredFiles > 0 {
-            actions.append(report.restoredFiles == 1 ? L10n.text("restored 1 original file") : L10n.text("restored \(report.restoredFiles) original files"))
+            actions.append(L10n.plural("restored %lld original files", report.restoredFiles))
         }
         if report.removedPartialCopies > 0 {
-            actions.append(report.removedPartialCopies == 1 ? L10n.text("removed 1 incomplete copy") : L10n.text("removed \(report.removedPartialCopies) incomplete copies"))
+            actions.append(L10n.plural("removed %lld incomplete copies", report.removedPartialCopies))
         }
         return interruptionPrefix
             + L10n.text("Louppe \(actions.joined(separator: L10n.text(" and "))). No existing file was overwritten.")
