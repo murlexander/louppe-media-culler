@@ -80,7 +80,7 @@ struct MetadataEditingControls: View {
                 Spacer()
                 ColorLabelMark(state: color)
                 ValueMenu(L10n.text("Color label"), value: colorLabelText(for: color), selection: Binding(
-                    get: { store.effectiveColorLabelState },
+                    get: { color },
                     set: { state in
                         switch state {
                         case .none: store.setColorLabel(nil)
