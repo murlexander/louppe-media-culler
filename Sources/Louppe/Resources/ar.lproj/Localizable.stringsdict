@@ -1513,5 +1513,1237 @@
 			<string>نقل %2$@ عنصر محدد إلى سلة المهملات…</string>
 		</dict>
 	</dict>
+	<key>%lld included RAW+JPEG pairs have different file decisions and are treated as undecided.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>تختلف القرارات بين ملفات %2$@ أزواج RAW+JPEG مضمنة؛ ويُعامل كل زوج كغير محسوم.</string>
+			<key>one</key>
+			<string>تختلف القرارات بين ملفات زوج RAW+JPEG مضمن واحد؛ ويُعامل كل زوج كغير محسوم.</string>
+			<key>two</key>
+			<string>تختلف القرارات بين ملفات زوجي RAW+JPEG مضمنين؛ ويُعامل كل زوج كغير محسوم.</string>
+			<key>few</key>
+			<string>تختلف القرارات بين ملفات %2$@ أزواج RAW+JPEG مضمنة؛ ويُعامل كل زوج كغير محسوم.</string>
+			<key>many</key>
+			<string>تختلف القرارات بين ملفات %2$@ زوج RAW+JPEG مضمنًا؛ ويُعامل كل زوج كغير محسوم.</string>
+			<key>other</key>
+			<string>تختلف القرارات بين ملفات %2$@ زوج RAW+JPEG مضمن؛ ويُعامل كل زوج كغير محسوم.</string>
+		</dict>
+	</dict>
+	<key>%lld items still undecided in this scope — they won't be exported.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>ما زال %2$@ عناصر غير محسومة ضمن هذا النطاق؛ لن تُصدّر.</string>
+			<key>one</key>
+			<string>ما زال عنصر واحد غير محسوم ضمن هذا النطاق؛ لن يُصدّر.</string>
+			<key>two</key>
+			<string>ما زال عنصران غير محسومين ضمن هذا النطاق؛ لن يُصدّرا.</string>
+			<key>few</key>
+			<string>ما زالت %2$@ عناصر غير محسومة ضمن هذا النطاق؛ لن تُصدّر.</string>
+			<key>many</key>
+			<string>ما زال %2$@ عنصرًا غير محسوم ضمن هذا النطاق؛ لن تُصدّر.</string>
+			<key>other</key>
+			<string>ما زال %2$@ عنصر غير محسوم ضمن هذا النطاق؛ لن تُصدّر.</string>
+		</dict>
+	</dict>
+	<key>%lld Lightroom .acr companions will stay in the source folder, unexported.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>ستبقى %2$@ ملفات Lightroom .acr مرافقة في المجلد المصدر دون تصدير.</string>
+			<key>one</key>
+			<string>سيبقى ملف Lightroom .acr مرافق واحد في المجلد المصدر دون تصدير.</string>
+			<key>two</key>
+			<string>سيبقى ملفا Lightroom .acr مرافقان في المجلد المصدر دون تصدير.</string>
+			<key>few</key>
+			<string>ستبقى %2$@ ملفات Lightroom .acr مرافقة في المجلد المصدر دون تصدير.</string>
+			<key>many</key>
+			<string>سيبقى %2$@ ملف Lightroom .acr مرافقًا في المجلد المصدر دون تصدير.</string>
+			<key>other</key>
+			<string>سيبقى %2$@ ملف Lightroom .acr مرافق في المجلد المصدر دون تصدير.</string>
+		</dict>
+	</dict>
+	<key>%lld items match more than one route: %@.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>يطابق %2$@ عناصر أكثر من مسار: %3$@.</string>
+			<key>one</key>
+			<string>يطابق عنصر واحد أكثر من مسار: %3$@.</string>
+			<key>two</key>
+			<string>يطابق عنصران أكثر من مسار: %3$@.</string>
+			<key>few</key>
+			<string>يطابق %2$@ عناصر أكثر من مسار: %3$@.</string>
+			<key>many</key>
+			<string>يطابق %2$@ عنصرًا أكثر من مسار: %3$@.</string>
+			<key>other</key>
+			<string>يطابق %2$@ عنصر أكثر من مسار: %3$@.</string>
+		</dict>
+	</dict>
+	<key>%lld files will be copied. Originals stay in place.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>ستُنسخ %2$@ ملفات. ستبقى الملفات الأصلية في مكانها.</string>
+			<key>one</key>
+			<string>سيُنسخ ملف واحد. ستبقى الملفات الأصلية في مكانها.</string>
+			<key>two</key>
+			<string>سيُنسخ ملفان. ستبقى الملفات الأصلية في مكانها.</string>
+			<key>few</key>
+			<string>ستُنسخ %2$@ ملفات. ستبقى الملفات الأصلية في مكانها.</string>
+			<key>many</key>
+			<string>سيُنسخ %2$@ ملفًا. ستبقى الملفات الأصلية في مكانها.</string>
+			<key>other</key>
+			<string>سيُنسخ %2$@ ملف. ستبقى الملفات الأصلية في مكانها.</string>
+		</dict>
+	</dict>
+	<key>Unified %lld RAW+JPEG conflicts in Louppe. Review the new plan before continuing.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>وُحّد %2$@ تعارضات RAW+JPEG في Louppe. راجع الخطة الجديدة قبل المتابعة.</string>
+			<key>one</key>
+			<string>وُحّد تعارض RAW+JPEG واحد في Louppe. راجع الخطة الجديدة قبل المتابعة.</string>
+			<key>two</key>
+			<string>وُحّد تعارضا RAW+JPEG في Louppe. راجع الخطة الجديدة قبل المتابعة.</string>
+			<key>few</key>
+			<string>وُحّد %2$@ تعارضات RAW+JPEG في Louppe. راجع الخطة الجديدة قبل المتابعة.</string>
+			<key>many</key>
+			<string>وُحّد %2$@ تعارض RAW+JPEG في Louppe. راجع الخطة الجديدة قبل المتابعة.</string>
+			<key>other</key>
+			<string>وُحّد %2$@ تعارض RAW+JPEG في Louppe. راجع الخطة الجديدة قبل المتابعة.</string>
+		</dict>
+	</dict>
+	<key>%lld conflicts changed while the resolver was open and were not overwritten. The refreshed plan shows the current values.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>تغيّر %2$@ تعارضات أثناء فتح نافذة الحل ولم يُكتب فوق أي تعارض. تعرض الخطة المحدّثة القيم الحالية.</string>
+			<key>one</key>
+			<string>تغيّر تعارض واحد أثناء فتح نافذة الحل ولم يُكتب فوق أي تعارض. تعرض الخطة المحدّثة القيم الحالية.</string>
+			<key>two</key>
+			<string>تغيّر تعارضان أثناء فتح نافذة الحل ولم يُكتب فوق أي تعارض. تعرض الخطة المحدّثة القيم الحالية.</string>
+			<key>few</key>
+			<string>تغيّر %2$@ تعارضات أثناء فتح نافذة الحل ولم يُكتب فوق أي تعارض. تعرض الخطة المحدّثة القيم الحالية.</string>
+			<key>many</key>
+			<string>تغيّر %2$@ تعارضًا أثناء فتح نافذة الحل ولم يُكتب فوق أي تعارض. تعرض الخطة المحدّثة القيم الحالية.</string>
+			<key>other</key>
+			<string>تغيّر %2$@ تعارض أثناء فتح نافذة الحل ولم يُكتب فوق أي تعارض. تعرض الخطة المحدّثة القيم الحالية.</string>
+		</dict>
+	</dict>
+	<key>%lld conflict choices were rejected because the files no longer formed one safe RAW+JPEG pair.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>رُفض %2$@ اختيارات للتعارض لأن الملفات لم تعد تشكّل زوج RAW+JPEG آمنًا.</string>
+			<key>one</key>
+			<string>رُفض اختيار واحد للتعارض لأن الملفات لم تعد تشكّل زوج RAW+JPEG آمنًا.</string>
+			<key>two</key>
+			<string>رُفض اختياران للتعارض لأن الملفات لم تعد تشكّل زوج RAW+JPEG آمنًا.</string>
+			<key>few</key>
+			<string>رُفض %2$@ اختيارات للتعارض لأن الملفات لم تعد تشكّل زوج RAW+JPEG آمنًا.</string>
+			<key>many</key>
+			<string>رُفض %2$@ اختيارًا للتعارض لأن الملفات لم تعد تشكّل زوج RAW+JPEG آمنًا.</string>
+			<key>other</key>
+			<string>رُفض %2$@ اختيار للتعارض لأن الملفات لم تعد تشكّل زوج RAW+JPEG آمنًا.</string>
+		</dict>
+	</dict>
+	<key>%lld items will be copied</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>ستُنسخ %2$@ عناصر</string>
+			<key>one</key>
+			<string>سيُنسخ عنصر واحد</string>
+			<key>two</key>
+			<string>سيُنسخ عنصران</string>
+			<key>few</key>
+			<string>ستُنسخ %2$@ عناصر</string>
+			<key>many</key>
+			<string>سيُنسخ %2$@ عنصرًا</string>
+			<key>other</key>
+			<string>سيُنسخ %2$@ عنصر</string>
+		</dict>
+	</dict>
+	<key>%lld items will be moved</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>ستُنقل %2$@ عناصر</string>
+			<key>one</key>
+			<string>سيُنقل عنصر واحد</string>
+			<key>two</key>
+			<string>سيُنقل عنصران</string>
+			<key>few</key>
+			<string>ستُنقل %2$@ عناصر</string>
+			<key>many</key>
+			<string>سيُنقل %2$@ عنصرًا</string>
+			<key>other</key>
+			<string>سيُنقل %2$@ عنصر</string>
+		</dict>
+	</dict>
+	<key>%lld items will be prepared for XMP publication</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>ستُجهّز %2$@ عناصر لكتابة XMP</string>
+			<key>one</key>
+			<string>سيُجهّز عنصر واحد لكتابة XMP</string>
+			<key>two</key>
+			<string>سيُجهّز عنصران لكتابة XMP</string>
+			<key>few</key>
+			<string>ستُجهّز %2$@ عناصر لكتابة XMP</string>
+			<key>many</key>
+			<string>سيُجهّز %2$@ عنصرًا لكتابة XMP</string>
+			<key>other</key>
+			<string>سيُجهّز %2$@ عنصر لكتابة XMP</string>
+		</dict>
+	</dict>
+	<key>%lld mixed-star pairs</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ أزواج بتقييمات نجوم مختلفة</string>
+			<key>one</key>
+			<string>زوج واحد بتقييمات نجوم مختلفة</string>
+			<key>two</key>
+			<string>زوجان بتقييمات نجوم مختلفة</string>
+			<key>few</key>
+			<string>%2$@ أزواج بتقييمات نجوم مختلفة</string>
+			<key>many</key>
+			<string>%2$@ زوجًا بتقييمات نجوم مختلفة</string>
+			<key>other</key>
+			<string>%2$@ زوج بتقييمات نجوم مختلفة</string>
+		</dict>
+	</dict>
+	<key>%lld mixed-color pairs</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ أزواج بتصنيفات لونية مختلفة</string>
+			<key>one</key>
+			<string>زوج واحد بتصنيفات لونية مختلفة</string>
+			<key>two</key>
+			<string>زوجان بتصنيفات لونية مختلفة</string>
+			<key>few</key>
+			<string>%2$@ أزواج بتصنيفات لونية مختلفة</string>
+			<key>many</key>
+			<string>%2$@ زوجًا بتصنيفات لونية مختلفة</string>
+			<key>other</key>
+			<string>%2$@ زوج بتصنيفات لونية مختلفة</string>
+		</dict>
+	</dict>
+	<key>%@ match only when Mixed is selected in the corresponding menu.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>يطابق %3$@ فقط عند اختيار مختلط في القائمة المقابلة.</string>
+			<key>one</key>
+			<string>يطابق %3$@ فقط عند اختيار مختلط في القائمة المقابلة.</string>
+			<key>two</key>
+			<string>يطابق %3$@ فقط عند اختيار مختلط في القائمة المقابلة.</string>
+			<key>few</key>
+			<string>يطابق %3$@ فقط عند اختيار مختلط في القائمة المقابلة.</string>
+			<key>many</key>
+			<string>يطابق %3$@ فقط عند اختيار مختلط في القائمة المقابلة.</string>
+			<key>other</key>
+			<string>يطابق %3$@ فقط عند اختيار مختلط في القائمة المقابلة.</string>
+		</dict>
+	</dict>
+	<key>%@ of %lld sidecar families</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%3$@ من %2$@ مجموعات ملفات مصاحبة</string>
+			<key>one</key>
+			<string>%3$@ من مجموعة ملفات مصاحبة واحدة</string>
+			<key>two</key>
+			<string>%3$@ من مجموعتي ملفات مصاحبة</string>
+			<key>few</key>
+			<string>%3$@ من %2$@ مجموعات ملفات مصاحبة</string>
+			<key>many</key>
+			<string>%3$@ من %2$@ مجموعة ملفات مصاحبة</string>
+			<key>other</key>
+			<string>%3$@ من %2$@ مجموعة ملفات مصاحبة</string>
+		</dict>
+	</dict>
+	<key>%lld extension-qualified application packets will stay unchanged beside originals.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>ستبقى %2$@ حزم تطبيق بأسماء تتضمن الامتداد دون تغيير بجانب الملفات الأصلية.</string>
+			<key>one</key>
+			<string>ستبقى حزمة تطبيق واحدة باسم يتضمن الامتداد دون تغيير بجانب الملفات الأصلية.</string>
+			<key>two</key>
+			<string>ستبقى حزمتا تطبيق باسمين يتضمنان الامتداد دون تغيير بجانب الملفات الأصلية.</string>
+			<key>few</key>
+			<string>ستبقى %2$@ حزم تطبيق بأسماء تتضمن الامتداد دون تغيير بجانب الملفات الأصلية.</string>
+			<key>many</key>
+			<string>ستبقى %2$@ حزمة تطبيق بأسماء تتضمن الامتداد دون تغيير بجانب الملفات الأصلية.</string>
+			<key>other</key>
+			<string>ستبقى %2$@ حزمة تطبيق بأسماء تتضمن الامتداد دون تغيير بجانب الملفات الأصلية.</string>
+		</dict>
+	</dict>
+	<key>%lld Lightroom .acr companions will stay untouched beside originals. Louppe never reads or changes Lightroom heavy-edit data.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>ستبقى %2$@ ملفات Lightroom .acr مرافقة دون تغيير بجانب الملفات الأصلية. لا يقرأ Louppe بيانات التحرير المتقدم في Lightroom ولا يغيّرها أبدًا.</string>
+			<key>one</key>
+			<string>سيبقى ملف Lightroom .acr مرافق واحد دون تغيير بجانب الملفات الأصلية. لا يقرأ Louppe بيانات التحرير المتقدم في Lightroom ولا يغيّرها أبدًا.</string>
+			<key>two</key>
+			<string>سيبقى ملفا Lightroom .acr مرافقان دون تغيير بجانب الملفات الأصلية. لا يقرأ Louppe بيانات التحرير المتقدم في Lightroom ولا يغيّرها أبدًا.</string>
+			<key>few</key>
+			<string>ستبقى %2$@ ملفات Lightroom .acr مرافقة دون تغيير بجانب الملفات الأصلية. لا يقرأ Louppe بيانات التحرير المتقدم في Lightroom ولا يغيّرها أبدًا.</string>
+			<key>many</key>
+			<string>سيبقى %2$@ ملف Lightroom .acr مرافقًا دون تغيير بجانب الملفات الأصلية. لا يقرأ Louppe بيانات التحرير المتقدم في Lightroom ولا يغيّرها أبدًا.</string>
+			<key>other</key>
+			<string>سيبقى %2$@ ملف Lightroom .acr مرافق دون تغيير بجانب الملفات الأصلية. لا يقرأ Louppe بيانات التحرير المتقدم في Lightroom ولا يغيّرها أبدًا.</string>
+		</dict>
+	</dict>
+	<key> — %lld items couldn't be copied and rolled back.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string> — تعذّر نسخ %2$@ عناصر.</string>
+			<key>one</key>
+			<string> — تعذّر نسخ عنصر واحد.</string>
+			<key>two</key>
+			<string> — تعذّر نسخ عنصرين.</string>
+			<key>few</key>
+			<string> — تعذّر نسخ %2$@ عناصر.</string>
+			<key>many</key>
+			<string> — تعذّر نسخ %2$@ عنصرًا.</string>
+			<key>other</key>
+			<string> — تعذّر نسخ %2$@ عنصر.</string>
+		</dict>
+	</dict>
+	<key> — %lld items couldn't be moved and stayed in the session.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string> — تعذّر نقل %2$@ عناصر؛ وتبقى العناصر المعنية في الجلسة.</string>
+			<key>one</key>
+			<string> — تعذّر نقل عنصر واحد؛ وتبقى العناصر المعنية في الجلسة.</string>
+			<key>two</key>
+			<string> — تعذّر نقل عنصرين؛ وتبقى العناصر المعنية في الجلسة.</string>
+			<key>few</key>
+			<string> — تعذّر نقل %2$@ عناصر؛ وتبقى العناصر المعنية في الجلسة.</string>
+			<key>many</key>
+			<string> — تعذّر نقل %2$@ عنصرًا؛ وتبقى العناصر المعنية في الجلسة.</string>
+			<key>other</key>
+			<string> — تعذّر نقل %2$@ عنصر؛ وتبقى العناصر المعنية في الجلسة.</string>
+		</dict>
+	</dict>
+	<key>%lld sidecar families are skipped after safety checks; listed media files still copy.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>تُتجاوز %2$@ مجموعات ملفات مصاحبة بعد فحوص الأمان؛ ما زالت ملفات الوسائط المدرجة تُنسخ.</string>
+			<key>one</key>
+			<string>تُتجاوز مجموعة ملفات مصاحبة واحدة بعد فحوص الأمان؛ ما زالت ملفات الوسائط المدرجة تُنسخ.</string>
+			<key>two</key>
+			<string>تُتجاوز مجموعتا ملفات مصاحبة بعد فحوص الأمان؛ ما زالت ملفات الوسائط المدرجة تُنسخ.</string>
+			<key>few</key>
+			<string>تُتجاوز %2$@ مجموعات ملفات مصاحبة بعد فحوص الأمان؛ ما زالت ملفات الوسائط المدرجة تُنسخ.</string>
+			<key>many</key>
+			<string>تُتجاوز %2$@ مجموعة ملفات مصاحبة بعد فحوص الأمان؛ ما زالت ملفات الوسائط المدرجة تُنسخ.</string>
+			<key>other</key>
+			<string>تُتجاوز %2$@ مجموعة ملفات مصاحبة بعد فحوص الأمان؛ ما زالت ملفات الوسائط المدرجة تُنسخ.</string>
+		</dict>
+	</dict>
+	<key> (%lld files, including RAW+JPEG pairs)</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string> (%2$@ ملفات، بما في ذلك أزواج RAW+JPEG)</string>
+			<key>one</key>
+			<string> (ملف واحد، بما في ذلك أزواج RAW+JPEG)</string>
+			<key>two</key>
+			<string> (ملفان، بما في ذلك أزواج RAW+JPEG)</string>
+			<key>few</key>
+			<string> (%2$@ ملفات، بما في ذلك أزواج RAW+JPEG)</string>
+			<key>many</key>
+			<string> (%2$@ ملفًا، بما في ذلك أزواج RAW+JPEG)</string>
+			<key>other</key>
+			<string> (%2$@ ملف، بما في ذلك أزواج RAW+JPEG)</string>
+		</dict>
+	</dict>
+	<key>…and %lld more media files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>…و%2$@ ملفات وسائط إضافية</string>
+			<key>one</key>
+			<string>…وملف وسائط إضافي واحد</string>
+			<key>two</key>
+			<string>…وملفا وسائط إضافيان</string>
+			<key>few</key>
+			<string>…و%2$@ ملفات وسائط إضافية</string>
+			<key>many</key>
+			<string>…و%2$@ ملف وسائط إضافيًا</string>
+			<key>other</key>
+			<string>…و%2$@ ملف وسائط إضافي</string>
+		</dict>
+	</dict>
+	<key>%lld media files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ ملفات وسائط</string>
+			<key>one</key>
+			<string>ملف وسائط واحد</string>
+			<key>two</key>
+			<string>ملفا وسائط</string>
+			<key>few</key>
+			<string>%2$@ ملفات وسائط</string>
+			<key>many</key>
+			<string>%2$@ ملف وسائط</string>
+			<key>other</key>
+			<string>%2$@ ملف وسائط</string>
+		</dict>
+	</dict>
+	<key>Numbered %lld files that shared a name.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>رُقّمت %2$@ ملفات بسبب الاشتراك في الاسم.</string>
+			<key>one</key>
+			<string>رُقّم ملف واحد بسبب الاشتراك في الاسم.</string>
+			<key>two</key>
+			<string>رُقّم ملفان بسبب الاشتراك في الاسم.</string>
+			<key>few</key>
+			<string>رُقّمت %2$@ ملفات بسبب الاشتراك في الاسم.</string>
+			<key>many</key>
+			<string>رُقّم %2$@ ملفًا بسبب الاشتراك في الاسم.</string>
+			<key>other</key>
+			<string>رُقّم %2$@ ملف بسبب الاشتراك في الاسم.</string>
+		</dict>
+	</dict>
+	<key>Resolve %lld filename conflicts before renaming.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>حلّ %2$@ تعارضات في الأسماء قبل إعادة التسمية.</string>
+			<key>one</key>
+			<string>حلّ تعارض واحد في الأسماء قبل إعادة التسمية.</string>
+			<key>two</key>
+			<string>حلّ تعارضين في الأسماء قبل إعادة التسمية.</string>
+			<key>few</key>
+			<string>حلّ %2$@ تعارضات في الأسماء قبل إعادة التسمية.</string>
+			<key>many</key>
+			<string>حلّ %2$@ تعارضًا في الأسماء قبل إعادة التسمية.</string>
+			<key>other</key>
+			<string>حلّ %2$@ تعارض في الأسماء قبل إعادة التسمية.</string>
+		</dict>
+	</dict>
+	<key>Rename %lld files?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>إعادة تسمية %2$@ ملفات؟</string>
+			<key>one</key>
+			<string>إعادة تسمية ملف واحد؟</string>
+			<key>two</key>
+			<string>إعادة تسمية ملفين؟</string>
+			<key>few</key>
+			<string>إعادة تسمية %2$@ ملفات؟</string>
+			<key>many</key>
+			<string>إعادة تسمية %2$@ ملفًا؟</string>
+			<key>other</key>
+			<string>إعادة تسمية %2$@ ملف؟</string>
+		</dict>
+	</dict>
+	<key>%lld folders</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ مجلدات</string>
+			<key>one</key>
+			<string>مجلد واحد</string>
+			<key>two</key>
+			<string>مجلدان</string>
+			<key>few</key>
+			<string>%2$@ مجلدات</string>
+			<key>many</key>
+			<string>%2$@ مجلدًا</string>
+			<key>other</key>
+			<string>%2$@ مجلد</string>
+		</dict>
+	</dict>
+	<key>%lld filename or sidecar conflicts must be resolved before moving.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>يجب حل %2$@ تعارضات في الأسماء أو الملفات المصاحبة قبل النقل.</string>
+			<key>one</key>
+			<string>يجب حل تعارض واحد في الأسماء أو الملفات المصاحبة قبل النقل.</string>
+			<key>two</key>
+			<string>يجب حل تعارضين في الأسماء أو الملفات المصاحبة قبل النقل.</string>
+			<key>few</key>
+			<string>يجب حل %2$@ تعارضات في الأسماء أو الملفات المصاحبة قبل النقل.</string>
+			<key>many</key>
+			<string>يجب حل %2$@ تعارضًا في الأسماء أو الملفات المصاحبة قبل النقل.</string>
+			<key>other</key>
+			<string>يجب حل %2$@ تعارض في الأسماء أو الملفات المصاحبة قبل النقل.</string>
+		</dict>
+	</dict>
+	<key>%lld Lightroom .acr companions will remain in place.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>ستبقى %2$@ ملفات Lightroom .acr مرافقة في مكانها.</string>
+			<key>one</key>
+			<string>سيبقى ملف Lightroom .acr مرافق واحد في مكانه.</string>
+			<key>two</key>
+			<string>سيبقى ملفا Lightroom .acr مرافقان في مكانهما.</string>
+			<key>few</key>
+			<string>ستبقى %2$@ ملفات Lightroom .acr مرافقة في مكانها.</string>
+			<key>many</key>
+			<string>سيبقى %2$@ ملف Lightroom .acr مرافقًا في مكانها.</string>
+			<key>other</key>
+			<string>سيبقى %2$@ ملف Lightroom .acr مرافق في مكانها.</string>
+		</dict>
+	</dict>
+	<key>Move %lld files?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>نقل %2$@ ملفات؟</string>
+			<key>one</key>
+			<string>نقل ملف واحد؟</string>
+			<key>two</key>
+			<string>نقل ملفين؟</string>
+			<key>few</key>
+			<string>نقل %2$@ ملفات؟</string>
+			<key>many</key>
+			<string>نقل %2$@ ملفًا؟</string>
+			<key>other</key>
+			<string>نقل %2$@ ملف؟</string>
+		</dict>
+	</dict>
+	<key>Into %lld folders inside “%@”</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>في %2$@ مجلدات داخل «%3$@»</string>
+			<key>one</key>
+			<string>في مجلد واحد داخل «%3$@»</string>
+			<key>two</key>
+			<string>في مجلدين داخل «%3$@»</string>
+			<key>few</key>
+			<string>في %2$@ مجلدات داخل «%3$@»</string>
+			<key>many</key>
+			<string>في %2$@ مجلدًا داخل «%3$@»</string>
+			<key>other</key>
+			<string>في %2$@ مجلد داخل «%3$@»</string>
+		</dict>
+	</dict>
+	<key>Copied files: %lld. Destination: %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@. الوجهة: %3$@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>نُسخت %2$@ ملفات</string>
+			<key>one</key>
+			<string>نُسخ ملف واحد</string>
+			<key>two</key>
+			<string>نُسخ ملفان</string>
+			<key>few</key>
+			<string>نُسخت %2$@ ملفات</string>
+			<key>many</key>
+			<string>نُسخ %2$@ ملفًا</string>
+			<key>other</key>
+			<string>نُسخ %2$@ ملف</string>
+		</dict>
+	</dict>
+	<key>Copied files: %lld. Destination folders: %lld.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@. %3$#@count2@.</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>نُسخت %2$@ ملفات</string>
+			<key>one</key>
+			<string>نُسخ ملف واحد</string>
+			<key>two</key>
+			<string>نُسخ ملفان</string>
+			<key>few</key>
+			<string>نُسخت %2$@ ملفات</string>
+			<key>many</key>
+			<string>نُسخ %2$@ ملفًا</string>
+			<key>other</key>
+			<string>نُسخ %2$@ ملف</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>مجلدات الوجهة: %4$@ مجلدات</string>
+			<key>one</key>
+			<string>مجلدات الوجهة: مجلد واحد</string>
+			<key>two</key>
+			<string>مجلدات الوجهة: مجلدان</string>
+			<key>few</key>
+			<string>مجلدات الوجهة: %4$@ مجلدات</string>
+			<key>many</key>
+			<string>مجلدات الوجهة: %4$@ مجلدًا</string>
+			<key>other</key>
+			<string>مجلدات الوجهة: %4$@ مجلد</string>
+		</dict>
+	</dict>
+	<key>Moved files: %lld. Destination: %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@. الوجهة: %3$@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>نُقلت %2$@ ملفات</string>
+			<key>one</key>
+			<string>نُقل ملف واحد</string>
+			<key>two</key>
+			<string>نُقل ملفان</string>
+			<key>few</key>
+			<string>نُقلت %2$@ ملفات</string>
+			<key>many</key>
+			<string>نُقل %2$@ ملفًا</string>
+			<key>other</key>
+			<string>نُقل %2$@ ملف</string>
+		</dict>
+	</dict>
+	<key>Moved files: %lld. Destination folders: %lld.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@. %3$#@count2@.</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>نُقلت %2$@ ملفات</string>
+			<key>one</key>
+			<string>نُقل ملف واحد</string>
+			<key>two</key>
+			<string>نُقل ملفان</string>
+			<key>few</key>
+			<string>نُقلت %2$@ ملفات</string>
+			<key>many</key>
+			<string>نُقل %2$@ ملفًا</string>
+			<key>other</key>
+			<string>نُقل %2$@ ملف</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>مجلدات الوجهة: %4$@ مجلدات</string>
+			<key>one</key>
+			<string>مجلدات الوجهة: مجلد واحد</string>
+			<key>two</key>
+			<string>مجلدات الوجهة: مجلدان</string>
+			<key>few</key>
+			<string>مجلدات الوجهة: %4$@ مجلدات</string>
+			<key>many</key>
+			<string>مجلدات الوجهة: %4$@ مجلدًا</string>
+			<key>other</key>
+			<string>مجلدات الوجهة: %4$@ مجلد</string>
+		</dict>
+	</dict>
+	<key>%lld items · %lld media files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@ · %3$#@count2@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ عناصر</string>
+			<key>one</key>
+			<string>عنصر واحد</string>
+			<key>two</key>
+			<string>عنصران</string>
+			<key>few</key>
+			<string>%2$@ عناصر</string>
+			<key>many</key>
+			<string>%2$@ عنصرًا</string>
+			<key>other</key>
+			<string>%2$@ عنصر</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%4$@ ملفات وسائط</string>
+			<key>one</key>
+			<string>ملف وسائط واحد</string>
+			<key>two</key>
+			<string>ملفا وسائط</string>
+			<key>few</key>
+			<string>%4$@ ملفات وسائط</string>
+			<key>many</key>
+			<string>%4$@ ملف وسائط</string>
+			<key>other</key>
+			<string>%4$@ ملف وسائط</string>
+		</dict>
+	</dict>
+	<key>%lld items will move out of %lld existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@%3$#@count2@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>سينتقل %2$@ عناصر من </string>
+			<key>one</key>
+			<string>سينتقل عنصر واحد من </string>
+			<key>two</key>
+			<string>سينتقل عنصران من </string>
+			<key>few</key>
+			<string>سينتقل %2$@ عناصر من </string>
+			<key>many</key>
+			<string>سينتقل %2$@ عنصرًا من </string>
+			<key>other</key>
+			<string>سينتقل %2$@ عنصر من </string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%4$@ مجلدات موجودة. تتبع ملفات XMP الجانبية المعروفة وملفات RAW+JPEG المجمّعة وسائطها. لن يُستبدل أي شيء.</string>
+			<key>one</key>
+			<string>مجلد موجود واحد. تتبع ملفات XMP الجانبية المعروفة وملفات RAW+JPEG المجمّعة وسائطها. لن يُستبدل أي شيء.</string>
+			<key>two</key>
+			<string>مجلدين موجودين. تتبع ملفات XMP الجانبية المعروفة وملفات RAW+JPEG المجمّعة وسائطها. لن يُستبدل أي شيء.</string>
+			<key>few</key>
+			<string>%4$@ مجلدات موجودة. تتبع ملفات XMP الجانبية المعروفة وملفات RAW+JPEG المجمّعة وسائطها. لن يُستبدل أي شيء.</string>
+			<key>many</key>
+			<string>%4$@ مجلدًا موجودًا. تتبع ملفات XMP الجانبية المعروفة وملفات RAW+JPEG المجمّعة وسائطها. لن يُستبدل أي شيء.</string>
+			<key>other</key>
+			<string>%4$@ مجلد موجود. تتبع ملفات XMP الجانبية المعروفة وملفات RAW+JPEG المجمّعة وسائطها. لن يُستبدل أي شيء.</string>
+		</dict>
+	</dict>
+	<key>%lld existing · %lld to create · %lld to update · %lld application packets copied unchanged</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@ · %3$#@count2@ · %5$#@count3@ · %7$#@count4@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>موجودة: %2$@</string>
+			<key>one</key>
+			<string>موجودة: %2$@</string>
+			<key>two</key>
+			<string>موجودة: %2$@</string>
+			<key>few</key>
+			<string>موجودة: %2$@</string>
+			<key>many</key>
+			<string>موجودة: %2$@</string>
+			<key>other</key>
+			<string>موجودة: %2$@</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%4$@ للإنشاء</string>
+			<key>one</key>
+			<string>%4$@ للإنشاء</string>
+			<key>two</key>
+			<string>%4$@ للإنشاء</string>
+			<key>few</key>
+			<string>%4$@ للإنشاء</string>
+			<key>many</key>
+			<string>%4$@ للإنشاء</string>
+			<key>other</key>
+			<string>%4$@ للإنشاء</string>
+		</dict>
+		<key>count3</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%6$@ للتحديث</string>
+			<key>one</key>
+			<string>%6$@ للتحديث</string>
+			<key>two</key>
+			<string>%6$@ للتحديث</string>
+			<key>few</key>
+			<string>%6$@ للتحديث</string>
+			<key>many</key>
+			<string>%6$@ للتحديث</string>
+			<key>other</key>
+			<string>%6$@ للتحديث</string>
+		</dict>
+		<key>count4</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>نُسخت %8$@ حزم تطبيق دون تغيير</string>
+			<key>one</key>
+			<string>نُسخت حزمة تطبيق واحدة دون تغيير</string>
+			<key>two</key>
+			<string>نُسخت حزمتا تطبيق دون تغيير</string>
+			<key>few</key>
+			<string>نُسخت %8$@ حزم تطبيق دون تغيير</string>
+			<key>many</key>
+			<string>نُسخت %8$@ حزمة تطبيق دون تغيير</string>
+			<key>other</key>
+			<string>نُسخت %8$@ حزمة تطبيق دون تغيير</string>
+		</dict>
+	</dict>
+	<key>%lld excluded by decision, stars, or color</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>استُبعدت %2$@ عناصر بسبب القرار أو النجوم أو اللون</string>
+			<key>one</key>
+			<string>استُبعد عنصر واحد بسبب القرار أو النجوم أو اللون</string>
+			<key>two</key>
+			<string>استُبعد عنصران بسبب القرار أو النجوم أو اللون</string>
+			<key>few</key>
+			<string>استُبعدت %2$@ عناصر بسبب القرار أو النجوم أو اللون</string>
+			<key>many</key>
+			<string>استُبعد %2$@ عنصرًا بسبب القرار أو النجوم أو اللون</string>
+			<key>other</key>
+			<string>استُبعد %2$@ عنصر بسبب القرار أو النجوم أو اللون</string>
+		</dict>
+	</dict>
+	<key>%lld outside this scope</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ عناصر خارج هذا النطاق</string>
+			<key>one</key>
+			<string>عنصر واحد خارج هذا النطاق</string>
+			<key>two</key>
+			<string>عنصران خارج هذا النطاق</string>
+			<key>few</key>
+			<string>%2$@ عناصر خارج هذا النطاق</string>
+			<key>many</key>
+			<string>%2$@ عنصرًا خارج هذا النطاق</string>
+			<key>other</key>
+			<string>%2$@ عنصر خارج هذا النطاق</string>
+		</dict>
+	</dict>
+	<key>%lld selected</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>المحدد: %2$@</string>
+			<key>one</key>
+			<string>المحدد: %2$@</string>
+			<key>two</key>
+			<string>المحدد: %2$@</string>
+			<key>few</key>
+			<string>المحدد: %2$@</string>
+			<key>many</key>
+			<string>المحدد: %2$@</string>
+			<key>other</key>
+			<string>المحدد: %2$@</string>
+		</dict>
+	</dict>
+	<key> and %lld more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string> و%2$@ عناصر إضافية</string>
+			<key>one</key>
+			<string> وعنصر إضافي واحد</string>
+			<key>two</key>
+			<string> وعنصران إضافيان</string>
+			<key>few</key>
+			<string> و%2$@ عناصر إضافية</string>
+			<key>many</key>
+			<string> و%2$@ عنصرًا إضافيًا</string>
+			<key>other</key>
+			<string> و%2$@ عنصر إضافي</string>
+		</dict>
+	</dict>
+	<key>, and %lld more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>، و%2$@ عناصر إضافية</string>
+			<key>one</key>
+			<string>، وعنصر إضافي واحد</string>
+			<key>two</key>
+			<string>، وعنصران إضافيان</string>
+			<key>few</key>
+			<string>، و%2$@ عناصر إضافية</string>
+			<key>many</key>
+			<string>، و%2$@ عنصرًا إضافيًا</string>
+			<key>other</key>
+			<string>، و%2$@ عنصر إضافي</string>
+		</dict>
+	</dict>
+	<key>…and %lld more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>…و%2$@ عناصر إضافية</string>
+			<key>one</key>
+			<string>…وعنصر إضافي واحد</string>
+			<key>two</key>
+			<string>…وعنصران إضافيان</string>
+			<key>few</key>
+			<string>…و%2$@ عناصر إضافية</string>
+			<key>many</key>
+			<string>…و%2$@ عنصرًا إضافيًا</string>
+			<key>other</key>
+			<string>…و%2$@ عنصر إضافي</string>
+		</dict>
+	</dict>
+	<key>%lld routed · %lld unmatched</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@ · %3$#@count2@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ عناصر موجّهة</string>
+			<key>one</key>
+			<string>عنصر موجّه واحد</string>
+			<key>two</key>
+			<string>عنصران موجّهان</string>
+			<key>few</key>
+			<string>%2$@ عناصر موجّهة</string>
+			<key>many</key>
+			<string>%2$@ عنصرًا موجّهًا</string>
+			<key>other</key>
+			<string>%2$@ عنصر موجّه</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%4$@ عناصر غير مطابقة</string>
+			<key>one</key>
+			<string>عنصر واحد غير مطابق</string>
+			<key>two</key>
+			<string>عنصران غير مطابقين</string>
+			<key>few</key>
+			<string>%4$@ عناصر غير مطابقة</string>
+			<key>many</key>
+			<string>%4$@ عنصرًا غير مطابق</string>
+			<key>other</key>
+			<string>%4$@ عنصر غير مطابق</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

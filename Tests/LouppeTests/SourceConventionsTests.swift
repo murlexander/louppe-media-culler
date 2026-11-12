@@ -92,21 +92,13 @@ final class SourceConventionsTests: XCTestCase {
     }
 
     func testEnglishOnlyPluralBranchesDoNotGrow() throws {
-        // These files are being converted separately. Lower ceilings as they
-        // migrate; every other source file must use app-language plural rules.
-        let baseline = [
-            "Sources/Louppe/Views/ExportView.swift": 26,
-            "Sources/Louppe/Views/RenameFilesView.swift": 6,
-            "Sources/Louppe/Views/OrganizeSourceView.swift": 9,
-            "Sources/Louppe/Views/Design/SourceFileOperationProgressView.swift": 0,
-            "Tests/LouppeTests/CaptureScenariosTests.swift": 0
-        ]
+        // Every source file must use app-language rules for count agreement.
         let files = try swiftFiles(in: "Sources/Louppe") + [repositoryRoot.appendingPathComponent(
             "Tests/LouppeTests/CaptureScenariosTests.swift")]
         for file in files {
             let source = try String(contentsOf: file, encoding: .utf8)
-            XCTAssertLessThanOrEqual(try englishPluralBranchCount(in: source), baseline[relativePath(file)] ?? 0,
-                                     "Use L10n.plural for count agreement: \(relativePath(file))")
+            XCTAssertEqual(try englishPluralBranchCount(in: source), 0,
+                           "Use L10n.plural for count agreement: \(relativePath(file))")
         }
     }
 

@@ -269,9 +269,7 @@ struct ExportView: View {
                             )
                             ForEach(StarRating.allCases, id: \.self) { rating in
                                 Toggle(
-                                    rating == .one
-                                        ? L10n.text("1 star")
-                                        : L10n.text("\(rating.count) stars"),
+                                    L10n.plural("%lld stars", rating.count),
                                     isOn: membershipBinding(
                                         .stars(rating),
                                         in: $selectedStars
@@ -323,7 +321,7 @@ struct ExportView: View {
                     exportPreview
 
                     if selectionSnapshot.mixedDecisionCount > 0 {
-                        Text((selectionSnapshot.mixedDecisionCount == 1 ? L10n.text("\(selectionSnapshot.mixedDecisionCount) included RAW+JPEG pair has different file decisions and is treated as undecided.") : L10n.text("\(selectionSnapshot.mixedDecisionCount) included RAW+JPEG pairs have different file decisions and are treated as undecided.")))
+                        Text(L10n.plural("%lld included RAW+JPEG pairs have different file decisions and are treated as undecided.", selectionSnapshot.mixedDecisionCount))
                             .font(.caption)
                             .foregroundStyle(.orange)
                             .multilineTextAlignment(.leading)
@@ -338,7 +336,7 @@ struct ExportView: View {
 
                     if scopeRatingCount(.undecided) > 0 && !selectedRatings.contains(.undecided) {
                         let count = scopeRatingCount(.undecided)
-                        Text((count == 1 ? L10n.text("\(count) item still undecided in this scope — they won't be exported.") : L10n.text("\(count) items still undecided in this scope — they won't be exported.")))
+                        Text(L10n.plural("%lld items still undecided in this scope — they won't be exported.", count))
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
@@ -380,7 +378,7 @@ struct ExportView: View {
                         }
 
                         if excludedACRCompanionCount > 0 {
-                            Text((excludedACRCompanionCount == 1 ? L10n.text("\(excludedACRCompanionCount) Lightroom .acr companion will stay in the source folder, unexported.") : L10n.text("\(excludedACRCompanionCount) Lightroom .acr companions will stay in the source folder, unexported.")))
+                            Text(L10n.plural("%lld Lightroom .acr companions will stay in the source folder, unexported.", excludedACRCompanionCount))
                                 .font(.caption)
                                 .foregroundStyle(.orange)
                         }
@@ -552,10 +550,10 @@ struct ExportView: View {
         let outsideScope = max(0, store.items.count - scopeIndices.count)
         var parts: [String] = []
         if excludedByChoices > 0 {
-            parts.append(L10n.text("\(excludedByChoices) excluded by decision, stars, or color"))
+            parts.append(L10n.plural("%lld excluded by decision, stars, or color", excludedByChoices))
         }
         if outsideScope > 0 {
-            parts.append(L10n.text("\(outsideScope) outside this scope"))
+            parts.append(L10n.plural("%lld outside this scope", outsideScope))
         }
         return parts.isEmpty ? L10n.text("Nothing excluded.") : parts.joined(separator: " · ") + "."
     }
@@ -860,7 +858,7 @@ struct ExportView: View {
         let routed = scopedItems.count
             - routingEvaluation.unmatchedItemIndices.count
             - routingEvaluation.overlappingItemIndices.count
-        return L10n.text("\(max(routed, 0)) routed · \(routingEvaluation.unmatchedItemIndices.count) unmatched")
+        return L10n.plural("%lld routed · %lld unmatched", counts: [max(routed, 0), routingEvaluation.unmatchedItemIndices.count])
     }
 
     private var routingValidationMessage: String? {
@@ -869,7 +867,7 @@ struct ExportView: View {
             return L10n.text("Choose a destination folder for every route.")
         }
         if !routingEvaluation.overlappingItemIndices.isEmpty {
-            return (routingEvaluation.overlappingItemIndices.count == 1 ? L10n.text("\(routingEvaluation.overlappingItemIndices.count) item matches more than one route: \(routingItemList(routingEvaluation.overlappingItemIndices)).") : L10n.text("\(routingEvaluation.overlappingItemIndices.count) items match more than one route: \(routingItemList(routingEvaluation.overlappingItemIndices))."))
+            return L10n.plural("%lld items match more than one route: %@.", routingEvaluation.overlappingItemIndices.count, arguments: [routingItemList(routingEvaluation.overlappingItemIndices)])
         }
         if !routingEvaluation.emptyRouteIDs.isEmpty {
             return L10n.text("Each route must match at least one item.")
@@ -883,7 +881,7 @@ struct ExportView: View {
         }
         let remainder = max(0, indices.count - names.count)
         return names.joined(separator: ", ")
-            + (remainder > 0 ? L10n.text(" and \(remainder) more") : "")
+            + (remainder > 0 ? L10n.plural(" and %lld more", remainder) : "")
     }
 
     private func refreshRoutingEvaluation() {
@@ -928,7 +926,7 @@ struct ExportView: View {
         _ plan: MultiDestinationExportPlan
     ) -> some View {
         SheetForm(title: L10n.text("Review Copy Plan")) {
-            Text((plan.totalFiles == 1 ? L10n.text("\(plan.totalFiles) file will be copied. Originals stay in place.") : L10n.text("\(plan.totalFiles) files will be copied. Originals stay in place.")))
+            Text(L10n.plural("%lld files will be copied. Originals stay in place.", plan.totalFiles))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
@@ -998,19 +996,19 @@ struct ExportView: View {
         var parts: [String] = []
         if outcome.appliedCount > 0 {
             parts.append(
-                (outcome.appliedCount == 1 ? L10n.text("Unified \(outcome.appliedCount) RAW+JPEG conflict in Louppe. Review the new plan before continuing.") : L10n.text("Unified \(outcome.appliedCount) RAW+JPEG conflicts in Louppe. Review the new plan before continuing."))
+                L10n.plural("Unified %lld RAW+JPEG conflicts in Louppe. Review the new plan before continuing.", outcome.appliedCount)
             )
         }
         let stale = outcome.staleConflictIDs.count
         if stale > 0 {
             parts.append(
-                (stale == 1 ? L10n.text("\(stale) conflict changed while the resolver was open and was not overwritten. The refreshed plan shows the current values.") : L10n.text("\(stale) conflicts changed while the resolver was open and were not overwritten. The refreshed plan shows the current values."))
+                L10n.plural("%lld conflicts changed while the resolver was open and were not overwritten. The refreshed plan shows the current values.", stale)
             )
         }
         let ineligible = outcome.ineligibleConflictIDs.count
         if ineligible > 0 {
             parts.append(
-                (ineligible == 1 ? L10n.text("\(ineligible) conflict choice was rejected because the files no longer formed one safe RAW+JPEG pair.") : L10n.text("\(ineligible) conflict choices were rejected because the files no longer formed one safe RAW+JPEG pair."))
+                L10n.plural("%lld conflict choices were rejected because the files no longer formed one safe RAW+JPEG pair.", ineligible)
             )
         }
         return parts.isEmpty ? nil : parts.joined(separator: " ")
@@ -1081,14 +1079,14 @@ struct ExportView: View {
         var text: String
         switch mode {
         case .copy:
-            text = count == 1 ? L10n.text("1 item will be copied") : L10n.text("\(count) items will be copied")
+            text = L10n.plural("%lld items will be copied", count)
         case .move:
-            text = count == 1 ? L10n.text("1 item will be moved") : L10n.text("\(count) items will be moved")
+            text = L10n.plural("%lld items will be moved", count)
         case .metadataXMP:
-            text = count == 1 ? L10n.text("1 item will be prepared for XMP publication") : L10n.text("\(count) items will be prepared for XMP publication")
+            text = L10n.plural("%lld items will be prepared for XMP publication", count)
         }
         if selectionSnapshot.physicalFileCount != selectionSnapshot.itemCount {
-            text += L10n.text(" (\(selectionSnapshot.physicalFileCount) files, including RAW+JPEG pairs)")
+            text += L10n.plural(" (%lld files, including RAW+JPEG pairs)", selectionSnapshot.physicalFileCount)
         }
         text += mode == .copy || mode == .metadataXMP
             ? L10n.text(". Originals are never touched.")
@@ -1106,17 +1104,15 @@ struct ExportView: View {
         var parts: [String] = []
         var total = 0
         if scopeMixedStarCount > 0 {
-            parts.append((scopeMixedStarCount == 1 ? L10n.text("\(scopeMixedStarCount) mixed-star pair") : L10n.text("\(scopeMixedStarCount) mixed-star pairs")))
+            parts.append(L10n.plural("%lld mixed-star pairs", scopeMixedStarCount))
             total += scopeMixedStarCount
         }
         if scopeMixedColorCount > 0 {
-            parts.append((scopeMixedColorCount == 1 ? L10n.text("\(scopeMixedColorCount) mixed-color pair") : L10n.text("\(scopeMixedColorCount) mixed-color pairs")))
+            parts.append(L10n.plural("%lld mixed-color pairs", scopeMixedColorCount))
             total += scopeMixedColorCount
         }
         let pairs = parts.joined(separator: L10n.text(" and "))
-        return total == 1
-            ? L10n.text("\(pairs) matches only when Mixed is selected in the corresponding menu.")
-            : L10n.text("\(pairs) match only when Mixed is selected in the corresponding menu.")
+        return L10n.plural("%@ match only when Mixed is selected in the corresponding menu.", total, arguments: [pairs])
     }
 
     private var scopeIndices: [Int] {
@@ -1164,7 +1160,7 @@ struct ExportView: View {
             filtered: store.visibleIndices,
             selected: store.selectedIndices
         ).count
-        return Text("\(title) (\(count))")
+        return Text("\(title) (\(L10n.number(count)))")
     }
 
     private var starSelectionSummary: String {
@@ -1193,14 +1189,14 @@ struct ExportView: View {
         if selected.count == 1, let only = selected.first {
             return label(only)
         }
-        return L10n.text("\(selected.count) selected")
+        return L10n.plural("%lld selected", selected.count)
     }
 
     private func starStateLabel(_ state: PhotoItemStarRatingState) -> String {
         switch state {
         case .unrated: return L10n.text("Unrated")
         case .stars(let rating):
-            return rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count) stars")
+            return L10n.plural("%lld stars", rating.count)
         case .mixed: return L10n.text("Mixed")
         }
     }
@@ -1238,7 +1234,7 @@ struct ExportView: View {
             }
         } label: {
             VStack(spacing: 2) {
-                Text("\(count)")
+                Text(L10n.number(count))
                     .font(.title.bold())
                     .foregroundStyle(isSelected ? color : Color.secondary)
                 // A checkbox glyph states inclusion without relying on color.
@@ -1339,8 +1335,8 @@ struct ExportView: View {
                 total: Double(max(total, 1))
             )
             .accessibilityLabel(title)
-            .accessibilityValue((total == 1 ? L10n.text("\(done) of 1 sidecar family") : L10n.text("\(done) of \(total) sidecar families")))
-            Text((total == 1 ? L10n.text("\(done) of 1 sidecar family") : L10n.text("\(done) of \(total) sidecar families")))
+            .accessibilityValue(L10n.plural("%@ of %lld sidecar families", total, arguments: [L10n.number(done)]))
+            Text(L10n.plural("%@ of %lld sidecar families", total, arguments: [L10n.number(done)]))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Button(stopTitle) { store.cancelXMPPublication() }
@@ -1386,17 +1382,17 @@ struct ExportView: View {
             }
             if changes.stars + changes.colors + changes.flags + changes.keywords > 0 {
                 warningText(
-                    L10n.text("Existing non-empty values will change — stars: \(changes.stars), colors: \(changes.colors), flags: \(changes.flags), reserved decision keywords: \(changes.keywords).")
+                    L10n.text("Existing non-empty values will change — stars: \(L10n.number(changes.stars)), colors: \(L10n.number(changes.colors)), flags: \(L10n.number(changes.flags)), reserved decision keywords: \(L10n.number(changes.keywords)).")
                 )
             }
             if plan.applicationPacketCount > 0 {
-                Text((plan.applicationPacketCount == 1 ? L10n.text("\(plan.applicationPacketCount) extension-qualified application packet will stay unchanged beside originals.") : L10n.text("\(plan.applicationPacketCount) extension-qualified application packets will stay unchanged beside originals.")))
+                Text(L10n.plural("%lld extension-qualified application packets will stay unchanged beside originals.", plan.applicationPacketCount))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
             }
             if plan.excludedACRCompanionCount > 0 {
-                warningText((plan.excludedACRCompanionCount == 1 ? L10n.text("\(plan.excludedACRCompanionCount) Lightroom .acr companion will stay untouched beside originals. Louppe never reads or changes Lightroom heavy-edit data.") : L10n.text("\(plan.excludedACRCompanionCount) Lightroom .acr companions will stay untouched beside originals. Louppe never reads or changes Lightroom heavy-edit data.")))
+                warningText(L10n.plural("%lld Lightroom .acr companions will stay untouched beside originals. Louppe never reads or changes Lightroom heavy-edit data.", plan.excludedACRCompanionCount))
             }
             if !issues.isEmpty {
                 VStack(alignment: .leading, spacing: 5) {
@@ -1408,7 +1404,7 @@ struct ExportView: View {
                             .foregroundStyle(.orange)
                     }
                     if issues.count > 6 {
-                        Text(L10n.text("…and \(issues.count - 6) more"))
+                        Text(L10n.plural("…and %lld more", issues.count - 6))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -1495,7 +1491,7 @@ struct ExportView: View {
             Text(label)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text("\(count)")
+            Text(L10n.number(count))
                 .monospacedDigit()
         }
         .font(.callout)
@@ -1511,7 +1507,7 @@ struct ExportView: View {
     private func fileList(_ names: [String]) -> String {
         if names.count <= 4 { return names.joined(separator: ", ") }
         return names.prefix(4).joined(separator: ", ")
-            + L10n.text(", and \(names.count - 4) more")
+            + L10n.plural(", and %lld more", names.count - 4)
     }
 
     private func xmpApplicationNote(_ profile: XMPApplicationProfile) -> String {
@@ -1535,11 +1531,11 @@ struct ExportView: View {
         totalBytes: Int64
     ) -> some View {
         let isPhotos = store.photosBatch?.mediaSession != nil
-        let completed = isPhotos ? completedBytes.formatted() : ByteCountFormatter.string(
+        let completed = isPhotos ? completedBytes.formatted(.number.locale(L10n.locale)) : ByteCountFormatter.string(
             fromByteCount: max(0, completedBytes),
             countStyle: .file
         )
-        let total = isPhotos ? totalBytes.formatted() : ByteCountFormatter.string(
+        let total = isPhotos ? totalBytes.formatted(.number.locale(L10n.locale)) : ByteCountFormatter.string(
             fromByteCount: max(0, totalBytes),
             countStyle: .file
         )
@@ -1646,7 +1642,7 @@ struct ExportView: View {
 
             if changes.stars + changes.colors + changes.flags
                 + changes.keywords > 0 {
-                Text(L10n.text("Existing non-empty values will change — stars: \(changes.stars), colors: \(changes.colors), flags: \(changes.flags), reserved decision keywords: \(changes.keywords)."))
+                Text(L10n.text("Existing non-empty values will change — stars: \(L10n.number(changes.stars)), colors: \(L10n.number(changes.colors)), flags: \(L10n.number(changes.flags)), reserved decision keywords: \(L10n.number(changes.keywords))."))
                     .font(.caption)
                     .foregroundStyle(.orange)
                     .multilineTextAlignment(.leading)
@@ -1785,13 +1781,13 @@ struct ExportView: View {
         var text: String
         if outcome.destinations.count > 1 {
             text = outcome.mode == .copy
-                ? L10n.text("Copied files: \(count). Destination folders: \(outcome.destinations.count).")
-                : L10n.text("Moved files: \(count). Destination folders: \(outcome.destinations.count).")
+                ? L10n.plural("Copied files: %lld. Destination folders: %lld.", counts: [count, outcome.destinations.count])
+                : L10n.plural("Moved files: %lld. Destination folders: %lld.", counts: [count, outcome.destinations.count])
         } else {
             let folder = outcome.destination.lastPathComponent
             text = outcome.mode == .copy
-                ? L10n.text("Copied files: \(count). Destination: \(folder)")
-                : L10n.text("Moved files: \(count). Destination: \(folder)")
+                ? L10n.plural("Copied files: %lld. Destination: %@", count, arguments: [folder])
+                : L10n.plural("Moved files: %lld. Destination: %@", count, arguments: [folder])
         }
         switch outcome.mode {
         case .copy:
@@ -1803,21 +1799,21 @@ struct ExportView: View {
                     text += L10n.text(" The stop reason is missing. Send the diagnostic log with this report.")
                 }
             } else if outcome.failedPhotos > 0 {
-                text += (outcome.failedPhotos == 1 ? L10n.text(" — \(outcome.failedPhotos) item couldn't be copied and rolled back.") : L10n.text(" — \(outcome.failedPhotos) items couldn't be copied and rolled back."))
+                text += L10n.plural(" — %lld items couldn't be copied and rolled back.", outcome.failedPhotos)
             } else {
                 text += "."
             }
             if outcome.inconsistentPhotos > 0 {
-                text += L10n.text(" For \(outcome.inconsistentPhotos), rollback also failed; check the destination for a partial pair.")
+                text += L10n.text(" For \(L10n.number(outcome.inconsistentPhotos)), rollback also failed; check the destination for a partial pair.")
             }
         case .move:
             if outcome.failedPhotos > 0 {
-                text += (outcome.failedPhotos == 1 ? L10n.text(" — \(outcome.failedPhotos) item couldn't be moved and stayed in the session.") : L10n.text(" — \(outcome.failedPhotos) items couldn't be moved and stayed in the session."))
+                text += L10n.plural(" — %lld items couldn't be moved and stayed in the session.", outcome.failedPhotos)
             } else {
                 text += "."
             }
             if outcome.inconsistentPhotos > 0 {
-                text += L10n.text(" For \(outcome.inconsistentPhotos), rollback also failed; check both the source folder and the destination.")
+                text += L10n.text(" For \(L10n.number(outcome.inconsistentPhotos)), rollback also failed; check both the source folder and the destination.")
             }
         case .metadataXMP:
             break
@@ -1909,11 +1905,15 @@ struct MultiDestinationPlanPreviewList: View {
                     Text(L10n.text("XMP sidecars"))
                         .font(.subheadline.weight(.semibold))
                         .accessibilityAddTraits(.isHeader)
-                    Text((xmp.applicationPacketCount == 1 ? L10n.text("\(xmp.existingRecognizedPacketCount) existing · \(xmp.count(.create)) to create · \(xmp.count(.update)) to update · \(xmp.applicationPacketCount) application packet copied unchanged") : L10n.text("\(xmp.existingRecognizedPacketCount) existing · \(xmp.count(.create)) to create · \(xmp.count(.update)) to update · \(xmp.applicationPacketCount) application packets copied unchanged")))
+                    Text(L10n.plural(
+                        "%lld existing · %lld to create · %lld to update · %lld application packets copied unchanged",
+                        counts: [xmp.existingRecognizedPacketCount, xmp.count(.create),
+                                 xmp.count(.update), xmp.applicationPacketCount]
+                    ))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     if !xmp.issueFamilies.isEmpty {
-                        Text((xmp.issueFamilies.count == 1 ? L10n.text("\(xmp.issueFamilies.count) sidecar family is skipped after safety checks; listed media files still copy.") : L10n.text("\(xmp.issueFamilies.count) sidecar families are skipped after safety checks; listed media files still copy.")))
+                        Text(L10n.plural("%lld sidecar families are skipped after safety checks; listed media files still copy.", xmp.issueFamilies.count))
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
@@ -1925,9 +1925,7 @@ struct MultiDestinationPlanPreviewList: View {
     static func routeCountText(
         _ route: MultiDestinationExportPlan.RoutePreview
     ) -> String {
-        route.itemCount == 1
-            ? (route.mediaFileCount == 1 ? L10n.text("\(route.itemCount) item · \(route.mediaFileCount) media file") : L10n.text("\(route.itemCount) item · \(route.mediaFileCount) media files"))
-            : (route.mediaFileCount == 1 ? L10n.text("\(route.itemCount) items · \(route.mediaFileCount) media file") : L10n.text("\(route.itemCount) items · \(route.mediaFileCount) media files"))
+        L10n.plural("%lld items · %lld media files", counts: [route.itemCount, route.mediaFileCount])
     }
 
     static func filePreviewText(

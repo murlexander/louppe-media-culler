@@ -127,7 +127,7 @@ struct RenameFilesView: View {
                 Picker(L10n.text("Apply to"), selection: $scope) {
                     ForEach(SourceOrganizationScope.allCases, id: \.self) {
                         value in
-                        Text("\(value == .all ? store.archiveAllScopeLabel : value.label) (\(store.organizationScopeCount(for: value)))")
+                        Text("\(value == .all ? store.archiveAllScopeLabel : value.label) (\(L10n.number(store.organizationScopeCount(for: value))))")
                             .tag(value)
                     }
                 }
@@ -236,30 +236,26 @@ struct RenameFilesView: View {
                         )
                     }
                     if changed.count > 6 {
-                        Text(changed.count - 6 == 1
-                            ? L10n.text("…and 1 more media file")
-                            : L10n.text("…and \(changed.count - 6) more media files"))
+                        Text(L10n.plural("…and %lld more media files", changed.count - 6))
                             .foregroundStyle(.secondary)
                     }
                 }
 
                 HStack(spacing: 10) {
-                    summary(plan.movingItemCount == 1 ? L10n.text("1 item") : L10n.text("\(plan.movingItemCount) items"))
-                    summary(changed.count == 1 ? L10n.text("1 media file") : L10n.text("\(changed.count) media files"))
+                    summary(L10n.plural("%lld items", plan.movingItemCount))
+                    summary(L10n.plural("%lld media files", changed.count))
                     if plan.sidecarFileCount > 0 {
-                        summary(L10n.text("\(plan.sidecarFileCount) XMP"))
+                        summary(L10n.text("\(L10n.number(plan.sidecarFileCount)) XMP"))
                     }
                 }
                 if plan.autoNumberedFileCount > 0 {
-                    summary(plan.autoNumberedFileCount == 1
-                        ? L10n.text("Numbered 1 file that shared a name.")
-                        : L10n.text("Numbered \(plan.autoNumberedFileCount) files that shared a name."))
+                    summary(L10n.plural("Numbered %lld files that shared a name.", plan.autoNumberedFileCount))
                 }
             }
 
             if !plan.collisions.isEmpty {
                 Label(
-                    (plan.collisions.count == 1 ? L10n.text("Resolve \(plan.collisions.count) filename conflict before renaming.") : L10n.text("Resolve \(plan.collisions.count) filename conflicts before renaming.")),
+                    L10n.plural("Resolve %lld filename conflicts before renaming.", plan.collisions.count),
                     systemImage: "exclamationmark.triangle"
                 )
                 .foregroundStyle(.secondary)
@@ -281,7 +277,7 @@ struct RenameFilesView: View {
     }
 
     private func confirmationView(_ plan: SourceOrganizationPlan) -> some View {
-        SheetForm(title: plan.movingFileCount == 1 ? L10n.text("Rename 1 file?") : L10n.text("Rename \(plan.movingFileCount) files?")) {
+        SheetForm(title: L10n.plural("Rename %lld files?", plan.movingFileCount)) {
             preview
             Divider()
             Text(L10n.text("Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session."))

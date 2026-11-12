@@ -71,7 +71,7 @@ struct OrganizeSourceView: View {
                 Picker(L10n.text("Apply to"), selection: $scope) {
                     ForEach(SourceOrganizationScope.allCases, id: \.self) {
                         value in
-                        Text("\(value == .all ? store.archiveAllScopeLabel : value.label) (\(store.organizationScopeCount(for: value)))")
+                        Text("\(value == .all ? store.archiveAllScopeLabel : value.label) (\(L10n.number(store.organizationScopeCount(for: value))))")
                             .tag(value)
                     }
                 }
@@ -271,11 +271,11 @@ struct OrganizeSourceView: View {
                         .help(example.path)
                 }
                 HStack(spacing: 10) {
-                    summaryValue(plan.previewGroups.count == 1 ? L10n.text("1 folder") : L10n.text("\(plan.previewGroups.count) folders"))
-                    summaryValue(plan.itemCount == 1 ? L10n.text("1 item") : L10n.text("\(plan.itemCount) items"))
-                    summaryValue(plan.mediaFileCount == 1 ? L10n.text("1 media file") : L10n.text("\(plan.mediaFileCount) media files"))
+                    summaryValue(L10n.plural("%lld folders", plan.previewGroups.count))
+                    summaryValue(L10n.plural("%lld items", plan.itemCount))
+                    summaryValue(L10n.plural("%lld media files", plan.mediaFileCount))
                     if plan.sidecarFileCount > 0 {
-                        summaryValue(L10n.text("\(plan.sidecarFileCount) XMP"))
+                        summaryValue(L10n.text("\(L10n.number(plan.sidecarFileCount)) XMP"))
                     }
                 }
 
@@ -287,13 +287,13 @@ struct OrganizeSourceView: View {
                                     .lineLimit(1)
                                     .truncationMode(.middle)
                                 Spacer()
-                                Text("\(group.itemCount)")
+                                Text(L10n.number(group.itemCount))
                                     .foregroundStyle(.secondary)
                                     .monospacedDigit()
                             }
                         }
                         if plan.previewGroups.count > 6 {
-                            Text(L10n.text("…and \(plan.previewGroups.count - 6) more"))
+                            Text(L10n.plural("…and %lld more", plan.previewGroups.count - 6))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -301,7 +301,7 @@ struct OrganizeSourceView: View {
 
                 if !plan.collisions.isEmpty {
                     Label(
-                        (plan.collisions.count == 1 ? L10n.text("\(plan.collisions.count) filename or sidecar conflict must be resolved before moving.") : L10n.text("\(plan.collisions.count) filename or sidecar conflicts must be resolved before moving.")),
+                        L10n.plural("%lld filename or sidecar conflicts must be resolved before moving.", plan.collisions.count),
                         systemImage: "exclamationmark.triangle"
                     )
                     .foregroundStyle(.secondary)
@@ -324,20 +324,17 @@ struct OrganizeSourceView: View {
                     let oldFolderCount = Set(
                         plan.sourceItems.compactMap(\.subfolder)
                     ).count
-                    Text(plan.movingItemCount == 1
-                        ? (oldFolderCount == 1
-                            ? L10n.text("1 item will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.")
-                            : L10n.text("1 item will move out of \(oldFolderCount) existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten."))
-                        : (oldFolderCount == 1
-                            ? L10n.text("\(plan.movingItemCount) items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.")
-                            : L10n.text("\(plan.movingItemCount) items will move out of \(oldFolderCount) existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.")))
+                    Text(L10n.plural(
+                        "%lld items will move out of %lld existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.",
+                        counts: [plan.movingItemCount, oldFolderCount]
+                    ))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 if plan.excludedACRCompanionCount > 0 {
-                    Text((plan.excludedACRCompanionCount == 1 ? L10n.text("\(plan.excludedACRCompanionCount) Lightroom .acr companion will remain in place.") : L10n.text("\(plan.excludedACRCompanionCount) Lightroom .acr companions will remain in place.")))
+                    Text(L10n.plural("%lld Lightroom .acr companions will remain in place.", plan.excludedACRCompanionCount))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -354,10 +351,8 @@ struct OrganizeSourceView: View {
     ) -> some View {
 
         return SheetForm(
-            title: plan.movingFileCount == 1 ? L10n.text("Move 1 file?") : L10n.text("Move \(plan.movingFileCount) files?"),
-            subtitle: plan.previewGroups.count == 1
-                ? L10n.text("Into 1 folder inside “\(plan.configuration.containerName)”")
-                : L10n.text("Into \(plan.previewGroups.count) folders inside “\(plan.configuration.containerName)”")
+            title: L10n.plural("Move %lld files?", plan.movingFileCount),
+            subtitle: L10n.plural("Into %lld folders inside “%@”", plan.previewGroups.count, arguments: [plan.configuration.containerName])
         ) {
             Text(L10n.text("Names and contents stay unchanged. Existing files are never overwritten."))
                 .fixedSize(horizontal: false, vertical: true)

@@ -43,7 +43,7 @@ final class LocalizationTests: XCTestCase {
     func testEveryPackagedPluralEntryUsesItsLanguageBundleAndAllIntegerForms() throws {
         let counts = [0, 1, 2, 3, 11, 100, 17015]
         let english = try pluralCatalog("en")
-        XCTAssertGreaterThan(english.count, 50)
+        XCTAssertGreaterThanOrEqual(english.count, 104)
         for language in L10n.supportedLanguages {
             let catalog = try pluralCatalog(language)
             XCTAssertEqual(Set(catalog.keys), Set(english.keys), language)
@@ -61,9 +61,9 @@ final class LocalizationTests: XCTestCase {
                         : language == "zh-Hans" ? ["other"] : ["one", "other"]
                     for category in required { XCTAssertNotNil(rule[category], "\(language): \(key): \(category)") }
                 }
-                for (offset, count) in counts.enumerated() {
-                    // Reverse count two to exercise independent agreement.
-                    let selected = names.indices.map { $0 == 0 ? count : counts[counts.count - 1 - offset] }
+                for offset in counts.indices {
+                    // Vary each count independently, including the four-count routing summary.
+                    let selected = names.indices.map { counts[(offset + 2 * $0) % counts.count] }
                     var expected = format
                     let locale = Locale(identifier: language)
                     var values: [any CVarArg] = []
@@ -80,6 +80,10 @@ final class LocalizationTests: XCTestCase {
                     expected = String(format: expected, locale: locale, arguments: values)
                     XCTAssertEqual(L10n.renderPlural(key, counts: selected, arguments: arguments, language: language),
                                    expected, "\(language): \(key): \(selected)")
+                    let rendered = L10n.renderPlural(key, counts: selected, arguments: arguments, language: language)
+                    for token in ["XMP", "RAW", "JPEG", ".acr", "Lightroom", "⌘Z"] where key.contains(token) {
+                        XCTAssertTrue(rendered.contains(token), "\(language): \(key): \(selected): lost \(token)")
+                    }
                 }
             }
         }
@@ -99,6 +103,71 @@ final class LocalizationTests: XCTestCase {
             "1 file (about 5 MB) will be moved to the Trash. The matching RAW file will stay in the folder.")
         XCTAssertEqual(L10n.renderPlural("%lld stars", counts: [2], language: "ar"), "نجمتان")
         XCTAssertEqual(L10n.renderPlural("Set %lld Stars", counts: [2], language: "ar"), "تعيين نجمتين")
+    }
+
+    func testFileOperationMessagesKeepIndependentAgreementAndLiteralNames() {
+        let name = "A {1} %lld #@count1@ مرحبًا.JPG"
+        for (items, files, expected) in [(1, 2, "1 item · 2 media files"),
+                                          (2, 1, "2 items · 1 media file"),
+                                          (17015, 1, "17,015 items · 1 media file")] {
+            XCTAssertEqual(L10n.renderPlural("%lld items · %lld media files", counts: [items, files], language: "en"), expected)
+        }
+        for (files, folders, expected) in [(1, 2, "Copied file: 1. Destination folders: 2."),
+                                            (2, 1, "Copied files: 2. Destination folder: 1.")] {
+            XCTAssertEqual(L10n.renderPlural("Copied files: %lld. Destination folders: %lld.",
+                                            counts: [files, folders], language: "en"), expected)
+        }
+        XCTAssertEqual(withoutDirectionIsolates(L10n.renderPlural("Moved files: %lld. Destination: %@", counts: [1],
+                                        arguments: [name], language: "en")), "Moved file: 1. Destination: \(name)")
+        XCTAssertEqual(withoutDirectionIsolates(L10n.renderPlural("Into %lld folders inside “%@”", counts: [17015],
+                                        arguments: [name], language: "en")), "Into 17,015 folders inside “\(name)”")
+        XCTAssertEqual(withoutDirectionIsolates(L10n.renderPlural("%lld items match more than one route: %@.", counts: [1],
+                                        arguments: [name], language: "en")), "1 item matches more than one route: \(name).")
+        let safety = "Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten."
+        for (items, folders, expected) in [(1, 2, "1 item will move out of 2 existing folders. "),
+                                            (2, 1, "2 items will move out of 1 existing folder. ")] {
+            XCTAssertEqual(L10n.renderPlural(
+                "%lld items will move out of %lld existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.",
+                counts: [items, folders], language: "en"), expected + safety)
+        }
+        XCTAssertEqual(L10n.renderPlural(
+            "%lld items will move out of %lld existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.",
+            counts: [1, 2], language: "hi"),
+            "1 आइटम को 2 मौजूदा फ़ोल्डरों से बाहर ले जाया जाएगा। पहचानी गई XMP साइडकार और समूहित RAW+JPEG फ़ाइलें अपने मीडिया के साथ जाएँगी। कुछ भी अधिलेखित नहीं होगा।")
+        let key = "%lld existing · %lld to create · %lld to update · %lld application packets copied unchanged"
+        XCTAssertEqual(L10n.renderPlural(key, counts: [1, 17015, 0, 2], language: "en"),
+                       "1 existing · 17,015 to create · 0 to update · 2 application packets copied unchanged")
+        XCTAssertEqual(L10n.renderPlural(key, counts: [2, 0, 17015, 1], language: "es"),
+                       "2 existentes · 0 por crear · 17.015 por actualizar · 1 paquete de aplicación copiado sin cambios")
+    }
+
+    func testFileAndSidecarProgressUseTotalForAgreementAndGroupedDone() {
+        for count in [0, 1, 2, 3, 11, 100, 17015] {
+            XCTAssertEqual(L10n.renderPlural("%@ of %lld files", counts: [count],
+                                            arguments: ["17,015"], language: "en"),
+                           "17,015 of \(count.formatted(.number.locale(Locale(identifier: "en")))) \(count == 1 ? "file" : "files")")
+            XCTAssertEqual(L10n.renderPlural("%@ of %lld sidecar families", counts: [count],
+                                            arguments: ["17,015"], language: "en"),
+                           "17,015 of \(count.formatted(.number.locale(Locale(identifier: "en")))) sidecar \(count == 1 ? "family" : "families")")
+        }
+        // Hindi uses the singular category for zero; it must still display zero.
+        XCTAssertEqual(L10n.renderPlural("%@ of %lld sidecar families", counts: [0], arguments: ["0"], language: "hi"),
+                       "0 साइडकार समूह में से 0")
+        XCTAssertEqual(withoutDirectionIsolates(L10n.renderPlural("%@ of %lld sidecar families", counts: [2],
+                                                               arguments: ["٠"], language: "ar")),
+                       "٠ من مجموعتي ملفات مصاحبة")
+    }
+
+    func testFileOperationArabicDualAndSafetyWording() {
+        XCTAssertEqual(L10n.renderPlural("Rename %lld files?", counts: [2], language: "ar"), "إعادة تسمية ملفين؟")
+        XCTAssertEqual(L10n.renderPlural("%lld media files", counts: [2], language: "ar"), "ملفا وسائط")
+        XCTAssertEqual(L10n.renderPlural("%lld folders", counts: [2], language: "ar"), "مجلدان")
+        XCTAssertEqual(L10n.renderPlural("Resolve %lld filename conflicts before renaming.", counts: [2], language: "ar"),
+                       "حلّ تعارضين في الأسماء قبل إعادة التسمية.")
+        XCTAssertEqual(L10n.renderPlural(
+            "%lld Lightroom .acr companions will stay untouched beside originals. Louppe never reads or changes Lightroom heavy-edit data.",
+            counts: [2], language: "ar"),
+            "سيبقى ملفا Lightroom .acr مرافقان دون تغيير بجانب الملفات الأصلية. لا يقرأ Louppe بيانات التحرير المتقدم في Lightroom ولا يغيّرها أبدًا.")
     }
 
     func testSourcePluralKeysHaveCatalogEntries() throws {
