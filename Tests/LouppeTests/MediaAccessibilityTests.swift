@@ -1,5 +1,6 @@
 import AVKit
 import XCTest
+import SwiftUI
 @testable import Louppe
 
 @MainActor
@@ -124,6 +125,84 @@ final class MediaAccessibilityTests: XCTestCase {
                 .hasMediaCharacteristic(.describesVideoForAccessibility) == true
         }
         XCTAssertTrue(newItem.currentMediaSelection.mediaSelectionCriteriaCanBeAppliedAutomatically(to: newSubtitles))
+    }
+
+    func testTrackOptionsFailureOffersWorkingRetryInBothDirections() async throws {
+        let item = try fixtureCopy()
+        let controller = configuredController()
+        defer { controller.stop() }
+        controller.prepare(item)
+        _ = try await groups(for: controller)
+        for scheme in [ColorScheme.light, .dark] {
+            for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+                var attempts = 0
+                let host = NSHostingView(rootView: HStack(alignment: .top, spacing: 16) {
+                    MediaTrackSelectionControls(item: item, playback: controller, loadOptions: { _ in
+                        attempts += 1
+                        return attempts == 1 ? .failed : .loaded(subtitles: nil, audio: nil)
+                    })
+                    .frame(width: 240, alignment: .leading)
+                    Divider()
+                    MediaTrackSelectionControls(item: item, playback: controller)
+                        .frame(width: 240, alignment: .leading)
+                }
+                .padding(16)
+                .frame(width: 530, height: 160, alignment: .topLeading)
+                .background(Color.appBackground)
+                .tint(Color.louppeAccent)
+                .environment(\.colorScheme, scheme)
+                .environment(\.layoutDirection, direction)
+                .environment(\.accessibilityEnabled, true))
+                let window = NSWindow(contentRect: NSRect(x: -20_000, y: -20_000, width: 530, height: 160),
+                                      styleMask: [.titled], backing: .buffered, defer: false)
+                window.isReleasedWhenClosed = false
+                window.appearance = NSAppearance(named: scheme == .light ? .aqua : .darkAqua)
+                window.contentView = host
+                defer { window.contentView = nil; window.close() }
+                host.layoutSubtreeIfNeeded()
+                try await waitUntil { attempts == 1 && self.retryButton(in: host) != nil }
+                host.layoutSubtreeIfNeeded()
+                XCTAssertFalse(window.isVisible)
+                XCTAssertFalse(window.isKeyWindow)
+                let retry = try XCTUnwrap(retryButton(in: host))
+                if let output = ProcessInfo.processInfo.environment["LOUPPE_TRACK_OPTIONS_SNAPSHOTS"] {
+                    let folder = URL(fileURLWithPath: output, isDirectory: true)
+                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                    let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                    host.cacheDisplay(in: host.bounds, to: bitmap)
+                    let suffix = "\(scheme == .light ? "light" : "dark")-\(direction == .leftToRight ? "ltr" : "rtl")"
+                    try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                        .write(to: folder.appendingPathComponent("track-options-\(suffix).png"))
+                }
+                let press = NSSelectorFromString("accessibilityPerformPress")
+                XCTAssertTrue(retry.responds(to: press))
+                retry.perform(press)
+                try await waitUntil { attempts == 2 && self.retryButton(in: host) == nil }
+            }
+        }
+    }
+
+    private func retryButton(in root: NSView) -> NSObject? {
+        var visited = Set<ObjectIdentifier>()
+        func find(_ object: NSObject) -> NSObject? {
+            guard visited.insert(ObjectIdentifier(object)).inserted else { return nil }
+            let label = NSSelectorFromString("accessibilityLabel")
+            if object.responds(to: label),
+               object.perform(label)?.takeUnretainedValue() as? String == L10n.text("Try Again") { return object }
+            let children = NSSelectorFromString("accessibilityChildren")
+            if object.responds(to: children),
+               let entries = object.perform(children)?.takeUnretainedValue() as? [NSObject] {
+                for entry in entries { if let button = find(entry) { return button } }
+            }
+            if let view = object as? NSView {
+                for child in NSAccessibility.unignoredChildren(from: [view]) {
+                    if let child = child as? NSObject, let button = find(child) { return button }
+                }
+                for child in view.subviews { if let button = find(child) { return button } }
+            }
+            return nil
+        }
+        return find(root)
     }
 
     private func configuredController() -> VideoPlaybackController {

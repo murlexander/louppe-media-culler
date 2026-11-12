@@ -2156,3 +2156,5 @@
 "1 item will move out of {0} existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "1 आइटम {0} मौजूदा फ़ोल्डरों से बाहर जाएगा। पहचानी गई XMP साइडकार और समूहित RAW+JPEG फ़ाइलें अपने मीडिया के साथ जाएँगी। कुछ भी अधिलेखित नहीं होगा।";
 
 "{0} items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "{0} आइटम 1 मौजूदा फ़ोल्डर से बाहर जाएँगे। पहचानी गई XMP साइडकार और समूहित RAW+JPEG फ़ाइलें अपने मीडिया के साथ जाएँगी। कुछ भी अधिलेखित नहीं होगा।";
+"Couldn't load audio and subtitle options." = "ऑडियो और उपशीर्षक के विकल्प लोड नहीं हो सके।";
+"Try Again" = "फिर से कोशिश करें";

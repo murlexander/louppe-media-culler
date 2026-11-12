@@ -2156,3 +2156,5 @@
 "1 item will move out of {0} existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "سينتقل عنصر واحد من {0} مجلدات موجودة. تتبع ملفات XMP الجانبية المعروفة وملفات RAW+JPEG المجمّعة وسائطها. لن يُستبدل أي شيء.";
 
 "{0} items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "سينتقل {0} من العناصر من مجلد موجود واحد. تتبع ملفات XMP الجانبية المعروفة وملفات RAW+JPEG المجمّعة وسائطها. لن يُستبدل أي شيء.";
+"Couldn't load audio and subtitle options." = "تعذّر تحميل خيارات الصوت والترجمة.";
+"Try Again" = "حاول مجددًا";

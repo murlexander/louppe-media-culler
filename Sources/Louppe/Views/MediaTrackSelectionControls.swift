@@ -1,17 +1,52 @@
 import AVKit
 import SwiftUI
 
+enum MediaTrackOptionsResult {
+    case loaded(subtitles: AVMediaSelectionGroup?, audio: AVMediaSelectionGroup?)
+    case failed
+
+    @MainActor
+    static func load(
+        from asset: AVAsset,
+        loader: @MainActor (AVAsset, AVMediaCharacteristic) async throws -> AVMediaSelectionGroup? = {
+            try await $0.loadMediaSelectionGroup(for: $1)
+        }
+    ) async throws -> Self {
+        do {
+            try Task.checkCancellation()
+            let subtitles = try await loader(asset, .legible)
+            try Task.checkCancellation()
+            let audio = try await loader(asset, .audible)
+            try Task.checkCancellation()
+            return .loaded(subtitles: subtitles, audio: audio)
+        } catch {
+            if error is CancellationError || Task.isCancelled { throw CancellationError() }
+            return .failed
+        }
+    }
+}
+
 /// The current AVPlayerItem owns both automatic criteria and manual choices.
 /// Info loads only that item's optional groups; Gallery and Grid share it.
 struct MediaTrackSelectionControls: View {
     let item: PhotoItem
     @ObservedObject var playback: VideoPlaybackController
+    var loadOptions: @MainActor (AVAsset) async throws -> MediaTrackOptionsResult = {
+        try await MediaTrackOptionsResult.load(from: $0)
+    }
 
     private enum Choice: Hashable {
         case automatic, off
         case option(AVMediaSelectionOption)
     }
 
+    private struct LoadRequest: Equatable {
+        let item: ObjectIdentifier?
+        let retry: UInt64
+    }
+
+    @State private var retryGeneration: UInt64 = 0
+    @State private var loadingFailed = false
     @State private var loadedItem: AVPlayerItem?
     @State private var subtitles: AVMediaSelectionGroup?
     @State private var audio: AVMediaSelectionGroup?
@@ -22,41 +57,60 @@ struct MediaTrackSelectionControls: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if playback.represents(item), let current = playback.player.currentItem {
-                if #available(macOS 26.4, *) {
-                    NativeSubtitleOptionsButton(player: playback.player, expectedItem: current,
-                                                fallbackGroup: loadedItem === current ? subtitles : nil)
-                        .fixedSize(horizontal: false, vertical: true)
+            if loadingFailed, loadedItem === playback.player.currentItem, playback.represents(item) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.text("Couldn't load audio and subtitle options."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button(L10n.text("Try Again")) { retryGeneration &+= 1 }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel(L10n.text("Try Again"))
                 }
-            }
-            if loadedItem === playback.player.currentItem, playback.represents(item) {
-                if #unavailable(macOS 26.4) {
-                    if let subtitles, !subtitles.options.isEmpty {
-                        trackPicker(L10n.text("Subtitles"), group: subtitles, choice: $subtitleChoice)
+            } else {
+                if playback.represents(item), let current = playback.player.currentItem {
+                    if #available(macOS 26.4, *) {
+                        NativeSubtitleOptionsButton(player: playback.player, expectedItem: current,
+                                                    fallbackGroup: loadedItem === current ? subtitles : nil)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                if let audio, audio.options.count > 1 {
-                    trackPicker(L10n.text("Audio track"), group: audio, choice: $audioChoice)
+                if loadedItem === playback.player.currentItem, playback.represents(item) {
+                    if #unavailable(macOS 26.4) {
+                        if let subtitles, !subtitles.options.isEmpty {
+                            trackPicker(L10n.text("Subtitles"), group: subtitles, choice: $subtitleChoice)
+                        }
+                    }
+                    if let audio, audio.options.count > 1 {
+                        trackPicker(L10n.text("Audio track"), group: audio, choice: $audioChoice)
+                    }
+                } else if playback.represents(item), playback.player.currentItem != nil {
+                    ProgressView().controlSize(.small)
+                        .accessibilityLabel(L10n.text("Loading media options"))
                 }
-            } else if playback.represents(item), playback.player.currentItem != nil {
-                ProgressView().controlSize(.small)
-                    .accessibilityLabel(L10n.text("Loading media options"))
             }
         }
-        .task(id: playback.player.currentItem) {
+        .task(id: LoadRequest(item: playback.player.currentItem.map(ObjectIdentifier.init), retry: retryGeneration)) {
             loadedItem = nil
+            loadingFailed = false
             subtitles = nil
             audio = nil
             guard playback.represents(item), let current = playback.player.currentItem else { return }
-            let subtitleGroup = try? await current.asset.loadMediaSelectionGroup(for: .legible)
-            guard !Task.isCancelled else { return }
-            let audioGroup = try? await current.asset.loadMediaSelectionGroup(for: .audible)
-            guard !Task.isCancelled, current === playback.player.currentItem,
-                  playback.represents(item) else { return }
-            loadedItem = current
-            subtitles = subtitleGroup
-            audio = audioGroup
-            refreshChoices()
+            do {
+                let result = try await loadOptions(current.asset)
+                guard !Task.isCancelled, current === playback.player.currentItem,
+                      playback.represents(item) else { return }
+                loadedItem = current
+                switch result {
+                case .loaded(let subtitleGroup, let audioGroup):
+                    subtitles = subtitleGroup
+                    audio = audioGroup
+                    refreshChoices()
+                case .failed:
+                    loadingFailed = true
+                }
+            } catch {
+                return
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: AVPlayerItem.mediaSelectionDidChangeNotification)) { notification in
             guard let changed = notification.object as? AVPlayerItem,

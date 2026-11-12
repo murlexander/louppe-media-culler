@@ -628,6 +628,8 @@ precedence over remembered scope/position.
   manual choices across Gallery/Grid. macOS 26.4+ uses AVKit's subtitle/style
   menu, supplementing authored languages when absent; older systems use native
   pickers. Item identity and cancellation prevent retired media from acting.
+  Track-group read failures replace the menus with a compact error and Try Again;
+  a successful load with no optional groups keeps the existing empty display.
 
 - [macOS input guidance](MACOS_INPUT.md) records the Apple touch-design review
   through macOS 27.2. `DirectTouchClickActions` attaches touch-only click

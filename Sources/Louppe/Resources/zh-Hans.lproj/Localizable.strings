@@ -2173,3 +2173,5 @@
 "1 item will move out of {0} existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "1 个项目将移出 {0} 个现有文件夹。已识别的 XMP 附属文件和已分组的 RAW+JPEG 文件将随媒体一起移动。不会覆盖任何内容。";
 
 "{0} items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "{0} 个项目将移出 1 个现有文件夹。已识别的 XMP 附属文件和已分组的 RAW+JPEG 文件将随媒体一起移动。不会覆盖任何内容。";
+"Couldn't load audio and subtitle options." = "无法加载音频和字幕选项。";
+"Try Again" = "重试";

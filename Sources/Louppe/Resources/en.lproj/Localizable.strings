@@ -2156,3 +2156,5 @@
 "1 item will move out of {0} existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "1 item will move out of {0} existing folders. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.";
 
 "{0} items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "{0} items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten.";
+"Couldn't load audio and subtitle options." = "Couldn't load audio and subtitle options.";
+"Try Again" = "Try Again";
