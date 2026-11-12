@@ -44,4 +44,3 @@ extension NSColor {
         return NSColor(srgbRed: color.0 / 255, green: color.1 / 255, blue: color.2 / 255, alpha: 1)
     }
 }
-

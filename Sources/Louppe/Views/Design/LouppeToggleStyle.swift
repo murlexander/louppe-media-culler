@@ -18,4 +18,3 @@ struct LouppeToggleStyle: ToggleStyle {
         .tint(Color.louppeFilledAccent)
     }
 }
-

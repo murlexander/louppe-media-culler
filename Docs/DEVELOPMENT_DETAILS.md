@@ -1007,6 +1007,38 @@ precedence over remembered scope/position.
 - Square thumbnails letterbox (`fit`) to preserve the whole photo and prevent
   portrait overflow.
 
+### Design components
+
+Use shared components and named constants for repeated layouts; keep native controls,
+grouped Forms, semantic colors and system text styles native, with no global spacing
+or font token scale. `SourceConventionsTests` guards these conventions.
+
+| Use | For |
+| --- | --- |
+| [`Palette.swift`](../Sources/Louppe/Views/Design/Palette.swift) | App background, foreground accent and filled-control accent, including appearance/contrast variants. |
+| [`LouppeToggleStyle`](../Sources/Louppe/Views/Design/LouppeToggleStyle.swift) | Native automatic, checkbox or switch toggles with readable white ink. |
+| [`CompactToolbarPopover`](../Sources/Louppe/Views/Design/CompactToolbarPopover.swift) | Sort/Filter title, compact margins, width and fixed Done footer. |
+| [`LabeledReadout`](../Sources/Louppe/Views/Design/LabeledReadout.swift) | Caption/value pairs read as one accessibility element. |
+| [`MediaBadgeBackdrop`](../Sources/Louppe/Views/Design/MediaBadgeBackdrop.swift) | Dark media-overlay badge surfaces respecting contrast and transparency preferences. |
+| [`ReviewCollectionMetrics`](../Sources/Louppe/Views/Design/ReviewCollectionMetrics.swift) | Browser/Grid geometry shared by rendering, measurement and keyboard navigation. |
+| [`ReviewEmptyState` / `ReviewEmptyStateView`](../Sources/Louppe/Views/Design/ReviewEmptyState.swift) | Session, grouped-review, folder and filter empty states with their remedies. |
+| [`ReviewTileMetrics` / `reviewTileSelectionOutline`](../Sources/Louppe/Views/Design/ReviewTileSelection.swift) | Ready/opening media corners and current/selected outlines. |
+| [`SheetActions` / `SheetCancelButton` / `SheetPrimaryButton`](../Sources/Louppe/Views/Design/SheetActions.swift) | Leading sheet actions and trailing Cancel/primary actions, preserving caller-owned gates and default roles. |
+| [`SourceFileOperationProgressView`](../Sources/Louppe/Views/Design/SourceFileOperationProgressView.swift) | Rename/Organize worker progress and keep-open instruction. |
+| [`SourceFileOperationOutcomeView`](../Sources/Louppe/Views/Design/SourceFileOperationOutcomeView.swift) | Confirmed Rename/Organize results, errors and gated Undo. |
+| [`StatusBanner`](../Sources/Louppe/Views/Design/StatusBanner.swift) | Full-width notice/warning strips, optional dismissal and accessibility announcement. |
+| [`SheetForm`](../Sources/Louppe/Views/SheetForm.swift) | Dialog title/subtitle, body and fixed action area; grouped setup or scrolling reading content. |
+| [`LouppeSettingsForm`](../Sources/Louppe/Views/LouppeSettingsForm.swift) | One native grouped form for Settings and setup sheets. |
+| [`FloatingControlSurface`](../Sources/Louppe/Views/FloatingControlSurface.swift) | Zoom/transport glass, older-system material and accessibility fallbacks. |
+| [`NativeSearchField`](../Sources/Louppe/Views/NativeSearchField.swift) | Native search editing, IME and scoped focus without another key monitor. |
+| [`ArchiveNavigationHeader`](../Sources/Louppe/Views/ArchiveNavigationViews.swift) | Folder navigation and breadcrumb header. |
+| [`ReviewCollection`](../Sources/Louppe/Views/ReviewCollection.swift) / [`PersistentVerticalScroller`](../Sources/Louppe/Views/PersistentVerticalScroller.swift) | Reused native review cells and vertical scrolling with a stable gutter. |
+| [`TileBadgeLayout` / `RatingBadge`](../Sources/Louppe/Views/ThumbnailView.swift) / [`ReviewGridCaption`](../Sources/Louppe/Views/ReviewCollectionGeometry.swift) | Media badge geometry, decisions and Grid filenames. |
+| [`WelcomeSourceRow`](../Sources/Louppe/Views/WelcomeView.swift) | Aligned Welcome source buttons and supporting details. |
+| [`MediaTileAccessibility`](../Sources/Louppe/Views/MediaTileAccessibility.swift) | Shared spoken media/rating descriptions and review actions. |
+| [`DirectTouchClickActions`](../Sources/Louppe/Views/DirectTouchClickActions.swift) | Touch-only single/double taps that yield to native scrolling. |
+| [`LocalizedInterface`](../Sources/Louppe/Views/LocalizedInterface.swift) / [`L10n`](../Sources/Louppe/Localization.swift) | Interface language/direction and complete localized presentation messages. |
+
 ## Agent environment
 
 Facts about the toolchain and macOS that agents keep rediscovering. Machine

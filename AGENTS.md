@@ -112,8 +112,10 @@ The owner and several agents often work on this checkout at the same time.
 
 - Colors never change: one background, `Color.appBackground`, with `Divider()`
   lines between regions (grouped Form sections keep their system surfaces). One
-  accent, `Color.louppeAccent` (#9853A6, global `.tint`). Green and red are
-  reserved for yes/no ratings; never blue or `Color.accentColor`.
+  accent, `Color.louppeAccent` (#9853A6, global `.tint`), defined in
+  `Sources/Louppe/Views/Design/Palette.swift`. Green and red mean yes/no in
+  ratings; elsewhere they appear only as content colors (color labels), red
+  validation errors and audio-meter zones. Never blue chrome or `Color.accentColor`.
 - Settings and configuration sheets use the native grouped Form: leading labels,
   trailing values, automatic picker and toggle styling. Toolbar popovers (Sort,
   Filter) share Filter's compact layout: bold title, compact rows and
@@ -124,7 +126,8 @@ The owner and several agents often work on this checkout at the same time.
   `.buttonStyle(.borderless)`, as in `ArchiveBreadcrumbView`; put a choice
   inside it as an inline `Picker` or buttons. Never `.pickerStyle(.menu)`,
   `.menuStyle(.borderedButton)` or `.menuStyle(.borderlessButton)`;
-  `SourceConventionsTests` ratchets the remaining old uses down.
+  `SourceConventionsTests` rejects these styles.
+- Before building a repeated layout, check the [Design components table](Docs/DEVELOPMENT_DETAILS.md#design-components).
 - Where controls go: source shortcuts and pins on Welcome; persistent
   preferences in Settings; narrowing the Photos selection in Filter; library
   mutations in the File menu behind a confirmation. The review surface gets a
