@@ -190,7 +190,7 @@ final class NextPhotoSpeedTests: XCTestCase {
     func testHeaderPixelSizeMatchesOrientedRecipeWithoutBuildingIt() async throws {
         let folder = try temporaryFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
-        for orientation in [1, 3, 6, 8] {
+        for orientation in 1...8 {
             let url = folder.appendingPathComponent("o\(orientation).jpg")
             try writeJPEG(to: url, width: 300, height: 200, orientation: orientation)
             let recipe = try XCTUnwrap(CIImage(contentsOf: url, options: [.applyOrientationProperty: true]))

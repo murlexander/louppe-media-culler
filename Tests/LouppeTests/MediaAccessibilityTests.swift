@@ -182,6 +182,60 @@ final class MediaAccessibilityTests: XCTestCase {
         }
     }
 
+    func testRetiredTrackFailureCannotReplaceOptionsAfterReturningToSamePhoto() async throws {
+        let first = try fixtureCopy()
+        let second = try fixtureCopy()
+        let controller = configuredController()
+        defer { controller.stop() }
+        controller.prepare(first)
+        _ = try await groups(for: controller)
+        let originalPlayerItem = try XCTUnwrap(controller.player.currentItem)
+        let retiredTaskFinished = expectation(description: "The retired options task has exited")
+        let didFinish: (AVPlayerItem) -> Void = { current in
+            if current === originalPlayerItem { retiredTaskFinished.fulfill() }
+        }
+        var attempts = 0
+        var retiredLoad: CheckedContinuation<MediaTrackOptionsResult, Never>?
+        let loader: @MainActor (AVAsset) async throws -> MediaTrackOptionsResult = { _ in
+            attempts += 1
+            if attempts == 1 {
+                // Deliberately ignore cancellation, like a late native read.
+                return await withCheckedContinuation { retiredLoad = $0 }
+            }
+            return .loaded(subtitles: nil, audio: nil)
+        }
+        let host = NSHostingView(rootView: MediaTrackSelectionControls(
+            item: first, playback: controller, loadOptions: loader, onOptionsLoadFinishedForTesting: didFinish)
+            .environment(\.accessibilityEnabled, true))
+        let window = NSWindow(contentRect: CGRect(x: -20_000, y: -20_000, width: 300, height: 160),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        defer {
+            retiredLoad?.resume(returning: .failed)
+            window.contentView = nil
+            window.close()
+        }
+        try await waitUntil { retiredLoad != nil }
+        controller.prepare(second)
+        host.rootView = MediaTrackSelectionControls(item: second, playback: controller, loadOptions: loader, onOptionsLoadFinishedForTesting: didFinish)
+            .environment(\.accessibilityEnabled, true)
+        try await waitUntil { attempts == 2 }
+        controller.prepare(first)
+        host.rootView = MediaTrackSelectionControls(item: first, playback: controller, loadOptions: loader, onOptionsLoadFinishedForTesting: didFinish)
+            .environment(\.accessibilityEnabled, true)
+        try await waitUntil { attempts == 3 }
+        let late = try XCTUnwrap(retiredLoad)
+        retiredLoad = nil
+        late.resume(returning: .failed)
+        await fulfillment(of: [retiredTaskFinished], timeout: 5)
+        host.layoutSubtreeIfNeeded()
+        XCTAssertNil(retryButton(in: host), "The first A player's late failure must not replace the new A's successful options")
+        XCTAssertEqual(attempts, 3, "A stale failure must not start an automatic retry loop")
+        XCTAssertFalse(window.isVisible)
+        XCTAssertFalse(window.isKeyWindow)
+    }
+
     private func retryButton(in root: NSView) -> NSObject? {
         var visited = Set<ObjectIdentifier>()
         func find(_ object: NSObject) -> NSObject? {

@@ -35,6 +35,10 @@ struct MediaTrackSelectionControls: View {
         try await MediaTrackOptionsResult.load(from: $0)
     }
 
+#if LOUPPE_TEST_SEAMS
+    var onOptionsLoadFinishedForTesting: ((AVPlayerItem) -> Void)?
+#endif
+
     private enum Choice: Hashable {
         case automatic, off
         case option(AVMediaSelectionOption)
@@ -95,6 +99,9 @@ struct MediaTrackSelectionControls: View {
             subtitles = nil
             audio = nil
             guard playback.represents(item), let current = playback.player.currentItem else { return }
+#if LOUPPE_TEST_SEAMS
+            defer { onOptionsLoadFinishedForTesting?(current) }
+#endif
             do {
                 let result = try await loadOptions(current.asset)
                 guard !Task.isCancelled, current === playback.player.currentItem,
