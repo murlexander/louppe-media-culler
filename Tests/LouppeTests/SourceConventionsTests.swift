@@ -91,6 +91,41 @@ final class SourceConventionsTests: XCTestCase {
         }
     }
 
+    func testEnglishOnlyPluralBranchesDoNotGrow() throws {
+        // These files are being converted separately. Lower ceilings as they
+        // migrate; every other source file must use app-language plural rules.
+        let baseline = [
+            "Sources/Louppe/Views/ExportView.swift": 26,
+            "Sources/Louppe/Views/RenameFilesView.swift": 6,
+            "Sources/Louppe/Views/OrganizeSourceView.swift": 9,
+            "Sources/Louppe/Views/Design/SourceFileOperationProgressView.swift": 0,
+            "Tests/LouppeTests/CaptureScenariosTests.swift": 0
+        ]
+        let files = try swiftFiles(in: "Sources/Louppe") + [repositoryRoot.appendingPathComponent(
+            "Tests/LouppeTests/CaptureScenariosTests.swift")]
+        for file in files {
+            let source = try String(contentsOf: file, encoding: .utf8)
+            XCTAssertLessThanOrEqual(try englishPluralBranchCount(in: source), baseline[relativePath(file)] ?? 0,
+                                     "Use L10n.plural for count agreement: \(relativePath(file))")
+        }
+    }
+
+    func testEnglishPluralBranchMatcherCoversMultilineAndInterpolatedCounts() throws {
+        XCTAssertEqual(try englishPluralBranchCount(in: #"count == 1 ? L10n.text("1 item") : L10n.text("\(count) items")"#), 1)
+        XCTAssertEqual(try englishPluralBranchCount(in: """
+            total == 1
+                ? L10n.text("Preparing 1 item") : L10n.text("Preparing items")
+            rating == .one ? L10n.text("1 star") : L10n.text("stars")
+            """), 2)
+        XCTAssertEqual(try englishPluralBranchCount(in: #"L10n.plural("%lld items", count); count == 1 ? first : second"#), 0)
+    }
+
+    private func englishPluralBranchCount(in source: String) throws -> Int {
+        let expression = try NSRegularExpression(pattern:
+            #"(?:==\s*1|==\s*\.one)\s*\?\s*L10n\.text\s*\(\s*""#)
+        return expression.numberOfMatches(in: source, range: NSRange(source.startIndex..., in: source))
+    }
+
     func testBareEnglishCountMatcherDistinguishesLocalizedCalls() throws {
         XCTAssertEqual(try bareEnglishCountCount(in: #"let a = "1 file"; let b = Text("1 item"); let c = "1 Star""#), 3)
         XCTAssertEqual(try bareEnglishCountCount(in: #"L10n.text("1 file"); L10n.label( "1 item"); L10n.text("1 item found")"#), 0)
@@ -135,7 +170,7 @@ final class SourceConventionsTests: XCTestCase {
     private func bareEnglishCountCount(in source: String) throws -> Int {
         // Capture the optional L10n call with the whole literal, rather than matching its inner quote again.
         let expression = try NSRegularExpression(pattern:
-            #"(?:(L10n\s*\.\s*(?:text|label)\s*\(\s*))?"(?:1 [A-Za-z]+(?: [^"\\\n]*)?|(?:[0-9]+|\\\([^"\\\n]*\)) (?:items?|files?|folders?|media files?|stars?))""#)
+            #"(?:(L10n\s*\.\s*(?:text|label|plural)\s*\(\s*))?"(?:1 [A-Za-z]+(?: [^"\\\n]*)?|(?:[0-9]+|\\\([^"\\\n]*\)) (?:items?|files?|folders?|media files?|stars?))""#)
         return expression.matches(in: source, range: NSRange(source.startIndex..., in: source))
             .filter { $0.range(at: 1).location == NSNotFound }.count
     }

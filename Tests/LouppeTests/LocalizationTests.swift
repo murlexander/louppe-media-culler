@@ -17,6 +17,134 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testPluralCountsUseAppLanguageRulesAndGroupedNumbers() {
+        let counts = [0, 1, 2, 3, 11, 100, 17015]
+        let arabicNumbers = counts.map { $0.formatted(.number.locale(Locale(identifier: "ar"))) }
+        let expected: [String: [String]] = [
+            "en": ["0 items", "1 item", "2 items", "3 items", "11 items", "100 items", "17,015 items"],
+            "es": ["0 elementos", "1 elemento", "2 elementos", "3 elementos", "11 elementos", "100 elementos", "17.015 elementos"],
+            "zh-Hans": ["0 项", "1 项", "2 项", "3 项", "11 项", "100 项", "17,015 项"],
+            "hi": ["0 आइटम", "1 आइटम", "2 आइटम", "3 आइटम", "11 आइटम", "100 आइटम", "17,015 आइटम"],
+            "pt": ["0 item", "1 item", "2 itens", "3 itens", "11 itens", "100 itens", "17.015 itens"],
+            "ar": ["\(arabicNumbers[0]) عناصر", "عنصر واحد", "عنصران", "\(arabicNumbers[3]) عناصر",
+                   "\(arabicNumbers[4]) عنصرًا", "\(arabicNumbers[5]) عنصر", "\(arabicNumbers[6]) عنصرًا"]
+        ]
+        for language in L10n.supportedLanguages {
+            for (index, count) in counts.enumerated() {
+                XCTAssertEqual(withoutDirectionIsolates(L10n.renderPlural("%lld items", counts: [count], language: language)),
+                               expected[language]?[index], "\(language): \(count)")
+            }
+        }
+        XCTAssertEqual(L10n.plural("%lld items", 17015),
+                       L10n.renderPlural("%lld items", counts: [17015], language: L10n.language))
+        XCTAssertEqual(L10n.number(17015), 17015.formatted(.number.locale(L10n.locale)))
+    }
+
+    func testEveryPackagedPluralEntryUsesItsLanguageBundleAndAllIntegerForms() throws {
+        let counts = [0, 1, 2, 3, 11, 100, 17015]
+        let english = try pluralCatalog("en")
+        XCTAssertGreaterThan(english.count, 50)
+        for language in L10n.supportedLanguages {
+            let catalog = try pluralCatalog(language)
+            XCTAssertEqual(Set(catalog.keys), Set(english.keys), language)
+            for (key, entry) in catalog {
+                let format = try XCTUnwrap(entry["NSStringLocalizedFormatKey"] as? String)
+                // Also proves SwiftPM packaged stringsdict and Bundle returns
+                // the plural-aware format instead of its English lookup key.
+                XCTAssertEqual(L10n.pluralFormat(forKey: key, language: language), format, "\(language): \(key)")
+                let names = entry.keys.filter { $0 != "NSStringLocalizedFormatKey" }.sorted()
+                for name in names {
+                    let rule = try XCTUnwrap(entry[name] as? [String: String])
+                    XCTAssertEqual(rule["NSStringFormatSpecTypeKey"], "NSStringPluralRuleType")
+                    XCTAssertEqual(rule["NSStringFormatValueTypeKey"], "lld")
+                    let required = language == "ar" ? ["zero", "one", "two", "few", "many", "other"]
+                        : language == "zh-Hans" ? ["other"] : ["one", "other"]
+                    for category in required { XCTAssertNotNil(rule[category], "\(language): \(key): \(category)") }
+                }
+                for (offset, count) in counts.enumerated() {
+                    // Reverse count two to exercise independent agreement.
+                    let selected = names.indices.map { $0 == 0 ? count : counts[counts.count - 1 - offset] }
+                    var expected = format
+                    let locale = Locale(identifier: language)
+                    var values: [any CVarArg] = []
+                    for (index, name) in names.enumerated() {
+                        let n = selected[index]
+                        let rule = try XCTUnwrap(entry[name] as? [String: String])
+                        let category = pluralCategory(n, language: language)
+                        let phrase = try XCTUnwrap(rule[category] ?? rule["other"])
+                        expected = expected.replacingOccurrences(of: "%\(2 * index + 1)$#@\(name)@", with: phrase)
+                        values += [Int64(n), n.formatted(.number.locale(locale))]
+                    }
+                    let arguments = ["A {1} %lld #@count1@ مرحبًا.JPG", "RAW", "EXTRA"]
+                    values += arguments.map { $0 as any CVarArg }
+                    expected = String(format: expected, locale: locale, arguments: values)
+                    XCTAssertEqual(L10n.renderPlural(key, counts: selected, arguments: arguments, language: language),
+                                   expected, "\(language): \(key): \(selected)")
+                }
+            }
+        }
+    }
+
+    func testPluralWholeSentenceKeepsLiteralArgumentsAndIndependentAgreement() {
+        XCTAssertEqual(L10n.renderPlural("%lld items changed after this folder was scanned%@. ", counts: [1],
+                                        arguments: [" (A {1} %lld.JPG)"], language: "en"),
+                       "1 item has changed after this folder was scanned (A {1} %lld.JPG). ")
+        XCTAssertEqual(L10n.renderPlural("%lld photos selected · %lld files", counts: [1, 17015], language: "en"),
+                       "1 photo selected · 17,015 files")
+        XCTAssertEqual(withoutDirectionIsolates(L10n.renderPlural("%lld photos selected · %lld files", counts: [2, 3], language: "ar")),
+                       "المحدد: صورتان · \(3.formatted(.number.locale(Locale(identifier: "ar")))) ملفات")
+        XCTAssertEqual(L10n.renderPlural(
+            "%lld files (about %@) will be moved to the Trash. The matching %@ files will stay in the folder.",
+            counts: [1], arguments: ["5 MB", "RAW"], language: "en"),
+            "1 file (about 5 MB) will be moved to the Trash. The matching RAW file will stay in the folder.")
+        XCTAssertEqual(L10n.renderPlural("%lld stars", counts: [2], language: "ar"), "نجمتان")
+        XCTAssertEqual(L10n.renderPlural("Set %lld Stars", counts: [2], language: "ar"), "تعيين نجمتين")
+    }
+
+    func testSourcePluralKeysHaveCatalogEntries() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let files = try XCTUnwrap(FileManager.default.enumerator(
+            at: root.appendingPathComponent("Sources/Louppe"), includingPropertiesForKeys: nil))
+        let expression = try NSRegularExpression(pattern: #"L10n\.plural\(\s*"([^"]+)""#)
+        let catalog = try pluralCatalog("en")
+        for case let file as URL in files where file.pathExtension == "swift" {
+            let source = try String(contentsOf: file, encoding: .utf8)
+            for match in expression.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
+                let range = try XCTUnwrap(Range(match.range(at: 1), in: source))
+                XCTAssertNotNil(catalog[String(source[range])], "\(file.lastPathComponent): \(source[range])")
+            }
+        }
+    }
+
+    private func withoutDirectionIsolates(_ value: String) -> String {
+        // NSString inserts bidi isolation around substituted numbers on some
+        // macOS versions. The catalog matrix above verifies those bytes too.
+        value.replacingOccurrences(of: "\u{2068}", with: "")
+            .replacingOccurrences(of: "\u{2069}", with: "")
+    }
+
+    private func pluralCategory(_ count: Int, language: String) -> String {
+        if language == "zh-Hans" { return "other" }
+        if language == "ar" {
+            if count == 0 { return "zero" }
+            if count == 1 { return "one" }
+            if count == 2 { return "two" }
+            if (3...10).contains(count % 100) { return "few" }
+            if (11...99).contains(count % 100) { return "many" }
+            return "other"
+        }
+        if (language == "hi" || language == "pt"), count == 0 { return "one" }
+        return count == 1 ? "one" : "other"
+    }
+
+    private func pluralCatalog(_ language: String) throws -> [String: [String: Any]] {
+        let path = try XCTUnwrap(L10n.resourceBundle.path(forResource: "Localizable", ofType: "stringsdict",
+                                                       inDirectory: nil, forLocalization: language))
+        return try XCTUnwrap(PropertyListSerialization.propertyList(
+            from: Data(contentsOf: URL(fileURLWithPath: path)), format: nil) as? [String: [String: Any]])
+    }
+
     func testLanguagePreferencesAndRegionalVariants() {
         XCTAssertEqual(L10n.language(for: ["es-MX", "en-US"]), "es")
         XCTAssertEqual(L10n.language(for: ["zh-CN"]), "zh-Hans")
