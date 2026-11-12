@@ -114,7 +114,7 @@ final class LocalizationTests: XCTestCase {
                                       "{0}: {1}", "{0} · {1}"]
         let shared: [String: Set<String>] = [
             "es": ["Audio", "Color", "Color: {0}", "General", "Manual", "Mono", "No", "OK", "audio", "{0} s", "s"],
-            "pt": ["Codec", "Manual", "Mono", "OK", "Picture in Picture", "Volume", "item", "{0} s", "s"]
+            "pt": ["1 item", "Codec", "Manual", "Mono", "OK", "Picture in Picture", "Volume", "item", "{0} s", "s"]
         ]
         for language in L10n.supportedLanguages where language != "en" {
             let allowed = technical.union(shared[language] ?? [])

@@ -26,6 +26,8 @@
 ". Completed photos stay at the destination; the photo in progress rolled back." = ". Completed photos stay at the destination; the photo in progress rolled back.";
 ". Originals are never touched." = ". Originals are never touched.";
 "0.1–100%. Press Return to apply." = "0.1–100%. Press Return to apply.";
+"1 file" = "1 file";
+"1 item" = "1 item";
 "1 item couldn't be moved to the Trash and stayed in the folder." = "1 item couldn't be moved to the Trash and stayed in the folder.";
 "1 item couldn't be restored from the Trash — it may have been deleted there." = "1 item couldn't be restored from the Trash — it may have been deleted there.";
 "1 item found" = "1 item found";

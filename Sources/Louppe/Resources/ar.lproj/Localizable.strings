@@ -26,6 +26,8 @@
 ". Completed photos stay at the destination; the photo in progress rolled back." = ". تبقى الصور المكتملة في الوجهة؛ أُعيدت الصورة التي كانت قيد المعالجة إلى المصدر.";
 ". Originals are never touched." = ". لا تُغيّر الملفات الأصلية أبدًا.";
 "0.1–100%. Press Return to apply." = "⁦0.1–100%⁩. اضغط Return للتطبيق.";
+"1 file" = "ملف واحد";
+"1 item" = "عنصر واحد";
 "1 item couldn't be moved to the Trash and stayed in the folder." = "تعذّر نقل عنصر واحد إلى سلة المهملات وبقي في المجلد.";
 "1 item couldn't be restored from the Trash — it may have been deleted there." = "تعذّر استعادة عنصر واحد من سلة المهملات؛ ربما حُذف منها.";
 "1 item found" = "عُثر على عنصر واحد";

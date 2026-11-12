@@ -26,6 +26,8 @@
 ". Completed photos stay at the destination; the photo in progress rolled back." = ". Las fotos completadas siguen en el destino; la foto en curso volvió al origen.";
 ". Originals are never touched." = ". Los originales nunca se modifican.";
 "0.1–100%. Press Return to apply." = "0.1–100%. Pulsa Retorno para aplicar.";
+"1 file" = "1 archivo";
+"1 item" = "1 elemento";
 "1 item couldn't be moved to the Trash and stayed in the folder." = "1 elemento no pudo ir a la Papelera y sigue en la carpeta.";
 "1 item couldn't be restored from the Trash — it may have been deleted there." = "1 elemento no pudo restaurarse desde la Papelera; puede haberse eliminado allí.";
 "1 item found" = "1 elemento encontrado";

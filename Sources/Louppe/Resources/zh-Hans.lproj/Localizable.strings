@@ -26,6 +26,8 @@
 ". Completed photos stay at the destination; the photo in progress rolled back." = "。已完成的照片留在目标位置；正在处理的照片已回退。";
 ". Originals are never touched." = "。原始文件始终保持不变。";
 "0.1–100%. Press Return to apply." = "0.1–100%。按 Return 键应用。";
+"1 file" = "1 个文件";
+"1 item" = "1 个项目";
 "1 item couldn't be moved to the Trash and stayed in the folder." = "1 个项目无法移到废纸篓，仍留在文件夹中。";
 "1 item couldn't be restored from the Trash — it may have been deleted there." = "1 个项目无法从废纸篓恢复；它可能已在废纸篓中被删除。";
 "1 item found" = "找到 1 个项目";

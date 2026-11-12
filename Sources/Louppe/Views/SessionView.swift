@@ -226,7 +226,7 @@ struct SessionView: View {
 
     private var clearAllRatingsMessage: String {
         let count = store.archiveRatedCount
-        let items = count == 1 ? "1 item" : L10n.text("\(count) items")
+        let items = itemsPhrase(count)
         return L10n.text("Clear Yes/No decisions from \(items). Stars and color labels stay unchanged. Undo with ⌘Z.")
     }
 
@@ -313,7 +313,7 @@ struct SessionView: View {
 
     private func cleanUpMessage(for mode: CleanUpMode) -> String {
         let counts = store.cleanUpCounts(for: mode)
-        let files = counts.files == 1 ? "1 file" : L10n.text("\(counts.files) files")
+        let files = counts.files == 1 ? L10n.text("1 file") : L10n.text("\(counts.files) files")
         let space = ByteCountFormatter.string(fromByteCount: counts.bytes, countStyle: .file)
         if mode == .pairedJPEGs || mode == .pairedRAWs {
             let removed = mode == .pairedJPEGs ? "JPEG" : "RAW"
@@ -371,7 +371,7 @@ struct SessionView: View {
     }
 
     private func itemsPhrase(_ count: Int) -> String {
-        count == 1 ? "1 item" : L10n.text("\(count) items")
+        count == 1 ? L10n.text("1 item") : L10n.text("\(count) items")
     }
 
     private var subtitle: String {

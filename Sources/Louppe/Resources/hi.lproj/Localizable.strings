@@ -26,6 +26,8 @@
 ". Completed photos stay at the destination; the photo in progress rolled back." = "। पूरी हो चुकी तस्वीरें गंतव्य पर हैं; चालू तस्वीर वापस रख दी गई।";
 ". Originals are never touched." = "। मूल फ़ाइलें कभी नहीं बदली जातीं।";
 "0.1–100%. Press Return to apply." = "0.1–100%। लागू करने के लिए Return दबाएँ।";
+"1 file" = "1 फ़ाइल";
+"1 item" = "1 आइटम";
 "1 item couldn't be moved to the Trash and stayed in the folder." = "1 आइटम कूड़ेदान में नहीं जा सका और फ़ोल्डर में ही है।";
 "1 item couldn't be restored from the Trash — it may have been deleted there." = "1 आइटम कूड़ेदान से वापस नहीं आ सका; संभव है वह वहाँ से मिटा दिया गया हो।";
 "1 item found" = "1 आइटम मिला";
