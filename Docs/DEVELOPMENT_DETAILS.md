@@ -752,9 +752,19 @@ precedence over remembered scope/position.
   display labels shared with stable English metadata identifiers; never pass
   filenames, user text, XMP values, generated path components, storage keys,
   export grouping IDs, or journal IDs through it. Preformat numbers before
-  interpolation; never use a translated string as a printf format.
+  `L10n.text` interpolation; only plural catalogs carry printf formats.
   Keep each language's keys/slots/technical tokens in sync with English.
   Translate whole sentences rather than inserting English suffixes or verbs.
+  Count phrases use `L10n.plural("%lld items", count)` and per-language
+  `Localizable.stringsdict` rules. The app-language bundle selects the format;
+  `Locale(identifier: L10n.language)` controls plural selection and grouped
+  numbers. Each count supplies a raw `Int64` for its rule and a separate display
+  string (`%1$#@count1@` selects the rule, whose forms display `%2$@`).
+  Additional arguments remain literal. Whole-sentence entries can own
+  several independently pluralized counts with `counts: [first, second]`.
+  `L10n.number` formats other integer counters in the same locale. SwiftPM
+  processes these catalogs with `Resources`; packaging copies the complete
+  resource bundle into the app. Stored filenames and identifiers stay unchanged.
 - macOS preferred languages (including per-app overrides) select the catalog;
   unavailable keys/languages fall back to English. Traditional Chinese does
   not silently select the Simplified catalog. `LocalizedInterfaceModifier`

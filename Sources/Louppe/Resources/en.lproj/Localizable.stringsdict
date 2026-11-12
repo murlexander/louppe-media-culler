@@ -1,0 +1,1005 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Louppe couldn't finish checking %lld interrupted files. </key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Louppe couldn't finish checking %2$@ interrupted file. </string>
+			<key>other</key>
+			<string>Louppe couldn't finish checking %2$@ interrupted files. </string>
+		</dict>
+	</dict>
+	<key>%lld possible duplicate files checked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ possible duplicate file checked</string>
+			<key>other</key>
+			<string>%2$@ possible duplicate files checked</string>
+		</dict>
+	</dict>
+	<key>%lld photo previews compared</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ photo preview compared</string>
+			<key>other</key>
+			<string>%2$@ photo previews compared</string>
+		</dict>
+	</dict>
+	<key>%lld items couldn't be moved completely. </key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ item couldn't be moved completely. </string>
+			<key>other</key>
+			<string>%2$@ items couldn't be moved completely. </string>
+		</dict>
+	</dict>
+	<key>%lld items couldn't be moved to the Trash and stayed in the folder.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ item couldn't be moved to the Trash and stayed in the folder.</string>
+			<key>other</key>
+			<string>%2$@ items couldn't be moved to the Trash and stayed in the folder.</string>
+		</dict>
+	</dict>
+	<key>%lld items couldn't be restored from the Trash — they may have been deleted there.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ item couldn't be restored from the Trash — it may have been deleted there.</string>
+			<key>other</key>
+			<string>%2$@ items couldn't be restored from the Trash — they may have been deleted there.</string>
+		</dict>
+	</dict>
+	<key>%lld stars</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ star</string>
+			<key>other</key>
+			<string>%2$@ stars</string>
+		</dict>
+	</dict>
+	<key>%lld files restored</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ file restored</string>
+			<key>other</key>
+			<string>%2$@ files restored</string>
+		</dict>
+	</dict>
+	<key>%lld files renamed</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ file renamed</string>
+			<key>other</key>
+			<string>%2$@ files renamed</string>
+		</dict>
+	</dict>
+	<key>%lld files moved</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ file moved</string>
+			<key>other</key>
+			<string>%2$@ files moved</string>
+		</dict>
+	</dict>
+	<key>%lld hours</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ hour</string>
+			<key>other</key>
+			<string>%2$@ hours</string>
+		</dict>
+	</dict>
+	<key>%lld minutes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ minute</string>
+			<key>other</key>
+			<string>%2$@ minutes</string>
+		</dict>
+	</dict>
+	<key>%lld seconds</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ second</string>
+			<key>other</key>
+			<string>%2$@ seconds</string>
+		</dict>
+	</dict>
+	<key>%@ of %lld items processed</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%3$@ of %2$@ item processed</string>
+			<key>other</key>
+			<string>%3$@ of %2$@ items processed</string>
+		</dict>
+	</dict>
+	<key>%lld matching pairs reviewed together.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ matching pair reviewed together.</string>
+			<key>other</key>
+			<string>%2$@ matching pairs reviewed together.</string>
+		</dict>
+	</dict>
+	<key>%lld matching pairs reviewed separately.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ matching pair reviewed separately.</string>
+			<key>other</key>
+			<string>%2$@ matching pairs reviewed separately.</string>
+		</dict>
+	</dict>
+	<key>Set %lld Stars</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Set %2$@ Star</string>
+			<key>other</key>
+			<string>Set %2$@ Stars</string>
+		</dict>
+	</dict>
+	<key>kept %lld completed copies at the destination</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>kept %2$@ completed copy at the destination</string>
+			<key>other</key>
+			<string>kept %2$@ completed copies at the destination</string>
+		</dict>
+	</dict>
+	<key>kept %lld completed Move files at the destination</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>kept %2$@ completed Move file at the destination</string>
+			<key>other</key>
+			<string>kept %2$@ completed Move files at the destination</string>
+		</dict>
+	</dict>
+	<key>restored %lld original files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>restored %2$@ original file</string>
+			<key>other</key>
+			<string>restored %2$@ original files</string>
+		</dict>
+	</dict>
+	<key>removed %lld incomplete copies</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>removed %2$@ incomplete copy</string>
+			<key>other</key>
+			<string>removed %2$@ incomplete copies</string>
+		</dict>
+	</dict>
+	<key>%lld items found</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ item found</string>
+			<key>other</key>
+			<string>%2$@ items found</string>
+		</dict>
+	</dict>
+	<key>%lld photos without a capture date</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ photo without a capture date</string>
+			<key>other</key>
+			<string>%2$@ photos without a capture date</string>
+		</dict>
+	</dict>
+	<key>%lld media items without a capture date</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ media item without a capture date</string>
+			<key>other</key>
+			<string>%2$@ media items without a capture date</string>
+		</dict>
+	</dict>
+	<key>%lld items match this selection.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ item matches this selection.</string>
+			<key>other</key>
+			<string>%2$@ items match this selection.</string>
+		</dict>
+	</dict>
+	<key>Preparing %@ of %lld items…</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Preparing %3$@ of %2$@ item…</string>
+			<key>other</key>
+			<string>Preparing %3$@ of %2$@ items…</string>
+		</dict>
+	</dict>
+	<key>Older decisions refer to %lld files missing from this folder. Louppe cannot tell whether they were deleted intentionally or are temporarily unavailable. Open Folder and Forget Missing Items discards only those old saved decisions, keeps present-file decisions, and upgrades the session. Close Folder changes nothing.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Older decisions refer to %2$@ file missing from this folder. Louppe cannot tell whether it was deleted intentionally or is temporarily unavailable. Open Folder and Forget Missing Item discards only that old saved decision, keeps present-file decisions, and upgrades the session. Close Folder changes nothing.</string>
+			<key>other</key>
+			<string>Older decisions refer to %2$@ files missing from this folder. Louppe cannot tell whether they were deleted intentionally or are temporarily unavailable. Open Folder and Forget Missing Items discards only those old saved decisions, keeps present-file decisions, and upgrades the session. Close Folder changes nothing.</string>
+		</dict>
+	</dict>
+	<key>%lld groups</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ group</string>
+			<key>other</key>
+			<string>%2$@ groups</string>
+		</dict>
+	</dict>
+	<key>%@ %lld groups are visible. Review only — nothing is changed automatically.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%3$@ %2$@ group is visible. Review only — nothing is changed automatically.</string>
+			<key>other</key>
+			<string>%3$@ %2$@ groups are visible. Review only — nothing is changed automatically.</string>
+		</dict>
+	</dict>
+	<key>Clear Yes/No decisions from %lld items. Stars and color labels stay unchanged. Undo with ⌘Z.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Clear Yes/No decisions from %2$@ item. Stars and color labels stay unchanged. Undo with ⌘Z.</string>
+			<key>other</key>
+			<string>Clear Yes/No decisions from %2$@ items. Stars and color labels stay unchanged. Undo with ⌘Z.</string>
+		</dict>
+	</dict>
+	<key>Trash %lld items?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Trash %2$@ item?</string>
+			<key>other</key>
+			<string>Trash %2$@ items?</string>
+		</dict>
+	</dict>
+	<key>Trash %lld items marked No?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Trash %2$@ item marked No?</string>
+			<key>other</key>
+			<string>Trash %2$@ items marked No?</string>
+		</dict>
+	</dict>
+	<key>Trash %lld items marked No or Undecided?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Trash %2$@ item marked No or Undecided?</string>
+			<key>other</key>
+			<string>Trash %2$@ items marked No or Undecided?</string>
+		</dict>
+	</dict>
+	<key>Trash JPEG from %lld RAW + JPEG pairs?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Trash the JPEG from %2$@ RAW + JPEG pair?</string>
+			<key>other</key>
+			<string>Trash the JPEGs from %2$@ RAW + JPEG pairs?</string>
+		</dict>
+	</dict>
+	<key>Trash RAW from %lld RAW + JPEG pairs?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Trash the RAW from %2$@ RAW + JPEG pair?</string>
+			<key>other</key>
+			<string>Trash the RAWs from %2$@ RAW + JPEG pairs?</string>
+		</dict>
+	</dict>
+	<key>%lld files (about %@) will be moved to the Trash. The matching %@ files will stay in the folder.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ file (about %3$@) will be moved to the Trash. The matching %4$@ file will stay in the folder.</string>
+			<key>other</key>
+			<string>%2$@ files (about %3$@) will be moved to the Trash. The matching %4$@ files will stay in the folder.</string>
+		</dict>
+	</dict>
+	<key>%lld files will be moved to the Trash (a RAW+JPEG pair counts as two), totaling about %@. Undo with ⌘Z before closing this session, while files remain in Trash. Emptying Trash permanently deletes them and may free that space.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ file will be moved to the Trash (a RAW+JPEG pair counts as two), totaling about %3$@. Undo with ⌘Z before closing this session, while files remain in Trash. Emptying Trash permanently deletes them and may free that space.</string>
+			<key>other</key>
+			<string>%2$@ files will be moved to the Trash (a RAW+JPEG pair counts as two), totaling about %3$@. Undo with ⌘Z before closing this session, while files remain in Trash. Emptying Trash permanently deletes them and may free that space.</string>
+		</dict>
+	</dict>
+	<key>Only %lld selected items are considered — every unselected item stays in the folder.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Only %2$@ selected item is considered — every unselected item stays in the folder.</string>
+			<key>other</key>
+			<string>Only %2$@ selected items are considered — every unselected item stays in the folder.</string>
+		</dict>
+	</dict>
+	<key>%lld items changed after this folder was scanned%@. </key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ item has changed after this folder was scanned%3$@. </string>
+			<key>other</key>
+			<string>%2$@ items have changed after this folder was scanned%3$@. </string>
+		</dict>
+	</dict>
+	<key>Exact duplicates · %lld items · matching file fingerprints</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Exact duplicates · %2$@ item · matching file fingerprints</string>
+			<key>other</key>
+			<string>Exact duplicates · %2$@ items · matching file fingerprints</string>
+		</dict>
+	</dict>
+	<key>Likely similar · %lld items · local preview comparison</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Likely similar · %2$@ item · local preview comparison</string>
+			<key>other</key>
+			<string>Likely similar · %2$@ items · local preview comparison</string>
+		</dict>
+	</dict>
+	<key>Capture burst · %lld items</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Capture burst · %2$@ item</string>
+			<key>other</key>
+			<string>Capture burst · %2$@ items</string>
+		</dict>
+	</dict>
+	<key>%lld items</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ item</string>
+			<key>other</key>
+			<string>%2$@ items</string>
+		</dict>
+	</dict>
+	<key>Apple Photos · %lld items</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Apple Photos · %2$@ item</string>
+			<key>other</key>
+			<string>Apple Photos · %2$@ items</string>
+		</dict>
+	</dict>
+	<key>Image checks: %@ of %lld photos. Some cues may be unavailable.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Image checks: %3$@ of %2$@ photo. Some cues may be unavailable.</string>
+			<key>other</key>
+			<string>Image checks: %3$@ of %2$@ photos. Some cues may be unavailable.</string>
+		</dict>
+	</dict>
+	<key>Saved decisions for %lld files need checking. You can keep reviewing; previous decisions are preserved.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Saved decisions for %2$@ file need checking. You can keep reviewing; previous decisions are preserved.</string>
+			<key>other</key>
+			<string>Saved decisions for %2$@ files need checking. You can keep reviewing; previous decisions are preserved.</string>
+		</dict>
+	</dict>
+	<key>Restored saved decisions for %lld identical files.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Restored saved decisions for %2$@ identical file.</string>
+			<key>other</key>
+			<string>Restored saved decisions for %2$@ identical files.</string>
+		</dict>
+	</dict>
+	<key>Membership could not be verified for %lld items.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Membership could not be verified for %2$@ item.</string>
+			<key>other</key>
+			<string>Membership could not be verified for %2$@ items.</string>
+		</dict>
+	</dict>
+	<key>All %lld folder items are considered, even those hidden by filters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>The folder’s %2$@ item is considered, even if hidden by filters.</string>
+			<key>other</key>
+			<string>All %2$@ folder items are considered, even those hidden by filters.</string>
+		</dict>
+	</dict>
+	<key>%@ of %lld files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%3$@ of %2$@ file</string>
+			<key>other</key>
+			<string>%3$@ of %2$@ files</string>
+		</dict>
+	</dict>
+	<key>%lld photos selected · %lld files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@ selected · %3$#@count2@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ photo</string>
+			<key>other</key>
+			<string>%2$@ photos</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ file</string>
+			<key>other</key>
+			<string>%4$@ files</string>
+		</dict>
+	</dict>
+	<key>%lld media items selected · %lld files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@ selected · %3$#@count2@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ media item</string>
+			<key>other</key>
+			<string>%2$@ media items</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ file</string>
+			<key>other</key>
+			<string>%4$@ files</string>
+		</dict>
+	</dict>
+	<key>Local analysis complete: %lld possible duplicate files checked; %lld photo previews compared.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Local analysis complete: %1$#@count1@; %3$#@count2@.</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ possible duplicate file checked</string>
+			<key>other</key>
+			<string>%2$@ possible duplicate files checked</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ photo preview compared</string>
+			<key>other</key>
+			<string>%4$@ photo previews compared</string>
+		</dict>
+	</dict>
+	<key>Only %lld visible items are considered; %lld hidden items stay untouched.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@; %3$#@count2@.</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Only %2$@ visible item is considered</string>
+			<key>other</key>
+			<string>Only %2$@ visible items are considered</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ hidden item stays untouched</string>
+			<key>other</key>
+			<string>%4$@ hidden items stay untouched</string>
+		</dict>
+	</dict>
+	<key>Includes %lld No and %lld Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Includes %1$#@count1@ and %3$#@count2@. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ No item</string>
+			<key>other</key>
+			<string>%2$@ No items</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ Undecided item</string>
+			<key>other</key>
+			<string>%4$@ Undecided items</string>
+		</dict>
+	</dict>
+	<key>legacy-missing-files-title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>A Saved File Is Missing</string>
+			<key>other</key>
+			<string>Saved Files Are Missing</string>
+		</dict>
+	</dict>
+	<key>legacy-forget-missing-items</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Open Folder and Forget Missing Item</string>
+			<key>other</key>
+			<string>Open Folder and Forget Missing Items</string>
+		</dict>
+	</dict>
+	<key>recovery-unavailable-drives</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Some interrupted files are still untouched because a drive is unavailable. </string>
+			<key>other</key>
+			<string>Some interrupted files are still untouched because drives are unavailable. </string>
+		</dict>
+	</dict>
+	<key>Trash %lld Selected…</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Trash %2$@ Selected…</string>
+			<key>other</key>
+			<string>Trash %2$@ Selected…</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

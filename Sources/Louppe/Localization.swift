@@ -50,6 +50,39 @@ enum L10n {
         render(message, language: language)
     }
 
+    /// The raw count selects a stringsdict rule; its separate display argument
+    /// uses grouping in the app language. Additional arguments are literal text.
+    static func plural(_ key: StaticString, _ count: Int, arguments: [String] = []) -> String {
+        renderPlural(String(describing: key), counts: [count], arguments: arguments, language: language)
+    }
+
+    /// Multiple counts keep agreement for each noun inside one translated message.
+    static func plural(_ key: StaticString, counts: [Int], arguments: [String] = []) -> String {
+        renderPlural(String(describing: key), counts: counts, arguments: arguments, language: language)
+    }
+
+    static func number(_ value: Int) -> String {
+        value.formatted(.number.locale(locale))
+    }
+
+    static func pluralFormat(forKey key: String, language: String) -> String {
+        if let format = languageBundles[language]?.localizedString(forKey: key, value: nil, table: "Localizable"),
+           format != key {
+            return format
+        }
+        return languageBundles["en"]?.localizedString(forKey: key, value: key, table: "Localizable") ?? key
+    }
+
+    static func renderPlural(
+        _ key: String, counts: [Int], arguments: [String] = [], language: String
+    ) -> String {
+        let locale = Locale(identifier: language)
+        let values: [any CVarArg] = counts.flatMap { count -> [any CVarArg] in
+            [Int64(count), count.formatted(.number.locale(locale))]
+        } + arguments.map { $0 as any CVarArg }
+        return String(format: pluralFormat(forKey: key, language: language), locale: locale, arguments: values)
+    }
+
     /// For explicitly identified display labels whose English spelling also
     /// belongs to a persisted enum or metadata field. Never pass filenames here.
     static func label(_ english: String) -> String {

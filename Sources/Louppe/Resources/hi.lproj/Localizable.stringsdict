@@ -1,0 +1,1005 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Louppe couldn't finish checking %lld interrupted files. </key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Louppe अधूरी कार्रवाई की %2$@ फ़ाइल की जाँच पूरी नहीं कर सका। </string>
+			<key>other</key>
+			<string>Louppe अधूरी कार्रवाई की %2$@ फ़ाइलों की जाँच पूरी नहीं कर सका। </string>
+		</dict>
+	</dict>
+	<key>%lld possible duplicate files checked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ संभावित डुप्लिकेट फ़ाइल जाँची गई</string>
+			<key>other</key>
+			<string>%2$@ संभावित डुप्लिकेट फ़ाइलें जाँची गईं</string>
+		</dict>
+	</dict>
+	<key>%lld photo previews compared</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ फ़ोटो के पूर्वावलोकन की तुलना की गई</string>
+			<key>other</key>
+			<string>%2$@ फ़ोटो पूर्वावलोकनों की तुलना की गई</string>
+		</dict>
+	</dict>
+	<key>%lld items couldn't be moved completely. </key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम पूरी तरह स्थानांतरित नहीं हो सका। </string>
+			<key>other</key>
+			<string>%2$@ आइटम पूरी तरह स्थानांतरित नहीं हो सके। </string>
+		</dict>
+	</dict>
+	<key>%lld items couldn't be moved to the Trash and stayed in the folder.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम कूड़ेदान में नहीं जा सका और फ़ोल्डर में ही है।</string>
+			<key>other</key>
+			<string>%2$@ आइटम कूड़ेदान में नहीं जा सके और फ़ोल्डर में ही हैं।</string>
+		</dict>
+	</dict>
+	<key>%lld items couldn't be restored from the Trash — they may have been deleted there.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम कूड़ेदान से वापस नहीं आ सका; संभव है वह वहाँ से मिटा दिया गया हो।</string>
+			<key>other</key>
+			<string>%2$@ आइटम कूड़ेदान से वापस नहीं आ सके; संभव है वे वहाँ से मिटा दिए गए हों।</string>
+		</dict>
+	</dict>
+	<key>%lld stars</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ स्टार</string>
+			<key>other</key>
+			<string>%2$@ स्टार</string>
+		</dict>
+	</dict>
+	<key>%lld files restored</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ फ़ाइल वापस लाई गई</string>
+			<key>other</key>
+			<string>%2$@ फ़ाइलें वापस लाई गईं</string>
+		</dict>
+	</dict>
+	<key>%lld files renamed</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ फ़ाइल का नाम बदला गया</string>
+			<key>other</key>
+			<string>%2$@ फ़ाइलों के नाम बदले गए</string>
+		</dict>
+	</dict>
+	<key>%lld files moved</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ फ़ाइल स्थानांतरित हुई</string>
+			<key>other</key>
+			<string>%2$@ फ़ाइलें स्थानांतरित हुईं</string>
+		</dict>
+	</dict>
+	<key>%lld hours</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ घंटा</string>
+			<key>other</key>
+			<string>%2$@ घंटे</string>
+		</dict>
+	</dict>
+	<key>%lld minutes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ मिनट</string>
+			<key>other</key>
+			<string>%2$@ मिनट</string>
+		</dict>
+	</dict>
+	<key>%lld seconds</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ सेकंड</string>
+			<key>other</key>
+			<string>%2$@ सेकंड</string>
+		</dict>
+	</dict>
+	<key>%@ of %lld items processed</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम में से %3$@ संसाधित</string>
+			<key>other</key>
+			<string>%2$@ में से %3$@ आइटम संसाधित</string>
+		</dict>
+	</dict>
+	<key>%lld matching pairs reviewed together.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ मिलती जोड़ी की साथ में समीक्षा की गई।</string>
+			<key>other</key>
+			<string>%2$@ मिलती जोड़ियों की साथ में समीक्षा की गई।</string>
+		</dict>
+	</dict>
+	<key>%lld matching pairs reviewed separately.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ मिलती जोड़ी की अलग-अलग समीक्षा की गई।</string>
+			<key>other</key>
+			<string>%2$@ मिलती जोड़ियों की अलग-अलग समीक्षा की गई।</string>
+		</dict>
+	</dict>
+	<key>Set %lld Stars</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ स्टार दें</string>
+			<key>other</key>
+			<string>%2$@ स्टार दें</string>
+		</dict>
+	</dict>
+	<key>kept %lld completed copies at the destination</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>गंतव्य पर %2$@ पूरी कॉपी रखी</string>
+			<key>other</key>
+			<string>गंतव्य पर %2$@ पूरी कॉपियाँ रखीं</string>
+		</dict>
+	</dict>
+	<key>kept %lld completed Move files at the destination</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>गंतव्य पर पूरी तरह स्थानांतरित %2$@ फ़ाइल रखी</string>
+			<key>other</key>
+			<string>गंतव्य पर पूरी तरह स्थानांतरित %2$@ फ़ाइलें रखीं</string>
+		</dict>
+	</dict>
+	<key>restored %lld original files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ मूल फ़ाइल वापस लाई</string>
+			<key>other</key>
+			<string>%2$@ मूल फ़ाइलें वापस लाईं</string>
+		</dict>
+	</dict>
+	<key>removed %lld incomplete copies</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ अधूरी कॉपी हटाई</string>
+			<key>other</key>
+			<string>%2$@ अधूरी कॉपियाँ हटाईं</string>
+		</dict>
+	</dict>
+	<key>%lld items found</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम मिला</string>
+			<key>other</key>
+			<string>%2$@ आइटम मिले</string>
+		</dict>
+	</dict>
+	<key>%lld photos without a capture date</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ फ़ोटो की कैप्चर तारीख नहीं है</string>
+			<key>other</key>
+			<string>%2$@ फ़ोटो की कैप्चर तारीख नहीं है</string>
+		</dict>
+	</dict>
+	<key>%lld media items without a capture date</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ मीडिया आइटम की कैप्चर तारीख नहीं है</string>
+			<key>other</key>
+			<string>%2$@ मीडिया आइटम की कैप्चर तारीख नहीं है</string>
+		</dict>
+	</dict>
+	<key>%lld items match this selection.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम इस चयन से मेल खाता है।</string>
+			<key>other</key>
+			<string>इस चयन से %2$@ आइटम मेल खाते हैं।</string>
+		</dict>
+	</dict>
+	<key>Preparing %@ of %lld items…</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम में से %3$@ तैयार हो रहा है…</string>
+			<key>other</key>
+			<string>%2$@ में से %3$@ आइटम तैयार किए जा रहे हैं…</string>
+		</dict>
+	</dict>
+	<key>Older decisions refer to %lld files missing from this folder. Louppe cannot tell whether they were deleted intentionally or are temporarily unavailable. Open Folder and Forget Missing Items discards only those old saved decisions, keeps present-file decisions, and upgrades the session. Close Folder changes nothing.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>पुराना निर्णय इस फ़ोल्डर से गायब %2$@ फ़ाइल का है। Louppe नहीं जान सकता कि उसे जानबूझकर मिटाया गया या वह कुछ समय के लिए उपलब्ध नहीं है। “फ़ोल्डर खोलें और गायब फ़ाइल का निर्णय हटाएँ” चुनने पर केवल वही पुराना निर्णय हटेगा। मौजूद फ़ाइलों के निर्णय बने रहेंगे और सत्र नए प्रारूप में बदल जाएगा। “फ़ोल्डर बंद करें” चुनने पर कुछ नहीं बदलेगा।</string>
+			<key>other</key>
+			<string>पुराने निर्णय इस फ़ोल्डर से गायब %2$@ फ़ाइलों के हैं। Louppe नहीं जान सकता कि उन्हें जानबूझकर मिटाया गया या वे कुछ समय के लिए उपलब्ध नहीं हैं। “फ़ोल्डर खोलें और गायब फ़ाइलों के निर्णय हटाएँ” चुनने पर केवल उन्हीं फ़ाइलों के पुराने निर्णय हटेंगे। मौजूद फ़ाइलों के निर्णय बने रहेंगे और सत्र नए प्रारूप में बदल जाएगा। “फ़ोल्डर बंद करें” चुनने पर कुछ नहीं बदलेगा।</string>
+		</dict>
+	</dict>
+	<key>%lld groups</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ समूह</string>
+			<key>other</key>
+			<string>%2$@ समूह</string>
+		</dict>
+	</dict>
+	<key>%@ %lld groups are visible. Review only — nothing is changed automatically.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%3$@ %2$@ समूह दिख रहा है। केवल समीक्षा — कुछ भी अपने आप नहीं बदलता।</string>
+			<key>other</key>
+			<string>%3$@ %2$@ समूह दिख रहे हैं। केवल समीक्षा — कुछ भी अपने आप नहीं बदलता।</string>
+		</dict>
+	</dict>
+	<key>Clear Yes/No decisions from %lld items. Stars and color labels stay unchanged. Undo with ⌘Z.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम से हाँ/नहीं के निर्णय मिटाएँ। स्टार और रंग लेबल नहीं बदलेंगे। ⌘Z से पूर्ववत करें।</string>
+			<key>other</key>
+			<string>%2$@ आइटम से हाँ/नहीं के निर्णय मिटाएँ। स्टार और रंग लेबल नहीं बदलेंगे। ⌘Z से पूर्ववत करें।</string>
+		</dict>
+	</dict>
+	<key>Trash %lld items?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम कूड़ेदान में भेजें?</string>
+			<key>other</key>
+			<string>%2$@ आइटम कूड़ेदान में भेजें?</string>
+		</dict>
+	</dict>
+	<key>Trash %lld items marked No?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>“नहीं” चिह्नित %2$@ आइटम कूड़ेदान में भेजें?</string>
+			<key>other</key>
+			<string>“नहीं” चिह्नित %2$@ आइटम कूड़ेदान में भेजें?</string>
+		</dict>
+	</dict>
+	<key>Trash %lld items marked No or Undecided?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>“नहीं” या अनिर्णीत चिह्नित %2$@ आइटम कूड़ेदान में भेजें?</string>
+			<key>other</key>
+			<string>“नहीं” या अनिर्णीत चिह्नित %2$@ आइटम कूड़ेदान में भेजें?</string>
+		</dict>
+	</dict>
+	<key>Trash JPEG from %lld RAW + JPEG pairs?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ RAW + JPEG जोड़ी से JPEG कूड़ेदान में भेजें?</string>
+			<key>other</key>
+			<string>%2$@ RAW + JPEG जोड़ियों से JPEG कूड़ेदान में भेजें?</string>
+		</dict>
+	</dict>
+	<key>Trash RAW from %lld RAW + JPEG pairs?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ RAW + JPEG जोड़ी से RAW कूड़ेदान में भेजें?</string>
+			<key>other</key>
+			<string>%2$@ RAW + JPEG जोड़ियों से RAW कूड़ेदान में भेजें?</string>
+		</dict>
+	</dict>
+	<key>%lld files (about %@) will be moved to the Trash. The matching %@ files will stay in the folder.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ फ़ाइल (लगभग %3$@) कूड़ेदान में जाएगी। मेल खाने वाली %4$@ फ़ाइल फ़ोल्डर में रहेगी।</string>
+			<key>other</key>
+			<string>%2$@ फ़ाइलें (लगभग %3$@) कूड़ेदान में जाएँगी। मेल खाने वाली %4$@ फ़ाइलें फ़ोल्डर में रहेंगी।</string>
+		</dict>
+	</dict>
+	<key>%lld files will be moved to the Trash (a RAW+JPEG pair counts as two), totaling about %@. Undo with ⌘Z before closing this session, while files remain in Trash. Emptying Trash permanently deletes them and may free that space.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ फ़ाइल कूड़ेदान में जाएगी (RAW+JPEG जोड़ी दो गिनी जाती है), कुल लगभग %3$@। फ़ाइलें कूड़ेदान में रहते हुए, सत्र बंद करने से पहले ⌘Z से पूर्ववत करें। कूड़ेदान खाली करना उन्हें हमेशा के लिए मिटाता है और वह जगह खाली कर सकता है।</string>
+			<key>other</key>
+			<string>%2$@ फ़ाइलें कूड़ेदान में जाएँगी (RAW+JPEG जोड़ी दो गिनी जाती है), कुल लगभग %3$@। फ़ाइलें कूड़ेदान में रहते हुए, सत्र बंद करने से पहले ⌘Z से पूर्ववत करें। कूड़ेदान खाली करना उन्हें हमेशा के लिए मिटाता है और वह जगह खाली कर सकता है।</string>
+		</dict>
+	</dict>
+	<key>Only %lld selected items are considered — every unselected item stays in the folder.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>केवल %2$@ चयनित आइटम शामिल है; हर अनचुना आइटम फ़ोल्डर में रहेगा।</string>
+			<key>other</key>
+			<string>केवल %2$@ चयनित आइटम शामिल हैं; हर अनचुना आइटम फ़ोल्डर में रहेगा।</string>
+		</dict>
+	</dict>
+	<key>%lld items changed after this folder was scanned%@. </key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>इस फ़ोल्डर के स्कैन होने के बाद %2$@ आइटम बदल गया%3$@। </string>
+			<key>other</key>
+			<string>इस फ़ोल्डर के स्कैन होने के बाद %2$@ आइटम बदल गए%3$@। </string>
+		</dict>
+	</dict>
+	<key>Exact duplicates · %lld items · matching file fingerprints</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>हूबहू डुप्लिकेट · %2$@ आइटम · मेल खाते फ़ाइल फिंगरप्रिंट</string>
+			<key>other</key>
+			<string>हूबहू डुप्लिकेट · %2$@ आइटम · मेल खाते फ़ाइल फिंगरप्रिंट</string>
+		</dict>
+	</dict>
+	<key>Likely similar · %lld items · local preview comparison</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>संभवतः मिलती-जुलती · %2$@ आइटम · स्थानीय पूर्वावलोकन की तुलना</string>
+			<key>other</key>
+			<string>संभवतः मिलती-जुलती · %2$@ आइटम · स्थानीय पूर्वावलोकन की तुलना</string>
+		</dict>
+	</dict>
+	<key>Capture burst · %lld items</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>फ़ोटो बर्स्ट · %2$@ आइटम</string>
+			<key>other</key>
+			<string>फ़ोटो बर्स्ट · %2$@ आइटम</string>
+		</dict>
+	</dict>
+	<key>%lld items</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम</string>
+			<key>other</key>
+			<string>%2$@ आइटम</string>
+		</dict>
+	</dict>
+	<key>Apple Photos · %lld items</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Apple Photos · %2$@ आइटम</string>
+			<key>other</key>
+			<string>Apple Photos · %2$@ आइटम</string>
+		</dict>
+	</dict>
+	<key>Image checks: %@ of %lld photos. Some cues may be unavailable.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>चित्र जाँच: %2$@ फ़ोटो में से %3$@। कुछ संकेत उपलब्ध न हों।</string>
+			<key>other</key>
+			<string>छवि जाँच: %2$@ में से %3$@ फ़ोटो। कुछ संकेत उपलब्ध नहीं हो सकते।</string>
+		</dict>
+	</dict>
+	<key>Saved decisions for %lld files need checking. You can keep reviewing; previous decisions are preserved.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ फ़ाइल के सहेजे निर्णय की जाँच ज़रूरी है। आप समीक्षा जारी रख सकते हैं; पिछले निर्णय सुरक्षित हैं।</string>
+			<key>other</key>
+			<string>%2$@ फ़ाइलों के सहेजे गए निर्णयों की जाँच आवश्यक है। आप समीक्षा जारी रख सकते हैं; पुराने निर्णय सुरक्षित हैं।</string>
+		</dict>
+	</dict>
+	<key>Restored saved decisions for %lld identical files.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ समान फ़ाइल के सहेजे निर्णय वापस लाए गए।</string>
+			<key>other</key>
+			<string>%2$@ समान फ़ाइलों के सहेजे गए निर्णय बहाल किए गए।</string>
+		</dict>
+	</dict>
+	<key>Membership could not be verified for %lld items.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ आइटम की सदस्यता सत्यापित नहीं की जा सकी।</string>
+			<key>other</key>
+			<string>%2$@ आइटम की ऐल्बम सदस्यता सत्यापित नहीं हो सकी।</string>
+		</dict>
+	</dict>
+	<key>All %lld folder items are considered, even those hidden by filters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>फ़ोल्डर के %2$@ आइटम पर विचार किया जाता है, भले ही वह फ़िल्टर से छिपा हो।</string>
+			<key>other</key>
+			<string>फ़ोल्डर के सभी %2$@ आइटम शामिल हैं, फ़िल्टर से छिपे हुए भी।</string>
+		</dict>
+	</dict>
+	<key>%@ of %lld files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ फ़ाइल में से %3$@</string>
+			<key>other</key>
+			<string>%2$@ फ़ाइलों का %3$@</string>
+		</dict>
+	</dict>
+	<key>%lld photos selected · %lld files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@ चयनित · %3$#@count2@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ फ़ोटो</string>
+			<key>other</key>
+			<string>%2$@ फ़ोटो</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ फ़ाइल</string>
+			<key>other</key>
+			<string>%4$@ फाइलें</string>
+		</dict>
+	</dict>
+	<key>%lld media items selected · %lld files</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@ चयनित · %3$#@count2@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ मीडिया आइटम</string>
+			<key>other</key>
+			<string>%2$@ मीडिया आइटम</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ फ़ाइल</string>
+			<key>other</key>
+			<string>%4$@ फाइलें</string>
+		</dict>
+	</dict>
+	<key>Local analysis complete: %lld possible duplicate files checked; %lld photo previews compared.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>स्थानीय विश्लेषण पूरा: %1$#@count1@; %3$#@count2@।</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ संभावित डुप्लिकेट फ़ाइल जाँची गई</string>
+			<key>other</key>
+			<string>%2$@ संभावित डुप्लिकेट फ़ाइलें जाँची गईं</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ फ़ोटो के पूर्वावलोकन की तुलना की गई</string>
+			<key>other</key>
+			<string>%4$@ फ़ोटो पूर्वावलोकनों की तुलना की गई</string>
+		</dict>
+	</dict>
+	<key>Only %lld visible items are considered; %lld hidden items stay untouched.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@; %3$#@count2@।</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>केवल %2$@ दिखाई देने वाले आइटम पर विचार किया जाता है</string>
+			<key>other</key>
+			<string>केवल %2$@ दिखाई देने वाले आइटम पर विचार किया जाता है</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ छिपा आइटम जस का तस रहता है</string>
+			<key>other</key>
+			<string>%4$@ छिपे आइटम जस के तस रहते हैं</string>
+		</dict>
+	</dict>
+	<key>Includes %lld No and %lld Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>इसमें %1$#@count1@ और %3$#@count2@ शामिल हैं। स्टार और रंग लेबल इन आइटमों को नहीं बचाते। RAW + JPEG के मिश्रित निर्णय फ़ोल्डर में ही रहते हैं।</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ नहीं आइटम</string>
+			<key>other</key>
+			<string>%2$@ नहीं आइटम</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ अनिर्णीत आइटम</string>
+			<key>other</key>
+			<string>%4$@ अनिर्णीत आइटम</string>
+		</dict>
+	</dict>
+	<key>legacy-missing-files-title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>सहेजी गई एक फ़ाइल मौजूद नहीं है</string>
+			<key>other</key>
+			<string>सहेजी गई फ़ाइलें मौजूद नहीं हैं</string>
+		</dict>
+	</dict>
+	<key>legacy-forget-missing-items</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>फ़ोल्डर खोलें और गायब फ़ाइल का निर्णय हटाएँ</string>
+			<key>other</key>
+			<string>फ़ोल्डर खोलें और गायब फ़ाइलों के निर्णय हटाएँ</string>
+		</dict>
+	</dict>
+	<key>recovery-unavailable-drives</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>एक ड्राइव उपलब्ध न होने से अधूरी कार्रवाई की कुछ फ़ाइलें नहीं बदली गईं। </string>
+			<key>other</key>
+			<string>ड्राइव उपलब्ध न होने से अधूरी कार्रवाई की कुछ फ़ाइलें नहीं बदली गईं। </string>
+		</dict>
+	</dict>
+	<key>Trash %lld Selected…</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ चयनित आइटम कूड़ेदान में भेजें…</string>
+			<key>other</key>
+			<string>%2$@ चयनित आइटम कूड़ेदान में भेजें…</string>
+		</dict>
+	</dict>
+</dict>
+</plist>
