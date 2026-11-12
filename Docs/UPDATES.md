@@ -77,7 +77,8 @@ The ZIP name stays `Louppe.zip`; the versioned tag makes its URL unique.
 The feed includes only the current changelog and no deltas. Publishing checks
 version/build, ZIP length/signature, feed signature, URL, minimum macOS,
 framework, Developer ID, hardened runtime, notarization, Gatekeeper, and app
-signature. Stable releases also update [Homebrew](HOMEBREW.md).
+signature. Both apps must contain all six source-matching plural catalogs.
+Stable releases also update [Homebrew](HOMEBREW.md).
 
 ## GitHub release notes
 

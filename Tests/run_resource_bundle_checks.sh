@@ -32,6 +32,12 @@ expect_rejection() {
     echo "Passed: $label refused"
 }
 expect_rejection 'SwiftPM bundle without identifier' 'missing a string CFBundleIdentifier'
+for locale in en es pt hi ar zh-Hans; do
+    directory="${locale:l}.lproj"
+    mkdir -p "$RESOURCE_BUNDLE/$directory"
+    cp "Sources/Louppe/Resources/$locale.lproj/Localizable.stringsdict" \
+        "$RESOURCE_BUNDLE/$directory/Localizable.stringsdict"
+done
 "$HELPER" --prepare "$RESOURCE_BUNDLE"
 "$HELPER" --verify "$RESOURCE_BUNDLE"
 [[ "$(plutil -extract CFBundleDevelopmentRegion raw "$RESOURCE_PLIST")" == "en" ]]
@@ -50,4 +56,21 @@ plutil -replace CFBundleIdentifier -integer 12 "$RESOURCE_PLIST"
 expect_rejection 'non-string resource identifier' 'missing a string CFBundleIdentifier'
 print -r -- 'not a plist' > "$RESOURCE_PLIST"
 expect_rejection 'malformed resource metadata' 'Info.plist is malformed'
+# The release verifier calls this same --verify path for both packaged apps.
+cp "$CHECK_ROOT/prepared.plist" "$RESOURCE_PLIST"
+"$HELPER" --verify "$RESOURCE_BUNDLE"
+rm "$RESOURCE_BUNDLE/es.lproj/Localizable.stringsdict"
+expect_rejection 'missing Spanish plural catalog' 'es plural catalog is missing'
+cp Sources/Louppe/Resources/es.lproj/Localizable.stringsdict "$RESOURCE_BUNDLE/es.lproj/Localizable.stringsdict"
+print -r -- 'not a plist' > "$RESOURCE_BUNDLE/ar.lproj/Localizable.stringsdict"
+expect_rejection 'malformed Arabic plural catalog' 'ar plural catalog is malformed'
+cp Sources/Louppe/Resources/ar.lproj/Localizable.stringsdict "$RESOURCE_BUNDLE/ar.lproj/Localizable.stringsdict"
+cat > "$RESOURCE_BUNDLE/pt.lproj/Localizable.stringsdict" <<'PLURAL'
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict/></plist>
+PLURAL
+expect_rejection 'valid Portuguese plist without plural keys' 'pt plural catalog differs from source'
+cp Sources/Louppe/Resources/pt.lproj/Localizable.stringsdict "$RESOURCE_BUNDLE/pt.lproj/Localizable.stringsdict"
+"$HELPER" --verify "$RESOURCE_BUNDLE"
+echo 'Passed: all six plural catalogs match source, including their keys and rules'
 echo 'All resource-bundle checks passed.'

@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Prepare or verify the SwiftPM resource bundle before app signing.
+# Prepare metadata or verify metadata and plural catalogs before app signing.
 set -euo pipefail
 if [[ $# -ne 2 || ( "$1" != "--prepare" && "$1" != "--verify" ) ]]; then
     echo "Usage: $0 [--prepare|--verify] resource-bundle" >&2
@@ -25,3 +25,17 @@ IDENTIFIER="$(plutil -extract CFBundleIdentifier raw -expect string "$RESOURCE_P
     || fail "The resource bundle is missing a string CFBundleIdentifier."
 [[ "$IDENTIFIER" == "$EXPECTED_IDENTIFIER" ]] \
     || fail "The resource bundle identifier must be $EXPECTED_IDENTIFIER."
+
+if [[ "$MODE" == "--verify" ]]; then
+    SOURCE_RESOURCES="$(cd "$(dirname "$0")/../Sources/Louppe/Resources" && pwd)"
+    for locale in en es pt hi ar zh-Hans; do
+        catalog="$2/${locale:l}.lproj/Localizable.stringsdict"
+        [[ -f "$catalog" && ! -L "$catalog" ]] \
+            || fail "$locale plural catalog is missing."
+        plutil -lint "$catalog" >/dev/null \
+            || fail "$locale plural catalog is malformed."
+        # Full equality also requires every source key, plural rule and form.
+        cmp -s "$SOURCE_RESOURCES/$locale.lproj/Localizable.stringsdict" "$catalog" \
+            || fail "$locale plural catalog differs from source."
+    done
+fi

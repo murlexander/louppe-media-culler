@@ -85,7 +85,7 @@ verify_app_bundle() {
         || fail "$label does not contain the reviewed Expat license."
     "$PWD/Scripts/resource_bundle_metadata.sh" --verify \
         "$bundle/Contents/Resources/Louppe_Louppe.bundle" \
-        || fail "$label resource bundle metadata is invalid."
+        || fail "$label resource bundle metadata or plural catalogs are invalid."
     local locale
     for locale in en es zh-Hans hi pt ar; do
         local source_strings="Sources/Louppe/Resources/$locale.lproj/Localizable.strings"
