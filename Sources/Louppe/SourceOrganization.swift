@@ -41,12 +41,12 @@ struct SourceOrganizationOutcome: Equatable, Sendable {
 
     func fileCountDescription(for kind: SourceFileChangeKind) -> String {
         if wasUndo {
-            return movedFiles == 1 ? L10n.text("1 file restored") : L10n.text("\(movedFiles) files restored")
+            return L10n.plural("%lld files restored", movedFiles)
         }
         if kind == .rename {
-            return movedFiles == 1 ? L10n.text("1 file renamed") : L10n.text("\(movedFiles) files renamed")
+            return L10n.plural("%lld files renamed", movedFiles)
         }
-        return movedFiles == 1 ? L10n.text("1 file moved") : L10n.text("\(movedFiles) files moved")
+        return L10n.plural("%lld files moved", movedFiles)
     }
 }
 

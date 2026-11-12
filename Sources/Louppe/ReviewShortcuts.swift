@@ -130,11 +130,11 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
         case .actualSize: L10n.text("Toggle 100% photo view")
         case .phoneSize: L10n.text("Toggle phone-sized photo view")
         case .clearStars: L10n.text("Clear stars")
-        case .oneStar: L10n.text("1 star")
-        case .twoStars: L10n.text("2 stars")
-        case .threeStars: L10n.text("3 stars")
-        case .fourStars: L10n.text("4 stars")
-        case .fiveStars: L10n.text("5 stars")
+        case .oneStar: L10n.plural("%lld stars", 1)
+        case .twoStars: L10n.plural("%lld stars", 2)
+        case .threeStars: L10n.plural("%lld stars", 3)
+        case .fourStars: L10n.plural("%lld stars", 4)
+        case .fiveStars: L10n.plural("%lld stars", 5)
         }
     }
     var group: ReviewShortcutGroup {

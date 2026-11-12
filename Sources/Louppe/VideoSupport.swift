@@ -268,9 +268,9 @@ enum MediaDurationFormat {
         let minutes = (rounded % 3600) / 60
         let remaining = rounded % 60
         var parts: [String] = []
-        if hours > 0 { parts.append(hours == 1 ? L10n.text("\(hours) hour") : L10n.text("\(hours) hours")) }
-        if minutes > 0 { parts.append(minutes == 1 ? L10n.text("\(minutes) minute") : L10n.text("\(minutes) minutes")) }
-        if remaining > 0 || parts.isEmpty { parts.append(remaining == 1 ? L10n.text("\(remaining) second") : L10n.text("\(remaining) seconds")) }
+        if hours > 0 { parts.append(L10n.plural("%lld hours", hours)) }
+        if minutes > 0 { parts.append(L10n.plural("%lld minutes", minutes)) }
+        if remaining > 0 || parts.isEmpty { parts.append(L10n.plural("%lld seconds", remaining)) }
         return parts.joined(separator: ", ")
     }
 }

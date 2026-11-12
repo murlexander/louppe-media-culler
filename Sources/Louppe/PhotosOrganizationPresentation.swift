@@ -107,7 +107,7 @@ enum PhotosOrganizationPresentation {
         var messages: [String] = []
         if let issue = result.issue { messages.append(error(issue)) }
         if !result.unverifiedAssetIdentifiers.isEmpty {
-            messages.append(L10n.text("Membership could not be verified for \(result.unverifiedAssetIdentifiers.count.formatted()) items."))
+            messages.append(L10n.plural("Membership could not be verified for %lld items.", result.unverifiedAssetIdentifiers.count))
         }
         if result.createdAlbumIdentifier != nil && (!result.destinationVerified || !result.placementVerified) {
             messages.append(L10n.text("A new album may have been created. Its location could not be verified. Check Photos before trying again."))

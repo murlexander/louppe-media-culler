@@ -1472,7 +1472,7 @@ struct PhotoSort: Equatable, Sendable {
                 switch item.starRatingState {
                 case .unrated: return L10n.text("Unrated")
                 case .stars(let rating):
-                    return rating == .one ? L10n.text("1 star") : L10n.text("\(rating.count) stars")
+                    return L10n.plural("%lld stars", rating.count)
                 case .mixed: return L10n.text("Mixed")
                 }
             case .colorLabel:

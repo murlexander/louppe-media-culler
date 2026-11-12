@@ -779,17 +779,13 @@ final class SessionStore: ObservableObject {
                 ? "“\(driveNames[0])”"
                 : driveNames.map { "“\($0)”" }.joined(separator: ", ")
             return interruptionPrefix + completedNotice
-                + (driveNames.count == 1
-                    ? L10n.text("Some interrupted files are still untouched because a drive is unavailable. ")
-                    : L10n.text("Some interrupted files are still untouched because drives are unavailable. "))
+                + L10n.plural("recovery-unavailable-drives", driveNames.count)
                 + L10n.text("Reconnect \(drives), then retry recovery. Reviewing remains available.")
         }
 
         let count = max(report.unresolvedFiles, 1)
         let message = interruptionPrefix + completedNotice
-            + (count == 1
-                ? L10n.text("Louppe couldn't finish checking 1 interrupted file. ")
-                : L10n.text("Louppe couldn't finish checking \(count) interrupted files. "))
+            + L10n.plural("Louppe couldn't finish checking %lld interrupted files. ", count)
             + L10n.text("Uncertain files remain untouched. Reviewing stays available; Copy, Move, Rename, Organize, and Clean Up are paused until recovery finishes.")
         return message
     }
@@ -1660,7 +1656,7 @@ final class SessionStore: ObservableObject {
         let photos = items.filter { $0.mediaKind == .photo }
         let dated = photos.filter { $0.captureDate != nil }
         let inferred = dated.filter { $0.captureDateEvidence?.isInferred ?? true }.count
-        return L10n.text("Photo dates: \(dated.count) of \(photos.count); \(inferred) inferred. Missing dates are excluded.")
+        return L10n.text("Photo dates: \(L10n.number(dated.count)) of \(L10n.number(photos.count)); \(L10n.number(inferred)) inferred. Missing dates are excluded.")
     }
 
     var duplicateBurstAnalysisSummary: String {
@@ -1671,13 +1667,10 @@ final class SessionStore: ObservableObject {
             return L10n.text("Analyze this folder locally to find exact duplicates, likely similar photos, and capture bursts.")
         }
         if result.analysisMode == .captureBursts { return captureBurstCoverageSummary }
-        let exact = result.analyzedExactFileCount == 1
-            ? L10n.text("1 possible duplicate file checked")
-            : L10n.text("\(result.analyzedExactFileCount) possible duplicate files checked")
-        let visual = result.analyzedVisualPhotoCount == 1
-            ? L10n.text("1 photo preview compared")
-            : L10n.text("\(result.analyzedVisualPhotoCount) photo previews compared")
-        return L10n.text("Local analysis complete: \(exact); \(visual).")
+        return L10n.plural(
+            "Local analysis complete: %lld possible duplicate files checked; %lld photo previews compared.",
+            counts: [result.analyzedExactFileCount, result.analyzedVisualPhotoCount]
+        )
     }
 
     /// Stable Browser row identities are rebuilt with the prepared visibility
@@ -1811,7 +1804,7 @@ final class SessionStore: ObservableObject {
         if photosBatch?.mediaSession != nil {
             return L10n.text("Original quality checks are unavailable during Photos preview review.")
         }
-        return L10n.text("Image checks: \(qualityCueMeasuredCount) of \(qualityCuePhotoCount) photos. Some cues may be unavailable.")
+        return L10n.plural("Image checks: %@ of %lld photos. Some cues may be unavailable.", qualityCuePhotoCount, arguments: [L10n.number(qualityCueMeasuredCount)])
     }
 
     func updateQualityCuePreferences(_ value: CameraQualityWarningPreferences) {
@@ -4691,7 +4684,7 @@ final class SessionStore: ObservableObject {
     /// store so the toolbar menu and the File menu share one source of truth.
     var selectionCleanUpTitle: String {
         let count = effectiveSelection.count
-        return count > 1 ? L10n.text("Trash \(count) Selected…") : L10n.text("Trash Selected…")
+        return count > 1 ? L10n.plural("Trash %lld Selected…", count) : L10n.text("Trash Selected…")
     }
 
     func presentExport(keepersOnly: Bool = false) {
@@ -4922,12 +4915,10 @@ final class SessionStore: ObservableObject {
         if result.failedPhotos > 0 {
             var message: String
             if result.inconsistentPhotos > 0 {
-                message = (result.failedPhotos == 1 ? L10n.text("\(result.failedPhotos) item couldn't be moved completely. ") : L10n.text("\(result.failedPhotos) items couldn't be moved completely. "))
-                    + L10n.text("For \(result.inconsistentPhotos), rollback also failed; check both the source folder and Trash.")
+                message = L10n.plural("%lld items couldn't be moved completely. ", result.failedPhotos)
+                    + L10n.text("For \(L10n.number(result.inconsistentPhotos)), rollback also failed; check both the source folder and Trash.")
             } else {
-                message = result.failedPhotos == 1
-                    ? L10n.text("1 item couldn't be moved to the Trash and stayed in the folder.")
-                    : L10n.text("\(result.failedPhotos) items couldn't be moved to the Trash and stayed in the folder.")
+                message = L10n.plural("%lld items couldn't be moved to the Trash and stayed in the folder.", result.failedPhotos)
             }
             if result.journalFailure {
                 message += L10n.text(" Louppe's file-safety checks stopped the operation before another file was touched.")
@@ -4966,7 +4957,6 @@ final class SessionStore: ObservableObject {
         mode: CleanUpMode = .keepOnlyYes
     ) -> String {
         let count = stalePhotos.count
-        let items = count == 1 ? L10n.text("1 item has") : L10n.text("\(count) items have")
         let examples = stalePhotos.prefix(3).map { "“\($0.displayName)”" }
         let names: String
         switch examples.count {
@@ -4987,7 +4977,7 @@ final class SessionStore: ObservableObject {
         case .pairedJPEGs: action = L10n.text("Trash Paired JPEGs")
         case .pairedRAWs: action = L10n.text("Trash Paired RAWs")
         }
-        return L10n.text("\(items) changed after this folder was scanned\(names). ")
+        return L10n.plural("%lld items changed after this folder was scanned%@. ", count, arguments: [names])
             + L10n.text("No files were moved. Use Rescan Folder, then choose \(action) and confirm the updated count.")
     }
 
@@ -5093,11 +5083,9 @@ final class SessionStore: ObservableObject {
             // indices no longer line up with `items`, so drop them rather than
             // risk restoring a rating onto the wrong photo.
             undoStack.removeAll()
-            cleanUpError = result.lostPhotos == 1
-                ? L10n.text("1 item couldn't be restored from the Trash — it may have been deleted there.")
-                : L10n.text("\(result.lostPhotos) items couldn't be restored from the Trash — they may have been deleted there.")
+            cleanUpError = L10n.plural("%lld items couldn't be restored from the Trash — they may have been deleted there.", result.lostPhotos)
             if result.inconsistentPhotos > 0 {
-                cleanUpError? += L10n.text(" For \(result.inconsistentPhotos), rollback also failed; check both the source folder and Trash.")
+                cleanUpError? += L10n.text(" For \(L10n.number(result.inconsistentPhotos)), rollback also failed; check both the source folder and Trash.")
             }
             if result.journalFailure {
                 cleanUpError? += L10n.text(" Louppe's file-safety checks stopped the operation before another file was touched.")
@@ -6636,9 +6624,9 @@ final class SessionStore: ObservableObject {
     var sessionRecoveryNotice: String {
         let count = pendingSessionRecoveryEntries.count
         if count > 0 {
-            return L10n.text("Saved decisions for \(count) files need checking. You can keep reviewing; previous decisions are preserved.")
+            return L10n.plural("Saved decisions for %lld files need checking. You can keep reviewing; previous decisions are preserved.", count)
         }
-        return L10n.text("Restored saved decisions for \(automaticallyRestoredSessionFiles) identical files.")
+        return L10n.plural("Restored saved decisions for %lld identical files.", automaticallyRestoredSessionFiles)
     }
 
     func recoveryFile(for record: SessionRecoveryEntry) -> PhotoFile? {

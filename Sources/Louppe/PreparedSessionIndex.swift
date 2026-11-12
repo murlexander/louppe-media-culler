@@ -477,7 +477,7 @@ struct PreparedSessionIndex: Sendable {
                     title: reviewGroup.mode != .captureBursts || indices.count == reviewGroup.itemIDs.count
                         ? reviewGroup.title(itemCount: indices.count)
                         : reviewGroup.title(itemCount: indices.count)
-                            + L10n.text(" (\(indices.count) of \(reviewGroup.itemIDs.count) shown)"),
+                            + L10n.text(" (\(L10n.number(indices.count)) of \(L10n.number(reviewGroup.itemIDs.count)) shown)"),
                     indices: indices
                 )
             )

@@ -169,14 +169,13 @@ enum DuplicateBurstAnalysis {
         }
 
         func title(itemCount count: Int) -> String {
-            let itemText = count == 1 ? L10n.text("item") : L10n.text("items")
             switch mode {
             case .exactDuplicates:
-                return L10n.text("Exact duplicates · \(count) \(itemText) · matching file fingerprints")
+                return L10n.plural("Exact duplicates · %lld items · matching file fingerprints", count)
             case .likelySimilarPhotos:
-                return L10n.text("Likely similar · \(count) \(itemText) · local preview comparison")
+                return L10n.plural("Likely similar · %lld items · local preview comparison", count)
             case .captureBursts:
-                let title = L10n.text("Capture burst · \(count) \(itemText)")
+                let title = L10n.plural("Capture burst · %lld items", count)
                 return captureDateNote.map { "\(title) · \($0)" } ?? title
             case .off:
                 return ""
