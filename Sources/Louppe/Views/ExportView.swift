@@ -38,17 +38,7 @@ struct ExportView: View {
     @State private var allowExternalLabelReplacement = false
     @State private var showXMPDetails = false
     @State private var showEditingAppOptions = false
-    @State private var xmpInclusionChoice = ExportXMPInclusionChoice()
-    @State private var existingXMPCount = 0
-    @State private var excludedACRCompanionCount = 0
-    @State private var isCheckingExistingXMP = false
-    @State private var xmpInspectionID = UUID()
-    @State private var xmpInspectionTask: Task<Void, Never>?
-    /// The detached scan itself. A detached task is not a child, so cancelling
-    /// only the awaiting wrapper would leave a superseded whole-session scan
-    /// running behind the newer one.
-    @State private var xmpInspectionWork:
-        Task<XMPExportSourceInspection?, Never>?
+    @StateObject private var xmpInspection = ExportXMPInspectionState()
     @State private var conflictResolver: XMPConflictResolverPresentation?
     @State private var conflictResolutionNotice: String?
 
@@ -57,9 +47,15 @@ struct ExportView: View {
     }
 
     #if LOUPPE_TEST_SEAMS
-    init(store: SessionStore, exporter: ExportManager) {
+    init(
+        store: SessionStore, exporter: ExportManager,
+        xmpInspector: @escaping ExportXMPInspectionState.Inspector = { selected, context in
+            try XMPExportPlanner.inspectSources(selected: selected, familyContextItems: context)
+        }
+    ) {
         self.store = store
         _exporter = StateObject(wrappedValue: exporter)
+        _xmpInspection = StateObject(wrappedValue: ExportXMPInspectionState(inspector: xmpInspector))
     }
     #endif
 
@@ -120,10 +116,8 @@ struct ExportView: View {
             Text(L10n.text("Completed media stays at the destination. Only the file being copied rolls back."))
         }
         .onAppear {
-            xmpInclusionChoice = ExportXMPInclusionChoice()
+            xmpInspection.reset()
             routingIncludesXMP = false
-            existingXMPCount = 0
-            excludedACRCompanionCount = 0
             applyConfiguration(
                 .initial(
                     hasExplicitSelection: !store.selectedIndices.isEmpty,
@@ -371,9 +365,19 @@ struct ExportView: View {
                         )
                         .toggleStyle(LouppeToggleStyle(.switchControl))
 
-                        Text(copyMoveXMPExplanation)
+                        if xmpInspection.status == .failed {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(L10n.text("Louppe couldn't check for existing XMP sidecars."))
+                                    .foregroundStyle(.secondary)
+                                Button(L10n.text("Try Again"), action: xmpInspection.retry)
+                                    .buttonStyle(.borderless)
+                            }
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                        } else {
+                            Text(copyMoveXMPExplanation)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
 
                         if excludedACRCompanionCount > 0 {
                             Text((excludedACRCompanionCount == 1 ? L10n.text("\(excludedACRCompanionCount) Lightroom .acr companion will stay in the source folder, unexported.") : L10n.text("\(excludedACRCompanionCount) Lightroom .acr companions will stay in the source folder, unexported.")))
@@ -381,7 +385,7 @@ struct ExportView: View {
                                 .foregroundStyle(.orange)
                         }
 
-                        if xmpInclusionChoice.isIncluded {
+                        if xmpInspection.inclusionChoice.isIncluded {
                             editingAppOptions
                         }
                     }
@@ -405,7 +409,7 @@ struct ExportView: View {
                                 sessionGeneration:
                                     store.xmpConflictSessionGeneration,
                                 mode: mode,
-                                includeXMP: xmpInclusionChoice.isIncluded,
+                                includeXMP: xmpInspection.inclusionChoice.isIncluded,
                                 xmpProfile: xmpProfile,
                                 visibleDecisionKeywords: effectiveVisibleDecisionKeywords,
                                 allowExternalLabelReplacement: allowExternalLabelReplacement,
@@ -423,7 +427,7 @@ struct ExportView: View {
                     }
                     .disabled(
                         selectionSnapshot.itemCount == 0
-                            || (mode != .metadataXMP && isCheckingExistingXMP)
+                            || (mode != .metadataXMP && xmpInspection.status == .checking)
                     )
                 }
             }
@@ -1014,56 +1018,38 @@ struct ExportView: View {
 
     private var includeXMPBinding: Binding<Bool> {
         Binding {
-            xmpInclusionChoice.isIncluded
+            xmpInspection.inclusionChoice.isIncluded
         } set: { value in
-            xmpInclusionChoice.setManually(value)
+            xmpInspection.inclusionChoice.setManually(value)
         }
+    }
+
+    private var existingXMPCount: Int {
+        xmpInspection.inspection?.recognizedPacketCount ?? 0
+    }
+
+    private var excludedACRCompanionCount: Int {
+        xmpInspection.inspection?.excludedACRCompanionCount ?? 0
     }
 
     private func scheduleXMPInspection() {
         cancelXMPInspection()
-        guard mode != .metadataXMP, store.photosBatch?.mediaSession == nil else {
-            isCheckingExistingXMP = false
-            excludedACRCompanionCount = 0
-            return
-        }
-        let requestID = UUID()
-        xmpInspectionID = requestID
-        isCheckingExistingXMP = true
-        let selected = selectionSnapshot.selectedItems(from: store.items)
-        let context = store.items
-        let work = Task.detached(priority: .utility) {
-            try? XMPExportPlanner.inspectSources(
-                selected: selected,
-                familyContextItems: context
-            )
-        }
-        xmpInspectionWork = work
-        xmpInspectionTask = Task {
-            let inspection = await work.value
-            guard !Task.isCancelled, xmpInspectionID == requestID else {
-                return
-            }
-            existingXMPCount = inspection?.recognizedPacketCount ?? 0
-            excludedACRCompanionCount =
-                inspection?.excludedACRCompanionCount ?? 0
-            isCheckingExistingXMP = false
-            xmpInclusionChoice.applyRecognizedPacketCount(existingXMPCount)
-        }
+        guard mode != .metadataXMP, store.photosBatch?.mediaSession == nil else { return }
+        xmpInspection.inspect(
+            selected: selectionSnapshot.selectedItems(from: store.items),
+            familyContextItems: store.items
+        )
     }
 
     private func cancelXMPInspection() {
-        xmpInspectionWork?.cancel()
-        xmpInspectionWork = nil
-        xmpInspectionTask?.cancel()
-        xmpInspectionTask = nil
+        xmpInspection.cancel()
     }
 
     private var copyMoveXMPExplanation: String {
-        if isCheckingExistingXMP {
+        if xmpInspection.status == .checking {
             return L10n.text("Checking the selected photos for existing XMP sidecars…")
         }
-        if xmpInclusionChoice.isIncluded {
+        if xmpInspection.inclusionChoice.isIncluded || xmpInspection.status == .idle {
             return L10n.text("XMP shares decisions, stars, and colors with editing apps. Include existing sidecars and create missing ones.")
         }
         if existingXMPCount > 0 {

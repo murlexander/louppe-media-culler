@@ -1122,6 +1122,15 @@ final class SessionStore: ObservableObject {
     @Published private(set) var organizationOutcome:
         SourceOrganizationOutcome?
     @Published var organizationError: String?
+    #if LOUPPE_TEST_SEAMS
+    func presentSourceFileOperationForTesting(
+        progress: SourceOrganizationProgress? = nil,
+        outcome: SourceOrganizationOutcome? = nil
+    ) {
+        organizationProgress = progress
+        organizationOutcome = outcome
+    }
+    #endif
     private var ratingTally = (yes: 0, no: 0, undecided: 0)
     private var mixedRatingCount = 0
     private var starTally: [StarRating: Int] = [:]

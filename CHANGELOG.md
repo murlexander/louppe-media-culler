@@ -2,6 +2,8 @@
 
 ## 1.14.0 (18) — 2026-11-08
 
+- Report failed XMP sidecar checks in Export with Try Again, preserving the XMP choice until a check succeeds.
+
 - Show the normal toolbar, Browser and Info panel while a large folder opens, with controls greyed out until all photo details load, so the view no longer jumps when review begins.
 - Filter dates by Range, Year or Date in a full-width chooser; each mode keeps its choices when you switch.
 - Drop the status-bar filter menu; the purple Filter button already shows an active filter. Sort now turns purple too when it differs from your default or Duplicates/Similar review is on.

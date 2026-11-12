@@ -84,7 +84,53 @@ final class CaptureScenariosTests: XCTestCase {
             report.details = ["A file changed since the operation began."]
             fixture.store.presentOperationRecoveryReportForTesting(report)
             return Surface(view: AnyView(RootView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
+        Scenario(name: "sheet-export", description: "Export setup beside its progress and result states.") { fixture in
+            fixture.ready(mode: .gallery)
+            return fixture.sheet(ExportView(store: fixture.store))
+        },
+        Scenario(name: "sheet-export-xmp-failure", description: "Export with a failed source-sidecar inspection.") { fixture in
+            fixture.ready(mode: .gallery)
+            return fixture.sheet(ExportView(store: fixture.store, exporter: ExportManager(), xmpInspector: { _, _ in
+                throw CocoaError(.fileReadNoPermission)
+            }))
+        },
+        Scenario(name: "sheet-export-progress", description: "Copy progress with the existing safe-stop action.") { fixture in
+            fixture.ready(mode: .gallery)
+            let exporter = ExportManager()
+            exporter.state = .working(mode: .copy, completedBytes: 42_000_000, totalBytes: 100_000_000)
+            return fixture.sheet(ExportView(store: fixture.store, exporter: exporter))
+        },
+        Scenario(name: "sheet-export-result", description: "Export result with the original completion wording and actions.") { fixture in
+            fixture.ready(mode: .gallery)
+            let exporter = ExportManager()
+            exporter.state = .finished(.init(mode: .copy, files: 10, failedPhotos: 0,
+                inconsistentPhotos: 0, cancelled: false, cancellationReason: nil,
+                journalFailure: false, recoveryRequired: false, failureMessage: nil,
+                destination: fixture.media, destinations: [fixture.media], xmpSummary: nil))
+            return fixture.sheet(ExportView(store: fixture.store, exporter: exporter))
+        },
+        Scenario(name: "sheet-rename-progress", description: "Rename progress in the production sheet with disposable media.") { fixture in
+            fixture.ready(mode: .gallery)
+            fixture.store.presentSourceFileOperationForTesting(progress: .init(action: .organizing, done: 4, total: 10))
+            return fixture.sheet(RenameFilesView(store: fixture.store))
+        },
+        Scenario(name: "sheet-rename-result", description: "Rename completion in the production sheet with disposable media.") { fixture in
+            fixture.ready(mode: .gallery)
+            fixture.store.presentSourceFileOperationForTesting(outcome: .init(movedFiles: 10, failedItems: 0, message: nil, wasUndo: false))
+            return fixture.sheet(RenameFilesView(store: fixture.store))
+        },
+        Scenario(name: "sheet-organize-progress", description: "Organize progress in the production sheet with disposable media.") { fixture in
+            fixture.ready(mode: .gallery)
+            fixture.store.presentSourceFileOperationForTesting(progress: .init(action: .organizing, done: 4, total: 10))
+            return fixture.sheet(OrganizeSourceView(store: fixture.store))
+        },
+        Scenario(name: "sheet-organize-result", description: "Organize completion in the production sheet with disposable media.") { fixture in
+            fixture.ready(mode: .gallery)
+            fixture.store.presentSourceFileOperationForTesting(outcome: .init(movedFiles: 10, failedItems: 0, message: nil, wasUndo: false))
+            return fixture.sheet(OrganizeSourceView(store: fixture.store))
         }
+
     ]
 
     override func setUpWithError() throws {
@@ -153,13 +199,25 @@ final class CaptureScenariosTests: XCTestCase {
                 let file = "\(scenario.name)-\(appearance.rawValue)\(live ? "-live-active" : "").png"
                 let prepare: (NSViewController) throws -> Void = { controller in
                     try self.selectSettingsTab(surface.settingsTab, in: controller)
+                    if scenario.name == "sheet-export-xmp-failure" {
+                        Task { @MainActor in
+                            try await Task.sleep(for: .milliseconds(200))
+                            let root = controller.view.window?.attachedSheet?.contentView ?? controller.view
+                            for scroll in OffscreenCapture.descendants(of: root).compactMap({ $0 as? NSScrollView }) {
+                                guard let document = scroll.documentView else { continue }
+                                document.scroll(NSPoint(x: 0, y: document.isFlipped ? document.bounds.maxY : 0))
+                                scroll.reflectScrolledClipView(scroll.contentView)
+                            }
+                        }
+                    }
                     if live {
                         switch scenario.name {
                         case "popover-sort": fixture.store.isSortPresented = true
                         case "popover-filter": fixture.store.isFilterPresented = true
                         case "sheet-rename": fixture.store.isRenamePresented = true
                         case "sheet-organize": fixture.store.isOrganizePresented = true
-                        default: break
+                        default:
+                            if scenario.name.hasPrefix("sheet-") { fixture.sheetIsPresented = true }
                         }
                     }
                 }
@@ -286,7 +344,8 @@ final class CaptureScenariosTests: XCTestCase {
     private enum CaptureError: Error { case invalidSelection(String), metadata }
 
     @MainActor
-    private final class Fixture {
+    private final class Fixture: ObservableObject {
+        @Published var sheetIsPresented = false
         let root: URL
         let media: URL
         let defaults: UserDefaults
@@ -296,6 +355,14 @@ final class CaptureScenariosTests: XCTestCase {
         #if !APP_STORE
         private let updater = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
         #endif
+
+        func sheet<Content: View>(_ content: Content) -> Surface {
+            guard ProcessInfo.processInfo.environment["LOUPPE_CAPTURE_LIVE"] == "1" else {
+                return Surface(view: AnyView(content), size: CGSize(width: 680, height: 650))
+            }
+            return Surface(view: AnyView(CaptureSheetHost(fixture: self, content: AnyView(content))),
+                    size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        }
 
         init() throws {
             root = URL(fileURLWithPath: "/private/tmp", isDirectory: true).appendingPathComponent("Louppe-Capture-\(UUID())", isDirectory: true)
@@ -397,6 +464,18 @@ final class CaptureScenariosTests: XCTestCase {
             image.unlockFocus()
             let bitmap = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(image.tiffRepresentation)))
             return try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+        }
+    }
+}
+
+private extension CaptureScenariosTests {
+    private struct CaptureSheetHost: View {
+        @ObservedObject var fixture: Fixture
+        let content: AnyView
+
+        var body: some View {
+            SessionView(store: fixture.store)
+                .sheet(isPresented: $fixture.sheetIsPresented) { content }
         }
     }
 }

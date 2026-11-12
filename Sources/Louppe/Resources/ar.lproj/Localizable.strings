@@ -2158,3 +2158,7 @@
 "{0} items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "سينتقل {0} من العناصر من مجلد موجود واحد. تتبع ملفات XMP الجانبية المعروفة وملفات RAW+JPEG المجمّعة وسائطها. لن يُستبدل أي شيء.";
 "Couldn't load audio and subtitle options." = "تعذّر تحميل خيارات الصوت والترجمة.";
 "Try Again" = "حاول مجددًا";
+
+/* Existing XMP inspection */
+"Louppe couldn't check for existing XMP sidecars." = "تعذّر على Louppe التحقق من ملفات XMP الجانبية الموجودة.";
+"Try Again" = "المحاولة مجددًا";

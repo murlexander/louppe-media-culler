@@ -2157,4 +2157,7 @@
 
 "{0} items will move out of 1 existing folder. Recognized XMP sidecars and grouped RAW+JPEG files follow their media. Nothing is overwritten." = "{0} itens serão movidos de 1 pasta existente. Arquivos XMP reconhecidos e RAW+JPEG agrupados acompanham sua mídia. Nada será sobrescrito.";
 "Couldn't load audio and subtitle options." = "Não foi possível carregar as opções de áudio e legendas.";
+
+/* Existing XMP inspection */
+"Louppe couldn't check for existing XMP sidecars." = "O Louppe não conseguiu verificar os arquivos XMP auxiliares existentes.";
 "Try Again" = "Tentar novamente";
