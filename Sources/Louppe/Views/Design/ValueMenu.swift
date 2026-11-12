@@ -23,6 +23,9 @@ struct ValueMenu<Selection: Hashable, Options: View>: View {
             Picker(title, selection: $selection, content: options)
                 .pickerStyle(.inline)
                 .labelsHidden()
+                // Inline choices become menu toggles; an inherited checkbox
+                // style would replace their titles with checkbox images.
+                .toggleStyle(.automatic)
         } label: {
             Text(verbatim: value)
                 .foregroundStyle(.primary)

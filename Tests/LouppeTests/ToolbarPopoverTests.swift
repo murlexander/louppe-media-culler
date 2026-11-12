@@ -62,6 +62,38 @@ final class ToolbarPopoverTests: XCTestCase {
         }
     }
 
+    func testSortMenusListTitledChoicesUnderThePopoverCheckboxStyle() throws {
+        let suite = "ToolbarPopoverTests.Menus.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SessionStore(reviewDefaults: defaults)
+        // RootView's app-wide toggle style, as the real popover inherits it.
+        let host = NSHostingView(rootView: SortView(store: store).toggleStyle(LouppeToggleStyle()))
+        let window = mount(host)
+        defer { window.close() }
+        let buttons = descendants(host).compactMap { $0 as? NSPopUpButton }
+        XCTAssertEqual(buttons.count, 2, "Sort by and Order")
+        var titles: [[String]] = []
+        for button in buttons {
+            let menu = try XCTUnwrap(button.menu)
+            // SwiftUI fills the menu just before it opens; ask its coordinator
+            // directly so no menu appears on screen.
+            let coordinator = try XCTUnwrap(menu.delegate as? NSObject)
+            let willShow = NSSelectorFromString("popUpButtonCell:willShowMenu:")
+            XCTAssertTrue(coordinator.responds(to: willShow), "SwiftUI changed how it fills menus; update this probe")
+            coordinator.perform(willShow, with: button.cell, with: menu)
+            let choices = menu.items.filter { !$0.isSeparatorItem }
+            XCTAssertFalse(choices.isEmpty)
+            for item in choices {
+                XCTAssertFalse(item.title.isEmpty, "A choice lost its title")
+                XCTAssertNil(item.image, "\(item.title) must not show a checkbox image")
+            }
+            titles.append(choices.map(\.title))
+        }
+        XCTAssertTrue(titles.contains { $0.contains(L10n.text("Date taken")) })
+        XCTAssertTrue(titles.contains { $0.contains(store.sort.key.ascendingLabel) })
+    }
+
     func testEscapeDismissesEachPopoverWithoutResettingItsState() throws {
         let suite = "ToolbarPopoverTests.Escape.\(UUID())"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
