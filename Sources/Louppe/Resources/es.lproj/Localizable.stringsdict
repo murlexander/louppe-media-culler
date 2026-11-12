@@ -14,6 +14,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Louppe no pudo terminar de comprobar %2$@ archivo interrumpido. </string>
+			<key>many</key>
+			<string>Louppe no pudo terminar de comprobar %2$@ archivos interrumpidos. </string>
 			<key>other</key>
 			<string>Louppe no pudo terminar de comprobar %2$@ archivos interrumpidos. </string>
 		</dict>
@@ -30,6 +32,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ posible archivo duplicado comprobado</string>
+			<key>many</key>
+			<string>%2$@ posibles archivos duplicados comprobados</string>
 			<key>other</key>
 			<string>%2$@ posibles archivos duplicados comprobados</string>
 		</dict>
@@ -46,6 +50,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ vista previa de foto comparada</string>
+			<key>many</key>
+			<string>%2$@ vistas previas de fotos comparadas</string>
 			<key>other</key>
 			<string>%2$@ vistas previas de fotos comparadas</string>
 		</dict>
@@ -62,6 +68,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento no pudo trasladarse por completo. </string>
+			<key>many</key>
+			<string>%2$@ elementos no pudieron trasladarse por completo. </string>
 			<key>other</key>
 			<string>%2$@ elementos no pudieron trasladarse por completo. </string>
 		</dict>
@@ -78,6 +86,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento no pudo ir a la Papelera y sigue en la carpeta.</string>
+			<key>many</key>
+			<string>%2$@ elementos no pudieron ir a la Papelera y siguen en la carpeta.</string>
 			<key>other</key>
 			<string>%2$@ elementos no pudieron ir a la Papelera y siguen en la carpeta.</string>
 		</dict>
@@ -94,6 +104,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento no pudo restaurarse desde la Papelera; puede haberse eliminado allí.</string>
+			<key>many</key>
+			<string>%2$@ elementos no pudieron restaurarse desde la Papelera; pueden haberse eliminado allí.</string>
 			<key>other</key>
 			<string>%2$@ elementos no pudieron restaurarse desde la Papelera; pueden haberse eliminado allí.</string>
 		</dict>
@@ -110,6 +122,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ estrella</string>
+			<key>many</key>
+			<string>%2$@ estrellas</string>
 			<key>other</key>
 			<string>%2$@ estrellas</string>
 		</dict>
@@ -126,6 +140,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ archivo restaurado</string>
+			<key>many</key>
+			<string>%2$@ archivos restaurados</string>
 			<key>other</key>
 			<string>%2$@ archivos restaurados</string>
 		</dict>
@@ -142,6 +158,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ archivo renombrado</string>
+			<key>many</key>
+			<string>%2$@ archivos renombrados</string>
 			<key>other</key>
 			<string>%2$@ archivos renombrados</string>
 		</dict>
@@ -158,6 +176,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ archivo trasladado</string>
+			<key>many</key>
+			<string>%2$@ archivos trasladados</string>
 			<key>other</key>
 			<string>%2$@ archivos trasladados</string>
 		</dict>
@@ -174,6 +194,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ hora</string>
+			<key>many</key>
+			<string>%2$@ horas</string>
 			<key>other</key>
 			<string>%2$@ horas</string>
 		</dict>
@@ -190,6 +212,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ minuto</string>
+			<key>many</key>
+			<string>%2$@ minutos</string>
 			<key>other</key>
 			<string>%2$@ minutos</string>
 		</dict>
@@ -206,6 +230,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ segundo</string>
+			<key>many</key>
+			<string>%2$@ segundos</string>
 			<key>other</key>
 			<string>%2$@ segundos</string>
 		</dict>
@@ -222,6 +248,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%3$@ de %2$@ elemento procesado</string>
+			<key>many</key>
+			<string>%3$@ de %2$@ elementos procesados</string>
 			<key>other</key>
 			<string>%3$@ de %2$@ elementos procesados</string>
 		</dict>
@@ -238,6 +266,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ par coincidente revisado en conjunto.</string>
+			<key>many</key>
+			<string>%2$@ pares coincidentes revisados en conjunto.</string>
 			<key>other</key>
 			<string>%2$@ pares coincidentes revisados en conjunto.</string>
 		</dict>
@@ -254,6 +284,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ par coincidente revisado por separado.</string>
+			<key>many</key>
+			<string>%2$@ pares coincidentes revisados por separado.</string>
 			<key>other</key>
 			<string>%2$@ pares coincidentes revisados por separado.</string>
 		</dict>
@@ -270,6 +302,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Asignar %2$@ estrella</string>
+			<key>many</key>
+			<string>Asignar %2$@ estrellas</string>
 			<key>other</key>
 			<string>Asignar %2$@ estrellas</string>
 		</dict>
@@ -286,6 +320,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>conservó %2$@ copia completada en el destino</string>
+			<key>many</key>
+			<string>conservó %2$@ copias completadas en el destino</string>
 			<key>other</key>
 			<string>conservó %2$@ copias completadas en el destino</string>
 		</dict>
@@ -302,6 +338,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>conservó %2$@ archivo ya trasladado en el destino</string>
+			<key>many</key>
+			<string>conservó %2$@ archivos ya trasladados en el destino</string>
 			<key>other</key>
 			<string>conservó %2$@ archivos ya trasladados en el destino</string>
 		</dict>
@@ -318,6 +356,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>restauró %2$@ archivo original</string>
+			<key>many</key>
+			<string>restauró %2$@ archivos originales</string>
 			<key>other</key>
 			<string>restauró %2$@ archivos originales</string>
 		</dict>
@@ -334,6 +374,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>eliminó %2$@ copia incompleta</string>
+			<key>many</key>
+			<string>eliminó %2$@ copias incompletas</string>
 			<key>other</key>
 			<string>eliminó %2$@ copias incompletas</string>
 		</dict>
@@ -350,6 +392,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento encontrado</string>
+			<key>many</key>
+			<string>%2$@ elementos encontrados</string>
 			<key>other</key>
 			<string>%2$@ elementos encontrados</string>
 		</dict>
@@ -366,6 +410,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ foto sin fecha de captura</string>
+			<key>many</key>
+			<string>%2$@ fotos sin fecha de captura</string>
 			<key>other</key>
 			<string>%2$@ fotos sin fecha de captura</string>
 		</dict>
@@ -382,6 +428,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento de medios sin fecha de captura</string>
+			<key>many</key>
+			<string>%2$@ elementos de medios sin fecha de captura</string>
 			<key>other</key>
 			<string>%2$@ elementos de medios sin fecha de captura</string>
 		</dict>
@@ -398,6 +446,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento coincide con esta selección.</string>
+			<key>many</key>
+			<string>%2$@ elementos coinciden con esta selección.</string>
 			<key>other</key>
 			<string>%2$@ elementos coinciden con esta selección.</string>
 		</dict>
@@ -414,6 +464,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Preparando %3$@ de %2$@ elemento…</string>
+			<key>many</key>
+			<string>Preparando %3$@ de %2$@ elementos…</string>
 			<key>other</key>
 			<string>Preparando %3$@ de %2$@ elementos…</string>
 		</dict>
@@ -430,6 +482,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Hay una decisión antigua para %2$@ archivo que falta en esta carpeta. Louppe no sabe si se eliminó a propósito o si no está disponible temporalmente. Abrir carpeta y olvidar elemento ausente descarta solo esa decisión, conserva las de los archivos presentes y actualiza la sesión. Cerrar carpeta no cambia nada.</string>
+			<key>many</key>
+			<string>Hay decisiones antiguas para %2$@ archivos que faltan en esta carpeta. Louppe no sabe si se eliminaron a propósito o si no están disponibles temporalmente. Abrir carpeta y olvidar elementos ausentes descarta solo esas decisiones, conserva las de los archivos presentes y actualiza la sesión. Cerrar carpeta no cambia nada.</string>
 			<key>other</key>
 			<string>Hay decisiones antiguas para %2$@ archivos que faltan en esta carpeta. Louppe no sabe si se eliminaron a propósito o si no están disponibles temporalmente. Abrir carpeta y olvidar elementos ausentes descarta solo esas decisiones, conserva las de los archivos presentes y actualiza la sesión. Cerrar carpeta no cambia nada.</string>
 		</dict>
@@ -446,6 +500,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ grupo</string>
+			<key>many</key>
+			<string>%2$@ grupos</string>
 			<key>other</key>
 			<string>%2$@ grupos</string>
 		</dict>
@@ -462,6 +518,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%3$@ Hay %2$@ grupo visible. Solo revisión: no se cambia nada automáticamente.</string>
+			<key>many</key>
+			<string>%3$@ Hay %2$@ grupos visibles. Solo revisión: no se cambia nada automáticamente.</string>
 			<key>other</key>
 			<string>%3$@ Hay %2$@ grupos visibles. Solo revisión: no se cambia nada automáticamente.</string>
 		</dict>
@@ -478,6 +536,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Borrar las decisiones Sí/No de %2$@ elemento. Las estrellas y etiquetas de color no cambian. Deshaz con ⌘Z.</string>
+			<key>many</key>
+			<string>Borrar las decisiones Sí/No de %2$@ elementos. Las estrellas y etiquetas de color no cambian. Deshaz con ⌘Z.</string>
 			<key>other</key>
 			<string>Borrar las decisiones Sí/No de %2$@ elementos. Las estrellas y etiquetas de color no cambian. Deshaz con ⌘Z.</string>
 		</dict>
@@ -494,6 +554,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>¿Llevar %2$@ elemento a la Papelera?</string>
+			<key>many</key>
+			<string>¿Llevar %2$@ elementos a la Papelera?</string>
 			<key>other</key>
 			<string>¿Llevar %2$@ elementos a la Papelera?</string>
 		</dict>
@@ -510,6 +572,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>¿Llevar %2$@ elemento marcado No a la Papelera?</string>
+			<key>many</key>
+			<string>¿Llevar %2$@ elementos marcados No a la Papelera?</string>
 			<key>other</key>
 			<string>¿Llevar %2$@ elementos marcados No a la Papelera?</string>
 		</dict>
@@ -526,6 +590,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>¿Llevar %2$@ elemento marcado No o Sin decidir a la Papelera?</string>
+			<key>many</key>
+			<string>¿Llevar %2$@ elementos marcados No o Sin decidir a la Papelera?</string>
 			<key>other</key>
 			<string>¿Llevar %2$@ elementos marcados No o Sin decidir a la Papelera?</string>
 		</dict>
@@ -542,6 +608,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>¿Llevar JPEG de %2$@ par RAW + JPEG a la Papelera?</string>
+			<key>many</key>
+			<string>¿Llevar JPEG de %2$@ pares RAW + JPEG a la Papelera?</string>
 			<key>other</key>
 			<string>¿Llevar JPEG de %2$@ pares RAW + JPEG a la Papelera?</string>
 		</dict>
@@ -558,6 +626,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>¿Llevar RAW de %2$@ par RAW + JPEG a la Papelera?</string>
+			<key>many</key>
+			<string>¿Llevar RAW de %2$@ pares RAW + JPEG a la Papelera?</string>
 			<key>other</key>
 			<string>¿Llevar RAW de %2$@ pares RAW + JPEG a la Papelera?</string>
 		</dict>
@@ -574,6 +644,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ archivo (unos %3$@) irá a la Papelera. El archivo %4$@ correspondiente quedará en la carpeta.</string>
+			<key>many</key>
+			<string>%2$@ archivos (unos %3$@) irán a la Papelera. Los archivos %4$@ correspondientes quedarán en la carpeta.</string>
 			<key>other</key>
 			<string>%2$@ archivos (unos %3$@) irán a la Papelera. Los archivos %4$@ correspondientes quedarán en la carpeta.</string>
 		</dict>
@@ -590,6 +662,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ archivo irá a la Papelera (un par RAW+JPEG cuenta como dos), con unos %3$@ en total. Deshaz con ⌘Z antes de cerrar esta sesión, mientras los archivos sigan en la Papelera. Vaciarla los elimina permanentemente y puede liberar ese espacio.</string>
+			<key>many</key>
+			<string>%2$@ archivos irán a la Papelera (un par RAW+JPEG cuenta como dos), con unos %3$@ en total. Deshaz con ⌘Z antes de cerrar esta sesión, mientras los archivos sigan en la Papelera. Vaciarla los elimina permanentemente y puede liberar ese espacio.</string>
 			<key>other</key>
 			<string>%2$@ archivos irán a la Papelera (un par RAW+JPEG cuenta como dos), con unos %3$@ en total. Deshaz con ⌘Z antes de cerrar esta sesión, mientras los archivos sigan en la Papelera. Vaciarla los elimina permanentemente y puede liberar ese espacio.</string>
 		</dict>
@@ -606,6 +680,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Solo se considera %2$@ elemento seleccionado; los no seleccionados quedan en la carpeta.</string>
+			<key>many</key>
+			<string>Solo se consideran %2$@ elementos seleccionados; los no seleccionados quedan en la carpeta.</string>
 			<key>other</key>
 			<string>Solo se consideran %2$@ elementos seleccionados; los no seleccionados quedan en la carpeta.</string>
 		</dict>
@@ -622,6 +698,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento cambió después del escaneo de esta carpeta%3$@. </string>
+			<key>many</key>
+			<string>%2$@ elementos cambiaron después del escaneo de esta carpeta%3$@. </string>
 			<key>other</key>
 			<string>%2$@ elementos cambiaron después del escaneo de esta carpeta%3$@. </string>
 		</dict>
@@ -638,6 +716,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Duplicados exactos · %2$@ elemento · huellas digitales de archivos coincidentes</string>
+			<key>many</key>
+			<string>Duplicados exactos · %2$@ elementos · huellas digitales de archivos coincidentes</string>
 			<key>other</key>
 			<string>Duplicados exactos · %2$@ elementos · huellas digitales de archivos coincidentes</string>
 		</dict>
@@ -654,6 +734,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Posiblemente similares · %2$@ elemento · comparación de vistas previas locales</string>
+			<key>many</key>
+			<string>Posiblemente similares · %2$@ elementos · comparación de vistas previas locales</string>
 			<key>other</key>
 			<string>Posiblemente similares · %2$@ elementos · comparación de vistas previas locales</string>
 		</dict>
@@ -670,6 +752,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Ráfaga · %2$@ elemento</string>
+			<key>many</key>
+			<string>Ráfaga · %2$@ elementos</string>
 			<key>other</key>
 			<string>Ráfaga · %2$@ elementos</string>
 		</dict>
@@ -686,6 +770,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento</string>
+			<key>many</key>
+			<string>%2$@ elementos</string>
 			<key>other</key>
 			<string>%2$@ elementos</string>
 		</dict>
@@ -702,6 +788,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Apple Photos · %2$@ elemento</string>
+			<key>many</key>
+			<string>Fotos de Apple · %2$@ elementos</string>
 			<key>other</key>
 			<string>Fotos de Apple · %2$@ elementos</string>
 		</dict>
@@ -718,6 +806,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Comprobaciones de imagen: %3$@ de %2$@ foto. Algunas señales pueden no estar disponibles.</string>
+			<key>many</key>
+			<string>Imágenes comprobadas: %3$@ de %2$@. Algunos indicadores pueden no estar disponibles.</string>
 			<key>other</key>
 			<string>Imágenes comprobadas: %3$@ de %2$@. Algunos indicadores pueden no estar disponibles.</string>
 		</dict>
@@ -734,6 +824,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Las decisiones guardadas de %2$@ archivo necesitan comprobarse. Puedes seguir revisando; se conservan las decisiones anteriores.</string>
+			<key>many</key>
+			<string>Hay que comprobar las decisiones guardadas de %2$@ archivos. Puedes seguir revisando; las decisiones anteriores se conservan.</string>
 			<key>other</key>
 			<string>Hay que comprobar las decisiones guardadas de %2$@ archivos. Puedes seguir revisando; las decisiones anteriores se conservan.</string>
 		</dict>
@@ -750,6 +842,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Se restauraron las decisiones guardadas de %2$@ archivo idéntico.</string>
+			<key>many</key>
+			<string>Se restauraron las decisiones guardadas de %2$@ archivos idénticos.</string>
 			<key>other</key>
 			<string>Se restauraron las decisiones guardadas de %2$@ archivos idénticos.</string>
 		</dict>
@@ -766,6 +860,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>No se pudo verificar la pertenencia de %2$@ elemento.</string>
+			<key>many</key>
+			<string>No se pudo verificar la pertenencia de %2$@ elementos al álbum.</string>
 			<key>other</key>
 			<string>No se pudo verificar la pertenencia de %2$@ elementos al álbum.</string>
 		</dict>
@@ -782,6 +878,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Se considera %2$@ elemento de la carpeta, aunque esté oculto por los filtros.</string>
+			<key>many</key>
+			<string>Se consideran los %2$@ elementos de la carpeta, incluidos los ocultos por filtros.</string>
 			<key>other</key>
 			<string>Se consideran los %2$@ elementos de la carpeta, incluidos los ocultos por filtros.</string>
 		</dict>
@@ -798,6 +896,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%3$@ de %2$@ archivo</string>
+			<key>many</key>
+			<string>%3$@ de %2$@ archivos</string>
 			<key>other</key>
 			<string>%3$@ de %2$@ archivos</string>
 		</dict>
@@ -814,6 +914,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ foto</string>
+			<key>many</key>
+			<string>%2$@ fotos</string>
 			<key>other</key>
 			<string>%2$@ fotos</string>
 		</dict>
@@ -825,6 +927,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%4$@ archivo</string>
+			<key>many</key>
+			<string>%4$@ archivos</string>
 			<key>other</key>
 			<string>%4$@ archivos</string>
 		</dict>
@@ -841,6 +945,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento multimedia</string>
+			<key>many</key>
+			<string>%2$@ elementos de medios</string>
 			<key>other</key>
 			<string>%2$@ elementos de medios</string>
 		</dict>
@@ -852,6 +958,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%4$@ archivo</string>
+			<key>many</key>
+			<string>%4$@ archivos</string>
 			<key>other</key>
 			<string>%4$@ archivos</string>
 		</dict>
@@ -868,6 +976,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ posible archivo duplicado comprobado</string>
+			<key>many</key>
+			<string>%2$@ posibles archivos duplicados comprobados</string>
 			<key>other</key>
 			<string>%2$@ posibles archivos duplicados comprobados</string>
 		</dict>
@@ -879,6 +989,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%4$@ vista previa de foto comparada</string>
+			<key>many</key>
+			<string>%4$@ vistas previas de fotos comparadas</string>
 			<key>other</key>
 			<string>%4$@ vistas previas de fotos comparadas</string>
 		</dict>
@@ -895,6 +1007,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Solo se considera %2$@ elemento visible</string>
+			<key>many</key>
+			<string>Solo se consideran %2$@ elementos visibles</string>
 			<key>other</key>
 			<string>Solo se consideran %2$@ elementos visibles</string>
 		</dict>
@@ -906,6 +1020,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%4$@ elemento oculto queda intacto</string>
+			<key>many</key>
+			<string>%4$@ elementos ocultos quedan intactos</string>
 			<key>other</key>
 			<string>%4$@ elementos ocultos quedan intactos</string>
 		</dict>
@@ -922,6 +1038,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento No</string>
+			<key>many</key>
+			<string>%2$@ elementos No</string>
 			<key>other</key>
 			<string>%2$@ elementos No</string>
 		</dict>
@@ -933,6 +1051,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%4$@ elemento sin decidir</string>
+			<key>many</key>
+			<string>%4$@ elementos sin decidir</string>
 			<key>other</key>
 			<string>%4$@ elementos sin decidir</string>
 		</dict>
@@ -949,6 +1069,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Falta un archivo guardado</string>
+			<key>many</key>
+			<string>Faltan archivos guardados</string>
 			<key>other</key>
 			<string>Faltan archivos guardados</string>
 		</dict>
@@ -965,6 +1087,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Abrir carpeta y olvidar elemento ausente</string>
+			<key>many</key>
+			<string>Abrir carpeta y olvidar elementos ausentes</string>
 			<key>other</key>
 			<string>Abrir carpeta y olvidar elementos ausentes</string>
 		</dict>
@@ -981,6 +1105,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Algunos archivos interrumpidos siguen sin cambios porque una unidad no está disponible. </string>
+			<key>many</key>
+			<string>Algunos archivos interrumpidos siguen sin cambios porque hay unidades no disponibles. </string>
 			<key>other</key>
 			<string>Algunos archivos interrumpidos siguen sin cambios porque hay unidades no disponibles. </string>
 		</dict>
@@ -997,6 +1123,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Llevar %2$@ elemento seleccionado a la Papelera…</string>
+			<key>many</key>
+			<string>Llevar %2$@ elementos seleccionados a la Papelera…</string>
 			<key>other</key>
 			<string>Llevar %2$@ elementos seleccionados a la Papelera…</string>
 		</dict>
@@ -1013,6 +1141,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ par RAW+JPEG incluido tiene decisiones distintas por archivo y se trata como sin decidir.</string>
+			<key>many</key>
+			<string>%2$@ pares RAW+JPEG incluidos tienen decisiones distintas por archivo y se tratan como sin decidir.</string>
 			<key>other</key>
 			<string>%2$@ pares RAW+JPEG incluidos tienen decisiones distintas por archivo y se tratan como sin decidir.</string>
 		</dict>
@@ -1029,6 +1159,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento sigue sin decidir en este ámbito; no se exportará.</string>
+			<key>many</key>
+			<string>%2$@ elementos siguen sin decidir en este ámbito; no se exportarán.</string>
 			<key>other</key>
 			<string>%2$@ elementos siguen sin decidir en este ámbito; no se exportarán.</string>
 		</dict>
@@ -1045,6 +1177,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ archivo Lightroom .acr quedará en la carpeta de origen, sin exportar.</string>
+			<key>many</key>
+			<string>%2$@ archivos Lightroom .acr quedarán en la carpeta de origen, sin exportar.</string>
 			<key>other</key>
 			<string>%2$@ archivos Lightroom .acr quedarán en la carpeta de origen, sin exportar.</string>
 		</dict>
@@ -1061,6 +1195,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento coincide con más de una ruta: %3$@.</string>
+			<key>many</key>
+			<string>%2$@ elementos coinciden con más de una ruta: %3$@.</string>
 			<key>other</key>
 			<string>%2$@ elementos coinciden con más de una ruta: %3$@.</string>
 		</dict>
@@ -1077,6 +1213,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Se copiará %2$@ archivo. Los originales se quedan donde están.</string>
+			<key>many</key>
+			<string>Se copiarán %2$@ archivos. Los originales se quedan donde están.</string>
 			<key>other</key>
 			<string>Se copiarán %2$@ archivos. Los originales se quedan donde están.</string>
 		</dict>
@@ -1093,6 +1231,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Se unificó %2$@ conflicto RAW+JPEG en Louppe. Revisa el nuevo plan antes de continuar.</string>
+			<key>many</key>
+			<string>Se unificaron %2$@ conflictos RAW+JPEG en Louppe. Revisa el nuevo plan antes de continuar.</string>
 			<key>other</key>
 			<string>Se unificaron %2$@ conflictos RAW+JPEG en Louppe. Revisa el nuevo plan antes de continuar.</string>
 		</dict>
@@ -1109,6 +1249,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ conflicto cambió mientras el diálogo estaba abierto y no se sobrescribió. El plan actualizado muestra los valores actuales.</string>
+			<key>many</key>
+			<string>%2$@ conflictos cambiaron mientras el diálogo estaba abierto y no se sobrescribieron. El plan actualizado muestra los valores actuales.</string>
 			<key>other</key>
 			<string>%2$@ conflictos cambiaron mientras el diálogo estaba abierto y no se sobrescribieron. El plan actualizado muestra los valores actuales.</string>
 		</dict>
@@ -1125,6 +1267,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Se rechazó %2$@ elección porque los archivos ya no formaban un par RAW+JPEG seguro.</string>
+			<key>many</key>
+			<string>Se rechazaron %2$@ elecciones porque los archivos ya no formaban un par RAW+JPEG seguro.</string>
 			<key>other</key>
 			<string>Se rechazaron %2$@ elecciones porque los archivos ya no formaban un par RAW+JPEG seguro.</string>
 		</dict>
@@ -1141,6 +1285,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento será copiado</string>
+			<key>many</key>
+			<string>Se copiarán %2$@ elementos</string>
 			<key>other</key>
 			<string>Se copiarán %2$@ elementos</string>
 		</dict>
@@ -1157,6 +1303,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Se moverá %2$@ elemento</string>
+			<key>many</key>
+			<string>Se moverán %2$@ elementos</string>
 			<key>other</key>
 			<string>Se moverán %2$@ elementos</string>
 		</dict>
@@ -1173,6 +1321,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Se preparará %2$@ elemento para publicar XMP</string>
+			<key>many</key>
+			<string>Se prepararán %2$@ elementos para publicar XMP</string>
 			<key>other</key>
 			<string>Se prepararán %2$@ elementos para publicar XMP</string>
 		</dict>
@@ -1189,6 +1339,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ par con valoraciones distintas</string>
+			<key>many</key>
+			<string>%2$@ pares con valoraciones distintas</string>
 			<key>other</key>
 			<string>%2$@ pares con valoraciones distintas</string>
 		</dict>
@@ -1205,6 +1357,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ par de color mixto</string>
+			<key>many</key>
+			<string>%2$@ pares de color mixto</string>
 			<key>other</key>
 			<string>%2$@ pares de color mixto</string>
 		</dict>
@@ -1221,6 +1375,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%3$@ coincide solo cuando Mixto está seleccionado en el menú correspondiente.</string>
+			<key>many</key>
+			<string>%3$@ coinciden solo cuando Mixto está seleccionado en el menú correspondiente.</string>
 			<key>other</key>
 			<string>%3$@ coinciden solo cuando Mixto está seleccionado en el menú correspondiente.</string>
 		</dict>
@@ -1237,6 +1393,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%3$@ de %2$@ familia de archivos sidecar</string>
+			<key>many</key>
+			<string>%3$@ de %2$@ familias de archivos auxiliares</string>
 			<key>other</key>
 			<string>%3$@ de %2$@ familias de archivos auxiliares</string>
 		</dict>
@@ -1253,6 +1411,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ paquete de aplicación con nombre por extensión quedará sin cambios junto a los originales.</string>
+			<key>many</key>
+			<string>%2$@ paquetes de aplicación con nombres por extensión quedarán sin cambios junto a los originales.</string>
 			<key>other</key>
 			<string>%2$@ paquetes de aplicación con nombres por extensión quedarán sin cambios junto a los originales.</string>
 		</dict>
@@ -1269,6 +1429,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ archivo Lightroom .acr quedará intacto junto a los originales. Louppe nunca lee ni cambia los datos de edición avanzada de Lightroom.</string>
+			<key>many</key>
+			<string>%2$@ archivos Lightroom .acr quedarán intactos junto a los originales. Louppe nunca lee ni cambia los datos de edición avanzada de Lightroom.</string>
 			<key>other</key>
 			<string>%2$@ archivos Lightroom .acr quedarán intactos junto a los originales. Louppe nunca lee ni cambia los datos de edición avanzada de Lightroom.</string>
 		</dict>
@@ -1285,6 +1447,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string> — No se pudo copiar %2$@ elemento.</string>
+			<key>many</key>
+			<string> — No se pudieron copiar %2$@ elementos.</string>
 			<key>other</key>
 			<string> — No se pudieron copiar %2$@ elementos.</string>
 		</dict>
@@ -1301,6 +1465,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string> — %2$@ elemento no pudo trasladarse y sigue en la sesión.</string>
+			<key>many</key>
+			<string> — %2$@ elementos no pudieron trasladarse y siguen en la sesión.</string>
 			<key>other</key>
 			<string> — %2$@ elementos no pudieron trasladarse y siguen en la sesión.</string>
 		</dict>
@@ -1317,6 +1483,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Se omite %2$@ familia de archivos auxiliares tras las comprobaciones de seguridad; los medios listados aún se copian.</string>
+			<key>many</key>
+			<string>Se omiten %2$@ familias de archivos auxiliares tras las comprobaciones de seguridad; los medios listados aún se copian.</string>
 			<key>other</key>
 			<string>Se omiten %2$@ familias de archivos auxiliares tras las comprobaciones de seguridad; los medios listados aún se copian.</string>
 		</dict>
@@ -1333,6 +1501,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string> (%2$@ archivo, incluidos los pares RAW+JPEG)</string>
+			<key>many</key>
+			<string> (%2$@ archivos, incluidos los pares RAW+JPEG)</string>
 			<key>other</key>
 			<string> (%2$@ archivos, incluidos los pares RAW+JPEG)</string>
 		</dict>
@@ -1349,6 +1519,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>…y %2$@ archivo multimedia más</string>
+			<key>many</key>
+			<string>…y %2$@ más archivos multimedia</string>
 			<key>other</key>
 			<string>…y %2$@ más archivos multimedia</string>
 		</dict>
@@ -1365,6 +1537,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ archivo multimedia</string>
+			<key>many</key>
+			<string>%2$@ archivos multimedia</string>
 			<key>other</key>
 			<string>%2$@ archivos multimedia</string>
 		</dict>
@@ -1381,6 +1555,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Se numeró %2$@ archivo que compartía nombre.</string>
+			<key>many</key>
+			<string>Se numeraron %2$@ archivos que compartían nombre.</string>
 			<key>other</key>
 			<string>Se numeraron %2$@ archivos que compartían nombre.</string>
 		</dict>
@@ -1397,6 +1573,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Resuelve %2$@ conflicto de nombres antes de cambiarlos.</string>
+			<key>many</key>
+			<string>Resuelve %2$@ conflictos de nombres antes de cambiarlos.</string>
 			<key>other</key>
 			<string>Resuelve %2$@ conflictos de nombres antes de cambiarlos.</string>
 		</dict>
@@ -1413,6 +1591,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>¿Renombrar %2$@ archivo?</string>
+			<key>many</key>
+			<string>¿Cambiar nombres de %2$@ archivos?</string>
 			<key>other</key>
 			<string>¿Cambiar nombres de %2$@ archivos?</string>
 		</dict>
@@ -1429,6 +1609,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ carpeta</string>
+			<key>many</key>
+			<string>%2$@ carpetas</string>
 			<key>other</key>
 			<string>%2$@ carpetas</string>
 		</dict>
@@ -1445,6 +1627,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Hay que resolver %2$@ conflicto de nombres o archivos auxiliares antes de trasladar.</string>
+			<key>many</key>
+			<string>Hay que resolver %2$@ conflictos de nombres o archivos auxiliares antes de trasladar.</string>
 			<key>other</key>
 			<string>Hay que resolver %2$@ conflictos de nombres o archivos auxiliares antes de trasladar.</string>
 		</dict>
@@ -1461,6 +1645,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ archivo Lightroom .acr permanecerá en su lugar.</string>
+			<key>many</key>
+			<string>%2$@ archivos Lightroom .acr permanecerán en su lugar.</string>
 			<key>other</key>
 			<string>%2$@ archivos Lightroom .acr permanecerán en su lugar.</string>
 		</dict>
@@ -1477,6 +1663,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>¿Trasladar %2$@ archivo?</string>
+			<key>many</key>
+			<string>¿Trasladar %2$@ archivos?</string>
 			<key>other</key>
 			<string>¿Trasladar %2$@ archivos?</string>
 		</dict>
@@ -1493,6 +1681,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>En %2$@ carpeta dentro de «%3$@»</string>
+			<key>many</key>
+			<string>En %2$@ carpetas dentro de “%3$@”</string>
 			<key>other</key>
 			<string>En %2$@ carpetas dentro de “%3$@”</string>
 		</dict>
@@ -1509,6 +1699,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Archivo copiado: %2$@</string>
+			<key>many</key>
+			<string>Archivos copiados: %2$@</string>
 			<key>other</key>
 			<string>Archivos copiados: %2$@</string>
 		</dict>
@@ -1525,6 +1717,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Archivo copiado: %2$@</string>
+			<key>many</key>
+			<string>Archivos copiados: %2$@</string>
 			<key>other</key>
 			<string>Archivos copiados: %2$@</string>
 		</dict>
@@ -1536,6 +1730,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Carpeta de destino: %4$@</string>
+			<key>many</key>
+			<string>Carpetas de destino: %4$@</string>
 			<key>other</key>
 			<string>Carpetas de destino: %4$@</string>
 		</dict>
@@ -1552,6 +1748,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Archivo trasladado: %2$@</string>
+			<key>many</key>
+			<string>Archivos trasladados: %2$@</string>
 			<key>other</key>
 			<string>Archivos trasladados: %2$@</string>
 		</dict>
@@ -1568,6 +1766,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Archivo trasladado: %2$@</string>
+			<key>many</key>
+			<string>Archivos trasladados: %2$@</string>
 			<key>other</key>
 			<string>Archivos trasladados: %2$@</string>
 		</dict>
@@ -1579,6 +1779,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>Carpeta de destino: %4$@</string>
+			<key>many</key>
+			<string>Carpetas de destino: %4$@</string>
 			<key>other</key>
 			<string>Carpetas de destino: %4$@</string>
 		</dict>
@@ -1595,6 +1797,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento</string>
+			<key>many</key>
+			<string>%2$@ elementos</string>
 			<key>other</key>
 			<string>%2$@ elementos</string>
 		</dict>
@@ -1606,6 +1810,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%4$@ archivo de medios</string>
+			<key>many</key>
+			<string>%4$@ archivos de medios</string>
 			<key>other</key>
 			<string>%4$@ archivos de medios</string>
 		</dict>
@@ -1622,6 +1828,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ elemento se moverá fuera de </string>
+			<key>many</key>
+			<string>%2$@ elementos saldrán de </string>
 			<key>other</key>
 			<string>%2$@ elementos saldrán de </string>
 		</dict>
@@ -1633,6 +1841,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%4$@ carpeta existente. Los archivos XMP reconocidos y los RAW+JPEG agrupados acompañan a sus archivos multimedia. No se sobrescribe nada.</string>
+			<key>many</key>
+			<string>%4$@ carpetas existentes. Los archivos XMP reconocidos y los RAW+JPEG agrupados acompañan a sus medios. No se sobrescribe nada.</string>
 			<key>other</key>
 			<string>%4$@ carpetas existentes. Los archivos XMP reconocidos y los RAW+JPEG agrupados acompañan a sus medios. No se sobrescribe nada.</string>
 		</dict>
@@ -1649,6 +1859,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ existente</string>
+			<key>many</key>
+			<string>%2$@ existentes</string>
 			<key>other</key>
 			<string>%2$@ existentes</string>
 		</dict>
@@ -1659,6 +1871,8 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
+			<string>%4$@ por crear</string>
+			<key>many</key>
 			<string>%4$@ por crear</string>
 			<key>other</key>
 			<string>%4$@ por crear</string>
@@ -1671,6 +1885,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%6$@ por actualizar</string>
+			<key>many</key>
+			<string>%6$@ por actualizar</string>
 			<key>other</key>
 			<string>%6$@ por actualizar</string>
 		</dict>
@@ -1682,6 +1898,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%8$@ paquete de aplicación copiado sin cambios</string>
+			<key>many</key>
+			<string>%8$@ paquetes de aplicación copiados sin cambios</string>
 			<key>other</key>
 			<string>%8$@ paquetes de aplicación copiados sin cambios</string>
 		</dict>
@@ -1698,6 +1916,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ excluido por decisión, estrellas o color</string>
+			<key>many</key>
+			<string>%2$@ excluidos por decisión, estrellas o color</string>
 			<key>other</key>
 			<string>%2$@ excluidos por decisión, estrellas o color</string>
 		</dict>
@@ -1713,6 +1933,8 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
+			<string>%2$@ fuera de este ámbito</string>
+			<key>many</key>
 			<string>%2$@ fuera de este ámbito</string>
 			<key>other</key>
 			<string>%2$@ fuera de este ámbito</string>
@@ -1730,6 +1952,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ seleccionado</string>
+			<key>many</key>
+			<string>%2$@ seleccionados</string>
 			<key>other</key>
 			<string>%2$@ seleccionados</string>
 		</dict>
@@ -1745,6 +1969,8 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
+			<string> y %2$@ más</string>
+			<key>many</key>
 			<string> y %2$@ más</string>
 			<key>other</key>
 			<string> y %2$@ más</string>
@@ -1762,6 +1988,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>, y %2$@ más</string>
+			<key>many</key>
+			<string>, y %2$@ más</string>
 			<key>other</key>
 			<string>, y %2$@ más</string>
 		</dict>
@@ -1777,6 +2005,8 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
+			<string>…y %2$@ más</string>
+			<key>many</key>
 			<string>…y %2$@ más</string>
 			<key>other</key>
 			<string>…y %2$@ más</string>
@@ -1794,6 +2024,8 @@
 			<string>lld</string>
 			<key>one</key>
 			<string>%2$@ asignado</string>
+			<key>many</key>
+			<string>%2$@ asignados</string>
 			<key>other</key>
 			<string>%2$@ asignados</string>
 		</dict>
@@ -1804,6 +2036,8 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
+			<string>%4$@ sin coincidencia</string>
+			<key>many</key>
 			<string>%4$@ sin coincidencia</string>
 			<key>other</key>
 			<string>%4$@ sin coincidencia</string>

@@ -41,7 +41,7 @@ final class LocalizationTests: XCTestCase {
     }
 
     func testEveryPackagedPluralEntryUsesItsLanguageBundleAndAllIntegerForms() throws {
-        let counts = [0, 1, 2, 3, 11, 100, 17015]
+        let counts = [0, 1, 2, 3, 11, 100, 101, 1000, 1001, 17015, 1000000]
         let english = try pluralCatalog("en")
         XCTAssertGreaterThanOrEqual(english.count, 104)
         for language in L10n.supportedLanguages {
@@ -58,7 +58,8 @@ final class LocalizationTests: XCTestCase {
                     XCTAssertEqual(rule["NSStringFormatSpecTypeKey"], "NSStringPluralRuleType")
                     XCTAssertEqual(rule["NSStringFormatValueTypeKey"], "lld")
                     let required = language == "ar" ? ["zero", "one", "two", "few", "many", "other"]
-                        : language == "zh-Hans" ? ["other"] : ["one", "other"]
+                        : language == "zh-Hans" ? ["other"]
+                        : ["es", "pt"].contains(language) ? ["one", "many", "other"] : ["one", "other"]
                     for category in required { XCTAssertNotNil(rule[category], "\(language): \(key): \(category)") }
                 }
                 for offset in counts.indices {
@@ -83,6 +84,54 @@ final class LocalizationTests: XCTestCase {
                     let rendered = L10n.renderPlural(key, counts: selected, arguments: arguments, language: language)
                     for token in ["XMP", "RAW", "JPEG", ".acr", "Lightroom", "⌘Z"] where key.contains(token) {
                         XCTAssertTrue(rendered.contains(token), "\(language): \(key): \(selected): lost \(token)")
+                    }
+                }
+            }
+        }
+    }
+
+    func testPluralFormatsKeepArgumentPositionsTypesAndTranslatedText() throws {
+        let english = try pluralCatalog("en")
+        let expression = try NSRegularExpression(pattern: #"%([1-9][0-9]*)\$(#@([A-Za-z0-9]+)@|lld|d|@)|%%"#)
+        func signature(_ format: String) throws -> [Int: String] {
+            var result: [Int: String] = [:]
+            let matches = expression.matches(in: format, range: NSRange(format.startIndex..., in: format))
+            let remainder = expression.stringByReplacingMatches(in: format,
+                range: NSRange(format.startIndex..., in: format), withTemplate: "")
+            XCTAssertFalse(remainder.contains("%"), "Unrecognized printf argument: \(format)")
+            for match in matches where match.range(at: 1).location != NSNotFound {
+                let slot = Int(format[try XCTUnwrap(Range(match.range(at: 1), in: format))])!
+                let type = String(format[try XCTUnwrap(Range(match.range(at: 2), in: format))])
+                if let previous = result[slot] { XCTAssertEqual(previous, type, format) }
+                result[slot] = type
+            }
+            return result
+        }
+        for language in L10n.supportedLanguages {
+            for (key, entry) in try pluralCatalog(language) {
+                let baseline = try XCTUnwrap(english[key])
+                let format = try XCTUnwrap(entry["NSStringLocalizedFormatKey"] as? String)
+                XCTAssertEqual(try signature(format), try signature(XCTUnwrap(baseline["NSStringLocalizedFormatKey"] as? String)),
+                               "\(language): \(key)")
+                let countSlots = 2 * (entry.count - 1)
+                for (name, value) in entry where name != "NSStringLocalizedFormatKey" {
+                    let rule = try XCTUnwrap(value as? [String: String])
+                    let englishRule = try XCTUnwrap(baseline[name] as? [String: String])
+                    let expected = try signature(XCTUnwrap(englishRule["other"]))
+                    for (category, phrase) in rule where !category.hasPrefix("NSString") {
+                        let actual = try signature(phrase)
+                        // Arabic singular/dual forms can spell out the count;
+                        // filename/error arguments must remain in every form.
+                        XCTAssertEqual(actual.filter { $0.key > countSlots }, expected.filter { $0.key > countSlots },
+                                       "\(language): \(key): \(category)")
+                        for (slot, type) in actual {
+                            XCTAssertEqual(type, expected[slot], "\(language): \(key): \(category): slot \(slot)")
+                        }
+                        if language != "en", [englishRule["one"], englishRule["other"]].contains(phrase) {
+                            // Portuguese 'item' is shared with English. Apple Photos is a brand.
+                            XCTAssertTrue(language == "pt" && ["%2$@ item", "Apple Photos · %2$@ item"].contains(phrase),
+                                          "Unexpected English plural in \(language): \(key): \(phrase)")
+                        }
                     }
                 }
             }
@@ -216,6 +265,7 @@ final class LocalizationTests: XCTestCase {
             if (11...99).contains(count % 100) { return "many" }
             return "other"
         }
+        if ["es", "pt"].contains(language), count != 0, count % 1_000_000 == 0 { return "many" }
         if (language == "hi" || language == "pt"), count == 0 { return "one" }
         return count == 1 ? "one" : "other"
     }
