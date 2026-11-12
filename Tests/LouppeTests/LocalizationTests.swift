@@ -532,6 +532,64 @@ final class LocalizationTests: XCTestCase {
     }
 
     @MainActor
+    func testRenderedCountersUseGroupedAppLanguageNumbers() async throws {
+        let items = (0..<17015).map { index in
+            PhotoItem(primaryFile: PhotoFile(id: "\(index).JPG", url: URL(fileURLWithPath: "/tmp/\(index).JPG"),
+                captureDate: nil, cameraModel: nil, lensModel: nil, fileSize: 1, metadataIsLoaded: false))
+        }
+        let opening = OpeningSessionState(snapshot: .init(items: items), viewMode: .grid, sourceAccess: nil)
+        let host = NSHostingView(rootView: VStack {
+            FilterCountLabel(label: "Fixture", count: 17015)
+            OpeningSessionStatus(state: opening)
+        }.localizedInterface().environment(\.accessibilityEnabled, true))
+        let window = NSWindow(contentRect: NSRect(x: -20_000, y: -20_000, width: 340, height: 160),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(100))
+        host.layoutSubtreeIfNeeded()
+        var visited: Set<ObjectIdentifier> = []
+        var strings: [String] = []
+        func walk(_ object: NSObject) {
+            guard visited.insert(ObjectIdentifier(object)).inserted else { return }
+            for name in ["accessibilityLabel", "accessibilityValue"] {
+                let selector = NSSelectorFromString(name)
+                if object.responds(to: selector),
+                   let value = object.perform(selector)?.takeUnretainedValue() as? String { strings.append(value) }
+            }
+            let children = NSSelectorFromString("accessibilityChildren")
+            if object.responds(to: children),
+               let values = object.perform(children)?.takeUnretainedValue() as? [NSObject] { values.forEach(walk) }
+            if let view = object as? NSView {
+                view.subviews.forEach(walk)
+                for child in NSAccessibility.unignoredChildren(from: [view]) {
+                    if let child = child as? NSObject { walk(child) }
+                }
+            }
+        }
+        walk(host)
+        let rendered = strings.joined(separator: " | ")
+        if let directory = ProcessInfo.processInfo.environment["LOUPPE_COUNTER_SNAPSHOTS"] {
+            let output = URL(fileURLWithPath: directory)
+            try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+            let suite = "LouppeCounterCaptures.\(UUID())"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            for appearance in OffscreenCapture.Appearance.allCases {
+                try await OffscreenCapture.capture(host.rootView, defaults: defaults, size: CGSize(width: 340, height: 160),
+                    title: "App-language counts", appearance: appearance,
+                    to: output.appendingPathComponent("counters-\(L10n.language)-\(appearance.rawValue).png"))
+            }
+        }
+        XCTAssertTrue(rendered.contains(L10n.number(17015)), "Missing grouped Filter count: \(rendered)")
+        XCTAssertTrue(rendered.contains("\(L10n.number(0)) / \(L10n.number(17015))"),
+                      "Opening progress must use app-language digits: \(rendered)")
+    }
+
+    @MainActor
     func testLocalizedPresentationFixtures() throws {
         guard let directory = ProcessInfo.processInfo.environment["LOUPPE_LOCALIZATION_SNAPSHOTS"] else { return }
         let fixture = FileManager.default.temporaryDirectory.appendingPathComponent("LouppeLocalizedUI-\(UUID())")

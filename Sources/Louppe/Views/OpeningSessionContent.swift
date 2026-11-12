@@ -59,7 +59,7 @@ struct OpeningSessionStatus: View {
                     .lineLimit(1)
                 // Cached observations may omit files, so their count would mislead.
                 if !state.isCached {
-                    Text(verbatim: "\(state.readyMetadataCount.formatted()) / \(state.items.count.formatted())")
+                    Text(verbatim: "\(L10n.number(state.readyMetadataCount)) / \(L10n.number(state.items.count))")
                         .font(.caption)
                         .monospacedDigit()
                 }
