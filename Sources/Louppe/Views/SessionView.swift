@@ -377,16 +377,16 @@ struct SessionView: View {
     private var subtitle: String {
         guard !store.items.isEmpty else { return "" }
         let position = store.currentVisiblePosition.map { $0 + 1 } ?? 0
-        var text = L10n.text("Item \(position) of \(store.visibleIndices.count)")
+        var text = L10n.text("Item \(position.formatted()) of \(store.visibleIndices.count.formatted())")
         if store.isFilterActive {
-            text += L10n.text(" (of \(store.archiveScopeCount) total)")
+            text += L10n.text(" (of \(store.archiveScopeCount.formatted()) total)")
         }
-        text += L10n.text("  ·  \(store.archiveReviewedCount)/\(store.archiveScopeCount) reviewed")
+        text += L10n.text("  ·  \(store.archiveReviewedCount.formatted())/\(store.archiveScopeCount.formatted()) reviewed")
         if store.archiveMixedCount > 0 {
-            text += L10n.text("  ·  \(store.archiveMixedCount) mixed")
+            text += L10n.text("  ·  \(store.archiveMixedCount.formatted()) mixed")
         }
         if store.selectedIndices.count > 1 {
-            text += L10n.text("  ·  \(store.selectedIndices.count) selected")
+            text += L10n.text("  ·  \(store.selectedIndices.count.formatted()) selected")
         }
         if store.isGroupedReviewActive {
             text += L10n.text("  ·  grouped review")

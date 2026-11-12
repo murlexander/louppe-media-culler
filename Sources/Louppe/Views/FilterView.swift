@@ -116,7 +116,7 @@ struct FilterView: View {
             }
             filterSections
         } footerLeading: {
-            Text(L10n.text("Showing \(store.visibleIndices.count) of \(store.items.count)"))
+            Text(L10n.text("Showing \(store.visibleIndices.count.formatted()) of \(store.items.count.formatted())"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
