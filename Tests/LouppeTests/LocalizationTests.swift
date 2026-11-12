@@ -452,7 +452,8 @@ final class LocalizationTests: XCTestCase {
             window.isReleasedWhenClosed = false
             window.contentView = host
             // A native fixture window, with no production application identity.
-            window.orderFront(nil)
+            window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+            window.orderBack(nil)
             defer { window.close() }
             RunLoop.main.run(until: Date().addingTimeInterval(0.15))
             host.layoutSubtreeIfNeeded()

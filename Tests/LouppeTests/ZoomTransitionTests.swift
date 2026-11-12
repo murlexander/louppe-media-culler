@@ -32,7 +32,6 @@ final class ZoomTransitionTests: XCTestCase {
     }
 
     func testGalleryLoadingSettlesAfterRepeatedZoomModeChanges() async throws {
-        try requireForegroundUI()
         let fixture = try Fixture()
         defer { fixture.close() }
         let store = SessionStore()
@@ -42,7 +41,8 @@ final class ZoomTransitionTests: XCTestCase {
         store.showBrowser = false
         let host = NSHostingView(rootView: GalleryView(store: store))
         fixture.window.contentView = host
-        fixture.window.makeKeyAndOrderFront(nil)
+        fixture.window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        fixture.window.orderBack(nil)
         defer { fixture.window.contentView = nil }
 
         for delay in [150, 5] {
@@ -59,7 +59,6 @@ final class ZoomTransitionTests: XCTestCase {
     }
 
     func testLiveFittedPinchDoesNotPaintOverBrowser() async throws {
-        try requireForegroundUI()
         let fixture = try Fixture()
         defer { fixture.close() }
         let store = SessionStore()
@@ -71,7 +70,8 @@ final class ZoomTransitionTests: XCTestCase {
         let host = NSHostingView(rootView: GalleryView(store: store))
         fixture.window.setContentSize(CGSize(width: 600, height: 320))
         fixture.window.contentView = host
-        fixture.window.makeKeyAndOrderFront(nil)
+        fixture.window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        fixture.window.orderBack(nil)
         defer { fixture.window.contentView = nil }
 
         func fittedSurface(in view: NSView) -> FittedImageDoubleClickView? {

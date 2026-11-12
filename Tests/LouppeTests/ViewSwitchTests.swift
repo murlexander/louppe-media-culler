@@ -5,11 +5,6 @@ import XCTest
 
 @MainActor
 final class ViewSwitchTests: XCTestCase {
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        try requireForegroundUI()
-    }
-
     func testRepeatedGalleryGridSwitchesRenderTailMediaAndStayInteractive() async throws {
         _ = NSApplication.shared
         let folder = FileManager.default.temporaryDirectory
@@ -69,7 +64,8 @@ final class ViewSwitchTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
         defer { window.orderOut(nil) }
         try await waitForRenderedMode(
             .gallery,

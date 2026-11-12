@@ -7,11 +7,6 @@ import XCTest
 
 @MainActor
 final class StagedViewportHandoffTests: XCTestCase {
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        try requireForegroundUI()
-    }
-
     func testMountedOpeningHandsOffManualAnchorSeparatelyFromCurrentAfterFinalReorder() async throws {
         _ = NSApplication.shared
         let root = URL(fileURLWithPath: "/private/tmp/louppe-anchor-\(UUID())", isDirectory: true)
@@ -42,7 +37,8 @@ final class StagedViewportHandoffTests: XCTestCase {
                               styleMask: [.titled, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
         defer { window.orderOut(nil); window.contentView = nil; window.close(); store.beginTerminationPreparation() }
         store.openFolder(folder)
         try await wait(host) { store.openingSession != nil && self.document(host) != nil }

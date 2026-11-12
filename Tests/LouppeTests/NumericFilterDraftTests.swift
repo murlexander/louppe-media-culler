@@ -50,7 +50,6 @@ final class NumericFilterDraftTests: XCTestCase {
     }
 
     func testOpeningWaitingAndClosingRealFilterPreservesAllPreciseCutoffs() async throws {
-        try requireForegroundUI()
         _ = NSApplication.shared
         let store = SessionStore()
         store.items = [makeItem("min", duration: 5, aperture: 1.4, shutter: 0.000123, iso: 100, fps: 24),
@@ -68,7 +67,8 @@ final class NumericFilterDraftTests: XCTestCase {
         host.frame = NSRect(x: 0, y: 0, width: 430, height: 650)
         let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
         defer { window.orderOut(nil); window.contentView = nil }
         host.layoutSubtreeIfNeeded()
         try await Task.sleep(for: .milliseconds(230))

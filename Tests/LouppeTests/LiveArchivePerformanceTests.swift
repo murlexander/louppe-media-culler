@@ -126,7 +126,8 @@ final class LiveArchivePerformanceTests: XCTestCase {
                     styleMask: [.titled, .resizable], backing: .buffered, defer: false)
                 window.isReleasedWhenClosed = false
                 window.contentView = host
-                window.orderFront(nil)
+                window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+                window.orderBack(nil)
                 defer { window.orderOut(nil); window.contentView = nil; window.close() }
                 let targets = [items.count / 2, items.count - 1, items.count / 3, 0]
                     .compactMap { index in
@@ -206,7 +207,8 @@ private final class ArchiveOpeningMount {
             styleMask: [.titled, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.orderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
         self.host = host; self.window = window
     }
     func hasVisiblePixels() -> Bool {

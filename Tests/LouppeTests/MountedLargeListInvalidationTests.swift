@@ -10,7 +10,6 @@ import XCTest
 @MainActor
 final class MountedLargeListInvalidationTests: XCTestCase {
     func testMountedGridDoesNotReconstructCollectionForCurrentOrSelection() async throws {
-        try requireForegroundUI()
         let store = readyStore()
         store.viewMode = .grid
         var constructions = 0
@@ -60,7 +59,6 @@ final class MountedLargeListInvalidationTests: XCTestCase {
     }
 
     func testMountedBrowserDoesNotReconstructCollectionForCurrentOrSelection() async throws {
-        try requireForegroundUI()
         let store = readyStore()
         var constructions = 0
         var snapshots: [BrowserCollectionContent] = []
@@ -150,7 +148,8 @@ final class MountedLargeListInvalidationTests: XCTestCase {
                               styleMask: [.titled, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
         return window
     }
 

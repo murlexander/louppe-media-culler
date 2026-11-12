@@ -168,7 +168,8 @@ final class StagedBrowseTests: XCTestCase {
                               styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.orderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
         defer { window.close(); store.cancelScan() }
         host.layoutSubtreeIfNeeded()
         try await Task.sleep(for: .milliseconds(100))

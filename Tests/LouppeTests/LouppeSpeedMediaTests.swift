@@ -275,7 +275,8 @@ final class LouppeSpeedMediaTests: XCTestCase {
                                       styleMask: [.titled], backing: .buffered, defer: false)
                 window.isReleasedWhenClosed = false
                 window.contentView = host
-                window.orderFront(nil)
+                window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+                window.orderBack(nil)
                 defer { window.orderOut(nil); window.contentView = nil; window.close() }
                 var fullReady: Double?
                 var displayed: Double?

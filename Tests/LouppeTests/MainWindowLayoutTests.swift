@@ -30,7 +30,8 @@ final class MainWindowLayoutTests: XCTestCase {
             ).background(WindowContentLayout(
                 layout: layout, minimumContentSize: layout.minimumContentSize
             )))
-            window.orderFront(nil)
+            // Screen-fitting can move this window; keep it unordered throughout.
+            host.layoutSubtreeIfNeeded()
             // Let SwiftUI mount the real toolbar and the window bridge.
             try await Task.sleep(for: .milliseconds(100))
             NotificationCenter.default.post(name: NSWindow.willStartLiveResizeNotification, object: window)
@@ -496,7 +497,8 @@ final class MainWindowLayoutTests: XCTestCase {
         ))
         window.contentView = host
         defer { drives.stop(); window.close() }
-        window.orderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
         for _ in 0..<40 where drives.drives.count != 13 {
             try await Task.sleep(for: .milliseconds(10))
         }

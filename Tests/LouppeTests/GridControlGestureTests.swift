@@ -25,6 +25,7 @@ final class GridControlGestureTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
         window.orderBack(nil)
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
 
@@ -76,6 +77,7 @@ final class GridControlGestureTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
         window.orderBack(nil)
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
 
@@ -144,6 +146,7 @@ final class GridControlGestureTests: XCTestCase {
             defer: false
         )
         window.contentView = hostingView
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
         window.orderBack(nil)
         RunLoop.current.run(until: Date().addingTimeInterval(0.05))
 

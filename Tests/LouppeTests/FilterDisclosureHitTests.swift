@@ -126,7 +126,9 @@ final class FilterDisclosureHitTests: XCTestCase {
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
         settle(host)
         return window
     }

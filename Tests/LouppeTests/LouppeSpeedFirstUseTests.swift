@@ -68,7 +68,8 @@ final class LouppeSpeedFirstUseTests: XCTestCase {
                                           styleMask: [.titled, .resizable], backing: .buffered, defer: false)
                     window.isReleasedWhenClosed = false
                     window.contentView = host
-                    window.orderFront(nil)
+                    window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+                    window.orderBack(nil)
                     // Fixture preparation scanned these files to create decision evidence.
                     // Remove only this disposable folder's optional metadata snapshot for
                     // app-cache-cold runs; the filesystem remains warm in both modes.
