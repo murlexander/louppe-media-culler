@@ -129,8 +129,6 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
   CVEs are unreachable in Louppe), with the vendored-file and license checks.
 - [ ] **Agent tooling follow-ups (audit of 20 agent threads, 9 November 2026).**
   The entry-point scripts landed; these remain, highest value first.
-  - Rendered hit tests for composed controls: the Grid Play button and the
-    panorama decision target must take real clicks at their drawn frames.
   - A layout test that side-by-side pane headers share one height.
   - A guarded installed-app smoke driver (screen lock, frontmost app and point
     ownership checked before every event) for folder click focus, view switching
