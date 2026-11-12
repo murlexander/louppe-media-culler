@@ -40,6 +40,18 @@ final class CaptureScenariosTests: XCTestCase {
             fixture.store.flushPendingFilter()
             return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         },
+        Scenario(name: "session-sorted-gallery", description: "Current item after reversing the review order.") { fixture in
+            try fixture.sortedCollection(mode: .gallery, direction: .leftToRight)
+        },
+        Scenario(name: "session-sorted-gallery-rtl", description: "Current item after reversing the review order.") { fixture in
+            try fixture.sortedCollection(mode: .gallery, direction: .rightToLeft)
+        },
+        Scenario(name: "session-sorted-grid", description: "Current item after reversing the review order.") { fixture in
+            try fixture.sortedCollection(mode: .grid, direction: .leftToRight)
+        },
+        Scenario(name: "session-sorted-grid-rtl", description: "Current item after reversing the review order.") { fixture in
+            try fixture.sortedCollection(mode: .grid, direction: .rightToLeft)
+        },
         Scenario(name: "welcome-recent", description: "Welcome with recent disposable folders and no connected drives.") { try $0.welcome(recent: true, drives: false) },
         Scenario(name: "welcome-drives", description: "Welcome with synthetic connected drives and no recent folders.") { try $0.welcome(recent: false, drives: true) },
         Scenario(name: "welcome-both", description: "Welcome with recent folders and synthetic connected drives.") { try $0.welcome(recent: true, drives: true) },
@@ -241,6 +253,7 @@ final class CaptureScenariosTests: XCTestCase {
                 let file = "\(scenario.name)-\(appearance.rawValue)\(live ? "-live-active" : "").png"
                 let prepare: (NSViewController) throws -> Void = { controller in
                     try self.selectSettingsTab(surface.settingsTab, in: controller)
+                    if scenario.name.hasPrefix("session-sorted-") { fixture.store.sort.ascending = false }
                     if scenario.name == "sheet-export-xmp-failure" {
                         Task { @MainActor in
                             try? await Task.sleep(for: .milliseconds(200))
@@ -454,6 +467,22 @@ final class CaptureScenariosTests: XCTestCase {
             store.viewMode = mode
             store.showBrowser = true
             store.showMetadataPanel = true
+        }
+
+        func sortedCollection(mode: ViewMode, direction: LayoutDirection) throws -> Surface {
+            let template = items[0].primaryURL
+            items = try (0..<40).map { index in
+                let name = String(format: "REVIEW_%03d.png", index)
+                let url = media.appendingPathComponent(name)
+                try FileManager.default.copyItem(at: template, to: url)
+                return PhotoItem(id: name, primaryURL: url, pairedURL: nil, captureDate: nil,
+                                 cameraModel: nil, lensModel: nil, fileSize: 1)
+            }
+            ready(mode: mode)
+            store.sort = PhotoSort(key: .name, ascending: true)
+            store.setIndex(20)
+            return Surface(view: AnyView(SessionView(store: store).environment(\.layoutDirection, direction)),
+                           size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         }
 
         func welcome(recent: Bool, drives showsDrives: Bool) throws -> Surface {

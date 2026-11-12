@@ -6,6 +6,7 @@ import SwiftUI
 @MainActor
 final class ReviewCollectionController {
     fileprivate weak var document: ReviewCollectionDocument?
+    var currentID: String?
     fileprivate var pendingFollowID: String?
     fileprivate var pendingReceipt: ReviewCollectionViewportReceipt?
     var onViewportChange: ((ReviewCollectionViewportReceipt) -> Void)?
@@ -14,6 +15,7 @@ final class ReviewCollectionController {
 
     func follow(id: String) {
         ForegroundWorkCoordinator.shared.noteInteraction()
+        currentID = id
         pendingReceipt = nil
         pendingFollowID = id
         document?.applyPendingPosition()
@@ -164,6 +166,7 @@ final class ReviewCollectionDocument: NSView {
             || self.environment.accessibilityReduceTransparency != environment.accessibilityReduceTransparency
             || self.environment.accessibilityDifferentiateWithoutColor != environment.accessibilityDifferentiateWithoutColor
         let receipt = changed || environmentChanged ? snapshotViewport() : nil
+        let currentToKeepVisible = changed || environmentChanged ? visibleCurrentID() : nil
         if self.controller !== controller {
             if self.controller?.document === self { self.controller?.document = nil }
             self.controller = controller
@@ -188,6 +191,7 @@ final class ReviewCollectionDocument: NSView {
         updateViewport()
         if let receipt, controller?.pendingReceipt == nil, controller?.pendingFollowID == nil {
             restore(receipt)
+            if let currentToKeepVisible { reveal(id: currentToKeepVisible) }
         }
         applyPendingPosition()
     }
@@ -290,6 +294,7 @@ final class ReviewCollectionDocument: NSView {
         updating = true
         defer { updating = false }
         let oldReceipt = size != viewportSize ? snapshotViewport() : nil
+        let currentToKeepVisible = size != viewportSize ? visibleCurrentID() : nil
         if geometry == nil || size.width != viewportSize.width {
             // Projection changes do not change the font templates. Avoid two
             // synchronous SwiftUI fitting/layout passes on each new inventory.
@@ -318,6 +323,7 @@ final class ReviewCollectionDocument: NSView {
         configurator.scheduleConfiguration()
         if let oldReceipt, controller?.pendingReceipt == nil, controller?.pendingFollowID == nil {
             restore(oldReceipt)
+            if let currentToKeepVisible { reveal(id: currentToKeepVisible) }
         }
         realizeViewport(projection: projection, geometry: geometry)
     }
@@ -455,6 +461,29 @@ final class ReviewCollectionDocument: NSView {
               let frame = geometry.itemFrame(at: position, projection: projection) else { return false }
         scroll(toY: frame.minY - receipt.topOffset)
         return true
+    }
+
+    /// Keep a visible current tile through sorting, filtering and resizing.
+    /// A user who scrolled away keeps their viewport instead of being pulled
+    /// back to the selection. Explicit navigation/restoration still wins.
+    private func visibleCurrentID() -> String? {
+        guard let id = controller?.currentID, let projection, let geometry,
+              let position = projection.positionByID[id],
+              let frame = geometry.itemFrame(at: position, projection: projection),
+              let clip = enclosingScrollView?.contentView,
+              frame.intersects(CGRect(origin: clip.bounds.origin, size: viewportSize)) else { return nil }
+        return id
+    }
+
+    private func reveal(id: String) {
+        guard let projection, let geometry, let clip = enclosingScrollView?.contentView,
+              let position = projection.positionByID[id],
+              let frame = geometry.itemFrame(at: position, projection: projection) else { return }
+        if frame.minY < clip.bounds.minY {
+            scroll(toY: frame.minY)
+        } else if frame.maxY > clip.bounds.maxY {
+            scroll(toY: frame.height > clip.bounds.height ? frame.minY : frame.maxY - clip.bounds.height)
+        }
     }
 
     private func scroll(toY y: CGFloat) {

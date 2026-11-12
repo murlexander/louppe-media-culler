@@ -961,6 +961,8 @@ precedence over remembered scope/position.
 - Browser/Grid share `ReviewCollection`, a native vertical document with indexed
   section geometry and a bounded set of reusable SwiftUI hosts. Stable entry and
   physical-file identities drive direct follow and viewport restoration.
+  Reordering and resizing retain a visible current tile; a manually scrolled-away
+  viewport keeps its own position.
   `BrowserRow` and `GridCell` observe `SessionStore` directly so badges/current
   frames update without rebuilding the collection projection. Reuse clears old
   roots before assigning new entries. Read-only opening supplies the same native

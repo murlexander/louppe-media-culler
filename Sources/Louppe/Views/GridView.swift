@@ -69,6 +69,7 @@ struct GridView: View {
                         if let receipt { collectionController.restoreViewport(receipt) }
                     }
                     .onChange(of: store.currentItem?.id) {
+                        collectionController.currentID = store.currentItem?.id
                         if suppressNextFollow {
                             suppressNextFollow = false
                         } else if let id = store.currentItem?.id {

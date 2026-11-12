@@ -156,6 +156,7 @@ private struct OpeningCollection: View {
             }
             .onChange(of: geometry.size.width) { _, width in updateColumns(width: width) }
             .onChange(of: thumbnailSize) { _, _ in updateColumns(width: geometry.size.width) }
+            .onChange(of: state.currentItem?.id) { controller.currentID = state.currentItem?.id }
             .onChange(of: state.keyboardNavigationGeneration) {
                 if let id = state.currentItem?.id { controller.follow(id: id) }
             }
