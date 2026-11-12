@@ -92,9 +92,8 @@ struct FilterView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.text("Filter"))
-                .font(.headline)
+        CompactToolbarPopover(title: L10n.text("Filter"), height: 560,
+                              done: { store.isFilterPresented = false }) {
             if let batch = store.photosBatch {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
@@ -116,13 +115,14 @@ struct FilterView: View {
                 rawJPEGPairingToggle
             }
             filterSections
-            footer
+        } footerLeading: {
+            Text(L10n.text("Showing \(store.visibleIndices.count) of \(store.items.count)"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        } footerActions: {
+            resetButton
         }
-        .toggleStyle(LouppeToggleStyle(.checkbox))
-        .padding(14)
-        .frame(width: 340, height: 560)
-        .background(Color.appBackground)
-        .tint(Color.louppeAccent)
         .onAppear {
             syncAllSettingDrafts()
             if store.takeFilterSearchFocusRequest() {
@@ -784,23 +784,14 @@ struct FilterView: View {
         }
     }
 
-    private var footer: some View {
-        HStack {
-            Text(L10n.text("Showing \(store.visibleIndices.count) of \(store.items.count)"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-            Spacer()
-            Button(L10n.text("Reset")) {
-                focusedSettingField = nil
-                store.exitGroupedReview()
-                store.resetFilter()
-                syncAllSettingDrafts()
-            }
-            .disabled(!store.filterCanReset && !store.isGroupedReviewActive && !store.isDuplicateBurstAnalysisRunning)
-            Button(L10n.text("Done")) { store.isFilterPresented = false }
-                .keyboardShortcut(.cancelAction)
+    private var resetButton: some View {
+        Button(L10n.text("Reset")) {
+            focusedSettingField = nil
+            store.exitGroupedReview()
+            store.resetFilter()
+            syncAllSettingDrafts()
         }
+        .disabled(!store.filterCanReset && !store.isGroupedReviewActive && !store.isDuplicateBurstAnalysisRunning)
     }
 
     // MARK: - Filter bindings

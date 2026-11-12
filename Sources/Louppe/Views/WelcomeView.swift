@@ -301,7 +301,8 @@ private struct PinnedFoldersSection: View {
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
-                    .menuStyle(.borderlessButton)
+                    .menuStyle(.button)
+                    .buttonStyle(.borderless)
                     .fixedSize()
                     .accessibilityLabel(L10n.text("Actions for \(pin.name)"))
                     .help(L10n.text("Open, locate, or unpin this folder"))

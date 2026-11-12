@@ -10,12 +10,8 @@ final class SourceConventionsTests: XCTestCase {
     func testDeprecatedControlStylesStayWithinBaseline() throws {
         // 2026-11-09: lower a count whenever an existing occurrence is modernized.
         let baseline: [String: Int] = [
-            "Sources/Louppe/Views/MediaTrackSelectionControls.swift": 1,
             "Sources/Louppe/Views/MetadataEditingControls.swift": 1,
             "Sources/Louppe/Views/OrganizeSourceView.swift": 2,
-            "Sources/Louppe/Views/ReviewShortcutsSettingsView.swift": 1,
-            "Sources/Louppe/Views/SortView.swift": 1,
-            "Sources/Louppe/Views/WelcomeView.swift": 1,
         ]
         let pattern = #"\.pickerStyle\s*\(\s*\.menu\s*\)|\.menuStyle\s*\(\s*\.(?:borderedButton|borderlessButton)\s*\)|\b(?:BorderedButtonMenuStyle|BorderlessButtonMenuStyle)\b"#
         let deprecated = try NSRegularExpression(pattern: pattern)

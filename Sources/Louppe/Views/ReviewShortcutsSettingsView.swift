@@ -244,8 +244,8 @@ struct ReviewShortcutsSettingsView: View {
                     .font(.body)
                     .frame(width: 16, height: 16)
             }
-            .menuStyle(.borderedButton)
-            .buttonStyle(.bordered)
+            .menuStyle(.button)
+            .buttonStyle(.borderless)
             .menuIndicator(.hidden)
             .buttonBorderShape(.circle)
             .controlSize(.regular)

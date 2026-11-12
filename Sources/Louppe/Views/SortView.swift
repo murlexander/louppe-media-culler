@@ -7,45 +7,39 @@ struct SortView: View {
     @ObservedObject var store: SessionStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.text("Sort"))
-                .font(.headline)
-
+        CompactToolbarPopover(title: L10n.text("Sort"), done: { store.isSortPresented = false }) {
             VStack(alignment: .leading, spacing: 8) {
-                pickerRow(L10n.text("Sort by")) {
-                    Picker(L10n.text("Sort by"), selection: $store.sort.key) {
-                        sortOption(L10n.text("Date taken"), .captureDate)
-                        sortOption(L10n.text("Name"), .name)
-                        sortOption(L10n.text("Decision"), .decision)
-                        sortOption(L10n.text("Star rating"), .starRating)
-                        sortOption(L10n.text("Color label"), .colorLabel)
-                        sortOption(L10n.text("Subfolder"), .subfolder, disabled: store.availableSubfolders.count <= 1)
-                        sortOption(L10n.text("Folder hierarchy"), .folderHierarchy)
-                            .help(L10n.text("Review folders before their subfolders; files stay chronological."))
-                        sortOption(L10n.text("File type"), .fileType)
-                        sortOption(L10n.text("Media type"), .mediaKind, disabled: store.availableMediaKinds.count <= 1)
-                        sortOption(L10n.text("Camera"), .camera)
-                        sortOption(L10n.text("Lens"), .lens)
-                        sortOption(L10n.text("Aperture"), .aperture, disabled: store.apertureRange == nil)
-                        sortOption(L10n.text("Shutter speed"), .shutterSpeed, disabled: store.shutterRange == nil)
-                        sortOption("ISO", .iso, disabled: store.isoRange == nil)
-                        sortOption(L10n.text("Media duration"), .duration, disabled: store.durationRange == nil)
-                        sortOption(L10n.text("Video resolution"), .videoResolution,
-                                   disabled: store.availableVideoResolutions.count <= 1)
-                        sortOption(L10n.text("Video frame rate"), .videoFrameRate,
-                                   disabled: store.videoFrameRateRange == nil)
-                        sortOption(L10n.text("Video codec"), .videoCodec,
-                                   disabled: store.availableVideoCodecs.count <= 1)
-                    }
-                    .accessibilityIdentifier("louppe.sortKey")
+                pickerRow(L10n.text("Sort by"), value: store.sort.key.popoverLabel,
+                          selection: $store.sort.key, identifier: "louppe.sortKey") {
+                    sortOption(.captureDate)
+                    sortOption(.name)
+                    sortOption(.decision)
+                    sortOption(.starRating)
+                    sortOption(.colorLabel)
+                    sortOption(.subfolder, disabled: store.availableSubfolders.count <= 1)
+                    sortOption(.folderHierarchy)
+                        .help(L10n.text("Review folders before their subfolders; files stay chronological."))
+                    sortOption(.fileType)
+                    sortOption(.mediaKind, disabled: store.availableMediaKinds.count <= 1)
+                    sortOption(.camera)
+                    sortOption(.lens)
+                    sortOption(.aperture, disabled: store.apertureRange == nil)
+                    sortOption(.shutterSpeed, disabled: store.shutterRange == nil)
+                    sortOption(.iso, disabled: store.isoRange == nil)
+                    sortOption(.duration, disabled: store.durationRange == nil)
+                    sortOption(.videoResolution,
+                               disabled: store.availableVideoResolutions.count <= 1)
+                    sortOption(.videoFrameRate,
+                               disabled: store.videoFrameRateRange == nil)
+                    sortOption(.videoCodec,
+                               disabled: store.availableVideoCodecs.count <= 1)
                 }
 
-                pickerRow(L10n.text("Order")) {
-                    Picker(L10n.text("Order"), selection: $store.sort.ascending) {
-                        Text(store.sort.key.ascendingLabel).tag(true)
-                        Text(store.sort.key.descendingLabel).tag(false)
-                    }
-                    .accessibilityIdentifier("louppe.sortOrder")
+                pickerRow(L10n.text("Order"),
+                          value: store.sort.ascending ? store.sort.key.ascendingLabel : store.sort.key.descendingLabel,
+                          selection: $store.sort.ascending, identifier: "louppe.sortOrder") {
+                    Text(store.sort.key.ascendingLabel).tag(true)
+                    Text(store.sort.key.descendingLabel).tag(false)
                 }
 
                 Toggle(L10n.text("Divide into groups"), isOn: $store.isGroupingEnabled)
@@ -106,31 +100,34 @@ struct SortView: View {
             }
 
             Divider()
-            HStack {
-                Spacer()
-                Button(L10n.text("Done")) { store.isSortPresented = false }
-                    .keyboardShortcut(.cancelAction)
-            }
         }
-        .toggleStyle(LouppeToggleStyle(.checkbox))
-        .padding(14)
-        .frame(width: 340)
-        .fixedSize(horizontal: false, vertical: true)
-        .background(Color.appBackground)
-        .tint(Color.louppeAccent)
     }
 
     /// A compact leading label with a trailing menu, as in Filter's rows.
-    private func pickerRow<Control: View>(_ title: String, @ViewBuilder control: () -> Control) -> some View {
+    private func pickerRow<Selection: Hashable, Options: View>(
+        _ title: String, value: String, selection: Binding<Selection>, identifier: String,
+        @ViewBuilder options: () -> Options
+    ) -> some View {
         HStack(spacing: 8) {
             Text(title)
                 .layoutPriority(1)
             Spacer(minLength: 8)
             // One width keeps both menus aligned; long names truncate natively.
-            control()
-                .labelsHidden()
-                .pickerStyle(.menu)
-                .frame(width: 180, alignment: .trailing)
+            Menu {
+                Picker(title, selection: selection, content: options)
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+            } label: {
+                Text(verbatim: value)
+                    .lineLimit(1)
+            }
+            .menuStyle(.button)
+            .buttonStyle(.borderless)
+            .labelsHidden()
+            .accessibilityLabel(title)
+            .accessibilityValue(value)
+            .accessibilityIdentifier(identifier)
+            .frame(width: 180, alignment: .trailing)
         }
     }
 
@@ -141,8 +138,8 @@ struct SortView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func sortOption(_ label: String, _ key: PhotoSort.Key, disabled: Bool = false) -> some View {
-        Text(label).tag(key).disabled(disabled)
+    private func sortOption(_ key: PhotoSort.Key, disabled: Bool = false) -> some View {
+        Text(verbatim: key.popoverLabel).tag(key).disabled(disabled)
     }
 
     private func reviewModeButton(_ mode: DuplicateBurstAnalysis.ReviewMode) -> some View {
@@ -194,6 +191,31 @@ struct SortView: View {
         case ...5: return L10n.text("Strict")
         case 6...10: return L10n.text("Balanced")
         default: return L10n.text("Broad")
+        }
+    }
+}
+
+private extension PhotoSort.Key {
+    var popoverLabel: String {
+        switch self {
+        case .captureDate: return L10n.text("Date taken")
+        case .name: return L10n.text("Name")
+        case .decision: return L10n.text("Decision")
+        case .starRating: return L10n.text("Star rating")
+        case .colorLabel: return L10n.text("Color label")
+        case .subfolder: return L10n.text("Subfolder")
+        case .folderHierarchy: return L10n.text("Folder hierarchy")
+        case .fileType: return L10n.text("File type")
+        case .mediaKind: return L10n.text("Media type")
+        case .camera: return L10n.text("Camera")
+        case .lens: return L10n.text("Lens")
+        case .aperture: return L10n.text("Aperture")
+        case .shutterSpeed: return L10n.text("Shutter speed")
+        case .iso: return "ISO"
+        case .duration: return L10n.text("Media duration")
+        case .videoResolution: return L10n.text("Video resolution")
+        case .videoFrameRate: return L10n.text("Video frame rate")
+        case .videoCodec: return L10n.text("Video codec")
         }
     }
 }

@@ -68,22 +68,44 @@ struct MediaTrackSelectionControls: View {
     private func trackPicker(_ title: String, group: AVMediaSelectionGroup, choice: Binding<Choice>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(verbatim: title).font(.subheadline.weight(.semibold))
-            Picker(title, selection: Binding(
-                get: { choice.wrappedValue },
-                set: { select($0, in: group) }
-            )) {
-                Text(verbatim: L10n.text("Automatic") + ((group === audio ? automaticAudioName : automaticSubtitleName)
-                    .map { " — " + $0 } ?? "")).tag(Choice.automatic)
-                if group.allowsEmptySelection {
-                    Text(L10n.text("Off")).tag(Choice.off)
+            Menu {
+                Picker(title, selection: Binding(
+                    get: { choice.wrappedValue },
+                    set: { select($0, in: group) }
+                )) {
+                    Text(verbatim: automaticTitle(in: group)).tag(Choice.automatic)
+                    if group.allowsEmptySelection {
+                        Text(L10n.text("Off")).tag(Choice.off)
+                    }
+                    ForEach(group.options, id: \.self) { option in
+                        Text(verbatim: option.displayName).tag(Choice.option(option))
+                    }
                 }
-                ForEach(group.options, id: \.self) { option in
-                    Text(verbatim: option.displayName).tag(Choice.option(option))
-                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } label: {
+                Text(verbatim: choiceTitle(choice.wrappedValue, in: group))
+                    .lineLimit(1)
             }
-            .pickerStyle(.menu)
+            .menuStyle(.button)
+            .buttonStyle(.borderless)
             .labelsHidden()
+            .accessibilityLabel(title)
+            .accessibilityValue(choiceTitle(choice.wrappedValue, in: group))
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func automaticTitle(in group: AVMediaSelectionGroup) -> String {
+        L10n.text("Automatic") + ((group === audio ? automaticAudioName : automaticSubtitleName)
+            .map { " — " + $0 } ?? "")
+    }
+
+    private func choiceTitle(_ choice: Choice, in group: AVMediaSelectionGroup) -> String {
+        switch choice {
+        case .automatic: return automaticTitle(in: group)
+        case .off: return L10n.text("Off")
+        case .option(let option): return option.displayName
         }
     }
 
