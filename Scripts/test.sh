@@ -106,7 +106,7 @@ if (( ! foreground )) && [[ "${LOUPPE_FOREGROUND_UI:-}" != 1 ]]; then
     gated_classes="$(find Tests/LouppeTests -name '*.swift' ! -name ForegroundUI.swift ! -name SourceConventionsTests.swift \
         -exec grep -l 'requireForegroundUI(' {} + | while IFS= read -r file; do
             awk '/class .*: XCTestCase/ { class=$0; sub(/^.*class /, "", class); sub(/[: ].*$/, "", class) }
-                 /requireForegroundUI\(/ { print class }' "$file"
+                 /requireForegroundUI\(/ && class != "" { print class }' "$file"
         done | sort -u | paste -sd ',' - || true)"
     echo "Foreground UI suites skipped (not run, not passed): $gated_classes"
 fi
