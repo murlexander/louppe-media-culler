@@ -1006,7 +1006,10 @@ Cancellable search checks reservations before I/O and caches next suffixes by
 complete normalized family, avoiding quadratic repeated-name planning.
 
 `XMPExportPlanner` resolves complete live stem families and prepares merged bytes
-before journal activation. Version-4 plans bind every media/XMP source,
+before journal activation. Cancelled source inspections stop between directories
+and in bounded member/entry batches while resolving families; an in-flight
+Foundation directory read must return before cancellation can be observed.
+Version-4 plans bind every media/XMP source,
 temporary, destination, identity, role, and digest before mutation. Failed/cancelled
 pairs roll back; earlier completed photos remain. Staged/flushed copies survive
 source disconnect. Move retains rollback. Transfer fully selected canonical XMP

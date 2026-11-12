@@ -4,6 +4,53 @@ import XCTest
 @testable import Louppe
 
 final class XMPPhase7Tests: XCTestCase {
+    func testCancelledInspectionStopsBeforeResolvingRemainingDirectories() async throws {
+        let root = try temporaryDirectory("CancelledInspection")
+        let folders = try (0..<4).map { try directory("Folder-\($0)", in: root) }
+        let items = try folders.map { folder in
+            let media = folder.appendingPathComponent("PHOTO.NEF")
+            try Data("media".utf8).write(to: media)
+            try Data("packet".utf8).write(to: folder.appendingPathComponent("PHOTO.xmp"))
+            return try item(media)
+        }
+        let task = Task.detached {
+            var visited: [URL] = []
+            do {
+                _ = try XMPExportPlanner.inspectSources(selected: items, familyContextItems: items,
+                    resolveDirectory: { members in
+                        visited.append(try XCTUnwrap(members.first).mediaPath.parent.url)
+                        let families = try XMPSidecarResolver.resolve(members: members)
+                        XCTAssertEqual(families.count, 1)
+                        withUnsafeCurrentTask { $0?.cancel() }
+                        return families
+                    })
+                XCTFail("Cancelled inspection returned a result")
+            } catch is CancellationError {
+                // The first directory did real I/O; no later directory was admitted.
+            } catch { XCTFail("Unexpected inspection error: \(error)") }
+            return visited
+        }
+        let visited = await task.value
+        XCTAssertEqual(visited.map(\.path), [folders[0].path])
+        let inspection = try XMPExportPlanner.inspectSources(selected: items, familyContextItems: items)
+        XCTAssertEqual(inspection.recognizedPacketCount, 4)
+    }
+
+    func testAlreadyCancelledInspectionDoesNoDirectoryIO() async throws {
+        let task = Task.detached {
+            withUnsafeCurrentTask { $0?.cancel() }
+            do {
+                _ = try XMPExportPlanner.inspectSources(selected: [], familyContextItems: [],
+                    resolveDirectory: { _ in
+                        XCTFail("Cancelled inspection entered a directory")
+                        return []
+                    })
+                XCTFail("Cancelled inspection returned a result")
+            } catch is CancellationError {} catch { XCTFail("Unexpected inspection error: \(error)") }
+        }
+        await task.value
+    }
+
     func testConditionalDefaultStopsAfterManualChoiceAndResetsWithNewSheetState() {
         var choice = ExportXMPInclusionChoice()
         choice.applyRecognizedPacketCount(0)

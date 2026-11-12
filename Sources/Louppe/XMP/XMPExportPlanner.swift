@@ -191,11 +191,19 @@ enum XMPExportPlanner {
 
     static func inspectSources(
         selected: [PhotoItem],
-        familyContextItems: [PhotoItem]
+        familyContextItems: [PhotoItem],
+        resolveDirectory: ([XMPStemFamilyMember]) throws -> [XMPSidecarFamilyPlan] = {
+            try XMPSidecarResolver.resolve(members: $0)
+        }
     ) throws -> XMPExportSourceInspection {
-        let selectedPaths = try Set(selected.flatMap(\.individualFiles).map {
-            try XMPExactFileSystemPath(url: $0.url)
-        })
+        try Task.checkCancellation()
+        var selectedPaths = Set<XMPExactFileSystemPath>()
+        for (index, item) in selected.enumerated() {
+            if index.isMultiple(of: 32) { try Task.checkCancellation() }
+            for file in item.individualFiles {
+                selectedPaths.insert(try XMPExactFileSystemPath(url: file.url))
+            }
+        }
         var recognizedPacketCount = 0
         var acrCompanions = Set<XMPExactFileSystemPath>()
         var caseSensitivity = VolumeCaseSensitivity()
@@ -203,14 +211,14 @@ enum XMPExportPlanner {
             contextItems: familyContextItems,
             profile: .universal,
             visibleDecisionKeywords: false,
-            allowExternalLabelReplacement: false
-        ) where family.members.contains(where: {
-            selectedPaths.contains($0.mediaPath)
-        }) {
+            allowExternalLabelReplacement: false,
+            resolveDirectory: resolveDirectory
+        ) {
             // The Export sheet reruns this probe on every metadata-tile
             // change, so an abandoned pass must stop instead of finishing a
             // whole-session scan behind the newer one.
             try Task.checkCancellation()
+            guard family.members.contains(where: { selectedPaths.contains($0.mediaPath) }) else { continue }
             // Video and audio remain ordinary media exports, but the first
             // XMP release deliberately neither creates nor transfers their sidecars.
             guard family.disposition != .unsupportedMedia else { continue }
@@ -221,6 +229,7 @@ enum XMPExportPlanner {
                 try caseSensitivity.namesAreCaseSensitive(in: $0)
             } ?? true
             for packet in family.extensionQualifiedSidecars {
+                try Task.checkCancellation()
                 guard let owner = try applicationPacketOwner(
                     packet,
                     members: family.members,
@@ -228,13 +237,12 @@ enum XMPExportPlanner {
                 ), selectedPaths.contains(owner.mediaPath) else { continue }
                 recognizedPacketCount += 1
             }
-            for packet in family.excludedACRCompanions where acrCompanion(
-                packet,
-                belongsToAny: selectedPaths,
-                among: family.members,
-                caseSensitiveNames: caseSensitiveNames
-            ) {
-                acrCompanions.insert(packet)
+            for packet in family.excludedACRCompanions {
+                try Task.checkCancellation()
+                if acrCompanion(packet, belongsToAny: selectedPaths, among: family.members,
+                                caseSensitiveNames: caseSensitiveNames) {
+                    acrCompanions.insert(packet)
+                }
             }
         }
         return XMPExportSourceInspection(
@@ -265,9 +273,9 @@ enum XMPExportPlanner {
         _ input: XMPExportPreparationInput
     ) async throws -> XMPExportPreparedPlan {
         let selectedPaths = input.selectedMediaPaths
-        let families = try resolvedFamilies(members: input.members).filter {
-            family in
-            family.members.contains { selectedPaths.contains($0.mediaPath) }
+        let families = try resolvedFamilies(members: input.members).filter { family in
+            try Task.checkCancellation()
+            return family.members.contains { selectedPaths.contains($0.mediaPath) }
         }
 
         let store = XMPMetadataStore()
@@ -514,10 +522,13 @@ enum XMPExportPlanner {
         contextItems: [PhotoItem],
         profile: XMPApplicationProfile,
         visibleDecisionKeywords: Bool,
-        allowExternalLabelReplacement: Bool
+        allowExternalLabelReplacement: Bool,
+        resolveDirectory: ([XMPStemFamilyMember]) throws -> [XMPSidecarFamilyPlan]
     ) throws -> [XMPSidecarFamilyPlan] {
-        let members = try contextItems.flatMap { item in
-            try item.individualFiles.map { file in
+        try Task.checkCancellation()
+        let members = try contextItems.enumerated().flatMap { index, item in
+            if index.isMultiple(of: 32) { try Task.checkCancellation() }
+            return try item.individualFiles.map { file in
                 try XMPStemFamilyMember(
                     mediaURL: file.url,
                     mediaKind: file.mediaKind,
@@ -530,16 +541,29 @@ enum XMPExportPlanner {
                 )
             }
         }
-        return try resolvedFamilies(members: members)
+        return try resolvedFamilies(members: members, resolveDirectory: resolveDirectory)
     }
 
     private static func resolvedFamilies(
-        members: [XMPStemFamilyMember]
+        members: [XMPStemFamilyMember],
+        resolveDirectory: ([XMPStemFamilyMember]) throws -> [XMPSidecarFamilyPlan] = {
+            try XMPSidecarResolver.resolve(members: $0)
+        }
     ) throws -> [XMPSidecarFamilyPlan] {
-        let grouped = Dictionary(grouping: members, by: { $0.mediaPath.parent })
-        return try grouped.keys
-            .sorted { $0.bytes.lexicographicallyPrecedes($1.bytes) }
-            .flatMap { try XMPSidecarResolver.resolve(members: grouped[$0] ?? []) }
+        try Task.checkCancellation()
+        var grouped: [XMPExactFileSystemPath: [XMPStemFamilyMember]] = [:]
+        for (index, member) in members.enumerated() {
+            if index.isMultiple(of: 32) { try Task.checkCancellation() }
+            grouped[member.mediaPath.parent, default: []].append(member)
+        }
+        let directories = grouped.keys.sorted { $0.bytes.lexicographicallyPrecedes($1.bytes) }
+        var families: [XMPSidecarFamilyPlan] = []
+        for directory in directories {
+            try Task.checkCancellation()
+            families.append(contentsOf: try resolveDirectory(grouped[directory] ?? []))
+        }
+        try Task.checkCancellation()
+        return families
     }
 
     private static func familyID(_ family: XMPSidecarFamilyPlan) -> String {
