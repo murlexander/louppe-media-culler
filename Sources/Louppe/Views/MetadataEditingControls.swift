@@ -240,7 +240,7 @@ struct MetadataBadgeStrip: View {
             case .stars(let rating):
                 HStack(spacing: 1) {
                     Image(systemName: "star.fill")
-                    Text("\(rating.count)")
+                    Text(L10n.number(rating.count))
                 }
             case .mixed:
                 Text("★–")

@@ -1224,7 +1224,7 @@ struct ExportView: View {
         }
     }
 
-    private func ratingTile(_ rating: Rating, count: Int, label: String, color: Color) -> some View {
+    func ratingTile(_ rating: Rating, count: Int, label: String, color: Color) -> some View {
         let isSelected = selectedRatings.contains(rating)
         return Button {
             if isSelected {
@@ -1267,7 +1267,7 @@ struct ExportView: View {
         .buttonStyle(.plain)
         .help(isSelected ? L10n.text("Click to leave \(label) items out") : L10n.text("Click to include \(label) items"))
         .accessibilityLabel(label)
-        .accessibilityValue(count.formatted())
+        .accessibilityValue(L10n.number(count))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 

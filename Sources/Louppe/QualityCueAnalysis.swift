@@ -34,7 +34,7 @@ struct QualityCueEvidence: Equatable, Sendable {
     var coverageDescription: String {
         guard sampleCount > 0 else { return L10n.text("Image measurement unavailable. Try Rescan Folder if the file changed.") }
         let dimensions = "\(width) × \(height)"
-        let counts = "\(shadowCount)/\(sampleCount); \(highlightCount)/\(sampleCount)"
+        let counts = "\(L10n.number(shadowCount))/\(L10n.number(sampleCount)); \(L10n.number(highlightCount))/\(L10n.number(sampleCount))"
         let zones = source == .rawDecode
             ? L10n.text("Linear luminance ≤ 0.002 / ≥ 0.995; Apple Default RAW decode.")
             : L10n.text("sRGB luminance 0–5 / 250–255; rendered preview.")

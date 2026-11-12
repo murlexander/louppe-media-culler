@@ -1502,7 +1502,7 @@ struct CleanUpMenuItems: View {
     }
 
     private func cleanUpScopeLabel(_ title: String, scope: CleanUpScope) -> Text {
-        Text("\(title) (\(store.cleanUpScopeCount(for: scope)))")
+        Text("\(title) (\(L10n.number(store.cleanUpScopeCount(for: scope))))")
     }
 }
 

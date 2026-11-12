@@ -474,7 +474,7 @@ struct ArchiveFoldersView: NSViewRepresentable {
             nameField.stringValue = name
             // Empty folders stay listed but recede, so media-bearing rows lead.
             nameField.textColor = count == 0 ? .secondaryLabelColor : .labelColor
-            countField.stringValue = count.formatted()
+            countField.stringValue = L10n.number(count)
             completeView.isHidden = !isComplete
             completeWidth.constant = isComplete ? 12 : 0
             toolTip = isComplete ? name + "\n" + L10n.text("All reviewed") : name

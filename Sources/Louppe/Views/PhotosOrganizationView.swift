@@ -76,12 +76,12 @@ struct PhotosOrganizationView: View {
         }
     }
 
-    private var setup: some View {
+    var setup: some View {
         Group {
             Section {
                 Picker(L10n.text("Scope"), selection: $scope) {
                     ForEach([SourceOrganizationScope.selected, .filtered, .all], id: \.self) { value in
-                        Text(L10n.text("\(scopeLabel(value)): \(count(for: value).formatted())"))
+                        Text(L10n.text("\(scopeLabel(value)): \(L10n.number(count(for: value)))"))
                             .tag(value)
                     }
                 }
@@ -137,7 +137,7 @@ struct PhotosOrganizationView: View {
     private func confirmation(_ review: Review) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             LabeledContent(L10n.text("Scope"), value: review.scopeLabel)
-            LabeledContent(L10n.text("Items"), value: review.count.formatted())
+            LabeledContent(L10n.text("Items"), value: L10n.number(review.count))
             VStack(alignment: .leading, spacing: 4) {
                 Text(L10n.text("Destination")).font(.headline)
                 Text(verbatim: review.destinationPath)
@@ -179,19 +179,19 @@ struct PhotosOrganizationView: View {
         }
     }
 
-    private func result(_ report: PhotosOrganizationReport) -> some View {
+    func result(_ report: PhotosOrganizationReport) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             if let path = report.destinationPath {
                 Text(L10n.text("Requested destination: \(path)"))
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
             }
-            LabeledContent(L10n.text("Requested"), value: report.requested.formatted())
-            LabeledContent(L10n.text("Verified in album"), value: report.verified.formatted())
-            LabeledContent(L10n.text("Already in album (included above)"), value: report.alreadyPresent.formatted())
-            LabeledContent(L10n.text("Unavailable items"), value: report.missing.formatted())
-            LabeledContent(L10n.text("Uncertain memberships"), value: report.uncertain.formatted())
-            LabeledContent(L10n.text("Not processed"), value: report.unprocessed.formatted())
+            LabeledContent(L10n.text("Requested"), value: L10n.number(report.requested))
+            LabeledContent(L10n.text("Verified in album"), value: L10n.number(report.verified))
+            LabeledContent(L10n.text("Already in album (included above)"), value: L10n.number(report.alreadyPresent))
+            LabeledContent(L10n.text("Unavailable items"), value: L10n.number(report.missing))
+            LabeledContent(L10n.text("Uncertain memberships"), value: L10n.number(report.uncertain))
+            LabeledContent(L10n.text("Not processed"), value: L10n.number(report.unprocessed))
             if let message = report.message {
                 Text(verbatim: message)
                     .fixedSize(horizontal: false, vertical: true)

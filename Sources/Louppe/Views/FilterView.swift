@@ -1254,7 +1254,7 @@ struct FilterCountLabel: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer()
-            Text("\(count)")
+            Text(L10n.number(count))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }

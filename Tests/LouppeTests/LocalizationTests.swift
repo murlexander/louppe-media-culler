@@ -590,6 +590,103 @@ final class LocalizationTests: XCTestCase {
     }
 
     @MainActor
+    func testRenderedOperationCountersUseAppLanguageInsteadOfMacLocale() async throws {
+        let childKey = "LOUPPE_COUNTER_LOCALE_CHILD"
+        if ProcessInfo.processInfo.environment[childKey] != "1" {
+            // L10n follows launch-time preferences, independently of the Mac locale.
+            let log = FileManager.default.temporaryDirectory.appendingPathComponent("LouppeCounterLocale-\(UUID()).log")
+            FileManager.default.createFile(atPath: log.path, contents: nil)
+            defer { try? FileManager.default.removeItem(at: log) }
+            let output = try FileHandle(forWritingTo: log)
+            defer { try? output.close() }
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+            process.arguments = ["xctest", "-AppleLanguages", "(es)", "-AppleLocale", "en_US",
+                "-XCTest", "LouppeTests.LocalizationTests/testRenderedOperationCountersUseAppLanguageInsteadOfMacLocale",
+                Bundle(for: Self.self).bundlePath]
+            var environment = ProcessInfo.processInfo.environment
+            environment[childKey] = "1"
+            process.environment = environment
+            process.standardOutput = output
+            process.standardError = output
+            try process.run()
+            process.waitUntilExit()
+            let diagnostics = try String(contentsOf: log, encoding: .utf8)
+            XCTAssertEqual(process.terminationStatus, 0, diagnostics)
+            return
+        }
+        XCTAssertEqual(L10n.language, "es")
+        XCTAssertEqual(Locale.current.identifier, "en_US")
+        XCTAssertEqual(L10n.number(17015), "17.015")
+
+        let store = SessionStore(automaticallyRecoversInterruptedOperations: false)
+        let report = PhotosOrganizationReport(disposition: .partial, requested: 17015, verified: 17016,
+            alreadyPresent: 17017, missing: 17018, uncertain: 17019, unprocessed: 17020)
+        let setup = PhotosOrganizationReviewModel(scopeCounts: [.selected: 17021], phase: .choosing)
+        let result = PhotosOrganizationReviewModel(phase: .finished(report))
+        func photosView(_ model: PhotosOrganizationReviewModel) -> PhotosOrganizationView {
+            PhotosOrganizationView(model: model, onConfirm: { _ in }, onCancelWork: {}, onDismiss: {}, onReload: {})
+        }
+        // Mount the production count controls directly: offscreen ScrollViews
+        // omit their body from the accessibility tree on some macOS versions.
+        let views: [(String, AnyView, [Int])] = [
+            ("Photos scope", AnyView(photosView(setup).setup), [17021]),
+            ("Photos result", AnyView(photosView(result).result(report)), Array(17015...17020)),
+            ("Export decisions", AnyView(ExportView(store: store).ratingTile(.yes, count: 17015,
+                label: "Yes", color: .green)), [17015]),
+            ("Filter facet", AnyView(FilterCountLabel(label: "Fixture", count: 17015)), [17015])
+        ]
+        for (name, view, counts) in views {
+            let host = NSHostingView(rootView: view.frame(width: 680, height: 900).localizedInterface().environment(\.accessibilityEnabled, true))
+            let window = NSWindow(contentRect: NSRect(x: -20_000, y: -20_000, width: 680, height: 900),
+                                  styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = host
+            window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+            window.orderBack(nil)
+            defer { window.close() }
+            try await Task.sleep(for: .milliseconds(100))
+            host.layoutSubtreeIfNeeded()
+            window.displayIfNeeded()
+            var visited: Set<ObjectIdentifier> = []
+            var strings: [String] = []
+            func walk(_ object: NSObject) {
+                guard visited.insert(ObjectIdentifier(object)).inserted else { return }
+                for name in ["accessibilityLabel", "accessibilityValue"] {
+                    let selector = NSSelectorFromString(name)
+                    if object.responds(to: selector),
+                       let value = object.perform(selector)?.takeUnretainedValue() as? String { strings.append(value) }
+                }
+                for name in ["accessibilityChildren", "accessibilityContents", "accessibilityRows"] {
+                    let children = NSSelectorFromString(name)
+                    if object.responds(to: children),
+                       let values = object.perform(children)?.takeUnretainedValue() as? [NSObject] { values.forEach(walk) }
+                }
+                if let view = object as? NSView {
+                    view.subviews.forEach(walk)
+                    for child in NSAccessibility.unignoredChildren(from: [view]) {
+                        if let child = child as? NSObject { walk(child) }
+                    }
+                }
+            }
+            walk(host)
+            let rendered = strings.joined(separator: " | ")
+            for count in counts {
+                XCTAssertTrue(rendered.contains(L10n.number(count)), "\(name): missing app-language count: \(rendered)")
+                XCTAssertFalse(rendered.contains(count.formatted()), "\(name): found Mac-locale count: \(rendered)")
+            }
+        }
+        let cell = ArchiveFoldersView.FolderCell()
+        cell.configure(id: "fixture", name: "Fixture", count: 17015)
+        XCTAssertEqual(cell.countField.stringValue, "17.015")
+        let item = PhotoItem(primaryFile: PhotoFile(id: "fixture.JPG", url: URL(fileURLWithPath: "/tmp/fixture.JPG"),
+            captureDate: nil, cameraModel: nil, lensModel: nil, fileSize: 1))
+        let evidence = QualityCueEvidence(item: item, analysis: HistogramAnalysis(bins: [], sampleCount: 17020,
+            shadowCount: 17015, highlightCount: 17016, width: 1024, height: 768), source: .renderedPreview)
+        XCTAssertTrue(evidence.coverageDescription.contains("17.015/17.020; 17.016/17.020"))
+    }
+
+    @MainActor
     func testLocalizedPresentationFixtures() throws {
         guard let directory = ProcessInfo.processInfo.environment["LOUPPE_LOCALIZATION_SNAPSHOTS"] else { return }
         let fixture = FileManager.default.temporaryDirectory.appendingPathComponent("LouppeLocalizedUI-\(UUID())")
