@@ -283,7 +283,8 @@ private final class ReadyAccessHarness: @unchecked Sendable {
 
     func background(_ photo: PhotoItem) -> Task<Void, Never> {
         switch kind {
-        case .full: return image.prefetchFullImages(items: [photo])
+        // Shared admission, so the deferred decode exists without authority.
+        case .full: return image.prefetchFullImages(items: [photo], nearestWaitsForVisibleDecodeOnly: false)
         case .rendered: return Task { _ = await histogram.analysis(for: photo, purpose: .backgroundQuality) }
         case .raw: return Task { _ = await raw.analysis(for: photo, purpose: .backgroundQuality) }
         default: preconditionFailure("unsupported background harness")

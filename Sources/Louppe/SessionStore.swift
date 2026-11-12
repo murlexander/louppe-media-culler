@@ -246,7 +246,11 @@ final class SessionStore: ObservableObject {
                 if !archiveIsRestoringPosition {
                     scheduleArchiveNavigationSave()
                 }
-                cancelNeighbourPrefetch()
+                cancelNeighbourPrefetch(handingOver: true)
+                if case .ready = phase, viewMode == .gallery, items.indices.contains(currentIndex) {
+                    ImagePipeline.shared.yieldWholeImageThumbnails(
+                        to: items[currentIndex], mode: prefetchRawDisplayMode, decoder: prefetchRawDecoder)
+                }
                 videoPlayback.stop()
                 if needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() }
             }
@@ -312,7 +316,8 @@ final class SessionStore: ObservableObject {
     var archiveViewportGeneration = UUID()
     var archiveIsRestoringPosition = false
     @Published var zoomMode: ZoomMode = .fit {
-        didSet { if zoomMode != oldValue { prefetchAroundCurrent() } }
+        // Same neighbours: hand over so a running neighbour decode is kept.
+        didSet { if zoomMode != oldValue { prefetchAroundCurrent(handingOver: true) } }
     }
     @Published private(set) var photoZoomScale: CGFloat = 1
     @Published private(set) var fittedPhotoZoomScale: CGFloat?
@@ -1026,7 +1031,11 @@ final class SessionStore: ObservableObject {
     private var prefetchDebounce: DispatchWorkItem?
     private var fullImagePrefetchTask: Task<Void, Never>?
     private var highResolutionPrefetchTask: Task<Void, Never>?
+    private var handedOverFullPrefetch: Task<Void, Never>?
+    private var handedOverSourcePrefetch: Task<Void, Never>?
     private var prefetchGeneration: UInt64 = 0
+    /// -1 after stepping back; neighbour prefetch leads in this direction.
+    private var navigationDirection = 1
     private var prefetchRawDisplayMode = RawDisplayMode(
         rawValue: UserDefaults.standard.string(forKey: RawDisplayMode.preferenceKey) ?? ""
     ) ?? .fast
@@ -6319,8 +6328,12 @@ final class SessionStore: ObservableObject {
         setSelectionIndices([])
         let clamped = min(max(index, 0), items.count - 1)
         guard clamped != currentIndex else { return }
+        if let from = preparedIndex.location(forItemIndex: currentIndex)?.position,
+           let to = preparedIndex.location(forItemIndex: clamped)?.position {
+            navigationDirection = to < from ? -1 : 1
+        }
         currentIndex = clamped
-        prefetchAroundCurrent()
+        prefetchAroundCurrent(handingOver: true)
     }
 
     private func advanceAfterDecision(
@@ -6336,7 +6349,7 @@ final class SessionStore: ObservableObject {
             if preparedIndex.location(forItemIndex: candidate) != nil,
                items[candidate].rating == .undecided {
                 currentIndex = candidate
-                prefetchAroundCurrent()
+                prefetchAroundCurrent(handingOver: true)
                 return
             }
         }
@@ -6366,7 +6379,7 @@ final class SessionStore: ObservableObject {
             ?? visibleIndices.first
         if let next {
             currentIndex = next
-            prefetchAroundCurrent()
+            prefetchAroundCurrent(handingOver: true)
         }
     }
 
@@ -6497,14 +6510,36 @@ final class SessionStore: ObservableObject {
         gridThumbSize = min(max(next, 90), 400)
     }
 
-    private func cancelNeighbourPrefetch() {
+    /// Navigation hands the old window over instead of cancelling it at once:
+    /// its waiter may be the only owner of the new current photo's running
+    /// decode, whose result would otherwise be discarded and decoded again.
+    /// The next window retires it after joining; any other change cancels both.
+    private func cancelNeighbourPrefetch(handingOver: Bool = false) {
         prefetchGeneration &+= 1
         prefetchDebounce?.cancel()
         prefetchDebounce = nil
-        fullImagePrefetchTask?.cancel()
+        let full = fullImagePrefetchTask, source = highResolutionPrefetchTask
         fullImagePrefetchTask = nil
-        highResolutionPrefetchTask?.cancel()
         highResolutionPrefetchTask = nil
+        guard handingOver else {
+            ImagePipeline.shared.cancelWholeImageThumbnailYield()
+            for task in [full, source, handedOverFullPrefetch, handedOverSourcePrefetch] { task?.cancel() }
+            handedOverFullPrefetch = nil
+            handedOverSourcePrefetch = nil
+            return
+        }
+        // Repeated navigation keeps only the latest window alive.
+        guard full != nil || source != nil else { return }
+        retireHandedOverPrefetch()
+        handedOverFullPrefetch = full
+        handedOverSourcePrefetch = source
+    }
+
+    private func retireHandedOverPrefetch() {
+        handedOverFullPrefetch?.cancel()
+        handedOverSourcePrefetch?.cancel()
+        handedOverFullPrefetch = nil
+        handedOverSourcePrefetch = nil
     }
 
     private func reloadPrefetchPreferences() {
@@ -6516,15 +6551,23 @@ final class SessionStore: ObservableObject {
         prefetchAroundCurrent()
     }
 
-    private func prefetchAroundCurrent() {
+    /// Direction of travel first; pipelines decode neighbours in this order.
+    static func neighbourOffsets(direction: Int) -> [Int] {
+        [1, 2, 3, -1].map { $0 * (direction < 0 ? -1 : 1) }
+    }
+
+    private func prefetchAroundCurrent(handingOver: Bool = false) {
         // Admitted tasks own individual coalesced waiters. Retire those
         // waiters as well as the debounce; foreground requests stay alive.
-        cancelNeighbourPrefetch()
+        cancelNeighbourPrefetch(handingOver: handingOver)
         guard case .ready = phase, viewMode == .gallery,
               !isPreparingForTermination, !isSessionTransitioning,
               !isChangingRawJPEGPairingMode,
-              let pos = preparedIndex.location(forItemIndex: currentIndex)?.position else { return }
-        let windowOffsets = [1, 2, 3, -1]
+              let pos = preparedIndex.location(forItemIndex: currentIndex)?.position else {
+            retireHandedOverPrefetch()
+            return
+        }
+        let windowOffsets = Self.neighbourOffsets(direction: navigationDirection)
         if let session = photosBatch?.mediaSession {
             let ids = windowOffsets.compactMap { offset -> String? in
                 let position = pos + offset
@@ -6533,6 +6576,7 @@ final class SessionStore: ObservableObject {
                 guard items.indices.contains(index) else { return nil }
                 return items[index].primaryFile.photosMedia?.assetID
             }
+            retireHandedOverPrefetch()
             fullImagePrefetchTask = Task { await session.preheat(assetIDs: ids) }
             return
         }
@@ -6542,7 +6586,11 @@ final class SessionStore: ObservableObject {
             let item = items[visibleIndices[p]]
             return item.mediaKind == .photo && item.isSupported ? item : nil
         }
-        guard !photos.isEmpty else { return }
+        guard !photos.isEmpty else {
+            retireHandedOverPrefetch()
+            return
+        }
+        let current = items.indices.contains(currentIndex) ? items[currentIndex] : nil
         let generation = prefetchGeneration
         let mode = RawDisplayMode(rawValue: UserDefaults.standard.string(forKey: RawDisplayMode.preferenceKey) ?? "") ?? .fast
         let decoder = AppleRawDecoder.load()
@@ -6554,7 +6602,14 @@ final class SessionStore: ObservableObject {
                   case .ready = self.phase, self.viewMode == .gallery,
                   !self.isPreparingForTermination, !self.isSessionTransitioning else { return }
             self.prefetchDebounce = nil
-            self.fullImagePrefetchTask = ImagePipeline.shared.prefetchFullImages(items: photos, mode: mode, decoder: decoder, sourceAccess: self.mediaReadAccess)
+            // The new window cancels the old one once it has joined the
+            // current photo's decode. The 100% view joins its own recipe at once.
+            let replaced = self.handedOverFullPrefetch
+            self.handedOverFullPrefetch = nil
+            self.retireHandedOverPrefetch()
+            self.fullImagePrefetchTask = ImagePipeline.shared.prefetchFullImages(
+                items: photos, after: current, mode: mode, decoder: decoder, sourceAccess: self.mediaReadAccess,
+                replacing: replaced)
             if preparesHighResolution {
                 self.highResolutionPrefetchTask = HighResolutionImagePipeline.shared.prefetchSources(items: photos, decoder: decoder, sourceAccess: self.mediaReadAccess)
             }

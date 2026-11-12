@@ -16,22 +16,28 @@ final class ForegroundWorkPipelineTests: XCTestCase {
                                      foregroundWork: coordinator) { _, _ in
             browsingPixels(width: worker.work())
         }
+        // The nearest neighbour waits for the visible photo's decode only.
+        let visible = Task { await pipeline.fullImage(for: item("visible.JPG")) }
+        defer { visible.cancel() }
+        try await boundary { worker.calls == 1 }
         let photo = item("promoted.JPG")
         let neighbours = pipeline.prefetchFullImages(items: [photo])
         defer { neighbours.cancel() }
-        try await boundary { coordinator.waitingCountForTesting == 1 }
-        XCTAssertEqual(worker.calls, 0)
+        try await boundary { pipeline.visibleAdmissionWaitingForTesting == 1 }
+        XCTAssertEqual(worker.calls, 1)
         let foreground = Task { await pipeline.fullImage(for: photo) }
         defer { foreground.cancel() }
-        try await boundary { worker.calls == 1 && pipeline.decodeWaiterCountForTesting(for: photo, full: true) == 2 }
+        try await boundary { pipeline.decodeWaiterCountForTesting(for: photo, full: true) == 2 }
         neighbours.cancel()
         await neighbours.value
         XCTAssertEqual(pipeline.decodeWaiterCountForTesting(for: photo, full: true), 1)
+        XCTAssertEqual(pipeline.visibleAdmissionWaitingForTesting, 0)
         XCTAssertEqual(coordinator.waitingCountForTesting, 0)
         worker.release.signal()
+        _ = await visible.value
         let pixels = await foreground.value
-        XCTAssertEqual(pixels?.size.width, 1)
-        XCTAssertEqual(worker.calls, 1, "foreground must promote the existing decode")
+        XCTAssertEqual(pixels?.size.width, 2)
+        XCTAssertEqual(worker.calls, 2, "foreground must promote the existing decode")
         XCTAssertNotNil(pipeline.cachedFullImage(for: photo))
     }
 
@@ -47,9 +53,11 @@ final class ForegroundWorkPipelineTests: XCTestCase {
         }
         let photos = (0..<30).map { item("\($0).JPG") }
         let neighbours = pipeline.prefetchFullImages(items: [photos[0]] + photos)
-        try await boundary { coordinator.waitingCountForTesting == ImagePipeline.neighbourPrefetchLimit }
-        XCTAssertEqual(worker.calls, 0)
-        XCTAssertTrue(photos.dropFirst(4).allSatisfy { pipeline.decodeWaiterCountForTesting(for: $0, full: true) == 0 })
+        // One at a time in order: the nearest needs no shared admission,
+        // the next waits for it; nothing else is queued.
+        try await boundary { worker.calls == 1 && coordinator.waitingCountForTesting == 1 }
+        XCTAssertEqual(pipeline.decodeWaiterCountForTesting(for: photos[1], full: true), 1)
+        XCTAssertTrue(photos.dropFirst(2).allSatisfy { pipeline.decodeWaiterCountForTesting(for: $0, full: true) == 0 })
         neighbours.cancel()
         await neighbours.value
         try await boundary { coordinator.waitingCountForTesting == 0 }

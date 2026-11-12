@@ -28,6 +28,10 @@ struct FullImageView: View {
     let onRepresentation: (PhotoRepresentation, PhotoContentRevision) -> Void
 
     @State private var image: NSImage?
+    /// Previous tier's full pixels, valid only for the same content/mode/decoder.
+    @State private var tierStandIn: NSImage?
+    @State private var displayCoverage = ImagePipeline.displayCoverage
+    @State private var loadedSizing = FitDecodeSizing.bounded
     @State private var loadedDisplayMode = RawDisplayMode.fast
     @State private var loadedDecoder = AppleRawDecoder.appleDefault
     @State private var fallbackRevision: PhotoContentRevision?
@@ -53,6 +57,7 @@ struct FullImageView: View {
     }
 
     private struct PreviewLoadID: Hashable {
+        let sizing: FitDecodeSizing
         let contentRevision: PhotoContentRevision
         let retryGeneration: UInt64
         let mode: RawDisplayMode
@@ -62,6 +67,14 @@ struct FullImageView: View {
     private struct StandInLoadID: Hashable {
         let preview: PreviewLoadID
         let fullIsLoaded: Bool
+    }
+
+    private var fitSizing: FitDecodeSizing {
+        FitDecodeSizing(item: item, mode: displayMode, coverage: displayCoverage)
+    }
+
+    private func sizingIsCurrent(_ sizing: FitDecodeSizing) -> Bool {
+        fitSizing == sizing && FitDecodeSizing(item: item, mode: displayMode, coverage: ImagePipeline.displayCoverage) == sizing
     }
 
     private var displayMode: RawDisplayMode {
@@ -109,7 +122,11 @@ struct FullImageView: View {
         self._clippingDecoder = State(initialValue: decoder)
         self._loadedDisplayMode = State(initialValue: mode)
         self._clippingDisplayMode = State(initialValue: mode)
-        let cachedFull = imagePipeline.cachedFullImage(for: item, mode: mode, decoder: decoder)
+        let coverage = ImagePipeline.displayCoverage
+        let sizing = FitDecodeSizing(item: item, mode: mode, coverage: coverage)
+        self._displayCoverage = State(initialValue: coverage)
+        self._loadedSizing = State(initialValue: sizing)
+        let cachedFull = imagePipeline.cachedFullImage(for: item, mode: mode, decoder: decoder, sizing: sizing)
         self._image = State(initialValue: cachedFull)
         self._clippingImage = State(
             initialValue: ClippingPreviewPipeline.shared.cachedImage(for: item, mode: mode, decoder: decoder)
@@ -123,13 +140,21 @@ struct FullImageView: View {
         let contentRevision = item.contentRevision
         let mode = displayMode
         let rendersRAW = mode.rendersRAW(for: item)
-        let currentLoad = imageRevision == contentRevision && loadedDisplayMode == mode && loadedDecoder == rawDecoder
+        let sizing = fitSizing
+        let sameRepresentation = imageRevision == contentRevision && loadedDisplayMode == mode && loadedDecoder == rawDecoder
+        let currentLoad = loadedSizing == sizing && sameRepresentation
         let displayedImage = currentLoad
             ? image
-            : imagePipeline.cachedFullImage(for: item, mode: mode, decoder: rawDecoder)
-        let displayedPreview = rendersRAW ? nil : currentLoad
+            : imagePipeline.cachedFullImage(for: item, mode: mode, decoder: rawDecoder, sizing: sizing)
+        // Keep full pixels across a tier change, including the interval before
+        // the new task registers. Readiness still belongs to the requested tier.
+        let retainedTierImage = sameRepresentation
+            ? tierStandIn ?? (loadedSizing != sizing ? image : nil)
+            : nil
+        let thumbnailPreview = rendersRAW ? nil : currentLoad
             ? preview
             : imagePipeline.cachedThumbnail(for: item)
+        let displayedPreview = retainedTierImage ?? thumbnailPreview
         let displayedClippingImage = clippingRevision == contentRevision && clippingDisplayMode == mode && clippingDecoder == rawDecoder
             ? clippingImage
             : ClippingPreviewPipeline.shared.cachedImage(for: item, mode: mode, decoder: rawDecoder)
@@ -248,6 +273,7 @@ struct FullImageView: View {
                             mode: zoomMode,
                             image: presentationPreview,
                             decoder: rawDecoder,
+                            warmsZoomSource: false,
                             maximumSize: zoomMode == .small
                                 ? CGSize(width: 400, height: 600)
                                 : nil,
@@ -310,7 +336,12 @@ struct FullImageView: View {
             fittedPinchGeneration &+= 1
             if zoomMode != .actual { onRepresentation(fittedRepresentation, contentRevision) }
         }
+        .onReceive(NotificationCenter.default.publisher(for: ImagePipeline.displayCoverageDidChange).receive(on: DispatchQueue.main)) { _ in
+            displayCoverage = ImagePipeline.displayCoverage
+        }
+        .onAppear { displayCoverage = ImagePipeline.displayCoverage }
         .task(id: PreviewLoadID(
+            sizing: sizing,
             contentRevision: contentRevision,
             retryGeneration: previewRetryGeneration,
             mode: mode,
@@ -319,9 +350,13 @@ struct FullImageView: View {
             let requestedItem = item
             let decoder = rawDecoder
             let requestedRevision = requestedItem.contentRevision
+            let requestedSizing = sizing
             let cachedFull = imagePipeline.cachedFullImage(
-                for: requestedItem, mode: mode, decoder: decoder
+                for: requestedItem, mode: mode, decoder: decoder, sizing: requestedSizing
             )
+            let retainsPixels = imageRevision == requestedRevision && loadedDisplayMode == mode && loadedDecoder == decoder
+            tierStandIn = cachedFull == nil && retainsPixels ? image ?? tierStandIn : nil
+            loadedSizing = requestedSizing
             loadedDisplayMode = mode
             loadedDecoder = decoder
             image = cachedFull
@@ -337,20 +372,24 @@ struct FullImageView: View {
             try? await Task.sleep(
                 nanoseconds: Self.navigationDebounceNanoseconds
             )
-            guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode, imageRevision == requestedRevision
+            guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode, imageRevision == requestedRevision,
+                  loadedSizing == requestedSizing, sizingIsCurrent(requestedSizing)
             else { return }
             onLoading(true)
             defer { onLoading(false) }
             let loaded = await imagePipeline.fullImage(
-                for: requestedItem, mode: mode, decoder: decoder, sourceAccess: mediaReadAccess
+                for: requestedItem, mode: mode, decoder: decoder, sizing: requestedSizing, sourceAccess: mediaReadAccess
             )
-            guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode, imageRevision == requestedRevision
+            guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode, imageRevision == requestedRevision,
+                  loadedSizing == requestedSizing, sizingIsCurrent(requestedSizing)
             else { return }
             image = loaded
+            tierStandIn = nil
             failedToLoad = (loaded == nil)
         }
         .task(id: StandInLoadID(
             preview: PreviewLoadID(
+                sizing: sizing,
                 contentRevision: contentRevision,
                 retryGeneration: previewRetryGeneration,
                 mode: mode,
@@ -370,11 +409,11 @@ struct FullImageView: View {
             else { return }
             try? await Task.sleep(nanoseconds: Self.navigationDebounceNanoseconds)
             guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode,
-                  loadedDecoder == decoder, imageRevision == requestedRevision, image == nil
+                  loadedDecoder == decoder, imageRevision == requestedRevision, loadedSizing == sizing, image == nil
             else { return }
             let thumb = await imagePipeline.thumbnail(for: requestedItem, sourceAccess: mediaReadAccess)
             guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode,
-                  loadedDecoder == decoder, imageRevision == requestedRevision, image == nil
+                  loadedDecoder == decoder, imageRevision == requestedRevision, loadedSizing == sizing, image == nil
             else { return }
             preview = thumb
         }
@@ -424,8 +463,8 @@ struct FullImageView: View {
         let mode = displayMode
         let ready: PhotoRepresentation = mode.rendersRAW(for: item) ? .raw : .preview
         let loading: PhotoRepresentation = mode.rendersRAW(for: item) ? .loadingRAW : .loadingPreview
-        guard loadedDisplayMode == mode, loadedDecoder == rawDecoder, imageRevision == item.contentRevision else {
-            return imagePipeline.cachedFullImage(for: item, mode: mode, decoder: rawDecoder) == nil ? loading : ready
+        guard loadedDisplayMode == mode, loadedDecoder == rawDecoder, loadedSizing == fitSizing, imageRevision == item.contentRevision else {
+            return imagePipeline.cachedFullImage(for: item, mode: mode, decoder: rawDecoder, sizing: fitSizing) == nil ? loading : ready
         }
         if image != nil { return ready }
         return failedToLoad ? .unavailable : loading
@@ -449,18 +488,19 @@ struct FullImageView: View {
         let revision = item.contentRevision
         let decoder = rawDecoder
         Task { @MainActor in
-            let source = await HighResolutionImagePipeline.shared.source(for: requestedItem, decoder: decoder, sourceAccess: mediaReadAccess)
+            // The zoomed view builds the recipe; the hand-off needs only its size.
+            let pixelSize = await HighResolutionImagePipeline.shared.pixelSize(for: requestedItem, decoder: decoder, sourceAccess: mediaReadAccess)
             guard generation == fittedPinchGeneration,
                   rawDecoder == decoder,
                   revision == item.contentRevision,
                   zoomMode != .actual
             else { return }
-            guard let source else {
+            guard let pixelSize else {
                 fittedPinchResetGeneration &+= 1
                 return
             }
             let fittedScale = ActualSizeGeometry.fitZoom(
-                sourcePixels: source.pixelSize,
+                sourcePixels: pixelSize,
                 backingScale: backingScale,
                 viewportSize: containerSize,
                 maximumSize: maximumSize
@@ -484,6 +524,8 @@ private struct ZoomableFittedImage: View {
     let mode: ZoomMode
     let image: NSImage
     var decoder: AppleRawDecoder = .appleDefault
+    /// Only the settled full preview prepares the 100% recipe after a dwell.
+    var warmsZoomSource = true
     var maximumSize: CGSize? = nil
     let pinchResetGeneration: UInt64
     let onMeasuredScale: (CGFloat, PhotoContentRevision, ZoomMode) -> Void
@@ -494,6 +536,7 @@ private struct ZoomableFittedImage: View {
     @State private var sourcePixelSize: CGSize?
     @State private var measuredRevision: PhotoContentRevision?
     @State private var containerSize: CGSize = .zero
+    static let zoomSourceDwellNanoseconds: UInt64 = 500_000_000
 
     var body: some View {
         GeometryReader { geometry in
@@ -557,12 +600,20 @@ private struct ZoomableFittedImage: View {
                 }
         }
         .task(id: HighResolutionImagePipeline.sourceKey(for: item, decoder: decoder)) {
-            let revision = item.contentRevision
-            let source = await HighResolutionImagePipeline.shared.source(for: item, decoder: decoder, sourceAccess: mediaReadAccess)
+            let requestedItem = item
+            let revision = requestedItem.contentRevision
+            // Header properties, not the recipe: passing photos never decode
+            // or retain a whole source just for the zoom readout.
+            let pixelSize = await HighResolutionImagePipeline.shared.pixelSize(for: requestedItem, decoder: decoder, sourceAccess: mediaReadAccess)
             guard !Task.isCancelled else { return }
             measuredRevision = revision
-            sourcePixelSize = source?.pixelSize
+            sourcePixelSize = pixelSize
             reportMeasuredScale()
+            guard warmsZoomSource else { return }
+            try? await Task.sleep(nanoseconds: Self.zoomSourceDwellNanoseconds)
+            guard !Task.isCancelled else { return }
+            // Cancelling this view task retires the admitted waiter.
+            await HighResolutionImagePipeline.shared.warmSource(for: requestedItem, decoder: decoder, sourceAccess: mediaReadAccess)
         }
         .onChange(of: containerSize) { _, _ in reportMeasuredScale() }
         .onChange(of: displayScale) { _, _ in reportMeasuredScale() }

@@ -540,8 +540,52 @@ fresh source decode; replacements never inherit old pixels, even for slow RAW.
 |---|---|
 | Neighbour prefetch | 60 ms debounce |
 | Full/clipping view decode | 40 ms; memory hits remain immediate |
+| 100% recipe for the current Fit photo | 500 ms after the full preview mounts, then admitted as neighbour work |
 | Secondary Info EXIF/histogram | 80 ms; EXIF reads use one lane, and a retired waiter never starts a read |
 | RAW histogram in Info | 700 ms; separate utility lane; background quality requests have no dwell |
+
+Fit previews (Fast mode, not RAW renders) are sized per format; only formats
+with a measured gain leave the 4,096-pixel request. JPEGs larger than 4,096
+pixels request the smallest decoder scale (1/8, 1/4, 1/2) that covers the photo
+fitted to the largest active display in backing pixels and a 3,840-pixel
+long-edge floor for custom zoom, else native size up to 4,608 pixels, else 4,096.
+Embedded previews must also meet the old 90% of 4,096 threshold, capped by the
+source size. RAF camera previews (about 4,416 pixels) return
+unresampled up to 4,608; a smaller preview still fails the undersized check and
+falls back to a 4,096-pixel decode. HEIC, JPEG XL, NEF, TIFF and the rest keep
+4,096. The display size is the size tier in JPEG keys, so window resizes never
+change keys; display-tier changes publish to the current view and reload it.
+Load identities, loaded-state checks and completions include the sizing tier.
+While the new tier loads, the preceding full preview remains a stand-in only
+for matching content, mode and decoder. Custom zoom below 100% shows the
+same preview, as before.
+
+The Fit zoom readout and pinch hand-off read oriented pixel dimensions from
+ImageIO headers (one serial header lane, revision-checked, 1,024 cached sizes).
+NEF and RAF headers matched `CIRAWFilter` extents, including rotated files;
+other RAW formats still build the recipe. A JPEG XL recipe decodes and holds the
+whole image, so Fit builds one only after the dwell above.
+
+Neighbour prefetch follows the direction of travel ([+1, +2, +3, −1], mirrored
+after stepping back) and decodes one photo at a time: first the current photo
+(joining or starting its preview before the view's 40 ms debounce ends, so no
+neighbour races ahead of it), then the nearest uncached neighbour, which waits
+only for visible full-preview decodes (750 ms escape), then the rest after
+shared background admission. Unpromoted neighbour work holds at most one of
+the two full-decode lanes and one of the two 100% lanes; further admitted work
+parks until that lane's worker exits. A visible request promotes a queued or
+running neighbour, which then frees the neighbour lane. Navigation and zoom
+changes hand the old window over: the new window cancels it only after joining
+the current photo's decode, so a running neighbour's result is not discarded
+and decoded again. View, decoder and folder changes and Close cancel at once.
+
+JPEG XL thumbnails decode the whole image on many threads. After Gallery
+navigation to a photo with no cached preview, JPEG XL thumbnails requested
+before that photo's full preview finishes (at most one second) go to a separate
+lane that starts one at a time; its backlog then drains at the thumbnail lane's
+width. Leaving Gallery or retiring the session ends the yield immediately;
+the matching deadline also ends it while Fit is still decoding. Otherwise, and always in Grid, they share the normal thumbnail lane. Dropped optional
+disk writes are counted for measurement.
 
 At 100%, document points equal source pixels/backing scale, giving one physical
 pixel per source pixel on standard/Retina displays. `ActualSizeViewport` holds

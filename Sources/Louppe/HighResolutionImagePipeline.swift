@@ -1,5 +1,6 @@
 import Foundation
 import CoreImage
+import ImageIO
 
 /// A lazy, oriented Core Image recipe for one source file. Holding this object
 /// does not allocate a full decoded bitmap; individual source-pixel tiles are
@@ -78,6 +79,10 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
         var waiters: [UUID: CheckedContinuation<ZoomImageSource?, Never>]
         let operation: BlockOperation
         let readAccess: MediaOperationReadAccess
+        var admissionTask: Task<Void, Never>?
+        var submitted = false
+        /// Neighbour or dwell work that no visible caller has promoted.
+        var isPrefetch = false
 
         init(
             waiters: [UUID: CheckedContinuation<ZoomImageSource?, Never>],
@@ -137,21 +142,40 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     private var tileCacheCost = 0
     private var tileAccessCounter: UInt64 = 0
     private var tileInFlight: [TileKey: PendingTile] = [:]
+    // Guarded by lock. Unpromoted recipe prefetch waits for background
+    // admission and holds at most one of the two tile lanes.
+    private var prefetchLane = PrefetchLane<String>()
+    #if LOUPPE_TEST_SEAMS
+    // Configure before starting workers; pauses after lane ownership transfers.
+    var beforePrefetchHandoffSubmissionForTesting: (@Sendable () -> Void)?
+    #endif
+    private let foregroundWork: ForegroundWorkCoordinator
+    /// Header reads for the Fit readout: tiny, serial, never on a tile lane.
+    private let pixelSizeQueue = DispatchQueue(label: "louppe.zoom-pixel-size", qos: .userInitiated)
+    private var pixelSizeCache: [String: CGSize] = [:]
     private let testingSource: (@Sendable (MediaSourceRevision, String, AppleRawDecoder) -> ZoomImageSource?)?
 
     private let testingTile: (@Sendable (ZoomImageSource, ZoomTileCoordinate) -> ZoomImageTile?)?
+    private let testingPixelSize: (@Sendable (MediaSourceRevision) -> CGSize?)?
 
-    private init() { testingSource = nil; testingTile = nil }
+    private init() {
+        testingSource = nil; testingTile = nil; testingPixelSize = nil
+        foregroundWork = .shared
+    }
 
     /// Fault-injected source construction still passes through revision checks,
     /// waiter ownership and the real operation queue (shared with tile work).
     init(
         testingSourceConcurrency: Int,
         tileRenderer: (@Sendable (ZoomImageSource, ZoomTileCoordinate) -> ZoomImageTile?)? = nil,
+        pixelSize: (@Sendable (MediaSourceRevision) -> CGSize?)? = nil,
+        foregroundWork: ForegroundWorkCoordinator = .shared,
         source: @escaping @Sendable (MediaSourceRevision, String, AppleRawDecoder) -> ZoomImageSource?
     ) {
+        self.foregroundWork = foregroundWork
         testingSource = source
         testingTile = tileRenderer
+        testingPixelSize = pixelSize
         renderQueue.maxConcurrentOperationCount = max(1, testingSourceConcurrency)
     }
 
@@ -173,7 +197,8 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
         decoder: AppleRawDecoder,
         qualityOfService: QualityOfService,
         queuePriority: Operation.QueuePriority,
-        sourceAccess: MediaReadAccess?
+        sourceAccess: MediaReadAccess?,
+        waitsForAdmission: Bool = true
     ) async -> ZoomImageSource? {
         guard !Task.isCancelled else { return nil }
         let key = Self.sourceKey(for: item, decoder: decoder)
@@ -198,17 +223,32 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
                 if let pending = sourceInFlight[key] {
                     pending.readAccess.retainIfNeeded(sourceAccess)
                     pending.waiters[waiterID] = continuation
+                    var next: (String, BlockOperation)?
                     if queuePriority == .veryHigh {
                         pending.operation.queuePriority = .veryHigh
                         pending.operation.qualityOfService = .userInitiated
+                        pending.admissionTask?.cancel()
+                        pending.admissionTask = nil
+                        if pending.isPrefetch {
+                            pending.isPrefetch = false
+                            next = prefetchLane.release(ObjectIdentifier(pending.operation), isLive: isLivePrefetchLocked)
+                        }
                     }
+                    let operation = pending.operation
                     lock.unlock()
+                    if queuePriority == .veryHigh { submitSource(key: key, operation: operation) }
+                    if let next { submitSource(key: next.0, operation: next.1) }
                     return
                 }
 
                 let readAccess = MediaOperationReadAccess(sourceAccess)
                 let operation = BlockOperation()
-                operation.completionBlock = { readAccess.finish() }
+                let operationID = ObjectIdentifier(operation)
+                // Queued cancellation may skip the execution block entirely.
+                operation.completionBlock = { [weak self] in
+                    readAccess.finish()
+                    self?.prefetchSourceExited(operationID)
+                }
                 operation.addExecutionBlock { [weak self, weak operation] in
                     guard let self, let operation, !operation.isCancelled else { return }
                     defer { readAccess.finish() }
@@ -224,17 +264,65 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
                 }
                 operation.qualityOfService = qualityOfService
                 operation.queuePriority = queuePriority
-                sourceInFlight[key] = PendingSource(waiters: [waiterID: continuation], operation: operation, readAccess: readAccess)
+                let pending = PendingSource(waiters: [waiterID: continuation], operation: operation, readAccess: readAccess)
+                pending.isPrefetch = queuePriority == .low
+                sourceInFlight[key] = pending
+                if pending.isPrefetch, waitsForAdmission {
+                    // Neighbour recipes yield to navigation like full previews.
+                    pending.admissionTask = Task.detached(priority: .utility) { [weak self, weak operation, foregroundWork] in
+                        guard await foregroundWork.waitForBackgroundAdmission(), !Task.isCancelled,
+                              let self, let operation else { return }
+                        self.submitSource(key: key, operation: operation)
+                    }
+                }
                 lock.unlock()
-                renderQueue.addOperation(operation)
+                if !pending.isPrefetch || !waitsForAdmission { submitSource(key: key, operation: operation) }
             }
         } onCancel: { [weak self] in
             self?.cancelSourceWaiter(waiterID, key: key)
         }
     }
 
+    /// Identity-checked under the state lock, as in `ImagePipeline.submit`.
+    private func submitSource(key: String, operation: BlockOperation) {
+        let admitted = withStateLock {
+            guard let pending = sourceInFlight[key], pending.operation === operation,
+                  !pending.submitted, !operation.isCancelled else { return false }
+            pending.admissionTask = nil
+            if pending.isPrefetch, !prefetchLane.claim(key, operation) { return false }
+            pending.submitted = true
+            return true
+        }
+        if admitted { renderQueue.addOperation(operation) }
+    }
+
+    private func isLivePrefetchLocked(_ key: String, _ operation: BlockOperation) -> Bool {
+        guard let pending = sourceInFlight[key] else { return false }
+        return pending.operation === operation && pending.isPrefetch && !pending.submitted && !operation.isCancelled
+    }
+
+    private func prefetchSourceExited(_ operation: ObjectIdentifier) {
+        let next = withStateLock { prefetchLane.release(operation, isLive: isLivePrefetchLocked) }
+        if let next {
+            #if LOUPPE_TEST_SEAMS
+            beforePrefetchHandoffSubmissionForTesting?()
+            #endif
+            submitSource(key: next.0, operation: next.1)
+        }
+    }
+
+    /// Fit dwell: prepare the current photo's recipe as neighbour work, so
+    /// a later zoom finds it without paying for every photo passed by. The
+    /// dwell replaces admission; the recipe still holds only the neighbour lane.
+    func warmSource(for item: PhotoItem, decoder: AppleRawDecoder = .appleDefault, sourceAccess: MediaReadAccess? = nil) async {
+        guard item.mediaKind == .photo, item.isSupported else { return }
+        _ = await source(for: item, decoder: decoder, qualityOfService: .utility, queuePriority: .low,
+                         sourceAccess: sourceAccess, waitsForAdmission: false)
+    }
+
     /// Retain and replace this handle with the session's neighbour window.
-    /// Four recipes match the existing source cache; each child owns one waiter.
+    /// Four recipes match the existing source cache. They run in the caller's
+    /// order, one waiter at a time, each after background admission.
     @discardableResult
     func prefetchSources(items: [PhotoItem], decoder: AppleRawDecoder = AppleRawDecoder.load(), sourceAccess: MediaReadAccess? = nil) -> Task<Void, Never> {
         guard !Task.isCancelled else { return Task {} }
@@ -246,18 +334,87 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
             if neighbours.count == ImagePipeline.neighbourPrefetchLimit { break }
         }
         return Task.detached(priority: .utility) { [self, neighbours] in
-            await withTaskGroup(of: Void.self) { group in
-                for item in neighbours {
-                    guard !Task.isCancelled else { break }
-                    group.addTask { [self] in
-                        _ = await source(for: item, decoder: decoder, qualityOfService: .utility, queuePriority: .low, sourceAccess: sourceAccess)
-                    }
-                }
+            for item in neighbours {
+                guard !Task.isCancelled else { break }
+                _ = await source(for: item, decoder: decoder, qualityOfService: .utility, queuePriority: .low, sourceAccess: sourceAccess)
             }
         }
     }
 
+    /// Oriented source pixels for the Fit zoom readout. ImageIO header
+    /// properties give the recipe's extent without building it: a JPEG XL
+    /// recipe decodes and retains the whole image. RAW formats outside
+    /// `headerSizedRawExtensions` keep the recipe, whose crop can differ.
+    func pixelSize(for item: PhotoItem, decoder: AppleRawDecoder = .appleDefault, sourceAccess: MediaReadAccess? = nil) async -> CGSize? {
+        guard !Task.isCancelled else { return nil }
+        let key = Self.sourceKey(for: item, decoder: decoder)
+        let known: CGSize? = withStateLock { sourceCache[key]?.pixelSize ?? pixelSizeCache[key] }
+        if let known { return known }
+        let ext = item.primaryURL.pathExtension.lowercased()
+        if FolderScanner.rawExtensions.contains(ext), !Self.headerSizedRawExtensions.contains(ext) {
+            return await source(for: item, decoder: decoder, sourceAccess: sourceAccess)?.pixelSize
+        }
+        let revision = MediaSourceRevision(item)
+        let readAccess = MediaOperationReadAccess(sourceAccess)
+        let retired = PixelSizeRequest()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                pixelSizeQueue.async { [self] in
+                    // The executing read owns its lease until it exits.
+                    defer { readAccess.finish() }
+                    guard !retired.isCancelled else { return continuation.resume(returning: nil) }
+                    let size = autoreleasepool {
+                        revision.read {
+                            if let testingPixelSize { return testingPixelSize(revision) }
+                            return Self.orientedPixelSize(url: revision.url)
+                        }
+                    }
+                    if let size {
+                        withStateLock {
+                            if pixelSizeCache.count >= Self.pixelSizeCacheLimit { pixelSizeCache.removeAll(keepingCapacity: true) }
+                            pixelSizeCache[key] = size
+                        }
+                    }
+                    continuation.resume(returning: size)
+                }
+            }
+        } onCancel: {
+            retired.cancel()
+        }
+    }
+
+    /// Header and recipe extents matched for every sampled NEF and RAF,
+    /// including rotated files.
+    static let headerSizedRawExtensions: Set<String> = ["nef", "raf"]
+    static let pixelSizeCacheLimit = 1024
+
+    /// The primary image's pixel dimensions with EXIF orientation applied,
+    /// as `CIImage(contentsOf:options: [.applyOrientationProperty: true])`
+    /// and `CIRAWFilter` report them.
+    static func orientedPixelSize(url: URL) -> CGSize? {
+        let options = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, options) else { return nil }
+        let index = CGImageSourceGetPrimaryImageIndex(source)
+        guard let properties = CGImageSourceCopyPropertiesAtIndex(source, index, options) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int,
+              let height = properties[kCGImagePropertyPixelHeight] as? Int,
+              width > 0, height > 0 else { return nil }
+        let orientation = (properties[kCGImagePropertyOrientation] as? NSNumber)?.uint32Value ?? 1
+        // Orientations 5–8 transpose the stored pixels.
+        return (5...8).contains(orientation)
+            ? CGSize(width: height, height: width)
+            : CGSize(width: width, height: height)
+    }
+
+    private final class PixelSizeRequest: @unchecked Sendable {
+        private let lock = NSLock()
+        private var cancelled = false
+        var isCancelled: Bool { lock.withLock { cancelled } }
+        func cancel() { lock.withLock { cancelled = true } }
+    }
+
     private func cancelSourceWaiter(_ waiterID: UUID, key: String) {
+        var next: (String, BlockOperation)?
         lock.lock()
         guard let pending = sourceInFlight[key], let waiter = pending.waiters.removeValue(forKey: waiterID) else {
             lock.unlock()
@@ -265,16 +422,26 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
         }
         if pending.waiters.isEmpty {
             sourceInFlight.removeValue(forKey: key)
+            pending.admissionTask?.cancel()
             // Cancellation cannot release a running synchronous recipe's lane.
             pending.operation.cancel()
+            if !pending.submitted {
+                pending.readAccess.finish()
+                next = prefetchLane.release(ObjectIdentifier(pending.operation), isLive: isLivePrefetchLocked)
+            }
         }
         lock.unlock()
         waiter.resume(returning: nil)
+        if let next { submitSource(key: next.0, operation: next.1) }
     }
 
     #if LOUPPE_TEST_SEAMS
     func sourceWaiterCountForTesting(for item: PhotoItem, decoder: AppleRawDecoder = .appleDefault) -> Int {
         withStateLock { sourceInFlight[Self.sourceKey(for: item, decoder: decoder)]?.waiters.count ?? 0 }
+    }
+
+    var prefetchLaneForTesting: (held: Bool, parked: Int) {
+        withStateLock { (prefetchLane.isHeld, prefetchLane.parkedCount) }
     }
 
     func sourceIsCachedForTesting(for item: PhotoItem, decoder: AppleRawDecoder = .appleDefault) -> Bool {

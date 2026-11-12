@@ -511,10 +511,13 @@ precedence over remembered scope/position.
   quality requests bypass Info's 700 ms dwell on the same single utility lane.
   Info EXIF detail reads use `MetadataDetailPipeline`'s single lane; a retired
   waiter never starts, and a running read keeps its grant until it exits.
-- Gallery owns one replaceable four-photo prefetch neighborhood. Navigation,
-  view/zoom/decoder changes, folder changes and Close cancel its admitted waiters
-  as well as its debounce. Grid does not warm full previews; high-resolution
-  sources warm only in actual-size Gallery. Executing workers retain their lanes.
+- Gallery owns one replaceable four-photo prefetch neighborhood, ordered by
+  direction of travel and decoded one photo at a time. View/decoder changes,
+  folder changes and Close cancel its admitted waiters as well as its debounce;
+  navigation and zoom changes retire them once the next window has joined. Grid does not warm full previews; high-resolution
+  sources warm in actual-size Gallery and for the current Fit photo after a
+  dwell. Executing workers retain their lanes; unpromoted neighbour work holds
+  at most one lane per pipeline.
   Matching-revision thumbnail pixels survive shared-cache eviction while retained
   by a cell. Optional disk writes coalesce keys and retain at most 8 MiB/32 entries,
   including the active write; saturation drops optional writes without delaying pixels.

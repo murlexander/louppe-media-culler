@@ -36,6 +36,84 @@ final class MediaOperationReadAccess: @unchecked Sendable {
     }
 }
 
+/// How a Fit preview that is not a RAW render is requested. Only formats
+/// with a measured gain leave `.bounded`: HEIC, JPEG XL, NEF previews and
+/// the rest decode no faster at native or exact scales.
+enum FitDecodeSizing: Hashable, Sendable {
+    /// The original request: long edge at most 4,096 pixels.
+    case bounded
+    /// JPEG decoder scales sized to cover this display tier.
+    case exactScale(coverage: CGSize)
+    /// RAF camera previews are about 4,416 pixels; resampling them to 4,096
+    /// more than doubled the decode.
+    case embeddedPreview
+
+    init(item: PhotoItem, mode: RawDisplayMode, coverage: CGSize?) {
+        guard !mode.rendersRAW(for: item) else { self = .bounded; return }
+        switch item.primaryURL.pathExtension.lowercased() {
+        case "jpg", "jpeg":
+            if let coverage, coverage.width > 0, coverage.height > 0 {
+                self = .exactScale(coverage: coverage)
+            } else {
+                self = .bounded
+            }
+        case "raf": self = .embeddedPreview
+        default: self = .bounded
+        }
+    }
+
+    /// The size tier in full-preview cache keys; `.bounded` keeps old keys.
+    var keySuffix: String {
+        switch self {
+        case .bounded: return ""
+        case .exactScale(let coverage): return "|fit-scaled-\(Int(coverage.width))x\(Int(coverage.height))"
+        case .embeddedPreview: return "|fit-embedded"
+        }
+    }
+}
+
+/// One decode lane for unpromoted neighbour work. Callers guard it with their
+/// own lock. The owner stays referenced until it exits, so its identifier
+/// cannot be reused; parked work runs in arrival order once admitted.
+struct PrefetchLane<Request> {
+    private var owner: BlockOperation?
+    private var parked: [(request: Request, operation: BlockOperation)] = []
+
+    /// True when `operation` holds the lane; otherwise it is parked.
+    mutating func claim(_ request: Request, _ operation: BlockOperation) -> Bool {
+        if owner == nil || owner === operation {
+            owner = operation
+            return true
+        }
+        if !parked.contains(where: { $0.operation === operation }) { parked.append((request, operation)) }
+        return false
+    }
+
+    /// Retires `operation` from the lane or the parked list. Freeing the
+    /// lane hands it to the oldest parked work that is still live.
+    mutating func release(
+        _ operation: ObjectIdentifier,
+        isLive: (Request, BlockOperation) -> Bool
+    ) -> (Request, BlockOperation)? {
+        guard let current = owner, ObjectIdentifier(current) == operation else {
+            parked.removeAll { ObjectIdentifier($0.operation) == operation }
+            return nil
+        }
+        owner = nil
+        while !parked.isEmpty {
+            let next = parked.removeFirst()
+            if isLive(next.request, next.operation) {
+                owner = next.operation
+                return next
+            }
+        }
+        return nil
+    }
+
+    var isHeld: Bool { owner != nil }
+    var parkedCount: Int { parked.count }
+}
+
 /// Decodes images with ImageIO (extracting embedded previews for RAW files),
 /// caches thumbnails in memory + on disk, and prefetches around the current photo.
 // @unchecked Sendable: safe to share across threads — NSCache and the queues
@@ -44,6 +122,9 @@ final class ImagePipeline: @unchecked Sendable {
     static let shared = ImagePipeline()
 
     private let foregroundWork: ForegroundWorkCoordinator
+    /// Visible full-preview decodes only; no interaction quiet window. It keeps
+    /// the shared coordinator's 750 ms per-wait escape.
+    private let visibleFullDecodes = ForegroundWorkCoordinator(quietInterval: .zero)
     private let thumbCache = NSCache<NSString, NSImage>()
     private let fullCache = NSCache<NSString, NSImage>()
     private let fullDecodeQueue: OperationQueue = {
@@ -62,10 +143,29 @@ final class ImagePipeline: @unchecked Sendable {
         // fills a fresh Grid noticeably faster without the peak-memory risk
         // that keeps the full-size queue at two. A separate queue also means
         // the current photo's full decode never waits behind tile backlog.
-        queue.maxConcurrentOperationCount = min(4, max(2, ProcessInfo.processInfo.activeProcessorCount / 2))
+        queue.maxConcurrentOperationCount = ImagePipeline.thumbnailLaneWidth
         queue.qualityOfService = .userInitiated
         return queue
     }()
+    /// JPEG XL has no embedded preview: each thumbnail decodes the whole image
+    /// on many threads. On the shared lane four at once help a cold Grid, but in
+    /// Gallery they made the visible photo's Fit decode about five times
+    /// slower. After Gallery navigation to an uncached photo, JPEG XL thumbnails
+    /// requested until that photo's full preview finishes (at most one second)
+    /// use this lane one at a time; its backlog then drains at full width.
+    private let wholeImageThumbnailQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.name = "louppe.decode.thumbnail.whole-image"
+        queue.maxConcurrentOperationCount = 1
+        queue.qualityOfService = .userInitiated
+        return queue
+    }()
+    static let wholeImageThumbnailExtensions: Set<String> = ["jxl"]
+    static let thumbnailLaneWidth = min(4, max(2, ProcessInfo.processInfo.activeProcessorCount / 2))
+    // Guarded by inFlightLock.
+    private var visibleFullDecodeCount = 0
+    private var wholeImageYield: (generation: UInt64, since: ContinuousClock.Instant)?
+    private var wholeImageYieldGeneration: UInt64 = 0
     private let diskQueue = DispatchQueue(label: "louppe.thumbnail-disk-cache", qos: .utility)
     private let diskCacheRoot: URL
     // Optional writes retain at most 1/32 of the thumbnail cache's byte budget.
@@ -78,6 +178,9 @@ final class ImagePipeline: @unchecked Sendable {
     private var diskWriteOrder: [URL] = []
     private var diskWriteBytes = 0
     private var diskDrainScheduled = false
+    /// Optional writes refused at the byte/count limit (not coalesced keys);
+    /// evidence for whether bursts lose disk thumbnails.
+    private var droppedDiskWrites = 0
     private var diskWriteWaiters: [CheckedContinuation<Void, Never>] = []
     /// The 512 MiB disk ceiling. A pass that finds more evicts the oldest
     /// entries down to the ceiling minus one live-maintenance interval.
@@ -99,7 +202,7 @@ final class ImagePipeline: @unchecked Sendable {
     private var activeMaintenancePasses = 0
     private var peakMaintenancePasses = 0
 
-    private enum DecodeKind: Hashable { case thumbnail, full }
+    private enum DecodeKind: Hashable { case thumbnail, wholeImageThumbnail, full }
     private struct DecodeRequest: Hashable {
         let kind: DecodeKind
         let key: String
@@ -110,6 +213,10 @@ final class ImagePipeline: @unchecked Sendable {
         let readAccess: MediaOperationReadAccess
         var admissionTask: Task<Void, Never>?
         var submitted = false
+        /// Neighbour work that has not been promoted by a visible caller.
+        var isPrefetch = false
+        /// Admitted after visible full decodes only, not shared demand.
+        var leadsNeighbours = false
 
         init(waiters: [UUID: CheckedContinuation<NSImage?, Never>], operation: BlockOperation, readAccess: MediaOperationReadAccess) {
             self.waiters = waiters
@@ -152,6 +259,13 @@ final class ImagePipeline: @unchecked Sendable {
     }
     private let inFlightLock = NSLock()
     private var inFlight: [DecodeRequest: PendingDecode] = [:]
+    // Guarded by inFlightLock. Unpromoted neighbour work occupies at most one
+    // full-decode lane, so the current photo always has the other.
+    private var prefetchLane = PrefetchLane<DecodeRequest>()
+    #if LOUPPE_TEST_SEAMS
+    // Configure before starting workers; pauses after lane ownership transfers.
+    var beforePrefetchHandoffSubmissionForTesting: (@Sendable () -> Void)?
+    #endif
     private static let lastDiskPruneDefaultsKey =
         "LouppeThumbnailCacheLastPrune"
 
@@ -270,8 +384,9 @@ final class ImagePipeline: @unchecked Sendable {
     /// view construction. They let the Gallery view show *something* the very
     /// frame the photo changes (the prefetched full image, or the Browser
     /// thumbnail as a low-res preview) instead of flashing an empty pane.
-    func cachedFullImage(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault) -> NSImage? {
-        fullCache.object(forKey: Self.fullCacheKey(for: item, mode: mode, decoder: decoder) as NSString)
+    func cachedFullImage(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault, sizing: FitDecodeSizing? = nil) -> NSImage? {
+        let sizing = sizing ?? FitDecodeSizing(item: item, mode: mode, coverage: Self.displayCoverage)
+        return fullCache.object(forKey: Self.fullCacheKey(for: item, mode: mode, decoder: decoder, sizing: sizing) as NSString)
     }
 
     func cachedThumbnail(for item: PhotoItem) -> NSImage? {
@@ -297,8 +412,9 @@ final class ImagePipeline: @unchecked Sendable {
         let key = Self.cacheKey(for: item)
         if let cached = thumbCache.object(forKey: key as NSString) { return cached }
         let revision = MediaSourceRevision(item)
+        let wholeImage = Self.wholeImageThumbnailExtensions.contains(item.primaryURL.pathExtension.lowercased())
         return await decodeOnce(
-            kind: .thumbnail,
+            kind: wholeImage ? .wholeImageThumbnail : .thumbnail,
             key: key,
             qualityOfService: .userInitiated,
             queuePriority: .normal,
@@ -308,9 +424,11 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
 
-    func fullImage(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault, sourceAccess: MediaReadAccess? = nil) async -> NSImage? {
+    func fullImage(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault, sizing: FitDecodeSizing? = nil, sourceAccess: MediaReadAccess? = nil) async -> NSImage? {
         guard !item.isAudio && !item.isText, !Task.isCancelled else { return nil }
-        let key = Self.fullCacheKey(for: item, mode: mode, decoder: decoder)
+        // One coverage snapshot sizes both the key and the decode.
+        let sizing = sizing ?? FitDecodeSizing(item: item, mode: mode, coverage: Self.displayCoverage)
+        let key = Self.fullCacheKey(for: item, mode: mode, decoder: decoder, sizing: sizing)
         if let cached = fullCache.object(forKey: key as NSString) { return cached }
         return await fullImage(
             for: MediaSourceRevision(item),
@@ -318,6 +436,7 @@ final class ImagePipeline: @unchecked Sendable {
             qualityOfService: .userInitiated,
             queuePriority: .veryHigh,
             rendersRAW: mode.rendersRAW(for: item),
+            sizing: sizing,
             decoder: decoder,
             sourceAccess: sourceAccess
         )
@@ -329,8 +448,11 @@ final class ImagePipeline: @unchecked Sendable {
         qualityOfService: QualityOfService,
         queuePriority: Operation.QueuePriority,
         rendersRAW: Bool = false,
+        sizing: FitDecodeSizing,
         decoder: AppleRawDecoder = .appleDefault,
-        sourceAccess: MediaReadAccess? = nil
+        sourceAccess: MediaReadAccess? = nil,
+        leadsNeighbours: Bool = false,
+        onRegistered: (@Sendable () -> Void)? = nil
     ) async -> NSImage? {
         guard !Task.isCancelled else { return nil }
         return await decodeOnce(
@@ -338,9 +460,11 @@ final class ImagePipeline: @unchecked Sendable {
             key: key,
             qualityOfService: qualityOfService,
             queuePriority: queuePriority,
-            sourceAccess: sourceAccess
+            sourceAccess: sourceAccess,
+            leadsNeighbours: leadsNeighbours,
+            onRegistered: onRegistered
         ) { [self] in
-            loadFullSync(revision: revision, key: key, rendersRAW: rendersRAW, decoder: decoder)
+            loadFullSync(revision: revision, key: key, rendersRAW: rendersRAW, sizing: sizing, decoder: decoder)
         }
     }
 
@@ -350,35 +474,60 @@ final class ImagePipeline: @unchecked Sendable {
     @discardableResult
     func prefetchFullImages(
         items: [PhotoItem],
+        after current: PhotoItem? = nil,
         mode: RawDisplayMode = .fast,
         decoder: AppleRawDecoder = .appleDefault,
-        sourceAccess: MediaReadAccess? = nil
+        sourceAccess: MediaReadAccess? = nil,
+        replacing previous: Task<Void, Never>? = nil,
+        nearestWaitsForVisibleDecodeOnly: Bool = true
     ) -> Task<Void, Never> {
-        guard !Task.isCancelled else { return Task {} }
+        guard !Task.isCancelled else {
+            previous?.cancel()
+            return Task {}
+        }
+        let coverage = Self.displayCoverage
         var keys = Set<String>()
-        var neighbours: [PhotoItem] = []
+        var neighbours: [(item: PhotoItem, key: String, sizing: FitDecodeSizing)] = []
+        // The visible photo first: its view joins or promotes this waiter, and
+        // no neighbour can race ahead of the view's debounced request.
+        var leading = nearestWaitsForVisibleDecodeOnly ? 1 : 0
+        if let current, current.mediaKind == .photo, current.isSupported {
+            let sizing = FitDecodeSizing(item: current, mode: mode, coverage: coverage)
+            let key = Self.fullCacheKey(for: current, mode: mode, decoder: decoder, sizing: sizing)
+            if fullCache.object(forKey: key as NSString) == nil {
+                neighbours.append((current, key, sizing))
+                leading += 1
+            }
+        }
         for item in items where item.mediaKind == .photo && item.isSupported {
-            let key = Self.fullCacheKey(for: item, mode: mode, decoder: decoder)
+            let sizing = FitDecodeSizing(item: item, mode: mode, coverage: coverage)
+            let key = Self.fullCacheKey(for: item, mode: mode, decoder: decoder, sizing: sizing)
             guard keys.insert(key).inserted else { continue }
-            if fullCache.object(forKey: key as NSString) == nil { neighbours.append(item) }
+            if fullCache.object(forKey: key as NSString) == nil { neighbours.append((item, key, sizing)) }
             if keys.count == Self.neighbourPrefetchLimit { break }
         }
-        return Task.detached(priority: .utility) { [self, neighbours] in
-            await withTaskGroup(of: Void.self) { group in
-                for item in neighbours {
-                    guard !Task.isCancelled else { break }
-                    group.addTask { [self] in
-                        _ = await fullImage(
-                            for: MediaSourceRevision(item),
-                            key: Self.fullCacheKey(for: item, mode: mode, decoder: decoder),
-                            qualityOfService: .utility,
-                            queuePriority: .low,
-                            rendersRAW: mode.rendersRAW(for: item),
-                            decoder: decoder,
-                            sourceAccess: sourceAccess
-                        )
-                    }
-                }
+        // In the caller's order (direction of travel first), one at a time:
+        // each neighbour waits for admission only after the previous decode.
+        // The nearest uncached one starts as soon as the visible decode ends.
+        return Task.detached(priority: .utility) { [self, neighbours, leading] in
+            // `previous` may own the only waiter of a decode this window needs:
+            // cancel it after the first waiter here is registered.
+            defer { previous?.cancel() }
+            let releasePrevious: @Sendable () -> Void = { previous?.cancel() }
+            for (index, neighbour) in neighbours.enumerated() {
+                guard !Task.isCancelled else { break }
+                _ = await fullImage(
+                    for: MediaSourceRevision(neighbour.item),
+                    key: neighbour.key,
+                    qualityOfService: .utility,
+                    queuePriority: .low,
+                    rendersRAW: mode.rendersRAW(for: neighbour.item),
+                    sizing: neighbour.sizing,
+                    decoder: decoder,
+                    sourceAccess: sourceAccess,
+                    leadsNeighbours: index < leading,
+                    onRegistered: index == 0 ? releasePrevious : nil
+                )
             }
         }
     }
@@ -392,14 +541,28 @@ final class ImagePipeline: @unchecked Sendable {
         qualityOfService: QualityOfService,
         queuePriority: Operation.QueuePriority,
         sourceAccess: MediaReadAccess? = nil,
+        leadsNeighbours: Bool = false,
+        onRegistered: (@Sendable () -> Void)? = nil,
         work: @escaping @Sendable () -> DecodedImage?
     ) async -> NSImage? {
         let demand = queuePriority == .low ? nil : foregroundWork.beginForegroundDemand()
         defer { demand?.finish() }
+        let isVisibleFull = kind == .full && queuePriority == .veryHigh
+        let fitDemand = isVisibleFull ? visibleFullDecodes.beginForegroundDemand() : nil
+        if isVisibleFull { inFlightLock.withLock { visibleFullDecodeCount += 1 } }
+        defer {
+            fitDemand?.finish()
+            if isVisibleFull {
+                inFlightLock.withLock { visibleFullDecodeCount -= 1 }
+                endWholeImageYield(generation: nil)
+            }
+        }
         let request = DecodeRequest(kind: kind, key: key)
         let waiterID = UUID()
         return await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
+                // Every path below unlocks first: the waiter is registered or answered.
+                defer { onRegistered?() }
                 inFlightLock.lock()
                 guard !Task.isCancelled else {
                     inFlightLock.unlock()
@@ -408,7 +571,7 @@ final class ImagePipeline: @unchecked Sendable {
                 }
                 let cached: NSImage?
                 switch kind {
-                case .thumbnail: cached = thumbCache.object(forKey: key as NSString)
+                case .thumbnail, .wholeImageThumbnail: cached = thumbCache.object(forKey: key as NSString)
                 case .full: cached = fullCache.object(forKey: key as NSString)
                 }
                 if let cached {
@@ -420,22 +583,40 @@ final class ImagePipeline: @unchecked Sendable {
                     pending.readAccess.retainIfNeeded(sourceAccess)
                     pending.waiters[waiterID] = continuation
                     // Visible work can promote an existing neighbour prefetch.
+                    var next: (DecodeRequest, BlockOperation)?
                     if queuePriority == .veryHigh {
                         pending.operation.queuePriority = .veryHigh
-                        pending.operation.qualityOfService = .userInitiated
+                        pending.operation.qualityOfService = qualityOfService
                         pending.admissionTask?.cancel()
                         pending.admissionTask = nil
+                        // Promoted work no longer counts against the neighbour lane.
+                        if pending.isPrefetch {
+                            pending.isPrefetch = false
+                            next = prefetchLane.release(ObjectIdentifier(pending.operation), isLive: isLivePrefetchLocked)
+                        }
+                    }
+                    // The nearest neighbour may join work an older window queued
+                    // farther out; it no longer waits on shared demand.
+                    if leadsNeighbours, pending.isPrefetch, !pending.submitted, !pending.leadsNeighbours {
+                        pending.admissionTask?.cancel()
+                        pending.leadsNeighbours = true
+                        pending.admissionTask = admissionTask(for: request, operation: pending.operation, leads: true)
                     }
                     let operation = pending.operation
                     inFlightLock.unlock()
                     if queuePriority == .veryHigh { submit(request, operation: operation) }
+                    if let next { submit(next.0, operation: next.1) }
                     return
                 }
 
                 let readAccess = MediaOperationReadAccess(sourceAccess)
                 let operation = BlockOperation()
                 // Queued cancellation may skip the execution block entirely.
-                operation.completionBlock = { readAccess.finish() }
+                let operationID = ObjectIdentifier(operation)
+                operation.completionBlock = { [weak self] in
+                    readAccess.finish()
+                    self?.prefetchOperationExited(operationID)
+                }
                 operation.addExecutionBlock { [weak self, weak operation] in
                     guard let self, let operation, !operation.isCancelled else { return }
                     // Waiter cancellation can return before native decoding.
@@ -447,13 +628,11 @@ final class ImagePipeline: @unchecked Sendable {
                 operation.qualityOfService = qualityOfService
                 operation.queuePriority = queuePriority
                 let pending = PendingDecode(waiters: [waiterID: continuation], operation: operation, readAccess: readAccess)
+                pending.isPrefetch = queuePriority == .low
                 inFlight[request] = pending
                 if queuePriority == .low {
-                    pending.admissionTask = Task.detached(priority: .utility) { [weak self, weak operation, foregroundWork] in
-                        guard await foregroundWork.waitForBackgroundAdmission(), !Task.isCancelled,
-                              let self, let operation else { return }
-                        self.submit(request, operation: operation)
-                    }
+                    pending.leadsNeighbours = leadsNeighbours
+                    pending.admissionTask = admissionTask(for: request, operation: operation, leads: leadsNeighbours)
                 }
                 inFlightLock.unlock()
                 if queuePriority != .low { submit(request, operation: operation) }
@@ -463,24 +642,81 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
 
+    /// Gallery navigation: let the new photo's full preview decode without
+    /// several whole-image thumbnails competing for the CPU.
+    func yieldWholeImageThumbnails(to item: PhotoItem, mode: RawDisplayMode, decoder: AppleRawDecoder) {
+        guard item.mediaKind == .photo, item.isSupported,
+              cachedFullImage(for: item, mode: mode, decoder: decoder) == nil else { return }
+        let generation: UInt64 = inFlightLock.withLock {
+            wholeImageYieldGeneration &+= 1
+            wholeImageYield = (wholeImageYieldGeneration, .now)
+            wholeImageThumbnailQueue.maxConcurrentOperationCount = 1
+            return wholeImageYieldGeneration
+        }
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 1) { [weak self] in
+            self?.endWholeImageYield(generation: generation)
+        }
+    }
+
+    /// A finished visible decode ends the yield unless navigation just began
+    /// one whose view has not requested its decode yet (40 ms debounce).
+    private func endWholeImageYield(generation: UInt64?) {
+        inFlightLock.withLock {
+            guard let yield = wholeImageYield else { return }
+            if let generation {
+                // The deadline is a hard cap, even if Fit is still decoding.
+                guard generation == yield.generation else { return }
+            } else {
+                guard visibleFullDecodeCount == 0,
+                      ContinuousClock.now - yield.since >= .milliseconds(150) else { return }
+            }
+            wholeImageYield = nil
+            wholeImageThumbnailQueue.maxConcurrentOperationCount = Self.thumbnailLaneWidth
+        }
+    }
+
+    /// Leaving Gallery or retiring a session also widens any existing backlog.
+    func cancelWholeImageThumbnailYield() {
+        inFlightLock.withLock {
+            wholeImageYield = nil
+            wholeImageThumbnailQueue.maxConcurrentOperationCount = Self.thumbnailLaneWidth
+        }
+    }
+
+    /// The nearest neighbour waits only for the visible photo's full decode,
+    /// not for Browser thumbnails or other demand; both keep the 750 ms escape.
+    private func admissionTask(for request: DecodeRequest, operation: BlockOperation, leads: Bool) -> Task<Void, Never> {
+        let admission = leads ? visibleFullDecodes : foregroundWork
+        return Task.detached(priority: .utility) { [weak self, weak operation, admission] in
+            guard await admission.waitForBackgroundAdmission(), !Task.isCancelled,
+                  let self, let operation else { return }
+            self.submit(request, operation: operation)
+        }
+    }
+
     /// Submission is identity-checked under the same lock as coalescing and
     /// retirement. A visible join can bypass admission without a second decode.
     private func submit(_ request: DecodeRequest, operation: BlockOperation) {
-        let admitted = inFlightLock.withLock {
+        let (admitted, yielding) = inFlightLock.withLock {
             guard let pending = inFlight[request], pending.operation === operation,
-                  !pending.submitted, !operation.isCancelled else { return false }
-            pending.submitted = true
+                  !pending.submitted, !operation.isCancelled else { return (false, false) }
             pending.admissionTask = nil
-            return true
+            // An admitted neighbour waits here while another holds the lane.
+            if pending.isPrefetch, !prefetchLane.claim(request, operation) { return (false, false) }
+            pending.submitted = true
+            return (true, wholeImageYield != nil)
         }
         guard admitted else { return }
         switch request.kind {
         case .thumbnail: thumbnailDecodeQueue.addOperation(operation)
+        case .wholeImageThumbnail:
+            (yielding ? wholeImageThumbnailQueue : thumbnailDecodeQueue).addOperation(operation)
         case .full: fullDecodeQueue.addOperation(operation)
         }
     }
 
     private func cancelWaiter(_ waiterID: UUID, for request: DecodeRequest) {
+        var next: (DecodeRequest, BlockOperation)?
         inFlightLock.lock()
         guard let pending = inFlight[request],
               let waiter = pending.waiters.removeValue(forKey: waiterID)
@@ -494,10 +730,31 @@ final class ImagePipeline: @unchecked Sendable {
             // BlockOperation cancellation never releases an executing lane:
             // its synchronous block must return before the next worker starts.
             pending.operation.cancel()
-            if !pending.submitted { pending.readAccess.finish() }
+            if !pending.submitted {
+                pending.readAccess.finish()
+                next = prefetchLane.release(ObjectIdentifier(pending.operation), isLive: isLivePrefetchLocked)
+            }
         }
         inFlightLock.unlock()
         waiter.resume(returning: nil)
+        if let next { submit(next.0, operation: next.1) }
+    }
+
+    private func isLivePrefetchLocked(_ request: DecodeRequest, _ operation: BlockOperation) -> Bool {
+        guard let pending = inFlight[request] else { return false }
+        return pending.operation === operation && pending.isPrefetch && !pending.submitted && !operation.isCancelled
+    }
+
+    /// Called after an operation's block exits or its queued cancellation
+    /// completes; only then can the next neighbour take the lane.
+    private func prefetchOperationExited(_ operation: ObjectIdentifier) {
+        let next = inFlightLock.withLock { prefetchLane.release(operation, isLive: isLivePrefetchLocked) }
+        if let next {
+            #if LOUPPE_TEST_SEAMS
+            beforePrefetchHandoffSubmissionForTesting?()
+            #endif
+            submit(next.0, operation: next.1)
+        }
     }
 
     private func finish(_ request: DecodeRequest, operation: BlockOperation, result: DecodedImage?) {
@@ -509,7 +766,7 @@ final class ImagePipeline: @unchecked Sendable {
         inFlight.removeValue(forKey: request)
         if let result, !operation.isCancelled {
             switch request.kind {
-            case .thumbnail: thumbCache.setObject(result.image, forKey: request.key as NSString, cost: result.cost)
+            case .thumbnail, .wholeImageThumbnail: thumbCache.setObject(result.image, forKey: request.key as NSString, cost: result.cost)
             case .full: fullCache.setObject(result.image, forKey: request.key as NSString, cost: result.cost)
             }
             if let write = result.diskWrite {
@@ -525,9 +782,13 @@ final class ImagePipeline: @unchecked Sendable {
     private func enqueueDiskWrite(image: CGImage, url: URL) {
         diskWriteLock.lock()
         let cost = Self.cost(of: image)
-        guard diskWrites[url] == nil,
-              diskWrites.count < Self.pendingDiskWriteCountLimit,
+        guard diskWrites[url] == nil else {
+            diskWriteLock.unlock()
+            return // Already queued for this key.
+        }
+        guard diskWrites.count < Self.pendingDiskWriteCountLimit,
               cost <= Self.pendingDiskWriteByteLimit - diskWriteBytes else {
+            droppedDiskWrites += 1
             diskWriteLock.unlock()
             return // Cache output is optional; visible pixels have priority.
         }
@@ -593,6 +854,8 @@ final class ImagePipeline: @unchecked Sendable {
         diskWriteLock.withLock { (diskWrites.count, diskWriteBytes) }
     }
 
+    var droppedDiskWritesForTesting: Int { diskWriteLock.withLock { droppedDiskWrites } }
+
     func evictThumbnailForTesting(for item: PhotoItem) {
         thumbCache.removeObject(forKey: Self.cacheKey(for: item) as NSString)
     }
@@ -607,8 +870,21 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
 
+    var wholeImageYieldForTesting: (generation: UInt64?, width: Int) {
+        inFlightLock.withLock { (wholeImageYield?.generation, wholeImageThumbnailQueue.maxConcurrentOperationCount) }
+    }
+
+    func expireWholeImageYieldForTesting(generation: UInt64) { endWholeImageYield(generation: generation) }
+
+    var visibleAdmissionWaitingForTesting: Int { visibleFullDecodes.waitingCountForTesting }
+
+    var prefetchLaneForTesting: (held: Bool, parked: Int) {
+        inFlightLock.withLock { (prefetchLane.isHeld, prefetchLane.parkedCount) }
+    }
+
     func decodeWaiterCountForTesting(for item: PhotoItem, full: Bool = false) -> Int {
-        let request = DecodeRequest(kind: full ? .full : .thumbnail, key: Self.cacheKey(for: item))
+        let key = full ? Self.fullCacheKey(for: item, mode: .fast) : Self.cacheKey(for: item)
+        let request = DecodeRequest(kind: full ? .full : .thumbnail, key: key)
         return inFlightLock.withLock { inFlight[request]?.waiters.count ?? 0 }
     }
     #endif
@@ -684,12 +960,12 @@ final class ImagePipeline: @unchecked Sendable {
         return DecodedImage(cgImage)
     }
 
-    private func loadFullSync(revision: MediaSourceRevision, key: String, rendersRAW: Bool, decoder: AppleRawDecoder) -> DecodedImage? {
+    private func loadFullSync(revision: MediaSourceRevision, key: String, rendersRAW: Bool, sizing: FitDecodeSizing, decoder: AppleRawDecoder) -> DecodedImage? {
         guard let cgImage = revision.read({
             if let testingDecoder { return testingDecoder(revision.url, Self.fullPixelSize) }
             return rendersRAW
                 ? RawImageRendering.preview(url: revision.url, maximumPixelSize: Self.fullPixelSize, decoder: decoder)
-                : Self.decodeImage(url: revision.url, maxPixel: Self.fullPixelSize)
+                : Self.decodeFitImage(url: revision.url, sizing: sizing)
         }) else { return nil }
         return DecodedImage(cgImage)
     }
@@ -725,23 +1001,84 @@ final class ImagePipeline: @unchecked Sendable {
     /// try the fast embedded path first, and if the result is much smaller than
     /// what we asked for, fall back to a real decode of the full image.
     static func decodeImage(url: URL, maxPixel: CGFloat) -> CGImage? {
-        let sourceOptions: [CFString: Any] = [kCGImageSourceShouldCache: false]
         guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions as CFDictionary) else {
             return nil
         }
+        return decodeImage(source: source, pixelSize: storedPixelSize(of: source), maxPixel: maxPixel)
+    }
 
-        // The size we actually want: no bigger than the photo itself.
-        var target = maxPixel
-        if let props = CGImageSourceCopyPropertiesAtIndex(source, 0, sourceOptions as CFDictionary) as? [CFString: Any],
-           let width = props[kCGImagePropertyPixelWidth] as? CGFloat,
-           let height = props[kCGImagePropertyPixelHeight] as? CGFloat {
-            target = min(maxPixel, max(width, height))
+    private static var sourceOptions: [CFString: Any] { [kCGImageSourceShouldCache: false] }
+
+    private static func storedPixelSize(of source: CGImageSource) -> CGSize? {
+        guard let props = CGImageSourceCopyPropertiesAtIndex(source, 0, sourceOptions as CFDictionary) as? [CFString: Any],
+              let width = props[kCGImagePropertyPixelWidth] as? CGFloat,
+              let height = props[kCGImagePropertyPixelHeight] as? CGFloat else { return nil }
+        let orientation = (props[kCGImagePropertyOrientation] as? NSNumber)?.uint32Value ?? 1
+        return (5...8).contains(orientation)
+            ? CGSize(width: height, height: width)
+            : CGSize(width: width, height: height)
+    }
+
+    /// Fit preview decode. `.bounded` is the original 4,096-pixel request;
+    /// the other cases request a size ImageIO produces without resampling.
+    static func decodeFitImage(url: URL, sizing: FitDecodeSizing) -> CGImage? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions as CFDictionary) else {
+            return nil
+        }
+        let pixelSize = storedPixelSize(of: source)
+        switch sizing {
+        case .bounded:
+            return decodeImage(source: source, pixelSize: pixelSize, maxPixel: fullPixelSize)
+        case .embeddedPreview:
+            // A camera preview up to the hard bound returns as stored; the
+            // undersized check and full fallback still use the usual bound.
+            return decodeImage(source: source, pixelSize: pixelSize, maxPixel: fullPixelSize,
+                               embeddedMaxPixel: fitOutputPixelBound)
+        case .exactScale(let coverage):
+            let request = pixelSize.map { exactScalePixelSize(orientedSize: $0, coverage: coverage) } ?? fullPixelSize
+            return decodeImage(source: source, pixelSize: pixelSize, maxPixel: request,
+                               embeddedAcceptancePixelSize: fullPixelSize)
+        }
+    }
+
+    /// The smallest JPEG decoder scale (1/8, 1/4, 1/2) whose output still
+    /// covers the photo fitted to `coverage` and the 3,840-pixel custom-zoom
+    /// floor, else native size within the
+    /// hard bound, else the original bounded request. Never more than
+    /// `fitOutputPixelBound` pixels on the long edge.
+    static func exactScalePixelSize(orientedSize: CGSize, coverage: CGSize) -> CGFloat {
+        let long = max(orientedSize.width, orientedSize.height)
+        guard long > fullPixelSize, orientedSize.width > 0, orientedSize.height > 0,
+              coverage.width > 0, coverage.height > 0 else { return fullPixelSize }
+        let fitted = min(1, coverage.width / orientedSize.width, coverage.height / orientedSize.height)
+        // Keep enough detail for custom zoom below 100%, even on small displays.
+        let required = max(min(long, 3840), min(fullPixelSize, (long * fitted).rounded(.up)))
+        for divisor: CGFloat in [8, 4, 2] {
+            // libjpeg rounds scaled dimensions up.
+            let scaled = (long / divisor).rounded(.up)
+            if scaled >= required && scaled <= fitOutputPixelBound { return scaled }
+        }
+        return long <= fitOutputPixelBound ? long : fullPixelSize
+    }
+
+    private static func decodeImage(
+        source: CGImageSource,
+        pixelSize: CGSize?,
+        maxPixel: CGFloat,
+        embeddedMaxPixel: CGFloat? = nil,
+        embeddedAcceptancePixelSize: CGFloat? = nil
+    ) -> CGImage? {
+        // Exact-scale Fit requests must not lower the old embedded-preview
+        // acceptance threshold. The fallback still decodes at the exact scale.
+        var target = max(maxPixel, embeddedAcceptancePixelSize ?? maxPixel)
+        if let pixelSize {
+            target = min(target, max(pixelSize.width, pixelSize.height))
         }
 
         let fastOptions: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageIfAbsent: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+            kCGImageSourceThumbnailMaxPixelSize: embeddedMaxPixel ?? maxPixel,
             kCGImageSourceShouldCacheImmediately: true,
         ]
         let fast = CGImageSourceCreateThumbnailAtIndex(source, 0, fastOptions as CFDictionary)
@@ -760,8 +1097,72 @@ final class ImagePipeline: @unchecked Sendable {
     }
 
     static func fullCacheKey(for item: PhotoItem, mode: RawDisplayMode, decoder: AppleRawDecoder = .appleDefault) -> String {
+        fullCacheKey(for: item, mode: mode, decoder: decoder,
+                     sizing: FitDecodeSizing(item: item, mode: mode, coverage: displayCoverage))
+    }
+
+    static func fullCacheKey(for item: PhotoItem, mode: RawDisplayMode, decoder: AppleRawDecoder, sizing: FitDecodeSizing) -> String {
         let key = cacheKey(for: item)
-        return mode.rendersRAW(for: item) ? "\(key)|apple-raw-presentation-v2|\(decoder.rawValue)" : key
+        return mode.rendersRAW(for: item) ? "\(key)|apple-raw-presentation-v2|\(decoder.rawValue)" : key + sizing.keySuffix
+    }
+
+    // MARK: - Fit sizing
+
+    /// Hard long-edge limit for Fit outputs that skip resampling: 12.5% over
+    /// the 4,096-pixel bound, about 7 MiB more per decoded 3:2 image.
+    static let fitOutputPixelBound: CGFloat = 4608
+
+    /// Largest active display in backing pixels. No Fit viewport can show
+    /// more, and window resizing never changes it, so it is the size tier.
+    /// nil (no display) keeps the bounded request.
+    static var displayCoverage: CGSize? { DisplayCoverage.shared.current }
+    static let displayCoverageDidChange = Notification.Name("louppe.display-coverage-changed")
+
+    #if LOUPPE_TEST_SEAMS
+    static func setDisplayCoverageForTesting(_ value: CGSize?) { DisplayCoverage.shared.update(value) }
+    #endif
+
+    private final class DisplayCoverage: @unchecked Sendable {
+        static let shared = DisplayCoverage()
+        private let lock = NSLock()
+        private var value: CGSize?
+        private var observer: NSObjectProtocol?
+
+        private init() {
+            value = Self.measure()
+            observer = NotificationCenter.default.addObserver(
+                forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: nil
+            ) { [weak self] _ in
+                self?.update(Self.measure())
+            }
+        }
+
+        var current: CGSize? { lock.withLock { value } }
+
+        func update(_ newValue: CGSize?) {
+            let changed = lock.withLock {
+                guard value != newValue else { return false }
+                value = newValue
+                return true
+            }
+            if changed { NotificationCenter.default.post(name: ImagePipeline.displayCoverageDidChange, object: nil) }
+        }
+
+        /// CoreGraphics display modes are safe off the main thread.
+        private static func measure() -> CGSize? {
+            var count: UInt32 = 0
+            guard CGGetActiveDisplayList(0, nil, &count) == .success, count > 0 else { return nil }
+            var displays = [CGDirectDisplayID](repeating: 0, count: Int(count))
+            guard CGGetActiveDisplayList(count, &displays, &count) == .success else { return nil }
+            var width = 0, height = 0
+            for display in displays.prefix(Int(count)) {
+                guard let mode = CGDisplayCopyDisplayMode(display) else { continue }
+                let rotated = Int(CGDisplayRotation(display).rounded()) % 180 == 90
+                width = max(width, rotated ? mode.pixelHeight : mode.pixelWidth)
+                height = max(height, rotated ? mode.pixelWidth : mode.pixelHeight)
+            }
+            return width > 0 && height > 0 ? CGSize(width: width, height: height) : nil
+        }
     }
 
     // MARK: - Cache keys

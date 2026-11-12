@@ -16,8 +16,9 @@ final class NeighbourMediaOwnershipTests: XCTestCase {
             let pipeline = harness(folder: folder, source: source, gate: gate)
             let photos = (0..<20).map { item("\($0).JPG") }
             let lease = pipeline.prefetch([photos[0], photos[0]] + photos)
-            try await eventually { gate.calls == 1 && photos.prefix(4).allSatisfy { pipeline.waiters($0) == 1 } }
-            XCTAssertTrue(photos.dropFirst(4).allSatisfy { pipeline.waiters($0) == 0 })
+            // Neighbours run one at a time in caller order.
+            try await eventually { gate.calls == 1 && pipeline.waiters(photos[0]) == 1 }
+            XCTAssertTrue(photos.dropFirst().allSatisfy { pipeline.waiters($0) == 0 })
             lease.cancel()
             await lease.value
             XCTAssertTrue(photos.allSatisfy { pipeline.waiters($0) == 0 })
@@ -144,6 +145,8 @@ final class NeighbourMediaOwnershipTests: XCTestCase {
                 XCTAssertLessThanOrEqual(pending.bytes, ImagePipeline.pendingDiskWriteByteLimit)
             }
             let saturated = pipeline.pendingDiskWritesForTesting
+            // Every refused write is counted; coalesced repeats are not.
+            XCTAssertEqual(pipeline.droppedDiskWritesForTesting, 100 - (saturated.count - initialState.count))
             if tiny {
                 XCTAssertEqual(saturated.count, ImagePipeline.pendingDiskWriteCountLimit)
             } else {
