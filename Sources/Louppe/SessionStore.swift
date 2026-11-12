@@ -1090,6 +1090,8 @@ final class SessionStore: ObservableObject {
     private var xmpPublicationSessionToken: XMPPublicationSessionToken?
     private var deferredFolderOpen: URL?
     private var deferredPinnedFolderIdentity: PinnedFolderIdentity?
+    /// The source-request generation that parked `deferredFolderOpen`.
+    private var deferredFolderOpenGeneration: UInt64?
     /// The session affected by an interrupted mutation. Both the exact path
     /// bytes and stable directory identity must still match before a delayed
     /// rescan can touch the current session.
@@ -1351,12 +1353,9 @@ final class SessionStore: ObservableObject {
                 self.recoveryRescanTarget = nil
             }
 
-            let deferredFolder = self.deferredFolderOpen
-            self.deferredFolderOpen = nil
-            let deferredPinIdentity = self.deferredPinnedFolderIdentity
-            self.deferredPinnedFolderIdentity = nil
-            if let deferredFolder {
-                self.openFolder(deferredFolder, expectedPinnedIdentity: deferredPinIdentity)
+            let deferred = self.takeDeferredFolderOpen()
+            if let deferred {
+                self.openFolder(deferred.url, expectedPinnedIdentity: deferred.pinnedIdentity)
             } else if let rescanTarget,
                       self.recoveryRescanTargetMatchesCurrentSession(
                         rescanTarget
@@ -1410,16 +1409,13 @@ final class SessionStore: ObservableObject {
                 self.operationRecoveryCause = nil
             }
 
-            let deferredFolder = self.deferredFolderOpen
-            self.deferredFolderOpen = nil
-            let deferredPinIdentity = self.deferredPinnedFolderIdentity
-            self.deferredPinnedFolderIdentity = nil
+            let deferred = self.takeDeferredFolderOpen()
             let rescanTarget = self.recoveryRescanTarget
             if !needsAttention {
                 self.recoveryRescanTarget = nil
             }
-            if let deferredFolder {
-                self.openFolder(deferredFolder, expectedPinnedIdentity: deferredPinIdentity)
+            if let deferred {
+                self.openFolder(deferred.url, expectedPinnedIdentity: deferred.pinnedIdentity)
             } else if let rescanTarget,
                       self.recoveryRescanTargetMatchesCurrentSession(
                         rescanTarget
@@ -3086,12 +3082,27 @@ final class SessionStore: ObservableObject {
         return sourceOpenRequestGeneration
     }
 
+    /// Recovery parks one folder choice until its safe boundary. Like pending
+    /// validation or bookmark resolution, a newer source request admitted
+    /// meanwhile retires it; `nil` leaves the outcome to that request.
+    private func takeDeferredFolderOpen() -> (url: URL, pinnedIdentity: PinnedFolderIdentity?)? {
+        defer {
+            deferredFolderOpen = nil
+            deferredPinnedFolderIdentity = nil
+            deferredFolderOpenGeneration = nil
+        }
+        guard let url = deferredFolderOpen,
+              deferredFolderOpenGeneration == sourceOpenRequestGeneration else { return nil }
+        return (url, deferredPinnedFolderIdentity)
+    }
+
     func openFolder(_ url: URL, expectedPinnedIdentity: PinnedFolderIdentity? = nil) {
         sourceOpenRequestGeneration &+= 1
         pinnedFolderPreparation.cancel()
         if isRecoveringInterruptedOperations {
             deferredFolderOpen = url
             deferredPinnedFolderIdentity = expectedPinnedIdentity
+            deferredFolderOpenGeneration = sourceOpenRequestGeneration
             return
         }
         if hasXMPPublicationSessionState {
@@ -3162,6 +3173,7 @@ final class SessionStore: ObservableObject {
            ) {
             deferredFolderOpen = url
             deferredPinnedFolderIdentity = expectedPinnedIdentity
+            deferredFolderOpenGeneration = sourceOpenRequestGeneration
             beginInterruptedOperationRecovery()
             return
         }
