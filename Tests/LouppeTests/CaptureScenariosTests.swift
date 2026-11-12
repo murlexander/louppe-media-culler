@@ -89,6 +89,7 @@ final class CaptureScenariosTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        if ProcessInfo.processInfo.environment["LOUPPE_CAPTURE_LIST"] == "1" { return }
         guard let output = ProcessInfo.processInfo.environment["LOUPPE_CAPTURE_OUTPUT"], !output.isEmpty else {
             throw XCTSkip("Set LOUPPE_CAPTURE_OUTPUT or use Scripts/capture_ui.sh for opt-in screenshots.")
         }
@@ -99,6 +100,13 @@ final class CaptureScenariosTests: XCTestCase {
         if env["LOUPPE_CAPTURE_LIST"] == "1" {
             for scenario in Self.registry { print("\(scenario.name)\t\(scenario.description)") }
             return
+        }
+        let live = env["LOUPPE_CAPTURE_LIVE"] == "1"
+        if live {
+            try requireForegroundUI()
+            guard #available(macOS 14.4, *) else {
+                throw CaptureError.invalidSelection("Live capture requires macOS 14.4 or newer")
+            }
         }
         let output = URL(fileURLWithPath: try XCTUnwrap(env["LOUPPE_CAPTURE_OUTPUT"]), isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -132,35 +140,44 @@ final class CaptureScenariosTests: XCTestCase {
             for scenario in selected {
                 let fixture = try Fixture()
                 defer { fixture.cleanUp() }
-                let surface = try scenario.builder(fixture)
+                let surface: Surface
+                if live && ["popover-sort", "popover-filter", "sheet-rename", "sheet-organize"].contains(scenario.name) {
+                    fixture.ready(mode: scenario.name.hasPrefix("sheet-") ? .gallery : .grid)
+                    surface = Surface(view: AnyView(SessionView(store: fixture.store)),
+                                      size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+                } else {
+                    surface = try scenario.builder(fixture)
+                }
                 let controller = OffscreenCapture.host(surface.view, defaults: fixture.defaults,
                     appearance: appearance, bridgesScene: surface.settingsTab == nil)
-                let file = "\(scenario.name)-\(appearance.rawValue).png"
-                try await OffscreenCapture.capture(controller, size: surface.size, title: scenario.name,
-                    appearance: appearance, to: output.appendingPathComponent(file), requiresToolbar: surface.requiresToolbar) { controller in
-                    if let tab = surface.settingsTab {
-                        guard tab != 0 else { return }
-                        let root = controller.view.window?.contentView?.superview ?? controller.view
-                        let views = OffscreenCapture.descendants(of: root)
-                        if let tabs = views.compactMap({ $0 as? NSTabView }).first {
-                            XCTAssertEqual(tabs.tabViewItems.count, 2)
-                            tabs.selectTabViewItem(at: tab)
-                        } else {
-                            // Newer macOS hosts TabView's pages behind a native
-                            // title-bar segmented control instead of NSTabView.
-                            let selector = try XCTUnwrap(views.compactMap { $0 as? NSSegmentedControl }
-                                .first { $0.segmentCount == 2 })
-                            selector.selectedSegment = tab
-                            XCTAssertTrue(selector.sendAction(selector.action, to: selector.target),
-                                          "Settings tab selection action did not reach SwiftUI")
+                let file = "\(scenario.name)-\(appearance.rawValue)\(live ? "-live-active" : "").png"
+                let prepare: (NSViewController) throws -> Void = { controller in
+                    try self.selectSettingsTab(surface.settingsTab, in: controller)
+                    if live {
+                        switch scenario.name {
+                        case "popover-sort": fixture.store.isSortPresented = true
+                        case "popover-filter": fixture.store.isFilterPresented = true
+                        case "sheet-rename": fixture.store.isRenamePresented = true
+                        case "sheet-organize": fixture.store.isOrganizePresented = true
+                        default: break
                         }
                     }
+                }
+                if live, #available(macOS 14.4, *) {
+                    try await LiveCapture.capture(controller, size: surface.size, title: "Louppe",
+                        appearance: appearance, to: output.appendingPathComponent(file), requiresToolbar: surface.requiresToolbar,
+                        presentation: scenario.name.hasPrefix("popover-") ? .popover : scenario.name.hasPrefix("sheet-") ? .sheet : .window,
+                        prepare: prepare)
+                } else {
+                    try await OffscreenCapture.capture(controller, size: surface.size, title: scenario.name,
+                        appearance: appearance, to: output.appendingPathComponent(file), requiresToolbar: surface.requiresToolbar,
+                        prepare: prepare)
                 }
                 entries.append((file, scenario.name, scenario.description, appearance.rawValue))
             }
             if let pair {
-                let file = "pair-\(pair[0])-\(pair[1])-\(appearance.rawValue).png"
-                try writePair(pair, appearance: appearance, output: output, file: file)
+                let file = "pair-\(pair[0])-\(pair[1])-\(appearance.rawValue)\(live ? "-live-active" : "").png"
+                try writePair(pair, appearance: appearance, live: live, output: output, file: file)
                 entries.append((file, "\(pair[0]) + \(pair[1])", "Top-aligned comparison of two production surfaces.", appearance.rawValue))
             }
         }
@@ -168,23 +185,45 @@ final class CaptureScenariosTests: XCTestCase {
         // Alex may change applications during a run. Log the evidence without treating
         // his own app switch as a capture failure; the per-window fuse is authoritative.
         print("CAPTURE FRONTMOST before=\(frontmostBefore ?? -1) after=\(frontmostAfter ?? -1) unchanged=\(frontmostBefore == frontmostAfter)")
+        if live { XCTAssertEqual(frontmostBefore, frontmostAfter, "Live capture did not restore foreground ownership") }
         XCTAssertFalse(NSApp.isActive)
         XCTAssertTrue(NSApp.windows.filter(\.isVisible).allSatisfy { window in
             NSScreen.screens.allSatisfy { !$0.frame.intersects(window.frame) }
         }, "Capture left a visible test window on a display")
         print("CAPTURE TEARDOWN: no visible test windows intersect any display")
-        let warning = "Offscreen captures show the inactive window appearance (grey traffic lights, muted selection). Use them for layout review only, never for Store, website or README images."
-        let notes = "Generated disposable fixtures only. Settings show the top of each scrollable pane. Native Liquid Glass selected tabs can cache as black pills offscreen, obscuring the selected tab label; pane content remains visible."
+        let warning = live
+            ? "Live, active window. Window-server capture of this test process only, including native toolbar popovers and sheets."
+            : "Offscreen captures show the inactive window appearance (grey traffic lights, muted selection). Use them for layout review only, never for Store, website or README images."
+        let notes = live
+            ? "Generated disposable fixtures only. Real on-screen containers, bridged session toolbar, 2× pixels. Settings show the top of each scrollable pane."
+            : "Generated disposable fixtures only. Settings show the top of each scrollable pane. Native Liquid Glass selected tabs can cache as black pills offscreen, obscuring the selected tab label; pane content remains visible."
         try "\(warning)\n\n\(metadata)\n\n\(notes)\n".write(to: output.appendingPathComponent("README.txt"), atomically: true, encoding: .utf8)
         let cards = entries.map { entry in
             "<figure><a href=\"\(entry.file)\"><img loading=\"lazy\" src=\"\(entry.file)\" alt=\"\(entry.name) \(entry.appearance)\"></a><figcaption><strong>\(entry.name) · \(entry.appearance)</strong><p>\(entry.description)</p></figcaption></figure>"
         }.joined(separator: "\n")
         let html = """
         <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>Louppe offscreen layout captures</title><style>body{font:15px system-ui;margin:24px;background:#eee;color:#222}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px}figure{margin:0;padding:12px;background:white;border-radius:8px}img{width:100%;height:auto}figcaption{margin-top:10px}p{line-height:1.4}pre{white-space:pre-wrap}</style>
+        <title>Louppe \(live ? "live, active window" : "offscreen layout") captures</title><style>body{font:15px system-ui;margin:24px;background:#eee;color:#222}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px}figure{margin:0;padding:12px;background:white;border-radius:8px}img{width:100%;height:auto}figcaption{margin-top:10px}p{line-height:1.4}pre{white-space:pre-wrap}</style>
         <h1>Louppe layout captures</h1><p>\(warning)</p><pre>\(metadata)</pre><p>\(notes)</p><main>\(cards)</main></html>
         """
         try html.write(to: output.appendingPathComponent("index.html"), atomically: true, encoding: .utf8)
+    }
+
+    private func selectSettingsTab(_ tab: Int?, in controller: NSViewController) throws {
+        guard let tab, tab != 0 else { return }
+        let root = controller.view.window?.contentView?.superview ?? controller.view
+        let views = OffscreenCapture.descendants(of: root)
+        if let tabs = views.compactMap({ $0 as? NSTabView }).first {
+            XCTAssertEqual(tabs.tabViewItems.count, 2)
+            tabs.selectTabViewItem(at: tab)
+        } else {
+            // Newer macOS hosts TabView pages in a native title-bar segmented control.
+            let selector = try XCTUnwrap(views.compactMap { $0 as? NSSegmentedControl }
+                .first { $0.segmentCount == 2 })
+            selector.selectedSegment = tab
+            XCTAssertTrue(selector.sendAction(selector.action, to: selector.target),
+                          "Settings tab selection action did not reach SwiftUI")
+        }
     }
 
     private static func matches(_ name: String, pattern: String) -> Bool {
@@ -211,9 +250,9 @@ final class CaptureScenariosTests: XCTestCase {
         return "Commit: \(sha)\nGit status --short: \(count) entries (\(count == 0 ? "clean" : "dirty"))"
     }
 
-    private func writePair(_ pair: [String], appearance: OffscreenCapture.Appearance, output: URL, file: String) throws {
+    private func writePair(_ pair: [String], appearance: OffscreenCapture.Appearance, live: Bool, output: URL, file: String) throws {
         let images = try pair.map { name in
-            try XCTUnwrap(NSImage(contentsOf: output.appendingPathComponent("\(name)-\(appearance.rawValue).png")))
+            try XCTUnwrap(NSImage(contentsOf: output.appendingPathComponent("\(name)-\(appearance.rawValue)\(live ? "-live-active" : "").png")))
         }
         let gap: CGFloat = 16
         let header: CGFloat = 32

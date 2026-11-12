@@ -7,7 +7,7 @@ source "$script_dir/lib/xcode_env.sh"
 cd "$LOUPPE_REPO_ROOT"
 
 usage() {
-    echo 'Usage: Scripts/capture_ui.sh [--list] [--topic <name>] [--out <dir>] [--appearance light|dark|both] [--pair <A> <B>] [<scenario-or-glob> …]'
+    echo 'Usage: Scripts/capture_ui.sh [--list] [--live [--foreground]] [--topic <name>] [--out <dir>] [--appearance light|dark|both] [--pair <A> <B>] [<scenario-or-glob> …]'
 }
 fail() { echo "capture_ui: $*" >&2; exit 2; }
 topic=capture
@@ -15,11 +15,15 @@ output=''
 appearance=both
 pair=''
 list=0
+live=0
+foreground=0
 typeset -a scenarios
 scenarios=()
 while (( $# )); do
     case "$1" in
         --list) list=1; shift ;;
+        --live) live=1; shift ;;
+        --foreground) foreground=1; shift ;;
         --topic) (( $# >= 2 )) || fail '--topic needs a name'; topic="$2"; shift 2 ;;
         --out) (( $# >= 2 )) || fail '--out needs a directory'; output="$2"; shift 2 ;;
         --appearance) (( $# >= 2 )) || fail '--appearance needs light, dark or both'; appearance="$2"; shift 2 ;;
@@ -37,6 +41,11 @@ fi
 case "$appearance" in light|dark|both) ;; *) fail '--appearance must be light, dark or both' ;; esac
 [[ -n "$topic" && "$topic" != *[^a-zA-Z0-9_-]* ]] || fail '--topic accepts letters, numbers, underscores and hyphens'
 [[ -z "$pair" || ${#scenarios} == 0 ]] || fail 'use --pair or scenario selections, not both'
+if (( live )); then
+    (( foreground )) || [[ "${LOUPPE_FOREGROUND_UI:-}" == 1 ]] || fail '--live raises windows; use --foreground only while the desktop is handed over (or LOUPPE_FOREGROUND_UI=1)'
+else
+    (( ! foreground )) || fail '--foreground requires --live'
+fi
 [[ -n "$output" ]] || output="$HOME/Documents/tmp/louppe-shots/$(date +%F)-$topic"
 mkdir -p "$output"
 output="$(cd "$output" && pwd)"
@@ -46,13 +55,19 @@ export LOUPPE_CAPTURE_SCENARIOS="${(j:,:)scenarios}"
 [[ -n "$LOUPPE_CAPTURE_SCENARIOS" ]] || export LOUPPE_CAPTURE_SCENARIOS='*'
 export LOUPPE_CAPTURE_PAIR="$pair"
 unset LOUPPE_CAPTURE_LIST
-# Always run with the foreground gate closed, including inherited CI environments.
-export LOUPPE_FOREGROUND_UI=0
+export LOUPPE_CAPTURE_LIVE="$live"
+# Default mode always closes the gate, including inherited CI environments.
+if (( live )); then
+    export LOUPPE_FOREGROUND_UI=1
+else
+    export LOUPPE_FOREGROUND_UI=0
+fi
 log="$output/capture.log"
 echo "Capturing to $output (log: $log)"
 typeset -a command
 if [[ -x "$script_dir/test.sh" ]]; then
     command=("$script_dir/test.sh" --filter CaptureScenariosTests)
+    (( ! live )) || command+=(--foreground)
 else
     command=(swift test --disable-keychain --scratch-path "$LOUPPE_SCRATCH_PATH" --filter CaptureScenariosTests)
 fi
@@ -61,7 +76,11 @@ result=0
 echo "Output: $output"
 find "$output" -maxdepth 1 -name '*.png' -type f -print | sort
 echo "Index: $output/index.html"
-echo 'Reminder: inactive window appearance; layout review only, never Store, website or README images.'
+if (( live )); then
+    echo 'Live, active window; window-server capture of this test process only.'
+else
+    echo 'Reminder: inactive window appearance; layout review only, never Store, website or README images.'
+fi
 if (( result )); then
     echo "Capture failed (exit $result). Last log lines:" >&2
     tail -n 35 "$log" >&2

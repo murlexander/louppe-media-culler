@@ -1067,7 +1067,18 @@ live instead.
   window appearance: grey traffic lights and muted selection. Session toolbars
   appear only when hosted in `NSHostingController` with
   `sceneBridgingOptions = [.toolbars, .title]`. `capture_ui.sh` handles both.
-  Never order windows front or fake activation to get accent colors.
+  Default mode keeps its offscreen focus fuses even in CI. Opt-in
+  `Scripts/capture_ui.sh --live --foreground` (or `LOUPPE_FOREGROUND_UI=1`)
+  requires a desktop handover and macOS 14.4+. It centers and activates a real
+  window on the main display, presents Sort/Filter from the session toolbar and
+  Rename/Organize as attached sheets, and captures their union at 2× through
+  ScreenCaptureKit's current-process filter without Screen Recording permission.
+  It waits for stable rendered pixels, closes its windows, restores the previous
+  frontmost app and asserts restoration, including on capture failure. Live files
+  use `-live-active.png` and their index labels them “live, active window”; default
+  offscreen files retain their inactive warning. Both modes support the same
+  scenario selections, appearance and pair options. Generated fixtures are for
+  UI review, not publication.
 - Launch Services hands `open` to an already-running instance and drops the new
   environment. Before trusting a launch check, confirm the PID's executable path.
   `LOUPPE_BACKGROUND_LAUNCH=1` launches without activating and keeps the opened

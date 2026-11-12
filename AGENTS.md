@@ -19,6 +19,7 @@ exit code, and never take the user's focus.
 | Tests | `Scripts/test.sh --filter <regex>` · `--gates` · `--full` |
 | Install the local build | `Scripts/install_local.sh` |
 | Screenshots of UI states | `Scripts/capture_ui.sh --topic <name> [<scenario>…]` (`--list`, `--pair A B`) |
+| Live screenshots (desktop handed over) | `Scripts/capture_ui.sh --live --foreground --topic <name> [<scenario>…]` |
 | Louppe copies on this Mac | `Scripts/list_louppe_copies.sh` (lists, never deletes) |
 | Release packaging | `build_app.sh`, `Scripts/verify_release.sh`, then [Updates](Docs/UPDATES.md) and [App Store](Docs/APP_STORE.md) |
 
