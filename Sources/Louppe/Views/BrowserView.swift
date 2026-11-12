@@ -44,6 +44,9 @@ struct BrowserView: View {
                     guard archiveGeneration == store.archiveViewportGeneration else { return }
                     onViewportRestored?(receipt)
                 }
+                // A restored receipt positions the viewport without following;
+                // the current tile still needs tracking for later reorders.
+                collectionController.currentID = store.currentItem?.id
                 if let initialViewportReceipt {
                     collectionController.restoreViewport(initialViewportReceipt)
                 } else if let id = store.currentItem?.id {

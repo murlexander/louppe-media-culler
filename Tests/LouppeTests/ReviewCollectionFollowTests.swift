@@ -80,6 +80,48 @@ final class ReviewCollectionFollowTests: XCTestCase {
         }
     }
 
+    func testReceiptRestoredViewportKeepsCurrentVisibleAfterSort() async throws {
+        // A remembered position (opening handoff, pinned folder, archive
+        // folder switch) mounts the collection through a viewport receipt
+        // instead of following the current item. A current tile visible in
+        // that restored viewport must survive the first reorder as well.
+        for mode in [ViewMode.gallery, .grid] {
+            let store = readyStore()
+            store.viewMode = mode
+            let width = mode == .gallery ? BrowserView.width : 650
+            let columns = mode == .gallery ? 1
+                : ReviewCollectionMetrics.gridColumnCount(paneWidth: width, thumbnailSize: store.gridThumbSize)
+            // The anchor starts a row in descending order too, so the current
+            // tile (beside or just below it now) lands one row above the
+            // restored anchor after reversing the order.
+            let anchor = 99 - columns * (51 / columns)
+            let current = anchor + max(columns - 1, 1)
+            store.setIndex(current)
+            let anchorFileID = store.items[anchor].individualFiles[0].id
+            let receipt = ReviewCollectionViewportReceipt(physicalFileID: anchorFileID, topOffset: 0)
+            let host = NSHostingView(rootView: Group {
+                if mode == .gallery { BrowserView(store: store, initialViewportReceipt: receipt) }
+                else { GridView(store: store, initialViewportReceipt: receipt) }
+            }.environment(\.accessibilityEnabled, true))
+            let window = mount(host, size: CGSize(width: width, height: 700))
+            defer { window.contentView = nil; window.close() }
+            try await settle(host)
+            let scroll = try XCTUnwrap(descendants(host).compactMap { $0 as? ReviewCollectionScrollView }.first)
+            let document = try XCTUnwrap(scroll.documentView as? ReviewCollectionDocument)
+            XCTAssertEqual(document.geometry?.columns, columns)
+            let restored = try XCTUnwrap(document.snapshotViewport())
+            XCTAssertEqual(restored.physicalFileID, anchorFileID, "The receipt, not following, positions the viewport")
+            XCTAssertEqual(restored.topOffset, 0, accuracy: 1)
+            try assertCurrentVisible(store, in: scroll)
+
+            store.sort.ascending = false
+            try await settle(host)
+            XCTAssertEqual(store.currentIndex, current)
+            try assertCurrentVisible(store, in: scroll)
+            XCTAssertEqual(scroll.contentView.bounds.minX, 0)
+        }
+    }
+
     private func readyStore() -> SessionStore {
         let suite = "ReviewUI.\(UUID())"
         let defaults = UserDefaults(suiteName: suite)!
