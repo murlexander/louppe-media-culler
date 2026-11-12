@@ -138,10 +138,13 @@ final class SourceConventionsTests: XCTestCase {
     }
 
     func testPopoversUseTheSharedSurface() throws {
-        // Popover content applies louppePopoverSurface(); Sort and Filter get it from their scaffold.
+        // Popover content applies louppePopoverSurface() last, so nothing outside
+        // it keeps the material from filling the arrow. Sort and Filter get it
+        // from their scaffold.
         let scaffold = try String(contentsOf: repositoryRoot.appendingPathComponent(
             "Sources/Louppe/Views/Design/CompactToolbarPopover.swift"), encoding: .utf8)
-        XCTAssertTrue(scaffold.contains(".louppePopoverSurface()"))
+        XCTAssertNotNil(scaffold.range(of: #"\.louppePopoverSurface\(\)\s*\}\s*\}\s*$"#, options: .regularExpression),
+                        "CompactToolbarPopover must end its body with louppePopoverSurface()")
         XCTAssertFalse(scaffold.contains("appBackground"))
         let expression = try NSRegularExpression(
             pattern: #"\.popover\s*\([^{]*\{(.*?)\n\s*\}"#, options: .dotMatchesLineSeparators)
@@ -151,8 +154,10 @@ final class SourceConventionsTests: XCTestCase {
             for match in expression.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
                 popovers += 1
                 let content = try XCTUnwrap(Range(match.range(at: 1), in: source).map { String(source[$0]) })
-                XCTAssertTrue(["louppePopoverSurface()", "SortView(", "FilterView("].contains { content.contains($0) },
-                              "\(relativePath(file)): \(content)")
+                let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+                XCTAssertTrue(trimmed.hasSuffix(".louppePopoverSurface()")
+                              || ["SortView(store: store)", "FilterView(store: store)"].contains(trimmed),
+                              "\(relativePath(file)): popover content must end with louppePopoverSurface(): \(content)")
                 XCTAssertFalse(content.contains("appBackground"), relativePath(file))
             }
         }

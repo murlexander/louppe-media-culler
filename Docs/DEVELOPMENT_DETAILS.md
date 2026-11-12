@@ -1034,7 +1034,7 @@ or font token scale. `SourceConventionsTests` guards these conventions.
 | [`Palette.swift`](../Sources/Louppe/Views/Design/Palette.swift) | App background, foreground accent and filled-control accent, including appearance/contrast variants. |
 | [`LouppeToggleStyle`](../Sources/Louppe/Views/Design/LouppeToggleStyle.swift) | Native automatic, checkbox or switch toggles with readable white ink. |
 | [`CompactToolbarPopover`](../Sources/Louppe/Views/Design/CompactToolbarPopover.swift) | Sort/Filter title, compact margins, width and fixed Done footer. |
-| [`louppePopoverSurface()`](../Sources/Louppe/Views/Design/PopoverSurface.swift) | Every popover's background (thick material, arrow included) and accent; 14-point margins. |
+| [`louppePopoverSurface()`](../Sources/Louppe/Views/Design/PopoverSurface.swift) | Every popover's background (thick material filling the popover, arrow included) and accent; applied last, after padding and frame; 14-point margins. |
 | [`ValueMenu`](../Sources/Louppe/Views/Design/ValueMenu.swift) | Borderless current-value picker with primary ink and a 22-point minimum label target. |
 | [`LabeledReadout`](../Sources/Louppe/Views/Design/LabeledReadout.swift) | Caption/value pairs read as one accessibility element. |
 | [`MediaBadgeBackdrop`](../Sources/Louppe/Views/Design/MediaBadgeBackdrop.swift) | Dark media-overlay badge surfaces respecting contrast and transparency preferences. |
@@ -1096,6 +1096,13 @@ live instead.
   offscreen files retain their inactive warning. Both modes support the same
   scenario selections, appearance and pair options. Generated fixtures are for
   UI review, not publication.
+- Content-sized popovers round their window to whole points. Content of
+  fractional height (a 16.42-point checkbox) then stops short of the arrow, and
+  a background attached to it leaves the arrow as lighter glass;
+  `louppePopoverSurface()` fills the popover first. `PopoverSurfaceTests` checks
+  arrow and body pixels without a handover: a non-activating window just above
+  the desktop, behind every app, still composes real glass for ScreenCaptureKit
+  (inactive look). It orders a window front, so it stays foreground-gated.
 - Launch Services hands `open` to an already-running instance and drops the new
   environment. Before trusting a launch check, confirm the PID's executable path.
   `LOUPPE_BACKGROUND_LAUNCH=1` launches without activating and keeps the opened

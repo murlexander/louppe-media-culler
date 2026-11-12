@@ -114,8 +114,9 @@ The owner and several agents often work on this checkout at the same time.
 - Colors never change: one background, `Color.appBackground`, with `Divider()`
   lines between regions (grouped Form sections keep their system surfaces).
   Popovers are the exception: their content applies `louppePopoverSurface()`
-  (system thick material, arrow included), never `Color.appBackground`. One
-  accent, `Color.louppeAccent` (#9853A6, global `.tint`), defined in
+  as its last modifier (system thick material filling the popover, arrow
+  included), never `Color.appBackground`. One accent, `Color.louppeAccent`
+  (#9853A6, global `.tint`), defined in
   `Sources/Louppe/Views/Design/Palette.swift`. Green and red mean yes/no in
   ratings; elsewhere they appear only as content colors (color labels), red
   validation errors and audio-meter zones. Never blue chrome or `Color.accentColor`.
@@ -156,6 +157,9 @@ The owner and several agents often work on this checkout at the same time.
   next to the closest existing pane (`--pair`), shown before any test counts.
   Offscreen captures show the inactive window appearance; say so, and never use
   them for Store, website or README images ([App Store](Docs/APP_STORE.md)).
+- Offscreen captures draw popovers, sheets and glass as plain windows. For those,
+  use `--live` captures and zoom into arrows, rims and edges in both appearances
+  before calling surfaces consistent.
 - A UI feature gets one review that sees the captures and the neighboring pane
   before the diff, preferably from a different model than the implementer. Skip
   a second same-model review. Panel scores are not evidence.
