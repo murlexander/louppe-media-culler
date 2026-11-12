@@ -245,7 +245,8 @@ struct ReviewShortcutsSettingsView: View {
                     .frame(width: 16, height: 16)
             }
             .menuStyle(.button)
-            .buttonStyle(.borderless)
+            // Bordered circle, matching ShortcutAccessoryButton beside it.
+            .buttonStyle(.bordered)
             .menuIndicator(.hidden)
             .buttonBorderShape(.circle)
             .controlSize(.regular)
