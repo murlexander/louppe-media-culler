@@ -76,11 +76,38 @@ enum L10n {
     static func renderPlural(
         _ key: String, counts: [Int], arguments: [String] = [], language: String
     ) -> String {
-        let locale = Locale(identifier: language)
+        let locale = Locale(identifier: supportedLanguages.contains(language) ? language : "en")
         let values: [any CVarArg] = counts.flatMap { count -> [any CVarArg] in
             [Int64(count), count.formatted(.number.locale(locale))]
         } + arguments.map { $0 as any CVarArg }
-        return String(format: pluralFormat(forKey: key, language: language), locale: locale, arguments: values)
+        let format = pluralFormat(forKey: key, language: language)
+        if format == key {
+            // A missing English entry still has the source key's %lld/%@
+            // contract, not the catalog's interleaved raw/display arguments.
+            // Insert literals once so filenames containing formats stay intact.
+            let expression = try! NSRegularExpression(pattern: "%%|%lld|%@")
+            var result = ""
+            var cursor = key.startIndex
+            var countIndex = 0
+            var argumentIndex = 0
+            for match in expression.matches(in: key, range: NSRange(key.startIndex..., in: key)) {
+                guard let range = Range(match.range, in: key) else { continue }
+                result += key[cursor..<range.lowerBound]
+                switch key[range] {
+                case "%lld" where counts.indices.contains(countIndex):
+                    result += counts[countIndex].formatted(.number.locale(locale))
+                    countIndex += 1
+                case "%@" where arguments.indices.contains(argumentIndex):
+                    result += arguments[argumentIndex]
+                    argumentIndex += 1
+                case "%%": result += "%"
+                default: result += key[range]
+                }
+                cursor = range.upperBound
+            }
+            return result + key[cursor...]
+        }
+        return String(format: format, locale: locale, arguments: values)
     }
 
     /// For explicitly identified display labels whose English spelling also

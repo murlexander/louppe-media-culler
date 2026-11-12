@@ -89,6 +89,19 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testMissingPluralKeyKeepsCountsAndLiteralArguments() {
+        // Future call sites can precede their catalogs; interleaved raw/display
+        // arguments must never be consumed as the wrong printf type.
+        XCTAssertEqual(L10n.renderPlural("%lld uncatalogued items · %lld files", counts: [3, 17015], language: "en"),
+                       "3 uncatalogued items · 17,015 files")
+        XCTAssertEqual(L10n.renderPlural("%lld uncatalogued items in %@", counts: [17015],
+                                        arguments: ["A {1} %lld.JPG"], language: "en"),
+                       "17,015 uncatalogued items in A {1} %lld.JPG")
+        XCTAssertEqual(L10n.renderPlural("%@ of %lld uncatalogued items (100%%)", counts: [17015],
+                                        arguments: ["3"], language: "en"), "3 of 17,015 uncatalogued items (100%)")
+        XCTAssertEqual(L10n.renderPlural("%lld items", counts: [17015], language: "xx"), "17,015 items")
+    }
+
     func testPluralWholeSentenceKeepsLiteralArgumentsAndIndependentAgreement() {
         XCTAssertEqual(L10n.renderPlural("%lld items changed after this folder was scanned%@. ", counts: [1],
                                         arguments: [" (A {1} %lld.JPG)"], language: "en"),
