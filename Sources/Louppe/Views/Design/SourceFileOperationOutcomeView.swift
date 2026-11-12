@@ -29,7 +29,7 @@ struct SourceFileOperationOutcomeView: View {
         } actions: {
             SheetActions {
                 // The same step as ⌘Z, offered where the result is shown.
-                if outcome.succeeded, !outcome.wasUndo, store.canUndo {
+                if outcome.movedFiles > 0, !outcome.wasUndo, store.canUndo {
                     Button(L10n.text("Undo")) { store.undo() }
                         .disabled(store.isFileOperationRunning)
                 }

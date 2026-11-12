@@ -128,6 +128,34 @@ final class CaptureScenariosTests: XCTestCase {
             fixture.store.presentSourceFileOperationForTesting(outcome: .init(movedFiles: 10, failedItems: 0, message: nil, wasUndo: false))
             return fixture.sheet(RenameFilesView(store: fixture.store))
         },
+        Scenario(name: "sheet-rename-partial", description: "Partial rename result with completed work and available Undo.") { fixture in
+            fixture.ready(mode: .gallery)
+            fixture.store.rate(.no, at: 0)
+            fixture.store.presentSourceFileOperationForTesting(outcome: .init(movedFiles: 1, failedItems: 1,
+                message: "One file could not be changed and kept its original path.", wasUndo: false))
+            return fixture.sheet(RenameFilesView(store: fixture.store).environment(\.layoutDirection, .leftToRight))
+        },
+        Scenario(name: "sheet-rename-partial-rtl", description: "Partial rename result with completed work and available Undo.") { fixture in
+            fixture.ready(mode: .gallery)
+            fixture.store.rate(.no, at: 0)
+            fixture.store.presentSourceFileOperationForTesting(outcome: .init(movedFiles: 1, failedItems: 1,
+                message: "One file could not be changed and kept its original path.", wasUndo: false))
+            return fixture.sheet(RenameFilesView(store: fixture.store).environment(\.layoutDirection, .rightToLeft))
+        },
+        Scenario(name: "sheet-organize-partial", description: "Partial organize result with completed work and available Undo.") { fixture in
+            fixture.ready(mode: .gallery)
+            fixture.store.rate(.no, at: 0)
+            fixture.store.presentSourceFileOperationForTesting(outcome: .init(movedFiles: 1, failedItems: 1,
+                message: "One file could not be changed and kept its original path.", wasUndo: false))
+            return fixture.sheet(OrganizeSourceView(store: fixture.store).environment(\.layoutDirection, .leftToRight))
+        },
+        Scenario(name: "sheet-organize-partial-rtl", description: "Partial organize result with completed work and available Undo.") { fixture in
+            fixture.ready(mode: .gallery)
+            fixture.store.rate(.no, at: 0)
+            fixture.store.presentSourceFileOperationForTesting(outcome: .init(movedFiles: 1, failedItems: 1,
+                message: "One file could not be changed and kept its original path.", wasUndo: false))
+            return fixture.sheet(OrganizeSourceView(store: fixture.store).environment(\.layoutDirection, .rightToLeft))
+        },
         Scenario(name: "sheet-organize-progress", description: "Organize progress in the production sheet with disposable media.") { fixture in
             fixture.ready(mode: .gallery)
             fixture.store.presentSourceFileOperationForTesting(progress: .init(action: .organizing, done: 4, total: 10))
