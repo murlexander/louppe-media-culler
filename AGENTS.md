@@ -141,7 +141,8 @@ The owner and several agents often work on this checkout at the same time.
   hide navigation chrome when there is nothing to navigate.
 - Prefer the normal UI in a disabled state over a special-purpose minimal
   screen.
-- Panes side by side share one header height so their dividers line up.
+- Panes side by side share one header height so their dividers line up (Info
+  has no header row; its filename and decision lead the panel).
 - Info keeps the approved readout: aperture, shutter and ISO in the hero row,
   then focal length, exposure compensation and white balance.
 - Layout changes cover still photos, video and audio tiles, panoramas, Photos
