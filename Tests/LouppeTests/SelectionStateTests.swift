@@ -334,11 +334,13 @@ final class SelectionStateTests: XCTestCase {
     func testGridRatingClickSignalsOnlyWhenItMovesCurrentPhoto() {
         let store = readyStore()
         var signalCount = 0
+        var currentWhenSignalled: Int?
         let actions = GridCellActions(
             store: store,
             index: 2,
             onPointerCurrentChange: {
                 signalCount += 1
+                currentWhenSignalled = store.currentIndex
             }
         )
 
@@ -346,6 +348,7 @@ final class SelectionStateTests: XCTestCase {
         actions.cycleRating()
 
         XCTAssertEqual(signalCount, 1)
+        XCTAssertEqual(currentWhenSignalled, 2)
         XCTAssertEqual(store.currentIndex, 2)
         XCTAssertEqual(store.items[2].rating, .no)
     }

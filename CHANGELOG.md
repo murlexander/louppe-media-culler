@@ -2,7 +2,7 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
-- Keep Shift-click and Command-click selection consistent while a folder opens and after it is ready.
+- Keep Shift-click and Command-click selection consistent while a folder opens and after it is ready. After plain navigation, Esc cancels opening; an explicit selection is cleared first.
 
 - Keep the next keyboard-selected Grid photo visible after a pointer decision filters out a tile.
 

@@ -42,6 +42,7 @@ struct GridView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .background(Color.appBackground)
                     .onAppear {
+                        pointerCurrentID = nil
                         collectionController.onViewportChange = { receipt in
                             store.recordPinnedViewport(physicalFileID: receipt.physicalFileID,
                                                        topOffset: Double(receipt.topOffset), surface: .grid,
