@@ -278,7 +278,8 @@ actor PinnedFoldersPersistence {
     }
 
     private func load() throws {
-        guard !loaded else { return }
+        // A cached list is only presentation state, never write authority.
+        loaded = false
         do {
             records = try read(fileURL)
             loaded = true
@@ -288,6 +289,7 @@ actor PinnedFoldersPersistence {
                 records = (try? read(previousURL)) ?? records
                 throw PinnedFolderError.invalidStorage
             }
+            records = []
             loaded = true
         } catch {
             // Show the last good records but block mutations until the primary
@@ -323,6 +325,19 @@ actor PinnedFoldersPersistence {
         if loaded { try write(try encoded(records), previousURL) }
         try write(data, fileURL)
         records = proposed
+    }
+
+    /// Compute the mutation from the current validated primary while excluding
+    /// other writers. Reloading after computing a proposed array would still
+    /// replay stale pins, bookmarks and positions over their newer changes.
+    private func mutate<T>(_ body: (inout [Record]) throws -> T) throws -> T {
+        try DurableFileIO.withExclusiveFileLock(at: fileURL.appendingPathExtension("lock")) {
+            try load()
+            var proposed = records
+            let result = try body(&proposed)
+            try commit(proposed)
+            return result
+        }
     }
 
     private func withScope<T>(_ url: URL, _ body: () throws -> T) rethrows -> T {
@@ -384,23 +399,22 @@ actor PinnedFoldersPersistence {
 
     func refresh() -> Snapshot {
         do {
-            try load()
-            var proposed = records
-            for index in proposed.indices where proposed[index].isPinned {
-                guard let (url, stale) = try? resolve(proposed[index]) else { continue }
-                let old = proposed[index]
-                try? withScope(url) {
-                    try verified(url, identity: old.identity)
-                    let fresh = stale ? (try? operations.create(url)) : nil
-                    let bookmark = fresh.flatMap { !$0.isEmpty && $0.count <= Self.maximumBookmarkBytes ? $0 : nil }
-                        ?? old.bookmark
-                    try verified(url, identity: old.identity)
-                    proposed[index].path = url.path
-                    proposed[index].name = url.lastPathComponent.isEmpty ? url.path : url.lastPathComponent
-                    proposed[index].bookmark = bookmark
+            try mutate { proposed in
+                for index in proposed.indices where proposed[index].isPinned {
+                    guard let (url, stale) = try? resolve(proposed[index]) else { continue }
+                    let old = proposed[index]
+                    try? withScope(url) {
+                        try verified(url, identity: old.identity)
+                        let fresh = stale ? (try? operations.create(url)) : nil
+                        let bookmark = fresh.flatMap { !$0.isEmpty && $0.count <= Self.maximumBookmarkBytes ? $0 : nil }
+                            ?? old.bookmark
+                        try verified(url, identity: old.identity)
+                        proposed[index].path = url.path
+                        proposed[index].name = url.lastPathComponent.isEmpty ? url.path : url.lastPathComponent
+                        proposed[index].bookmark = bookmark
+                    }
                 }
             }
-            try commit(proposed)
             return snapshot()
         } catch { return snapshot(message: error.localizedDescription) }
     }
@@ -415,74 +429,73 @@ actor PinnedFoldersPersistence {
     }
 
     func pin(url: URL, expectedIdentity: PinnedFolderIdentity) throws -> (UUID, Snapshot) {
-        try load()
-        let bookmark = try withScope(url) {
-            try verified(url, identity: expectedIdentity)
-            let data = try operations.create(url)
-            guard !data.isEmpty, data.count <= Self.maximumBookmarkBytes else {
-                throw PinnedFolderError.bookmarkUnavailable
+        let id = try mutate { proposed in
+            let bookmark = try withScope(url) {
+                try verified(url, identity: expectedIdentity)
+                let data = try operations.create(url)
+                guard !data.isEmpty, data.count <= Self.maximumBookmarkBytes else {
+                    throw PinnedFolderError.bookmarkUnavailable
+                }
+                try verified(url, identity: expectedIdentity)
+                return data
             }
-            try verified(url, identity: expectedIdentity)
-            return data
+            let previous = proposed.first { $0.identity == expectedIdentity }
+            guard previous?.isPinned == true || proposed.filter(\.isPinned).count < Self.maximumPins else {
+                throw PinnedFolderError.capacity
+            }
+            let id = previous?.id ?? UUID()
+            proposed.removeAll { $0.identity == expectedIdentity }
+            proposed.insert(Record(id: id, identity: expectedIdentity,
+                                   name: url.lastPathComponent.isEmpty ? url.path : url.lastPathComponent,
+                                   path: url.path, bookmark: bookmark, isPinned: true,
+                                   position: previous?.position, updated: Date()), at: 0)
+            trimUnpinned(&proposed)
+            return id
         }
-        var proposed = records
-        let previous = proposed.first { $0.identity == expectedIdentity }
-        guard previous?.isPinned == true || proposed.filter(\.isPinned).count < Self.maximumPins else {
-            throw PinnedFolderError.capacity
-        }
-        let id = previous?.id ?? UUID()
-        proposed.removeAll { $0.identity == expectedIdentity }
-        proposed.insert(Record(id: id, identity: expectedIdentity,
-                               name: url.lastPathComponent.isEmpty ? url.path : url.lastPathComponent,
-                               path: url.path, bookmark: bookmark, isPinned: true,
-                               position: previous?.position, updated: Date()), at: 0)
-        trimUnpinned(&proposed)
-        try commit(proposed)
         return (id, snapshot())
     }
 
     func unpin(id: UUID) throws -> Snapshot {
-        try load()
-        var proposed = records
-        if let index = proposed.firstIndex(where: { $0.id == id }) {
-            proposed[index].isPinned = false
-            proposed[index].bookmark = nil
-            proposed[index].updated = Date()
+        try mutate { proposed in
+            if let index = proposed.firstIndex(where: { $0.id == id }) {
+                proposed[index].isPinned = false
+                proposed[index].bookmark = nil
+                proposed[index].updated = Date()
+            }
         }
-        try commit(proposed)
         return snapshot()
     }
 
     func prepareOpen(id: UUID, reconnectingWith selected: URL? = nil) throws -> (PinnedFolderOpenRequest, Snapshot) {
-        try load()
-        guard let index = records.firstIndex(where: { $0.id == id && $0.isPinned }) else {
-            throw PinnedFolderError.bookmarkUnavailable
-        }
-        let record = records[index]
-        let (url, stale) = try selected.map { ($0, true) } ?? resolve(record)
-        var proposed = records
-        try withScope(url) {
-            try verified(url, identity: record.identity)
-            if stale {
-                // A picker grant must become durable before reconnect succeeds.
-                // A stale bookmark may continue with its prior working bytes.
-                let bookmark: Data?
-                if selected != nil { bookmark = try operations.create(url) }
-                else { bookmark = (try? operations.create(url)) ?? record.bookmark }
-                guard let bookmark, !bookmark.isEmpty, bookmark.count <= Self.maximumBookmarkBytes else {
-                    throw PinnedFolderError.bookmarkUnavailable
-                }
-                proposed[index].bookmark = bookmark
-                // Creating the bookmark took time: verify the folder again.
-                try verified(url, identity: record.identity)
+        let request = try mutate { proposed in
+            guard let index = proposed.firstIndex(where: { $0.id == id && $0.isPinned }) else {
+                throw PinnedFolderError.bookmarkUnavailable
             }
-            proposed[index].path = url.path
-            proposed[index].name = url.lastPathComponent.isEmpty ? url.path : url.lastPathComponent
+            let record = proposed[index]
+            let (url, stale) = try selected.map { ($0, true) } ?? resolve(record)
+            try withScope(url) {
+                try verified(url, identity: record.identity)
+                if stale {
+                    // A picker grant must become durable before reconnect succeeds.
+                    // A stale bookmark may continue with its prior working bytes.
+                    let bookmark: Data?
+                    if selected != nil { bookmark = try operations.create(url) }
+                    else { bookmark = (try? operations.create(url)) ?? record.bookmark }
+                    guard let bookmark, !bookmark.isEmpty, bookmark.count <= Self.maximumBookmarkBytes else {
+                        throw PinnedFolderError.bookmarkUnavailable
+                    }
+                    proposed[index].bookmark = bookmark
+                    // Creating the bookmark took time: verify the folder again.
+                    try verified(url, identity: record.identity)
+                }
+                proposed[index].path = url.path
+                proposed[index].name = url.lastPathComponent.isEmpty ? url.path : url.lastPathComponent
+            }
+            // `commit` writes only when the path, name or bookmark changed. The
+            // opening worker verifies the identity again before reading.
+            return PinnedFolderOpenRequest(pinID: id, authorityURL: url, expectedIdentity: record.identity)
         }
-        // `commit` writes only when the path, name or bookmark changed. The
-        // opening worker verifies the identity again before reading.
-        try commit(proposed)
-        return (.init(pinID: id, authorityURL: url, expectedIdentity: record.identity), snapshot(verifiedOpen: id))
+        return (request, snapshot(verifiedOpen: id))
     }
 
     /// A pin's stored bookmark and identity, copied under the actor so that
@@ -520,18 +533,17 @@ actor PinnedFoldersPersistence {
     }
 
     func savePosition(_ position: PinnedFolderPosition, for identity: PinnedFolderIdentity) throws -> Snapshot {
-        try load()
         guard position.isValid else { throw PinnedFolderError.invalidPosition }
-        var proposed = records
-        if let index = proposed.firstIndex(where: { $0.identity == identity }) {
-            proposed[index].position = position
-            proposed[index].updated = Date()
-        } else {
-            proposed.append(Record(id: UUID(), identity: identity, name: "", path: "", bookmark: nil,
-                                   isPinned: false, position: position, updated: Date()))
+        try mutate { proposed in
+            if let index = proposed.firstIndex(where: { $0.identity == identity }) {
+                proposed[index].position = position
+                proposed[index].updated = Date()
+            } else {
+                proposed.append(Record(id: UUID(), identity: identity, name: "", path: "", bookmark: nil,
+                                       isPinned: false, position: position, updated: Date()))
+            }
+            trimUnpinned(&proposed)
         }
-        trimUnpinned(&proposed)
-        try commit(proposed)
         // Position traffic must not re-resolve every pin or publish UI changes.
         return .init(revision: revision, folders: [], message: nil)
     }

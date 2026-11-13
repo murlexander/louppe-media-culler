@@ -261,6 +261,139 @@ final class PinnedFolderPersistenceTests: XCTestCase {
         XCTAssertTrue(unpinned.folders.isEmpty, "Unavailable pins must remain removable")
     }
 
+    func testCachedPositionWriterPreservesAnotherInstancesUnpin() async throws {
+        let fixture = try PinnedFolderFixture()
+        defer { fixture.remove() }
+        let first = fixture.worker(), cached = fixture.worker()
+        let (id, _) = try await first.pinSelectedFolder(url: fixture.folder)
+        let loaded = await cached.refresh()
+        XCTAssertEqual(loaded.folders.map(\.id), [id])
+
+        _ = try await first.unpin(id: id)
+        let position = try fixture.position()
+        _ = try await cached.savePosition(position, for: fixture.identity)
+
+        let reloaded = fixture.worker()
+        let snapshot = await reloaded.refresh()
+        XCTAssertNil(snapshot.message)
+        XCTAssertTrue(snapshot.folders.isEmpty, "A position checkpoint must not resurrect another instance's unpin")
+        let saved = try await reloaded.position(for: fixture.identity)
+        XCTAssertEqual(saved, position)
+    }
+
+    func testCachedPositionWriterPreservesAnotherInstancesNewPin() async throws {
+        let fixture = try PinnedFolderFixture()
+        defer { fixture.remove() }
+        let first = fixture.worker(), cached = fixture.worker()
+        let (id, _) = try await first.pinSelectedFolder(url: fixture.folder)
+        _ = await cached.refresh()
+        let other = fixture.root.appendingPathComponent("Other")
+        try FileManager.default.createDirectory(at: other, withIntermediateDirectories: false)
+        let (otherID, _) = try await first.pinSelectedFolder(url: other)
+
+        let position = try fixture.position()
+        _ = try await cached.savePosition(position, for: fixture.identity)
+        let reloaded = fixture.worker()
+        let snapshot = await reloaded.refresh()
+        XCTAssertNil(snapshot.message)
+        XCTAssertEqual(snapshot.folders.map(\.id), [otherID, id], "A position checkpoint must retain pins created since load")
+        let saved = try await reloaded.position(for: fixture.identity)
+        XCTAssertEqual(saved, position)
+    }
+
+    func testCachedPositionWriterRefusesNewlyCorruptPrimaryWithoutChangingEitherCopy() async throws {
+        let fixture = try PinnedFolderFixture()
+        defer { fixture.remove() }
+        let worker = fixture.worker()
+        _ = try await worker.pinSelectedFolder(url: fixture.folder)
+        let position = try fixture.position()
+        _ = try await worker.savePosition(position, for: fixture.identity)
+        let previousURL = fixture.document.appendingPathExtension("previous")
+        let previous = try Data(contentsOf: previousURL)
+        let corrupt = Data("new corruption after cached load".utf8)
+        try corrupt.write(to: fixture.document)
+
+        do {
+            _ = try await worker.savePosition(.init(current: nil, browser: nil, grid: nil), for: fixture.identity)
+            XCTFail("A cached document cannot authorize replacing a newly unreadable primary")
+        } catch PinnedFolderError.invalidStorage {}
+        XCTAssertEqual(try Data(contentsOf: fixture.document), corrupt)
+        XCTAssertEqual(try Data(contentsOf: previousURL), previous)
+    }
+
+    func testCachedPositionWriterPreservesAnotherInstancesRefreshedBookmark() async throws {
+        let fixture = try PinnedFolderFixture()
+        defer { fixture.remove() }
+        let first = fixture.worker(), cached = fixture.worker()
+        let (id, _) = try await first.pinSelectedFolder(url: fixture.folder)
+        _ = await cached.refresh()
+        let renamed = fixture.root.appendingPathComponent("Renamed")
+        try FileManager.default.moveItem(at: fixture.folder, to: renamed)
+        _ = try await first.prepareOpen(id: id, reconnectingWith: renamed)
+
+        _ = try await cached.savePosition(.init(current: nil, browser: nil, grid: nil), for: fixture.identity)
+        let (request, snapshot) = try await fixture.worker().prepareOpen(id: id)
+        XCTAssertEqual(request.authorityURL, renamed, "Position traffic must retain the newer bookmark grant")
+        XCTAssertEqual(snapshot.folders.first?.path, renamed.path)
+    }
+
+    func testCachedWriterRefusesUnknownSchemaWithoutChangingEitherCopy() async throws {
+        let fixture = try PinnedFolderFixture()
+        defer { fixture.remove() }
+        let worker = fixture.worker()
+        let (id, _) = try await worker.pinSelectedFolder(url: fixture.folder)
+        _ = try await worker.savePosition(try fixture.position(), for: fixture.identity)
+        let previousURL = fixture.document.appendingPathExtension("previous")
+        let previous = try Data(contentsOf: previousURL)
+        var document = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: fixture.document)) as? [String: Any])
+        document["version"] = 2
+        let newer = try JSONSerialization.data(withJSONObject: document)
+        try newer.write(to: fixture.document)
+
+        do { _ = try await worker.unpin(id: id); XCTFail("Unknown schema must refuse mutations") }
+        catch PinnedFolderError.invalidStorage {}
+        XCTAssertEqual(try Data(contentsOf: fixture.document), newer)
+        XCTAssertEqual(try Data(contentsOf: previousURL), previous)
+    }
+
+    func testInFlightUnpinExcludesPositionWriterWithFiniteRetry() async throws {
+        let fixture = try PinnedFolderFixture()
+        defer { fixture.remove() }
+        let (id, _) = try await fixture.worker().pinSelectedFolder(url: fixture.folder)
+        let cached = fixture.worker()
+        _ = await cached.refresh()
+        let entered = expectation(description: "unpin reached primary replacement")
+        let release = DispatchSemaphore(value: 0)
+        defer { release.signal() }
+        let position = try fixture.position()
+        let first = PinnedFoldersPersistence(storageDirectory: fixture.storage, operations: fixture.operations(), write: { data, url in
+            if url.lastPathComponent == "PinnedFolders.json" {
+                entered.fulfill()
+                guard release.wait(timeout: .now() + 10) == .success else { throw POSIXError(.ETIMEDOUT) }
+            }
+            try DurableFileIO.atomicWrite(data, to: url, fullSync: true)
+        })
+        let unpin = Task { try await first.unpin(id: id) }
+        await fulfillment(of: [entered], timeout: 3)
+        let started = ContinuousClock.now
+        do {
+            _ = try await cached.savePosition(position, for: fixture.identity)
+            XCTFail("A checkpoint must not enter another writer's uncommitted transaction")
+        } catch DurableFileIO.IOError.system(let operation, _, let code) {
+            XCTAssertEqual(operation, "wait for persistence lock")
+            XCTAssertEqual(code, EWOULDBLOCK)
+        } catch { XCTFail("Unexpected contention error: \(error)") }
+        XCTAssertLessThan(started.duration(to: .now), .seconds(5), "Contention must remain retryable")
+        release.signal()
+        _ = try await unpin.value
+        _ = try await cached.savePosition(position, for: fixture.identity)
+        let reloaded = fixture.worker()
+        let snapshot = await reloaded.refresh()
+        XCTAssertTrue(snapshot.folders.isEmpty)
+        let saved = try await reloaded.position(for: fixture.identity)
+        XCTAssertEqual(saved, position)
+    }
+
     func testSamePathReplacementCannotOpenOrReconnect() async throws {
         let fixture = try PinnedFolderFixture()
         defer { fixture.remove() }
