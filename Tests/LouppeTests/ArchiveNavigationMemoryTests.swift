@@ -284,7 +284,9 @@ final class ArchiveNavigationMemoryTests: XCTestCase {
         try await fixture.persistence().save(initial, for: identity)
         let priorBytes = try Data(contentsOf: fixture.document)
         let failure = NavigationWriteFailure()
+        let writes = NavigationWriteLog()
         let worker = ArchiveNavigationPersistence(fileURL: fixture.document, write: { data, url in
+            writes.record(data, at: url)
             try DurableFileIO.atomicWrite(data, to: url, fullSync: true)
             if url.lastPathComponent == "ArchiveNavigation.json", failure.shouldFail() {
                 throw CocoaError(.fileWriteUnknown)
@@ -298,9 +300,131 @@ final class ArchiveNavigationMemoryTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: fixture.document.appendingPathExtension("previous")), priorBytes)
         let stillPending = try await worker.load(for: identity)
         XCTAssertEqual(stillPending, initial, "failed persistence cannot publish success in memory")
-        try await worker.save(desired, for: identity)
+        let interruptedBytes = try Data(contentsOf: fixture.document)
+        let newer = ArchiveNavigationMemory(index: index, selectedFolderID: "2024", includesDescendants: false)
+        try await worker.save(newer, for: identity)
         let restored = try await fixture.persistence().load(for: identity)
-        XCTAssertEqual(restored, desired)
+        XCTAssertEqual(restored, newer)
+        XCTAssertEqual(try Data(contentsOf: fixture.document.appendingPathExtension("previous")), interruptedBytes)
+        XCTAssertEqual(writes.primaryWrites.count, 2, "A newer checkpoint must not replay the interrupted primary write")
+        XCTAssertEqual(writes.primaryWrites.first, interruptedBytes)
+        XCTAssertEqual(writes.primaryWrites.last, try Data(contentsOf: fixture.document))
+    }
+
+    func testInterruptedWriteCanRetrySameSnapshotOrReturnToPriorSnapshot() async throws {
+        for returnsToPrior in [false, true] {
+            let fixture = try NavigationFixture()
+            defer { fixture.remove() }
+            let identity = try fixture.rootIdentity()
+            let index = try fixture.index()
+            let initial = ArchiveNavigationMemory(index: index)
+            try await fixture.persistence().save(initial, for: identity)
+            let failure = NavigationWriteFailure()
+            let writes = NavigationWriteLog()
+            let worker = ArchiveNavigationPersistence(fileURL: fixture.document, write: { data, url in
+                writes.record(data, at: url)
+                try DurableFileIO.atomicWrite(data, to: url, fullSync: true)
+                if url.lastPathComponent == "ArchiveNavigation.json", failure.shouldFail() {
+                    throw CocoaError(.fileWriteUnknown)
+                }
+            })
+            let interrupted = ArchiveNavigationMemory(index: index, selectedFolderID: "2024/Trip")
+            do { try await worker.save(interrupted, for: identity); XCTFail("Injected failure must be visible") }
+            catch {}
+            let desired = returnsToPrior ? initial : interrupted
+            try await worker.save(desired, for: identity)
+            let restored = try await fixture.persistence().load(for: identity)
+            XCTAssertEqual(restored, desired)
+            XCTAssertEqual(writes.primaryWrites.count, returnsToPrior ? 2 : 1,
+                           "Securing the interrupted snapshot must not replay its primary write")
+        }
+    }
+
+    func testInterruptedWriteRefusesChangedPrimaryOrPreviousEvenWhenNewRequestMatches() async throws {
+        for changesPrevious in [false, true] {
+            let fixture = try NavigationFixture()
+            defer { fixture.remove() }
+            let identity = try fixture.rootIdentity()
+            let index = try fixture.index()
+            let initial = ArchiveNavigationMemory(index: index)
+            try await fixture.persistence().save(initial, for: identity)
+            let failure = NavigationWriteFailure()
+            let worker = ArchiveNavigationPersistence(fileURL: fixture.document, write: { data, url in
+                try DurableFileIO.atomicWrite(data, to: url, fullSync: true)
+                if url.lastPathComponent == "ArchiveNavigation.json", failure.shouldFail() {
+                    throw CocoaError(.fileWriteUnknown)
+                }
+            })
+            do {
+                try await worker.save(ArchiveNavigationMemory(index: index, selectedFolderID: "2024/Trip"), for: identity)
+                XCTFail("Injected failure must be visible")
+            } catch {}
+            let newer = ArchiveNavigationMemory(index: index, selectedFolderID: "2024", includesDescendants: false)
+            let externalURL = fixture.root.appendingPathComponent("External.json")
+            try await ArchiveNavigationPersistence(fileURL: externalURL).save(newer, for: identity)
+            let previousURL = fixture.document.appendingPathExtension("previous")
+            try Data(contentsOf: externalURL).write(to: changesPrevious ? previousURL : fixture.document)
+            let primary = try Data(contentsOf: fixture.document)
+            let previous = try Data(contentsOf: previousURL)
+            for requested in [newer, initial] {
+                do { try await worker.save(requested, for: identity); XCTFail("Changed evidence cannot authorize a retry") }
+                catch ArchiveNavigationError.changedStorage {}
+            }
+            XCTAssertEqual(try Data(contentsOf: fixture.document), primary)
+            XCTAssertEqual(try Data(contentsOf: previousURL), previous)
+            let retained = try await worker.load(for: identity)
+            XCTAssertEqual(retained, initial)
+        }
+    }
+
+    func testInterruptedFirstWriteCanAdvanceToNewSnapshot() async throws {
+        let fixture = try NavigationFixture()
+        defer { fixture.remove() }
+        let identity = try fixture.rootIdentity()
+        let index = try fixture.index()
+        let failure = NavigationWriteFailure()
+        let worker = ArchiveNavigationPersistence(fileURL: fixture.document, write: { data, url in
+            try DurableFileIO.atomicWrite(data, to: url, fullSync: true)
+            if url.lastPathComponent == "ArchiveNavigation.json", failure.shouldFail() {
+                throw CocoaError(.fileWriteUnknown)
+            }
+        })
+        do { try await worker.save(ArchiveNavigationMemory(index: index), for: identity); XCTFail("Injected failure must be visible") }
+        catch {}
+        let newer = ArchiveNavigationMemory(index: index, selectedFolderID: "2024")
+        try await worker.save(newer, for: identity)
+        let restored = try await fixture.persistence().load(for: identity)
+        XCTAssertEqual(restored, newer)
+    }
+
+    func testResetAfterInterruptedWritePreservesEvidenceAndAllowsNewSnapshot() async throws {
+        let fixture = try NavigationFixture()
+        defer { fixture.remove() }
+        let identity = try fixture.rootIdentity()
+        let index = try fixture.index()
+        try await fixture.persistence().save(ArchiveNavigationMemory(index: index), for: identity)
+        let failure = NavigationWriteFailure()
+        let worker = ArchiveNavigationPersistence(fileURL: fixture.document, write: { data, url in
+            try DurableFileIO.atomicWrite(data, to: url, fullSync: true)
+            if url.lastPathComponent == "ArchiveNavigation.json", failure.shouldFail() {
+                throw CocoaError(.fileWriteUnknown)
+            }
+        })
+        do {
+            try await worker.save(ArchiveNavigationMemory(index: index, selectedFolderID: "2024/Trip"), for: identity)
+            XCTFail("Injected failure must be visible")
+        } catch {}
+        let primary = try Data(contentsOf: fixture.document)
+        let previous = try Data(contentsOf: fixture.document.appendingPathExtension("previous"))
+        try await worker.resetPreservingEvidence()
+        let recovery = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: fixture.document.deletingLastPathComponent(),
+            includingPropertiesForKeys: nil).first { $0.lastPathComponent.hasPrefix("ArchiveNavigation.recovered-") })
+        XCTAssertEqual(try Data(contentsOf: recovery.appendingPathComponent("ArchiveNavigation.json")), primary)
+        XCTAssertEqual(try Data(contentsOf: recovery.appendingPathComponent("ArchiveNavigation.json.previous")), previous)
+        let newer = ArchiveNavigationMemory(index: index, selectedFolderID: "2024")
+        try await worker.save(newer, for: identity)
+        let restored = try await fixture.persistence().load(for: identity)
+        XCTAssertEqual(restored, newer)
     }
 
     func testPositionCapacityDropsLeastRecentEntriesWithoutChangingDecisions() throws {
@@ -393,5 +517,14 @@ private final class NavigationWriteFailure: @unchecked Sendable {
         guard remaining > 0 else { return false }
         remaining -= 1
         return true
+    }
+}
+
+private final class NavigationWriteLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var writes: [Data] = []
+    var primaryWrites: [Data] { lock.withLock { writes } }
+    func record(_ data: Data, at url: URL) {
+        if url.lastPathComponent == "ArchiveNavigation.json" { lock.withLock { writes.append(data) } }
     }
 }

@@ -176,12 +176,18 @@ actor ArchiveNavigationPersistence {
         let version: Int
         let records: [Record]
     }
+    private struct InterruptedWrite {
+        let data: Data
+        let previous: Data?
+        let records: [Record]
+    }
 
     private let fileURL: URL
     private let write: @Sendable (Data, URL) throws -> Void
     private var records: [Record] = []
     private var loaded = false
     private var revision: Data?
+    private var interruptedWrite: InterruptedWrite?
 
     init(fileURL: URL? = nil,
          write: @escaping @Sendable (Data, URL) throws -> Void = {
@@ -218,27 +224,50 @@ actor ArchiveNavigationPersistence {
 
     func save(_ memory: ArchiveNavigationMemory, for root: PinnedFolderIdentity) throws {
         guard memory.isValid else { throw ArchiveNavigationError.capacity }
-        try readIfNeeded()
-        guard records.first(where: { $0.root == root })?.memory != memory else { return }
-        let proposed = Array(([Record(root: root, memory: memory)]
-            + records.filter { $0.root != root }).prefix(Self.maximumRoots))
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        let data = try encoder.encode(Document(version: 1, records: proposed))
-        guard data.count <= Self.maximumBytes else { throw ArchiveNavigationError.capacity }
-        // Refuse an external writer or unreadable primary instead of replacing
-        // it with this actor's older view. No source media is read here.
-        let currentBytes = try readBytes(fileURL)
-        let ownInterruptedWrite = currentBytes == data ? try readBytes(previousURL) == revision : false
-        guard currentBytes == revision || ownInterruptedWrite else {
-            throw ArchiveNavigationError.changedStorage
+        try DurableFileIO.withExclusiveFileLock(at: fileURL.appendingPathExtension("lock")) {
+            try readIfNeeded()
+            try recoverInterruptedWrite()
+            // Refuse an external writer or unreadable primary even when the
+            // requested snapshot equals this actor's cached memory.
+            guard try readBytes(fileURL) == revision else { throw ArchiveNavigationError.changedStorage }
+            guard records.first(where: { $0.root == root })?.memory != memory else { return }
+            let proposed = Array(([Record(root: root, memory: memory)]
+                + records.filter { $0.root != root }).prefix(Self.maximumRoots))
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys]
+            let data = try encoder.encode(Document(version: 1, records: proposed))
+            guard data.count <= Self.maximumBytes else { throw ArchiveNavigationError.capacity }
+            if let revision { try write(revision, previousURL) }
+            // Keep this exact attempted snapshot independently of the next
+            // request. A rename may succeed before its directory flush fails.
+            interruptedWrite = .init(data: data, previous: revision, records: proposed)
+            try write(data, fileURL)
+            records = proposed
+            revision = data
+            interruptedWrite = nil
         }
-        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true)
-        if let revision { try write(revision, previousURL) }
-        try write(data, fileURL)
-        records = proposed
-        revision = data
+    }
+
+    /// Called under the transaction lock. Adopt only our exact interrupted
+    /// bytes with their exact prior copy, after securing the directory entry.
+    /// A new request can then advance without replaying the older primary write.
+    private func recoverInterruptedWrite() throws {
+        guard let attempt = interruptedWrite else { return }
+        let current = try readBytes(fileURL)
+        guard try readBytes(previousURL) == attempt.previous else { throw ArchiveNavigationError.changedStorage }
+        if current == revision {
+            // The failed attempt never replaced the primary. Normal CAS still
+            // owns the original revision and the next request may retry it.
+            interruptedWrite = nil
+            return
+        }
+        guard current == attempt.data else { throw ArchiveNavigationError.changedStorage }
+        try DurableFileIO.syncDirectory(fileURL.deletingLastPathComponent(), fullSync: true)
+        guard try readBytes(fileURL) == attempt.data,
+              try readBytes(previousURL) == attempt.previous else { throw ArchiveNavigationError.changedStorage }
+        records = attempt.records
+        revision = attempt.data
+        interruptedWrite = nil
     }
 
     /// Explicit recovery for optional UI memory. Never follows a state-file
@@ -269,6 +298,7 @@ actor ArchiveNavigationPersistence {
         }
         records = []
         revision = nil
+        interruptedWrite = nil
         loaded = true
     }
 
