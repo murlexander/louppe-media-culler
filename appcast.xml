@@ -6,22 +6,44 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>Louppe</title>
         <item>
-            <title>1.13.2</title>
-            <pubDate>Sun, 08 Nov 2026 17:01:44 +0100</pubDate>
-            <link>https://github.com/murlexander/louppe-media-culler/releases/tag/v1.13.2</link>
-            <sparkle:version>17</sparkle:version>
-            <sparkle:shortVersionString>1.13.2</sparkle:shortVersionString>
+            <title>1.14.0</title>
+            <pubDate>Fri, 13 Nov 2026 01:51:03 +0100</pubDate>
+            <link>https://github.com/murlexander/louppe-media-culler/releases/tag/v1.14.0</link>
+            <sparkle:version>18</sparkle:version>
+            <sparkle:shortVersionString>1.14.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description sparkle:format="markdown"><![CDATA[
-- Update Expat to 2.10.0 for four upstream parser security fixes, preserving the existing XMP resource limits and disabled DTD/general entities.
+- Use the right singular and plural words in every language, and group large counts in Louppe's language so they are easier to read.
+- Show the next photo sooner when browsing, with faster fitted previews and lower memory use.
+- Keep Louppe responsive while checking folders opened from Finder, the Dock or a drop.
+- Offer Try Again if a video's audio or subtitle options cannot be loaded.
+- Keep Clean Up's menu commands responsive in large folders.
+- Align menus, dialog actions and status messages across review, Export, Rename and Organize. Give VoiceOver clearer labels for camera settings and photo quality warnings.
+- Report failed XMP sidecar checks in Export with Try Again, preserving the XMP choice until a check succeeds.
+- Keep the Rename and Organize sheet title visible while files move.
+- Give Sort, Filter, quality-cue and review-status popovers one surface, arrow included: no lighter arrow or seam, and legible over bright photos.
+
+- Show the normal toolbar, Browser and Info panel while a large folder opens, with controls greyed out until all photo details load, so the view no longer jumps when review begins.
+- Filter dates by Range, Year or Date in a full-width chooser; each mode keeps its choices when you switch.
+- Drop the status-bar filter menu; the purple Filter button already shows an active filter. Sort now turns purple too when it differs from your default or Duplicates/Similar review is on.
+- Remove brief stalls of up to 0.1 seconds while photo details load in folders with tens of thousands of photos.
+- Line up Connected drives with Pinned folders on the start screen when there are no recent folders, instead of showing them off-center.
+- Show a thick purple line where a dragged row will land when reordering Rename filename parts or Organize folder levels.
+- Center the Grid's Play button on the video again; since 1.13 it sat near the top edge of wide clips.
+- Rename Files numbers files that would share a name instead of blocking: with only Date taken, each day's files become 2026.02.20_001, _002, and so on. Unique names stay unchanged.
+
+- Keep Undo from moving a file that another app changed or replaced after Rename or Organize.
+- Offer Undo when Rename or Organize finishes with some files left unchanged.
+- Keep the current photo in view in Browser and Grid after sorting or resizing the window.
+- Apply a just-typed search before decisions, stars and color labels, so they never reach photos the search hides.
 
 ]]></description>
-            <enclosure url="https://github.com/murlexander/louppe-media-culler/releases/download/v1.13.2/Louppe.zip" length="8841087" type="application/octet-stream" sparkle:edSignature="QMwRxLVz26MCjtrBiVx58wcOy7m4ChM2UH6dbgeQWiUr8UpBvxvu4hnJ80VsEB+FzpG5lmA2zCbVykmOMtUMAQ=="/>
+            <enclosure url="https://github.com/murlexander/louppe-media-culler/releases/download/v1.14.0/Louppe.zip" length="8966165" type="application/octet-stream" sparkle:edSignature="PVPhJuv4FOLjwW+XSe/ovuHwQYvTsfS1E9xIuBjWKHLdUg3jXcinCsyWaYZ/Re57HRYxg2nY94Oa6iAMDfpqDQ=="/>
         </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: H8S4OhIL8gfgVb2YG/HgGR/c0uQVz5H0eqB1TNM9Ywht5iNgynb7GKwTnMeYbnHxFb13BPEXtMmdYcNWHqI+CA==
-length: 1442
+edSignature: phwiHEuIsPuXJ1gti5y97ZJZgSLhJJ8nGJaMdwDWP3FI97MYBmYBYCcDEOO1gUmSVH2ywHp7k3Nsl80j98jWAQ==
+length: 3761
 -->
