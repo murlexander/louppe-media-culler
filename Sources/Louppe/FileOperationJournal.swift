@@ -1675,9 +1675,9 @@ enum FileOperationJournal {
                     at: source,
                     includeStatusChange: false
                 )
-                try DurableFileIO.syncDirectory(
-                    source.deletingLastPathComponent(),
-                    fullSync: true,
+                try syncRestoredMoveDirectories(
+                    source: source,
+                    previousLocations: state == nil ? [] : [temporary, destination].compactMap { $0 },
                     policy: directorySyncPolicy
                 )
                 return RecoveredFileCounts()
@@ -1791,6 +1791,11 @@ enum FileOperationJournal {
                     policy: directorySyncPolicy
                 )
             }
+            try syncRestoredMoveDirectories(
+                source: source,
+                previousLocations: state == nil ? [] : [temporary, destination].compactMap { $0 },
+                policy: directorySyncPolicy
+            )
             return RecoveredFileCounts()
         }
 
@@ -1914,6 +1919,23 @@ enum FileOperationJournal {
             syncRemovedSourceDirectory: false
         )
         return RecoveredFileCounts(restoredFiles: 1)
+    }
+
+    /// An earlier restore may have renamed the file home, then failed a
+    /// directory flush. Its current name proves identity, not durability.
+    /// Repeat both sides before retiring recovery; an unstarted record need
+    /// not have created its planned destination directories yet.
+    private static func syncRestoredMoveDirectories(
+        source: URL,
+        previousLocations: [URL],
+        policy: DurableFileIO.DirectorySyncPolicy
+    ) throws {
+        var synced = Set<Data>()
+        for location in [source] + previousLocations {
+            let parent = try XMPExactFileSystemPath(url: location).parent
+            guard synced.insert(parent.bytes).inserted else { continue }
+            try DurableFileIO.syncDirectory(parent.url, fullSync: true, policy: policy)
+        }
     }
 
     private static func restoreWithoutOverwrite(

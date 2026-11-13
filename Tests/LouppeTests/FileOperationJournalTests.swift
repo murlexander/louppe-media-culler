@@ -4,6 +4,81 @@ import XCTest
 @testable import Louppe
 
 final class FileOperationJournalTests: XCTestCase {
+    func testRestoredMoveRetryRequiresBothAffectedDirectoryFlushes() throws {
+        for failRestoredParent in [true, false] {
+            let fixture = try makeFixture(named: "RestoredMoveSyncRetry")
+            defer { try? FileManager.default.removeItem(at: fixture.root) }
+            let fm = FileManager.default
+            let sourceFolder = fixture.root.appendingPathComponent("Source")
+            let movedFolder = fixture.root.appendingPathComponent("Moved")
+            for folder in [sourceFolder, movedFolder] {
+                try fm.createDirectory(at: folder, withIntermediateDirectories: false)
+            }
+            let source = sourceFolder.appendingPathComponent("PHOTO.JPG")
+            let destination = movedFolder.appendingPathComponent("PHOTO.JPG")
+            let bytes = Data("irreplaceable original".utf8)
+            try bytes.write(to: source)
+            let original = try FileOperationJournal.captureIdentity(at: source)
+            let writer = try FileOperationJournal.start(
+                kind: .exportMove,
+                seeds: [.init(itemID: "photo", source: source, destination: destination)],
+                directory: fixture.journals
+            )
+            let temporary = try XCTUnwrap(writer.temporaryURL(at: 0))
+            try writer.mark(.started, fileAt: 0)
+            try DurableFileIO.renameWithoutOverwrite(from: source, to: temporary, strategy: .exclusivePOSIX)
+            try writer.mark(.staged, fileAt: 0, identityAt: temporary)
+            let planURL = writer.token.directory.appendingPathComponent("plan.json")
+            let planBytes = try Data(contentsOf: planURL)
+            XCTAssertTrue(FileOperationJournal.finalize(writer, operationIsConsistent: false))
+
+            // Write + search permits the restore rename, but read-only open
+            // for directory fsync must fail. Test both sides of that rename.
+            let deniedFolder = failRestoredParent ? sourceFolder : movedFolder
+            try fm.setAttributes([.posixPermissions: 0o300], ofItemAtPath: deniedFolder.path)
+            defer { try? fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: deniedFolder.path) }
+            XCTAssertThrowsError(try DurableFileIO.syncDirectory(deniedFolder, fullSync: true))
+            let first = FileOperationJournal.recoverPendingOperations(directory: fixture.journals)
+            XCTAssertEqual(first.unresolvedOperations, 1)
+            XCTAssertEqual(first.unresolvedFiles, 1)
+            XCTAssertEqual(try Data(contentsOf: source), bytes, "the rename succeeded before its flush failed")
+            XCTAssertEqual(try FileOperationJournal.captureIdentity(at: source).fileNumber, original.fileNumber)
+            XCTAssertFalse(fm.fileExists(atPath: temporary.path))
+            XCTAssertFalse(fm.fileExists(atPath: destination.path))
+
+            let retry = FileOperationJournal.recoverPendingOperations(directory: fixture.journals)
+            XCTAssertEqual(retry.unresolvedOperations, 1, "unchanged Retry must not accept an unflushed rollback")
+            XCTAssertEqual(retry.unresolvedFiles, 1)
+            XCTAssertTrue(FileOperationJournal.hasPendingOperations(directory: fixture.journals))
+            XCTAssertEqual(try? Data(contentsOf: planURL), planBytes)
+            XCTAssertEqual(try Data(contentsOf: source), bytes)
+
+            try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: deniedFolder.path)
+            let resolved = FileOperationJournal.recoverPendingOperations(directory: fixture.journals)
+            XCTAssertEqual(resolved.restoredOperations, 1)
+            XCTAssertEqual(resolved.unresolvedOperations, 0)
+            XCTAssertFalse(FileOperationJournal.hasPendingOperations(directory: fixture.journals))
+            try FileOperationJournal.requireIdentity(original, at: source)
+            XCTAssertEqual(try Data(contentsOf: source), bytes)
+        }
+    }
+
+    func testUnstartedMoveRecoveryDoesNotRequireUncreatedDestinationDirectories() throws {
+        let fixture = try makeFixture(named: "UnstartedMoveDirectories")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let writer = try FileOperationJournal.start(
+            kind: .organizeSource,
+            seeds: [.init(itemID: "photo", source: fixture.source,
+                destination: fixture.root.appendingPathComponent("NotCreated/Yes/PHOTO.JPG"))],
+            directory: fixture.journals
+        )
+        XCTAssertTrue(FileOperationJournal.finalize(writer, operationIsConsistent: false))
+        let report = FileOperationJournal.recoverPendingOperations(directory: fixture.journals)
+        XCTAssertEqual(report.unresolvedOperations, 0)
+        XCTAssertEqual(report.restoredOperations, 1)
+        XCTAssertEqual(try Data(contentsOf: fixture.source), Data("source".utf8))
+    }
+
     @MainActor
     func testSessionStoreDoesNotInspectInjectedJournalUnlessExplicitlyEnabled() throws {
         let fixture = try makeFixture(named: "SessionStoreRecoveryIsolation")
