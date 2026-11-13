@@ -78,8 +78,11 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 - [ ] **Cards and folder switching:** Rename/Organize, Undo and interrupted recovery on an exFAT card; quick Finder, Dock and pinned-folder switching in the signed sandboxed build.
 - [ ] **Displays and playback:** Retina/non-Retina display changes, resizing and full screen while photos decode; video full screen and Picture in Picture.
 
-- [ ] **Photos portrait playback:** verify full top/bottom fixture bars during live portrait/rotated original playback in light/dark; offscreen AppKit PNGs omit AVPlayerLayer pixels.
+- [ ] **Photos portrait playback:** verify full top/bottom bars while playing and resizing portrait/rotated originals; live light/dark captures verify the paused first-frame fit.
 - [ ] **Store Photos cache cleanup:** verify batch retirement and retry inside the sandboxed Store build; restricted-ancestor filesystem tests do not replace runtime acceptance.
+- [ ] **Opening gestures:** verify native Shift/Command input through Opening-to-Ready handoff; composed tests exercise public controls and captures verify outlines.
+- [ ] **Live choice menus:** open the native choices inside Sort/Filter; live captures cover the toolbar popovers themselves.
+- [ ] **100% RAW panning:** inspect recovered sharp tiles and unavailable overlays while panning away and back on real RAW media; deterministic mounted tests cover the cancellation race.
 
 ### Hardware and environments
 
@@ -137,6 +140,8 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 - [x] **Grid follow after filtering:** pointer decisions preserve browsing position without suppressing the next keyboard follow.
 - [x] **Opening modifier selection:** implicit current, range anchors and Command toggles match Ready through physical-file handoff.
 - [ ] **Large XMP jobs:** reduce repeated fresh family-census work in large single folders while preserving mutation/recovery ownership checks.
+- [ ] **Suite isolation:** investigate the occasional full-suite `ViewSwitchTests` thumbnail timeout and native wheel-event failure; preserve viewport and media-read assertions.
+- [ ] **Connected-drive accessibility harness:** verify capacity and Choose through system accessibility when XCTest's hosted SwiftUI tree exposes no children.
 
 - [ ] Resolve the selected alternate audio track for meters/waveforms; multi-track files report analysis unavailable until it can be proved without changing playback.
 
