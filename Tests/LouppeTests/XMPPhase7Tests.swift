@@ -51,6 +51,59 @@ final class XMPPhase7Tests: XCTestCase {
         await task.value
     }
 
+    func testCanonicalPacketCannotClaimAnotherMediasApplicationPacket() async throws {
+        let root = try temporaryDirectory("OwnershipOverlap")
+        let raw = root.appendingPathComponent("IMG.NEF")
+        let jpeg = root.appendingPathComponent("IMG.NEF.jpg")
+        let sidecar = root.appendingPathComponent("IMG.NEF.xmp")
+        try Data("raw".utf8).write(to: raw)
+        try Data("jpeg".utf8).write(to: jpeg)
+        let original = try packet(decision: .yes, stars: .one, color: .green)
+        try original.write(to: sidecar)
+        let rawItem = try item(raw, decision: .yes, stars: .two)
+        let jpegItem = try item(jpeg, decision: .no, stars: .five)
+        let input = try XMPPublicationInput(items: [jpegItem],
+            familyContextItems: [rawItem, jpegItem], profile: .universal,
+            visibleDecisionKeywords: false)
+        let families = try XMPSidecarResolver.resolve(members: input.members)
+        let rawFamily = try XCTUnwrap(families.first { $0.members.contains { $0.mediaPath.url == raw } })
+        let jpegFamily = try XCTUnwrap(families.first { $0.members.contains { $0.mediaPath.url == jpeg } })
+        XCTAssertEqual(rawFamily.disposition, .publish)
+        XCTAssertEqual(rawFamily.extensionQualifiedSidecars.map(\.url), [sidecar])
+        XCTAssertEqual(jpegFamily.disposition, .filenameCollision)
+        let resolvedPlan = await XMPPublicationPlanner.preflight(input,
+            isCancelled: { false }, progress: { _, _ in })
+        let plan = try XCTUnwrap(resolvedPlan)
+        XCTAssertEqual(plan.count(.destinationCollision), 1)
+        let result = await XMPPublicationWorker.publish(plan, cancelFlag: .init(), progress: { _, _ in })
+        XCTAssertEqual(result.completed, 0)
+        XCTAssertEqual(try Data(contentsOf: sidecar), original)
+    }
+
+    func testJPEGOnlyMoveKeepsRAWApplicationPacketAndOriginal() async throws {
+        let root = try temporaryDirectory("OwnershipOverlapMove")
+        let source = try directory("Source", in: root)
+        let destination = try directory("Destination", in: root)
+        let raw = source.appendingPathComponent("IMG.NEF")
+        let jpeg = source.appendingPathComponent("IMG.NEF.jpg")
+        let sidecar = source.appendingPathComponent("IMG.NEF.xmp")
+        let rawBytes = Data("raw".utf8)
+        try rawBytes.write(to: raw)
+        try Data("jpeg".utf8).write(to: jpeg)
+        let original = try packet(decision: .yes, stars: .one, color: .green)
+        try original.write(to: sidecar)
+        let jpegItem = try item(jpeg, decision: .no, stars: .five)
+        // Even a context that omits the RAW must not claim its application packet.
+        let xmp = try await prepared([jpegItem], context: [jpegItem])
+        XCTAssertEqual(xmp.families.first?.category, .destinationCollision)
+        let result = ExportWorker.move([jpegItem], to: destination, xmpPlan: xmp,
+            journalDirectory: root.appendingPathComponent("Journals")) { _, _ in }
+        XCTAssertEqual(result.movedItemIDs, [jpegItem.id])
+        XCTAssertEqual(try Data(contentsOf: raw), rawBytes)
+        XCTAssertEqual(try Data(contentsOf: sidecar), original)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.appendingPathComponent("IMG.NEF.xmp").path))
+    }
+
     func testConditionalDefaultStopsAfterManualChoiceAndResetsWithNewSheetState() {
         var choice = ExportXMPInclusionChoice()
         choice.applyRecognizedPacketCount(0)

@@ -170,12 +170,18 @@ enum XMPSidecarResolver {
         // normalization inside the inner loop.
         var xmpEntriesByKey: [String: Set<XMPExactFileSystemPath>] = [:]
         var acrEntriesByKey: [String: Set<XMPExactFileSystemPath>] = [:]
+        // A canonical stem can itself be another media file's full name:
+        // IMG.NEF.jpg must never adopt IMG.NEF.xmp from IMG.NEF.
+        var mediaFilenameKeys: Set<String> = []
         for (index, path) in directoryEntries.enumerated() {
             if index.isMultiple(of: 32) { try Task.checkCancellation() }
             let entryName = try decodedName(path)
             let isXMP = recognizedXMPExtension(entryName, caseSensitiveNames)
             let isACR = !isXMP
                 && recognizedACRExtension(entryName, caseSensitiveNames)
+            if FolderScanner.recognizedExtensions.contains(path.url.pathExtension.lowercased()) {
+                mediaFilenameKeys.insert(comparisonKey(entryName, caseSensitiveNames: caseSensitiveNames))
+            }
             guard isXMP || isACR else { continue }
             let key = comparisonKey(
                 entryName,
@@ -270,7 +276,8 @@ enum XMPSidecarResolver {
             let disposition: XMPSidecarFamilyPlan.Disposition
             if media.contains(where: { $0.mediaKind != .photo }) {
                 disposition = .unsupportedMedia
-            } else if exactStemBytes.count > 1 || uniqueCanonical.count > 1 {
+            } else if exactStemBytes.count > 1 || uniqueCanonical.count > 1
+                        || mediaFilenameKeys.contains(key) {
                 disposition = .filenameCollision
             } else if metadataValues.count != 1 {
                 disposition = .metadataConflict
