@@ -190,10 +190,13 @@ folders are removed at the next preparation. At most the active and preparing
 batch are retained during normal operation. Retirement and abandoned-cache pruning
 retain any marked batch referenced by an active operation plan, including a
 Copy interrupted before its staged checkpoint or lease-preservation callback.
-Cleanup takes the nonblocking Operations lock, validates every active plan before
-any deletion, and holds that lock through synchronous descriptor-relative,
-no-follow removal. Unknown/unreadable journals or lock contention defer the whole
-pass. A later ordinary cleanup reclaims batches after journal retirement.
+Cleanup validates every active plan under the Operations lock before each
+chunk of at most 64 descriptor-relative, no-follow removals.
+Command workers wait off-main only for this process's current cleanup chunk and
+get priority at its release; main-thread, reentrant and cross-process attempts
+remain nonblocking. Cleanup never waits for command workers: contention or
+unknown/unreadable journals defer the remaining pass with its marker intact.
+A later ordinary cleanup reclaims batches after journal retirement.
 The verified cache root opens directly, without requesting directory reads of
 its ancestors. The batch marker stays until payload cleanup succeeds, so a
 failed or cancelled pass remains discoverable for retry.

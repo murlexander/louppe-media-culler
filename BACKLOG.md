@@ -144,6 +144,7 @@ reproduces a product failure. Before release, validate the changed safety and UI
 paths in the 1.15 checks above and run the release procedure on the actual
 candidate. Store-specific acceptance applies to the Store package.
 
+- [x] **Photos staging cleanup:** yield bounded, freshly journal-checked chunks to pending file-command workers; retain recovery sources and retry markers.
 - [x] **Grid follow after filtering:** pointer decisions preserve browsing position without suppressing the next keyboard follow.
 - [x] **Opening modifier selection:** implicit current, range anchors and Command toggles match Ready through physical-file handoff.
 - [ ] **Before 1.15 — XMP job cost:** add optimized end-to-end coverage of standalone publication and Export Move at 1k/2k/4k families in flat and dispersed folders, then reduce the confirmed census overhead. Measure complete-job time, directory-entry visits, cancellation latency and retained memory. Preserve fresh descriptor-bound ownership checks at publication, source retirement and recovery; keep the new-owner, Unicode, parent-swap and source-independent Copy regressions. A listing cached across later mutations would reopen the ownership bug; the existing debug census microbenchmark does not establish release-build throughput.

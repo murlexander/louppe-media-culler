@@ -218,6 +218,95 @@ final class PhotosRecoveryRetentionTests: XCTestCase, @unchecked Sendable {
         }
     }
 
+    func testCleanupReleasesBetweenChunksRechecksNewJournalAndEventuallyFinishes() throws {
+        let fixture = try PhotosRecoveryFixture()
+        defer { fixture.remove() }
+        let batch = try fixture.extraBatch()
+        for index in 0..<160 {
+            try fixture.bytes.write(to: batch.appendingPathComponent("payload-\(index)"))
+        }
+        let source = batch.appendingPathComponent("new-original.JPG")
+        var chunks = 0
+        PhotosBatchCleanup.remove([batch], cacheRoot: fixture.cache,
+            operationJournalDirectory: fixture.journals, afterChunk: {
+                chunks += 1
+                if chunks == 1 {
+                    // The first chunk released the OS lock. Activate a new
+                    // journal before the next chunk can inspect/delete files.
+                    try fixture.bytes.write(to: source)
+                    let writer = try FileOperationJournal.start(kind: .exportCopy,
+                        seeds: [.init(itemID: "new", source: source, destination: fixture.destination)],
+                        directory: fixture.journals)
+                    _ = FileOperationJournal.finalize(writer, operationIsConsistent: false)
+                }
+            })
+        XCTAssertEqual(chunks, 2, "The next chunk must see the newly activated journal and stop")
+        XCTAssertEqual(try Data(contentsOf: source), fixture.bytes)
+        let retained = try FileManager.default.contentsOfDirectory(atPath: batch.path)
+        XCTAssertTrue(retained.contains(".louppe-photos-batch"))
+        XCTAssertGreaterThan(retained.count, 90, "Deletion must be bounded, not a whole-batch pass")
+        XCTAssertLessThan(retained.count, 162, "Cleanup must actually make progress")
+        XCTAssertEqual(FileOperationJournal.recoverPendingOperations(directory: fixture.journals).unresolvedOperations, 0)
+        var retryChunks = 0
+        PhotosBatchCleanup.remove([batch], cacheRoot: fixture.cache,
+            operationJournalDirectory: fixture.journals, afterChunk: { retryChunks += 1 })
+        XCTAssertGreaterThan(retryChunks, 1)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: batch.path), "Ordinary pruning must finish after retirement")
+    }
+
+    @MainActor
+    func testMainThreadNeverWaitsForCleanupLock() async throws {
+        let fixture = try PhotosRecoveryFixture()
+        defer { fixture.remove() }
+        let entered = DispatchSemaphore(value: 0)
+        let release = DispatchSemaphore(value: 0)
+        let cleanup = Task.detached {
+            try FileOperationJournal.withUnreferencedPhotosBatches([fixture.folder], directory: fixture.journals) { _ in
+                entered.signal()
+                guard release.wait(timeout: .now() + 5) == .success else { throw POSIXError(.ETIMEDOUT) }
+            }
+        }
+        XCTAssertEqual(entered.wait(timeout: .now() + 5), .success)
+        let start = ContinuousClock.now
+        XCTAssertThrowsError(try fixture.writer())
+        XCTAssertLessThan(start.duration(to: .now), .seconds(1))
+        release.signal()
+        try await cleanup.value
+    }
+
+    func testUserOperationWaitsForOwnCleanupOffMainWithoutRejectingIt() async throws {
+        let fixture = try PhotosRecoveryFixture()
+        defer { fixture.remove() }
+        let entered = DispatchSemaphore(value: 0)
+        let release = DispatchSemaphore(value: 0)
+        let cleanup = Task.detached {
+            try FileOperationJournal.withUnreferencedPhotosBatches([fixture.folder], directory: fixture.journals) { _ in
+                entered.signal()
+                guard release.wait(timeout: .now() + 5) == .success else { throw POSIXError(.ETIMEDOUT) }
+            }
+        }
+        XCTAssertEqual(entered.wait(timeout: .now() + 5), .success)
+        let started = DispatchSemaphore(value: 0)
+        let operation = Task.detached {
+            started.signal()
+            let writer = try fixture.writer()
+            _ = FileOperationJournal.finalize(writer, operationIsConsistent: true)
+        }
+        XCTAssertEqual(started.wait(timeout: .now() + 5), .success)
+#if LOUPPE_TEST_SEAMS
+        let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+        while try FileOperationJournal.photosCleanupWaiterCountForTesting(directory: fixture.journals) == 0,
+              ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        XCTAssertEqual(try FileOperationJournal.photosCleanupWaiterCountForTesting(directory: fixture.journals), 1,
+            "The command must actually contend with cleanup before it releases the lock")
+#endif
+        release.signal()
+        try await cleanup.value
+        try await operation.value
+    }
+
     func testCleanupHoldsOperationLockIncludingWithInitiallyMissingRoot() throws {
         let fixture = try PhotosRecoveryFixture()
         defer { fixture.remove() }
@@ -270,7 +359,7 @@ final class PhotosRecoveryRetentionTests: XCTestCase, @unchecked Sendable {
             let evidence = foreign.appendingPathComponent("keep")
             try fixture.bytes.write(to: evidence)
             PhotosBatchCleanup.remove([fixture.folder], cacheRoot: fixture.cache,
-                                      operationJournalDirectory: fixture.journals) {
+                                      operationJournalDirectory: fixture.journals, beforeRemoval: {
                 XCTAssertThrowsError(try fixture.writer()) { error in
                     guard case FileOperationJournal.JournalError.operationInUse = error else { return XCTFail("\(error)") }
                 }
@@ -278,7 +367,7 @@ final class PhotosRecoveryRetentionTests: XCTestCase, @unchecked Sendable {
                 let target = redirectRoot ? fixture.cache : fixture.folder
                 try fm.moveItem(at: target, to: fixture.root.appendingPathComponent("Retained"))
                 try fm.createSymbolicLink(at: target, withDestinationURL: foreign)
-            }
+            })
             XCTAssertEqual(try Data(contentsOf: evidence), fixture.bytes)
         }
     }

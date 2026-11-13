@@ -330,6 +330,7 @@ actor PhotosLibraryService: PhotosLibraryClient {
 /// atomically exclude arbitrary same-user namespace edits.
 enum PhotosBatchCleanup {
     static func remove(_ folders: [URL], cacheRoot: URL, operationJournalDirectory: URL?,
+                       afterChunk: () throws -> Void = {},
                        beforeRemoval: () throws -> Void = {}) {
         guard !folders.isEmpty,
               let binding = try? DurableFileIO.DirectoryBinding(url: cacheRoot),
@@ -341,19 +342,35 @@ enum PhotosBatchCleanup {
                 && UUID(uuidString: $0.lastPathComponent) != nil
         }
         guard !candidates.isEmpty else { return }
-        try? FileOperationJournal.withUnreferencedPhotosBatches(candidates, directory: operationJournalDirectory) { unreferenced in
-            try binding.requireCurrentPath()
-            try beforeRemoval()
-            for folder in unreferenced {
-                try Task.checkCancellation()
-                let name = folder.lastPathComponent
-                let fd = openat(rootFD, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
-                guard fd >= 0 else { continue }
-                defer { Darwin.close(fd) }
-                guard marked(fd) else { continue }
-                try removeContents(fd, preservingBatchMarker: true)
-                guard unlinkat(fd, ".louppe-photos-batch", 0) == 0 else { throw POSIXError(.EIO) }
-                _ = unlinkat(rootFD, name, AT_REMOVEDIR)
+        for folder in candidates {
+            var finished = false
+            while !finished {
+                do {
+                    try Task.checkCancellation()
+                    // Revalidate all journals under the lock for every bounded
+                    // chunk. A newly referenced batch must retain its remainder.
+                    try FileOperationJournal.withUnreferencedPhotosBatches([folder], directory: operationJournalDirectory) { unreferenced in
+                        guard !unreferenced.isEmpty else { finished = true; return }
+                        try binding.requireCurrentPath()
+                        try beforeRemoval()
+                        let name = folder.lastPathComponent
+                        let fd = openat(rootFD, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                        guard fd >= 0 else { finished = true; return }
+                        defer { Darwin.close(fd) }
+                        guard marked(fd) else { finished = true; return }
+                        var remaining = 64
+                        finished = try removeContents(fd, remaining: &remaining, preservingBatchMarker: true)
+                        if finished {
+                            guard unlinkat(fd, ".louppe-photos-batch", 0) == 0 else { throw POSIXError(.EIO) }
+                            _ = unlinkat(rootFD, name, AT_REMOVEDIR)
+                        }
+                    }
+                    try afterChunk()
+                } catch {
+                    // Preserve the marker on contention, uncertainty or failed
+                    // I/O. Ordinary pruning retries after the command retires.
+                    return
+                }
             }
         }
     }
@@ -390,24 +407,26 @@ enum PhotosBatchCleanup {
         return count == expected.count && Array(bytes.prefix(count)) == expected
     }
 
-    private static func removeContents(_ directory: Int32, preservingBatchMarker: Bool = false) throws {
+    private static func removeContents(_ directory: Int32, remaining: inout Int,
+                                       preservingBatchMarker: Bool = false) throws -> Bool {
         let copy = dup(directory)
         guard copy >= 0 else { throw POSIXError(.EIO) }
         guard let stream = fdopendir(copy) else { Darwin.close(copy); throw POSIXError(.EIO) }
         defer { closedir(stream) }
         while true {
             try Task.checkCancellation()
+            if remaining == 0 { return false }
             errno = 0
             guard let entry = readdir(stream) else {
                 if errno != 0 { throw POSIXError(.EIO) }
-                return
+                return true
             }
-            try withUnsafePointer(to: &entry.pointee.d_name) { tuple in
-                try tuple.withMemoryRebound(to: CChar.self, capacity: Int(entry.pointee.d_namlen) + 1) { name in
-                    if strcmp(name, ".") == 0 || strcmp(name, "..") == 0 { return }
+            let complete = try withUnsafePointer(to: &entry.pointee.d_name) { tuple in
+                try tuple.withMemoryRebound(to: CChar.self, capacity: Int(entry.pointee.d_namlen) + 1) { name -> Bool in
+                    if strcmp(name, ".") == 0 || strcmp(name, "..") == 0 { return true }
                     // Failure or cancellation must leave a populated batch
                     // discoverable by the next ordinary pruning pass.
-                    if preservingBatchMarker && strcmp(name, ".louppe-photos-batch") == 0 { return }
+                    if preservingBatchMarker && strcmp(name, ".louppe-photos-batch") == 0 { return true }
                     var status = stat()
                     guard fstatat(directory, name, &status, AT_SYMLINK_NOFOLLOW) == 0 else { throw POSIXError(.EIO) }
                     let isDirectory = status.st_mode & S_IFMT == S_IFDIR
@@ -415,11 +434,15 @@ enum PhotosBatchCleanup {
                         let child = openat(directory, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
                         guard child >= 0 else { throw POSIXError(.EIO) }
                         defer { Darwin.close(child) }
-                        try removeContents(child)
+                        guard try removeContents(child, remaining: &remaining) else { return false }
+                        if remaining == 0 { return false }
                     }
                     guard unlinkat(directory, name, isDirectory ? AT_REMOVEDIR : 0) == 0 else { throw POSIXError(.EIO) }
+                    remaining -= 1
+                    return true
                 }
             }
+            if !complete { return false }
         }
     }
 }

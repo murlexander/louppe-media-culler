@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Keep file commands available while Louppe removes an old Photos review’s temporary files.
+
 - Finish interrupted XMP Move recovery when its empty former source folder has been removed.
 
 - Let Organize move photos without XMP despite hidden same-stem or nested-stem media, while protecting shared sidecars.

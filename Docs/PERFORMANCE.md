@@ -355,7 +355,11 @@ are pruned at the next preparation. Failed cleanup keeps its staging bytes
 charged until batch retirement; disk failures remain actionable. Removal/pruning
 retain whole journal-referenced batches under the existing Operations lock,
 reading one plan at a time with the existing 512 MiB encoded-plan ceiling.
-Uncertain journals or lock contention defer all deletion. Candidate/reference
+Cleanup releases and revalidates between chunks of at most 64 removals.
+Each chunk traverses to its next removable entry without a time cutoff, so a
+slow traversal cannot cause repeated zero-progress restarts. Pending same-process
+command workers get priority and wait only off-main for the current chunk; cleanup never waits for a command. Uncertain
+journals or lock contention defer the remainder to ordinary pruning. Candidate/reference
 metadata is proportional to candidate batches. The 5,000,000,000-byte staging
 ceiling applies per media session; unresolved journals (especially indefinitely
 corrupt or locked storage) can retain batches across reviews, without a global

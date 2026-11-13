@@ -709,7 +709,7 @@ enum FileOperationJournal {
     ) throws {
         let root = rootOverride ?? defaultDirectory
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        let operationLock = try OperationLock.acquire(in: root)
+        let operationLock = try OperationLock.acquire(in: root, photosCleanup: true)
         defer { operationLock.release() }
         let roots = try candidates.map { url in
             let bytes = try validatedPathBytes(for: url)
@@ -736,6 +736,12 @@ enum FileOperationJournal {
         }
         try cleanup(roots.enumerated().compactMap { referenced.contains($0.offset) ? nil : $0.element.0 })
     }
+
+#if LOUPPE_TEST_SEAMS
+    static func photosCleanupWaiterCountForTesting(directory: URL) throws -> Int {
+        try OperationLock.photosCleanupWaiterCount(in: directory)
+    }
+#endif
 
     static func hasPendingOperations(directory rootOverride: URL? = nil) -> Bool {
         let root = rootOverride ?? defaultDirectory
@@ -3243,13 +3249,40 @@ enum FileOperationJournal {
     /// safely inspect journals. The app-level single-instance declaration is
     /// only a UX defense; this lock is the correctness boundary.
     fileprivate final class OperationLock {
+        // Only command workers may wait for this process's bounded cleanup.
+        // Never wait on the main thread, another command, or another process.
+        private final class CleanupArbitration: @unchecked Sendable {
+            let condition = NSCondition()
+            var owners: [Data: pthread_t] = [:]
+            var waiters: [Data: Int] = [:]
+        }
+        private static let arbitration = CleanupArbitration()
         private var descriptor: Int32
+        private let cleanupKey: Data?
 
-        private init(descriptor: Int32) {
+        private init(descriptor: Int32, cleanupKey: Data?) {
             self.descriptor = descriptor
+            self.cleanupKey = cleanupKey
         }
 
-        static func acquire(in root: URL) throws -> OperationLock {
+        static func acquire(in root: URL, photosCleanup: Bool = false) throws -> OperationLock {
+            let key = try validatedPathBytes(for: resolvingSymlinksExactly(root))
+            let state = arbitration
+            state.condition.lock()
+            defer { state.condition.unlock() }
+            if photosCleanup {
+                // A pending command gets the next chunk boundary. Do not spin
+                // or wait here: the operation may need the Photos service actor.
+                guard state.waiters[key, default: 0] == 0 else { throw JournalError.operationInUse }
+            } else if let owner = state.owners[key], !Thread.isMainThread,
+                      pthread_equal(owner, pthread_self()) == 0 {
+                state.waiters[key, default: 0] += 1
+                defer {
+                    state.waiters[key, default: 0] -= 1
+                    if state.waiters[key] == 0 { state.waiters[key] = nil }
+                }
+                while state.owners[key] != nil { state.condition.wait() }
+            }
             let path = root.appendingPathComponent(".operation.lock").path
             var descriptor: Int32
             repeat {
@@ -3279,13 +3312,31 @@ enum FileOperationJournal {
                 Darwin.close(descriptor)
                 throw JournalError.cannotLockOperations(code)
             }
-            return OperationLock(descriptor: descriptor)
+            if photosCleanup { state.owners[key] = pthread_self() }
+            return OperationLock(descriptor: descriptor, cleanupKey: photosCleanup ? key : nil)
         }
 
+#if LOUPPE_TEST_SEAMS
+        static func photosCleanupWaiterCount(in root: URL) throws -> Int {
+            let key = try validatedPathBytes(for: resolvingSymlinksExactly(root))
+            let state = arbitration
+            state.condition.lock()
+            defer { state.condition.unlock() }
+            return state.waiters[key, default: 0]
+        }
+#endif
+
         func release() {
+            let state = Self.arbitration
+            state.condition.lock()
+            defer { state.condition.unlock() }
             guard descriptor >= 0 else { return }
             Darwin.close(descriptor)
             descriptor = -1
+            if let cleanupKey {
+                state.owners[cleanupKey] = nil
+                state.condition.broadcast()
+            }
         }
 
         deinit {
