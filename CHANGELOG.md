@@ -2,6 +2,7 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Release abandoned clipping-preview work and its queued image memory when browsing quickly.
 - Restore sharp 100% tiles when panning away and back quickly, without false rendering failures.
 - Respect disabled iCloud download permissions for Photos images and originals still waiting to start.
 - Protect shared XMP sidecars when media are added during review, refuse overlapping packet ownership, and stop metadata folder checks promptly when cancelled.

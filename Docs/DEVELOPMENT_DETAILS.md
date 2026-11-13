@@ -573,7 +573,10 @@ precedence over remembered scope/position.
   avoid filesystem reads. Cold player preparation uses one bounded `lstat`;
   ready-to-play checks run off-main. Mismatch offers Rescan.
 - Histogram/clipping analysis unpremultiplies nonzero alpha before luminance
-  checks and repremultiplies warnings with the original alpha.
+  checks and repremultiplies warnings with the original alpha. Clipping previews
+  retire cancelled waiters individually. The last waiter drops queued source
+  pixels; running transforms retain their lane until exit, and operation identity
+  prevents retired completions from consuming or caching replacement requests.
 - Keep `GalleryView`'s `FullImageView` persistent; do not add `.id(item.id)`.
   Its AppKit viewport preserves normalized inspection position across photos.
   `FullImageView.loadedItemID` prevents stale preview display.

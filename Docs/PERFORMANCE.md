@@ -128,7 +128,11 @@ persistence reads and final identity checks.
   retains numbers, never pixels. Same revisions coalesce; cancellation removes
   stale waiters/queued work. Unsupported/unknown decoders leave rendered analysis
   in place. `ClippingPreviewPipeline` shares the coalesced full preview and runs
-  two transforms.
+  two transforms. Each waiter has its own cancellation identity. The last
+  cancellation retires the request and releases its queued source image; queued
+  blocks capture no pixels. Running transforms keep their lanes until worker
+  exit. Completion matches operation identity before caching or resuming live
+  waiters, so retired work cannot consume a renewed same-key request.
 - Quality cues work with Info closed. One session scheduler prioritizes current/
   selected/rendered/nearby photos, requests at most two items per batch, then
   walks the remaining session. It retains only revision/source/dimensions/sample

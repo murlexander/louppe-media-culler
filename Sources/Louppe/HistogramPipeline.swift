@@ -905,32 +905,71 @@ final class ClippingPreviewPipeline: @unchecked Sendable {
     static let cacheCostLimit = 128 * 1024 * 1024
 
     private final class PendingImage {
-        var waiters: [CheckedContinuation<NSImage?, Never>]
+        var waiters: [UUID: CheckedContinuation<NSImage?, Never>]
+        var source: CGImage?
         let operation: BlockOperation
 
         init(
-            waiters: [CheckedContinuation<NSImage?, Never>],
+            waiters: [UUID: CheckedContinuation<NSImage?, Never>],
+            source: CGImage,
             operation: BlockOperation
         ) {
             self.waiters = waiters
+            self.source = source
             self.operation = operation
         }
     }
 
     private let cache = NSCache<NSString, NSImage>()
-    private let queue: OperationQueue = {
-        let queue = OperationQueue()
-        queue.name = "louppe.clipping-preview"
-        queue.maxConcurrentOperationCount = 2
-        queue.qualityOfService = .userInitiated
-        return queue
-    }()
+    private let queue: OperationQueue
+    private let testingSource: (@Sendable (PhotoItem) async -> CGImage?)?
+    private let testingTransform: (@Sendable (CGImage) -> CGImage?)?
     private let lock = NSLock()
     private var inFlight: [String: PendingImage] = [:]
 
     private init() {
+        queue = OperationQueue()
+        queue.name = "louppe.clipping-preview"
+        queue.maxConcurrentOperationCount = 2
+        queue.qualityOfService = .userInitiated
+        testingSource = nil
+        testingTransform = nil
         cache.countLimit = 2
         cache.totalCostLimit = Self.cacheCostLimit
+    }
+
+    #if LOUPPE_TEST_SEAMS
+    init(operationQueue: OperationQueue,
+         source: @escaping @Sendable (PhotoItem) async -> CGImage?,
+         transform: @escaping @Sendable (CGImage) -> CGImage?) {
+        queue = operationQueue
+        queue.name = "louppe.clipping-preview"
+        queue.maxConcurrentOperationCount = 2
+        queue.qualityOfService = .userInitiated
+        testingSource = source
+        testingTransform = transform
+        cache.countLimit = 2
+        cache.totalCostLimit = Self.cacheCostLimit
+    }
+
+    func waiterCountForTesting(for item: PhotoItem) -> Int {
+        lock.withLock { inFlight[ImagePipeline.fullCacheKey(for: item, mode: .fast)]?.waiters.count ?? 0 }
+    }
+
+    func waitForWorkForTesting() async {
+        await withCheckedContinuation { continuation in
+            let barrier = BlockOperation { continuation.resume() }
+            for operation in queue.operations { barrier.addDependency(operation) }
+            queue.addOperation(barrier)
+        }
+    }
+    #endif
+
+    private func sourceImage(for item: PhotoItem, mode: RawDisplayMode,
+                             decoder: AppleRawDecoder, sourceAccess: MediaReadAccess?) async -> CGImage? {
+        if let testingSource { return await testingSource(item) }
+        let source = await ImagePipeline.shared.fullImage(for: item, mode: mode, decoder: decoder, sourceAccess: sourceAccess)
+        return source?.cgImage(forProposedRect: nil, context: nil, hints: nil)
     }
 
     func cachedImage(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault) -> NSImage? {
@@ -940,70 +979,100 @@ final class ClippingPreviewPipeline: @unchecked Sendable {
     }
 
     func image(for item: PhotoItem, mode: RawDisplayMode = .fast, decoder: AppleRawDecoder = .appleDefault, sourceAccess: MediaReadAccess? = nil) async -> NSImage? {
-        guard item.mediaKind == .photo, item.isSupported else { return nil }
+        guard !Task.isCancelled, item.mediaKind == .photo, item.isSupported else { return nil }
         let key = ImagePipeline.fullCacheKey(for: item, mode: mode, decoder: decoder)
         if let cached = cache.object(forKey: key as NSString) {
             return cached
         }
-        guard let source = await ImagePipeline.shared.fullImage(for: item, mode: mode, decoder: decoder, sourceAccess: sourceAccess),
-              let cgImage = source.cgImage(
-                forProposedRect: nil,
-                context: nil,
-                hints: nil
-              )
-        else { return nil }
+        guard let cgImage = await sourceImage(for: item, mode: mode, decoder: decoder, sourceAccess: sourceAccess),
+              !Task.isCancelled else { return nil }
 
-        return await withCheckedContinuation { continuation in
-            lock.lock()
-            if let cached = cache.object(forKey: key as NSString) {
-                lock.unlock()
-                continuation.resume(returning: cached)
-                return
-            }
-            if let pending = inFlight[key] {
-                pending.waiters.append(continuation)
-                lock.unlock()
-                return
-            }
-            let operation = BlockOperation { [weak self] in
-                guard let self else { return }
-                let processed = autoreleasepool {
-                    ClippingWarningProcessor.overlay(on: cgImage).map {
-                        NSImage(cgImage: $0, size: .zero)
-                    }
+        let waiterID = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                lock.lock()
+                guard !Task.isCancelled else {
+                    lock.unlock()
+                    continuation.resume(returning: nil)
+                    return
                 }
-                self.finish(
-                    key: key,
-                    image: processed,
-                    cost: processed.map {
-                        Int($0.size.width * $0.size.height * 4)
-                    } ?? 0
+                if let cached = cache.object(forKey: key as NSString) {
+                    lock.unlock()
+                    continuation.resume(returning: cached)
+                    return
+                }
+                if let pending = inFlight[key] {
+                    pending.waiters[waiterID] = continuation
+                    lock.unlock()
+                    return
+                }
+                let operation = BlockOperation()
+                // The pending request owns queued pixels. This block captures
+                // only identity, so cancellation can release them immediately
+                // even if OperationQueue retains the cancelled block.
+                operation.addExecutionBlock { [weak self, weak operation] in
+                    guard let self, let operation,
+                          let source = self.takeSource(key: key, operation: operation) else { return }
+                    let processed = autoreleasepool {
+                        if let transform = self.testingTransform { return transform(source) }
+                        return ClippingWarningProcessor.overlay(on: source)
+                    }
+                    self.finish(
+                        key: key, operation: operation,
+                        image: processed.map { NSImage(cgImage: $0, size: .zero) },
+                        cost: processed.map { $0.bytesPerRow * $0.height } ?? 0
+                    )
+                }
+                operation.qualityOfService = .userInitiated
+                inFlight[key] = PendingImage(
+                    waiters: [waiterID: continuation], source: cgImage, operation: operation
                 )
+                lock.unlock()
+                queue.addOperation(operation)
             }
-            operation.qualityOfService = .userInitiated
-            inFlight[key] = PendingImage(
-                waiters: [continuation],
-                operation: operation
-            )
-            lock.unlock()
-            queue.addOperation(operation)
+        } onCancel: { [weak self] in
+            self?.cancelWaiter(waiterID, key: key)
         }
     }
 
-    private func finish(key: String, image: NSImage?, cost: Int) {
+    private func takeSource(key: String, operation: BlockOperation) -> CGImage? {
+        lock.withLock {
+            guard let pending = inFlight[key], pending.operation === operation,
+                  !operation.isCancelled else { return nil }
+            let source = pending.source
+            pending.source = nil
+            return source
+        }
+    }
+
+    private func cancelWaiter(_ waiterID: UUID, key: String) {
         lock.lock()
-        guard let pending = inFlight.removeValue(forKey: key) else {
+        guard let pending = inFlight[key],
+              let waiter = pending.waiters.removeValue(forKey: waiterID) else {
             lock.unlock()
             return
         }
-        if let image {
-            cache.setObject(
-                image,
-                forKey: key as NSString,
-                cost: cost
-            )
+        if pending.waiters.isEmpty {
+            inFlight.removeValue(forKey: key)
+            pending.source = nil
+            // A running synchronous transform still owns its lane until exit.
+            pending.operation.cancel()
         }
-        let waiters = pending.waiters
+        lock.unlock()
+        waiter.resume(returning: nil)
+    }
+
+    private func finish(key: String, operation: BlockOperation, image: NSImage?, cost: Int) {
+        lock.lock()
+        guard let pending = inFlight[key], pending.operation === operation else {
+            lock.unlock()
+            return
+        }
+        inFlight.removeValue(forKey: key)
+        if let image, !operation.isCancelled {
+            cache.setObject(image, forKey: key as NSString, cost: cost)
+        }
+        let waiters = Array(pending.waiters.values)
         lock.unlock()
         for waiter in waiters {
             waiter.resume(returning: image)
