@@ -549,6 +549,11 @@ precedence over remembered scope/position.
 
 ## Media rendering and caches
 
+- Audio levels measure the single enabled default audio track. Multiple tracks
+  require every disabled alternative to explicitly name that default as its audio
+  fallback, as in iPhone spatial recordings. Language/independent alternatives or
+  no single enabled track mean unavailable; analysis never changes playback selection.
+
 - `MediaKind.text` files remain standalone during pairing and use per-file review
   metadata/operations. The extension list excludes XMP and hidden sidecars.
   `TextPreviewLoader` reads/parses only the current document on one actor, caps

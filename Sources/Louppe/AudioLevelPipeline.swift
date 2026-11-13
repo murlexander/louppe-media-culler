@@ -354,13 +354,28 @@ final class AudioLevelPipeline: @unchecked Sendable {
     ) async -> AudioLevelAnalysis? {
         guard !Task.isCancelled else { return nil }
         let asset = AVURLAsset(url: url)
-        // The reader does not share AVPlayerItem's automatic/manual selection.
-        // Multiple alternatives therefore cannot be labelled as playback levels.
-        guard let tracks = try? await asset.loadTracks(withMediaType: .audio),
-              tracks.count == 1, let track = tracks.first,
+        guard let tracks = try? await asset.loadTracks(withMediaType: .audio) else { return nil }
+        var enabled: [AVAssetTrack] = []
+        for track in tracks {
+            guard let isEnabled = try? await track.load(.isEnabled) else { return nil }
+            if isEnabled { enabled.append(track) }
+        }
+        // iPhone Spatial Audio commonly has an enabled stereo fallback and a
+        // disabled spatial track (Apple TN3177). Measure the authored default,
+        // never mix alternatives or guess when multiple tracks are enabled.
+        guard enabled.count == 1, let track = enabled.first,
               !Task.isCancelled,
               let reader = try? AVAssetReader(asset: asset)
         else { return nil }
+        if tracks.count > 1 {
+            for alternative in tracks where alternative.trackID != track.trackID {
+                // A language or independent alternate can be selected manually
+                // by the player. Only an explicit fallback association proves
+                // that the disabled tracks represent this same recording.
+                guard let fallbacks = try? await alternative.loadAssociatedTracks(ofType: .audioFallback),
+                      fallbacks.count == 1, fallbacks[0].trackID == track.trackID else { return nil }
+            }
+        }
         let output = AVAssetReaderTrackOutput(
             track: track,
             outputSettings: [

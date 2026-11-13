@@ -23,7 +23,7 @@
 - Use neutral thumbnail selection in inactive windows and expose Sort and Filter titles as VoiceOver headings.
 - Refuse redirected source and destination paths during Copy and Organize.
 - Keep interrupted Move recovery pending until restored file locations are safely saved to disk.
-- Show audio analysis as unavailable for files with alternate audio tracks, instead of presenting measurements from the wrong track.
+- Show audio levels for the enabled default in recordings with explicit fallback tracks, including iPhone spatial audio; keep language and ambiguous alternatives unavailable.
 - Reject reused release build numbers even after the update feed has been regenerated.
 - Explain the chosen key under the Settings keyboard map, and assign a free key to an action from there. Pointing at a shortcut lights its key; a filtered shortcut group can be collapsed. Thanks to Andrey Markin (@Mark-Life) for the keyboard map refinements in this update.
 
