@@ -52,6 +52,7 @@ enum SourceOrganizationWorker {
     static func organize(
         _ plan: SourceOrganizationPlan,
         journalDirectory: URL? = nil,
+        beforeOpeningDestinationRoot: @escaping () throws -> Void = {},
         afterPreparingDestinationDirectories: @escaping () throws -> Void = {},
         progress: @escaping Progress
     ) -> SourceOrganizationResult {
@@ -66,7 +67,7 @@ enum SourceOrganizationWorker {
             directorySyncPolicy: plan.storageSafety.directorySyncPolicy,
             renameStrategy: plan.storageSafety.noOverwriteRenameStrategy,
             prepareDestinationDirectories: {
-                try prepareDestinationDirectories(for: plan)
+                try prepareDestinationDirectories(for: plan, beforeOpeningRoot: beforeOpeningDestinationRoot)
                 try verifyMoveCompatibility(for: plan)
                 try afterPreparingDestinationDirectories()
             },
@@ -162,7 +163,8 @@ enum SourceOrganizationWorker {
     }
 
     private static func prepareDestinationDirectories(
-        for plan: SourceOrganizationPlan
+        for plan: SourceOrganizationPlan,
+        beforeOpeningRoot: () throws -> Void
     ) throws {
         guard plan.sourceFolderIdentity.matches(folder: plan.sourceFolder) else {
             throw WorkerError.sourceFolderChanged
@@ -173,7 +175,21 @@ enum SourceOrganizationWorker {
         }.sorted {
             componentCount($0.bytes) < componentCount($1.bytes)
         }
+        try beforeOpeningRoot()
         let rootDirectory = try DurableFileIO.BoundDirectory(.init(url: root.url))
+        // Binding a fresh pathname must not adopt a replacement source root.
+        // Compare the opened descriptor's identity with the confirmed root;
+        // a fresh capture supplies the current device after a UUID-owned remount.
+        let currentRoot = try SessionPersistence.SourceFolderIdentity.capture(at: root.url)
+        let binding = rootDirectory.binding
+        guard plan.sourceFolderIdentity == currentRoot,
+              UInt64(binding.device) == currentRoot.systemNumber,
+              UInt64(binding.inode) == currentRoot.fileNumber,
+              Int64(binding.birthSeconds) == currentRoot.birthTime.seconds,
+              Int64(binding.birthNanoseconds) == currentRoot.birthTime.nanoseconds,
+              plan.sourceFolderIdentity.matches(folder: root.url) else {
+            throw WorkerError.sourceFolderChanged
+        }
         for directory in directories {
             try createDirectoryChain(
                 directory,

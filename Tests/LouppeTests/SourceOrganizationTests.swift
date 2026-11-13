@@ -3,6 +3,83 @@ import XCTest
 @testable import Louppe
 
 final class SourceOrganizationTests: XCTestCase {
+    func testOrganizationRefusesReplacedRootBeforeCreatingDescendants() throws {
+        for redirectsAncestor in [false, true] {
+            let base = try makeFixture(named: "RootBindingSwap")
+            defer { try? FileManager.default.removeItem(at: base.root) }
+            let parent = try directory("Parent", under: base.root)
+            let photos = try directory("Photos", under: parent)
+            let fixture = Fixture(root: base.root, photos: photos, journals: base.journals)
+            let source = try mediaFile("A.JPG", under: photos)
+            let item = makeItem(id: "A.JPG", url: source, rating: .yes)
+            let original = try FileOperationJournal.captureIdentity(at: source)
+            let prepared = try plan(fixture: fixture, selected: [item], levels: [.decision])
+            let held = base.root.appendingPathComponent("Held")
+            let outside = try directory("Outside", under: base.root)
+            let outsidePhotos = try directory("Photos", under: outside)
+            let result = SourceOrganizationWorker.organize(
+                prepared, journalDirectory: fixture.journals,
+                beforeOpeningDestinationRoot: {
+                    if redirectsAncestor {
+                        try FileManager.default.moveItem(at: parent, to: held)
+                        try FileManager.default.createSymbolicLink(at: parent, withDestinationURL: outside)
+                    } else {
+                        try FileManager.default.moveItem(at: photos, to: held)
+                        try FileManager.default.createDirectory(at: photos, withIntermediateDirectories: false)
+                    }
+                }, progress: { _, _ in }
+            )
+            let unconfirmed = redirectsAncestor ? outsidePhotos : photos
+            let heldSource = redirectsAncestor
+                ? held.appendingPathComponent("Photos/A.JPG") : held.appendingPathComponent("A.JPG")
+            XCTAssertEqual(result.movedFiles, 0)
+            XCTAssertEqual(result.failedItems, 1)
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: unconfirmed.path), [],
+                "No directories may be created under an unconfirmed root")
+            XCTAssertEqual(try FileOperationJournal.captureIdentity(at: heldSource), original)
+            XCTAssertEqual(try Data(contentsOf: heldSource), Data("A.JPG".utf8))
+        }
+    }
+
+    func testOrganizationRootBindingAllowsUUIDOwnedDeviceRemapping() throws {
+        let fixture = try makeFixture(named: "RootBindingRemount")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let source = try mediaFile("A.JPG", under: fixture.photos)
+        let item = makeItem(id: "A.JPG", url: source, rating: .yes)
+        let prepared = try plan(fixture: fixture, selected: [item], levels: [.decision])
+        guard prepared.sourceFolderIdentity.volumeUUIDString != nil else {
+            throw XCTSkip("UUID-owned volume required for device remapping")
+        }
+        let remapped = SourceOrganizationPlan(
+            sourceFolder: prepared.sourceFolder,
+            sourceFolderIdentity: prepared.sourceFolderIdentity.remappingSourceSystemNumberForTesting(to: prepared.sourceFolderIdentity.systemNumber &+ 1),
+            storageSafety: prepared.storageSafety,
+            configuration: prepared.configuration,
+            sourceItems: prepared.sourceItems,
+            workerPlan: prepared.workerPlan,
+            destinationDirectories: prepared.destinationDirectories,
+            mappings: prepared.mappings,
+            destinationItemIDBySourceItemID: prepared.destinationItemIDBySourceItemID,
+            originFolderPathBytesByFileID: prepared.originFolderPathBytesByFileID,
+            previewGroups: prepared.previewGroups,
+            collisions: prepared.collisions,
+            itemCount: prepared.itemCount,
+            mediaFileCount: prepared.mediaFileCount,
+            movingItemCount: prepared.movingItemCount,
+            movingFileCount: prepared.movingFileCount,
+            alreadyOrganizedItemCount: prepared.alreadyOrganizedItemCount,
+            sidecarFileCount: prepared.sidecarFileCount,
+            excludedACRCompanionCount: prepared.excludedACRCompanionCount,
+            autoNumberedFileCount: prepared.autoNumberedFileCount
+        )
+        let result = SourceOrganizationWorker.organize(remapped, journalDirectory: fixture.journals,
+            progress: { _, _ in })
+        XCTAssertEqual(result.movedFiles, 1)
+        XCTAssertEqual(result.failedItems, 0)
+        XCTAssertEqual(try Data(contentsOf: fixture.photos.appendingPathComponent("Organized/Yes/A.JPG")),
+            Data("A.JPG".utf8))
+    }
+
     func testOrganizationRefusesIntermediateSymlinkAfterPreparingDirectories() throws {
         for existingDirectories in [false, true] {
             let fixture = try makeFixture(named: "PreparedIntermediateSwap")
