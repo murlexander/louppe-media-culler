@@ -1,7 +1,8 @@
 #!/bin/zsh
 set -euo pipefail
 cd "$(dirname "$0")/.."
-source "$PWD/Scripts/lib/xcode_env.sh"
+# CI selects its own Xcode (not /Applications/Xcode.app); locally, pin full Xcode.
+[[ -n "${CI:-}" ]] || source "$PWD/Scripts/lib/xcode_env.sh"
 optimization=()
 snapshot_only=0
 for option in "$@"; do
