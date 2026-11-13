@@ -5,6 +5,49 @@ import XCTest
 @testable import Louppe
 
 final class XMPFamilyCensusTests: XCTestCase {
+    func testLaterFamilySeesNewOwnerAndChangedFileAfterEarlierPublication() async throws {
+        for addOwner in [false, true] {
+            let root = try folder()
+            let first = root.appendingPathComponent("FIRST.NEF")
+            let later = root.appendingPathComponent("LATER.NEF")
+            for raw in [first, later] { try Data("raw".utf8).write(to: raw) }
+            let families = try XMPSidecarResolver.resolve(members: [member(first), member(later)])
+            let validations = try families.map {
+                try XMPPublicationSourceValidation(family: $0, sourceFolder: nil, sourceFolderIdentity: nil)
+            }
+            let store = XMPMetadataStore()
+            let writes = try await prepareFamilies(families, validations: validations, store: store)
+            _ = try await store.commit(writes[0], sourceValidation: validations[0])
+            if addOwner {
+                try Data("new owner".utf8).write(to: root.appendingPathComponent("LATER.JPG"))
+            } else {
+                // An in-place edit need not change the directory's timestamps.
+                try Data("changed media".utf8).write(to: later)
+            }
+            do {
+                _ = try await store.commit(writes[1], sourceValidation: validations[1])
+                XCTFail("A later family adopted a stale observation")
+            } catch {
+                if addOwner { XCTAssertTrue(error is XMPFamilyMembership.Changed, "\(error)") }
+                else { XCTAssertTrue(error is XMPPublicationSourceChanged, "\(error)") }
+            }
+            XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("FIRST.xmp").path))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("LATER.xmp").path))
+            XCTAssertEqual(try Data(contentsOf: later), Data((addOwner ? "raw" : "changed media").utf8))
+        }
+    }
+
+    private func prepareFamilies(_ families: [XMPSidecarFamilyPlan],
+                                 validations: [XMPPublicationSourceValidation],
+                                 store: XMPMetadataStore) async throws -> [XMPPreparedWrite] {
+        var writes: [XMPPreparedWrite] = []
+        for (family, validation) in zip(families, validations) {
+            writes.append(try await store.prepareWrite(path: XCTUnwrap(family.canonicalSidecar),
+                metadata: metadata, sourceValidation: validation))
+        }
+        return writes
+    }
+
     func testNestedStemWithoutApplicationPacketAllowsCanonicalPublicationAndMove() async throws {
         let root = try folder()
         let source = try folder(in: root)

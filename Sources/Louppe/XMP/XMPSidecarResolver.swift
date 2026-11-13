@@ -507,6 +507,9 @@ struct XMPFamilyMembership: Equatable, Sendable {
             }
             try XMPSidecarResolver.checkCancellation(isCancelled)
             measured(visited, result.count)
+            #if LOUPPE_TEST_SEAMS
+            XMPBoundaryMetrics.shared.record(visited: visited)
+            #endif
             return result
         }
     }
@@ -530,3 +533,24 @@ struct XMPFamilyMembership: Equatable, Sendable {
         return sensitive ? normalized : normalized.lowercased()
     }
 }
+
+#if LOUPPE_TEST_SEAMS
+/// Opt-in whole-job accounting; one update per census, never per entry.
+final class XMPBoundaryMetrics: @unchecked Sendable {
+    static let shared = XMPBoundaryMetrics()
+    private let lock = NSLock()
+    private var entries: Int? = nil
+    func start() { lock.lock(); entries = 0; lock.unlock() }
+    func record(visited: Int) {
+        lock.lock()
+        if entries != nil { entries! += visited }
+        lock.unlock()
+    }
+    func stop() -> Int {
+        lock.lock(); defer { lock.unlock() }
+        let result = entries ?? 0
+        entries = nil
+        return result
+    }
+}
+#endif

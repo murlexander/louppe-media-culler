@@ -22,6 +22,20 @@ The runner holds `~/.louppe-perf/measure.lock` during these measurements, waitin
 for an existing owner. Compare both revisions on the same Mac and toolchain;
 fixture setup and compilation are outside the timed regions.
 
+`Tests/run_xmp_job_cost.sh` measures optimized production standalone XMP
+publication (updating existing packets) and Export Move, including planning,
+durable writes, journals and retirement cleanup. It uses disposable 1k/2k/4k
+single-media families with existing canonical XMP, flat or 32 families per
+subfolder. Each case gets a new process and holds the same measurement lock.
+It reports complete-job time, census directory-entry visits, cancellation
+latency during already-current publication, and initial/retained/peak process RSS.
+The cancellation probe isolates ownership checks; it does not bound an in-flight
+durable write. RSS includes
+allocator/framework retention, not only live Swift objects. Move has no Stop
+API; its cancellation metric is explicitly unavailable. Set
+`LOUPPE_XMP_SIZES='4000'` to restrict a repeat to one size. Fixtures are removed
+after each case. Release packaging excludes the census accounting seam.
+
 ## Disposable verification fixtures
 
 Performance fixtures use `/private/tmp`. On 7 October 2026, a Documents control
