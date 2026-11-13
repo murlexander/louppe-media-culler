@@ -10,7 +10,7 @@ struct GridView: View {
     @ObservedObject var store: SessionStore
     @Environment(\.locale) private var locale
     @State private var collectionController = ReviewCollectionController()
-    @State private var suppressNextFollow = false
+    @State private var pointerCurrentID: String?
     var initialViewportReceipt: ReviewCollectionViewportReceipt? = nil
     var onViewportChange: ((ReviewCollectionViewportReceipt) -> Void)? = nil
     var onViewportRestored: ((ReviewCollectionViewportReceipt) -> Void)? = nil
@@ -73,9 +73,9 @@ struct GridView: View {
                     }
                     .onChange(of: store.currentItem?.id) {
                         collectionController.currentID = store.currentItem?.id
-                        if suppressNextFollow {
-                            suppressNextFollow = false
-                        } else if let id = store.currentItem?.id {
+                        let pointerID = pointerCurrentID
+                        pointerCurrentID = nil
+                        if let id = store.currentItem?.id, id != pointerID {
                             collectionController.follow(id: id)
                         }
                     }
@@ -92,7 +92,10 @@ struct GridView: View {
     }
 
     private func suppressFollowForPointerAction() {
-        suppressNextFollow = true
+        // Capture the final identity after the synchronous pointer transaction,
+        // including filtering. A transaction can return to the observed current;
+        // that receipt must never suppress later navigation to a different ID.
+        pointerCurrentID = store.currentItem?.id
     }
 }
 
@@ -320,8 +323,8 @@ private struct GridCell: View {
         if item.isPlayableMedia {
             Button {
                 if index != store.currentIndex {
-                    onPointerCurrentChange()
                     store.setIndex(index)
+                    onPointerCurrentChange()
                 }
                 store.videoPlayback.toggle(item)
             } label: {
@@ -460,10 +463,9 @@ struct GridCellActions {
         modifiers: NSEvent.ModifierFlags = NSEvent.modifierFlags
     ) {
         store.handleThumbnailClick(at: index, modifiers: modifiers) {
-            if index != store.currentIndex {
-                onPointerCurrentChange()
-            }
+            let changesCurrent = index != store.currentIndex
             makeCurrent()
+            if changesCurrent { onPointerCurrentChange() }
         }
     }
 
@@ -484,10 +486,9 @@ struct GridCellActions {
         let ratesExistingSelection =
             store.selectedIndices.count > 1
             && store.selectedIndices.contains(index)
-        if !ratesExistingSelection, index != store.currentIndex {
-            onPointerCurrentChange()
-        }
+        let changesCurrent = !ratesExistingSelection && index != store.currentIndex
         store.toggleRating(at: index)
+        if changesCurrent { onPointerCurrentChange() }
     }
 }
 

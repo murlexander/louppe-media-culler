@@ -134,7 +134,7 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 ## Agent work
 
-- [ ] **Grid follow after filtering:** reproduce and fix a filtered-out pointer rating leaving the next keyboard navigation offscreen.
+- [x] **Grid follow after filtering:** pointer decisions preserve browsing position without suppressing the next keyboard follow.
 - [ ] **Opening modifier selection:** align initial Shift-click and Command-click anchors with the Ready selection model.
 - [ ] **Large XMP jobs:** reduce repeated fresh family-census work in large single folders while preserving mutation/recovery ownership checks.
 

@@ -314,7 +314,7 @@ final class SelectionStateTests: XCTestCase {
         )
     }
 
-    func testGridPhotoClickSignalsBeforeChangingCurrentPhoto() {
+    func testGridPhotoClickSignalsFinalCurrentPhoto() {
         let store = readyStore()
         var currentWhenSignalled: Int?
         let actions = GridCellActions(
@@ -327,7 +327,7 @@ final class SelectionStateTests: XCTestCase {
 
         actions.selectPhoto(modifiers: [])
 
-        XCTAssertEqual(currentWhenSignalled, 0)
+        XCTAssertEqual(currentWhenSignalled, 3)
         XCTAssertEqual(store.currentIndex, 3)
     }
 

@@ -801,7 +801,10 @@ source presentation; current and selection update observed cells directly.
 `gridColumnCount` remains unpublished navigation state.
 
 Follow-navigation resolves the target directly, without realizing intervening
-rows. Manual scrolling stays idle. Physical-ID viewport receipts preserve the
+rows. Grid pointer actions suppress follow only for their final synchronous
+current identity, so coalesced changes and filtered-out decisions cannot consume
+a later keyboard follow. This uses no delayed clearing or extra scroll owner.
+Manual scrolling stays idle. Physical-ID viewport receipts preserve the
 browsed offset independently of the current photo through projection changes.
 The document opts out of AppKit responsive scrolling: main-actor cell realization
 does not promise the worker's extra overdraw region. Native wheel, momentum and

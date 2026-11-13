@@ -1004,7 +1004,10 @@ precedence over remembered scope/position.
   section geometry and a bounded set of reusable SwiftUI hosts. Stable entry and
   physical-file identities drive direct follow and viewport restoration.
   Reordering and resizing retain a visible current tile; a manually scrolled-away
-  viewport keeps its own position.
+  viewport keeps its own position. Grid pointer selection, decision and Play
+  actions record their final current identity after synchronous filtering; only
+  that identity skips follow. A transaction returning to the observed current
+  cannot suppress later keyboard navigation to another item.
   `BrowserRow` and `GridCell` observe `SessionStore` directly so badges/current
   frames update without rebuilding the collection projection. Reuse clears old
   roots before assigning new entries. Read-only opening supplies the same native

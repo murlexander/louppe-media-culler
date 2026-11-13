@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Keep the next keyboard-selected Grid photo visible after a pointer decision filters out a tile.
+
 - Fit portrait and rotated Photos video originals using their actual oriented dimensions.
 
 - Keep Photos originals needed by interrupted Copy recovery when closing a review or pruning abandoned staging.
