@@ -35,7 +35,7 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
     static let maximumEntries = 250_000
     static let maximumEntryBytes = 16 * 1_024
     /// Count ceiling for unpinned folders. Pinned folders are exempt from it.
-    static let maximumFolderSnapshots = 32
+    static let maximumFolderSnapshots = 256
     /// Byte ceiling for all snapshots; pinned folders are evicted last.
     static let maximumTotalBytes = 256 * 1_024 * 1_024
     static let maximumProtectedFolders = 512
@@ -62,8 +62,25 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
     }
 
     static var currentContext: String {
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        return "\(MetadataExtractor.archiveSchemaVersion)|\(TimeZone.current.identifier)|\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)|\(operatingSystemBuild)"
+    }
+
+    static var legacyLocalizedContext: String {
         "\(MetadataExtractor.archiveSchemaVersion)|\(TimeZone.current.identifier)|\(ProcessInfo.processInfo.operatingSystemVersionString)"
     }
+
+    private static let operatingSystemBuild: String = {
+        var size = 0
+        guard sysctlbyname("kern.osversion", nil, &size, nil, 0) == 0, size > 0, size <= 1_024 else {
+            return ProcessInfo.processInfo.operatingSystemVersionString
+        }
+        var bytes = [CChar](repeating: 0, count: size)
+        guard sysctlbyname("kern.osversion", &bytes, &size, nil, 0) == 0 else {
+            return ProcessInfo.processInfo.operatingSystemVersionString
+        }
+        return String(decoding: bytes.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+    }()
 
     private struct Envelope: Codable {
         let schemaVersion: Int
@@ -235,10 +252,14 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
     private var failureTrackingOverflowed = false
     /// v1 snapshot that supplied `entries`; removed after v2 is written.
     private var migrationSource: URL?
+    private var migratesContext = false
     /// The v2 file this instance read (nil: absent). A commit writes only if
     /// it is still that file, so an older producer never replaces a newer
     /// snapshot. Guarded by `maintenanceLock` after initialization.
     private var loadedRevision: SnapshotRevision?
+    #if LOUPPE_TEST_SEAMS
+    private(set) var maintenanceRunsForTesting = 0
+    #endif
 
     private struct SnapshotRevision: Equatable {
         let device: Int64, inode: UInt64, size: Int64
@@ -250,6 +271,10 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
             var info = stat()
             guard url.withUnsafeFileSystemRepresentation({ $0.map { Darwin.lstat($0, &info) } ?? -1 }) == 0
             else { return nil }
+            self.init(info)
+        }
+
+        init(_ info: stat) {
             device = Int64(info.st_dev); inode = UInt64(info.st_ino); size = Int64(info.st_size)
             modified = Int64(info.st_mtimespec.tv_sec); modifiedNanoseconds = info.st_mtimespec.tv_nsec
             changed = Int64(info.st_ctimespec.tv_sec); changedNanoseconds = info.st_ctimespec.tv_nsec
@@ -287,14 +312,23 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
         // Taken before reading: a replacement during the read only makes a
         // later commit skip conservatively.
         loadedRevision = SnapshotRevision(at: cacheURL)
-        if let current = Self.read(cacheURL, limit: Self.maximumSnapshotBytes, isCancelled: isCancelled)
-            .flatMap({ Self.decode($0, context: context, folderPath: folderPath, folderBinding: folderBinding,
-                                   isCancelled: isCancelled) }) {
+        let currentData = Self.read(cacheURL, limit: Self.maximumSnapshotBytes, isCancelled: isCancelled)
+        if let current = currentData.flatMap({ Self.decode($0, context: context,
+            folderPath: folderPath, folderBinding: folderBinding, isCancelled: isCancelled) }) {
             entries = current
+        } else if interpretationContext == nil,
+                  let localized = currentData.flatMap({ Self.decode($0, context: Self.legacyLocalizedContext,
+                    folderPath: folderPath, folderBinding: folderBinding, isCancelled: isCancelled) }) {
+            // Only this process's exact old context is accepted: schema, zone
+            // and OS build remain strict. Rewrite it once with stable fields.
+            entries = localized
+            migratesContext = true
         } else if let legacyURL = legacyDirectory?.appendingPathComponent(
                     Self.legacyBucket(for: identity, path: folderPath) + ".json"),
-                  let legacy = Self.read(legacyURL, limit: Self.maximumLegacySnapshotBytes, isCancelled: isCancelled)
-                    .flatMap({ Self.decodeLegacy($0, context: context, isCancelled: isCancelled) }) {
+                  let data = Self.read(legacyURL, limit: Self.maximumLegacySnapshotBytes, isCancelled: isCancelled),
+                  let legacy = Self.decodeLegacy(data, context: context, isCancelled: isCancelled)
+                    ?? (interpretationContext == nil
+                        ? Self.decodeLegacy(data, context: Self.legacyLocalizedContext, isCancelled: isCancelled) : nil) {
             // Only reached when v2 is missing or invalid: one extra open attempt.
             entries = legacy
             migrationSource = legacyURL
@@ -405,16 +439,18 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
         }
     }
 
-    /// Pure preparation belongs BEFORE the caller's final file/folder barrier.
+    /// Preparation belongs BEFORE the caller's final file/folder barrier and
+    /// is pure by default. Only post-Ready callers may touch via `onUnchanged`.
     /// Nil means unchanged/unavailable/cancelled; it never grants publication.
     /// Keeping comparison and encoding here prevents an unvalidated O(n) gap
     /// after that barrier on warm opens that need no cache filesystem work.
-    func prepareCommit(_ items: [PhotoItem], isCancelled: @Sendable () -> Bool = { false }) -> PreparedCommit? {
+    func prepareCommit(_ items: [PhotoItem], isCancelled: @Sendable () -> Bool = { false },
+                       onUnchanged: () -> Void = {}) -> PreparedCommit? {
         guard !isCancelled() else { return nil }
         extractionLock.lock()
         let failed = failedExtractions
         let overflowed = failureTrackingOverflowed
-        let migrating = migrationSource != nil
+        let migrating = migrationSource != nil || migratesContext
         extractionLock.unlock()
         guard !overflowed else { return nil }
         var candidates: [Entry] = []
@@ -437,10 +473,13 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
         }
         guard !isCancelled() else { return nil }
         // Loaded snapshots already obey the snapshot/entry-count ceilings.
-        // No encoding, directory maintenance or disk probes for an unchanged set.
-        // Storage cannot grow on this path; every write still runs maintenance.
-        // A migrated v1 snapshot is written once in v2 even when unchanged.
-        if unchanged && candidates.count == entries.count && !migrating { return nil }
+        // No encoding or maintenance for an unchanged set. Post-Ready callers
+        // may refresh its use date; pre-barrier preparation remains pure.
+        // Migrated snapshots are rewritten once even when unchanged.
+        if unchanged && candidates.count == entries.count && !migrating {
+            onUnchanged()
+            return nil
+        }
         guard let data = Self.encode(candidates, context: context, folderPath: folderPath,
                                      folderBinding: folderBinding, isCancelled: isCancelled) else { return nil }
         guard !isCancelled() else { return nil }
@@ -468,14 +507,46 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
             extractionLock.lock()
             let migrated = migrationSource
             migrationSource = nil
+            migratesContext = false
             extractionLock.unlock()
             if let migrated {
                 // unlink never follows a final symlink; absence is fine.
                 _ = migrated.withUnsafeFileSystemRepresentation { $0.map { Darwin.unlink($0) } }
             }
+            #if LOUPPE_TEST_SEAMS
+            maintenanceRunsForTesting += 1
+            #endif
             Self.maintain(directory: directory, preserving: cacheURL.lastPathComponent)
             return true
         } catch { return true } // Failed optional I/O still requires source revalidation.
+    }
+
+    /// Refresh eviction age at most daily without encoding or maintenance.
+    /// A descriptor and revision check keep stale producers and symlinks inert.
+    @discardableResult
+    func noteUsed(isCancelled: @Sendable () -> Bool = { false }) -> Bool {
+        guard !isCancelled() else { return false }
+        Self.maintenanceLock.lock()
+        defer { Self.maintenanceLock.unlock() }
+        guard !isCancelled(), let revision = loadedRevision,
+              Date().timeIntervalSince1970 - (Double(revision.modified)
+                + Double(revision.modifiedNanoseconds) / 1e9) >= 24 * 60 * 60 else { return false }
+        let descriptor = cacheURL.withUnsafeFileSystemRepresentation {
+            $0.map { Darwin.open($0, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC) } ?? -1
+        }
+        guard descriptor >= 0 else { return false }
+        defer { Darwin.close(descriptor) }
+        var status = stat()
+        guard fstat(descriptor, &status) == 0,
+              status.st_mode & mode_t(S_IFMT) == mode_t(S_IFREG),
+              SnapshotRevision(status) == revision, !isCancelled() else { return false }
+        var now = timeval()
+        guard gettimeofday(&now, nil) == 0 else { return false }
+        var times = [timeval(tv_sec: status.st_atimespec.tv_sec,
+                             tv_usec: Int32(status.st_atimespec.tv_nsec / 1_000)), now]
+        guard futimes(descriptor, &times) == 0, fstat(descriptor, &status) == 0 else { return false }
+        loadedRevision = SnapshotRevision(status)
+        return true
     }
 
     // MARK: - Pinned-folder protection
@@ -559,7 +630,7 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
                                    isCancelled: { false }) }
             .map { $0.values.sorted { $0.path < $1.path } }
     }
-    var isMigratingForTesting: Bool { extractionLock.withLock { migrationSource != nil } }
+    var isMigratingForTesting: Bool { extractionLock.withLock { migrationSource != nil || migratesContext } }
     /// The v1 JSON filename this folder's current mount would migrate from.
     var legacySnapshotNameForTesting: String { Self.legacyBucket(for: folderIdentity, path: folderPath) + ".json" }
     #endif

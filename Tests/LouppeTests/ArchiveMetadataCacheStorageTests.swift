@@ -38,7 +38,7 @@ final class ArchiveMetadataCacheStorageTests: XCTestCase {
 
     // MARK: Pinned protection
 
-    func testPinnedSnapshotSurvivesFortyOneOtherFoldersRelaunchAndIsEvictableAfterUnpin() async throws {
+    func testPinnedSnapshotSurvivesMoreOtherFoldersThanTheCapRelaunchAndIsEvictableAfterUnpin() async throws {
         let pinned = try ArchiveMetadataFixture(names: ["A.JPG"])
         defer { pinned.remove() }
         let cache = pinned.cache
@@ -67,9 +67,9 @@ final class ArchiveMetadataCacheStorageTests: XCTestCase {
             XCTAssertEqual(items.first?.cameraModel, "Other camera")
             XCTAssertTrue(FileManager.default.fileExists(atPath: index.cacheURL.path))
         }
-        for _ in 0..<41 { try openOtherFolder() }
+        for _ in 0..<(ArchiveMetadataIndex.maximumFolderSnapshots + 9) { try openOtherFolder() }
         XCTAssertTrue(FileManager.default.fileExists(atPath: pinnedURL.path),
-                      "41 other folder snapshots must not evict a pinned folder")
+                      "more other folder snapshots than the cap must not evict a pinned folder")
         XCTAssertEqual(try Self.snapshotNames(in: cache).count, ArchiveMetadataIndex.maximumFolderSnapshots + 1)
         let reads = ArchiveMetadataReads()
         _ = try pinned.prepare(FolderScanner.discoverInventory(pinned.source), reads: reads)
@@ -154,13 +154,13 @@ final class ArchiveMetadataCacheStorageTests: XCTestCase {
         let stale = try file(ArchiveMetadataFixture.snapshotName(1, protection: pin), age: 1_000)
         let newest = try file(ArchiveMetadataFixture.snapshotName(2, protection: pin), age: 900)
         for value in 0..<ArchiveMetadataIndex.maximumFolderSnapshots {
-            _ = try file(ArchiveMetadataFixture.snapshotName(100 + value), age: 500 - Double(value))
+            _ = try file(ArchiveMetadataFixture.snapshotName(1000 + value), age: 500 - Double(value))
         }
         _ = try fixture.prepare(FolderScanner.discoverInventory(fixture.source), reads: ArchiveMetadataReads())
         XCTAssertFalse(FileManager.default.fileExists(atPath: stale.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: newest.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath:
-            fixture.cache.appendingPathComponent(ArchiveMetadataFixture.snapshotName(100)).path))
+            fixture.cache.appendingPathComponent(ArchiveMetadataFixture.snapshotName(1000)).path))
         XCTAssertEqual(try Self.snapshotNames(in: fixture.cache).count, ArchiveMetadataIndex.maximumFolderSnapshots + 1)
     }
 

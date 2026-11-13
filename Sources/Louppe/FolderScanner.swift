@@ -699,7 +699,9 @@ enum FolderScanner {
         validatesIdentities: Bool = true,
         metadataReady: (@Sendable (OpeningMetadataUpdate) -> Void)? = nil,
         metadataInterest: OpeningMetadataInterest? = nil,
-        metadataWorkers: Int? = nil
+        metadataWorkers: Int? = nil,
+        admissionFloor: Int = 0,
+        foregroundWork: ForegroundWorkCoordinator = .shared
     ) throws -> [PhotoItem] {
         try stageWillBegin(.metadata)
         let workers = min(maxMetadataConcurrency, max(1, metadataWorkers ?? maxMetadataConcurrency))
@@ -712,13 +714,13 @@ enum FolderScanner {
                 try makeItems(for: inventory.items, isCancelled: isCancelled,
                               recorder: recorder, metadataReaderForTesting: metadataReaderForTesting,
                               metadataIndex: index, metadataReady: metadataReady, metadataInterest: metadataInterest,
-                              workers: workers)
+                              workers: workers, admissionFloor: admissionFloor, foregroundWork: foregroundWork)
             }
         } else {
             result = try makeItems(for: inventory.items, isCancelled: isCancelled,
                                    recorder: nil, metadataReaderForTesting: metadataReaderForTesting,
                                    metadataIndex: index, metadataReady: metadataReady, metadataInterest: metadataInterest,
-                                   workers: workers)
+                                   workers: workers, admissionFloor: admissionFloor, foregroundWork: foregroundWork)
         }
         try stageWillBegin(.chronologicalSort)
         let sorted = recorder.map { $0.measure(.chronologicalSort) { sortItems(result) } } ?? sortItems(result)
@@ -1096,7 +1098,9 @@ enum FolderScanner {
         metadataIndex: ArchiveMetadataIndex?,
         metadataReady: (@Sendable (OpeningMetadataUpdate) -> Void)?,
         metadataInterest: OpeningMetadataInterest?,
-        workers: Int = maxMetadataConcurrency
+        workers: Int = maxMetadataConcurrency,
+        admissionFloor: Int = 0,
+        foregroundWork: ForegroundWorkCoordinator = .shared
     ) throws -> [PhotoItem] {
         if isCancelled() { throw CancellationError() }
         guard !inventoryItems.isEmpty else { return [] }
@@ -1107,16 +1111,30 @@ enum FolderScanner {
             })
         }
         recorder?.progress(.metadata, completed: 0, total: inventoryItems.count)
-        DispatchQueue.concurrentPerform(iterations: min(workers, inventoryItems.count)) { _ in
+        DispatchQueue.concurrentPerform(iterations: min(workers, inventoryItems.count)) { worker in
             while !isCancelled() {
-                let preferred = metadataInterest?.currentPhysicalFileID.flatMap { slotByPhysicalID?[$0] }
-                guard let slot = results.claim(prioritizing: preferred) else { return }
+                let deferredSince = ContinuousClock.now
+                var slot: Int?
+                repeat {
+                    let preferred = metadataInterest?.currentPhysicalFileID.flatMap { slotByPhysicalID?[$0] }
+                    let admitsRead = worker < admissionFloor || metadataReaderForTesting != nil
+                        || foregroundWork.shouldAdmitBackgroundWork(deferredSince: deferredSince)
+                    slot = results.claim(prioritizing: preferred, allowing: {
+                        admitsRead || metadataIndex?.metadata(for: inventoryItems[$0].primaryFile) != nil
+                    })
+                    if slot != nil { break }
+                    // Wait before claiming: the floor workers must be able
+                    // to finish every file while demand stays held.
+                    if isCancelled() || !results.hasUnclaimedWork { return }
+                    Thread.sleep(forTimeInterval: 0.015)
+                } while !isCancelled()
+                guard let slot else { return }
                 do {
                     let source = inventoryItems[slot]
                     let file = try autoreleasepool {
                         try enrichMetadata(for: source.primaryFile, metadataReaderForTesting: metadataReaderForTesting,
                                            metadataIndex: metadataIndex, checksCacheHits: false,
-                                           isCancelled: isCancelled)
+                                           worker: worker, foregroundWork: foregroundWork, isCancelled: isCancelled)
                     }
                     if isCancelled() { return }
                     let item = PhotoItem(primaryFile: file, pairedFile: source.pairedFile)
@@ -1334,6 +1352,8 @@ enum FolderScanner {
         metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)?,
         metadataIndex: ArchiveMetadataIndex? = nil,
         checksCacheHits: Bool = true,
+        worker: Int? = nil,
+        foregroundWork: ForegroundWorkCoordinator = .shared,
         isCancelled: @Sendable () -> Bool = { false }
     ) throws -> PhotoFile {
         if isCancelled() { throw CancellationError() }
@@ -1344,12 +1364,11 @@ enum FolderScanner {
             if isCancelled() { throw CancellationError() }
             return ready
         }
-        if metadataReaderForTesting == nil {
-            // Only background workers call this synchronous boundary. Give
-            // interaction a quiet window, with the coordinator's hard deadline
-            // preventing continuous navigation from starving a complete scan.
+        if metadataReaderForTesting == nil, worker == nil {
+            // Scan workers handle admission before claiming a slot. Lazy
+            // enrichment still yields here before its independent read.
             let deferredSince = ContinuousClock.now
-            while !ForegroundWorkCoordinator.shared.shouldAdmitBackgroundWork(deferredSince: deferredSince) {
+            while !foregroundWork.shouldAdmitBackgroundWork(deferredSince: deferredSince) {
                 if isCancelled() { throw CancellationError() }
                 Thread.sleep(forTimeInterval: 0.015)
             }
@@ -1458,19 +1477,26 @@ enum FolderScanner {
             claimed = Array(repeating: false, count: count)
         }
 
-        func claim(prioritizing preferred: Int?) -> Int? {
+        func claim(prioritizing preferred: Int?, allowing: (Int) -> Bool) -> Int? {
             lock.lock()
             defer { lock.unlock() }
             guard firstError == nil else { return nil }
-            if let preferred, values.indices.contains(preferred), !claimed[preferred] {
+            if let preferred, values.indices.contains(preferred), !claimed[preferred], allowing(preferred) {
                 claimed[preferred] = true
                 return preferred
             }
             while next < values.count, claimed[next] { next += 1 }
-            guard next < values.count else { return nil }
+            guard next < values.count, allowing(next) else { return nil }
             claimed[next] = true
             defer { next += 1 }
             return next
+        }
+
+        var hasUnclaimedWork: Bool {
+            lock.withLock {
+                while next < values.count, claimed[next] { next += 1 }
+                return firstError == nil && next < values.count
+            }
         }
 
         func store(_ item: PhotoItem, at index: Int) -> Int {

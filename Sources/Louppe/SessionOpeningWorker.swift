@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 struct SessionOpeningPreparation: Sendable {
     let restoration: SessionOpeningRestoration
@@ -31,7 +32,11 @@ struct SessionOpeningMetadataCommit: Sendable {
     func run(isCancelled: @Sendable () -> Bool) -> Bool {
         guard !isCancelled() else { return false }
         willCommitForTesting?()
-        return index.prepareCommit(items, isCancelled: isCancelled)?.commit(isCancelled: isCancelled) ?? false
+        var notedUse = false
+        let prepared = index.prepareCommit(items, isCancelled: isCancelled, onUnchanged: {
+            notedUse = index.noteUsed(isCancelled: isCancelled)
+        })
+        return prepared?.commit(isCancelled: isCancelled) ?? notedUse
     }
 }
 
@@ -158,17 +163,25 @@ enum SessionOpeningWorker {
             var didPublishPreview = false
             if allowsPreview, !didPublishCachedPreview, let preview,
                pendingRestoration.permitsPreview(persistenceResult: saved) {
-                // Read-only badges, folders and pixels must match the disk.
-                try checkpoint(.previewIdentityValidation)
-                try recorder.measure(.previewIdentityValidation) {
-                    try identityBarrier(pendingRestoration.items)
+                let skipsFreshPreview = inventory.physicalFileCount <= 3_000
+                    && metadataIndex.map { index in
+                        inventory.items.allSatisfy { index.metadata(for: $0.primaryFile) != nil }
+                    } == true
+                if skipsFreshPreview {
+                    recorder.recordPreviewSkipped()
+                } else {
+                    // Read-only badges, folders and pixels must match the disk.
+                    try checkpoint(.previewIdentityValidation)
+                    try recorder.measure(.previewIdentityValidation) {
+                        try identityBarrier(pendingRestoration.items)
+                    }
+                    try checkpoint(.previewPublication)
+                    let started = ProcessInfo.processInfo.systemUptime
+                    await preview(OpeningSessionSnapshot(items: pendingRestoration.items))
+                    didPublishPreview = true
+                    recorder.record(.previewPublication, seconds: ProcessInfo.processInfo.systemUptime - started)
+                    if cancelFlag.isSet { throw CancellationError() }
                 }
-                try checkpoint(.previewPublication)
-                let started = ProcessInfo.processInfo.systemUptime
-                await preview(OpeningSessionSnapshot(items: pendingRestoration.items))
-                didPublishPreview = true
-                recorder.record(.previewPublication, seconds: ProcessInfo.processInfo.systemUptime - started)
-                if cancelFlag.isSet { throw CancellationError() }
             }
             let restoredInventory = FolderScanner.Inventory(
                 root: inventory.root, items: pendingRestoration.items,
@@ -180,7 +193,9 @@ enum SessionOpeningWorker {
                 in: restoredInventory, isCancelled: { cancelFlag.isSet }, recorder: recorder,
                 stageWillBegin: checkpoint, metadataReaderForTesting: hooks.metadataReader,
                 metadataIndex: metadataIndex, commitsMetadataIndex: false, validatesIdentities: false,
-                metadataReady: didPublishPreview ? metadataReady : nil, metadataInterest: metadataInterest
+                metadataReady: didPublishPreview ? metadataReady : nil, metadataInterest: metadataInterest,
+                // Two workers keep reading while the user browses.
+                admissionFloor: 2
             )
             let reviewItems: [PhotoItem]
             if let photosBatch {
@@ -229,5 +244,15 @@ enum SessionOpeningWorker {
         } onCancel: {
             cancelFlag.set()
         }
+    }
+}
+
+/// A skipped preview is an event, not a stage in the opening progress sequence.
+extension SessionOpeningRecorder {
+    private static let previewSignposter = OSSignposter(
+        subsystem: "com.alexandermarkin.louppe", category: "Folder Opening")
+
+    func recordPreviewSkipped() {
+        Self.previewSignposter.emitEvent("previewSkipped")
     }
 }

@@ -165,6 +165,8 @@ final class ArchiveSessionIntegrationTests: XCTestCase {
         first.recordPinnedViewport(physicalFileID: "020.txt", topOffset: -13, surface: .grid)
         first.recordPinnedViewport(physicalFileID: "030.txt", topOffset: -7, surface: .browser)
         first.beginTerminationPreparation(); _ = await first.saveSessionForTermination()
+        // A new file keeps one metadata miss, so the reopen still shows its opening preview.
+        try Data("text 80".utf8).write(to: folder.appendingPathComponent("080.txt"))
         let secondPins = makePins(pinsRoot); await secondPins.refresh()
         let second = SessionStore(persistence: SessionPersistence(backupDirectory: root.appendingPathComponent("backups")),
                                   reviewDefaults: defaults, pinnedFolders: secondPins)
