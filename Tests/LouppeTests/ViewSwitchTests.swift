@@ -44,7 +44,10 @@ final class ViewSwitchTests: XCTestCase {
             ))
         }
 
-        let store = SessionStore()
+        let defaultsName = "ViewSwitchTests.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+        let store = SessionStore(reviewDefaults: defaults)
         store.items = items
         // Force the normal derived-index path, then exercise several real day
         // sections rather than one synthetic, ungrouped list.
@@ -54,6 +57,7 @@ final class ViewSwitchTests: XCTestCase {
 
         let hostingView = NSHostingView(
             rootView: SessionView(store: store)
+                .defaultAppStorage(defaults)
                 .frame(width: 1_100, height: 720)
         )
         hostingView.frame = NSRect(x: 0, y: 0, width: 1_100, height: 720)
@@ -63,10 +67,11 @@ final class ViewSwitchTests: XCTestCase {
             backing: .buffered,
             defer: false
         )
+        window.isReleasedWhenClosed = false
         window.contentView = hostingView
         window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
         window.orderBack(nil)
-        defer { window.orderOut(nil) }
+        defer { window.contentView = nil; window.close() }
         try await waitForRenderedMode(
             .gallery,
             in: hostingView
@@ -99,6 +104,16 @@ final class ViewSwitchTests: XCTestCase {
             .seconds(2),
             "the tiny real-media fixture should still finish its thumbnail promptly"
         )
+#if LOUPPE_TEST_SEAMS
+        // A realized tile retains its pixels independently of NSCache. Exercise
+        // the eviction that unrelated suite/media work can cause after decode.
+        ImagePipeline.shared.evictThumbnailForTesting(for: tail)
+        XCTAssertNil(ImagePipeline.shared.cachedThumbnail(for: tail))
+        try await waitForThumbnail(tail, in: hostingView)
+        // Restore the warm-cache setup before measuring warm view switches.
+        let warmThumbnail = await ImagePipeline.shared.thumbnail(for: tail)
+        XCTAssertNotNil(warmThumbnail)
+#endif
         hostingView.layoutSubtreeIfNeeded()
         let allClickSurfaceSizes = descendants(of: hostingView)
             .compactMap { ($0 as? GridImmediateClickSurface.ClickView)?.frame.size }
@@ -204,12 +219,22 @@ final class ViewSwitchTests: XCTestCase {
     ) async throws {
         for _ in 0..<400 {
             hostingView.layoutSubtreeIfNeeded()
-            if ImagePipeline.shared.cachedThumbnail(for: item) != nil {
+#if LOUPPE_TEST_SEAMS
+            // Cache membership is neither a render receipt nor guaranteed after
+            // delivery. Require pixels in the actual visible, distant Grid cell.
+            if let grid = descendants(of: hostingView).compactMap({ $0 as? ReviewCollectionScrollView })
+                .first(where: { descendants(of: $0).contains { $0 is GridImmediateClickSurface.ClickView } }),
+               descendants(of: grid).compactMap({ $0 as? ThumbnailRenderMarker.MarkerView })
+                .contains(where: {
+                    $0.revision == item.contentRevision && $0.hasImage
+                        && !$0.isHiddenOrHasHiddenAncestor && !$0.visibleRect.isEmpty
+                }) {
                 return
             }
+#endif
             try await Task.sleep(for: .milliseconds(5))
         }
-        XCTFail("the distant current Grid tile never requested its thumbnail")
+        XCTFail("the distant current Grid tile never displayed its thumbnail")
         throw NSError(domain: "ViewSwitchTests", code: 2)
     }
 

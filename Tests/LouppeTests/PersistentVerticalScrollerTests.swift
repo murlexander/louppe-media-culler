@@ -25,6 +25,7 @@ enum VerticalScrollRegression {
         ] {
             let cgEvent = try XCTUnwrap(CGEvent(scrollWheelEvent2Source: nil, units: .pixel,
                                               wheelCount: 2, wheel1: vertical, wheel2: horizontal, wheel3: 0))
+            cgEvent.timestamp = DispatchTime.now().uptimeNanoseconds
             cgEvent.setIntegerValueField(.scrollWheelEventScrollPhase, value: phase)
             cgEvent.setIntegerValueField(.scrollWheelEventMomentumPhase, value: momentum)
             cgEvent.flags = []
@@ -69,14 +70,28 @@ final class PersistentVerticalScrollerTests: XCTestCase {
         XCTAssertEqual(clip.bounds.minX, 0, accuracy: 0.01)
         XCTAssertEqual(clip.bounds.minY, 240, accuracy: 0.01)
         let previousY = clip.bounds.minY
-        try VerticalScrollRegression.assertWheelInputStaysVertical(scroll)
+        // Observe one isolated native wheel before the mixed phase/momentum
+        // sequence, whose animated deltas can cancel each other. A fixed delay
+        // after that sequence is not evidence that this event was consumed.
+        let moved = XCTNSNotificationExpectation(name: NSView.boundsDidChangeNotification, object: clip)
+        moved.handler = { _ in
+            MainActor.assumeIsolated {
+                clip.bounds.minY != previousY
+            }
+        }
         let wheel = try XCTUnwrap(CGEvent(scrollWheelEvent2Source: nil, units: .line,
                                          wheelCount: 1, wheel1: 3, wheel2: 0, wheel3: 0))
+        wheel.timestamp = DispatchTime.now().uptimeNanoseconds
         wheel.flags = []
-        scroll.scrollWheel(with: try XCTUnwrap(NSEvent(cgEvent: wheel)))
-        try await Task.sleep(for: .milliseconds(100))
+        wheel.setIntegerValueField(.mouseEventWindowUnderMousePointer, value: Int64(window.windowNumber))
+        wheel.setIntegerValueField(.mouseEventWindowUnderMousePointerThatCanHandleThisEvent, value: Int64(window.windowNumber))
+        let event = try XCTUnwrap(NSEvent(cgEvent: wheel))
+        XCTAssertGreaterThan(event.timestamp, 0, "Native animation needs a current event timestamp")
+        scroll.scrollWheel(with: event)
+        await fulfillment(of: [moved], timeout: 2)
         XCTAssertTrue(scroll.verticalScroller === nativeScroller)
         XCTAssertNotEqual(clip.bounds.minY, previousY, "The X lock must retain vertical wheel scrolling")
+        try VerticalScrollRegression.assertWheelInputStaysVertical(scroll)
         withExtendedLifetime(bridge) {}
     }
 
@@ -115,9 +130,16 @@ final class PersistentVerticalScrollerTests: XCTestCase {
         XCTAssertEqual(oldClip.bounds.minX, 17, accuracy: 0.01)
     }
 
+    // Match ReviewCollectionDocument's native scrolling contract. A plain
+    // NSView opts into AppKit's concurrent event monitor, which requires a live
+    // NSApplication event pump absent from this offscreen XCTest host.
+    private final class WheelDocument: NSView {
+        override class var isCompatibleWithResponsiveScrolling: Bool { false }
+    }
+
     private func mountedScroller() -> (NSScrollView, NSView, PersistentVerticalScroller.Configurator) {
         let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 300, height: 400))
-        let document = NSView(frame: NSRect(x: 0, y: 0, width: 317, height: 2000))
+        let document = WheelDocument(frame: NSRect(x: 0, y: 0, width: 317, height: 2000))
         scroll.documentView = document
         let bridge = PersistentVerticalScroller.Configurator()
         document.addSubview(bridge)

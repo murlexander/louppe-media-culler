@@ -805,9 +805,15 @@ so toggles preserve debounced EXIF/histogram tasks. Keep secondary inspection
 outside the media canvases.
 
 `ViewSwitchTests` mounts the real UI with 106 image files, multiple days, and
-current at Grid's distant tail. Await its scroll view and tail thumbnail, then
-run five warm Gallery/Grid cycles. Preserve render barriers; enum-write timing
-cannot verify visible transitions.
+current at Grid's distant tail. Await pixels in the visible tail tile, including
+after shared-thumbnail-cache eviction, then run five warm Gallery/Grid cycles.
+Use disposable preferences and detach/close the host. Preserve render barriers,
+media-read counts and timing limits; enum-write timing cannot verify visible
+transitions. Native wheel tests use current monotonic timestamps and await
+bounds-change notifications for an isolated wheel before mixed phase/momentum events can cancel its animated displacement.
+The standalone wheel fixture matches the collection document's opt-out from
+AppKit responsive scrolling; XCTest has no live application event pump for its
+concurrent event monitor.
 
 Browser, Grid and read-only opening share `ReviewCollection`: one native vertical
 document with arithmetic section/row geometry and reusable `NSHostingView` cells.
