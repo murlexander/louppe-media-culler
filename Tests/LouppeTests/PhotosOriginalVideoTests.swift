@@ -6,6 +6,34 @@ import XCTest
 
 @MainActor
 final class PhotosOriginalVideoTests: XCTestCase {
+    func testMultipleDrainWaitersIncludingCancelledRetirementResumeAfterWorkerExit() async throws {
+        let gate = PhotosVideoScanGate()
+        let fixture = try PhotosVideoFixture(scanVideo: gate.scan)
+        defer { gate.release(); fixture.remove() }
+        let item = try XCTUnwrap(fixture.batch().reviewItems?.first)
+        let original = Task { try await fixture.session.original(for: item) }
+        await gate.waitForStart()
+        let premature = expectation(description: "Drain must retain staging through native worker exit")
+        premature.isInverted = true
+        let retirements = (0..<3).map { _ in
+            Task {
+                await fixture.session.stopAndDrainOriginalRequests()
+                if !gate.firstExited { premature.fulfill() }
+            }
+        }
+        retirements[0].cancel()
+        await fixture.provider.waitForStop()
+        await fulfillment(of: [premature], timeout: 0.2)
+        gate.release()
+        for retirement in retirements { await retirement.value }
+        do { let lease = try await original.value; await lease.close(); XCTFail("Retired original must not publish") }
+        catch is CancellationError {} catch PhotosRepresentationError.retired {}
+        await fixture.session.stopAndDrainOriginalRequests()
+        XCTAssertTrue(gate.firstSourceSurvivedUntilExit)
+        let requests = await fixture.session.inFlightRequestCountForTesting
+        XCTAssertEqual(requests, 0)
+    }
+
     func testBatchRetirementWaitsForOriginalScanBeforeRemovingStaging() async throws {
         let gate = PhotosVideoScanGate()
         let fixture = try PhotosVideoFixture(scanVideo: gate.scan)
