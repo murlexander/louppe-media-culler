@@ -508,24 +508,31 @@ enum XMPPublicationPlanner {
     static func preflight(
         _ input: XMPPublicationInput,
         isCancelled: @escaping @Sendable () -> Bool,
-        progress: @escaping Progress
+        progress: @escaping Progress,
+        resolveDirectory: (@Sendable ([XMPStemFamilyMember]) throws -> [XMPSidecarFamilyPlan])? = nil
     ) async -> XMPPublicationPlan? {
-        if isCancelled() { return nil }
-        let families = resolveFamilies(input.members).filter { family in
-            family.members.contains {
-                input.selectedMediaPaths.contains($0.mediaPath)
-            }
-        }
+        let families: [XMPSidecarFamilyPlan]
+        do {
+            families = try resolveFamilies(input.members, isCancelled: isCancelled,
+                resolveDirectory: resolveDirectory).filter { family in
+                    try XMPSidecarResolver.checkCancellation(isCancelled)
+                    return family.members.contains {
+                        input.selectedMediaPaths.contains($0.mediaPath)
+                    }
+                }
+        } catch { return nil }
         let reporter = ThrottledProgress(total: families.count, callback: progress)
-        let jobs = families.enumerated().map {
-            Job(
-                order: $0.offset,
-                family: $0.element,
+        var jobs: [Job] = []
+        for (index, family) in families.enumerated() {
+            guard !isCancelled(), !Task.isCancelled else { return nil }
+            jobs.append(Job(
+                order: index,
+                family: family,
                 sessionGeneration: input.sessionGeneration,
                 selectedMediaPaths: input.selectedMediaPaths,
                 sourceFolder: input.sourceFolder,
                 sourceFolderIdentity: input.sourceFolderIdentity
-            )
+            ))
         }
         let queue = JobQueue(jobs)
         var preparedEntries: [(Int, XMPPublicationPlanEntry)] = []
@@ -535,7 +542,7 @@ enum XMPPublicationPlanner {
                 group.addTask {
                     let store = XMPMetadataStore()
                     var local: [(Int, XMPPublicationPlanEntry)] = []
-                    while !isCancelled(), let job = await queue.next() {
+                    while !isCancelled(), !Task.isCancelled, let job = await queue.next() {
                         local.append((
                             job.order,
                             await preflightEntry(
@@ -554,7 +561,7 @@ enum XMPPublicationPlanner {
             }
             for await local in group { preparedEntries.append(contentsOf: local) }
         }
-        guard !isCancelled(), preparedEntries.count == families.count else {
+        guard !isCancelled(), !Task.isCancelled, preparedEntries.count == families.count else {
             return nil
         }
         return XMPPublicationPlan(
@@ -569,31 +576,45 @@ enum XMPPublicationPlanner {
     }
 
     private static func resolveFamilies(
-        _ members: [XMPStemFamilyMember]
-    ) -> [XMPSidecarFamilyPlan] {
-        let grouped = Dictionary(
-            grouping: members,
-            by: { $0.mediaPath.parent }
-        )
-        return grouped.keys
-            .sorted { $0.bytes.lexicographicallyPrecedes($1.bytes) }
-            .flatMap { directory in
-                let directoryMembers = grouped[directory] ?? []
-                do {
-                    return try XMPSidecarResolver.resolve(members: directoryMembers)
-                } catch {
-                    return directoryMembers.map { member in
-                        XMPSidecarFamilyPlan(
-                            members: [member],
-                            canonicalSidecar: nil,
-                            extensionQualifiedSidecars: [],
-                            excludedACRCompanions: [],
-                            metadata: nil,
-                            disposition: .filenameCollision
-                        )
-                    }
+        _ members: [XMPStemFamilyMember],
+        isCancelled: @Sendable () -> Bool,
+        resolveDirectory: (@Sendable ([XMPStemFamilyMember]) throws -> [XMPSidecarFamilyPlan])?
+    ) throws -> [XMPSidecarFamilyPlan] {
+        try XMPSidecarResolver.checkCancellation(isCancelled)
+        var grouped: [XMPExactFileSystemPath: [XMPStemFamilyMember]] = [:]
+        for (index, member) in members.enumerated() {
+            if index.isMultiple(of: 32) { try XMPSidecarResolver.checkCancellation(isCancelled) }
+            grouped[member.mediaPath.parent, default: []].append(member)
+        }
+        var families: [XMPSidecarFamilyPlan] = []
+        for directory in grouped.keys.sorted(by: { $0.bytes.lexicographicallyPrecedes($1.bytes) }) {
+            try XMPSidecarResolver.checkCancellation(isCancelled)
+            let directoryMembers = grouped[directory] ?? []
+            do {
+                if let resolveDirectory {
+                    families.append(contentsOf: try resolveDirectory(directoryMembers))
+                } else {
+                    families.append(contentsOf: try XMPSidecarResolver.resolve(
+                        members: directoryMembers, isCancelled: isCancelled))
+                }
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                for (index, member) in directoryMembers.enumerated() {
+                    if index.isMultiple(of: 32) { try XMPSidecarResolver.checkCancellation(isCancelled) }
+                    families.append(XMPSidecarFamilyPlan(
+                        members: [member],
+                        canonicalSidecar: nil,
+                        extensionQualifiedSidecars: [],
+                        excludedACRCompanions: [],
+                        metadata: nil,
+                        disposition: .filenameCollision
+                    ))
                 }
             }
+        }
+        try XMPSidecarResolver.checkCancellation(isCancelled)
+        return families
     }
 
     private static func preflightEntry(

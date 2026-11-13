@@ -51,6 +51,77 @@ final class XMPPhase7Tests: XCTestCase {
         await task.value
     }
 
+    func testPublicationFlagCancellationStopsBeforeSecondDirectory() async throws {
+        let root = try temporaryDirectory("PublicationFlagCancellation")
+        let folders = try (0..<4).map { try directory("Folder-\($0)", in: root) }
+        let items = try folders.map { folder in
+            let media = folder.appendingPathComponent("PHOTO.NEF")
+            try Data("media".utf8).write(to: media)
+            return try item(media)
+        }
+        let input = try XMPPublicationInput(items: items, profile: .universal,
+            visibleDecisionKeywords: false)
+        let flag = XMPPublicationCancelFlag()
+        let visits = DirectoryVisits()
+        let plan = await XMPPublicationPlanner.preflight(input,
+            isCancelled: { flag.isSet }, progress: { _, _ in },
+            resolveDirectory: { members in
+                visits.append(try XCTUnwrap(members.first).mediaPath.parent.url)
+                let families = try XMPSidecarResolver.resolve(members: members)
+                flag.set()
+                return families
+            })
+        XCTAssertNil(plan)
+        XCTAssertEqual(visits.urls.map(\.path), [folders[0].path])
+    }
+
+    func testResolverPollsPublicationFlagWithinDirectoryBatches() throws {
+        let root = try temporaryDirectory("ResolverFlagCancellation")
+        let media = root.appendingPathComponent("PHOTO.NEF")
+        try Data("media".utf8).write(to: media)
+        let input = try XMPPublicationInput(items: [try item(media)], profile: .universal,
+            visibleDecisionKeywords: false)
+        let entries = try (0..<512).map {
+            try XMPExactFileSystemPath(url: root.appendingPathComponent("PHOTO-\($0).xmp"))
+        }
+        let flag = XMPPublicationCancelFlag()
+        var checks = 0
+        XCTAssertThrowsError(try XMPSidecarResolver.resolve(members: input.members,
+            directoryEntries: entries, caseSensitiveNames: true, isCancelled: {
+                checks += 1
+                if checks == 5 { flag.set() }
+                return flag.isSet
+            })) { error in XCTAssertTrue(error is CancellationError) }
+        XCTAssertEqual(checks, 5)
+    }
+
+    func testTaskCancelledPublicationPreflightDoesNoDirectoryIO() async throws {
+        let root = try temporaryDirectory("PublicationTaskCancellation")
+        let media = root.appendingPathComponent("PHOTO.NEF")
+        try Data("media".utf8).write(to: media)
+        let input = try XMPPublicationInput(items: [try item(media)], profile: .universal,
+            visibleDecisionKeywords: false)
+        let visits = DirectoryVisits()
+        let task = Task.detached {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return await XMPPublicationPlanner.preflight(input,
+                isCancelled: { false }, progress: { _, _ in }, resolveDirectory: { members in
+                    visits.append(try XCTUnwrap(members.first).mediaPath.parent.url)
+                    return []
+                })
+        }
+        let plan = await task.value
+        XCTAssertNil(plan)
+        XCTAssertTrue(visits.urls.isEmpty)
+    }
+
+    private final class DirectoryVisits: @unchecked Sendable {
+        private let lock = NSLock()
+        private var storage: [URL] = []
+        var urls: [URL] { lock.withLock { storage } }
+        func append(_ url: URL) { lock.withLock { storage.append(url) } }
+    }
+
     func testCanonicalPacketCannotClaimAnotherMediasApplicationPacket() async throws {
         let root = try temporaryDirectory("OwnershipOverlap")
         let raw = root.appendingPathComponent("IMG.NEF")

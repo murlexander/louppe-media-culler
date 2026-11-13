@@ -78,12 +78,13 @@ enum XMPSidecarResolver {
     }
 
     static func resolve(
-        members: [XMPStemFamilyMember]
+        members: [XMPStemFamilyMember],
+        isCancelled: () -> Bool = { false }
     ) throws -> [XMPSidecarFamilyPlan] {
-        try Task.checkCancellation()
+        try checkCancellation(isCancelled)
         guard let directory = members.first?.mediaPath.parent else { return [] }
         for (index, member) in members.enumerated() {
-            if index.isMultiple(of: 32) { try Task.checkCancellation() }
+            if index.isMultiple(of: 32) { try checkCancellation(isCancelled) }
             guard member.mediaPath.parent == directory else {
                 throw ResolverError.mediaFromDifferentDirectories
             }
@@ -100,25 +101,26 @@ enum XMPSidecarResolver {
         let caseSensitive = try directory.url.resourceValues(
             forKeys: [.volumeSupportsCaseSensitiveNamesKey]
         ).volumeSupportsCaseSensitiveNames ?? true
-        try Task.checkCancellation()
+        try checkCancellation(isCancelled)
         let enumerated = try FileManager.default.contentsOfDirectory(
             at: directory.url,
             includingPropertiesForKeys: nil,
             options: []
         )
-        try Task.checkCancellation()
+        try checkCancellation(isCancelled)
         // Foundation may expose /var as its /private/var alias while listing.
         // Retain only each real entry's exact filename bytes and keep the
         // caller's exact directory prefix as path authority.
         let entries = try enumerated.enumerated().map { index, url in
-            if index.isMultiple(of: 32) { try Task.checkCancellation() }
+            if index.isMultiple(of: 32) { try checkCancellation(isCancelled) }
             let path = try XMPExactFileSystemPath(url: url)
             return try directory.appending(componentBytes: path.lastComponentBytes)
         }
         return try resolve(
             members: members,
             directoryEntries: entries,
-            caseSensitiveNames: caseSensitive
+            caseSensitiveNames: caseSensitive,
+            isCancelled: isCancelled
         )
     }
 
@@ -127,12 +129,13 @@ enum XMPSidecarResolver {
     static func resolve(
         members: [XMPStemFamilyMember],
         directoryEntries: [XMPExactFileSystemPath],
-        caseSensitiveNames: Bool
+        caseSensitiveNames: Bool,
+        isCancelled: () -> Bool = { false }
     ) throws -> [XMPSidecarFamilyPlan] {
-        try Task.checkCancellation()
+        try checkCancellation(isCancelled)
         guard let directory = members.first?.mediaPath.parent else { return [] }
         for (index, member) in members.enumerated() {
-            if index.isMultiple(of: 32) { try Task.checkCancellation() }
+            if index.isMultiple(of: 32) { try checkCancellation(isCancelled) }
             guard member.mediaPath.parent == directory else {
                 throw ResolverError.mediaFromDifferentDirectories
             }
@@ -146,7 +149,7 @@ enum XMPSidecarResolver {
             let familyKey: String
         }
         let parsed = try members.enumerated().map { index, member in
-            if index.isMultiple(of: 32) { try Task.checkCancellation() }
+            if index.isMultiple(of: 32) { try checkCancellation(isCancelled) }
             let filename = try decodedName(member.mediaPath)
             let stem = deletingFinalExtension(filename)
             return ParsedMember(
@@ -174,7 +177,7 @@ enum XMPSidecarResolver {
         // IMG.NEF.jpg must never adopt IMG.NEF.xmp from IMG.NEF.
         var mediaFilenameKeys: Set<String> = []
         for (index, path) in directoryEntries.enumerated() {
-            if index.isMultiple(of: 32) { try Task.checkCancellation() }
+            if index.isMultiple(of: 32) { try checkCancellation(isCancelled) }
             let entryName = try decodedName(path)
             let isXMP = recognizedXMPExtension(entryName, caseSensitiveNames)
             let isACR = !isXMP
@@ -216,11 +219,11 @@ enum XMPSidecarResolver {
 
         var groups: [String: [ParsedMember]] = [:]
         for (index, member) in parsed.enumerated() {
-            if index.isMultiple(of: 32) { try Task.checkCancellation() }
+            if index.isMultiple(of: 32) { try checkCancellation(isCancelled) }
             groups[member.familyKey, default: []].append(member)
         }
         return try groups.keys.sorted().map { key in
-            try Task.checkCancellation()
+            try checkCancellation(isCancelled)
             let group = groups[key]!.sorted {
                 $0.member.mediaPath.bytes.lexicographicallyPrecedes(
                     $1.member.mediaPath.bytes
@@ -299,6 +302,11 @@ enum XMPSidecarResolver {
                 disposition: disposition
             )
         }
+    }
+
+    static func checkCancellation(_ isCancelled: () -> Bool) throws {
+        try Task.checkCancellation()
+        if isCancelled() { throw CancellationError() }
     }
 
     private static func decodedName(
