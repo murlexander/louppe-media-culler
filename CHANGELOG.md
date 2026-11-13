@@ -2,6 +2,7 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Preserve folder pins during overlapping position saves, and let navigation saves recover from an interrupted write before saving a newer position.
 - Keep saved decisions tied to verified file content, and detect conflicting folder changes before saving a fallback backup.
 - Keep a hidden current photo out of Command-click selection and Trash targets.
 - Align dialog actions and warning remedies in one column when long labels need more room, preserving keyboard actions during resize.

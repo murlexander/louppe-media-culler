@@ -366,7 +366,9 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
 
 Welcome's Pin Folder… chooser pins directly without opening/scanning/saving the
 source; reviewing has no pin toolbar button. Pins and positions use their own
-durable Application Support document, never a source sidecar or cache. Bookmark/picker URLs retain exact scope authority. A pin's
+durable Application Support document, never a source sidecar or cache. Pin
+mutations read the current validated document and update it under one finite
+cross-process file lock; cached records never authorize a write. Bookmark/picker URLs retain exact scope authority. A pin's
 UUID-or-conservative-device plus inode/birth identity is verified before opening
 persistence/discovery and again through existing source barriers. Missing/revoked
 pins remain visible with Locate/Unpin; failed resolution never falls back to path.
@@ -398,7 +400,10 @@ Archive folder browsing retains one root session and save authority. Its separat
 expanded folders (shallowest first) under a 4 MiB ceiling, plus one previous copy. Root and directory
 volume/inode/birth evidence owns reuse; physical revisions own current/viewport
 anchors. Actor errors retain previous bytes and show a retryable UI warning, never
-change decision safety, and never authorize source mutations. Review bundle domains
+change decision safety, and never authorize source mutations. Exact
+interrupted primary/previous evidence is retained independently of the next
+checkpoint; recovery secures directory durability before advancing to newer UI
+memory. Review bundle domains
 are independent; XCTest defaults use disposable storage.
 
 ## Session state and selection
