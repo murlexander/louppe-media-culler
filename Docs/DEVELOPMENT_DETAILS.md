@@ -252,7 +252,8 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   failure; never move them back into protected Trash to force pair atomicity.
   Completed Export Move items stay at their destination; incomplete pairs roll back.
   An already-restored Move still flushes both affected directories before recovery
-  retires its journal; a prior failed flush remains retryable.
+  retires its journal; a prior failed flush remains retryable. If the former
+  destination directory was removed, flush its nearest surviving ancestor.
 - Plan-v3 paths carry exact filesystem bytes through validation, target
   construction, and recovery. Never normalize them through Swift strings; retain
   v1/v2 compatibility. A staged Copy is written, flushed, and source-verified.

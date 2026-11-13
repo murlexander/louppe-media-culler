@@ -4,6 +4,29 @@ import XCTest
 @testable import Louppe
 
 final class FileOperationJournalTests: XCTestCase {
+    func testRestoredMoveRecoveryAfterDestinationFolderWasRemoved() throws {
+        let fixture = try makeFixture(named: "RemovedMoveDestination")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let movedFolder = fixture.root.appendingPathComponent("Moved")
+        try FileManager.default.createDirectory(at: movedFolder, withIntermediateDirectories: false)
+        let destination = movedFolder.appendingPathComponent("PHOTO.JPG")
+        let writer = try FileOperationJournal.start(kind: .exportMove,
+            seeds: [.init(itemID: "photo", source: fixture.source, destination: destination)],
+            directory: fixture.journals)
+        try writer.mark(.started, fileAt: 0)
+        let temporary = try XCTUnwrap(writer.temporaryURL(at: 0))
+        try DurableFileIO.atomicExclusiveRename(from: fixture.source, to: temporary)
+        try writer.mark(.staged, fileAt: 0, identityAt: temporary)
+        try DurableFileIO.atomicExclusiveRename(from: temporary, to: fixture.source)
+        try FileManager.default.removeItem(at: movedFolder)
+        _ = FileOperationJournal.finalize(writer, operationIsConsistent: false)
+        let result = FileOperationJournal.recoverPendingOperations(directory: fixture.journals)
+        XCTAssertEqual(result.unresolvedOperations, 0)
+        XCTAssertFalse(FileOperationJournal.hasPendingOperations(directory: fixture.journals))
+        XCTAssertEqual(try Data(contentsOf: fixture.source), Data("source".utf8))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: movedFolder.path))
+    }
+
     func testRestoredMoveRetryRequiresBothAffectedDirectoryFlushes() throws {
         for failRestoredParent in [true, false] {
             let fixture = try makeFixture(named: "RestoredMoveSyncRetry")

@@ -1981,10 +1981,21 @@ enum FileOperationJournal {
         policy: DurableFileIO.DirectorySyncPolicy
     ) throws {
         var synced = Set<Data>()
-        for location in [source] + previousLocations {
-            let parent = try XMPExactFileSystemPath(url: location).parent
-            guard synced.insert(parent.bytes).inserted else { continue }
-            try DurableFileIO.syncDirectory(parent.url, fullSync: true, policy: policy)
+        for (index, location) in ([source] + previousLocations).enumerated() {
+            var parent = try XMPExactFileSystemPath(url: location).parent
+            while synced.insert(parent.bytes).inserted {
+                do {
+                    try DurableFileIO.syncDirectory(parent.url, fullSync: true, policy: policy)
+                    break
+                } catch DurableFileIO.IOError.system(_, _, let code) where index > 0 && code == ENOENT {
+                    // An empty former destination may have been removed after
+                    // rollback. Persist its absence in the nearest surviving
+                    // ancestor; permission errors and redirected paths still fail.
+                    let ancestor = parent.parent
+                    guard ancestor.bytes != parent.bytes else { throw POSIXError(.ENOENT) }
+                    parent = ancestor
+                }
+            }
         }
     }
 

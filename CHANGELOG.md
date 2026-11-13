@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Finish interrupted Move recovery when an empty former destination folder has been removed.
+
 - Keep Shift-click and Command-click selection consistent while a folder opens and after it is ready. After browsing, the first Esc keeps opening in progress; press Esc again to cancel.
 
 - Keep the next keyboard-selected Grid photo visible after a pointer decision filters out a tile.
