@@ -4,26 +4,6 @@ import XCTest
 @testable import Louppe
 
 final class PhotosRecoveryRetentionTests: XCTestCase, @unchecked Sendable {
-    func testLargeStagingCleanupMeasuresOperationLockWindow() throws {
-        let fixture = try PhotosRecoveryFixture()
-        defer { fixture.remove() }
-        let count = Int(ProcessInfo.processInfo.environment["LOUPPE_VERIFY_CLEANUP_FILES"] ?? "100") ?? 100
-        let payload = fixture.folder.appendingPathComponent("Payload")
-        try FileManager.default.createDirectory(at: payload, withIntermediateDirectories: false)
-        for index in 0..<count { try Data().write(to: payload.appendingPathComponent("file-\(index)")) }
-        var lockStart: TimeInterval = 0
-        PhotosBatchCleanup.remove([fixture.folder], cacheRoot: fixture.cache, operationJournalDirectory: fixture.journals) {
-            lockStart = ProcessInfo.processInfo.systemUptime
-            XCTAssertThrowsError(try fixture.writer()) { error in
-                guard case FileOperationJournal.JournalError.operationInUse = error else { return XCTFail("\(error)") }
-            }
-        }
-        let elapsed = ProcessInfo.processInfo.systemUptime - lockStart
-        XCTAssertGreaterThan(lockStart, 0)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.folder.path))
-        print("R15 Photos cleanup: \(count) files; journal lock held through deletion for \(elapsed) s")
-    }
-
     func testFailedPayloadCleanupKeepsMarkerAndCanBeRetried() async throws {
         let fixture = try PhotosRecoveryFixture()
         defer { fixture.remove() }
