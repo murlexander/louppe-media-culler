@@ -11,6 +11,8 @@ swiftc \
     -D LOUPPE_TESTING \
     -parse-as-library \
     Sources/Louppe/XMP/XMPExactFileSystemPath.swift \
+    Tests/PerformanceChecks/XMPPublicationStubs.swift \
+    Sources/Louppe/XMP/XMPSidecarResolver.swift \
     Sources/Louppe/DurableFileIO.swift \
     Sources/Louppe/SourceOrganizationStorageSafety.swift \
     Sources/Louppe/FileOperationJournal.swift \
