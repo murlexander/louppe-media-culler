@@ -125,8 +125,8 @@ None counts as passed until run in its stated environment. Owner: **Alex** unles
 
 ### Distribution
 
-- [ ] **App Store 1.14.0 (18).** Package from tag `v1.14.0` (release step 7) and
-  submit; the Sparkle release shipped on 13 November without it. 1.13.2 (17) was
+- [ ] **App Store 1.14.1 (19).** Package from tag `v1.14.1` (release step 7) and
+  submit for review (Alex, 13 November 2026); 1.14.0 had no Store build. 1.13.2 (17) was
   submitted on 8 November with automatic release; respond to any review request.
 - [ ] **TestFlight — out of scope (Alex, 4 November 2026).** Every delivery shows
   ITMS-90889: the bundle has no provisioning profile. Enabling TestFlight needs a
@@ -138,20 +138,21 @@ None counts as passed until run in its stated environment. Owner: **Alex** unles
 
 ## Agent work
 
-Recommended 1.15 implementation cut: finish the XMP job-cost work below. The
-audio-analysis expansion and test-tool follow-ups can wait unless investigation
-reproduces a product failure. Before release, validate the changed safety and UI
-paths in the 1.15 checks above and run the release procedure on the actual
-candidate. Store-specific acceptance applies to the Store package.
+The 1.15 cycle's fixes ship as 1.14.1 (19) (Alex, 13 November 2026). Optimized
+whole-job XMP measurements put ordinary Copy, Move and publication jobs within
+0.69–1.17× of 1.14.0, so the census redesign below waits. The 1.15 checks above
+remain unverified for 1.14.1.
 
 - [x] **Photos staging cleanup:** yield bounded, freshly journal-checked chunks to pending file-command workers; retain recovery sources and retry markers.
 - [x] **Grid follow after filtering:** pointer decisions preserve browsing position without suppressing the next keyboard follow.
 - [x] **Opening modifier selection:** implicit current, range anchors and Command toggles match Ready through physical-file handoff.
-- [ ] **Before 1.15 — XMP job cost:** add optimized end-to-end coverage of standalone publication and Export Move at 1k/2k/4k families in flat and dispersed folders, then reduce the confirmed census overhead. Measure complete-job time, directory-entry visits, cancellation latency and retained memory. Preserve fresh descriptor-bound ownership checks at publication, source retirement and recovery; keep the new-owner, Unicode, parent-swap and source-independent Copy regressions. A listing cached across later mutations would reopen the ownership bug; the existing debug census microbenchmark does not establish release-build throughput.
+- [ ] **Later — XMP job cost:** census visits grow with families × folder size (4k flat-folder Move ≈ 6.4 min, as in 1.14.0). Whole-job runner: `Tests/run_xmp_job_cost.sh`. Candidate design: one census per directory per batch with a kqueue change proof on the verified descriptor and a full re-census on any event; local APFS/HFS only. Ship only with a confirmed ≥20% 4k flat-folder gain, keeping fresh descriptor-bound checks and the between-family regression.
 - [x] **Follow-up — suite isolation:** await visible Grid thumbnail pixels even after shared-cache eviction; isolate view preferences and close the host. Match the collection’s nonconcurrent document and await isolated native wheel bounds changes before mixed gestures. Keep viewport, media-read and timing assertions.
 - [ ] **Follow-up — connected-drive accessibility harness:** verify capacity and Choose through system accessibility when XCTest's hosted SwiftUI tree exposes no children.
 
-- [ ] **Later — alternate-track analysis:** resolve the selected alternate audio track for meters/waveforms; multi-track files report analysis unavailable until it can be proved without changing playback.
+- [ ] **Later — alternate-track analysis:** the enabled default track is analyzed when disabled alternatives name it as fallback (spatial audio); language alternatives still report analysis unavailable.
+- [ ] **Verify** stereo/APAC fallback analysis with a real iPhone spatial recording; sandboxed Copy from a granted external-drive subfolder; XMP planning on a volume with unknown case sensitivity.
+- [ ] **Bound and drain** native video-header reads after `VideoMetadataExtractor.scanInfo`'s 15-second timeout (no hang reproduced; the inner task is cancelled, not joined, as in 1.14.0).
 
 - [ ] **1.15 follow-ups from the 1.14.0 release (13 November 2026).**
   - `PopoverSurfaceTests` fails with ScreenCaptureKit `InvalidTransition` when it

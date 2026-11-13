@@ -1,43 +1,22 @@
 # Version History
 
-## 1.15.0 (19) — 2026-11-13
+## 1.14.1 (19) — 2026-11-13
 
-- Keep file commands available while Louppe removes an old Photos review’s temporary files.
-
-- Finish interrupted XMP Move recovery when its empty former source folder has been removed.
-
-- Let Organize move photos without XMP despite hidden same-stem or nested-stem media, while protecting shared sidecars.
-
-- Keep notification dismiss buttons at the far right, including when their actions wrap.
-
-- Keep Photos video originals available to play when their metadata scan times out.
-
-- Let Copy work with access to the selected subfolder when its volume root is restricted.
-
-- Finish interrupted Move recovery when an empty former destination folder has been removed.
-
-- Keep Shift-click and Command-click selection consistent while a folder opens and after it is ready. After browsing, the first Esc keeps opening in progress; press Esc again to cancel.
-
-- Keep the next keyboard-selected Grid photo visible after a pointer decision filters out a tile.
-
-- Fit portrait and rotated Photos video originals using their actual oriented dimensions.
-
-- Keep Photos originals needed by interrupted Copy recovery when closing a review or pruning abandoned staging.
-
-- Release abandoned clipping-preview work and its queued image memory when browsing quickly.
-- Restore sharp 100% tiles when panning away and back quickly, without false rendering failures.
-- Respect disabled iCloud download permissions for Photos images and originals still waiting to start.
-- Protect shared XMP sidecars when media are added during review, refuse overlapping packet ownership, and stop metadata folder checks promptly when cancelled.
-- Preserve folder pins during overlapping position saves, and let navigation saves recover from an interrupted write before saving a newer position.
-- Keep saved decisions tied to verified file content, and detect conflicting folder changes before saving a fallback backup.
-- Keep a hidden current photo out of Command-click selection and Trash targets.
-- Align dialog actions and warning remedies in one column when long labels need more room, preserving keyboard actions during resize.
-- Use neutral thumbnail selection in inactive windows and expose Sort and Filter titles as VoiceOver headings.
-- Refuse redirected source and destination paths during Copy and Organize.
-- Keep interrupted Move recovery pending until restored file locations are safely saved to disk.
-- Show audio levels for the enabled default in recordings with explicit fallback tracks, including iPhone spatial audio; keep language and ambiguous alternatives unavailable.
-- Reject reused release build numbers even after the update feed has been regenerated.
 - Explain the chosen key under the Settings keyboard map, and assign a free key to an action from there. Pointing at a shortcut lights its key; a filtered shortcut group can be collapsed. Thanks to Andrey Markin (@Mark-Life) for the keyboard map refinements in this update.
+- Show audio levels for iPhone spatial-audio videos and other recordings whose extra tracks fall back to the main one.
+- Fit portrait and rotated Photos videos correctly, and keep them playable when their details are slow to read.
+- Keep Shift-click and Command-click selection the same while a folder opens and after it is ready. After browsing an opening folder, the first Esc no longer closes it; press Esc again to cancel.
+- Keep the next keyboard-selected Grid photo in view after a decision hides the current one.
+- Restore sharp 100% detail when panning away and back quickly, and free memory sooner when browsing fast.
+- Keep dialog buttons and warning actions readable when labels are long, with the close button at the far right. Selection in inactive windows is neutral grey, and VoiceOver reads Sort and Filter titles as headings.
+
+- Let Organize move photos without XMP even when a hidden or similarly named file sits beside them; shared XMP sidecars stay protected.
+- Protect XMP sidecars that another photo could own, including files added during review.
+- Keep a hidden current photo out of Command-click selection and Trash.
+- Refuse redirected source and destination paths in Copy and Organize, and let Copy work from a permitted subfolder of a restricted drive.
+- Finish interrupted Move recovery even when an emptied source or destination folder was removed, and keep recovery pending until restored files are safely saved.
+- Keep Photos originals that interrupted Copy recovery still needs, respect turned-off iCloud downloads for waiting requests, and keep file commands available while old Photos temporary files are removed.
+- Keep folder pins and positions safe when saves overlap or a write is interrupted, and tie saved decisions to verified file content.
 
 ## 1.14.0 (18) — 2026-11-13
 
