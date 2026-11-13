@@ -44,6 +44,8 @@ plist_value() {
     /usr/libexec/PlistBuddy -c "Print :$2" "$1/Contents/Info.plist"
 }
 
+source "$PWD/Scripts/lib/release_signatures.sh"
+
 verify_app_bundle() {
     local bundle="$1"
     local label="$2"
@@ -145,47 +147,7 @@ print("\n".join(key for key in plistlib.load(open(sys.argv[1], "rb"))
     done
 
     if $DEVELOPER_ID || $PUBLISHING; then
-        local signing_details
-        local team_identifier
-        signing_details="$(codesign -dvvv "$bundle" 2>&1)"
-        print -r -- "$signing_details" | grep -Fq \
-            'Authority=Developer ID Application:' \
-            || fail "$label is not signed with a Developer ID Application certificate."
-        print -r -- "$signing_details" | grep -Eq \
-            '^TeamIdentifier=[A-Z0-9]{10}$' \
-            || fail "$label has no valid Apple Developer team identifier."
-        print -r -- "$signing_details" | grep -Eq \
-            'flags=.*\(runtime\)' \
-            || fail "$label does not enable the hardened runtime."
-
-        team_identifier="$(print -r -- "$signing_details" | \
-            awk -F= '$1 == "TeamIdentifier" { print $2 }')"
-        [[ "$team_identifier" == "$EXPECTED_DEVELOPER_TEAM_ID" ]] \
-            || fail "$label is not signed by the SAMO DANNI EOOD Apple Developer team."
-        local sparkle_version="$bundle/Contents/Frameworks/Sparkle.framework/Versions/B"
-        local -a nested_code
-        nested_code=(
-            "$sparkle_version/XPCServices/Installer.xpc"
-            "$sparkle_version/XPCServices/Downloader.xpc"
-            "$sparkle_version/Autoupdate"
-            "$sparkle_version/Updater.app"
-            "$bundle/Contents/Frameworks/Sparkle.framework"
-        )
-        local code nested_details nested_team
-        for code in "${nested_code[@]}"; do
-            [[ -e "$code" ]] || fail "$label is missing signed Sparkle code at $code."
-            nested_details="$(codesign -dvvv "$code" 2>&1)"
-            print -r -- "$nested_details" | grep -Fq \
-                'Authority=Developer ID Application:' \
-                || fail "$label contains Sparkle code without a Developer ID signature."
-            nested_team="$(print -r -- "$nested_details" | \
-                awk -F= '$1 == "TeamIdentifier" { print $2 }')"
-            [[ "$nested_team" == "$team_identifier" ]] \
-                || fail "$label contains Sparkle code signed by another Apple Developer team."
-            print -r -- "$nested_details" | grep -Eq \
-                'flags=.*\(runtime\)' \
-                || fail "$label contains Sparkle code without the hardened runtime."
-        done
+        verify_developer_id_signatures "$bundle" "$label" "$EXPECTED_DEVELOPER_TEAM_ID"
     fi
 
     if $PUBLISHING; then
@@ -195,6 +157,8 @@ print("\n".join(key for key in plistlib.load(open(sys.argv[1], "rb"))
             || fail "$label is not accepted by Gatekeeper."
     fi
 
+    local linked_libraries
+    linked_libraries="$(otool -L "$bundle/Contents/MacOS/Louppe")"
     if $APP_STORE; then
         [[ "$(plist_value "$bundle" LSApplicationCategoryType)" == "public.app-category.photography" ]] \
             || fail "$label App Store category must be Photography."
@@ -209,7 +173,7 @@ print("\n".join(key for key in plistlib.load(open(sys.argv[1], "rb"))
         fi
         [[ ! -e "$bundle/Contents/Frameworks/Sparkle.framework" ]] \
             || fail "$label embeds a prohibited standalone updater."
-        if otool -L "$bundle/Contents/MacOS/Louppe" | grep -Fq "@rpath/Sparkle.framework"; then
+        if grep -Fq "@rpath/Sparkle.framework" <<< "$linked_libraries"; then
             fail "$label executable links a prohibited standalone updater."
         fi
     else
@@ -223,7 +187,7 @@ print("\n".join(key for key in plistlib.load(open(sys.argv[1], "rb"))
             || fail "$label does not verify updates before extraction."
         [[ -d "$bundle/Contents/Frameworks/Sparkle.framework" ]] \
             || fail "$label does not embed Sparkle.framework."
-        otool -L "$bundle/Contents/MacOS/Louppe" | grep -Fq "@rpath/Sparkle.framework" \
+        grep -Fq "@rpath/Sparkle.framework" <<< "$linked_libraries" \
             || fail "$label executable is not linked to embedded Sparkle."
     fi
 }

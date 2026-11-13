@@ -158,10 +158,7 @@ candidate. Store-specific acceptance applies to the Store package.
     restoring the activation policy alone didn't fix it.
   - The `sheet-rename-partial` and `sheet-organize-partial` capture scenarios fail
     live with the same error.
-  - Reproduce any `verify_release.sh` hardened-runtime false failure on the
-    actual release candidate before changing the guard; investigate the
-    `print … | grep -q` pipeline under `pipefail` without weakening rejection
-    of unsigned code or missing runtime flags.
+  - [x] Prevent hardened-runtime signature false failures from early-exit pipes; fixtures retain unsigned, wrong-team and missing-runtime rejection.
   - The Filter search field shows the system blue focus ring, not purple.
 - [ ] **AUD-06 — Remaining projection costs.** Date-grouped projection and filter
   toggles take ~100–130 ms at 100k; the content-check queue walk is ~58% of the
