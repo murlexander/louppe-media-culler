@@ -99,7 +99,8 @@ final class ExportWorkerSafetyTests: XCTestCase {
         try bytes.write(to: source)
         let directory = try DurableFileIO.BoundDirectory(.init(url: destination))
         XCTAssertThrowsError(try directory.copy(from: source,
-            to: destination.appendingPathComponent("partial"), afterDestinationOpened: {
+            to: destination.appendingPathComponent("partial"),
+            expectedSourceIdentity: FileOperationJournal.captureIdentity(at: source), afterDestinationOpened: {
                 try! FileManager.default.moveItem(at: destination, to: moved)
                 try! FileManager.default.createSymbolicLink(at: destination, withDestinationURL: unapproved)
             }))

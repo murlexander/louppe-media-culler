@@ -28,7 +28,8 @@ final class TransferDurabilityTests: XCTestCase {
         let temporary = fixture.destination.appendingPathComponent(".copy.partial")
         var reports: [Int64] = []
 
-        try directory.copy(from: source, to: temporary, progress: { reports.append($0); return true })
+        try directory.copy(from: source, to: temporary,
+            expectedSourceIdentity: FileOperationJournal.captureIdentity(at: source), progress: { reports.append($0); return true })
 
         XCTAssertGreaterThan(reports.count, 2, "a large file must report progress before it completes")
         XCTAssertEqual(reports, reports.sorted(), "copied bytes never move backwards")
@@ -53,7 +54,8 @@ final class TransferDurabilityTests: XCTestCase {
         let temporary = fixture.destination.appendingPathComponent(".copy.partial")
         var calls = 0
 
-        XCTAssertThrowsError(try directory.copy(from: source, to: temporary, progress: { _ in
+        XCTAssertThrowsError(try directory.copy(from: source, to: temporary,
+            expectedSourceIdentity: FileOperationJournal.captureIdentity(at: source), progress: { _ in
             calls += 1
             return false
         })) { error in
@@ -84,6 +86,7 @@ final class TransferDurabilityTests: XCTestCase {
         var calls = 0
         XCTAssertThrowsError(try directory.copy(
             from: source, to: mount.appendingPathComponent("FULL.partial"),
+            expectedSourceIdentity: FileOperationJournal.captureIdentity(at: source),
             progress: { _ in calls += 1; return true }
         )) { error in
             XCTAssertNil(error as? DurableFileIO.CopyStopped)

@@ -609,7 +609,7 @@ enum ExportWorker {
                 failureMessage: error.localizedDescription, xmpSummary: xmpSummary)
         }
         let inFileCopy = InFileCopyMonitor(isCancelled: isCancelled)
-        let protectedCopier: FileCopier = { source, temporary in
+        let protectedCopier: @Sendable (URL, URL, FileOperationJournal.FileIdentity) throws -> Void = { source, temporary, identity in
             let key = try XMPExactFileSystemPath(url: temporary).parent.bytes
             guard let directory = boundDirectories[key] else {
                 throw DurableFileIO.DestinationChanged()
@@ -626,6 +626,7 @@ enum ExportWorker {
                 // Report bytes within a large file and honor a confirmed
                 // Stop between writes instead of after the whole file.
                 try directory.copy(from: source, to: temporary,
+                                   expectedSourceIdentity: identity,
                                    progress: inFileCopy.report)
             }
         }
@@ -758,7 +759,9 @@ enum ExportWorker {
                                 source: file.source,
                                 temporary: temporary,
                                 isCancelled: isCancelled,
-                                fileCopier: protectedCopier
+                                fileCopier: { [identity = writer.plan.files[fileIndex].identity] source, temporary in
+                                    try protectedCopier(source, temporary, identity)
+                                }
                             )
                         }
                         touched.location = .temporary(temporary)

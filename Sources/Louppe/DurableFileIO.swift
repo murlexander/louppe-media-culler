@@ -180,20 +180,45 @@ enum DurableFileIO {
         /// `CopyStopped` and leaves its partial temporary for the caller's
         /// identity-checked cleanup.
         func copy(from source: URL, to temporary: URL,
+                  expectedSourceIdentity: FileOperationJournal.FileIdentity,
+                  afterSourceOpened: () throws -> Void = {},
                   afterDestinationOpened: () -> Void = {},
                   progress: ((Int64) -> Bool)? = nil) throws {
             let sourceFD = try openDescriptor(source,
                 flags: O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC,
                 operation: "open source for copy")
             defer { Darwin.close(sourceFD) }
-            try requireDescriptorType(sourceFD, type: mode_t(S_IFREG),
-                path: source.path, operation: "verify copy source")
+            try afterSourceOpened()
+            // Resolve the planned volume freshly so a reconnect can change its
+            // device number, but never borrow volume facts from a raced source
+            // pathname. The opened file must actually belong to this device.
+            let volume = try FileOperationJournal.captureIdentity(
+                at: URL(fileURLWithPath: expectedSourceIdentity.volumeRootPath)
+            )
+            func requireOpenedSource() throws {
+                var status = stat()
+                guard fstat(sourceFD, &status) == 0 else {
+                    throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+                }
+                guard status.st_mode & S_IFMT == S_IFREG,
+                      UInt64(status.st_dev) == volume.systemNumber,
+                      FileOperationJournal.identitiesMatch(
+                        expected: expectedSourceIdentity,
+                        actual: FileOperationJournal.identity(
+                            from: status, volumeRootPath: volume.volumeRootPath,
+                            volumeUUIDString: volume.volumeUUIDString
+                        ),
+                        includeStatusChange: true
+                      ) else { throw POSIXError(.ESTALE) }
+            }
+            try requireOpenedSource()
             let targetFD = try create(temporary)
             defer { Darwin.close(targetFD) }
             afterDestinationOpened()
             // Apple's descriptor copy preserves file metadata and resource
             // forks while never resolving the destination path again.
             try DurableFileIO.copyDescriptor(sourceFD, to: targetFD, progress: progress)
+            try requireOpenedSource()
             try syncDescriptor(targetFD, path: temporary.path, fullSync: true)
             try binding.requireCurrentPath()
         }

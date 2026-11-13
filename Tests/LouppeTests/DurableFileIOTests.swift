@@ -3,6 +3,59 @@ import XCTest
 @testable import Louppe
 
 final class DurableFileIOTests: XCTestCase {
+    func testDescriptorCopyRejectsForeignSourceWhenParentIsRestoredAfterOpen() throws {
+        let root = try makeTemporaryDirectory(named: "CopySourceParentSwap")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fm = FileManager.default
+        let parent = root.appendingPathComponent("Source")
+        let held = root.appendingPathComponent("HeldSource")
+        let foreign = root.appendingPathComponent("Foreign")
+        let destination = root.appendingPathComponent("Destination")
+        for folder in [parent, foreign, destination] {
+            try fm.createDirectory(at: folder, withIntermediateDirectories: false)
+        }
+        let source = parent.appendingPathComponent("PHOTO.JPG")
+        let original = Data("original photo".utf8)
+        let foreignBytes = Data("foreign bytes!".utf8)
+        try original.write(to: source)
+        try foreignBytes.write(to: foreign.appendingPathComponent("PHOTO.JPG"))
+        let plannedIdentity = try FileOperationJournal.captureIdentity(at: source)
+        let directory = try DurableFileIO.BoundDirectory(.init(url: destination))
+        let temporary = destination.appendingPathComponent("partial")
+        try fm.moveItem(at: parent, to: held)
+        try fm.createSymbolicLink(at: parent, withDestinationURL: foreign)
+        XCTAssertThrowsError(try directory.copy(
+            from: source, to: temporary, expectedSourceIdentity: plannedIdentity,
+            afterSourceOpened: {
+                try fm.removeItem(at: parent)
+                try fm.moveItem(at: held, to: parent)
+            }
+        ))
+        XCTAssertFalse(fm.fileExists(atPath: temporary.path), "reject before creating a foreign copy")
+        XCTAssertEqual(try FileOperationJournal.captureIdentity(at: source), plannedIdentity)
+        XCTAssertEqual(try Data(contentsOf: source), original)
+        XCTAssertEqual(try Data(contentsOf: foreign.appendingPathComponent("PHOTO.JPG")), foreignBytes)
+    }
+
+    func testDescriptorCopyRechecksOpenedSourceAfterTransfer() throws {
+        let root = try makeTemporaryDirectory(named: "CopySourceChanged")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("PHOTO.JPG")
+        let original = Data("original photo".utf8)
+        try original.write(to: source)
+        let identity = try FileOperationJournal.captureIdentity(at: source)
+        let directory = try DurableFileIO.BoundDirectory(.init(url: root))
+        XCTAssertThrowsError(try directory.copy(
+            from: source, to: root.appendingPathComponent("partial"),
+            expectedSourceIdentity: identity,
+            afterDestinationOpened: {
+                let handle = try! FileHandle(forWritingTo: source)
+                try! handle.write(contentsOf: Data("changed bytes!".utf8))
+                try! handle.close()
+            }
+        ))
+    }
+
     func testBoundMoveKeepsStagedFileInOpenedDirectoryAfterPathSwap() throws {
         let root = try makeTemporaryDirectory(named: "BoundMovePathSwap")
         defer { try? FileManager.default.removeItem(at: root) }
