@@ -261,6 +261,68 @@ final class PinnedFolderPersistenceTests: XCTestCase {
         XCTAssertTrue(unpinned.folders.isEmpty, "Unavailable pins must remain removable")
     }
 
+    func testFirstPinCreationFailureRemainsRetryableWithoutOrphanPrevious() async throws {
+        let fixture = try PinnedFolderFixture()
+        defer { fixture.remove() }
+        let fault = PinnedFolderPrimaryWriteFault()
+        let worker = PinnedFoldersPersistence(storageDirectory: fixture.storage,
+            operations: fixture.operations(), write: fault.write)
+        fault.setMode(.beforePrimary)
+        do {
+            _ = try await worker.pin(url: fixture.folder, expectedIdentity: fixture.identity)
+            XCTFail("Injected first primary creation must fail")
+        } catch {}
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.document.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.document.appendingPathExtension("previous").path),
+            "A first save has no validated primary to preserve as previous")
+        fault.setMode(.none)
+        let (id, snapshot) = try await worker.pin(url: fixture.folder, expectedIdentity: fixture.identity)
+        XCTAssertNil(snapshot.message)
+        XCTAssertEqual(snapshot.folders.first?.id, id)
+    }
+
+    func testUncertainPinWriteCannotBeAcceptedUntilDirectorySyncSucceeds() async throws {
+        let fixture = try PinnedFolderFixture()
+        defer {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: fixture.storage.path)
+            fixture.remove()
+        }
+        let fault = PinnedFolderPrimaryWriteFault()
+        let worker = PinnedFoldersPersistence(storageDirectory: fixture.storage,
+            operations: fixture.operations(), write: fault.write)
+        let (id, _) = try await worker.pin(url: fixture.folder, expectedIdentity: fixture.identity)
+        _ = try await worker.savePosition(try fixture.position(), for: fixture.identity)
+        let previous = try Data(contentsOf: fixture.document)
+        let changed = PinnedFolderPosition(current: nil, browser: nil, grid: nil)
+        fault.setMode(.afterPrimary)
+        do {
+            _ = try await worker.savePosition(changed, for: fixture.identity)
+            XCTFail("An uncertain write cannot report success")
+        } catch {}
+        fault.setMode(.none)
+        let uncertain = try Data(contentsOf: fixture.document)
+        XCTAssertNotEqual(uncertain, previous)
+        let failedRefresh = await worker.refresh()
+        XCTAssertNotNil(failedRefresh.message, "Refresh must not silently adopt an undurable primary")
+        do {
+            _ = try await worker.prepareOpen(id: id)
+            XCTFail("An unchanged open must secure the failed directory flush first")
+        } catch {}
+        do {
+            _ = try await worker.position(for: fixture.identity)
+            XCTFail("Position reads must not accept an uncertain snapshot")
+        } catch {}
+        XCTAssertEqual(try Data(contentsOf: fixture.document), uncertain)
+        XCTAssertEqual(try Data(contentsOf: fixture.document.appendingPathExtension("previous")), previous)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: fixture.storage.path)
+        let recovered = await worker.refresh()
+        XCTAssertNil(recovered.message)
+        let saved = try await worker.position(for: fixture.identity)
+        XCTAssertEqual(saved, changed)
+        let (request, _) = try await worker.prepareOpen(id: id)
+        XCTAssertEqual(request.pinID, id)
+    }
+
     func testCachedPositionWriterPreservesAnotherInstancesUnpin() async throws {
         let fixture = try PinnedFolderFixture()
         defer { fixture.remove() }
@@ -756,6 +818,26 @@ private final class PinnedCallCounter: @unchecked Sendable {
     private var count = 0
     func increment() { lock.withLock { count += 1 } }
     var value: Int { lock.withLock { count } }
+}
+
+private final class PinnedFolderPrimaryWriteFault: @unchecked Sendable {
+    enum Mode { case none, beforePrimary, afterPrimary }
+    private let lock = NSLock()
+    private var mode = Mode.none
+    func setMode(_ mode: Mode) { lock.withLock { self.mode = mode } }
+    func write(_ data: Data, _ url: URL) throws {
+        let mode = lock.withLock { self.mode }
+        let isPrimary = url.lastPathComponent == "PinnedFolders.json"
+        if isPrimary, mode == .beforePrimary { throw POSIXError(.ENOSPC) }
+        try DurableFileIO.atomicWrite(data, to: url, fullSync: true)
+        if isPrimary, mode == .afterPrimary {
+            // The caller cannot know whether a throwing rename/sync attempt is
+            // durable. Keep a real directory flush unavailable on subsequent retries.
+            try FileManager.default.setAttributes([.posixPermissions: 0o300],
+                ofItemAtPath: url.deletingLastPathComponent().path)
+            throw POSIXError(.EIO)
+        }
+    }
 }
 
 private final class PinnedFolderWriteFault: @unchecked Sendable {

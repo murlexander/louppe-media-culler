@@ -229,6 +229,12 @@ actor PinnedFoldersPersistence {
     private let archiveMetadataProtection: URL?
     private var records: [Record] = []
     private var loaded = false
+    private var primaryRevision: Data?
+    private struct InterruptedWrite {
+        let data: Data
+        let previous: Data?
+    }
+    private var interruptedWrite: InterruptedWrite?
     private var revision: UInt64 = 0
     /// Folders from the last complete `snapshot()`, reused by `prepareOpen`.
     private var lastFolders: [PinnedFolder] = []
@@ -250,6 +256,10 @@ actor PinnedFoldersPersistence {
     private var previousURL: URL { fileURL.appendingPathExtension("previous") }
 
     private func read(_ url: URL) throws -> [Record] {
+        try readDocument(url).records
+    }
+
+    private func readDocument(_ url: URL) throws -> (records: [Record], data: Data) {
         let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
         guard values.isRegularFile == true, values.isSymbolicLink != true,
               let size = values.fileSize, size <= Self.maximumBytes else {
@@ -274,14 +284,24 @@ actor PinnedFoldersPersistence {
                 throw PinnedFolderError.invalidStorage
             }
         }
-        return document.records
+        return (document.records, data)
     }
 
     private func load() throws {
+        try DurableFileIO.withExclusiveFileLock(at: fileURL.appendingPathExtension("lock")) {
+            try loadCurrent()
+        }
+    }
+
+    /// The caller holds the transaction lock for validation and recovery.
+    private func loadCurrent() throws {
         // A cached list is only presentation state, never write authority.
         loaded = false
+        try recoverInterruptedWrite()
         do {
-            records = try read(fileURL)
+            let document = try readDocument(fileURL)
+            records = document.records
+            primaryRevision = document.data
             loaded = true
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             // A surviving previous copy proves this is not a first launch.
@@ -290,6 +310,7 @@ actor PinnedFoldersPersistence {
                 throw PinnedFolderError.invalidStorage
             }
             records = []
+            primaryRevision = nil
             loaded = true
         } catch {
             // Show the last good records but block mutations until the primary
@@ -322,9 +343,38 @@ actor PinnedFoldersPersistence {
         try FileManager().createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         // Keep prior bytes even if the new rename succeeds but directory sync
         // fails. The visible store remains unchanged and reports the failure.
-        if loaded { try write(try encoded(records), previousURL) }
+        if let primaryRevision { try write(primaryRevision, previousURL) }
+        interruptedWrite = .init(data: data, previous: primaryRevision)
         try write(data, fileURL)
         records = proposed
+        primaryRevision = data
+        interruptedWrite = nil
+    }
+
+    private func existingData(at url: URL) throws -> Data? {
+        do { return try readDocument(url).data }
+        catch let error as CocoaError where error.code == .fileReadNoSuchFile { return nil }
+    }
+
+    /// A throwing write may have renamed the primary without flushing its
+    /// directory. Never publish those bytes until that exact attempt is durable.
+    private func recoverInterruptedWrite() throws {
+        guard let attempt = interruptedWrite else { return }
+        let current = try existingData(at: fileURL)
+        guard try existingData(at: previousURL) == attempt.previous else {
+            throw PinnedFolderError.invalidStorage
+        }
+        if current == primaryRevision {
+            interruptedWrite = nil
+            return
+        }
+        guard current == attempt.data else { throw PinnedFolderError.invalidStorage }
+        try DurableFileIO.syncDirectory(fileURL.deletingLastPathComponent(), fullSync: true)
+        guard try existingData(at: fileURL) == attempt.data,
+              try existingData(at: previousURL) == attempt.previous else {
+            throw PinnedFolderError.invalidStorage
+        }
+        interruptedWrite = nil
     }
 
     /// Compute the mutation from the current validated primary while excluding
@@ -332,7 +382,7 @@ actor PinnedFoldersPersistence {
     /// replay stale pins, bookmarks and positions over their newer changes.
     private func mutate<T>(_ body: (inout [Record]) throws -> T) throws -> T {
         try DurableFileIO.withExclusiveFileLock(at: fileURL.appendingPathExtension("lock")) {
-            try load()
+            try loadCurrent()
             var proposed = records
             let result = try body(&proposed)
             try commit(proposed)
