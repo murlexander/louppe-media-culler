@@ -66,8 +66,14 @@ struct SessionOpeningRestoration: Sendable {
                 for file in loaded[i].individualFiles {
                     switch ratingIndex.lookup(for: file) {
                     case .match(let match):
-                        if let digest = savedEntries[match.persistedFileIDBytes]?.contentSHA256,
-                           let identity = file.scannedIdentity {
+                        if let saved = savedEntries[match.persistedFileIDBytes],
+                           let digest = saved.contentSHA256,
+                           let savedIdentity = saved.fileIdentity,
+                           let identity = file.scannedIdentity,
+                           SessionRatingIndex.persistedIdentityMatches(expected: savedIdentity, actual: identity),
+                           savedIdentity.statusChangeTime == identity.statusChangeTime {
+                            // Rating matching permits rename-related ctime changes;
+                            // cached content proof requires the full saved revision.
                             sessionContentProofs[file.id] = SessionContentProof(
                                 identity: identity, sha256: digest
                             )

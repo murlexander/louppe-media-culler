@@ -1,5 +1,6 @@
 import XCTest
 import CryptoKit
+import Darwin
 @testable import Louppe
 
 @MainActor
@@ -78,6 +79,84 @@ final class SessionRatingRecoveryTests: XCTestCase {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(SessionFile.self, from: Data(contentsOf: fixture.sidecar))
+    }
+
+    func testOpeningReusesUnchangedProofAcrossUUIDRemount() throws {
+        let f = try fixture()
+        let old = try entry(f.a, fingerprint: true)
+        let saved = try XCTUnwrap(old.fileIdentity)
+        let volumeUUID = try XCTUnwrap(saved.volumeUUIDString)
+        for remounted in [false, true] {
+            let identity = FileOperationJournal.FileIdentity(
+                volumeRootPath: remounted ? "/Volumes/Remounted" : saved.volumeRootPath,
+                volumeUUIDString: volumeUUID,
+                systemNumber: remounted ? saved.systemNumber &+ 1 : saved.systemNumber,
+                fileNumber: saved.fileNumber, logicalSize: saved.logicalSize,
+                modificationTime: saved.modificationTime, statusChangeTime: saved.statusChangeTime,
+                birthTime: saved.birthTime)
+            let file = PhotoFile(id: "A.png", url: f.a, captureDate: nil, cameraModel: nil,
+                                 lensModel: nil, fileSize: saved.logicalSize ?? 0, scannedIdentity: identity)
+            let snapshot = SessionFile(version: 7, sourcePath: f.photos.path, scannedAt: Date(),
+                                       entries: [old], fileIDEncoding: .percentEncodedFileSystemPath)
+            let restored = try SessionOpeningRestoration.prepare(scanned: [PhotoItem(primaryFile: file)],
+                url: f.photos, persistenceResult: .init(session: snapshot, origin: nil, problems: []),
+                replaceSavedSession: false)
+            XCTAssertEqual(restored.sessionContentProofs[file.id]?.sha256, old.contentSHA256)
+            XCTAssertEqual(restored.sessionContentProofs[file.id]?.identity, identity)
+        }
+    }
+
+    func testInPlaceRewriteWithRestoredMtimeRequiresFreshFingerprint() async throws {
+        let f = try fixture()
+        // A trailing byte leaves the PNG usable while making equal-length A/B revisions.
+        var original = try Data(contentsOf: f.a)
+        original.append(0)
+        try original.write(to: f.a)
+        let old = try entry(f.a, fingerprint: true)
+        let oldIdentity = try XCTUnwrap(old.fileIdentity)
+        let mtime = try XCTUnwrap(oldIdentity.modificationTime)
+        try await save([old], fixture: f)
+
+        let handle = try FileHandle(forWritingTo: f.a)
+        try handle.seek(toOffset: UInt64(original.count - 1))
+        try handle.write(contentsOf: Data([1]))
+        try handle.close()
+        var times = [timespec(tv_sec: 0, tv_nsec: Int(UTIME_OMIT)),
+                     timespec(tv_sec: Int(mtime.seconds), tv_nsec: Int(mtime.nanoseconds))]
+        XCTAssertEqual(utimensat(AT_FDCWD, f.a.path, &times, 0), 0)
+        let freshIdentity = try FileOperationJournal.captureIdentity(at: f.a)
+        XCTAssertTrue(SessionRatingIndex.persistedIdentityMatches(expected: oldIdentity, actual: freshIdentity))
+        XCTAssertNotEqual(oldIdentity.statusChangeTime, freshIdentity.statusChangeTime)
+        let freshDigest = try hash(f.a)
+        XCTAssertNotEqual(freshDigest, old.contentSHA256)
+
+        let counter = ReadCounter()
+        let session = SessionStore(persistence: SessionPersistence(backupDirectory: f.backups),
+            sessionContentVerification: { file, proof in
+                await counter.record()
+                XCTAssertNil(proof, "A different physical revision cannot reuse the saved digest")
+                return try SessionContentVerifier.verify(file, knownProof: proof)
+            })
+        session.openFolder(f.photos)
+        try await ready(session)
+        try await finished(session)
+        XCTAssertEqual(session.items.first?.rating, .no, "Rename-compatible decision restoration is unchanged")
+        let reads = await counter.count
+        XCTAssertEqual(reads, 1, "The restored reviewed file must queue a fresh fingerprint")
+        session.rate(.yes, at: 0)
+        try await finished(session)
+        XCTAssertEqual(try read(f).entries.first?.contentSHA256, freshDigest)
+        XCTAssertEqual(try read(f).entries.first?.rating, "yes")
+
+        try FileManager.default.moveItem(at: f.a, to: f.root.appendingPathComponent("RevisionB.png"))
+        try original.write(to: f.a)
+        let reopen = store(f)
+        reopen.openFolder(f.photos)
+        try await ready(reopen)
+        try await finished(reopen)
+        XCTAssertEqual(reopen.items.first?.rating, .undecided, "An A copy cannot inherit B's new decision")
+        XCTAssertEqual(reopen.automaticallyRestoredSessionFiles, 0)
+        XCTAssertEqual(reopen.pendingSessionRecoveryEntries.first?.entry.rating, "yes")
     }
 
     func testIdenticalCopyRestoresAllMetadataAndRetainsHistory() async throws {
