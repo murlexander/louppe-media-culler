@@ -265,13 +265,16 @@ In **Settings → Keyboard shortcuts**, choose **Follow keyboard layout** or
 when switching layouts, including Dvorak; position names refer to QWERTY keys.
 New setups start with physical positions; saved choices are retained.
 Choose a key on the keyboard map to see its actions, or search the grouped editor.
-Choosing a key only filters the editor. Use **Add shortcut** to record another
-key, click an existing binding to replace it, or use its remove button.
+Choosing a key only filters the editor. If the key is free, **Assign…** adds it
+to an action you pick, with that action's usual view and media context. Pointing
+at a shortcut in the editor lights its key on the map. Use **Add shortcut** to
+record another key, click an existing binding to replace it, or use its remove button.
 Letters, numbers, punctuation, arrows, Tab and Space can be assigned. Each
 matching mode keeps its own bindings.
 
 Click Command or Shift on the keyboard to preview modified shortcuts; holding
-the keys previews them temporarily. Command shortcuts follow the current Mac
+the keys previews them temporarily, and choosing a key while holding them keeps
+that layer on. Command shortcuts follow the current Mac
 keyboard layout independently of physical review positions. Export, Command
 Palette, Rescan and Enclosing Folder accept several Command or Shift-Command
 letter or arrow shortcuts.

@@ -74,6 +74,14 @@ final class CaptureScenariosTests: XCTestCase {
         Scenario(name: "settings-shortcuts", description: "Native Settings window on its Keyboard shortcuts page.") { fixture in
             Surface(view: fixture.settings(), size: CGSize(width: 620, height: 600), settingsTab: 1)
         },
+        Scenario(name: "settings-shortcuts-free-key", description: "Keyboard shortcuts with a free key chosen: its row offers Assign.") { _ in
+            Surface(view: AnyView(LouppeSettingsForm { ReviewShortcutsSettingsView(selectedKey: 16) }),
+                    size: CGSize(width: 620, height: 600))
+        },
+        Scenario(name: "settings-shortcuts-used-key", description: "Keyboard shortcuts with a used key chosen: the editor lists its actions.") { _ in
+            Surface(view: AnyView(LouppeSettingsForm { ReviewShortcutsSettingsView(selectedKey: 14) }),
+                    size: CGSize(width: 620, height: 600))
+        },
         Scenario(name: "popover-filter", description: "Production Filter popover content over disposable session data.") { fixture in
             fixture.ready(mode: .grid)
             return Surface(view: AnyView(FilterView(store: fixture.store)), size: CGSize(width: 340, height: 560))

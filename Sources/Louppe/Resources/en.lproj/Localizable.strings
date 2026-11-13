@@ -1756,6 +1756,11 @@
 "Restore all shortcuts for the selected matching mode." = "Restore all shortcuts for the selected matching mode.";
 "Add shortcut" = "Add shortcut";
 "Add shortcut for {0}" = "Add shortcut for {0}";
+"Choose a key to see what it does." = "Choose a key to see what it does.";
+"Assign…" = "Assign…";
+"Assign {0} to an action" = "Assign {0} to an action";
+"Assigned to {0}." = "Assigned to {0}.";
+"Shift with a letter works like the letter alone." = "Shift with a letter works like the letter alone.";
 "Defaults overlap another shortcut. Remove that assignment first." = "Defaults overlap another shortcut. Remove that assignment first.";
 "Restore defaults for this action" = "Restore defaults for this action";
 "Remove shortcut" = "Remove shortcut";

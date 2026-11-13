@@ -32,6 +32,17 @@ struct ReviewKeyboardLayerState {
     mutating func toggleShift() { latched = .init(command: latched.command, shift: !latched.shift) }
 }
 
+/// What the row under the map says about the chosen key on the displayed layer.
+/// Used keys are explained by the filtered editor; free keys list assignable actions.
+enum ReviewKeyStatus: Equatable {
+    case used
+    case unused
+    case reserved
+    case shiftedLetter
+    case review(ReviewShortcutBinding, [ReviewShortcutAction])
+    case command(CommandShortcutBinding, [CommandShortcutAction])
+}
+
 /// A visual index into the shortcut editor. Selecting a key never changes a binding.
 struct ReviewKeyboardMap {
     let interpretation: ReviewShortcutInterpretation
@@ -46,6 +57,7 @@ struct ReviewKeyboardMap {
         [0, 1, 2, 3, 5, 4, 38, 40, 37, 41, 39],
         [6, 7, 8, 9, 11, 45, 46, 43, 47, 44],
     ]
+    static let keyCodes: [UInt16] = rows.flatMap { $0 } + [51, 49, 123, 126, 125, 124]
 
     func character(for keyCode: UInt16) -> String? {
         if let special = ReviewShortcutBinding.specialLabels[keyCode] { return special }
@@ -107,6 +119,53 @@ struct ReviewKeyboardMap {
         }
     }
 
+    /// Offers only actions the editors would accept for this exact key, with
+    /// each action's default view and media context.
+    func status(for keyCode: UInt16, preferences: ReviewShortcutPreferences,
+                commandPreferences: CommandShortcutPreferences) -> ReviewKeyStatus {
+        let used = !actions(for: keyCode, preferences: preferences).isEmpty
+            || !commandBindings(for: keyCode, preferences: commandPreferences).isEmpty
+        switch layer {
+        case .shift:
+            // The router lets Shift-letter run the letter's review action; layout
+            // mode compares the shifted character, so check what Shift produces.
+            let meaning = interpretation == .physicalPosition
+                ? ReviewShortcutBinding.positionLabels[keyCode] : modifiedCharacters[keyCode]?.lowercased()
+            if let meaning, ReviewShortcutBinding.specialLabels[keyCode] == nil,
+               meaning.unicodeScalars.allSatisfy({ CharacterSet.letters.contains($0) }) { return .shiftedLetter }
+            return used ? .used : .unused
+        case .base:
+            guard !used else { return .used }
+            let character = ReviewShortcutBinding.specialLabels[keyCode] ?? layoutCharacters[keyCode]
+                ?? (interpretation == .physicalPosition ? ReviewShortcutBinding.positionLabels[keyCode] : nil)
+            guard let character else { return .unused }
+            let binding = ReviewShortcutBinding(character: character, keyCode: keyCode)
+            let choices = ReviewShortcutAction.allCases.filter { action in
+                var proposal = preferences
+                return proposal.add(binding, for: action, scope: action.defaultScope)
+            }
+            return choices.isEmpty ? .unused : .review(binding, choices)
+        case .command, .commandShift:
+            guard !used else { return .used }
+            guard let modifiers = layer.modifiers, let character = character(for: keyCode) else { return .unused }
+            let binding = CommandShortcutBinding(character: character, keyCode: keyCode, modifiers: modifiers)
+            if CommandShortcutPreferences.isReserved(binding) { return .reserved }
+            let choices = CommandShortcutAction.allCases.filter {
+                $0.isEditable && commandPreferences.conflict(for: binding, action: $0) == nil
+            }
+            return choices.isEmpty ? .unused : .command(binding, choices)
+        }
+    }
+
+    /// Keys a shortcut editor row uses on the displayed layer, for hover previews.
+    func keys(for action: ReviewShortcutAction?, command: CommandShortcutAction?,
+              preferences: ReviewShortcutPreferences, commandPreferences: CommandShortcutPreferences) -> Set<UInt16> {
+        Set(Self.keyCodes.filter { code in
+            (action.map { actions(for: code, preferences: preferences).contains($0) } ?? false)
+                || (command.map { commandActions(for: code, preferences: commandPreferences).contains($0) } ?? false)
+        })
+    }
+
     @MainActor
     static func currentLayoutCharacters(layer: ReviewKeyboardLayer = .base) -> [UInt16: String] {
         guard let inputSource = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
@@ -142,6 +201,9 @@ struct ReviewKeyboardView: View {
     var toggleCommand: () -> Void = {}
     var toggleShift: () -> Void = {}
     @Binding var selectedKey: UInt16?
+    var focusedKey: FocusState<UInt16?>.Binding
+    /// Keys of the editor row under the pointer; never a selection.
+    var highlightedKeys: Set<UInt16> = []
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.colorScheme) private var colorScheme
 
@@ -256,9 +318,14 @@ struct ReviewKeyboardView: View {
     private func key(_ code: UInt16, height: CGFloat = ReviewKeyboardView.rowHeight) -> some View {
         let actions = map.actions(for: code, preferences: preferences)
         let commands = map.commandBindings(for: code, preferences: commandPreferences)
-        let titles = actions.map(\.title) + commands.map { $0.binding.display + " — " + $0.action.title }
+        // Modifier layers already name the chord in the key's label.
+        let titles = actions.map(\.title) + commands.map {
+            map.layer == .base ? $0.binding.display + " — " + $0.action.title : $0.action.title
+        }
         let label = map.label(for: code)
         let selected = selectedKey == code
+        let fill = selected ? Color.louppeAccent
+            : highlightedKeys.contains(code) ? Color.louppeAccent.opacity(0.2) : Color.clear
         let assigned = !titles.isEmpty
         return Button {
             selectedKey = selected ? nil : code
@@ -270,11 +337,12 @@ struct ReviewKeyboardView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: height)
                 .foregroundStyle(selected ? selectedForeground : Color.primary)
-                .background(selected ? Color.louppeAccent : Color.clear, in: RoundedRectangle(cornerRadius: 4))
+                .background(fill, in: RoundedRectangle(cornerRadius: 4))
                 .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(assigned ? Color.louppeAccent : Color.primary.opacity(0.22), lineWidth: 1))
                 .contentShape(RoundedRectangle(cornerRadius: 4))
         }
         .buttonStyle(.plain)
+        .focused(focusedKey, equals: code)
         .disabled(map.character(for: code) == nil && !assigned)
         .accessibilityLabel(map.layer.prefix + (code == 48 ? L10n.text("Tab") : label))
         .accessibilityValue(titles.isEmpty ? L10n.text("No shortcut assigned") : titles.joined(separator: ", "))

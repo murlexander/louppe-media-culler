@@ -1756,6 +1756,11 @@
 "Restore all shortcuts for the selected matching mode." = "चुने गए मिलान मोड के सभी शॉर्टकट बहाल करें।";
 "Add shortcut" = "शॉर्टकट जोड़ें";
 "Add shortcut for {0}" = "{0} के लिए शॉर्टकट जोड़ें";
+"Choose a key to see what it does." = "कोई कुंजी चुनें और देखें कि वह क्या करती है।";
+"Assign…" = "असाइन करें…";
+"Assign {0} to an action" = "{0} को किसी कार्रवाई पर असाइन करें";
+"Assigned to {0}." = "{0} पर असाइन किया गया।";
+"Shift with a letter works like the letter alone." = "Shift के साथ कोई अक्षर अकेले उस अक्षर की तरह काम करता है।";
 "Defaults overlap another shortcut. Remove that assignment first." = "डिफ़ॉल्ट किसी अन्य शॉर्टकट से टकराते हैं। पहले उस असाइनमेंट को हटाएँ।";
 "Restore defaults for this action" = "इस कार्रवाई के डिफ़ॉल्ट बहाल करें";
 "Remove shortcut" = "शॉर्टकट हटाएँ";

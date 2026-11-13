@@ -9,7 +9,7 @@ struct ReviewShortcutsSettingsView: View {
     @State private var commandPreferences = CommandShortcutPreferences.load()
     @State private var layers = ReviewKeyboardLayerState()
     @State private var search = ""
-    @State private var expandedGroups: Set<String> = []
+    @State private var groups = ShortcutGroupExpansion()
     @State private var draftAction: ReviewShortcutAction?
     @State private var draftCommand: CommandShortcutAction?
     @State private var commandErrorAction: CommandShortcutAction?
@@ -18,11 +18,19 @@ struct ReviewShortcutsSettingsView: View {
     @State private var errorAction: ReviewShortcutAction?
     @State private var error: String?
     @State private var selectedKey: UInt16?
+    @State private var keyMessage: String?
+    @State private var hoveredEditor: ShortcutEditorID?
+    @FocusState private var focusedKey: UInt16?
     @State private var layoutCharacters = ReviewKeyboardMap.currentLayoutCharacters()
     @State private var modifiedCharacters: [ReviewKeyboardLayer: [UInt16: String]] = Dictionary(uniqueKeysWithValues:
         ReviewKeyboardLayer.allCases.filter { $0 != .base }.map { ($0, ReviewKeyboardMap.currentLayoutCharacters(layer: $0)) })
 
     private var query: String { search.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// `selectedKey` opens the page with that key chosen (UI captures and tests).
+    init(selectedKey: UInt16? = nil) {
+        _selectedKey = State(initialValue: selectedKey)
+    }
 
     var body: some View {
         Section {
@@ -44,24 +52,10 @@ struct ReviewShortcutsSettingsView: View {
             .help(matchingModeHelp)
             .accessibilityHint(matchingModeHelp)
             ReviewKeyboardView(map: keyboardMap, preferences: preferences, commandPreferences: commandPreferences,
-                               toggleCommand: { layers.toggleCommand() }, toggleShift: { layers.toggleShift() }, selectedKey: $selectedKey)
+                               toggleCommand: { layers.toggleCommand() }, toggleShift: { layers.toggleShift() },
+                               selectedKey: $selectedKey, focusedKey: $focusedKey, highlightedKeys: hoveredKeys)
                 .padding(.vertical, 5)
-            if let selectedKey {
-                HStack {
-                    Text(layers.displayed.prefix + keyboardMap.label(for: selectedKey))
-                        .font(.system(.body, design: .monospaced).weight(.medium))
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Button {
-                        self.selectedKey = nil
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                    }
-                    .buttonStyle(.borderless)
-                    .help(L10n.text("Clear selection"))
-                    .accessibilityLabel(L10n.text("Clear selection"))
-                }
-            }
+            selectedKeyRow
             NativeSearchField(
                 text: $search,
                 placeholder: L10n.text("Find a shortcut"),
@@ -92,7 +86,7 @@ struct ReviewShortcutsSettingsView: View {
                     }
                 }
             }
-            if !ReviewShortcutAction.allCases.contains(where: matchesEditor)
+            if selectedKey == nil, !ReviewShortcutAction.allCases.contains(where: matchesEditor)
                 && !CommandShortcutAction.allCases.contains(where: matchesCommandEditor) {
                 Text(L10n.text("No matching shortcuts."))
                     .foregroundStyle(.secondary)
@@ -123,13 +117,20 @@ struct ReviewShortcutsSettingsView: View {
         .onChange(of: savedCommands) { _, value in commandPreferences = CommandShortcutPreferences.decode(value) }
         .onChange(of: search) { _, _ in
             if !query.isEmpty { selectedKey = nil }
-            cancelDraft()
-            clearError()
+            resetFilteredState()
         }
         .onChange(of: selectedKey) { _, key in
-            if key != nil { search = "" }
-            cancelDraft()
-            clearError()
+            if key != nil {
+                search = ""
+                // Keep a layer previewed by held keys after they are released.
+                layers.latched = layers.displayed
+            }
+            resetFilteredState()
+        }
+        .onChange(of: layers.displayed) { _, _ in
+            // Another layer is another filter: reopen its matching groups.
+            groups.filterChanged()
+            keyMessage = nil
         }
         .onReceive(DistributedNotificationCenter.default().publisher(for: Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String))) { _ in
             layoutCharacters = ReviewKeyboardMap.currentLayoutCharacters()
@@ -227,6 +228,7 @@ struct ReviewShortcutsSettingsView: View {
                     .accessibilityIdentifier("louppe.shortcutError")
             }
         }
+        .onHover { hover(.review(action), inside: $0) }
     }
 
     @ViewBuilder
@@ -288,6 +290,7 @@ struct ReviewShortcutsSettingsView: View {
             }
             commandBindingsEditor(action)
         }
+        .onHover { hover(.command(action), inside: $0) }
     }
 
     @ViewBuilder
@@ -457,19 +460,156 @@ struct ReviewShortcutsSettingsView: View {
     }
 
     private func groupExpansion(_ group: ReviewShortcutGroup) -> Binding<Bool> {
-        Binding(
-            get: { selectedKey != nil || !query.isEmpty || expandedGroups.contains(group.rawValue) },
+        let filtering = selectedKey != nil || !query.isEmpty
+        return Binding(
+            get: { groups.isExpanded(group, filtering: filtering) },
             set: { expanded in
-                if expanded { expandedGroups.insert(group.rawValue) }
-                else {
-                    expandedGroups.remove(group.rawValue)
-                    if draftAction?.group == group || draftCommand?.group == group {
-                        cancelDraft()
-                        clearError()
-                    }
+                groups.set(group, expanded: expanded, filtering: filtering)
+                if !expanded, draftAction?.group == group || draftCommand?.group == group {
+                    cancelDraft()
+                    clearError()
                 }
             }
         )
+    }
+
+    private func resetFilteredState() {
+        groups.filterChanged()
+        hoveredEditor = nil
+        keyMessage = nil
+        cancelDraft()
+        clearError()
+    }
+
+    private func hover(_ editor: ShortcutEditorID, inside: Bool) {
+        if inside { hoveredEditor = editor }
+        else if hoveredEditor == editor { hoveredEditor = nil }
+    }
+
+    private var hoveredKeys: Set<UInt16> {
+        switch hoveredEditor {
+        case let .review(action):
+            keyboardMap.keys(for: action, command: linkedCommand(for: action),
+                             preferences: preferences, commandPreferences: commandPreferences)
+        case let .command(action):
+            keyboardMap.keys(for: nil, command: action, preferences: preferences, commandPreferences: commandPreferences)
+        case nil: []
+        }
+    }
+
+    // MARK: Chosen key
+
+    @ViewBuilder
+    private var selectedKeyRow: some View {
+        HStack(spacing: 8) {
+            if let selectedKey {
+                let name = layers.displayed.prefix + keyboardMap.label(for: selectedKey)
+                let status = keyboardMap.status(for: selectedKey, preferences: preferences,
+                                                commandPreferences: commandPreferences)
+                Text(name)
+                    .font(.system(.body, design: .monospaced).weight(.medium))
+                    .foregroundStyle(.primary)
+                if let note = keyMessage ?? note(for: status) {
+                    Text(note).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                assignMenu(for: status, keyName: name)
+                Button {
+                    let previous = selectedKey
+                    self.selectedKey = nil
+                    // The button disappears; return keyboard focus to the key.
+                    focusedKey = previous
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.borderless)
+                .help(L10n.text("Clear selection"))
+                .accessibilityLabel(L10n.text("Clear selection"))
+            } else {
+                // Always present, so choosing a key never shifts the list below.
+                Text(L10n.text("Choose a key to see what it does."))
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+            }
+        }
+        .frame(minHeight: 22)
+    }
+
+    private func note(for status: ReviewKeyStatus) -> String? {
+        switch status {
+        case .used: nil
+        case .unused, .review, .command: L10n.text("No shortcut assigned")
+        case .reserved: L10n.text("This shortcut is reserved by macOS.")
+        case .shiftedLetter: L10n.text("Shift with a letter works like the letter alone.")
+        }
+    }
+
+    @ViewBuilder
+    private func assignMenu(for status: ReviewKeyStatus, keyName: String) -> some View {
+        switch status {
+        case let .review(binding, actions):
+            assignMenu(keyName: keyName) {
+                ForEach(ReviewShortcutGroup.allCases, id: \.self) { group in
+                    let grouped = actions.filter { $0.group == group }
+                    if !grouped.isEmpty {
+                        Section(group.title) {
+                            ForEach(grouped, id: \.self) { action in
+                                Button(action.title) { assign(binding, to: action) }
+                            }
+                        }
+                    }
+                }
+            }
+        case let .command(binding, actions):
+            assignMenu(keyName: keyName) {
+                ForEach(actions, id: \.self) { action in
+                    Button(action.title) { assign(binding, to: action) }
+                }
+            }
+        case .used, .unused, .reserved, .shiftedLetter:
+            EmptyView()
+        }
+    }
+
+    private func assignMenu<Items: View>(keyName: String, @ViewBuilder items: () -> Items) -> some View {
+        Menu {
+            items()
+        } label: {
+            Text(L10n.text("Assign…"))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.bordered)
+        .fixedSize()
+        .help(L10n.text("Assign \(keyName) to an action"))
+        .accessibilityLabel(L10n.text("Assign \(keyName) to an action"))
+        .accessibilityIdentifier("louppe.assignShortcutKey")
+    }
+
+    /// The key stays chosen, so the filtered list shows the new binding with
+    /// its context picker for any further change.
+    private func assign(_ binding: ReviewShortcutBinding, to action: ReviewShortcutAction) {
+        var updated = preferences
+        guard updated.add(binding, for: action, scope: action.defaultScope) else {
+            keyMessage = updated.conflict(for: binding, action: action, scope: action.defaultScope).map(conflictMessage)
+            return
+        }
+        save(updated)
+        announceAssignment(to: action.title)
+    }
+
+    private func assign(_ binding: CommandShortcutBinding, to action: CommandShortcutAction) {
+        var updated = commandPreferences
+        if let conflict = updated.conflict(for: binding, action: action) { keyMessage = conflict; return }
+        guard updated.add(binding, for: action) else { return }
+        saveCommands(updated)
+        announceAssignment(to: action.title)
+    }
+
+    private func announceAssignment(to title: String) {
+        keyMessage = nil
+        cancelDraft()
+        clearError()
+        AccessibilityNotification.Announcement(L10n.text("Assigned to \(title).")).post()
     }
 
     private func add(_ binding: ReviewShortcutBinding, for action: ReviewShortcutAction) -> Bool {
@@ -506,7 +646,11 @@ struct ReviewShortcutsSettingsView: View {
     }
 
     private func showConflict(_ conflict: ReviewShortcutConflict, for action: ReviewShortcutAction) {
-        showError(L10n.text("Already used for \(conflict.action.title) in \(conflict.contextLabel). Choose another key or a separate context."), for: action)
+        showError(conflictMessage(conflict), for: action)
+    }
+
+    private func conflictMessage(_ conflict: ReviewShortcutConflict) -> String {
+        L10n.text("Already used for \(conflict.action.title) in \(conflict.contextLabel). Choose another key or a separate context.")
     }
 
     private func invalidKey(for action: ReviewShortcutAction) {
@@ -534,6 +678,34 @@ struct ReviewShortcutsSettingsView: View {
         draftAction = nil
         draftCommand = nil
     }
+}
+
+/// Filtering opens every matching group; collapsing one then lasts until the
+/// filter changes and leaves the unfiltered choice untouched.
+struct ShortcutGroupExpansion: Equatable {
+    private var expanded: Set<ReviewShortcutGroup> = []
+    private var collapsedWhileFiltering: Set<ReviewShortcutGroup> = []
+
+    func isExpanded(_ group: ReviewShortcutGroup, filtering: Bool) -> Bool {
+        filtering ? !collapsedWhileFiltering.contains(group) : expanded.contains(group)
+    }
+
+    mutating func set(_ group: ReviewShortcutGroup, expanded isExpanded: Bool, filtering: Bool) {
+        if filtering {
+            if isExpanded { collapsedWhileFiltering.remove(group) } else { collapsedWhileFiltering.insert(group) }
+        } else if isExpanded {
+            expanded.insert(group)
+        } else {
+            expanded.remove(group)
+        }
+    }
+
+    mutating func filterChanged() { collapsedWhileFiltering = [] }
+}
+
+private enum ShortcutEditorID: Equatable {
+    case review(ReviewShortcutAction)
+    case command(CommandShortcutAction)
 }
 
 /// Render the native disclosure indicator while the header button owns its

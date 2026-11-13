@@ -82,6 +82,7 @@ None counts as passed until run in its stated environment. Owner: **Alex** unles
 - [ ] **Store Photos cache cleanup:** verify batch retirement and retry inside the sandboxed Store build; restricted-ancestor filesystem tests do not replace runtime acceptance.
 - [ ] **Opening gestures:** verify native Shift/Command input through Opening-to-Ready handoff; composed tests exercise public controls and captures verify outlines.
 - [ ] **Live choice menus:** open the native choices inside Sort/Filter; live captures cover the toolbar popovers themselves.
+- [ ] **Shortcut keyboard map:** VoiceOver and Full Keyboard Access through the chosen-key row, **Assign…** and focus returning to the key after Clear; the open Assign menu in a live capture. Keys stay 27 points high (arrows 12), below the 36-point touch target, and the map has one Tab stop per key rather than arrow-key movement.
 - [ ] **100% RAW panning:** inspect recovered sharp tiles and unavailable overlays while panning away and back on real RAW media; deterministic mounted tests cover the cancellation race.
 
 ### Hardware and environments

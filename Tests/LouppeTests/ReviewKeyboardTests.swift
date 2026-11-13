@@ -198,4 +198,80 @@ final class ReviewKeyboardTests: XCTestCase {
         state.held = .base
         XCTAssertEqual(state.displayed, .shift)
     }
+
+    func testChosenFreeKeyOffersOnlyActionsTheEditorsAccept() throws {
+        var review = ReviewShortcutPreferences()
+        review.interpretation = .keyboardLayout
+        var commands = CommandShortcutPreferences()
+        let base = ReviewKeyboardMap(interpretation: .keyboardLayout, layoutCharacters: [16: "y", 3: "f"],
+                                     modifiedCharactersByLayer: [.command: [16: "y", 3: "f"]])
+        guard case let .review(binding, choices) = base.status(for: 16, preferences: review, commandPreferences: commands) else {
+            return XCTFail("A free letter offers review actions")
+        }
+        XCTAssertEqual(binding, ReviewShortcutBinding(character: "y", keyCode: 16))
+        XCTAssertEqual(choices, ReviewShortcutAction.allCases, "A free key can become an alias for any action")
+        XCTAssertEqual(base.status(for: 3, preferences: review, commandPreferences: commands), .used)
+        XCTAssertEqual(base.status(for: 51, preferences: review, commandPreferences: commands), .used, "⌘⌫ keeps Delete lit")
+        XCTAssertTrue(review.add(binding, for: .oneStar, scope: ReviewShortcutAction.oneStar.defaultScope))
+        XCTAssertEqual(base.status(for: 16, preferences: review, commandPreferences: commands), .used)
+
+        let command = ReviewKeyboardMap(interpretation: .physicalPosition, layoutCharacters: [:], layer: .command,
+                                        modifiedCharacters: [2: "d", 1: "s", 18: "1", 14: "e"])
+        let editable = CommandShortcutAction.allCases.filter(\.isEditable)
+        let commandD = CommandShortcutBinding(character: "d", keyCode: 2, modifiers: .command)
+        XCTAssertEqual(command.status(for: 2, preferences: review, commandPreferences: commands), .command(commandD, editable))
+        XCTAssertEqual(command.status(for: 1, preferences: review, commandPreferences: commands), .reserved)
+        XCTAssertEqual(command.status(for: 18, preferences: review, commandPreferences: commands), .unused,
+                       "Digits are unsupported, not reserved")
+        XCTAssertEqual(command.status(for: 14, preferences: review, commandPreferences: commands), .used)
+        XCTAssertEqual(command.status(for: 49, preferences: review, commandPreferences: commands), .unused)
+        guard case .command(_, editable) = command.status(for: 125, preferences: review, commandPreferences: commands) else {
+            return XCTFail("Command-Down is assignable")
+        }
+        XCTAssertTrue(commands.add(commandD, for: .rescan))
+        XCTAssertEqual(command.status(for: 2, preferences: review, commandPreferences: commands), .used)
+
+        let combined = ReviewKeyboardMap(interpretation: .physicalPosition, layoutCharacters: [:], layer: .commandShift,
+                                         modifiedCharacters: [2: "d"])
+        XCTAssertEqual(combined.status(for: 2, preferences: review, commandPreferences: commands),
+                       .command(.init(character: "d", keyCode: 2, modifiers: .commandShift), editable))
+    }
+
+    func testChosenKeyFollowsPhysicalPositionsAndExplainsShiftedLetters() {
+        var review = ReviewShortcutPreferences()
+        review.interpretation = .physicalPosition
+        let commands = CommandShortcutPreferences()
+        // Dvorak: QWERTY Y produces F, but physical Mark Yes stays at QWERTY F.
+        let base = ReviewKeyboardMap(interpretation: .physicalPosition, layoutCharacters: [3: "u", 16: "f"])
+        guard case let .review(binding, _) = base.status(for: 16, preferences: review, commandPreferences: commands) else {
+            return XCTFail("The physical Y position is free")
+        }
+        XCTAssertTrue(review.add(binding, for: .oneStar, scope: ReviewShortcutAction.oneStar.defaultScope))
+        XCTAssertTrue(base.actions(for: 16, preferences: review).contains(.oneStar))
+
+        let shift = ReviewKeyboardMap(interpretation: .physicalPosition, layoutCharacters: [:], layer: .shift)
+        XCTAssertEqual(shift.status(for: 3, preferences: review, commandPreferences: commands), .shiftedLetter)
+        XCTAssertEqual(shift.status(for: 18, preferences: review, commandPreferences: commands), .unused)
+        XCTAssertEqual(shift.status(for: 123, preferences: review, commandPreferences: commands), .used, "⇧← seeks video")
+
+        // Layout mode compares what Shift produces: a letter whose Shift output is punctuation is not a letter.
+        let layout = ReviewKeyboardMap(interpretation: .keyboardLayout, layoutCharacters: [3: "f", 27: "ß"],
+                                       layer: .shift, modifiedCharacters: [3: "F", 27: "?"])
+        XCTAssertEqual(layout.status(for: 3, preferences: review, commandPreferences: commands), .shiftedLetter)
+        XCTAssertEqual(layout.status(for: 27, preferences: review, commandPreferences: commands), .unused)
+    }
+
+    func testHoveredEditorRowLightsItsKeysOnTheDisplayedLayer() {
+        let review = ReviewShortcutPreferences()
+        let commands = CommandShortcutPreferences()
+        let base = ReviewKeyboardMap(interpretation: .physicalPosition, layoutCharacters: [:],
+                                     modifiedCharactersByLayer: [.command: [14: "e", 40: "k"]])
+        XCTAssertEqual(base.keys(for: .yes, command: nil, preferences: review, commandPreferences: commands), [3])
+        XCTAssertEqual(base.keys(for: .export, command: .export, preferences: review, commandPreferences: commands), [14])
+        XCTAssertEqual(base.keys(for: nil, command: .commandPalette, preferences: review, commandPreferences: commands), [40])
+        let command = ReviewKeyboardMap(interpretation: .physicalPosition, layoutCharacters: [:], layer: .command,
+                                        modifiedCharacters: [14: "e"])
+        XCTAssertTrue(command.keys(for: .yes, command: nil, preferences: review, commandPreferences: commands).isEmpty)
+        XCTAssertEqual(command.keys(for: .export, command: .export, preferences: review, commandPreferences: commands), [14])
+    }
 }

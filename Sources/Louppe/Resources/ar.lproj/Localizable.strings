@@ -1756,6 +1756,11 @@
 "Restore all shortcuts for the selected matching mode." = "استعادة كل الاختصارات لوضع المطابقة المحدد.";
 "Add shortcut" = "إضافة اختصار";
 "Add shortcut for {0}" = "إضافة اختصار لـ {0}";
+"Choose a key to see what it does." = "اختر مفتاحًا لترى ما يفعله.";
+"Assign…" = "تعيين…";
+"Assign {0} to an action" = "تعيين {0} لإجراء";
+"Assigned to {0}." = "عُيّن إلى {0}.";
+"Shift with a letter works like the letter alone." = "يعمل Shift مع حرف مثل الحرف وحده.";
 "Defaults overlap another shortcut. Remove that assignment first." = "تتداخل الإعدادات الافتراضية مع اختصار آخر. أزل ذلك التعيين أولًا.";
 "Restore defaults for this action" = "استعادة الإعدادات الافتراضية لهذا الإجراء";
 "Remove shortcut" = "إزالة الاختصار";

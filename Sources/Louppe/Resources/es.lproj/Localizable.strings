@@ -1756,6 +1756,11 @@
 "Restore all shortcuts for the selected matching mode." = "Restaurar todos los atajos del modo de coincidencia seleccionado.";
 "Add shortcut" = "Añadir atajo";
 "Add shortcut for {0}" = "Añadir atajo para {0}";
+"Choose a key to see what it does." = "Elige una tecla para ver qué hace.";
+"Assign…" = "Asignar…";
+"Assign {0} to an action" = "Asignar {0} a una acción";
+"Assigned to {0}." = "Asignado a {0}.";
+"Shift with a letter works like the letter alone." = "Mayúsculas con una letra funciona igual que la letra sola.";
 "Defaults overlap another shortcut. Remove that assignment first." = "Los valores predeterminados coinciden con otro atajo. Elimina esa asignación primero.";
 "Restore defaults for this action" = "Restaurar valores predeterminados de esta acción";
 "Remove shortcut" = "Eliminar atajo";

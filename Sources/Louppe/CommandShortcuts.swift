@@ -205,6 +205,11 @@ struct CommandShortcutPreferences: Codable, Equatable, Sendable {
     /// Keep established system, clipboard, text editing, window and Help keys
     /// available to AppKit even when the session has ordinary control focus.
     private static let reservedLetters = Set(["a", "b", "c", "f", "g", "h", "i", "m", "n", "o", "p", "q", "s", "u", "v", "w", "x", "z"])
+    /// An assignable chord shape that Louppe leaves to macOS. Digits and
+    /// punctuation are simply unsupported, not reserved.
+    static func isReserved(_ binding: CommandShortcutBinding) -> Bool {
+        binding.isEditableChord && reservedLetters.contains(binding.character)
+    }
     func conflict(for binding: CommandShortcutBinding, action: CommandShortcutAction, excluding: CommandShortcutBinding? = nil) -> String? {
         guard action.isEditable, binding.isEditableChord,
               !Self.reservedLetters.contains(binding.character) else {

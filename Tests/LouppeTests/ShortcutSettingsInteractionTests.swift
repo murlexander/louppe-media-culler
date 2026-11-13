@@ -61,6 +61,39 @@ final class ShortcutSettingsInteractionTests: XCTestCase {
                        "Clearing search must return to the collapsed groups")
     }
 
+    func testChosenKeyFiltersTheEditorToItsBindings() throws {
+        let suite = "ShortcutSettingsInteractionTests.ChosenKey.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(ReviewShortcutPreferences().encoded, forKey: ReviewShortcutPreferences.preferenceKey)
+        // Physical F marks Yes; physical Y is free on every layout.
+        for (key, expected) in [(UInt16(3), [ReviewShortcutAction.yes.title]), (16, [])] {
+            let host = NSHostingView(rootView: LouppeSettingsForm {
+                ReviewShortcutsSettingsView(selectedKey: key)
+            }.defaultAppStorage(defaults).frame(width: 620, height: 700))
+            let window = mount(host)
+            defer { window.close() }
+            let recorders = descendants(host).compactMap { $0 as? ReviewShortcutRecorderButton }
+            XCTAssertEqual(Set(recorders.map(\.actionTitle)), Set(expected), "key \(key)")
+        }
+    }
+
+    func testFilteredGroupCollapsesUntilTheFilterChanges() {
+        var groups = ShortcutGroupExpansion()
+        XCTAssertFalse(groups.isExpanded(.review, filtering: false))
+        XCTAssertTrue(groups.isExpanded(.review, filtering: true), "Filtering opens matching groups")
+        groups.set(.review, expanded: false, filtering: true)
+        XCTAssertFalse(groups.isExpanded(.review, filtering: true), "A filtered group can be collapsed")
+        XCTAssertTrue(groups.isExpanded(.stars, filtering: true))
+        XCTAssertFalse(groups.isExpanded(.review, filtering: false), "The unfiltered choice is untouched")
+        groups.filterChanged()
+        XCTAssertTrue(groups.isExpanded(.review, filtering: true), "A new filter opens matching groups again")
+        groups.set(.view, expanded: true, filtering: false)
+        groups.set(.view, expanded: false, filtering: true)
+        groups.filterChanged()
+        XCTAssertTrue(groups.isExpanded(.view, filtering: false))
+    }
+
     func testEntireDisclosureHeaderTogglesInBothDirectionsAndKeepsChildrenSeparate() throws {
         for direction in [LayoutDirection.leftToRight, .rightToLeft] {
             let state = ShortcutHitState()

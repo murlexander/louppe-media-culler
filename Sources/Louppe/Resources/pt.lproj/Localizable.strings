@@ -1756,6 +1756,11 @@
 "Restore all shortcuts for the selected matching mode." = "Restaurar todos os atalhos do modo de correspondência selecionado.";
 "Add shortcut" = "Adicionar atalho";
 "Add shortcut for {0}" = "Adicionar atalho para {0}";
+"Choose a key to see what it does." = "Escolha uma tecla para ver o que ela faz.";
+"Assign…" = "Atribuir…";
+"Assign {0} to an action" = "Atribuir {0} a uma ação";
+"Assigned to {0}." = "Atribuído a {0}.";
+"Shift with a letter works like the letter alone." = "Shift com uma letra funciona como a letra sozinha.";
 "Defaults overlap another shortcut. Remove that assignment first." = "Os padrões se sobrepõem a outro atalho. Remova essa atribuição primeiro.";
 "Restore defaults for this action" = "Restaurar padrões desta ação";
 "Remove shortcut" = "Remover atalho";

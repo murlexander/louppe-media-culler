@@ -1773,6 +1773,11 @@
 "Restore all shortcuts for the selected matching mode." = "恢复所选匹配模式下的所有快捷键。";
 "Add shortcut" = "添加快捷键";
 "Add shortcut for {0}" = "为{0}添加快捷键";
+"Choose a key to see what it does." = "选择一个按键，查看它的作用。";
+"Assign…" = "分配…";
+"Assign {0} to an action" = "将{0}分配给一个操作";
+"Assigned to {0}." = "已分配给{0}。";
+"Shift with a letter works like the letter alone." = "Shift 加字母的作用与单独按该字母相同。";
 "Defaults overlap another shortcut. Remove that assignment first." = "默认快捷键与另一个快捷键重叠。请先移除该分配。";
 "Restore defaults for this action" = "恢复此操作的默认设置";
 "Remove shortcut" = "移除快捷键";
