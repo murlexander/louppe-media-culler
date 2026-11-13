@@ -78,6 +78,9 @@ The feed includes only the current changelog and no deltas. Publishing checks
 version/build, ZIP length/signature, feed signature, URL, minimum macOS,
 framework, Developer ID, hardened runtime, notarization, Gatekeeper, and app
 signature. Both apps must contain all six source-matching plural catalogs.
+Feed preparation and publishing verification check build order against release
+tags as well as the feed, so regenerating the feed cannot hide a reused build.
+Fetch release tags when using a shallow checkout.
 Stable releases also update [Homebrew](HOMEBREW.md).
 
 ## GitHub release notes

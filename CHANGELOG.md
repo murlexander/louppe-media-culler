@@ -2,7 +2,7 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
-- Begin the next bug-fix and testing cycle.
+- Reject reused release build numbers even after the update feed has been regenerated.
 
 ## 1.14.0 (18) — 2026-11-13
 

@@ -18,6 +18,10 @@ if [[ ! -f "$ARCHIVE" ]]; then
     exit 1
 fi
 
+# Check before replacing the prior feed; tags remain an independent baseline
+# when this command or the publishing verifier is run again.
+python3 -I Scripts/check_release_build_order.py "$PWD/appcast.xml" "$MARKETING_VERSION" "$BUILD_NUMBER"
+
 SPARKLE_TOOLS="$(find "${LOUPPE_SCRATCH_PATH:-.build}/artifacts" -type d \
     -path '*/Sparkle/bin' -print -quit)"
 if [[ -z "$SPARKLE_TOOLS" || ! -x "$SPARKLE_TOOLS/generate_appcast" ]]; then
