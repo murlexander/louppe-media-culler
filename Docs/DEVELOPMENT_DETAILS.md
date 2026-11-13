@@ -318,7 +318,10 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   unsafe explicit containers. Existing XMP transfers require complete ownership
   only for packets being moved; hidden same-stem media without a shared packet
   do not block Organize. Nested-stem media protect shared extension-qualified
-  packets without claiming the shorter stem's canonical packet.
+  packets without claiming the shorter stem's canonical packet. A packet shared
+  by canonical and extension-qualified names moves once, in one rollback group,
+  only when every possible owner is reviewed, selected, keeps its exact name,
+  and goes to the same directory.
 - Rename/Organize undo retains the worker-confirmed destination identities;
   never recapture a later occupant to establish undo ownership.
 

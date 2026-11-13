@@ -83,9 +83,13 @@ enum XMPSidecarResolver {
         }
     }
 
+    /// `transferTargets` is the complete selected media mapping. It permits
+    /// shared existing packets only when all possible owners travel together
+    /// with their exact filenames intact; publication ignores it.
     static func resolve(
         members: [XMPStemFamilyMember],
         purpose: Purpose = .publication,
+        transferTargets: [XMPExactFileSystemPath: XMPExactFileSystemPath] = [:],
         isCancelled: () -> Bool = { false }
     ) throws -> [XMPSidecarFamilyPlan] {
         try checkCancellation(isCancelled)
@@ -118,6 +122,7 @@ enum XMPSidecarResolver {
             caseSensitiveNames: caseSensitive,
             requireLiveEntries: true,
             purpose: purpose,
+            transferTargets: transferTargets,
             isCancelled: isCancelled
         )
     }
@@ -130,6 +135,7 @@ enum XMPSidecarResolver {
         caseSensitiveNames: Bool,
         requireLiveEntries: Bool = false,
         purpose: Purpose = .publication,
+        transferTargets: [XMPExactFileSystemPath: XMPExactFileSystemPath] = [:],
         isCancelled: () -> Bool = { false }
     ) throws -> [XMPSidecarFamilyPlan] {
         try checkCancellation(isCancelled)
@@ -175,7 +181,7 @@ enum XMPSidecarResolver {
         var acrEntriesByKey: [String: Set<XMPExactFileSystemPath>] = [:]
         // A canonical stem can itself be another media file's full name:
         // IMG.NEF.jpg must never adopt IMG.NEF.xmp from IMG.NEF.
-        var mediaFilenameKeys: Set<String> = []
+        var mediaByFilename: [String: Set<XMPExactFileSystemPath>] = [:]
         var mediaByStem: [String: Set<XMPExactFileSystemPath>] = [:]
         for (index, path) in directoryEntries.enumerated() {
             if index.isMultiple(of: 32) { try checkCancellation(isCancelled) }
@@ -184,7 +190,7 @@ enum XMPSidecarResolver {
             let isACR = !isXMP
                 && recognizedACRExtension(entryName, caseSensitiveNames)
             if FolderScanner.isRecognizedExtension(path.url.pathExtension) {
-                mediaFilenameKeys.insert(comparisonKey(entryName, caseSensitiveNames: caseSensitiveNames))
+                mediaByFilename[comparisonKey(entryName, caseSensitiveNames: caseSensitiveNames), default: []].insert(path)
                 mediaByStem[comparisonKey(deletingFinalExtension(entryName), caseSensitiveNames: caseSensitiveNames), default: []].insert(path)
             }
             guard isXMP || isACR else { continue }
@@ -217,6 +223,27 @@ enum XMPSidecarResolver {
             return matches.sorted {
                 $0.bytes.lexicographicallyPrecedes($1.bytes)
             }
+        }
+
+        // Transfer targets are planner authority, never inferred from the
+        // listing. A packet shared between a canonical and qualified name may
+        // travel only with every reviewed owner, preserving every filename.
+        let reviewedPaths = Set(members.map(\.mediaPath))
+        func sharedPacketCanTransfer(_ packet: XMPExactFileSystemPath) throws -> Bool {
+            guard purpose == .transferExisting else { return false }
+            let key = comparisonKey(deletingFinalExtension(try decodedName(packet)),
+                                    caseSensitiveNames: caseSensitiveNames)
+            let owners = (mediaByStem[key] ?? []).union(mediaByFilename[key] ?? [])
+            guard !owners.isEmpty, owners.isSubset(of: reviewedPaths) else { return false }
+            var targetParents = Set<XMPExactFileSystemPath>()
+            for (index, owner) in owners.enumerated() {
+                if index.isMultiple(of: 32) { try checkCancellation(isCancelled) }
+                guard let target = transferTargets[owner],
+                      target.lastComponentBytes == owner.lastComponentBytes else { return false }
+                if requireLiveEntries { try XMPFamilyMembership.requireRegular(owner) }
+                targetParents.insert(target.parent)
+            }
+            return targetParents.count == 1
         }
 
         var groups: [String: [ParsedMember]] = [:]
@@ -287,15 +314,16 @@ enum XMPSidecarResolver {
             // and a nested stem doesn't own this family's canonical packet.
             // Publication still requires the full, verified live family.
             let canonicalOwnershipMatters = purpose == .publication || !uniqueCanonical.isEmpty
-            let canonicalCollision = canonicalOwnershipMatters
+            let canonicalCollision = try canonicalOwnershipMatters
                 && (!complete || !safe || exactStemBytes.count > 1 || uniqueCanonical.count > 1
-                    || mediaFilenameKeys.contains(key))
+                    || (mediaByFilename[key]?.isEmpty == false
+                        && !(try sharedPacketCanTransfer(canonical))))
             // IMG.NEF.xmp is also canonical for IMG.NEF.jpg, including when
             // that possible owner was skipped by the scanner.
             let qualifiedCollision = try purpose == .transferExisting && qualifiedMatches.contains { packet in
                 let packetStem = deletingFinalExtension(try decodedName(packet))
                 let owners = mediaByStem[comparisonKey(packetStem, caseSensitiveNames: caseSensitiveNames)]
-                return owners?.isEmpty == false
+                return try owners?.isEmpty == false && !sharedPacketCanTransfer(packet)
             }
             let metadataValues = Set(media.map(\.metadata))
             let disposition: XMPSidecarFamilyPlan.Disposition

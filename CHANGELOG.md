@@ -10,7 +10,7 @@
 - Restore sharp 100% detail when panning away and back quickly, and free memory sooner when browsing fast.
 - Keep dialog buttons and warning actions readable when labels are long, with the close button at the far right. Selection in inactive windows is neutral grey, and VoiceOver reads Sort and Filter titles as headings.
 
-- Let Organize move photos without XMP even when a hidden or similarly named file sits beside them; shared XMP sidecars stay protected.
+- Let Organize move photos without XMP beside hidden or similarly named files, and move shared XMP when all its owners keep their names and move together.
 - Protect XMP sidecars that another photo could own, including files added during review.
 - Keep a hidden current photo out of Command-click selection and Trash.
 - Refuse redirected source and destination paths in Copy and Organize, and let Copy work from a permitted subfolder of a restricted drive.

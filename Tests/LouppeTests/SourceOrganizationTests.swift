@@ -37,6 +37,128 @@ final class SourceOrganizationTests: XCTestCase {
         }
     }
 
+    func testOrganizationMovesSharedQualifiedPacketWithAllUnchangedOwnersAndUndo() throws {
+        let fixture = try makeFixture(named: "SharedQualifiedPacket")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let names = ["IMG.NEF", "IMG.NEF.jpg", "IMG.NEF.xmp", "IMG.xmp"]
+        for name in names { _ = try mediaFile(name, under: fixture.photos) }
+        let items = ["IMG.NEF", "IMG.NEF.jpg"].map {
+            makeItem(id: $0, url: fixture.photos.appendingPathComponent($0), rating: .yes)
+        }
+        let target = try directory("Organized/Yes", under: fixture.photos)
+        let unrelated = try mediaFile("UNRELATED.xmp", under: target)
+        let prepared = try plan(fixture: fixture, selected: items, levels: [.decision])
+        XCTAssertTrue(prepared.canExecute, prepared.collisions.map(\.message).joined(separator: " | "))
+        guard prepared.canExecute else { return }
+        XCTAssertEqual(prepared.sidecarFileCount, 2)
+        XCTAssertEqual(prepared.workerPlan.items.count, 1, "Every owner and its packet must roll back together")
+        XCTAssertEqual(prepared.mappings.count, 4, "The shared packet must be scheduled only once")
+        let moved = SourceOrganizationWorker.organize(prepared, journalDirectory: fixture.journals) { _, _ in }
+        XCTAssertEqual(moved.failedItems, 0, moved.failureMessage ?? "")
+        XCTAssertFalse(moved.requiresRecovery)
+        XCTAssertEqual(moved.movedFiles, 4)
+        for name in names {
+            XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.photos.appendingPathComponent(name).path))
+            XCTAssertEqual(try Data(contentsOf: target.appendingPathComponent(name)), Data(name.utf8))
+        }
+        XCTAssertEqual(try Data(contentsOf: unrelated), Data("UNRELATED.xmp".utf8))
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: target.path)), Set(names + ["UNRELATED.xmp"]))
+        let undo = SourceOrganizationWorker.undo(try XCTUnwrap(moved.undoRecord), currentItems: [],
+            journalDirectory: fixture.journals) { _, _ in }
+        XCTAssertEqual(undo.failedItems, 0, undo.failureMessage ?? "")
+        XCTAssertFalse(undo.requiresRecovery)
+        XCTAssertEqual(undo.movedFiles, 4)
+        for name in names {
+            XCTAssertEqual(try Data(contentsOf: fixture.photos.appendingPathComponent(name)), Data(name.utf8))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: target.appendingPathComponent(name).path))
+        }
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: target.path), ["UNRELATED.xmp"])
+    }
+
+    func testSharedQualifiedPacketRefusesSeparatedRenamedOrUnreviewedOwners() throws {
+        for variant in ["rawOnly", "jpegOnly", "splitTargets", "hidden", "rename", "organizeRename", "occupiedTarget"] {
+            let fixture = try makeFixture(named: "SharedQualified-\(variant)")
+            defer { try? FileManager.default.removeItem(at: fixture.root) }
+            let raw = try mediaFile("IMG.NEF", under: fixture.photos)
+            let jpeg = try mediaFile("IMG.NEF.jpg", under: fixture.photos)
+            let packet = try mediaFile("IMG.NEF.xmp", under: fixture.photos)
+            let rawItem = makeItem(id: "IMG.NEF", url: raw, rating: .yes)
+            let jpegItem = makeItem(id: "IMG.NEF.jpg", url: jpeg,
+                rating: variant == "splitTargets" ? .no : .yes)
+            var context = [rawItem, jpegItem]
+            var selected = context
+            var config = configuration(levels: [.decision])
+            switch variant {
+            case "rawOnly": selected = [rawItem]
+            case "jpegOnly": selected = [jpegItem]
+            case "hidden":
+                try (jpeg as NSURL).setResourceValue(true, forKey: .isHiddenKey)
+                context = [rawItem]
+                selected = context
+            case "rename": config = FileRenamingPlanner.sourceConfiguration(customBaseName: "New")
+            case "organizeRename": config.fileNaming = .customBaseName("New")
+            case "occupiedTarget":
+                let target = try directory("Organized/Yes", under: fixture.photos)
+                try Data("foreign packet".utf8).write(to: target.appendingPathComponent("IMG.NEF.xmp"))
+            default: break
+            }
+            let prepared = try SourceOrganizationPlanner.makePlan(sourceFolder: fixture.photos,
+                selectedItems: selected, familyContextItems: context, configuration: config,
+                knownOriginFolderPathBytesByFileID: [:])
+            XCTAssertFalse(prepared.canExecute, variant)
+            XCTAssertFalse(prepared.collisions.isEmpty, variant)
+            for url in [raw, jpeg, packet] {
+                XCTAssertEqual(try Data(contentsOf: url), Data(url.lastPathComponent.utf8), variant)
+            }
+            if variant == "occupiedTarget" {
+                XCTAssertEqual(try Data(contentsOf: fixture.photos.appendingPathComponent("Organized/Yes/IMG.NEF.xmp")), Data("foreign packet".utf8))
+            } else {
+                XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.photos.appendingPathComponent("Organized").path), variant)
+            }
+            XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.journals.path), variant)
+        }
+    }
+
+    func testRenamePreservingOriginalNamesLeavesSharedQualifiedPacketUntouched() throws {
+        let fixture = try makeFixture(named: "SharedQualifiedUnchangedRename")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let names = ["IMG.NEF", "IMG.NEF.jpg", "IMG.NEF.xmp"]
+        for name in names { _ = try mediaFile(name, under: fixture.photos) }
+        let items = names.prefix(2).map {
+            makeItem(id: $0, url: fixture.photos.appendingPathComponent($0))
+        }
+        let prepared = try SourceOrganizationPlanner.makePlan(sourceFolder: fixture.photos,
+            selectedItems: items, familyContextItems: items,
+            configuration: FileRenamingPlanner.sourceConfiguration(metadata: .init(parts: [
+                .init(kind: .originalName, isEnabled: true)
+            ])), knownOriginFolderPathBytesByFileID: [:])
+        XCTAssertTrue(prepared.collisions.isEmpty, prepared.collisions.map(\.message).joined(separator: " | "))
+        XCTAssertEqual(prepared.movingFileCount, 0)
+        XCTAssertFalse(prepared.canExecute, "An unchanged Rename has no work to execute")
+        for name in names {
+            XCTAssertEqual(try Data(contentsOf: fixture.photos.appendingPathComponent(name)), Data(name.utf8))
+        }
+    }
+
+    func testSharedQualifiedTransferExceptionDoesNotPermitPublication() throws {
+        let fixture = try makeFixture(named: "SharedQualifiedPublication")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let raw = try mediaFile("IMG.NEF", under: fixture.photos)
+        let jpeg = try mediaFile("IMG.NEF.jpg", under: fixture.photos)
+        let packet = try mediaFile("IMG.NEF.xmp", under: fixture.photos)
+        let members = try [raw, jpeg].map {
+            try XMPStemFamilyMember(mediaURL: $0,
+                metadata: .init(decision: .yes, stars: .five, colorLabel: .red, profile: .universal))
+        }
+        let targets = try Dictionary(uniqueKeysWithValues: [raw, jpeg].map {
+            (try XMPExactFileSystemPath(url: $0), try XMPExactFileSystemPath(url: $0))
+        })
+        let families = try XMPSidecarResolver.resolve(members: members, transferTargets: targets)
+        let nested = try XCTUnwrap(families.first { $0.members.first?.mediaPath.url == jpeg })
+        XCTAssertEqual(nested.disposition, .filenameCollision)
+        XCTAssertEqual(try Data(contentsOf: packet), Data("IMG.NEF.xmp".utf8))
+    }
+
     func testTransferResolutionCannotAdoptCanonicalPacketAppearingAfterCensus() throws {
         let fixture = try makeFixture(named: "LateSharedXMP")
         defer { try? FileManager.default.removeItem(at: fixture.root) }

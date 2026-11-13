@@ -761,11 +761,36 @@ enum SourceOrganizationPlanner {
             parentGroups[member.mediaPath.parent, default: []].append(member)
         }
 
+        var mappedSidecars = Set<XMPExactFileSystemPath>()
         var sidecarFiles = 0
         var excludedACR = Set<XMPExactFileSystemPath>()
         for members in parentGroups.values {
             if isCancelled() { throw CancellationError() }
-            for family in try XMPSidecarResolver.resolve(members: members, purpose: .transferExisting) {
+            let families = try XMPSidecarResolver.resolve(
+                members: members, purpose: .transferExisting,
+                transferTargets: targetMediaPathBySourceMediaPath
+            )
+            // A packet can be canonical for one family and qualified for
+            // another. Keep all its owners in one journaled rollback group.
+            var firstItemIndexByPacket: [XMPExactFileSystemPath: Int] = [:]
+            for family in families {
+                if isCancelled() { throw CancellationError() }
+                let packets = family.extensionQualifiedSidecars + [family.canonicalSidecar].compactMap { $0 }
+                for packet in packets {
+                    let owners = family.members.filter {
+                        packet == family.canonicalSidecar || extensionPacket(packet, belongsTo: $0.mediaPath)
+                    }
+                    for owner in owners {
+                        guard let index = selectedItemIndexByMediaPath[owner.mediaPath] else { continue }
+                        if let first = firstItemIndexByPacket[packet] {
+                            disjointSet.union(first, index)
+                        } else {
+                            firstItemIndexByPacket[packet] = index
+                        }
+                    }
+                }
+            }
+            for family in families {
                 if isCancelled() { throw CancellationError() }
                 let selectedMembers = family.members.filter {
                     targetDirectoryByMediaPath[$0.mediaPath] != nil
@@ -845,31 +870,33 @@ enum SourceOrganizationPlanner {
                         let target = try targetDirectory.appending(
                             componentBytes: targetComponent
                         )
-                        mappings.append(SourceOrganizationFileMapping(
-                            itemID: selectedItems[first].id,
-                            source: canonical.url,
-                            destination: target.url,
-                            isMedia: false
-                        ))
-                        if reserve(
-                            source: canonical.url,
-                            target: target.url,
-                            isMedia: false,
-                            itemIndex: first
-                        ) {
-                            plannedFilesByItem[first].append(
-                                ExportWorker.PlannedFile(
-                                    source: canonical.url,
-                                    target: target.url,
-                                    scannedIdentity: try FileOperationJournal
-                                        .captureIdentity(at: canonical.url),
-                                    role: .applicationXMP
+                        if mappedSidecars.insert(canonical).inserted {
+                            mappings.append(SourceOrganizationFileMapping(
+                                itemID: selectedItems[first].id,
+                                source: canonical.url,
+                                destination: target.url,
+                                isMedia: false
+                            ))
+                            if reserve(
+                                source: canonical.url,
+                                target: target.url,
+                                isMedia: false,
+                                itemIndex: first
+                            ) {
+                                plannedFilesByItem[first].append(
+                                    ExportWorker.PlannedFile(
+                                        source: canonical.url,
+                                        target: target.url,
+                                        scannedIdentity: try FileOperationJournal
+                                            .captureIdentity(at: canonical.url),
+                                        role: .applicationXMP
+                                    )
                                 )
-                            )
-                            sidecarFiles += 1
-                            if configuration.destinationMode
-                                == .organizedFolders {
-                                destinationDirectories.insert(targetDirectory)
+                                sidecarFiles += 1
+                                if configuration.destinationMode
+                                    == .organizedFolders {
+                                    destinationDirectories.insert(targetDirectory)
+                                }
                             }
                         }
                     }
@@ -908,6 +935,7 @@ enum SourceOrganizationPlanner {
                     let target = try targetDirectory.appending(
                         componentBytes: targetComponent
                     )
+                    guard mappedSidecars.insert(packet).inserted else { continue }
                     mappings.append(SourceOrganizationFileMapping(
                         itemID: selectedItems[itemIndex].id,
                         source: packet.url,
