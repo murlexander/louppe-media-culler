@@ -66,10 +66,9 @@ struct StatusBanner<Message: View, Actions: View>: View {
                         .accessibilityLabel(dismissal.label)
                     }
                 }
-                AdaptiveControlLayout(spacing: 10) {
-                    actions()
-                }
+                actions()
             }
+            .louppeAdaptiveButtonSizing()
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity)

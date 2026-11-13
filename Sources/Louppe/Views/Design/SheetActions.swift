@@ -20,10 +20,9 @@ struct SheetActions<Leading: View, Trailing: View>: View {
     var body: some View {
         AdaptiveControlLayout(separatesGroups: true) {
             HStack(spacing: 8) { leading() }
-            AdaptiveControlLayout {
-                trailing()
-            }
+            trailing()
         }
+        .louppeAdaptiveButtonSizing()
     }
 }
 

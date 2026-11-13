@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Keeps native controls at their ideal width, stacking when a row cannot fit.
+/// Keeps a compact native row when it fits; otherwise uses one full-width column.
 /// The same children stay mounted during resize, preserving focus and shortcuts.
 struct AdaptiveControlLayout: Layout {
     var spacing: CGFloat = 12
@@ -36,7 +36,7 @@ struct AdaptiveControlLayout: Layout {
         let stacked = requiredWidth > width && indices.count > 1
         var sizes = ideals
         for index in indices {
-            var offered = min(width, ideals[index].width)
+            var offered = stacked ? width : min(width, ideals[index].width)
             if !stacked, index == 0, minimumLeadingWidth != nil {
                 offered = max(0, width - gaps - indices.filter { $0 != 0 }.reduce(0) { $0 + ideals[$1].width })
             }
@@ -46,21 +46,39 @@ struct AdaptiveControlLayout: Layout {
             ? indices.reduce(gaps) { $0 + sizes[$1].height }
             : indices.map { sizes[$0].height }.max() ?? 0
         let occupiedWidth = indices.reduce(0) { $0 + sizes[$1].width }
-        let rowGap = separatesGroups && indices.count > 1
-            ? max(spacing, (width - occupiedWidth) / CGFloat(indices.count - 1)) : spacing
         var x = separatesGroups && indices.contains(0) ? 0 : max(0, width - occupiedWidth - gaps)
         var y: CGFloat = 0
         var frames: [(Int, CGRect)] = []
         for index in indices {
             let size = sizes[index]
             if stacked {
-                x = separatesGroups && index == 0 ? 0 : max(0, width - size.width)
+                x = max(0, width - size.width)
             } else {
+                // Only the gap between the leading group and trailing actions
+                // expands. Cancel and the primary action stay together.
+                if separatesGroups, indices.contains(0), index == indices.first(where: { $0 != 0 }) {
+                    let trailing = indices.filter { $0 != 0 }
+                    x = width - trailing.reduce(0) { $0 + sizes[$1].width }
+                        - spacing * CGFloat(trailing.count - 1)
+                }
                 y = (height - size.height) / 2
             }
             frames.append((index, CGRect(origin: CGPoint(x: x, y: y), size: size)))
-            if stacked { y += size.height + spacing } else { x += size.width + rowGap }
+            if stacked { y += size.height + spacing } else { x += size.width + spacing }
         }
         return (CGSize(width: width, height: height), frames)
+    }
+}
+
+extension View {
+    /// Native flexible sizing fills each column cell without replacing button
+    /// styles. Older systems retain their native fitted buttons in the column.
+    @ViewBuilder
+    func louppeAdaptiveButtonSizing() -> some View {
+        if #available(macOS 26.0, *) {
+            buttonSizing(.flexible)
+        } else {
+            self
+        }
     }
 }

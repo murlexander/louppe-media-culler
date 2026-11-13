@@ -30,6 +30,10 @@ final class DesignPresentationTests: XCTestCase {
                     XCTAssertGreaterThanOrEqual(frame.minX, -1)
                     XCTAssertLessThanOrEqual(frame.maxX, width + 1)
                 }
+                if width == 320 {
+                    let frames = probes.sorted { $0.id < $1.id }.map { $0.convert($0.bounds, to: host) }
+                    assertColumn(frames, in: host, width: width)
+                }
             }
         }
     }
@@ -88,6 +92,8 @@ final class DesignPresentationTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(frame.minX, 13)
                 XCTAssertLessThanOrEqual(frame.maxX, 387)
             }
+            assertColumn(probes.sorted { $0.id < $1.id }.map { $0.convert($0.bounds, to: host) },
+                         in: host, width: 372)
         }
     }
 
@@ -222,6 +228,22 @@ final class DesignPresentationTests: XCTestCase {
         window.contentView = host
         host.layoutSubtreeIfNeeded()
         return window
+    }
+
+    private func assertColumn(_ frames: [CGRect], in host: NSView, width: CGFloat,
+                              file: StaticString = #filePath, line: UInt = #line) {
+        for (previous, next) in zip(frames, frames.dropFirst()) {
+            XCTAssertGreaterThan(host.isFlipped ? next.minY - previous.maxY : previous.minY - next.maxY,
+                                 7, "Each action gets its own row, in declaration order", file: file, line: line)
+        }
+        if #available(macOS 26.0, *) {
+            for (previous, next) in zip(frames, frames.dropFirst()) {
+                XCTAssertEqual(previous.minX, next.minX, accuracy: 1, file: file, line: line)
+            }
+            for frame in frames {
+                XCTAssertEqual(frame.width, width, accuracy: 1, "Native button faces share the column width", file: file, line: line)
+            }
+        }
     }
 
     private func key(_ text: String, code: UInt16, window: NSWindow) throws -> NSEvent {
