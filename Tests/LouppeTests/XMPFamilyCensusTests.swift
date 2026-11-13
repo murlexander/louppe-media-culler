@@ -48,6 +48,27 @@ final class XMPFamilyCensusTests: XCTestCase {
         return writes
     }
 
+    func testReproduceCompletedRetirementRecoveryWithRemovedSourceFolder() throws {
+        let root = try folder()
+        let sourceFolder = try folder(in: root)
+        let source = sourceFolder.appendingPathComponent("PAIR.xmp")
+        let retired = root.appendingPathComponent("retired.xmp")
+        let bytes = try packet()
+        try bytes.write(to: source)
+        let journals = root.appendingPathComponent("Journals")
+        let writer = try FileOperationJournal.start(kind: .exportMove, seeds: [.init(itemID: "family",
+            source: source, destination: retired, expectedIdentity: FileOperationJournal.captureIdentity(at: source),
+            role: .retiredXMPSource, expectedSourceDigest: Data(SHA256.hash(data: bytes)))], directory: journals)
+        try writer.mark(.started, fileAt: 0)
+        try DurableFileIO.atomicExclusiveRename(from: source, to: retired)
+        try writer.mark(.completed, fileAt: 0, identityAt: retired, expectedIdentity: FileOperationJournal.captureIdentity(at: retired))
+        try FileManager.default.removeItem(at: sourceFolder)
+        _ = FileOperationJournal.finalize(writer, operationIsConsistent: false)
+        let report = FileOperationJournal.recoverPendingOperations(directory: journals)
+        XCTAssertEqual(report.unresolvedOperations, 0,
+            "Reserved resolver: absent source parent must mean no possible XMP owners")
+    }
+
     func testNestedStemWithoutApplicationPacketAllowsCanonicalPublicationAndMove() async throws {
         let root = try folder()
         let source = try folder(in: root)

@@ -3,6 +3,29 @@ import XCTest
 @testable import Louppe
 
 final class SourceOrganizationTests: XCTestCase {
+    func testReproduceNoXMPOrganizationBlockedByHiddenSameStemMedia() throws {
+        let fixture = try makeFixture(named: "NoXMPHiddenSibling")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let raw = try mediaFile("IMG_1.NEF", under: fixture.photos)
+        let hidden = try mediaFile("IMG_1.JPG", under: fixture.photos)
+        try (hidden as NSURL).setResourceValue(true, forKey: .isHiddenKey)
+        let selected = makeItem(id: "IMG_1.NEF", url: raw, rating: .yes)
+        let result = try plan(fixture: fixture, selected: [selected], levels: [.decision])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.photos.appendingPathComponent("IMG_1.xmp").path))
+        XCTAssertTrue(result.collisions.isEmpty, "Organize without XMP should not be blocked by hidden same-stem media")
+    }
+
+    func testReproduceNoXMPOrganizationBlockedByNestedStemMedia() throws {
+        let fixture = try makeFixture(named: "NoXMPNestedStem")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let raw = try mediaFile("IMG.NEF", under: fixture.photos)
+        let jpeg = try mediaFile("IMG.NEF.jpg", under: fixture.photos)
+        let selected = [makeItem(id: "IMG.NEF", url: raw, rating: .yes),
+                        makeItem(id: "IMG.NEF.jpg", url: jpeg, rating: .yes)]
+        let result = try plan(fixture: fixture, selected: selected, levels: [.decision])
+        XCTAssertTrue(result.collisions.isEmpty, "Moving unchanged media names without XMP cannot create ambiguous XMP names")
+    }
+
     func testOrganizationRefusesReplacedRootBeforeCreatingDescendants() throws {
         for redirectsAncestor in [false, true] {
             let base = try makeFixture(named: "RootBindingSwap")

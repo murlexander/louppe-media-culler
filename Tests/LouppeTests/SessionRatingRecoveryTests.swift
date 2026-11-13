@@ -81,6 +81,36 @@ final class SessionRatingRecoveryTests: XCTestCase {
         return try decoder.decode(SessionFile.self, from: Data(contentsOf: fixture.sidecar))
     }
 
+    func testMetadataOnlyChangeRefreshesProofAfterReadyAtMeasuredCost() throws {
+        let f = try fixture()
+        let handle = try FileHandle(forWritingTo: f.a)
+        let chunk = Data(repeating: 42, count: 1_048_576)
+        let megabytes = Int(ProcessInfo.processInfo.environment["LOUPPE_VERIFY_HASH_MB"] ?? "1") ?? 1
+        for _ in 0..<megabytes { try handle.write(contentsOf: chunk) }
+        try handle.truncate(atOffset: UInt64(megabytes * chunk.count))
+        try handle.close()
+        let old = try entry(f.a, fingerprint: true)
+        let result = f.a.withUnsafeFileSystemRepresentation { path in
+            setxattr(path!, "com.louppe.disposable-verification", "tag", 3, 0, 0)
+        }
+        XCTAssertEqual(result, 0)
+        let fresh = try FileOperationJournal.captureIdentity(at: f.a)
+        XCTAssertNotEqual(fresh.statusChangeTime, old.fileIdentity?.statusChangeTime)
+        let file = PhotoFile(id: "A.png", url: f.a, captureDate: nil, cameraModel: nil, lensModel: nil,
+            fileSize: fresh.logicalSize ?? 0, scannedIdentity: fresh)
+        let snapshot = SessionFile(version: 7, sourcePath: f.photos.path, scannedAt: Date(),
+            entries: [old], fileIDEncoding: .percentEncodedFileSystemPath)
+        let restored = try SessionOpeningRestoration.prepare(scanned: [PhotoItem(primaryFile: file)],
+            url: f.photos, persistenceResult: .init(session: snapshot, origin: nil, problems: []),
+            replaceSavedSession: false)
+        XCTAssertTrue(restored.sessionContentProofs.isEmpty)
+        XCTAssertEqual(restored.items.first?.rating, .no, "Physical-file decisions restore without hashing")
+        let start = ProcessInfo.processInfo.systemUptime
+        let proof = try SessionContentVerifier.verify(file)
+        print("R15 metadata-only fingerprint refresh: \(megabytes) MiB in \(ProcessInfo.processInfo.systemUptime - start) s")
+        XCTAssertEqual(proof.sha256, old.contentSHA256)
+    }
+
     func testOpeningReusesUnchangedProofAcrossUUIDRemount() throws {
         let f = try fixture()
         let old = try entry(f.a, fingerprint: true)
