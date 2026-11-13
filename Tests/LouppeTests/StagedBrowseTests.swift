@@ -70,13 +70,18 @@ final class StagedBrowseTests: XCTestCase {
         XCTAssertEqual(earlySaves, 0)
         let selected = try XCTUnwrap(opening.items.last)
         opening.select(selected.id)
+        XCTAssertTrue(opening.selectedIDs.isEmpty, "Plain navigation keeps current implicit")
+        opening.select(opening.items[0].id, toggling: true)
+        let selectedIDs: Set<String> = [selected.id, opening.items[0].id]
+        XCTAssertEqual(opening.selectedIDs, selectedIDs)
+        XCTAssertEqual(opening.currentItem?.id, selected.id, "Command adds to selection without moving current")
         opening.viewMode = .grid
         opening.recordViewport(.init(surface: .grid, physicalFileID: opening.items[0].primaryFile.id, topOffset: -17))
         gate.release.signal()
         try await eventually { if case .ready = store.phase { return true }; return false }
         XCTAssertNil(store.openingSession)
         XCTAssertEqual(store.currentItem?.id, selected.id)
-        XCTAssertEqual(Set(store.selectedIndices.map { store.items[$0].id }), [selected.id])
+        XCTAssertEqual(Set(store.selectedIndices.map { store.items[$0].id }), selectedIDs)
         XCTAssertEqual(store.viewMode, .grid)
         let receipt = try XCTUnwrap(store.pendingOpeningViewportReceipt(for: .grid))
         XCTAssertNotEqual(receipt.physicalFileID, store.currentItem?.id)

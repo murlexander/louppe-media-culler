@@ -56,7 +56,7 @@ final class AccessibilityStructureTests: XCTestCase {
             XCTAssertTrue(second.responds(to: NSSelectorFromString("accessibilityPerformPress")))
             second.perform(NSSelectorFromString("accessibilityPerformPress"))
             XCTAssertEqual(state.currentItem?.id, items[1].id)
-            XCTAssertEqual(state.selectedIDs, [items[1].id])
+            XCTAssertTrue(state.selectedIDs.isEmpty, "Showing a photo uses Ready's implicit-current selection")
             let actions = (second.value(forKey: "accessibilityCustomActions") as? [NSAccessibilityCustomAction]) ?? []
             XCTAssertTrue(actions.contains { $0.name == "Open in Gallery" })
             XCTAssertTrue(actions.contains { $0.name == "Add to Selection" || $0.name == "Remove from Selection" })

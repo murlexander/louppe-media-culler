@@ -45,9 +45,11 @@ final class StagedViewportHandoffTests: XCTestCase {
         let opening = try XCTUnwrap(store.openingSession)
         var early = try XCTUnwrap(document(host))
         let current = opening.items[250]
-        opening.select(opening.items[200].id)
-        opening.select(current.id, toggling: true)
+        opening.select(current.id)
+        opening.select(opening.items[200].id, toggling: true)
         let selected = opening.selectedIDs
+        XCTAssertEqual(opening.currentItem?.id, current.id)
+        XCTAssertEqual(selected, [current.id, opening.items[200].id])
         // Leave a different, dormant Browser receipt before settling Grid.
         opening.viewMode = .gallery
         try await wait(host) { self.document(host) !== early }
