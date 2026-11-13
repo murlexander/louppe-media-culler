@@ -131,7 +131,6 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 ## Agent work
 
-- [ ] **Photos original consent:** reproduce and fix a queued original request retaining download permission after consent is disabled.
 - [ ] **Photos original video:** reproduce and fix portrait originals losing their dimensions and rendering through a landscape crop.
 - [ ] **Photos recovery staging:** preserve journal-referenced original leases through batch removal and abandoned-cache pruning.
 - [ ] **100% tile cancellation:** reproduce and fix rapid A → B → A panning turning cancelled tiles into persistent rendering failures.

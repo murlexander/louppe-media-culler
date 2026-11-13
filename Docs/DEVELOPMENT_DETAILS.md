@@ -112,6 +112,8 @@ Review-image and original iCloud consent live in General Settings and persist
 independently through injected UserDefaults, initially off. Active-media updates
 serialize captured actor/value/revision snapshots; adoption applies latest consent
 before publication. Changing consent cannot automatically retry an original.
+Queued requests read current consent when provider work starts, after lane and
+filename waits; changing consent does not change requests already underway.
 The chooser, review bar and Copy sheet link to Settings instead of owning consent.
 Choosing
 review downloads does not authorize resource streaming. PhotoKit may itself

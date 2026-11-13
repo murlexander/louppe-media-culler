@@ -122,6 +122,11 @@ actor PhotosMediaSession {
     init(provider: any PhotosMediaProvider, folder: URL, allowNetwork: Bool = false) {
         self.provider = provider; self.folder = folder; self.imageNetwork = allowNetwork
     }
+#if LOUPPE_TEST_SEAMS
+    /// Includes executing and gated requests, without adding another owner.
+    var inFlightRequestCountForTesting: Int { cancellation.count }
+#endif
+
     func setImageNetwork(_ allowed: Bool) async {
         if allowed && !imageNetwork {
             // A local low-quality fallback must not mask a newly authorized
@@ -151,11 +156,11 @@ actor PhotosMediaSession {
         // A realized view owns each waiter; cancellation doesn't cancel other
         // views of the same item. The small gate bounds even rapid scrolling.
         guard cancellation.count < 76 else { throw PhotosRepresentationError.busy }
-        let token = UUID(), network = imageNetwork
+        let token = UUID()
         let task = Task { [provider, imageGate] in
             try await imageGate.acquire()
             do {
-                let value = try await provider.image(assetID: assetID, pixels: size, network: network, progress: progress)
+                let value = try await provider.image(assetID: assetID, pixels: size, network: self.imageNetwork, progress: progress)
                 try Task.checkCancellation()
                 await imageGate.release()
                 return value
@@ -187,11 +192,11 @@ actor PhotosMediaSession {
                   progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws -> PhotosOriginalLease {
         guard !stopped, let reference = item.primaryFile.photosMedia else { throw PhotosRepresentationError.retired }
         guard cancellation.count < 76 else { throw PhotosRepresentationError.busy }
-        let token = UUID(), network = originalNetwork
+        let token = UUID()
         let task = Task { [originalGate] in
             try await originalGate.acquire()
             do {
-                let value = try await self.stageOriginal(item, assetID: reference.assetID, network: network, progress: progress)
+                let value = try await self.stageOriginal(item, assetID: reference.assetID, progress: progress)
                 await originalGate.release()
                 return value
             } catch { await originalGate.release(); throw error }
@@ -201,7 +206,7 @@ actor PhotosMediaSession {
         return try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
     }
 
-    private func stageOriginal(_ item: PhotoItem, assetID: String, network: Bool,
+    private func stageOriginal(_ item: PhotoItem, assetID: String,
                               progress: @escaping @Sendable (Double) -> Void) async throws -> PhotosOriginalLease {
         try Task.checkCancellation()
         guard !stopped else { throw PhotosRepresentationError.retired }
@@ -220,7 +225,7 @@ actor PhotosMediaSession {
             let url = directory.appendingPathComponent(filename)
             let bytes = try await provider.original(assetID: assetID, destination: url,
                 maximumBytes: PhotosLibraryService.maximumBatchBytes - originalBytes,
-                network: network, progress: progress)
+                network: originalNetwork, progress: progress)
             try Task.checkCancellation()
             guard !stopped else { throw PhotosRepresentationError.retired }
             let identity = try FileOperationJournal.captureIdentity(at: url)

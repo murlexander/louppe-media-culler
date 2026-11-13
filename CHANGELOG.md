@@ -2,6 +2,7 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Respect disabled iCloud download permissions for Photos images and originals still waiting to start.
 - Protect shared XMP sidecars when media are added during review, refuse overlapping packet ownership, and stop metadata folder checks promptly when cancelled.
 - Preserve folder pins during overlapping position saves, and let navigation saves recover from an interrupted write before saving a newer position.
 - Keep saved decisions tied to verified file content, and detect conflicting folder changes before saving a fallback backup.

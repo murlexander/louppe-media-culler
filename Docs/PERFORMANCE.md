@@ -312,6 +312,8 @@ asset before the next; it never stages the whole export. Separate original
 consent prevents representation access authorizing full-resource transfers.
 Both permissions persist in General Settings; updates target the captured active
 media actor and latest revision. A permission change never retries an original.
+Queued images and originals read current permission at provider admission,
+including after original-filename lookup; admitted work keeps its snapshot.
 Original download progress coalesces into a slot sampled every 100 ms. Images
 and originals receive actual PhotoKit cancellation; late callbacks cannot
 publish to retired views/batches. Failures do not mount partial inventories.

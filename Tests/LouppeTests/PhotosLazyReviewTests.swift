@@ -403,6 +403,7 @@ actor MockPhotosMedia: PhotosMediaProvider {
         var images: [String] = []
         var originals: [String] = []
         var originalNetwork: [Bool] = []
+        var imageNetwork: [Bool] = []
         var maximumConcurrentImages = 0
         var maximumConcurrentOriginals = 0
         var preheat: [String] = []
@@ -416,13 +417,31 @@ actor MockPhotosMedia: PhotosMediaProvider {
     private var slowOriginals = false
     private var slowOriginalAsset: String?
     private var resolvedOriginalFilename: String?
+    private var holdImages = false
+    private var heldImages: [CheckedContinuation<Void, Never>] = []
+    private var holdFilename = false
+    private var heldFilename: CheckedContinuation<Void, Never>?
+    func holdImageRequests() { holdImages = true }
+    func releaseImageRequests() {
+        holdImages = false
+        let continuations = heldImages
+        heldImages.removeAll()
+        for continuation in continuations { continuation.resume() }
+    }
+    func holdNextOriginalFilename() { holdFilename = true }
+    var originalFilenameIsHeld: Bool { heldFilename != nil }
+    func releaseOriginalFilename() { heldFilename?.resume(); heldFilename = nil }
     func setOffline(_ value: Bool) { offline = value }
     func setOversize(_ value: Bool) { oversize = value }
     func setSlowOriginals(_ value: Bool) { slowOriginals = value }
     func setSlowOriginalAsset(_ value: String) { slowOriginalAsset = value }
     func setOriginalFilename(_ value: String) { resolvedOriginalFilename = value }
-    func originalFilename(assetID: String) -> String? {
+    func originalFilename(assetID: String) async -> String? {
         requests.filenames.append(assetID)
+        if holdFilename {
+            holdFilename = false
+            await withCheckedContinuation { heldFilename = $0 }
+        }
         return resolvedOriginalFilename
     }
     nonisolated static func originalBytes(_ id: String) -> Data { Data("exact-original-resource:\(id):RAW-not-preview".utf8) }
@@ -437,9 +456,11 @@ actor MockPhotosMedia: PhotosMediaProvider {
     func image(assetID: String, pixels: Int, network: Bool,
                progress: @escaping @Sendable (Double) -> Void) async throws -> PhotosReviewImage {
         requests.images.append(assetID)
+        requests.imageNetwork.append(network)
         imageCount += 1
         requests.maximumConcurrentImages = max(requests.maximumConcurrentImages, imageCount)
         defer { imageCount -= 1 }
+        if holdImages { await withCheckedContinuation { heldImages.append($0) } }
         try await Task.sleep(for: assetID == "slow" ? .seconds(5) : .milliseconds(12))
         if (Int(assetID.split(separator: "-").last ?? "0") ?? 0) % 2 == 1, (!network || offline) {
             throw PhotosRepresentationError.cloud
@@ -465,7 +486,7 @@ actor MockPhotosMedia: PhotosMediaProvider {
         return Int64(bytes.count)
     }
     func preheat(assetIDs: [String]) { requests.preheat = assetIDs }
-    func stop() {}
+    func stop() { releaseImageRequests(); releaseOriginalFilename() }
 }
 
 @MainActor

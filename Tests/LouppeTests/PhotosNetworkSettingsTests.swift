@@ -4,6 +4,68 @@ import XCTest
 
 @MainActor
 final class PhotosNetworkSettingsTests: XCTestCase {
+    func testQueuedImagesUseLatestConsentAtAdmission() async throws {
+        let fixture = try LazyPhotosFixture()
+        defer { fixture.remove() }
+        let batch = try await fixture.batch(size: 10)
+        let session = try XCTUnwrap(batch.mediaSession)
+        await session.setImageNetwork(true)
+        await fixture.provider.holdImageRequests()
+        var tasks = [Task<PhotosReviewImage, Error>]()
+        do {
+            for index in [0, 2, 4, 6] {
+                tasks.append(Task { try await session.image(assetID: "asset-\(index)", pixels: 384) })
+            }
+            try await wait { await fixture.provider.requests.images.count == 4 }
+            tasks.append(Task { try await session.image(assetID: "asset-8", pixels: 384) })
+            try await wait { await session.inFlightRequestCountForTesting == 5 }
+            await session.setImageNetwork(false)
+            await fixture.provider.releaseImageRequests()
+            for task in tasks { _ = try await task.value }
+            let requests = await fixture.provider.requests
+            XCTAssertEqual(Array(requests.imageNetwork.prefix(4)), [true, true, true, true],
+                "Already admitted requests keep their permission snapshot")
+            XCTAssertEqual(requests.images.last, "asset-8")
+            XCTAssertEqual(requests.imageNetwork.last, false,
+                "A queued review request must observe revoked consent before starting")
+        } catch {
+            for task in tasks { task.cancel() }
+            await fixture.provider.releaseImageRequests()
+            await session.stop()
+            throw error
+        }
+        await session.stop()
+    }
+
+    func testQueuedOriginalsUseLatestConsentAfterAwaitingFilename() async throws {
+        let fixture = try LazyPhotosFixture()
+        defer { fixture.remove() }
+        let batch = try await fixture.batch(size: 10)
+        let session = try XCTUnwrap(batch.mediaSession)
+        let items = try XCTUnwrap(batch.reviewItems)
+        await session.setOriginalNetwork(true)
+        await fixture.provider.holdNextOriginalFilename()
+        var tasks = [Task<PhotosOriginalLease, Error>]()
+        do {
+            tasks.append(Task { try await session.original(for: items[0]) })
+            try await wait { await fixture.provider.originalFilenameIsHeld }
+            tasks.append(Task { try await session.original(for: items[2]) })
+            try await wait { await session.inFlightRequestCountForTesting == 2 }
+            await session.setOriginalNetwork(false)
+            await fixture.provider.releaseOriginalFilename()
+            for task in tasks { let lease = try await task.value; await lease.close() }
+            let requests = await fixture.provider.requests
+            XCTAssertEqual(requests.originalNetwork, [false, false],
+                "Both the filename wait and original-lane wait must observe revoked consent")
+        } catch {
+            for task in tasks { task.cancel() }
+            await fixture.provider.releaseOriginalFilename()
+            await session.stop()
+            throw error
+        }
+        await session.stop()
+    }
+
     func testFreshPreferencesAndFirstReviewRequireSeparateConsent() async throws {
         let fixture = try LazyPhotosFixture()
         defer { fixture.remove() }
