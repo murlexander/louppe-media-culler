@@ -439,7 +439,15 @@ struct XMPFamilyMembership: Equatable, Sendable {
     /// Recovery has no reviewed membership to adopt. Any possible canonical or
     /// extension-qualified owner requires preserving the original packet.
     static func hasPossibleOwners(packet: XMPExactFileSystemPath) throws -> Bool {
-        let binding = try DurableFileIO.DirectoryBinding(url: packet.parent.url)
+        let binding: DurableFileIO.DirectoryBinding
+        do {
+            binding = try DurableFileIO.DirectoryBinding(url: packet.parent.url)
+        } catch DurableFileIO.IOError.system(_, _, let code) where code == ENOENT {
+            // A completed retirement may outlive its now-empty source folder.
+            // Absence proves no owners here; permission and other I/O errors
+            // remain unresolved rather than authorizing packet cleanup.
+            return false
+        }
         try binding.requireCurrentPath()
         let sensitive = try caseSensitivity(in: packet.parent)
         let packetStem = key(stem(try name(packet)), sensitive)

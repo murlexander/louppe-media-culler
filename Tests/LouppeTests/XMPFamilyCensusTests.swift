@@ -67,6 +67,44 @@ final class XMPFamilyCensusTests: XCTestCase {
         let report = FileOperationJournal.recoverPendingOperations(directory: journals)
         XCTAssertEqual(report.unresolvedOperations, 0,
             "Reserved resolver: absent source parent must mean no possible XMP owners")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: retired.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: sourceFolder.path))
+    }
+
+    func testRetirementRecoveryPreservesPacketWhenSourceParentIsUnreadable() throws {
+        let root = try folder()
+        let sourceFolder = try folder(in: root)
+        let source = sourceFolder.appendingPathComponent("PAIR.xmp")
+        let retired = root.appendingPathComponent("retired.xmp")
+        let bytes = try packet()
+        try bytes.write(to: source)
+        let journals = root.appendingPathComponent("Journals")
+        let writer = try FileOperationJournal.start(kind: .exportMove, seeds: [.init(itemID: "family",
+            source: source, destination: retired, expectedIdentity: FileOperationJournal.captureIdentity(at: source),
+            role: .retiredXMPSource, expectedSourceDigest: Data(SHA256.hash(data: bytes)))], directory: journals)
+        try writer.mark(.started, fileAt: 0)
+        try DurableFileIO.atomicExclusiveRename(from: source, to: retired)
+        try writer.mark(.completed, fileAt: 0, identityAt: retired, expectedIdentity: FileOperationJournal.captureIdentity(at: retired))
+        _ = FileOperationJournal.finalize(writer, operationIsConsistent: false)
+        try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: sourceFolder.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: sourceFolder.path) }
+        XCTAssertThrowsError(try XMPFamilyMembership.hasPossibleOwners(packet: XMPExactFileSystemPath(url: source)))
+        let blocked = FileOperationJournal.recoverPendingOperations(directory: journals)
+        XCTAssertEqual(blocked.unresolvedOperations, 1)
+        XCTAssertEqual(try Data(contentsOf: retired), bytes)
+
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: sourceFolder.path)
+        let recovered = FileOperationJournal.recoverPendingOperations(directory: journals)
+        XCTAssertEqual(recovered.unresolvedOperations, 0)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: retired.path))
+    }
+
+    func testNonDirectorySourceParentDoesNotAuthorizeRetiredPacketCleanup() throws {
+        let root = try folder()
+        let parent = root.appendingPathComponent("former-folder")
+        try Data("replacement".utf8).write(to: parent)
+        let packet = try XMPExactFileSystemPath(url: parent.appendingPathComponent("PAIR.xmp"))
+        XCTAssertThrowsError(try XMPFamilyMembership.hasPossibleOwners(packet: packet))
     }
 
     func testNestedStemWithoutApplicationPacketAllowsCanonicalPublicationAndMove() async throws {

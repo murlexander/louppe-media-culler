@@ -308,7 +308,8 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   retirement recognizes either reserved cleanup path; ambiguity preserves files.
   Fresh media-family checks also guard retirement and recovery cleanup; a newly
   present owner keeps its canonical packet or gets the verified staged packet
-  restored without overwriting a collision.
+  restored without overwriting a collision. A missing source parent has no
+  possible owners; unreadable or invalid parents still leave recovery pending.
 - Organize checks scanner-visible names and hidden/package flags in preview and
   before moving. Sanitize generated hidden/package-like components and refuse
   unsafe explicit containers. Existing XMP transfers require complete ownership

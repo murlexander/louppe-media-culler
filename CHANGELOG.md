@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Finish interrupted XMP Move recovery when its empty former source folder has been removed.
+
 - Let Organize move photos without XMP despite hidden same-stem or nested-stem media, while protecting shared sidecars.
 
 - Keep notification dismiss buttons at the far right, including when their actions wrap.
