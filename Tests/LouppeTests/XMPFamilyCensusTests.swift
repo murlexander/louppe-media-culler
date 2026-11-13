@@ -99,12 +99,148 @@ final class XMPFamilyCensusTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: retired.path))
     }
 
-    func testNonDirectorySourceParentDoesNotAuthorizeRetiredPacketCleanup() throws {
+    func testRetirementRecoveryKeepsInvalidSourceParentsPendingUntilRestored() throws {
+        for variant in ["symlink", "file", "loopingAncestor"] {
+            let root = try folder()
+            let volume = try folder(in: root)
+            let journals = root.appendingPathComponent("Journals")
+            let fixture = try completedRetirement(in: volume, journals: journals,
+                nestedSource: variant == "loopingAncestor")
+            let replaced = variant == "loopingAncestor" ? fixture.source.deletingLastPathComponent() : fixture.source
+            let held = volume.appendingPathComponent("HeldSource")
+            try FileManager.default.moveItem(at: replaced, to: held)
+            let heldSource = variant == "loopingAncestor" ? held.appendingPathComponent("Photos") : held
+            let replacement = Data("replacement must survive recovery".utf8)
+            if variant == "file" {
+                try replacement.write(to: replaced)
+            } else {
+                try FileManager.default.createSymbolicLink(at: replaced,
+                    withDestinationURL: variant == "loopingAncestor" ? replaced : held)
+            }
+            // Assert the actual syscall failure, then the whole recovery result.
+            XCTAssertThrowsError(try XMPFamilyMembership.hasPossibleOwners(
+                packet: XMPExactFileSystemPath(url: fixture.source.appendingPathComponent("PAIR.xmp")))) { error in
+                guard case DurableFileIO.IOError.system(_, _, let code) = error else {
+                    return XCTFail("Unexpected error: \(error)")
+                }
+                // macOS reports ENOTDIR for a final symlink opened with
+                // O_DIRECTORY | O_NOFOLLOW; an ancestor loop reports ELOOP.
+                XCTAssertEqual(code, variant == "loopingAncestor" ? ELOOP : ENOTDIR)
+            }
+            let blocked = FileOperationJournal.recoverPendingOperations(directory: journals)
+            XCTAssertEqual(blocked.discoveredOperations, 1)
+            XCTAssertEqual(blocked.unresolvedOperations, 1)
+            XCTAssertEqual(blocked.unresolvedFiles, 1)
+            // A looping ancestor is rejected by exact-path plan validation
+            // before recovery examines any files; the journal stays pending.
+            XCTAssertEqual(blocked.preservedMoves, variant == "loopingAncestor" ? 0 : 1,
+                "\(variant): \(blocked.details)")
+            XCTAssertTrue(FileOperationJournal.hasPendingOperations(directory: journals))
+            XCTAssertEqual(try Data(contentsOf: heldSource.appendingPathComponent(".retired-xmp")), fixture.original)
+            XCTAssertEqual(try Data(contentsOf: fixture.destination.appendingPathComponent("PAIR.NEF")), Data("raw".utf8))
+            XCTAssertEqual(try Data(contentsOf: fixture.destination.appendingPathComponent("PAIR.xmp")), fixture.published)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: heldSource.appendingPathComponent("PAIR.xmp").path))
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: heldSource.path), [".retired-xmp"])
+            if variant == "file" {
+                XCTAssertEqual(try Data(contentsOf: replaced), replacement)
+            } else {
+                XCTAssertEqual(try FileManager.default.destinationOfSymbolicLink(atPath: replaced.path),
+                    variant == "loopingAncestor" ? replaced.path : held.path)
+            }
+
+            try FileManager.default.removeItem(at: replaced)
+            try FileManager.default.moveItem(at: held, to: replaced)
+            let recovered = FileOperationJournal.recoverPendingOperations(directory: journals)
+            XCTAssertEqual(recovered.unresolvedOperations, 0)
+            XCTAssertEqual(recovered.preservedMoves, 1)
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: fixture.source.path), [])
+            XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: fixture.destination.path)), ["PAIR.NEF", "PAIR.xmp"])
+            XCTAssertEqual(try Data(contentsOf: fixture.destination.appendingPathComponent("PAIR.NEF")), Data("raw".utf8))
+            XCTAssertEqual(try Data(contentsOf: fixture.destination.appendingPathComponent("PAIR.xmp")), fixture.published)
+            XCTAssertFalse(FileOperationJournal.hasPendingOperations(directory: journals))
+        }
+    }
+
+    func testAbsentVolumeRetirementStaysPendingForMissingMediaUntilVolumeReturns() throws {
         let root = try folder()
-        let parent = root.appendingPathComponent("former-folder")
-        try Data("replacement".utf8).write(to: parent)
-        let packet = try XMPExactFileSystemPath(url: parent.appendingPathComponent("PAIR.xmp"))
-        XCTAssertThrowsError(try XMPFamilyMembership.hasPossibleOwners(packet: packet))
+        let volume = try folder(in: root)
+        let journals = root.appendingPathComponent("Journals")
+        let fixture = try completedRetirement(in: volume, journals: journals)
+        let offline = root.appendingPathComponent("OfflineVolume")
+        // Model an absent mount path without requiring a real volume or sudo.
+        try FileManager.default.moveItem(at: volume, to: offline)
+        XCTAssertThrowsError(try DurableFileIO.DirectoryBinding(url: fixture.source)) { error in
+            guard case DurableFileIO.IOError.system(_, _, let code) = error else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+            XCTAssertEqual(code, ENOENT)
+        }
+        let blocked = FileOperationJournal.recoverPendingOperations(directory: journals)
+        XCTAssertEqual(blocked.discoveredOperations, 1)
+        XCTAssertEqual(blocked.unresolvedOperations, 1)
+        XCTAssertGreaterThanOrEqual(blocked.unresolvedFiles, 1)
+        XCTAssertEqual(blocked.preservedMoves, 0)
+        XCTAssertTrue(blocked.details.contains(L10n.text("The interrupted move couldn't locate PAIR.NEF.")),
+            "A missing mount must stay pending through the media missingMovedFile path: \(blocked.details)")
+        XCTAssertTrue(FileOperationJournal.hasPendingOperations(directory: journals))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: volume.path), "Recovery must not recreate an absent mount")
+        XCTAssertEqual(try Data(contentsOf: offline.appendingPathComponent("Source/.retired-xmp")), fixture.original)
+        XCTAssertEqual(try Data(contentsOf: offline.appendingPathComponent("Destination/PAIR.NEF")), Data("raw".utf8))
+        XCTAssertEqual(try Data(contentsOf: offline.appendingPathComponent("Destination/PAIR.xmp")), fixture.published)
+
+        try FileManager.default.moveItem(at: offline, to: volume)
+        let recovered = FileOperationJournal.recoverPendingOperations(directory: journals)
+        XCTAssertEqual(recovered.unresolvedOperations, 0)
+        XCTAssertEqual(recovered.preservedMoves, 1)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: fixture.source.path), [])
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: fixture.destination.path)), ["PAIR.NEF", "PAIR.xmp"])
+        XCTAssertEqual(try Data(contentsOf: fixture.destination.appendingPathComponent("PAIR.NEF")), Data("raw".utf8))
+        XCTAssertEqual(try Data(contentsOf: fixture.destination.appendingPathComponent("PAIR.xmp")), fixture.published)
+        XCTAssertFalse(FileOperationJournal.hasPendingOperations(directory: journals))
+    }
+
+    private func completedRetirement(in volume: URL, journals: URL, nestedSource: Bool = false) throws ->
+        (source: URL, destination: URL, original: Data, published: Data) {
+        let source = volume.appendingPathComponent(nestedSource ? "Source/Photos" : "Source")
+        let destination = volume.appendingPathComponent("Destination")
+        for path in [source, destination] {
+            try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true)
+        }
+        let media = source.appendingPathComponent("PAIR.NEF")
+        let sourcePacket = source.appendingPathComponent("PAIR.xmp")
+        let targetMedia = destination.appendingPathComponent("PAIR.NEF")
+        let targetPacket = destination.appendingPathComponent("PAIR.xmp")
+        let retired = source.appendingPathComponent(".retired-xmp")
+        let original = try packet()
+        let published = try XMPFieldMapping.merge(packet: original, metadata: metadata)
+        try Data("raw".utf8).write(to: media)
+        try original.write(to: sourcePacket)
+        let writer = try FileOperationJournal.start(kind: .exportMove, seeds: [
+            .init(itemID: "family", source: media, destination: targetMedia),
+            .init(itemID: "family", source: sourcePacket, destination: targetPacket,
+                role: .preparedXMP, expectedSourceDigest: Data(SHA256.hash(data: original)),
+                preparedContentDigest: Data(SHA256.hash(data: published))),
+            .init(itemID: "family", source: sourcePacket, destination: retired,
+                role: .retiredXMPSource, expectedSourceDigest: Data(SHA256.hash(data: original))),
+        ], directory: journals)
+        try writer.mark(.started, fileAt: 0)
+        try DurableFileIO.atomicExclusiveRename(from: media, to: targetMedia)
+        try writer.mark(.completed, fileAt: 0, identityAt: targetMedia,
+            expectedIdentity: FileOperationJournal.captureIdentity(at: targetMedia))
+        let temporary = try XCTUnwrap(writer.temporaryURL(at: 1))
+        try writer.mark(.started, fileAt: 1)
+        try DurableFileIO.writeNewFile(published, to: temporary, fullSync: true)
+        try writer.mark(.staged, fileAt: 1, identityAt: temporary,
+            expectedIdentity: FileOperationJournal.captureIdentity(at: temporary))
+        try DurableFileIO.atomicExclusiveRename(from: temporary, to: targetPacket)
+        try writer.mark(.completed, fileAt: 1, identityAt: targetPacket,
+            expectedIdentity: FileOperationJournal.captureIdentity(at: targetPacket))
+        try writer.mark(.started, fileAt: 2)
+        try DurableFileIO.atomicExclusiveRename(from: sourcePacket, to: retired)
+        try writer.mark(.completed, fileAt: 2, identityAt: retired,
+            expectedIdentity: FileOperationJournal.captureIdentity(at: retired))
+        XCTAssertTrue(FileOperationJournal.finalize(writer, operationIsConsistent: false))
+        return (source, destination, original, published)
     }
 
     func testNestedStemWithoutApplicationPacketAllowsCanonicalPublicationAndMove() async throws {

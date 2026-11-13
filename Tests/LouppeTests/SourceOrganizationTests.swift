@@ -9,8 +9,14 @@ final class SourceOrganizationTests: XCTestCase {
         let raw = try mediaFile("IMG_1.NEF", under: fixture.photos)
         let hidden = try mediaFile("IMG_1.JPG", under: fixture.photos)
         try (hidden as NSURL).setResourceValue(true, forKey: .isHiddenKey)
-        let selected = makeItem(id: "IMG_1.NEF", url: raw, rating: .yes)
-        let result = try plan(fixture: fixture, selected: [selected], levels: [.decision])
+        var scanned = try FolderScanner.scan(fixture.photos) { _ in }
+        XCTAssertEqual(scanned.map(\.id), ["IMG_1.NEF"], "The real scanner must exclude the hidden owner")
+        let index = try XCTUnwrap(scanned.firstIndex { $0.id == "IMG_1.NEF" })
+        XCTAssertEqual(scanned[index].primaryURL.resolvingSymlinksInPath(), raw.resolvingSymlinksInPath())
+        scanned[index].rating = .yes
+        let result = try SourceOrganizationPlanner.makePlan(sourceFolder: fixture.photos,
+            selectedItems: [scanned[index]], familyContextItems: scanned,
+            configuration: configuration(levels: [.decision]), knownOriginFolderPathBytesByFileID: [:])
         XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.photos.appendingPathComponent("IMG_1.xmp").path))
         XCTAssertTrue(result.collisions.isEmpty, "Organize without XMP should not be blocked by hidden same-stem media")
         let moved = SourceOrganizationWorker.organize(result, journalDirectory: fixture.journals) { _, _ in }
@@ -159,20 +165,50 @@ final class SourceOrganizationTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: packet), Data("IMG.NEF.xmp".utf8))
     }
 
-    func testTransferResolutionCannotAdoptCanonicalPacketAppearingAfterCensus() throws {
-        let fixture = try makeFixture(named: "LateSharedXMP")
-        defer { try? FileManager.default.removeItem(at: fixture.root) }
-        let raw = try mediaFile("IMG.NEF", under: fixture.photos)
-        let hidden = try mediaFile("IMG.JPG", under: fixture.photos)
-        try (hidden as NSURL).setResourceValue(true, forKey: .isHiddenKey)
-        let member = try XMPStemFamilyMember(mediaURL: raw,
-            metadata: .init(decision: .yes, stars: .five, colorLabel: .red, profile: .universal))
-        let family = try XCTUnwrap(XMPSidecarResolver.resolve(members: [member], purpose: .transferExisting).first)
-        XCTAssertNil(family.canonicalSidecar, "An unchanged transfer must not reserve an absent packet for later adoption")
-        try Data("new shared packet".utf8).write(to: fixture.photos.appendingPathComponent("IMG.xmp"))
-        let fresh = try XCTUnwrap(XMPSidecarResolver.resolve(members: [member], purpose: .transferExisting).first)
-        XCTAssertEqual(fresh.disposition, .filenameCollision)
-        XCTAssertNil(family.canonicalSidecar)
+    func testPlannerAndWorkerCannotAdoptPacketAppearingAfterPlan() throws {
+        for rename in [false, true] {
+            for packetName in ["IMG.xmp", "IMG.NEF.xmp"] {
+                let fixture = try makeFixture(named: "LateSharedXMP")
+                defer { try? FileManager.default.removeItem(at: fixture.root) }
+                let raw = try mediaFile("IMG.NEF", under: fixture.photos)
+                let hiddenName = packetName == "IMG.xmp" ? "IMG.JPG" : "IMG.NEF.jpg"
+                let hidden = try mediaFile(hiddenName, under: fixture.photos)
+                try (hidden as NSURL).setResourceValue(true, forKey: .isHiddenKey)
+                let scanned = try FolderScanner.scan(fixture.photos) { _ in }
+                XCTAssertEqual(scanned.map(\.id), ["IMG.NEF"])
+                let prepared = try SourceOrganizationPlanner.makePlan(sourceFolder: fixture.photos,
+                    selectedItems: scanned, familyContextItems: scanned,
+                    configuration: rename
+                        ? FileRenamingPlanner.sourceConfiguration(customBaseName: "New")
+                        : configuration(levels: [.decision]), knownOriginFolderPathBytesByFileID: [:])
+                XCTAssertTrue(prepared.canExecute, prepared.collisions.map(\.message).joined(separator: " | "))
+                XCTAssertEqual(prepared.sidecarFileCount, 0)
+                XCTAssertTrue(prepared.workerPlan.items.flatMap(\.files).allSatisfy { $0.role == .media })
+                let packet = fixture.photos.appendingPathComponent(packetName)
+                let packetBytes = Data("new shared editor packet".utf8)
+                try packetBytes.write(to: packet)
+                let packetIdentity = try FileOperationJournal.captureIdentity(at: packet)
+                let hiddenIdentity = try FileOperationJournal.captureIdentity(at: hidden)
+
+                let moved = SourceOrganizationWorker.organize(prepared, journalDirectory: fixture.journals) { _, _ in }
+                XCTAssertEqual(moved.failedItems, 0, moved.failureMessage ?? "")
+                XCTAssertFalse(moved.requiresRecovery)
+                XCTAssertEqual(moved.movedFiles, 1)
+                XCTAssertFalse(FileManager.default.fileExists(atPath: raw.path))
+                let target = try XCTUnwrap(prepared.mappings.first { $0.isMedia }?.destination)
+                XCTAssertEqual(try Data(contentsOf: target), Data("IMG.NEF".utf8))
+                XCTAssertEqual(try Data(contentsOf: packet), packetBytes)
+                XCTAssertEqual(try FileOperationJournal.captureIdentity(at: packet), packetIdentity)
+                XCTAssertEqual(try Data(contentsOf: hidden), Data(hiddenName.utf8))
+                XCTAssertEqual(try FileOperationJournal.captureIdentity(at: hidden), hiddenIdentity)
+                let sourceNames = try FileManager.default.contentsOfDirectory(atPath: fixture.photos.path)
+                XCTAssertEqual(Set(sourceNames), Set([hiddenName, packetName, rename ? "New.NEF" : "Organized"]))
+                if !rename {
+                    XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: target.deletingLastPathComponent().path), ["IMG.NEF"])
+                }
+                XCTAssertFalse(FileOperationJournal.hasPendingOperations(directory: fixture.journals))
+            }
+        }
     }
 
     func testOrganizationTransfersOnlyPacketsWhoseOwnersMove() throws {
@@ -214,8 +250,12 @@ final class SourceOrganizationTests: XCTestCase {
         let packet = fixture.photos.appendingPathComponent("IMG.xmp")
         let bytes = Data("shared metadata".utf8)
         try bytes.write(to: packet)
-        let selected = makeItem(id: "IMG.NEF", url: raw, rating: .yes)
-        let prepared = try plan(fixture: fixture, selected: [selected], levels: [.decision])
+        let scanned = try FolderScanner.scan(fixture.photos) { _ in }
+        XCTAssertEqual(scanned.map(\.id), ["IMG.NEF"])
+        XCTAssertEqual(scanned.first?.primaryURL.resolvingSymlinksInPath(), raw.resolvingSymlinksInPath())
+        let prepared = try SourceOrganizationPlanner.makePlan(sourceFolder: fixture.photos,
+            selectedItems: scanned, familyContextItems: scanned,
+            configuration: configuration(levels: [.decision]), knownOriginFolderPathBytesByFileID: [:])
         XCTAssertFalse(prepared.canExecute)
         XCTAssertTrue(prepared.collisions.contains {
             $0.message == L10n.text("This media family has ambiguous XMP filenames.")
