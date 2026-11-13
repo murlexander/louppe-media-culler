@@ -6,6 +6,37 @@ import XCTest
 
 @MainActor
 final class PhotosOriginalVideoTests: XCTestCase {
+    func testBatchRetirementWaitsForOriginalScanBeforeRemovingStaging() async throws {
+        let gate = PhotosVideoScanGate()
+        let fixture = try PhotosVideoFixture(scanVideo: gate.scan)
+        defer { gate.release(); fixture.remove() }
+        let batch = try fixture.batch()
+        let item = try XCTUnwrap(batch.reviewItems?.first)
+        let service = PhotosLibraryService(cacheRoot: fixture.root,
+            decisionsStore: PhotosReviewDecisions(directory: fixture.root.appendingPathComponent("Decisions")),
+            operationJournalDirectory: fixture.root.appendingPathComponent("Operations"))
+        let original = Task { try await fixture.session.original(for: item) }
+        await gate.waitForStart()
+        let prematureRemoval = expectation(description: "Retirement must wait for the held original worker")
+        prematureRemoval.isInverted = true
+        let removal = Task {
+            await service.remove(batch)
+            if !gate.firstExited { prematureRemoval.fulfill() }
+        }
+        await fixture.provider.waitForStop()
+        await fulfillment(of: [prematureRemoval], timeout: 0.5)
+        if let source = gate.firstSourceURL {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: source.path),
+                "Responsive Stop must not let batch cleanup remove a worker's source")
+        } else { XCTFail("The worker must have acquired an original") }
+        gate.release()
+        do { let lease = try await original.value; await lease.close(); XCTFail("Retired original must not publish") }
+        catch is CancellationError {} catch PhotosRepresentationError.retired {}
+        await removal.value
+        XCTAssertTrue(gate.firstSourceSurvivedUntilExit)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.folder.path))
+    }
+
     func testPortraitAndRotatedOriginalsReachActualGalleryWithOrientedDimensions() async throws {
         for name in ["portrait", "rotated"] {
             let fixture = try PhotosVideoFixture(name: name)
@@ -123,8 +154,9 @@ struct PhotosVideoFixture {
     init(name: String = "rotated",
          scanVideo: @escaping @Sendable (URL) -> VideoScanInfo = { VideoMetadataExtractor.scanInfo(for: $0) }) throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("PhotosVideo-\(UUID())")
-        folder = root.appendingPathComponent("Batch")
+        folder = root.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("louppe-photos-review-v1".utf8).write(to: folder.appendingPathComponent(".louppe-photos-batch"))
         let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         provider = FixturePhotosVideoProvider(source: repository.appendingPathComponent("Tests/Fixtures/PhotosPortrait/\(name).mov"))
         session = PhotosMediaSession(provider: provider, folder: folder, scanVideo: scanVideo)
@@ -146,6 +178,12 @@ struct PhotosVideoFixture {
 actor FixturePhotosVideoProvider: PhotosMediaProvider {
     nonisolated let source: URL
     private(set) var originalRequests = 0
+    private var stopped = false
+    private var stopWaiter: CheckedContinuation<Void, Never>?
+    func waitForStop() async {
+        guard !stopped else { return }
+        await withCheckedContinuation { stopWaiter = $0 }
+    }
     init(source: URL) { self.source = source }
     func image(assetID: String, pixels: Int, network: Bool,
                progress: @escaping @Sendable (Double) -> Void) throws -> PhotosReviewImage {
@@ -161,7 +199,11 @@ actor FixturePhotosVideoProvider: PhotosMediaProvider {
         return bytes
     }
     func preheat(assetIDs: [String]) {}
-    func stop() {}
+    func stop() {
+        stopped = true
+        stopWaiter?.resume()
+        stopWaiter = nil
+    }
 }
 
 /// Deterministic native-worker boundary: no sleep races or foreground input.
@@ -173,7 +215,11 @@ private final class PhotosVideoScanGate: @unchecked Sendable {
     private var count = 0
     private var ranOffMain = true
     private var firstFinished = false
+    private var firstSource: URL?
+    private var sourceSurvived = false
     var firstExited: Bool { lock.withLock { firstFinished } }
+    var firstSourceURL: URL? { lock.withLock { firstSource } }
+    var firstSourceSurvivedUntilExit: Bool { lock.withLock { sourceSurvived } }
     var calls: Int { lock.withLock { count } }
     var offMain: Bool { lock.withLock { ranOffMain } }
     func waitForStart() async {
@@ -186,6 +232,7 @@ private final class PhotosVideoScanGate: @unchecked Sendable {
     func scan(_ url: URL) -> VideoScanInfo {
         let (first, waiter) = lock.withLock {
             count += 1; ranOffMain = ranOffMain && !Thread.isMainThread
+            if count == 1 { firstSource = url }
             started = true
             let waiter = continuation; continuation = nil
             return (count == 1, waiter)
@@ -193,7 +240,10 @@ private final class PhotosVideoScanGate: @unchecked Sendable {
         waiter?.resume()
         if first {
             _ = semaphore.wait(timeout: .now() + 10)
-            lock.withLock { firstFinished = true }
+            lock.withLock {
+                sourceSurvived = FileManager.default.fileExists(atPath: url.path)
+                firstFinished = true
+            }
         }
         return VideoScanInfo(duration: 0.6, dimensions: CGSize(width: 180, height: 320),
             codec: "H.264", frameRate: 10, isPlayable: true)

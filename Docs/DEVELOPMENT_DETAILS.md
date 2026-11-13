@@ -128,7 +128,9 @@ in the serial original lane, propagating oriented dimensions, codec, frame rate,
 duration and playability to Gallery. The existing 15-second scan bridge never
 blocks the media actor or main actor; cancelled scans drain before file/lane
 release, and cannot publish to a retired review. Membership still reads no
-original or AVAsset. `PhotosResourceTransfer` streams the primary `.photo`/`.video`
+original or AVAsset. Batch retirement awaits original-request completion before
+unpinning or deleting staging; standalone Stop remains responsive.
+`PhotosResourceTransfer` streams the primary `.photo`/`.video`
 resource, one request at a time, within the unchanged 5 GB aggregate staging
 ceiling. Resource requests have separate network consent and real cancellation.
 Leases retain files through rendering/Copy and remove them on release. Live
@@ -190,6 +192,9 @@ Cleanup takes the nonblocking Operations lock, validates every active plan befor
 any deletion, and holds that lock through synchronous descriptor-relative,
 no-follow removal. Unknown/unreadable journals or lock contention defer the whole
 pass. A later ordinary cleanup reclaims batches after journal retirement.
+The verified cache root opens directly, without requesting directory reads of
+its ancestors. The batch marker stays until payload cleanup succeeds, so a
+failed or cancelled pass remains discoverable for retry.
 Markers identify disposable cache folders; they do not authenticate forged
 folders or exclude arbitrary same-user namespace changes. Failed cleanup remains
 best effort. Permissions require `NSPhotoLibraryUsageDescription` and the Photos entitlement

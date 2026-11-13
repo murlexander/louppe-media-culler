@@ -286,7 +286,7 @@ actor PhotosLibraryService: PhotosLibraryClient {
     }
 
     func remove(_ batch: PhotosReviewBatch) async {
-        await batch.mediaSession?.stop()
+        await batch.mediaSession?.stopAndDrainOriginalRequests()
         // Retire membership even when a journal or I/O failure defers deletion.
         retainedFolders.remove(batch.folder)
         retainedSnapshots[batch.folder] = nil
@@ -351,7 +351,8 @@ enum PhotosBatchCleanup {
                 guard fd >= 0 else { continue }
                 defer { Darwin.close(fd) }
                 guard marked(fd) else { continue }
-                try removeContents(fd)
+                try removeContents(fd, preservingBatchMarker: true)
+                guard unlinkat(fd, ".louppe-photos-batch", 0) == 0 else { throw POSIXError(.EIO) }
                 _ = unlinkat(rootFD, name, AT_REMOVEDIR)
             }
         }
@@ -366,23 +367,14 @@ enum PhotosBatchCleanup {
     }
 
     private static func openRoot(_ url: URL) throws -> Int32 {
-        guard let bytes = FileOperationJournal.exactPathBytes(for: url), bytes.first == 47 else {
-            throw CocoaError(.fileReadInvalidFileName)
+        // Opening the permitted cache needs search access, not directory-read
+        // access, to its ancestors. The caller verifies this descriptor against
+        // the captured binding before any descriptor-relative cleanup.
+        let fd = url.withUnsafeFileSystemRepresentation {
+            $0.map { open($0, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC) } ?? -1
         }
-        var fd = open("/", O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         guard fd >= 0 else { throw POSIXError(.EIO) }
-        do {
-            for component in bytes.split(separator: 47) {
-                guard component != Data(".".utf8), component != Data("..".utf8) else { throw POSIXError(.EINVAL) }
-                let next = (Array(component) + [0]).withUnsafeBytes {
-                    openat(fd, $0.baseAddress!.assumingMemoryBound(to: CChar.self),
-                           O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
-                }
-                guard next >= 0 else { throw POSIXError(.EIO) }
-                Darwin.close(fd); fd = next
-            }
-            return fd
-        } catch { Darwin.close(fd); throw error }
+        return fd
     }
 
     private static func marked(_ directory: Int32) -> Bool {
@@ -398,7 +390,7 @@ enum PhotosBatchCleanup {
         return count == expected.count && Array(bytes.prefix(count)) == expected
     }
 
-    private static func removeContents(_ directory: Int32) throws {
+    private static func removeContents(_ directory: Int32, preservingBatchMarker: Bool = false) throws {
         let copy = dup(directory)
         guard copy >= 0 else { throw POSIXError(.EIO) }
         guard let stream = fdopendir(copy) else { Darwin.close(copy); throw POSIXError(.EIO) }
@@ -413,6 +405,9 @@ enum PhotosBatchCleanup {
             try withUnsafePointer(to: &entry.pointee.d_name) { tuple in
                 try tuple.withMemoryRebound(to: CChar.self, capacity: Int(entry.pointee.d_namlen) + 1) { name in
                     if strcmp(name, ".") == 0 || strcmp(name, "..") == 0 { return }
+                    // Failure or cancellation must leave a populated batch
+                    // discoverable by the next ordinary pruning pass.
+                    if preservingBatchMarker && strcmp(name, ".louppe-photos-batch") == 0 { return }
                     var status = stat()
                     guard fstatat(directory, name, &status, AT_SYMLINK_NOFOLLOW) == 0 else { throw POSIXError(.EIO) }
                     let isDirectory = status.st_mode & S_IFMT == S_IFDIR

@@ -1,8 +1,69 @@
 import Foundation
+import Darwin
 import XCTest
 @testable import Louppe
 
 final class PhotosRecoveryRetentionTests: XCTestCase, @unchecked Sendable {
+    func testFailedPayloadCleanupKeepsMarkerAndCanBeRetried() async throws {
+        let fixture = try PhotosRecoveryFixture()
+        defer { fixture.remove() }
+        let marker = fixture.folder.appendingPathComponent(".louppe-photos-batch")
+        for index in 0..<32 {
+            try FileManager.default.createDirectory(at: fixture.folder.appendingPathComponent("payload-\(index)"),
+                withIntermediateDirectories: false)
+        }
+        // Use the filesystem's real enumeration order to place the failing
+        // payload after the marker; do not rely on alphabetic or creation order.
+        let names = try directoryNames(fixture.folder)
+        let markerIndex = try XCTUnwrap(names.firstIndex(of: marker.lastPathComponent))
+        let blockedName = try XCTUnwrap(names.dropFirst(markerIndex + 1).first { $0.hasPrefix("payload-") })
+        let blocked = fixture.folder.appendingPathComponent(blockedName)
+        let remaining = blocked.appendingPathComponent("original.mov")
+        try fixture.bytes.write(to: remaining)
+        try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: blocked.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: blocked.path) }
+
+        let service = fixture.service()
+        await service.remove(fixture.batch)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: marker.path),
+            "An incomplete cleanup must keep the batch's retry authority")
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: blocked.path)
+        XCTAssertEqual(try Data(contentsOf: remaining), fixture.bytes)
+        try await service.pruneAbandonedBatches()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.folder.path),
+            "Restoring access must allow ordinary pruning to finish")
+    }
+
+    func testCleanupNeedsOnlySearchAccessToCacheAncestors() throws {
+        let fixture = try PhotosRecoveryFixture()
+        defer { fixture.remove() }
+        let ancestor = fixture.root.appendingPathComponent("SearchOnly")
+        let cache = ancestor.appendingPathComponent("Cache")
+        let batch = cache.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: batch, withIntermediateDirectories: true)
+        try Data("louppe-photos-review-v1".utf8).write(to: batch.appendingPathComponent(".louppe-photos-batch"))
+        try fixture.bytes.write(to: batch.appendingPathComponent("original.mov"))
+        try FileManager.default.setAttributes([.posixPermissions: 0o111], ofItemAtPath: ancestor.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: ancestor.path) }
+        PhotosBatchCleanup.remove([batch], cacheRoot: cache, operationJournalDirectory: fixture.journals)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: batch.path),
+            "A readable cache does not require directory-read authority over its ancestors")
+    }
+
+    private func directoryNames(_ url: URL) throws -> [String] {
+        let stream = url.withUnsafeFileSystemRepresentation { $0.flatMap { opendir($0) } }
+        guard let stream else { throw POSIXError(.EIO) }
+        defer { closedir(stream) }
+        var names: [String] = []
+        while let entry = readdir(stream) {
+            let name = withUnsafePointer(to: &entry.pointee.d_name) {
+                $0.withMemoryRebound(to: CChar.self, capacity: Int(entry.pointee.d_namlen) + 1) { String(cString: $0) }
+            }
+            if name != "." && name != ".." { names.append(name) }
+        }
+        return names
+    }
+
     func testStartedCompleteCopySurvivesProductionBatchRemovalWithoutPreserveCallback() async throws {
         for recordedIdentity in [false, true] {
             let fixture = try PhotosRecoveryFixture()

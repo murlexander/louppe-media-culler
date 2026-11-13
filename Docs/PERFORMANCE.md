@@ -320,7 +320,9 @@ asset before the next; it never stages the whole export. Explicit video-original
 acquisition reuses the bounded 15-second metadata scanner off-main, retaining
 its original lane and staged file until the worker exits. The media actor stays
 available for stop/consent; cancellation rejects late metadata and cleans staging
-after worker exit. Opening membership performs no AVAsset reads. Separate original
+after worker exit. Retirement awaits all original requests before unpinning or
+deleting a batch; standalone Stop does not wait for their workers.
+Opening membership performs no AVAsset reads. Separate original
 consent prevents representation access authorizing full-resource transfers.
 Both permissions persist in General Settings; updates target the captured active
 media actor and latest revision. A permission change never retries an original.
@@ -344,6 +346,8 @@ metadata is proportional to candidate batches. The 5,000,000,000-byte staging
 ceiling applies per media session; unresolved journals (especially indefinitely
 corrupt or locked storage) can retain batches across reviews, without a global
 retained-byte or folder bound. Ordinary cleanup reclaims them after retirement.
+Failed payload cleanup retains the root marker for a later pruning pass. The
+bound cache root opens without directory-read permission on its ancestors.
 
 Explicit **Add to Album** uses serial metadata-only PhotoKit transactions of
 at most 200 assets, with fresh exact-ID/capability checks and callback-following

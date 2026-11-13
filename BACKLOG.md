@@ -79,6 +79,7 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 - [ ] **Displays and playback:** Retina/non-Retina display changes, resizing and full screen while photos decode; video full screen and Picture in Picture.
 
 - [ ] **Photos portrait playback:** verify full top/bottom fixture bars during live portrait/rotated original playback in light/dark; offscreen AppKit PNGs omit AVPlayerLayer pixels.
+- [ ] **Store Photos cache cleanup:** verify batch retirement and retry inside the sandboxed Store build; restricted-ancestor filesystem tests do not replace runtime acceptance.
 
 ### Hardware and environments
 

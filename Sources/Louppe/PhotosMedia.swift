@@ -114,6 +114,8 @@ actor PhotosMediaSession {
     private var imageNetwork: Bool
     private var originalNetwork = false
     private var cancellation: [UUID: @Sendable () -> Void] = [:]
+    private var originalRequestCount = 0
+    private var originalDrainWaiters: [CheckedContinuation<Void, Never>] = []
     private struct ImageKey: Hashable { let assetID: String; let pixels: Int }
     private var cache: [ImageKey: (PhotosReviewImage, UInt64)] = [:]
     private var clock: UInt64 = 0
@@ -195,6 +197,7 @@ actor PhotosMediaSession {
                   progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws -> PhotosOriginalLease {
         guard !stopped, let reference = item.primaryFile.photosMedia else { throw PhotosRepresentationError.retired }
         guard cancellation.count < 76 else { throw PhotosRepresentationError.busy }
+        originalRequestCount += 1
         let token = UUID()
         let task = Task { [originalGate] in
             try await originalGate.acquire()
@@ -205,8 +208,21 @@ actor PhotosMediaSession {
             } catch { await originalGate.release(); throw error }
         }
         cancellation[token] = { task.cancel() }
-        defer { cancellation[token] = nil }
-        return try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+        defer {
+            cancellation[token] = nil
+            originalRequestCount -= 1
+            if originalRequestCount == 0 {
+                let waiters = originalDrainWaiters
+                originalDrainWaiters.removeAll()
+                for waiter in waiters { waiter.resume() }
+            }
+        }
+        let lease = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+        do {
+            guard !stopped else { throw PhotosRepresentationError.retired }
+            try Task.checkCancellation()
+        } catch { await lease.close(); throw error }
+        return lease
     }
 
     private func stageOriginal(_ item: PhotoItem, assetID: String,
@@ -267,6 +283,14 @@ actor PhotosMediaSession {
         for cancel in cancellation.values { cancel() }
         cache.removeAll(); cachedBytes = 0
         await provider.stop()
+    }
+
+    /// Retirement keeps the batch pinned until cancelled original requests and
+    /// their native workers finish. Standalone stop remains responsive.
+    func stopAndDrainOriginalRequests() async {
+        await stop()
+        guard originalRequestCount > 0 else { return }
+        await withCheckedContinuation { originalDrainWaiters.append($0) }
     }
 }
 
