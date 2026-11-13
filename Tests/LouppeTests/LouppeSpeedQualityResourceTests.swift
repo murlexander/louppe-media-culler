@@ -38,7 +38,8 @@ final class LouppeSpeedQualityResourceTests: XCTestCase {
                 var publications = 0
                 let completion = QualityBenchmarkCompletion()
                 let lastBatchSize = count.isMultiple(of: 2) ? 2 : 1
-                let subscription = store.objectWillChange.sink { _ in
+                // Cue results publish on their own object, not the store.
+                let subscription = store.qualityCuePublication.objectWillChange.sink { _ in
                     publications += 1
                     // willChange precedes mutation. Schedule one final observer
                     // turn rather than busy-polling and charging harness CPU to

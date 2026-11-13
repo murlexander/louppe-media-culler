@@ -319,9 +319,11 @@ final class VideoPlaybackController: ObservableObject {
         return min(target, duration)
     }
 
+    // Gallery stops playback on every step, video or not. Assign only changed
+    // values so a step between photos publishes nothing here.
     func pause() {
         player.pause()
-        isPlaying = false
+        if isPlaying { isPlaying = false }
         rememberCurrentPosition()
     }
 
@@ -329,11 +331,11 @@ final class VideoPlaybackController: ObservableObject {
         playbackGeneration &+= 1
         pause()
         removeObservers()
-        player.replaceCurrentItem(with: nil)
-        currentTimeSeconds = 0
-        itemID = nil
-        contentRevision = nil
-        errorMessage = nil
+        if player.currentItem != nil { player.replaceCurrentItem(with: nil) }
+        if currentTimeSeconds != 0 { currentTimeSeconds = 0 }
+        if itemID != nil { itemID = nil }
+        if contentRevision != nil { contentRevision = nil }
+        if errorMessage != nil { errorMessage = nil }
     }
 
     /// Positions are intentionally an in-memory review aid rather than sidecar

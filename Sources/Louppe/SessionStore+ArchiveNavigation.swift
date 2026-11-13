@@ -336,9 +336,11 @@ extension SessionStore {
             guard let self else { return }
             do {
                 try await self.archiveNavigationPersistence.save(memory, for: identity)
+                // Every write lands here; assigning unchanged values would
+                // still redraw the whole window.
                 if self.archiveNavigationRootIdentity == identity {
-                    self.archiveNavigationWarning = nil
-                    self.archiveNavigationCanReset = false
+                    if self.archiveNavigationWarning != nil { self.archiveNavigationWarning = nil }
+                    if self.archiveNavigationCanReset { self.archiveNavigationCanReset = false }
                 }
             } catch {
                 if self.archiveNavigationRootIdentity == identity {

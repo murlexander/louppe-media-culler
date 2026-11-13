@@ -228,10 +228,35 @@ final class QualityCueSchedulingTests: XCTestCase {
             "Finishing or revisiting complete coverage must not restart the selected-priority walk")
     }
 
+    func testWholeImageBatchIsSingle() async throws {
+        let measurements = CueSchedulingMeasurements()
+        let rest = CueSchedulingRestGate()
+        let extensions = ["JPG", "jxl", "JPG", "JPG", "jxl", "jxl"]
+        let store = makeStore(count: extensions.count, measurements: measurements,
+                              rest: { await rest.sleep($0) }, pathExtensions: extensions)
+        registerCleanup(store: store, rest: rest)
+        store.startQualityCueAnalysis()
+        var batches: [[String]] = []
+        var measured = 0
+        while measured < extensions.count {
+            try await waitUntil { await rest.snapshot.requests == batches.count + 1 }
+            let started = await measurements.started
+            batches.append(Array(started.dropFirst(measured)))
+            measured = started.count
+            await rest.releaseNext()
+        }
+        XCTAssertEqual(Set(batches.joined()).count, extensions.count)
+        for batch in batches where batch.contains(where: { $0.hasSuffix(".jxl") }) {
+            XCTAssertEqual(batch.count, 1, "A whole-image decode must run alone: \(batches)")
+        }
+        XCTAssertTrue(batches.contains { $0.count == 2 }, "Other formats still pair: \(batches)")
+    }
+
     private func makeStore(
         count: Int,
         measurements: CueSchedulingMeasurements,
-        rest: @escaping @Sendable (Duration) async -> Void
+        rest: @escaping @Sendable (Duration) async -> Void,
+        pathExtensions: [String]? = nil
     ) -> SessionStore {
         let name = "QualityCueSchedulingTests.\(UUID())"
         let defaults = UserDefaults(suiteName: name)!
@@ -241,7 +266,7 @@ final class QualityCueSchedulingTests: XCTestCase {
             qualityCueResources: { .init(lowPower: false, thermal: .nominal) },
             qualityCueRest: rest)
         store.items = (0..<count).map { index in
-            let id = String(format: "SCHEDULING_%04d.JPG", index)
+            let id = String(format: "SCHEDULING_%04d.", index) + (pathExtensions?[index] ?? "JPG")
             return PhotoItem(primaryFile: PhotoFile(
                 id: id, url: URL(fileURLWithPath: "/private/tmp/louppe-cue-scheduling-synthetic/\(id)"),
                 captureDate: Date(timeIntervalSince1970: Double(index)),

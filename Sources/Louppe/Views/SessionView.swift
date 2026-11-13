@@ -425,17 +425,9 @@ struct SessionView: View {
             .foregroundStyle(.secondary)
             // Background-work spinner. Always present (just invisible when
             // idle) so the status text doesn't shift when it appears.
-            SessionActivityIndicator(isActive:
-                    store.fullImageLoads > 0
-                        || store.isChangingRawJPEGPairingMode
-                        || store.isDuplicateBurstAnalysisRunning,
-                label:
-                    store.isDuplicateBurstAnalysisRunning
-                        ? L10n.text("Analyzing duplicate and burst groups locally")
-                        : store.isChangingRawJPEGPairingMode
-                        ? L10n.text("Preparing separate JPEG metadata")
-                        : L10n.text("Loading photo preview")
-                )
+            SessionActivitySpinner(activity: store.galleryActivity,
+                                   isChangingRawJPEGPairingMode: store.isChangingRawJPEGPairingMode,
+                                   isAnalyzingDuplicateBursts: store.isDuplicateBurstAnalysisRunning)
             if hasReviewStatusDetails {
                 Image(systemName: "chevron.down")
                     .font(.caption2)
@@ -1457,6 +1449,28 @@ private struct SessionKeyEventMonitor: NSViewRepresentable {
 #endif
         }
 
+    }
+}
+
+/// Gallery decodes change the spinner several times per step; observing them
+/// here keeps those changes from redrawing the session window.
+private struct SessionActivitySpinner: View {
+    @ObservedObject var activity: GalleryActivity
+    let isChangingRawJPEGPairingMode: Bool
+    let isAnalyzingDuplicateBursts: Bool
+
+    var body: some View {
+        SessionActivityIndicator(isActive:
+                activity.fullImageLoads > 0
+                    || isChangingRawJPEGPairingMode
+                    || isAnalyzingDuplicateBursts,
+            label:
+                isAnalyzingDuplicateBursts
+                    ? L10n.text("Analyzing duplicate and burst groups locally")
+                    : isChangingRawJPEGPairingMode
+                    ? L10n.text("Preparing separate JPEG metadata")
+                    : L10n.text("Loading photo preview")
+            )
     }
 }
 

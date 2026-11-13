@@ -3,8 +3,16 @@ import SwiftUI
 /// Matching cues and their values, shared by Info and tile popovers.
 struct QualityCueDetailsView: View {
     @ObservedObject var store: SessionStore
+    @ObservedObject private var cuePublication: QualityCuePublication
     let item: PhotoItem
     var showsInspectionAction = false
+
+    init(store: SessionStore, item: PhotoItem, showsInspectionAction: Bool = false) {
+        self.store = store
+        cuePublication = store.qualityCuePublication
+        self.item = item
+        self.showsInspectionAction = showsInspectionAction
+    }
 
     var body: some View {
         let cues = store.qualityCues(for: item)
@@ -41,8 +49,16 @@ struct QualityCueDetailsView: View {
 
 struct QualityCueTileIcons: View {
     @ObservedObject var store: SessionStore
+    /// Measured evidence publishes here; the store publishes everything else.
+    @ObservedObject private var cuePublication: QualityCuePublication
     let item: PhotoItem
     @State private var showsDetails = false
+
+    init(store: SessionStore, item: PhotoItem) {
+        self.store = store
+        cuePublication = store.qualityCuePublication
+        self.item = item
+    }
 
     var body: some View {
         let cues = store.qualityCues(for: item)
@@ -74,6 +90,38 @@ struct QualityCueTileIcons: View {
             }
         }
         .onAppear { store.prioritizeQualityCues(for: item) }
+    }
+}
+
+/// Filter's progress line for the background cue walk.
+struct QualityCueCoverageText: View {
+    @ObservedObject var store: SessionStore
+    @ObservedObject private var cuePublication: QualityCuePublication
+
+    init(store: SessionStore) {
+        self.store = store
+        cuePublication = store.qualityCuePublication
+    }
+
+    var body: some View {
+        Text(store.qualityCueCoverageSummary)
+    }
+}
+
+/// Info's divider beside the cue rows, which appear while Info is open.
+struct QualityCueDivider: View {
+    @ObservedObject var store: SessionStore
+    @ObservedObject private var cuePublication: QualityCuePublication
+    let item: PhotoItem
+
+    init(store: SessionStore, item: PhotoItem) {
+        self.store = store
+        cuePublication = store.qualityCuePublication
+        self.item = item
+    }
+
+    var body: some View {
+        if !store.qualityCues(for: item).isEmpty { Divider() }
     }
 }
 

@@ -5,12 +5,19 @@ import SwiftUI
 /// source-pixel magnification from 30% to 400% on a logarithmic scale.
 struct PhotoZoomControl: View {
     @ObservedObject var store: SessionStore
+    /// Fitted detail and fitted scale publish here, not on the store.
+    @ObservedObject private var activity: GalleryActivity
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var lastReading: ZoomReading?
 
     private let minimum = 0.30
     private let maximum = Double(ActualSizeGeometry.maximumZoom)
+
+    init(store: SessionStore) {
+        self.store = store
+        activity = store.galleryActivity
+    }
 
     var body: some View {
         controls

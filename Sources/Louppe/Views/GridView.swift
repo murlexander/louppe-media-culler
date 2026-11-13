@@ -193,14 +193,21 @@ struct GridCollectionContent: View, Equatable {
 /// macOS lazy containers can retain an already-created value subtree after the
 /// shared per-file rating storage changes. Keeping the observation here makes
 /// the badge, selection frame, and accessibility value update immediately.
-private struct GridCell: View {
+struct GridCell: View {
     @ObservedObject var store: SessionStore
     let index: Int
     let id: String
     let onPointerCurrentChange: () -> Void
     let tileImageSizes: GridTileImageSizes
 
+    #if LOUPPE_TEST_SEAMS
+    static var didEvaluateBody: ((String) -> Void)?
+    #endif
+
     var body: some View {
+        #if LOUPPE_TEST_SEAMS
+        let _ = Self.didEvaluateBody?(id)
+        #endif
         if store.items.indices.contains(index), store.items[index].id == id {
             let item = store.items[index]
             let actions = GridCellActions(

@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import Combine
+import OSLog
 
 enum ViewMode: String, CaseIterable, Sendable {
     case gallery
@@ -158,6 +159,47 @@ struct XMPConflictResolutionOutcome: Equatable, Sendable {
     }
 }
 
+/// Gallery-only status that changes several times per step. Only the toolbar
+/// spinner and the zoom pill read it, so it publishes here instead of
+/// redrawing every `SessionStore` observer. The store keeps the rules and
+/// forwards reads and writes.
+@MainActor
+final class GalleryActivity: ObservableObject {
+    /// In-flight big-photo decodes (a count, so overlapping loads during fast
+    /// arrow-key navigation can't blank the spinner early). The toolbar shows
+    /// a small spinner while it's above zero.
+    @Published var fullImageLoads = 0
+    @Published private(set) var photoRepresentation: PhotoRepresentation = .preview
+    private(set) var photoRepresentationRevision: PhotoContentRevision?
+    @Published private(set) var fittedPhotoZoomScale: CGFloat?
+    private(set) var fittedPhotoZoomRevision: PhotoContentRevision?
+    private(set) var fittedPhotoZoomMode: ZoomMode?
+
+    func setPhotoRepresentation(_ representation: PhotoRepresentation, revision: PhotoContentRevision) {
+        let changed = photoRepresentationRevision != revision || photoRepresentation != representation
+        photoRepresentationRevision = revision
+        if changed { photoRepresentation = representation }
+    }
+
+    func setFittedPhotoZoomScale(_ scale: CGFloat, revision: PhotoContentRevision, mode: ZoomMode) {
+        if fittedPhotoZoomRevision == revision,
+           fittedPhotoZoomMode == mode,
+           let fittedPhotoZoomScale,
+           abs(fittedPhotoZoomScale - scale) < 0.001 { return }
+        fittedPhotoZoomRevision = revision
+        fittedPhotoZoomMode = mode
+        fittedPhotoZoomScale = scale
+    }
+}
+
+/// Quality-cue evidence changes publish here, not on `SessionStore`: the
+/// background walk measures every photo, and only cue icons, Info's cue rows
+/// and Filter's coverage line read the results. It holds no state; observers
+/// read the evidence from the store. Cue filter visibility still publishes
+/// through the store.
+@MainActor
+final class QualityCuePublication: ObservableObject {}
+
 /// The app's single source of truth: the loaded session (photos + ratings),
 /// navigation, undo, view state, and persistence to the sidecar file.
 @MainActor
@@ -185,6 +227,24 @@ final class SessionStore: ObservableObject {
         }
     }
     private var openingSessionChanges: AnyCancellable?
+#if LOUPPE_TEST_SEAMS
+    /// Main-queue turns in which the store published. Sends within one turn
+    /// coalesce into one SwiftUI update; each turn redraws every observer.
+    private(set) var publicationTurnsForTesting = 0
+    private var publicationTurnIsOpen = false
+    private var publicationTurnObserver: AnyCancellable?
+    private static let publicationSignposter = OSSignposter(
+        subsystem: "com.alexandermarkin.louppe", category: "Store Publication"
+    )
+
+    private func notePublicationTurn() {
+        guard !publicationTurnIsOpen else { return }
+        publicationTurnIsOpen = true
+        publicationTurnsForTesting += 1
+        Self.publicationSignposter.emitEvent("store.publish")
+        DispatchQueue.main.async { [weak self] in self?.publicationTurnIsOpen = false }
+    }
+#endif
     var openingWorkerHooksForTesting = SessionOpeningWorker.Hooks()
     /// Optional metadata-cache write after Ready. Close never waits for it;
     /// Quit cancels it. One commit runs at a time; a newer opening replaces
@@ -320,9 +380,6 @@ final class SessionStore: ObservableObject {
         didSet { if zoomMode != oldValue { prefetchAroundCurrent(handingOver: true) } }
     }
     @Published private(set) var photoZoomScale: CGFloat = 1
-    @Published private(set) var fittedPhotoZoomScale: CGFloat?
-    private var fittedPhotoZoomRevision: PhotoContentRevision?
-    private var fittedPhotoZoomMode: ZoomMode?
     private var lastGestureZoomPublication: CFAbsoluteTime = 0
     @Published var showClippingWarnings = false
     let actualSizeViewport = ActualSizeViewport()
@@ -382,6 +439,7 @@ final class SessionStore: ObservableObject {
     // quadratic insertion cost of a growing @Published evidence dictionary.
     private(set) var qualityCueEvidence: [String: QualityCueEvidence] = [:]
     private(set) var qualityCueCheckingIDs: Set<String> = []
+    let qualityCuePublication = QualityCuePublication()
     @Published private(set) var isQualityCueAnalysisPaused = false
     private let usesDefaultQualityCueMeasurement: Bool
     private let qualityCueMeasurement: @Sendable (PhotoItem) async -> QualityCueEvidence
@@ -412,22 +470,22 @@ final class SessionStore: ObservableObject {
     private var qualityCueInterestIDs: [String] = []
     private var qualityCuePreferencesObserver: AnyCancellable?
 
-    /// In-flight big-photo decodes (a count, so overlapping loads during fast
-    /// arrow-key navigation can't blank the spinner early). The toolbar shows
-    /// a small spinner while it's above zero.
-    @Published var fullImageLoads = 0
-    @Published private(set) var photoRepresentation: PhotoRepresentation = .preview
-    private var photoRepresentationRevision: PhotoContentRevision?
+    /// Decode count, fitted detail and fitted scale publish on their own
+    /// object: they change several times per Gallery step.
+    let galleryActivity = GalleryActivity()
+    var fullImageLoads: Int {
+        get { galleryActivity.fullImageLoads }
+        set { galleryActivity.fullImageLoads = newValue }
+    }
 
     var currentPhotoRepresentation: PhotoRepresentation? {
-        photoRepresentationRevision == currentItem?.contentRevision ? photoRepresentation : nil
+        galleryActivity.photoRepresentationRevision == currentItem?.contentRevision
+            ? galleryActivity.photoRepresentation : nil
     }
 
     func reportPhotoRepresentation(_ representation: PhotoRepresentation, revision: PhotoContentRevision) {
         guard currentItem?.contentRevision == revision else { return }
-        let changed = photoRepresentationRevision != revision || photoRepresentation != representation
-        photoRepresentationRevision = revision
-        if changed { photoRepresentation = representation }
+        galleryActivity.setPhotoRepresentation(representation, revision: revision)
     }
     @Published var scanError: String?
     /// A legacy folder-path mismatch can be acknowledged only for the exact
@@ -464,7 +522,11 @@ final class SessionStore: ObservableObject {
     var sessionRecoveryEntries: [SessionRecoveryEntry] { sessionRecoveryEntryStorage }
     @Published var isSessionRecoveryPresented = false
     @Published private(set) var isSessionRecoveryNoticeDismissed = false
-    @Published private(set) var sessionContentCheck: SessionContentCheckState = .idle
+    /// Only the recovery banner and sheet show progress. A first-time rating's
+    /// fingerprint must not redraw the window when there is nothing to recover.
+    private(set) var sessionContentCheck: SessionContentCheckState = .idle {
+        willSet { if !sessionRecoveryEntries.isEmpty { objectWillChange.send() } }
+    }
     @Published private(set) var automaticallyRestoredSessionFiles = 0
     private var sessionContentProofs: [String: SessionContentProof] = [:]
     private var sessionContentCapturedProofs: [String: SessionContentProof] = [:]
@@ -1292,6 +1354,9 @@ final class SessionStore: ObservableObject {
         pinnedFolderPreparation.recentPaths = { [weak self] in
             self?.recentFolders.map(\.standardizedFileURL.path) ?? []
         }
+#if LOUPPE_TEST_SEAMS
+        publicationTurnObserver = objectWillChange.sink { [weak self] _ in self?.notePublicationTurn() }
+#endif
         if automaticallyRecoversInterruptedOperations,
            FileOperationJournal.hasPendingOperations(
             directory: operationJournalDirectory
@@ -1866,10 +1931,8 @@ final class SessionStore: ObservableObject {
         qualityCueRestTask?.cancel()
         // Keep the task/lease until its group exits: immediate Resume cannot
         // admit another pair while cancelled measurements are still retiring.
-        if !qualityCueCheckingIDs.isEmpty {
-            objectWillChange.send()
-            qualityCueCheckingIDs.removeAll(keepingCapacity: true)
-        }
+        // No view shows the checking state, so clearing it publishes nothing.
+        qualityCueCheckingIDs.removeAll(keepingCapacity: true)
         qualityCueCursor = 0
         qualityCueSelectionOrder = nil
         qualityCueSelectionCursor = 0
@@ -1887,7 +1950,7 @@ final class SessionStore: ObservableObject {
     private func invalidateQualityCueAnalysis(keepingPaused: Bool = false) {
         qualityCueFilterNeedsRefresh = false
         pauseQualityCueAnalysis()
-        objectWillChange.send()
+        qualityCuePublication.objectWillChange.send()
         qualityCueEvidence.removeAll()
         qualityCueMatchCache = nil
         qualityCueMeasuredCount = 0
@@ -1939,7 +2002,8 @@ final class SessionStore: ObservableObject {
                     return results
                 }
                 guard !Task.isCancelled, self.qualityCueGeneration == generation else { return }
-                self.objectWillChange.send()
+                // Cue readers only; a changed cue filter publishes through applyFilter.
+                self.qualityCuePublication.objectWillChange.send()
                 for (id, evidence) in results {
                     self.qualityCueCheckingIDs.remove(id)
                     guard let index = self.preparedIndex.itemIndex(forID: id),
@@ -2008,45 +2072,52 @@ final class SessionStore: ObservableObject {
         if restart { startQualityCueAnalysis() }
     }
 
+    /// Two photos per batch, or one whole-image photo alone: its source decode
+    /// shares the full-decode lanes with Gallery's Fit.
     private func nextQualityCueBatch(generation: UInt64) -> [PhotoItem]? {
         guard qualityCueGeneration == generation else { return nil }
         var batch: [PhotoItem] = []
-        func append(_ index: Int) {
-            guard batch.count < 2, items.indices.contains(index) else { return }
+        var capacity = 2
+        /// False only when a whole-image photo must wait for the next batch,
+        /// so a cursor does not step past it.
+        @discardableResult func append(_ index: Int) -> Bool {
+            guard batch.count < capacity, items.indices.contains(index) else { return true }
             let item = items[index]
             guard item.mediaKind == .photo, item.isSupported,
                   qualityEvidence(for: item) == nil,
                   !qualityCueCheckingIDs.contains(item.id),
-                  !batch.contains(where: { $0.id == item.id }) else { return }
+                  !batch.contains(where: { $0.id == item.id }) else { return true }
+            if ImagePipeline.wholeImageThumbnailExtensions.contains(item.primaryURL.pathExtension.lowercased()) {
+                guard batch.isEmpty else { return false }
+                capacity = 1
+            }
             batch.append(item)
+            return true
         }
         append(currentIndex)
         if qualityCueSelectionOrder == nil {
             qualityCueSelectionOrder = Array(selectedIndices)
             qualityCueSelectionCursor = 0
         }
-        while batch.count < 2, let order = qualityCueSelectionOrder,
+        while batch.count < capacity, let order = qualityCueSelectionOrder,
               qualityCueSelectionCursor < order.count {
             let index = order[qualityCueSelectionCursor]
-            qualityCueSelectionCursor += 1
             #if LOUPPE_TEST_SEAMS
             qualityCueSelectionProbesForTesting += 1
             #endif
-            append(index)
+            guard append(index) else { break }
+            qualityCueSelectionCursor += 1
         }
         for id in qualityCueInterestIDs {
             if let index = preparedIndex.itemIndex(forID: id) { append(index) }
-            if batch.count == 2 { break }
+            if batch.count == capacity { break }
         }
         for offset in [1, -1, 2, -2, 3] { append(currentIndex + offset) }
-        while batch.count < 2, qualityCueCursor < items.count {
-            append(qualityCueCursor)
+        while batch.count < capacity, qualityCueCursor < items.count, append(qualityCueCursor) {
             qualityCueCursor += 1
         }
-        if !batch.isEmpty {
-            objectWillChange.send()
-            for item in batch { qualityCueCheckingIDs.insert(item.id) }
-        }
+        // Checking state has no UI reader; the results publish once.
+        for item in batch { qualityCueCheckingIDs.insert(item.id) }
         return batch
     }
 
@@ -2200,7 +2271,9 @@ final class SessionStore: ObservableObject {
             }
             applyFilter(preservingCurrent: true)
         }
-        objectWillChange.send()
+        // Restored decisions publish through publishMetadataMutation; proofs
+        // and failures are shown only beside recovery records.
+        if !sessionRecoveryEntries.isEmpty { objectWillChange.send() }
         let cost = start.duration(to: .now)
         contentResultsNotBefore = ContinuousClock.now
             + max(recoveryBatchMinimumInterval, min(.seconds(1), cost * 4))
@@ -6459,9 +6532,9 @@ final class SessionStore: ObservableObject {
     /// source dimensions and viewport have been measured.
     var displayedPhotoZoomScale: CGFloat? {
         if zoomMode == .actual { return photoZoomScale }
-        guard fittedPhotoZoomRevision == currentItem?.contentRevision,
-              fittedPhotoZoomMode == zoomMode else { return nil }
-        return fittedPhotoZoomScale
+        guard galleryActivity.fittedPhotoZoomRevision == currentItem?.contentRevision,
+              galleryActivity.fittedPhotoZoomMode == zoomMode else { return nil }
+        return galleryActivity.fittedPhotoZoomScale
     }
 
     func reportFittedPhotoZoomScale(
@@ -6473,14 +6546,8 @@ final class SessionStore: ObservableObject {
               zoomMode == mode,
               currentItem?.contentRevision == revision,
               scale.isFinite, scale > 0 else { return }
-        let scale = ActualSizeGeometry.clampedZoom(scale)
-        if fittedPhotoZoomRevision == revision,
-           fittedPhotoZoomMode == mode,
-           let fittedPhotoZoomScale,
-           abs(fittedPhotoZoomScale - scale) < 0.001 { return }
-        fittedPhotoZoomRevision = revision
-        fittedPhotoZoomMode = mode
-        fittedPhotoZoomScale = scale
+        galleryActivity.setFittedPhotoZoomScale(
+            ActualSizeGeometry.clampedZoom(scale), revision: revision, mode: mode)
     }
 
     /// Gallery double-click enters 100% with the clicked image point under the

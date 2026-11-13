@@ -226,7 +226,7 @@ struct FilterView: View {
                         Label(kind.title, systemImage: kind.symbol)
                     }
                 }
-                Text(store.qualityCueCoverageSummary)
+                QualityCueCoverageText(store: store)
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if store.qualityCuePreferences.needsHistogram {

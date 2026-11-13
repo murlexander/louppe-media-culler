@@ -322,9 +322,7 @@ struct MetadataPanel: View {
         QualityCueDetailsView(store: store, item: item)
 
         if showsHistogram {
-            if !store.qualityCues(for: item).isEmpty {
-                Divider()
-            }
+            QualityCueDivider(store: store, item: item)
             HistogramSection(
                 item: item,
                 analysis: displayedHistogram,
@@ -334,9 +332,8 @@ struct MetadataPanel: View {
             )
         }
 
-        if (showsHistogram || !store.qualityCues(for: item).isEmpty)
-            && (hasCameraLensInfo || hasShootingInfo || !otherFields.isEmpty) {
-            Divider()
+        if hasCameraLensInfo || hasShootingInfo || !otherFields.isEmpty {
+            if showsHistogram { Divider() } else { QualityCueDivider(store: store, item: item) }
         }
 
         if let cameraLensText {

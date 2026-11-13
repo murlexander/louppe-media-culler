@@ -136,7 +136,7 @@ struct BrowserCollectionContent: View, Equatable {
 /// recreated, most visibly after Clear All Decisions), so a row must never
 /// depend on the container to learn about store changes. Do not turn this
 /// back into a plain value subtree.
-private struct BrowserRow: View {
+struct BrowserRow: View {
     @ObservedObject var store: SessionStore
     let index: Int
     let id: String
@@ -144,7 +144,14 @@ private struct BrowserRow: View {
     /// suppress-follow flag stays BrowserView @State.
     let onPlainClick: () -> Void
 
+    #if LOUPPE_TEST_SEAMS
+    static var didEvaluateBody: ((String) -> Void)?
+    #endif
+
     var body: some View {
+        #if LOUPPE_TEST_SEAMS
+        let _ = Self.didEvaluateBody?(id)
+        #endif
         // The bounds check stays inside the row: it re-renders independently
         // of the parent, and visibleIndices must never outlive items.
         if store.items.indices.contains(index), store.items[index].id == id {

@@ -5,6 +5,8 @@ import SwiftUI
 /// restart its metadata and histogram work.
 struct GalleryView: View {
     @ObservedObject var store: SessionStore
+    /// Tests substitute a gated pipeline; the app always uses the shared one.
+    var imagePipeline = ImagePipeline.shared
 
     var body: some View {
         HStack(spacing: 0) {
@@ -59,10 +61,12 @@ struct GalleryView: View {
                             },
                             onRepresentation: { representation, revision in
                                 store.reportPhotoRepresentation(representation, revision: revision)
-                            }
-                        ) { loading in
-                            store.fullImageLoads += loading ? 1 : -1
-                        }
+                            },
+                            onLoading: { loading in
+                                store.fullImageLoads += loading ? 1 : -1
+                            },
+                            imagePipeline: imagePipeline
+                        )
                     }
                 } else if !store.visibleIndices.isEmpty {
                     ContentUnavailableView {
