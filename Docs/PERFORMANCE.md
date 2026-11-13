@@ -332,7 +332,14 @@ the JSON document. Only the selected membership's decisions join UI state. Folde
 fingerprints and original-only quality/exact/similarity sweeps are skipped.
 Cache media retires after saving outgoing decisions; marked startup leftovers
 are pruned at the next preparation. Failed cleanup keeps its staging bytes
-charged until batch retirement; disk failures remain actionable.
+charged until batch retirement; disk failures remain actionable. Removal/pruning
+retain whole journal-referenced batches under the existing Operations lock,
+reading one plan at a time with the existing 512 MiB encoded-plan ceiling.
+Uncertain journals or lock contention defer all deletion. Candidate/reference
+metadata is proportional to candidate batches. The 5,000,000,000-byte staging
+ceiling applies per media session; unresolved journals (especially indefinitely
+corrupt or locked storage) can retain batches across reviews, without a global
+retained-byte or folder bound. Ordinary cleanup reclaims them after retirement.
 
 Explicit **Add to Album** uses serial metadata-only PhotoKit transactions of
 at most 200 assets, with fresh exact-ID/capability checks and callback-following

@@ -700,6 +700,43 @@ enum FileOperationJournal {
         }
     }
 
+    /// Photos staging retirement shares the journal's nonblocking authority.
+    /// Decode one bounded plan at a time; any uncertainty aborts the entire
+    /// pass before the synchronous cleanup callback can delete a batch.
+    static func withUnreferencedPhotosBatches(
+        _ candidates: [URL], directory rootOverride: URL? = nil,
+        cleanup: ([URL]) throws -> Void
+    ) throws {
+        let root = rootOverride ?? defaultDirectory
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let operationLock = try OperationLock.acquire(in: root)
+        defer { operationLock.release() }
+        let roots = try candidates.map { url in
+            let bytes = try validatedPathBytes(for: url)
+            return (url, bytes, try resolvedFileSystemPathBytes(bytes))
+        }
+        var referenced = Set<Int>()
+        for operation in try pendingOperationURLs(in: root, fileManager: .default) {
+            let plan = try decodePlan(at: operation)
+            for file in plan.files {
+                for role in [PlannedPathRole.source, .destination, .temporary] {
+                    if role == .destination && file.destinationPath == nil { continue }
+                    if role == .temporary && file.temporaryPath == nil { continue }
+                    let url = try plannedURL(for: file, role: role, planVersion: plan.version)
+                    let bytes = try validatedPathBytes(for: url)
+                    let resolved = try resolvedFileSystemPathBytes(bytes)
+                    for (index, candidate) in roots.enumerated() {
+                        if pathIsEqualToOrDescendantOfRoot(path: bytes, root: candidate.1)
+                            || pathIsEqualToOrDescendantOfRoot(path: resolved, root: candidate.2) {
+                            referenced.insert(index)
+                        }
+                    }
+                }
+            }
+        }
+        try cleanup(roots.enumerated().compactMap { referenced.contains($0.offset) ? nil : $0.element.0 })
+    }
+
     static func hasPendingOperations(directory rootOverride: URL? = nil) -> Bool {
         let root = rootOverride ?? defaultDirectory
         let fm = FileManager.default

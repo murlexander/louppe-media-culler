@@ -172,14 +172,17 @@ actor PhotosLibraryService: PhotosLibraryClient {
     // A cancelled new selection cannot evict the outgoing review's snapshot.
     private var retainedSnapshots: [URL: (id: UUID, result: PHFetchResult<PHAsset>)] = [:]
     private let cacheRoot: URL
+    private let operationJournalDirectory: URL?
     private let decisionsStore: PhotosReviewDecisions
     private var retainedFolders: Set<URL> = []
 
     init(cacheRoot: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("com.alexandermarkin.louppe/PhotosReview", isDirectory: true),
-         decisionsStore: PhotosReviewDecisions = .shared) {
+         decisionsStore: PhotosReviewDecisions = .shared,
+         operationJournalDirectory: URL? = nil) {
         self.cacheRoot = cacheRoot
         self.decisionsStore = decisionsStore
+        self.operationJournalDirectory = operationJournalDirectory
     }
 
     func authorize() async throws {
@@ -284,26 +287,27 @@ actor PhotosLibraryService: PhotosLibraryClient {
 
     func remove(_ batch: PhotosReviewBatch) async {
         await batch.mediaSession?.stop()
-        guard batch.folder.deletingLastPathComponent().standardizedFileURL == cacheRoot.standardizedFileURL,
-              UUID(uuidString: batch.folder.lastPathComponent) != nil else { return }
-        // This is disposable app-owned media. Decisions live in Application Support.
+        // Retire membership even when a journal or I/O failure defers deletion.
         retainedFolders.remove(batch.folder)
         retainedSnapshots[batch.folder] = nil
-        try? FileManager.default.removeItem(at: batch.folder)
+        cleanupBatches([batch.folder])
     }
 
-    private func pruneAbandonedBatches() throws {
+    func pruneAbandonedBatches() throws {
+        try Task.checkCancellation()
         guard let folders = try? FileManager.default.contentsOfDirectory(at: cacheRoot,
-            includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey]) else { return }
-        for folder in folders where !retainedFolders.contains(folder) {
-            try Task.checkCancellation()
-            guard UUID(uuidString: folder.lastPathComponent) != nil,
-                  let values = try? folder.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
-                  values.isDirectory == true, values.isSymbolicLink != true,
-                  (try? Data(contentsOf: folder.appendingPathComponent(".louppe-photos-batch")))
-                    == Data("louppe-photos-review-v1".utf8) else { continue }
-            try? FileManager.default.removeItem(at: folder)
+            includingPropertiesForKeys: nil) else { return }
+        // Directory listings may resolve an ancestor alias (for example /var).
+        // Rebind UUID leaves to the exact cache spelling used by membership.
+        let candidates = folders.compactMap {
+            try? FileOperationJournal.appendingPathComponentExactly($0.lastPathComponent, to: cacheRoot)
         }
+        cleanupBatches(candidates.filter { !retainedFolders.contains($0) })
+    }
+
+    private func cleanupBatches(_ folders: [URL]) {
+        PhotosBatchCleanup.remove(folders, cacheRoot: cacheRoot,
+                                  operationJournalDirectory: operationJournalDirectory)
     }
 
     static func safeFilename(_ name: String, type: String) -> String {
@@ -317,6 +321,111 @@ actor PhotosLibraryService: PhotosLibraryClient {
     private func requireAuthorization() throws {
         let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         guard status == .authorized || status == .limited else { throw PhotosLibraryError.permissionDenied }
+    }
+}
+
+/// Only marked, immediate UUID children of this Photos cache are disposable.
+/// All recursive traversal/unlinking is relative to held no-follow descriptors.
+/// This prevents parent redirection; it does not authenticate forged markers or
+/// atomically exclude arbitrary same-user namespace edits.
+enum PhotosBatchCleanup {
+    static func remove(_ folders: [URL], cacheRoot: URL, operationJournalDirectory: URL?,
+                       beforeRemoval: () throws -> Void = {}) {
+        guard !folders.isEmpty,
+              let binding = try? DurableFileIO.DirectoryBinding(url: cacheRoot),
+              let rootFD = try? openRoot(FileOperationJournal.resolvingSymlinksExactly(cacheRoot)) else { return }
+        defer { Darwin.close(rootFD) }
+        guard matches(rootFD, binding) else { return }
+        let candidates = folders.filter {
+            FileOperationJournal.exactPathsEqual($0.deletingLastPathComponent(), cacheRoot)
+                && UUID(uuidString: $0.lastPathComponent) != nil
+        }
+        guard !candidates.isEmpty else { return }
+        try? FileOperationJournal.withUnreferencedPhotosBatches(candidates, directory: operationJournalDirectory) { unreferenced in
+            try binding.requireCurrentPath()
+            try beforeRemoval()
+            for folder in unreferenced {
+                try Task.checkCancellation()
+                let name = folder.lastPathComponent
+                let fd = openat(rootFD, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                guard fd >= 0 else { continue }
+                defer { Darwin.close(fd) }
+                guard marked(fd) else { continue }
+                try removeContents(fd)
+                _ = unlinkat(rootFD, name, AT_REMOVEDIR)
+            }
+        }
+    }
+
+    private static func matches(_ fd: Int32, _ binding: DurableFileIO.DirectoryBinding) -> Bool {
+        var status = stat()
+        return fstat(fd, &status) == 0 && status.st_dev == binding.device
+            && status.st_ino == binding.inode
+            && status.st_birthtimespec.tv_sec == binding.birthSeconds
+            && status.st_birthtimespec.tv_nsec == binding.birthNanoseconds
+    }
+
+    private static func openRoot(_ url: URL) throws -> Int32 {
+        guard let bytes = FileOperationJournal.exactPathBytes(for: url), bytes.first == 47 else {
+            throw CocoaError(.fileReadInvalidFileName)
+        }
+        var fd = open("/", O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        guard fd >= 0 else { throw POSIXError(.EIO) }
+        do {
+            for component in bytes.split(separator: 47) {
+                guard component != Data(".".utf8), component != Data("..".utf8) else { throw POSIXError(.EINVAL) }
+                let next = (Array(component) + [0]).withUnsafeBytes {
+                    openat(fd, $0.baseAddress!.assumingMemoryBound(to: CChar.self),
+                           O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                }
+                guard next >= 0 else { throw POSIXError(.EIO) }
+                Darwin.close(fd); fd = next
+            }
+            return fd
+        } catch { Darwin.close(fd); throw error }
+    }
+
+    private static func marked(_ directory: Int32) -> Bool {
+        let fd = openat(directory, ".louppe-photos-batch", O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
+        guard fd >= 0 else { return false }
+        defer { Darwin.close(fd) }
+        let expected = Array("louppe-photos-review-v1".utf8)
+        var status = stat()
+        guard fstat(fd, &status) == 0, status.st_mode & S_IFMT == S_IFREG,
+              status.st_size == expected.count else { return false }
+        var bytes = [UInt8](repeating: 0, count: expected.count + 1)
+        let count = bytes.withUnsafeMutableBytes { Darwin.read(fd, $0.baseAddress, $0.count) }
+        return count == expected.count && Array(bytes.prefix(count)) == expected
+    }
+
+    private static func removeContents(_ directory: Int32) throws {
+        let copy = dup(directory)
+        guard copy >= 0 else { throw POSIXError(.EIO) }
+        guard let stream = fdopendir(copy) else { Darwin.close(copy); throw POSIXError(.EIO) }
+        defer { closedir(stream) }
+        while true {
+            try Task.checkCancellation()
+            errno = 0
+            guard let entry = readdir(stream) else {
+                if errno != 0 { throw POSIXError(.EIO) }
+                return
+            }
+            try withUnsafePointer(to: &entry.pointee.d_name) { tuple in
+                try tuple.withMemoryRebound(to: CChar.self, capacity: Int(entry.pointee.d_namlen) + 1) { name in
+                    if strcmp(name, ".") == 0 || strcmp(name, "..") == 0 { return }
+                    var status = stat()
+                    guard fstatat(directory, name, &status, AT_SYMLINK_NOFOLLOW) == 0 else { throw POSIXError(.EIO) }
+                    let isDirectory = status.st_mode & S_IFMT == S_IFDIR
+                    if isDirectory {
+                        let child = openat(directory, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                        guard child >= 0 else { throw POSIXError(.EIO) }
+                        defer { Darwin.close(child) }
+                        try removeContents(child)
+                    }
+                    guard unlinkat(directory, name, isDirectory ? AT_REMOVEDIR : 0) == 0 else { throw POSIXError(.EIO) }
+                }
+            }
+        }
     }
 }
 

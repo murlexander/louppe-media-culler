@@ -750,6 +750,7 @@ final class ExportManager: ObservableObject {
         let operationAccesses = destinationFolderAccesses.map { $0.makeIndependentAccess() }
         let photosProgress = PhotosBatchProgressRecorder()
         photosOriginalProgress = 0
+        let journalDirectory = self.journalDirectory
         let photosSource = selected.first?.primaryFile.photosMedia
         let photosWorker: Task<ExportWorker.CopyResult, Never>?
         if let photosSource, mode == .copy, let cancelFlag,
@@ -760,7 +761,7 @@ final class ExportManager: ObservableObject {
             state = .working(mode: .copy, completedBytes: 0, totalBytes: Int64(selected.count))
             photosWorker = Task.detached(priority: .userInitiated) {
                 return await PhotosCopyWorker.copy(selected, sourceFolder: folder,
-                    destination: destination, binding: destinationBinding, cancelFlag: cancelFlag,
+                    destination: destination, binding: destinationBinding, journalDirectory: journalDirectory, cancelFlag: cancelFlag,
                     downloadProgress: { done, total, fraction in
                         photosProgress.update(PhotosBatchProgress(completed: done, total: total, downloadFraction: fraction))
                     }) { done, total in
@@ -770,7 +771,6 @@ final class ExportManager: ObservableObject {
             }
             photosCopyTask = photosWorker
         } else { photosWorker = nil }
-        let journalDirectory = self.journalDirectory
         let worker = Task.detached(priority: .userInitiated) {
             () -> WorkerResult in
             if let photosWorker { return .copy(await photosWorker.value) }

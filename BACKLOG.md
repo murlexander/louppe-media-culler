@@ -132,7 +132,6 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 ## Agent work
 
 - [ ] **Photos original video:** reproduce and fix portrait originals losing their dimensions and rendering through a landscape crop.
-- [ ] **Photos recovery staging:** preserve journal-referenced original leases through batch removal and abandoned-cache pruning.
 - [ ] **Grid follow after filtering:** reproduce and fix a filtered-out pointer rating leaving the next keyboard navigation offscreen.
 - [ ] **Opening modifier selection:** align initial Shift-click and Command-click anchors with the Ready selection model.
 - [ ] **Large XMP jobs:** reduce repeated fresh family-census work in large single folders while preserving mutation/recovery ownership checks.

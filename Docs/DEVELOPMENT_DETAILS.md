@@ -178,7 +178,15 @@ for popover dismissal before presenting the chooser.
 Previously active cache media is
 retired only after the outgoing decision barrier; abandoned marked UUID cache
 folders are removed at the next preparation. At most the active and preparing
-batch are retained during normal operation; failed filesystem cleanup remains
+batch are retained during normal operation. Retirement and abandoned-cache pruning
+retain any marked batch referenced by an active operation plan, including a
+Copy interrupted before its staged checkpoint or lease-preservation callback.
+Cleanup takes the nonblocking Operations lock, validates every active plan before
+any deletion, and holds that lock through synchronous descriptor-relative,
+no-follow removal. Unknown/unreadable journals or lock contention defer the whole
+pass. A later ordinary cleanup reclaims batches after journal retirement.
+Markers identify disposable cache folders; they do not authenticate forged
+folders or exclude arbitrary same-user namespace changes. Failed cleanup remains
 best effort. Permissions require `NSPhotoLibraryUsageDescription` and the Photos entitlement
 in every bundle, including the hardened-runtime Developer ID product. Direct
 builds use `Packaging/Louppe.direct.entitlements`; Store builds retain their sandbox and
