@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Keep Photos video originals available to play when their metadata scan times out.
+
 - Let Copy work with access to the selected subfolder when its volume root is restricted.
 
 - Finish interrupted Move recovery when an empty former destination folder has been removed.

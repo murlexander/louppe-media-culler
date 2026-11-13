@@ -265,7 +265,7 @@ actor PhotosMediaSession {
                 captureDate: item.captureDate, captureDateEvidence: item.captureDateEvidence,
                 cameraModel: nil, lensModel: nil, mediaKind: item.mediaKind, duration: video?.duration ?? item.duration,
                 videoDimensions: video?.dimensions, videoCodec: video?.codec, videoFrameRate: video?.frameRate,
-                videoIsPlayable: video?.isPlayable ?? item.isVideo, fileSize: bytes, scannedIdentity: identity,
+                videoIsPlayable: video.flatMap { $0.extractionSucceeded ? $0.isPlayable : nil } ?? item.isVideo, fileSize: bytes, scannedIdentity: identity,
                 rating: metadata.rating, ratedAt: metadata.ratedAt, starRating: metadata.starRating,
                 starsChangedAt: metadata.starsChangedAt, colorLabel: metadata.colorLabel, colorChangedAt: metadata.colorChangedAt)
             originalBytes += bytes

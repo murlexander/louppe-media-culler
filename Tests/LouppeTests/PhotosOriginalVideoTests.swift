@@ -6,6 +6,22 @@ import XCTest
 
 @MainActor
 final class PhotosOriginalVideoTests: XCTestCase {
+    func testMetadataTimeoutDoesNotDisablePlayablePhotosOriginal() async throws {
+        let fixture = try PhotosVideoFixture(scanVideo: { _ in
+            VideoScanInfo(duration: nil, dimensions: nil, codec: nil, frameRate: nil,
+                          isPlayable: false, extractionSucceeded: false)
+        })
+        defer { fixture.remove() }
+        let item = try XCTUnwrap(fixture.batch().reviewItems?.first)
+        let lease = try await fixture.session.original(for: item)
+        XCTAssertTrue(lease.item.videoIsPlayable, "Unknown scan result must allow the normal player preparation")
+        let actual = AVURLAsset(url: lease.item.primaryURL)
+        let playable = try await actual.load(.isPlayable)
+        XCTAssertTrue(playable, "Disposable original is playable despite the injected scan timeout")
+        await lease.close()
+        await fixture.session.stopAndDrainOriginalRequests()
+    }
+
     func testMultipleDrainWaitersIncludingCancelledRetirementResumeAfterWorkerExit() async throws {
         let gate = PhotosVideoScanGate()
         let fixture = try PhotosVideoFixture(scanVideo: gate.scan)

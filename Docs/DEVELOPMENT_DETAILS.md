@@ -125,7 +125,9 @@ the outgoing review; closed batches cancel admitted media work.
 Original detail/RAW rendering and original video playback acquire a private
 file lease. Video originals reuse `VideoMetadataExtractor` on a detached worker
 in the serial original lane, propagating oriented dimensions, codec, frame rate,
-duration and playability to Gallery. The existing 15-second scan bridge never
+duration and playability to Gallery. Failed metadata extraction leaves playback
+preparation available; a successful scan can still report an unplayable video.
+The existing 15-second scan bridge never
 blocks the media actor or main actor; cancelled scans drain before file/lane
 release, and cannot publish to a retired review. Membership still reads no
 original or AVAsset. Batch retirement awaits original-request completion before
