@@ -161,6 +161,11 @@ final class ImagePipeline: @unchecked Sendable {
         return queue
     }()
     static let wholeImageThumbnailExtensions: Set<String> = ["jxl"]
+    /// The same rule for the other consumers: without an embedded preview or
+    /// a reduced-size decode, a histogram or 100% recipe also costs the whole image.
+    static func decodesWholeImage(_ item: PhotoItem) -> Bool {
+        item.mediaKind == .photo && wholeImageThumbnailExtensions.contains(item.primaryURL.pathExtension.lowercased())
+    }
     static let thumbnailLaneWidth = min(4, max(2, ProcessInfo.processInfo.activeProcessorCount / 2))
     // Guarded by inFlightLock.
     private var visibleFullDecodeCount = 0
@@ -265,6 +270,9 @@ final class ImagePipeline: @unchecked Sendable {
     #if LOUPPE_TEST_SEAMS
     // Configure before starting workers; pauses after lane ownership transfers.
     var beforePrefetchHandoffSubmissionForTesting: (@Sendable () -> Void)?
+    // Guarded by inFlightLock. Source files decoded after every cache missed.
+    private var thumbnailSourceDecodes = 0
+    private var fullSourceDecodes = 0
     #endif
     private static let lastDiskPruneDefaultsKey =
         "LouppeThumbnailCacheLastPrune"
@@ -440,6 +448,34 @@ final class ImagePipeline: @unchecked Sendable {
             decoder: decoder,
             sourceAccess: sourceAccess
         )
+    }
+
+    /// The cached Fast-mode Fit preview, or the result of one already in
+    /// flight; never starts a decode. The joined waiter is cancellable like
+    /// any other, but neither promotes the work nor counts as foreground demand.
+    func fullImageIfCachedOrInFlight(for item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> NSImage? {
+        guard !item.isAudio && !item.isText, !Task.isCancelled else { return nil }
+        let key = Self.fullCacheKey(for: item, mode: .fast)
+        if let cached = fullCache.object(forKey: key as NSString) { return cached }
+        let request = DecodeRequest(kind: .full, key: key)
+        let waiterID = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                inFlightLock.lock()
+                let cancelled = Task.isCancelled
+                let cached = cancelled ? nil : fullCache.object(forKey: key as NSString)
+                guard !cancelled, cached == nil, let pending = inFlight[request] else {
+                    inFlightLock.unlock()
+                    continuation.resume(returning: cached)
+                    return
+                }
+                pending.readAccess.retainIfNeeded(sourceAccess)
+                pending.waiters[waiterID] = continuation
+                inFlightLock.unlock()
+            }
+        } onCancel: { [weak self] in
+            self?.cancelWaiter(waiterID, for: request)
+        }
     }
 
     private func fullImage(
@@ -887,6 +923,11 @@ final class ImagePipeline: @unchecked Sendable {
         let request = DecodeRequest(kind: full ? .full : .thumbnail, key: key)
         return inFlightLock.withLock { inFlight[request]?.waiters.count ?? 0 }
     }
+
+    /// Source decodes started so far; memory and disk-cache hits do not count.
+    var sourceDecodesForTesting: (thumbnail: Int, full: Int) {
+        inFlightLock.withLock { (thumbnailSourceDecodes, fullSourceDecodes) }
+    }
     #endif
 
     // MARK: - Decoding
@@ -927,6 +968,9 @@ final class ImagePipeline: @unchecked Sendable {
             return DecodedImage(cgImage, diskURL: diskURL)
         }
 
+        #if LOUPPE_TEST_SEAMS
+        inFlightLock.withLock { thumbnailSourceDecodes += 1 }
+        #endif
         let cgImage = revision.read {
             if let testingDecoder { return testingDecoder(revision.url, Self.thumbPixelSize) }
             return item.isVideo
@@ -961,6 +1005,9 @@ final class ImagePipeline: @unchecked Sendable {
     }
 
     private func loadFullSync(revision: MediaSourceRevision, key: String, rendersRAW: Bool, sizing: FitDecodeSizing, decoder: AppleRawDecoder) -> DecodedImage? {
+        #if LOUPPE_TEST_SEAMS
+        inFlightLock.withLock { fullSourceDecodes += 1 }
+        #endif
         guard let cgImage = revision.read({
             if let testingDecoder { return testingDecoder(revision.url, Self.fullPixelSize) }
             return rendersRAW

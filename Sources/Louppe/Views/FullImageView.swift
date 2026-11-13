@@ -5,6 +5,18 @@ import AppKit
 struct FullImageView: View {
     @Environment(\.mediaReadAccess) private var mediaReadAccess
     private static let navigationDebounceNanoseconds: UInt64 = 40_000_000
+    /// A preview change this long after the previous one is not key repeat.
+    private static let isolatedStepInterval: Duration = .milliseconds(150)
+    private static var fitRequestTiming: (debounceNanoseconds: UInt64, isolatedStepInterval: Duration) {
+        #if LOUPPE_TEST_SEAMS
+        if let fitRequestTimingForTesting { return fitRequestTimingForTesting }
+        #endif
+        return (navigationDebounceNanoseconds, isolatedStepInterval)
+    }
+    #if LOUPPE_TEST_SEAMS
+    /// Stretched by tests so a busy machine cannot blur immediate and debounced requests.
+    static var fitRequestTimingForTesting: (debounceNanoseconds: UInt64, isolatedStepInterval: Duration)?
+    #endif
     @Environment(\.openWindow) private var openWindow
     @AppStorage(RawDisplayMode.preferenceKey) private var rawDisplayMode = RawDisplayMode.fast
     @AppStorage(AppleRawDecoder.preferenceKey) private var rawDecoder = AppleRawDecoder.appleDefault
@@ -48,6 +60,13 @@ struct FullImageView: View {
     @State private var clippingDisplayMode = RawDisplayMode.fast
     @State private var clippingDecoder = AppleRawDecoder.appleDefault
     @State private var clippingRevision: PhotoContentRevision
+    @State private var previewChanges = PreviewChangeClock()
+
+    /// When the preview task last restarted. A reference, so recording it
+    /// never invalidates the view.
+    private final class PreviewChangeClock {
+        var last: ContinuousClock.Instant?
+    }
 
     private struct ClippingLoadID: Hashable {
         let contentRevision: PhotoContentRevision
@@ -365,13 +384,18 @@ struct FullImageView: View {
                 : nil
             failedToLoad = false
             imageRevision = requestedRevision
+            let timing = Self.fitRequestTiming
+            let now = ContinuousClock.now
+            let isolatedStep = previewChanges.last.map { now - $0 >= timing.isolatedStepInterval } ?? true
+            previewChanges.last = now
             guard requestedItem.isSupported, cachedFull == nil else { return }
 
             // Key repeat can create and cancel several view tasks in a few
-            // milliseconds. Let stale tasks disappear before they add work.
-            try? await Task.sleep(
-                nanoseconds: Self.navigationDebounceNanoseconds
-            )
+            // milliseconds. Let stale tasks disappear before they add work;
+            // an isolated step has none to wait for.
+            if !isolatedStep {
+                try? await Task.sleep(nanoseconds: timing.debounceNanoseconds)
+            }
             guard !Task.isCancelled, rawDecoder == decoder, loadedDisplayMode == mode, imageRevision == requestedRevision,
                   loadedSizing == requestedSizing, sizingIsCurrent(requestedSizing)
             else { return }

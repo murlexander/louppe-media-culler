@@ -260,7 +260,8 @@ private struct HistogramAnalysisWaiter {
 
 /// Bounded, coalesced histogram work. At most two 1,024-pixel analysis
 /// previews are decoded at once; the cache retains tiny value results, never
-/// decoded bitmaps.
+/// decoded bitmaps. Whole-image formats measure the Fit preview instead, so
+/// Info does not decode a photo that Gallery is already decoding.
 final class HistogramPipeline: @unchecked Sendable {
     enum RequestPurpose: Sendable {
         case info, backgroundQuality
@@ -302,6 +303,7 @@ final class HistogramPipeline: @unchecked Sendable {
     }
 
     private let foregroundWork: ForegroundWorkCoordinator
+    private let imagePipeline: ImagePipeline
     private let queue: OperationQueue
     private let decoder: Decoder
     private let lock = NSLock()
@@ -310,6 +312,9 @@ final class HistogramPipeline: @unchecked Sendable {
     private var inFlight: [String: PendingAnalysis] = [:]
     /// Retired requests cannot publish/cache or be confused with a renewed key.
     private var retiredWaiters: [UUID: [CheckedContinuation<HistogramAnalysis?, Never>]] = [:]
+    #if LOUPPE_TEST_SEAMS
+    private var sourceDecodes = 0
+    #endif
 
     /// Isolated workers/queues make resource and cancellation contracts testable;
     /// production uses the shared instance with the same two-operation ceiling.
@@ -319,9 +324,11 @@ final class HistogramPipeline: @unchecked Sendable {
                 .flatMap(ClippingWarningProcessor.analyze)
         },
         operationQueue: OperationQueue? = nil,
-        foregroundWork: ForegroundWorkCoordinator = .shared
+        foregroundWork: ForegroundWorkCoordinator = .shared,
+        imagePipeline: ImagePipeline = .shared
     ) {
         self.foregroundWork = foregroundWork
+        self.imagePipeline = imagePipeline
         self.decoder = decoder
         let queue = operationQueue ?? OperationQueue()
         queue.name = "louppe.histogram"
@@ -332,7 +339,14 @@ final class HistogramPipeline: @unchecked Sendable {
 
     func analysis(for item: PhotoItem, purpose: RequestPurpose = .info, sourceAccess: MediaReadAccess? = nil) async -> HistogramAnalysis? {
         guard item.mediaKind == .photo, item.isSupported else { return nil }
-        let key = ImagePipeline.cacheKey(for: item) + "|histogram-v1-srgb-1024"
+        let key = Self.cacheKey(for: item)
+        let measuresFit = ImagePipeline.decodesWholeImage(item)
+        if measuresFit {
+            let cached = lock.withLock { cache[key] }
+            // Let a Fit that is already decoding finish; the worker then
+            // finds it cached. Joining starts none, so Info in Grid decodes.
+            if cached == nil { _ = await imagePipeline.fullImageIfCachedOrInFlight(for: item, sourceAccess: sourceAccess) }
+        }
         let revision = MediaSourceRevision(item)
         let requestID = UUID()
         return await withTaskCancellationHandler {
@@ -379,7 +393,9 @@ final class HistogramPipeline: @unchecked Sendable {
                     else { return }
                     defer { readAccess.finish() }
                     let result = autoreleasepool {
-                        revision.read { self.decoder(revision.url) }
+                        measuresFit
+                            ? self.fitAnalysis(for: item, revision: revision)
+                            : self.decodedAnalysis(revision) { self.decoder($0) }
                     }
                     self.finish(key: key, operation: operation, result: result)
                 }
@@ -421,11 +437,60 @@ final class HistogramPipeline: @unchecked Sendable {
         if admitted { queue.addOperation(operation) }
     }
 
+    /// Whole-image formats moved to v2 when their input became the Fit preview.
+    private static func cacheKey(for item: PhotoItem) -> String {
+        ImagePipeline.cacheKey(for: item)
+            + (ImagePipeline.decodesWholeImage(item) ? "|histogram-v2-fit-srgb-1024" : "|histogram-v1-srgb-1024")
+    }
+
+    /// The cached Fit preview, else the same bounded decode on this lane,
+    /// uncached. Both pass through `analysisPreview`, so Info and the
+    /// background walk count identical samples whichever one ran.
+    private func fitAnalysis(for item: PhotoItem, revision: MediaSourceRevision) -> HistogramAnalysis? {
+        // Cached pixels were revision-checked by the decode that produced them.
+        if let fit = imagePipeline.cachedFullImage(for: item)?.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+            return Self.analysisPreview(ofFit: fit).flatMap(ClippingWarningProcessor.analyze)
+        }
+        return decodedAnalysis(revision) { url in
+            ImagePipeline.decodeFitImage(url: url, sizing: .bounded)
+                .flatMap(Self.analysisPreview(ofFit:))
+                .flatMap(ClippingWarningProcessor.analyze)
+        }
+    }
+
+    private func decodedAnalysis(_ revision: MediaSourceRevision, _ decode: (URL) -> HistogramAnalysis?) -> HistogramAnalysis? {
+        #if LOUPPE_TEST_SEAMS
+        lock.withLock { sourceDecodes += 1 }
+        #endif
+        return revision.read { decode(revision.url) }
+    }
+
+    /// The one 4,096 → 1,024 reduction for histograms measured from a Fit
+    /// preview. A preview within the analysis size is measured as it is.
+    static func analysisPreview(ofFit image: CGImage) -> CGImage? {
+        let longEdge = CGFloat(max(image.width, image.height))
+        guard longEdge > analysisPixelSize else { return image }
+        let scale = analysisPixelSize / longEdge
+        let width = max(1, Int((CGFloat(image.width) * scale).rounded()))
+        let height = max(1, Int((CGFloat(image.height) * scale).rounded()))
+        guard let context = CGContext(
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        context.interpolationQuality = .high
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()
+    }
+
     #if LOUPPE_TEST_SEAMS
     func waiterCountForTesting(for item: PhotoItem) -> Int {
-        let key = ImagePipeline.cacheKey(for: item) + "|histogram-v1-srgb-1024"
+        let key = Self.cacheKey(for: item)
         return lock.withLock { inFlight[key]?.waiters.count ?? 0 }
     }
+
+    /// Source decodes this pipeline started for its own analysis previews.
+    var sourceDecodesForTesting: Int { lock.withLock { sourceDecodes } }
     #endif
 
     private func finish(key: String, operation: BlockOperation, result: HistogramAnalysis?) {

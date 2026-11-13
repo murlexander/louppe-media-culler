@@ -145,9 +145,13 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     // Guarded by lock. Unpromoted recipe prefetch waits for background
     // admission and holds at most one of the two tile lanes.
     private var prefetchLane = PrefetchLane<String>()
+    // Guarded by lock. Set by the first visible recipe request for a
+    // whole-image format, which is how 100% asks for one.
+    private var wholeImageZoomUsed = false
     #if LOUPPE_TEST_SEAMS
     // Configure before starting workers; pauses after lane ownership transfers.
     var beforePrefetchHandoffSubmissionForTesting: (@Sendable () -> Void)?
+    private var recipeBuilds = 0
     #endif
     private let foregroundWork: ForegroundWorkCoordinator
     /// Header reads for the Fit readout: tiny, serial, never on a tile lane.
@@ -180,6 +184,7 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     }
 
     func source(for item: PhotoItem, decoder: AppleRawDecoder = .appleDefault, sourceAccess: MediaReadAccess? = nil) async -> ZoomImageSource? {
+        if ImagePipeline.decodesWholeImage(item) { withStateLock { wholeImageZoomUsed = true } }
         let result = await source(
             for: item,
             decoder: decoder,
@@ -252,6 +257,9 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
                 operation.addExecutionBlock { [weak self, weak operation] in
                     guard let self, let operation, !operation.isCancelled else { return }
                     defer { readAccess.finish() }
+                    #if LOUPPE_TEST_SEAMS
+                    self.withStateLock { self.recipeBuilds += 1 }
+                    #endif
                     let source = autoreleasepool {
                         revision.read {
                             if let testingSource = self.testingSource {
@@ -314,8 +322,11 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     /// Fit dwell: prepare the current photo's recipe as neighbour work, so
     /// a later zoom finds it without paying for every photo passed by. The
     /// dwell replaces admission; the recipe still holds only the neighbour lane.
+    /// A whole-image recipe decodes and retains the photo, so the dwell builds
+    /// one only after 100% has shown such a photo in this process.
     func warmSource(for item: PhotoItem, decoder: AppleRawDecoder = .appleDefault, sourceAccess: MediaReadAccess? = nil) async {
         guard item.mediaKind == .photo, item.isSupported else { return }
+        if ImagePipeline.decodesWholeImage(item), !withStateLock({ wholeImageZoomUsed }) { return }
         _ = await source(for: item, decoder: decoder, qualityOfService: .utility, queuePriority: .low,
                          sourceAccess: sourceAccess, waitsForAdmission: false)
     }
@@ -447,6 +458,11 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     func sourceIsCachedForTesting(for item: PhotoItem, decoder: AppleRawDecoder = .appleDefault) -> Bool {
         withStateLock { sourceCache[Self.sourceKey(for: item, decoder: decoder)] != nil }
     }
+
+    /// 100% recipes this pipeline started building; cache hits do not count.
+    var recipeBuildsForTesting: Int { withStateLock { recipeBuilds } }
+
+    func forgetWholeImageZoomForTesting() { withStateLock { wholeImageZoomUsed = false } }
 
     func waitForSourceWorkForTesting() async {
         await withCheckedContinuation { continuation in
