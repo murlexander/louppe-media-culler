@@ -584,7 +584,7 @@ precedence over remembered scope/position.
   folder changes and Close cancel its admitted waiters as well as its debounce;
   navigation and zoom changes retire them once the next window has joined. Grid does not warm full previews; high-resolution
   sources warm in actual-size Gallery and for the current Fit photo after a
-  dwell. Executing workers retain their lanes; unpromoted neighbour work holds
+  dwell (JPEG XL only once 100% has been used in this process). Executing workers retain their lanes; unpromoted neighbour work holds
   at most one lane per pipeline.
   Matching-revision thumbnail pixels survive shared-cache eviction while retained
   by a cell. Optional disk writes coalesce keys and retain at most 8 MiB/32 entries,
@@ -595,7 +595,7 @@ precedence over remembered scope/position.
   Warm full-image hits publish ready immediately. Its slot stays fixed and no
   progress view is instantiated at idle; source/tile loading remains separate.
 - Quality checks use utility JPEG operations; Info joins/promotes shared numeric
-  work. Two scheduler measurements retire before restarting; background native
+  work. JPEG XL histograms measure the cached or decoding Fit preview. Two scheduler measurements retire before restarting; background native
   cancellation waits for executing histogram work to exit. Low Power/thermal
   backoff paces remaining batches; only pending foreground interest wakes rest.
   Explicit Pause survives threshold edits, file work and replacement until Resume.

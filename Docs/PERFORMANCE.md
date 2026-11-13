@@ -128,7 +128,9 @@ persistence reads and final identity checks.
   work. Cancellation removes only that waiter; last-waiter retirement cancels
   queued work and rejects completion by operation identity. Executing blocks
   keep their lane until exit. Gallery publishes full pixels independently of
-  its thumbnail stand-in, then retires an unneeded stand-in waiter.
+  its thumbnail stand-in, then retires an unneeded stand-in waiter. Its decode
+  count, fitted detail and fitted scale publish on `GalleryActivity` (toolbar
+  spinner, zoom pill), not on the store.
 - `HistogramPipeline` runs two 1,024-pixel photo decodes, coalesces requests,
   and retains 256 numeric results. Background operations use utility/low priority;
   Info uses user-initiated/high priority and promotes shared work without splitting
@@ -148,12 +150,15 @@ persistence reads and final identity checks.
   exit. Completion matches operation identity before caching or resuming live
   waiters, so retired work cannot consume a renewed same-key request.
 - Quality cues work with Info closed. One session scheduler prioritizes current/
-  selected/rendered/nearby photos, requests at most two items per batch, then
+  selected/rendered/nearby photos, requests at most two items per batch (a JPEG
+  XL photo is measured alone), then
   walks the remaining session. It retains only revision/source/dimensions/sample
   and clipping counts per item; bins/bitmaps stay in the bounded workers above.
   Tile interest is capped at 64 IDs. Selection priority has a retained frontier;
-  it does not repeatedly scan completed selections. Private evidence/checking state
-  sends one admission and one result publication per pair. Pause, file work, pairing, replacement and
+  it does not repeatedly scan completed selections. Evidence publishes once per
+  batch on `QualityCuePublication` (tile icons, Info cue rows, Filter coverage);
+  checking state publishes nothing. The store publishes only when `applyFilter`
+  changes a selected cue filter's visibility. Pause, file work, pairing, replacement and
   Close cancel pending work; revision/generation guards reject stale completion.
   RAW measurement uses Apple Default independently of presentation decoder, with
   explicit preview fallback. Analyzer/color/resolution configuration is included
@@ -260,7 +265,10 @@ a provisional `OpeningSessionState` before discovery. No additional disk cache,
 photo copies, saved badges or write authority are added. The toolbar status uses
 the same small activity indicator as Ready, labeled Checking folder, without a
 count. Missing, invalid
-or empty caches use the fresh-inventory preview above. Cached observations may
+or empty caches use the fresh-inventory preview above. Without a pinned cached
+preview, a folder of at most 3,000 physical files whose primaries all hit the
+metadata index skips that preview and its barrier (`previewSkipped` signpost event): its Ready follows
+within a few hundred milliseconds, so a second mount costs more than it shows. Cached observations may
 omit uncached files and include removed files until Ready. The full scan,
 restoration and final barriers still run; navigation handoff rejects changed
 physical revisions. One cached projection remains stable until Ready rather
@@ -282,7 +290,7 @@ Opening identity passes (`SessionOpeningWorker`):
 | Pass | When | Covers |
 | --- | --- | --- |
 | Discovery capture | always | baseline identity of every file and folder |
-| Preview barrier | only when a preview mounts | files, folders and the opened folder before read-only badges and pixels |
+| Preview barrier | only when a fresh-inventory preview mounts | files, folders and the opened folder before read-only badges and pixels |
 | Metadata miss bracket | per cache miss | identity after the admission wait and after the read: bytes read belong to the scanned file |
 | Cache hit | — | no I/O; the entry is keyed by the discovery identity |
 | Final barrier | always, after metadata, persistence read, restoration and derived preparation | files, folders and the opened folder before save/mutation authority |
@@ -407,6 +415,7 @@ single-decision check measured 0.3 ms on 12 October 2026. Refresh
 only affected sort/filter projections, preserving the current photo. Reuse the
 existing save debounce/deadline. Fingerprint-only checkpoints do not advance the
 user-change generation, so already saved decisions continue to read Saved.
+Fingerprint progress publishes only while recovery records exist.
 
 ## Shared review-metadata storage
 
@@ -436,6 +445,9 @@ until recreation (e.g. Grid and back). `BrowserRow` therefore observes the
 store directly through `@ObservedObject`; do not restore a plain `ForEach`
 subtree. Keep `.id(item.id)` for follow-scroll and `ThumbnailView` `@State`
 reset when Clean Up/undo changes the photo at an index.
+`PublicationTurnTests` counts store publication turns per action
+(`publicationTurnsForTesting`) and tile bodies (`BrowserRow`/`GridCell.didEvaluateBody`):
+a Gallery step is one turn and one body per realized row.
 
 Each realized `GridCell` likewise observes `SessionStore` and reads current
 `PhotoItem` in `body`; the outer grid keeps `.id(item.id)`. Pointer, keyboard,
@@ -461,14 +473,20 @@ text layout; no text cache or remote fetch.
 metadata, quality checks, fingerprints, optional disk writes and trailing autosave.
 Its single timer holds at most 128 admissions; cancellation retires each waiter.
 A 180 ms quiet window yields to navigation, with a fixed 750 ms per-wait deadline
-for eventual progress. Overflow bypasses the hint while existing queues retain
+for eventual progress. Folder opening's metadata stage keeps two workers outside
+admission (`admissionFloor`), so a cold scan advances while the user browses; the
+other workers, and every worker of pinned-folder preparation, wait before claiming
+a miss. Cache hits never wait. Overflow bypasses the hint while existing queues retain
 resource bounds. Required save deadlines, transitions and Quit bypass admission.
 Executing native decodes keep their lanes/access through exit and cannot be
 preempted. This is pacing, not a hard CPU/storage cap.
 
 `ArchiveMetadataIndex` adds rebuildable scan observations to existing v6 thumbnail
 reuse. Exact percent-encoded paths, fresh physical identities/revisions, extractor
-schema, time zone and OS interpretation context own hits. On UUID volumes, the
+schema, time zone and OS interpretation context own hits. The context uses the
+numeric OS version and build (`kern.osversion`), not the localized version
+string; a snapshot written under this process's old localized string migrates
+once. On UUID volumes, the
 UUID replaces the device number (`st_dev`) and mount root in the folder key and
 entry match. A remount with a new device number or at `/Volumes/<name> 1` still
 hits; paths are rebased from the snapshot's recorded folder path. UUID-less
@@ -484,7 +502,7 @@ Snapshots cap at 250k entries/32 MiB (about 50–60 B per entry). A valid v1 JSO
 snapshot is read once when v2 is missing, written as v2 without EXIF reads, then
 removed. v1 is found under its original key (the current mount's path and device).
 Uncached excess files still complete normally.
-Maintenance runs only after a snapshot write: unpinned snapshots keep 32 folders,
+Maintenance runs only after a snapshot write: unpinned snapshots keep 256 folders,
 oldest first; all snapshots share 256 MiB, evicting unpinned first and the oldest
 pin only when pins alone exceed it. `PinnedFoldersStore` publishes the pinned set
 (in memory, plus an async `pinned-folders` list for later launches); opening adds
@@ -497,7 +515,9 @@ detached utility task at a time, holding its own folder lease. At most one more
 waits; a newer opening replaces it and releases its lease and inventory. It
 compares, encodes and writes only a changed snapshot. Its entries carry the
 identities the final barrier verified, so a file replaced later never hits them
-and is reread on the next opening; no source barrier follows. Close never waits
+and is reread on the next opening; no source barrier follows. An unchanged
+commit only refreshes the snapshot's date when it is older than 24 hours (no
+encode, no maintenance), so folders in use age out last. Close never waits
 for it; Quit cancels the running commit and drops the waiting one. Cache failure
 cannot fail source opening. Warm unchanged snapshots skip encoding and I/O.
 
@@ -578,11 +598,11 @@ Quit take a finite checkpoint independently of decision durability. See
 | Thumbnails | 1,200 objects; 256 MiB decoded |
 | Full previews | 8 objects; 384 MiB decoded |
 | Clipping previews | 2 objects; 128 MiB decoded |
-| Histograms | 256 numeric results; temporary 1,024-pixel previews |
+| Histograms | 256 numeric results; temporary 1,024-pixel previews. JPEG XL measures the cached or decoding Fit preview, else a temporary uncached 4,096-pixel decode, reduced to 1,024 |
 | RAW histograms | 128 numeric results; temporary extended-linear RGBA-float bitmap near 1,024 pixels on longest side |
-| Actual-size tiles | 128 MiB total; 1,024 × 1,024 source-pixel tiles, normal and clipping variants; lazy recipes retain no whole bitmap |
+| Actual-size tiles | 128 MiB total; 1,024 × 1,024 source-pixel tiles, normal and clipping variants; lazy recipes retain no whole bitmap (JPEG XL recipes do) |
 | Disk thumbnails | 512 MiB; 90-day age; utility pass at most daily after launch delay, plus live passes after 64 MiB of writes before the total is known, then when known total + writes exceed 512 MiB; evicts to 448 MiB; one pass at a time; undeleted files stay counted and fail the pass; live retries after failed passes wait 1, 2, 4, then 8 intervals of writes until one succeeds; test hosts use a disposable root and prune only with injected limits |
-| Archive metadata snapshots | 250k entries/32 MiB each; 32 unpinned folders; 256 MiB total, pins evicted last |
+| Archive metadata snapshots | 250k entries/32 MiB each; 256 unpinned folders; 256 MiB total, pins evicted last |
 
 Decoded cost is `bytesPerRow × height`. Return thumbnails before JPEG
 encoding/writing. Preserve the undersized embedded-preview fallback in
@@ -602,9 +622,9 @@ fresh source decode; replacements never inherit old pixels, even for slow RAW.
 | Deferred work | Dwell |
 |---|---|
 | Neighbour prefetch | 60 ms debounce |
-| Full/clipping view decode | 40 ms; memory hits remain immediate |
-| 100% recipe for the current Fit photo | 500 ms after the full preview mounts, then admitted as neighbour work |
-| Secondary Info EXIF/histogram | 80 ms; EXIF reads use one lane, and a retired waiter never starts a read |
+| Full/clipping view decode | 40 ms; memory hits remain immediate. The full preview is requested at once when the previous preview change was 150 ms or more ago; clipping and the thumbnail stand-in keep 40 ms |
+| 100% recipe for the current Fit photo | 500 ms after the full preview mounts, then admitted as neighbour work; JPEG XL only after 100% has shown a JPEG XL photo in this process |
+| Secondary Info EXIF/histogram | 80 ms; EXIF reads use one lane, and a retired waiter never starts a read; a JPEG XL histogram waits for a Fit that is decoding and never starts one |
 | RAW histogram in Info | 700 ms; separate utility lane; background quality requests have no dwell |
 
 Fit previews (Fast mode, not RAW renders) are sized per format; only formats
@@ -627,12 +647,15 @@ The Fit zoom readout and pinch hand-off read oriented pixel dimensions from
 ImageIO headers (one serial header lane, revision-checked, 1,024 cached sizes).
 NEF and RAF headers matched `CIRAWFilter` extents, including rotated files;
 other RAW formats still build the recipe. A JPEG XL recipe decodes and holds the
-whole image, so Fit builds one only after the dwell above.
+whole image, so Fit builds one only after the dwell above, and only once 100%
+has been used on a JPEG XL photo; the first such zoom builds it (about 0.2 s,
+once per process).
 
 Neighbour prefetch follows the direction of travel ([+1, +2, +3, −1], mirrored
 after stepping back) and decodes one photo at a time: first the current photo
 (joining or starting its preview before the view's 40 ms debounce ends, so no
-neighbour races ahead of it), then the nearest uncached neighbour, which waits
+neighbour races ahead of it; on an isolated step the view's request comes first
+and the window joins it), then the nearest uncached neighbour, which waits
 only for visible full-preview decodes (750 ms escape), then the rest after
 shared background admission. Unpromoted neighbour work holds at most one of
 the two full-decode lanes and one of the two 100% lanes; further admitted work
