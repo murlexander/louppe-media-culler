@@ -28,6 +28,7 @@ struct CompactToolbarPopover<Content: View, FooterLeading: View, FooterActions: 
         VStack(alignment: .leading, spacing: 12) {
             Text(verbatim: title)
                 .font(.headline)
+                .accessibilityAddTraits(.isHeader)
             content
             HStack {
                 footerLeading

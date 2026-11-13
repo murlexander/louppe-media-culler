@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Stack dialog actions and warning remedies when long labels need more room, preserving keyboard actions during resize.
+- Use neutral thumbnail selection in inactive windows and expose Sort and Filter titles as VoiceOver headings.
 - Refuse redirected source and destination paths during Copy and Organize.
 - Keep interrupted Move recovery pending until restored file locations are safely saved to disk.
 - Show audio analysis as unavailable for files with alternate audio tracks, instead of presenting measurements from the wrong track.

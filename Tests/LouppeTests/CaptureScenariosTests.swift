@@ -24,6 +24,12 @@ final class CaptureScenariosTests: XCTestCase {
 
     // --list reads these literal name/description lines without compiling Swift.
     private static let registry: [Scenario] = [
+        Scenario(name: "design-actions-compact", description: "Shared warning and sheet actions with long Portuguese labels in a narrow layout.") { fixture in
+            fixture.adaptiveActions(width: 400)
+        },
+        Scenario(name: "design-actions-wide", description: "The same warning and sheet actions with room for their horizontal layout.") { fixture in
+            fixture.adaptiveActions(width: 900)
+        },
         Scenario(name: "session-grid-ready", description: "Ready Grid session with toolbar, generated photos and fixture video.") { fixture in
             fixture.ready(mode: .grid)
             return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
@@ -406,6 +412,30 @@ final class CaptureScenariosTests: XCTestCase {
 
     @MainActor
     private final class Fixture {
+        func adaptiveActions(width: CGFloat) -> Surface {
+            func text(_ key: String) -> String { L10n.render(.init(stringLiteral: key), language: "pt") }
+            let view = VStack(spacing: 0) {
+                StatusBanner(systemImage: "exclamationmark.triangle.fill", emphasis: .warning) {
+                    Text(text("Some interrupted files are still untouched."))
+                } actions: {
+                    Button(text("Keep Files As They Are")) {}
+                    Button(text("Retry Recovery")) {}
+                }
+                SheetForm(title: text("Check Saved Decisions")) {
+                    Text(text("Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files."))
+                } actions: {
+                    SheetActions {
+                        Button(text("Keep Current Decisions")) {}
+                    } trailing: {
+                        SheetCancelButton(text("Done")) {}
+                        SheetPrimaryButton(text("Restore Selected Decisions"), runsOnReturn: false) {}
+                    }
+                }
+            }.localizedInterface(language: "pt")
+                .frame(width: width, height: 400)
+            return Surface(view: AnyView(view), size: CGSize(width: width, height: 400))
+        }
+
         let sheetPresentation = CaptureSheetPresentation()
         let root: URL
         let media: URL

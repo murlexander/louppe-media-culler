@@ -72,8 +72,9 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 ### 1.15 checks
 
-- [ ] **VoiceOver:** opening and Ready tile names, reading order and actions after scrolling; Undo after a partly failed Rename or Organize.
-- [ ] **macOS 14:** toolbar popovers, the Range/Year/Date chooser, sheet action rows and accessibility fallbacks.
+- [ ] **VoiceOver:** opening and Ready tile names, reading order and actions after scrolling; Undo after a partly failed Rename or Organize; Sort/Filter headings and focus while warning remedies stack.
+- [ ] **macOS 14:** toolbar popovers, the Range/Year/Date chooser, adaptive sheet actions, inactive thumbnail selection and accessibility fallbacks.
+- [ ] **Window activity and accessibility:** selection outlines while switching real windows with Increase Contrast and Differentiate Without Color, over bright and dark media.
 - [ ] **Cards and folder switching:** Rename/Organize, Undo and interrupted recovery on an exFAT card; quick Finder, Dock and pinned-folder switching in the signed sandboxed build.
 - [ ] **Displays and playback:** Retina/non-Retina display changes, resizing and full screen while photos decode; video full screen and Picture in Picture.
 

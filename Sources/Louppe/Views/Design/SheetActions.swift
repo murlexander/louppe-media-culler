@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The fixed action row of a `SheetForm`: optional leading items (Back, Undo,
+/// The fixed action area of a `SheetForm`: optional leading items (Back, Undo,
 /// Show in Finder, a planning indicator), then the trailing Cancel and primary
 /// buttons. Escape belongs to Cancel when the step shows one; otherwise it
 /// belongs to Back (Export review steps). Callers retain disabled gates and
@@ -18,10 +18,11 @@ struct SheetActions<Leading: View, Trailing: View>: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            leading()
-            Spacer()
-            trailing()
+        AdaptiveControlLayout(separatesGroups: true) {
+            HStack(spacing: 8) { leading() }
+            AdaptiveControlLayout {
+                trailing()
+            }
         }
     }
 }

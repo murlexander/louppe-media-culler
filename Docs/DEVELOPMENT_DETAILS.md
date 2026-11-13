@@ -1051,18 +1051,19 @@ or font token scale. `SourceConventionsTests` guards these conventions.
 | --- | --- |
 | [`Palette.swift`](../Sources/Louppe/Views/Design/Palette.swift) | App background, foreground accent and filled-control accent, including appearance/contrast variants. |
 | [`LouppeToggleStyle`](../Sources/Louppe/Views/Design/LouppeToggleStyle.swift) | Native automatic, checkbox or switch toggles with readable white ink. |
-| [`CompactToolbarPopover`](../Sources/Louppe/Views/Design/CompactToolbarPopover.swift) | Sort/Filter title, compact margins, width and fixed Done footer. |
+| [`CompactToolbarPopover`](../Sources/Louppe/Views/Design/CompactToolbarPopover.swift) | Sort/Filter heading, compact margins, width and fixed Done footer. |
 | [`louppePopoverSurface()`](../Sources/Louppe/Views/Design/PopoverSurface.swift) | Every popover's background (thick material filling the popover, arrow included) and accent; applied last, after padding and frame; 14-point margins. |
 | [`ValueMenu`](../Sources/Louppe/Views/Design/ValueMenu.swift) | Borderless current-value picker with primary ink and a 22-point minimum label target. |
 | [`LabeledReadout`](../Sources/Louppe/Views/Design/LabeledReadout.swift) | Caption/value pairs read as one accessibility element. |
 | [`MediaBadgeBackdrop`](../Sources/Louppe/Views/Design/MediaBadgeBackdrop.swift) | Dark media-overlay badge surfaces respecting contrast and transparency preferences. |
 | [`ReviewCollectionMetrics`](../Sources/Louppe/Views/Design/ReviewCollectionMetrics.swift) | Browser/Grid geometry shared by rendering, measurement and keyboard navigation. |
 | [`ReviewEmptyState` / `ReviewEmptyStateView`](../Sources/Louppe/Views/Design/ReviewEmptyState.swift) | Session, grouped-review, folder and filter empty states with their remedies. |
-| [`ReviewTileMetrics` / `reviewTileSelectionOutline`](../Sources/Louppe/Views/Design/ReviewTileSelection.swift) | Ready/opening media corners and current/selected outlines. |
-| [`SheetActions` / `SheetCancelButton` / `SheetPrimaryButton`](../Sources/Louppe/Views/Design/SheetActions.swift) | Leading actions, cancel-role Escape, and primary actions with explicit `runsOnReturn` and caller-owned gates. |
+| [`ReviewTileMetrics` / `reviewTileSelectionOutline`](../Sources/Louppe/Views/Design/ReviewTileSelection.swift) | Ready/opening media corners and current/selected outlines; active purple and the system's neutral inactive-selection color. |
+| [`AdaptiveControlLayout`](../Sources/Louppe/Views/Design/AdaptiveControlLayout.swift) | Native-width action rows that stack without replacing their children. Grouped rows separate leading/trailing content; banners reserve readable message space before placing remedies alongside it. |
+| [`SheetActions` / `SheetCancelButton` / `SheetPrimaryButton`](../Sources/Louppe/Views/Design/SheetActions.swift) | Adaptive leading/trailing actions, cancel-role Escape, and primary actions with explicit `runsOnReturn` and caller-owned gates. |
 | [`SourceFileOperationProgressView`](../Sources/Louppe/Views/Design/SourceFileOperationProgressView.swift) | Rename/Organize worker progress and keep-open instruction. |
 | [`SourceFileOperationOutcomeView`](../Sources/Louppe/Views/Design/SourceFileOperationOutcomeView.swift) | Confirmed Rename/Organize results, errors and gated Undo. |
-| [`StatusBanner`](../Sources/Louppe/Views/Design/StatusBanner.swift) | Notice/warning strips, paired dismissal label/action, optional VoiceOver label and explicit focus on appear. |
+| [`StatusBanner`](../Sources/Louppe/Views/Design/StatusBanner.swift) | Notice/warning strips with remedies alongside or below the message, paired dismissal label/action, optional VoiceOver label and explicit focus on appear. |
 | [`SheetForm`](../Sources/Louppe/Views/SheetForm.swift) | Dialog title/subtitle, body and fixed action area; grouped setup or scrolling reading content. |
 | [`LouppeSettingsForm`](../Sources/Louppe/Views/LouppeSettingsForm.swift) | One native grouped form for Settings and setup sheets. |
 | [`FloatingControlSurface`](../Sources/Louppe/Views/FloatingControlSurface.swift) | Interactive control glass, passive panel glass, older-system material and accessibility fallbacks. |

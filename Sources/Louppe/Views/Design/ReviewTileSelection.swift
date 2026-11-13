@@ -8,8 +8,10 @@ enum ReviewTileMetrics {
 
 /// The current/selected outline around a tile's fitted media, used by Ready
 /// and opening tiles. Increase Contrast and Differentiate Without Color make a
-/// selected (not current) outline opaque; the latter also dashes it.
+/// selected (not current) outline opaque; the latter also dashes it. Inactive
+/// windows use neutral ink without dimming the media itself.
 struct ReviewTileSelectionOutline: ViewModifier {
+    @Environment(\.appearsActive) private var appearsActive
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     @Environment(\.colorSchemeContrast) private var contrast
     let isCurrent: Bool
@@ -26,8 +28,9 @@ struct ReviewTileSelectionOutline: ViewModifier {
     }
 
     private var color: Color {
-        if isCurrent { return .louppeAccent }
-        if isSelected { return .louppeAccent.opacity(contrast == .increased || differentiateWithoutColor ? 1 : 0.45) }
+        let ink: Color = appearsActive ? .louppeAccent : Color(nsColor: .unemphasizedSelectedContentBackgroundColor)
+        if isCurrent { return ink }
+        if isSelected { return ink.opacity(contrast == .increased || differentiateWithoutColor ? 1 : 0.45) }
         return .clear
     }
 }
