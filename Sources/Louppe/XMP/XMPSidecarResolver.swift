@@ -64,6 +64,11 @@ struct XMPSidecarFamilyPlan: Equatable, Sendable {
 }
 
 enum XMPSidecarResolver {
+    enum Purpose {
+        case publication
+        case transferExisting
+    }
+
     enum ResolverError: LocalizedError {
         case mediaFromDifferentDirectories
         case unreadableFilename(XMPExactFileSystemPath)
@@ -80,6 +85,7 @@ enum XMPSidecarResolver {
 
     static func resolve(
         members: [XMPStemFamilyMember],
+        purpose: Purpose = .publication,
         isCancelled: () -> Bool = { false }
     ) throws -> [XMPSidecarFamilyPlan] {
         try checkCancellation(isCancelled)
@@ -111,6 +117,7 @@ enum XMPSidecarResolver {
             directoryEntries: entries,
             caseSensitiveNames: caseSensitive,
             requireLiveEntries: true,
+            purpose: purpose,
             isCancelled: isCancelled
         )
     }
@@ -122,6 +129,7 @@ enum XMPSidecarResolver {
         directoryEntries: [XMPExactFileSystemPath],
         caseSensitiveNames: Bool,
         requireLiveEntries: Bool = false,
+        purpose: Purpose = .publication,
         isCancelled: () -> Bool = { false }
     ) throws -> [XMPSidecarFamilyPlan] {
         try checkCancellation(isCancelled)
@@ -274,12 +282,26 @@ enum XMPSidecarResolver {
             let safe = !requireLiveEntries || actualMedia.allSatisfy {
                 (try? XMPFamilyMembership.requireRegular($0)) != nil
             }
+            // Organize/Rename only transfer existing packets. An unreviewed
+            // same-stem file cannot lose a canonical packet that isn't there,
+            // and a nested stem doesn't own this family's canonical packet.
+            // Publication still requires the full, verified live family.
+            let canonicalOwnershipMatters = purpose == .publication || !uniqueCanonical.isEmpty
+            let canonicalCollision = canonicalOwnershipMatters
+                && (!complete || !safe || exactStemBytes.count > 1 || uniqueCanonical.count > 1
+                    || mediaFilenameKeys.contains(key))
+            // IMG.NEF.xmp is also canonical for IMG.NEF.jpg, including when
+            // that possible owner was skipped by the scanner.
+            let qualifiedCollision = try purpose == .transferExisting && qualifiedMatches.contains { packet in
+                let packetStem = deletingFinalExtension(try decodedName(packet))
+                let owners = mediaByStem[comparisonKey(packetStem, caseSensitiveNames: caseSensitiveNames)]
+                return owners?.isEmpty == false
+            }
             let metadataValues = Set(media.map(\.metadata))
             let disposition: XMPSidecarFamilyPlan.Disposition
             if media.contains(where: { $0.mediaKind != .photo }) {
                 disposition = .unsupportedMedia
-            } else if !complete || !safe || exactStemBytes.count > 1 || uniqueCanonical.count > 1
-                        || mediaFilenameKeys.contains(key) {
+            } else if canonicalCollision || qualifiedCollision {
                 disposition = .filenameCollision
             } else if metadataValues.count != 1 {
                 disposition = .metadataConflict
@@ -292,7 +314,9 @@ enum XMPSidecarResolver {
                 // family cannot be published. Copy/Move's conditional default
                 // still needs to report recognized source XMP accurately, but
                 // must not invent a writable target for a conflicted family.
-                canonicalSidecar: disposition == .publish
+                // Transfer-only plans never adopt a packet that appears after
+                // this census: only publication may construct an absent target.
+                canonicalSidecar: purpose == .publication && disposition == .publish
                     ? canonical
                     : (uniqueCanonical.count == 1 ? uniqueCanonical[0] : nil),
                 extensionQualifiedSidecars: qualifiedMatches,

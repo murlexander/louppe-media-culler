@@ -311,7 +311,10 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   restored without overwriting a collision.
 - Organize checks scanner-visible names and hidden/package flags in preview and
   before moving. Sanitize generated hidden/package-like components and refuse
-  unsafe explicit containers.
+  unsafe explicit containers. Existing XMP transfers require complete ownership
+  only for packets being moved; hidden same-stem media without a shared packet
+  do not block Organize. Nested-stem media protect shared extension-qualified
+  packets without claiming the shorter stem's canonical packet.
 - Rename/Organize undo retains the worker-confirmed destination identities;
   never recapture a later occupant to establish undo ownership.
 

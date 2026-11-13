@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Let Organize move photos without XMP despite hidden same-stem or nested-stem media, while protecting shared sidecars.
+
 - Keep notification dismiss buttons at the far right, including when their actions wrap.
 
 - Keep Photos video originals available to play when their metadata scan times out.

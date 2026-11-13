@@ -765,7 +765,7 @@ enum SourceOrganizationPlanner {
         var excludedACR = Set<XMPExactFileSystemPath>()
         for members in parentGroups.values {
             if isCancelled() { throw CancellationError() }
-            for family in try XMPSidecarResolver.resolve(members: members) {
+            for family in try XMPSidecarResolver.resolve(members: members, purpose: .transferExisting) {
                 if isCancelled() { throw CancellationError() }
                 let selectedMembers = family.members.filter {
                     targetDirectoryByMediaPath[$0.mediaPath] != nil
