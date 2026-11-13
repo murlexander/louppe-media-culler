@@ -133,7 +133,6 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 - [ ] **Photos original video:** reproduce and fix portrait originals losing their dimensions and rendering through a landscape crop.
 - [ ] **Photos recovery staging:** preserve journal-referenced original leases through batch removal and abandoned-cache pruning.
-- [ ] **100% tile cancellation:** reproduce and fix rapid A → B → A panning turning cancelled tiles into persistent rendering failures.
 - [ ] **Clipping preview cancellation:** retire abandoned queued transforms and their retained source images when the last waiter cancels.
 - [ ] **Grid follow after filtering:** reproduce and fix a filtered-out pointer rating leaving the next keyboard navigation offscreen.
 - [ ] **Opening modifier selection:** align initial Shift-click and Command-click anchors with the Ready selection model.

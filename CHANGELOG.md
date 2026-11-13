@@ -2,6 +2,7 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Restore sharp 100% tiles when panning away and back quickly, without false rendering failures.
 - Respect disabled iCloud download permissions for Photos images and originals still waiting to start.
 - Protect shared XMP sidecars when media are added during review, refuse overlapping packet ownership, and stop metadata folder checks promptly when cancelled.
 - Preserve folder pins during overlapping position saves, and let navigation saves recover from an interrupted write before saving a newer position.

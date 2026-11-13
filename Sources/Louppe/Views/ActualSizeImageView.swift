@@ -59,6 +59,15 @@ final class ActualSizeScrollView: NSScrollView {
     private let canvas = ActualSizeCanvasView()
     private var sourceLoader: (@MainActor (PhotoItem, AppleRawDecoder) async -> ZoomImageSource?)?
     var displayedSourceKey: String? { canvas.source?.key }
+    private var tilePipeline = HighResolutionImagePipeline.shared
+
+    #if LOUPPE_TEST_SEAMS
+    convenience init(tilePipeline: HighResolutionImagePipeline) {
+        self.init(frame: .zero)
+        self.tilePipeline = tilePipeline
+        canvas.tilePipeline = tilePipeline
+    }
+    #endif
 
     convenience init(sourceLoader: @escaping @MainActor (PhotoItem, AppleRawDecoder) async -> ZoomImageSource?) {
         self.init(frame: .zero)
@@ -214,7 +223,7 @@ final class ActualSizeScrollView: NSScrollView {
             let generation = sourceGeneration
             sourceTask?.cancel()
             canvas.beginItem(key: "\(sourceKey)|retry-\(retryGeneration)")
-            HighResolutionImagePipeline.shared.cancelTileRequests(
+            tilePipeline.cancelTileRequests(
                 exceptSourceKey: nil
             )
             sourceTask = Task { @MainActor [weak self] in
@@ -223,7 +232,7 @@ final class ActualSizeScrollView: NSScrollView {
                 if let sourceLoader = self.sourceLoader {
                     source = await sourceLoader(item, decoder)?.retainingSourceAccess(sourceAccess)
                 } else {
-                    source = await HighResolutionImagePipeline.shared.source(
+                    source = await self.tilePipeline.source(
                         for: item, decoder: decoder, sourceAccess: sourceAccess
                     )
                 }
@@ -307,7 +316,7 @@ final class ActualSizeScrollView: NSScrollView {
         currentContentRevision = nil
         currentSourceKey = nil
         canvas.prepareForRemoval()
-        HighResolutionImagePipeline.shared.cancelTileRequests(
+        tilePipeline.cancelTileRequests(
             exceptSourceKey: nil
         )
     }
@@ -650,12 +659,14 @@ private final class ActualSizeCanvasView: NSView {
     private var failedCoordinates: Set<ZoomTileCoordinate> = []
     private var sourceFailed = false
 
+    var tilePipeline = HighResolutionImagePipeline.shared
+
     private var itemKey: String?
     private var preview: NSImage?
     private var backingScale: CGFloat = 1
     private var imageFrame: CGRect = .zero
     private var tiles: [ZoomTileCoordinate: DisplayTile] = [:]
-    private var pending: Set<ZoomTileCoordinate> = []
+    private var pending: [ZoomTileCoordinate: UUID] = [:]
     private var wanted: Set<ZoomTileCoordinate> = []
     private var generation: UInt64 = 0
     private var reportsTileActivity = false
@@ -672,7 +683,7 @@ private final class ActualSizeCanvasView: NSView {
         failedCoordinates = []
         source = nil
         tiles = [:]
-        pending = []
+        pending = [:]
         wanted = []
         imageSize = .zero
         imageFrame = bounds
@@ -693,11 +704,11 @@ private final class ActualSizeCanvasView: NSView {
         if !value {
             stopReportingActivity()
             generation &+= 1
-            pending = []
+            pending = [:]
             wanted = []
             tiles = [:]
             if let source {
-                HighResolutionImagePipeline.shared.retainTileRequests(
+                tilePipeline.retainTileRequests(
                     sourceKey: source.key,
                     coordinates: [],
                     showsClippingWarnings: showsClippingWarnings
@@ -715,10 +726,10 @@ private final class ActualSizeCanvasView: NSView {
         showsClippingWarnings = value
         failedCoordinates = []
         tiles = [:]
-        pending = []
+        pending = [:]
         wanted = []
         generation &+= 1
-        HighResolutionImagePipeline.shared.cancelTileRequests(
+        tilePipeline.cancelTileRequests(
             exceptSourceKey: nil
         )
         needsDisplay = true
@@ -735,7 +746,7 @@ private final class ActualSizeCanvasView: NSView {
         visibleCoordinates = []
         self.backingScale = validScale(backingScale)
         tiles = [:]
-        pending = []
+        pending = [:]
         wanted = []
         generation &+= 1
         needsDisplay = true
@@ -814,8 +825,12 @@ private final class ActualSizeCanvasView: NSView {
         })
         failedCoordinates.formIntersection(coordinates)
         wanted = coordinates
+        // Retire identities before the pipeline resumes cancelled waiters. A
+        // rapid return to this region must create new requests, and old nil
+        // completions must not remove or fail those replacement requests.
+        pending = pending.filter { coordinates.contains($0.key) }
         tiles = tiles.filter { coordinates.contains($0.key) }
-        HighResolutionImagePipeline.shared.retainTileRequests(
+        tilePipeline.retainTileRequests(
             sourceKey: source.key,
             coordinates: coordinates,
             showsClippingWarnings: showsClippingWarnings
@@ -831,7 +846,7 @@ private final class ActualSizeCanvasView: NSView {
         source = nil
         itemKey = nil
         generation &+= 1
-        pending = []
+        pending = [:]
         wanted = []
         tiles = [:]
         stopReportingActivity()
@@ -937,24 +952,29 @@ private final class ActualSizeCanvasView: NSView {
     }
 
     private func requestMissingTiles(source: ZoomImageSource) {
-        let missing = wanted.subtracting(tiles.keys).subtracting(pending).subtracting(failedCoordinates)
+        let missing = wanted.subtracting(tiles.keys).subtracting(pending.keys).subtracting(failedCoordinates)
         guard !missing.isEmpty else {
             updateActivityReport()
             return
         }
-        pending.formUnion(missing)
+        let requests = missing.map { ($0, UUID()) }
+        for (coordinate, requestID) in requests { pending[coordinate] = requestID }
         updateActivityReport()
         let requestGeneration = generation
-        for coordinate in missing {
+        let pipeline = tilePipeline
+        let clipping = showsClippingWarnings
+        for (coordinate, requestID) in requests {
             Task { @MainActor [weak self] in
-                let tile = await HighResolutionImagePipeline.shared.tile(
+                guard self?.pending[coordinate] == requestID else { return }
+                let tile = await pipeline.tile(
                     for: source,
                     coordinate: coordinate,
-                    showsClippingWarnings: self?.showsClippingWarnings ?? false
+                    showsClippingWarnings: clipping
                 )
                 guard let self else { return }
-                guard self.generation == requestGeneration else { return }
-                self.pending.remove(coordinate)
+                guard self.generation == requestGeneration,
+                      self.pending[coordinate] == requestID else { return }
+                self.pending.removeValue(forKey: coordinate)
                 defer { self.updateActivityReport() }
                 guard self.source?.key == source.key,
                       self.wanted.contains(coordinate) else { return }

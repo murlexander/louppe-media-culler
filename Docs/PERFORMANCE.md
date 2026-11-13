@@ -629,7 +629,11 @@ A toggles phone-size/Fit.
 
 Retire a departing actual-size source before reporting tiles idle. Late
 layout/scroll callbacks cannot restart it and strand the toolbar load count.
-Explicit configuration may restart, including the same photo.
+Explicit configuration may restart, including the same photo. Panning retires
+unwanted coordinate request identities before pipeline cancellation resumes
+waiters. Returning to a region renews its requests; old completions cannot remove
+them or report a decode failure. Genuine failures still remain until retry or
+until the tile leaves the wanted ring.
 
 Fitted previews finish/cancel pinch with `NSMagnificationGestureRecognizer`;
 native scroll views use live-magnification notifications and `NSEvent.phase`,

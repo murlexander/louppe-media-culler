@@ -590,7 +590,8 @@ precedence over remembered scope/position.
   cancel stale loads before publication.
 - At 100%, one source pixel maps to one backing pixel. Keep the two-operation
   tile queue, visible ring, and 128 MiB ceiling; never decode a whole 45–100 MP
-  bitmap for this view.
+  bitmap for this view. Retire per-coordinate request identities as tiles leave
+  the wanted ring; late cancelled completions cannot fail renewed visible tiles.
 
 ## Native UI
 
