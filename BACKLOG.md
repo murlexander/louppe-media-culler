@@ -159,7 +159,7 @@ candidate. Store-specific acceptance applies to the Store package.
   - The `sheet-rename-partial` and `sheet-organize-partial` capture scenarios fail
     live with the same error.
   - [x] Prevent hardened-runtime signature false failures from early-exit pipes; fixtures retain unsigned, wrong-team and missing-runtime rejection.
-  - The Filter search field shows the system blue focus ring, not purple.
+  - [x] Check native Filter search focus-ring coloring: retain the system keyboard-focus indicator. The macOS 27.2 SDK has no per-field color setter; suppressing/replacing the ring would lose native focus behavior.
 - [ ] **AUD-06 — Remaining projection costs.** Date-grouped projection and filter
   toggles take ~100–130 ms at 100k; the content-check queue walk is ~58% of the
   363 ms Select All → decision. Measure first; preserve serial proofs, ties,

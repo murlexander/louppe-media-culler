@@ -745,8 +745,10 @@ precedence over remembered scope/position.
   (gear) and Keyboard shortcuts (keyboard) tabs. macOS owns the toolbar tabs and
   selected-page title; the expanded native toolbar centers the title without the
   app name. The packaged LouppeAccent color and NSAccentColorName keep native
-  toolbar selection and focus rings consistent with the existing purple tint,
-  respecting a user's explicit system accent override.
+  toolbar selection consistent with the existing purple tint, respecting a
+  user's explicit system accent override. Native search focus rings use the
+  system keyboard-focus indicator color. AppKit exposes it read-only and offers
+  ring type/mask controls, not a per-field color setter; preserve the native ring.
   Both pages share a 620 × 600-point content area and each owns one
   grouped scrolling form. General contains Review, new-folder defaults, RAW
   display, Quality Cues, Capture bursts, Updates, Louppe Help, and Louppe info in
