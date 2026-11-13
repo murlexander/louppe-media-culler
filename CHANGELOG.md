@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Keep notification dismiss buttons at the far right, including when their actions wrap.
+
 - Keep Photos video originals available to play when their metadata scan times out.
 
 - Let Copy work with access to the selected subfolder when its volume root is restricted.

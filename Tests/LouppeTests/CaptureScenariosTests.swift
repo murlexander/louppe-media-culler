@@ -24,6 +24,18 @@ final class CaptureScenariosTests: XCTestCase {
 
     // --list reads these literal name/description lines without compiling Swift.
     private static let registry: [Scenario] = [
+        Scenario(name: "design-banner-dismissal", description: "Dismissible saved-decision banner with its restore action.") { fixture in
+            fixture.dismissibleBanner(width: 900)
+        },
+        Scenario(name: "design-banner-dismissal-compact", description: "Dismissible banner with wrapping text and a stacked restore action.") { fixture in
+            fixture.dismissibleBanner(width: 360)
+        },
+        Scenario(name: "session-grid-selection", description: "Inactive current and selected outlines in the production Grid.") { fixture in
+            fixture.ready(mode: .grid)
+            fixture.store.setIndex(0)
+            fixture.store.setSelection([0, 1, 2])
+            return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
         Scenario(name: "design-actions-compact", description: "Shared warning and sheet actions with long Portuguese labels in a narrow layout.") { fixture in
             fixture.adaptiveActions(width: 400)
         },
@@ -38,11 +50,17 @@ final class CaptureScenariosTests: XCTestCase {
             fixture.ready(mode: .gallery)
             return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         },
+        Scenario(name: "session-photos-timeout", description: "Playable disposable Photos original after a failed metadata scan.") { fixture in
+            try await fixture.photosPortrait(scanFails: true)
+        },
         Scenario(name: "session-photos-portrait", description: "Exact rotated Photos original through production acquisition and Gallery playback.") { fixture in
             try await fixture.photosPortrait()
         },
+        Scenario(name: "session-audio-fallback", description: "Default audio levels for an explicit fallback-track association.") { fixture in
+            try await fixture.audioAlternatives(fallback: true)
+        },
         Scenario(name: "session-audio-alternatives", description: "Gallery and Info for a disposable file with two alternative audio tracks.") { fixture in
-            try fixture.audioAlternatives()
+            try await fixture.audioAlternatives()
         },
         Scenario(name: "session-search-stars", description: "Immediate star edit after search narrows the current photo and selection.") { fixture in
             fixture.ready(mode: .grid)
@@ -431,6 +449,14 @@ final class CaptureScenariosTests: XCTestCase {
 
     @MainActor
     private final class Fixture {
+        func dismissibleBanner(width: CGFloat) -> Surface {
+            let view = StatusBanner(systemImage: "arrow.triangle.2.circlepath",
+                dismissal: .init(label: "Dismiss notification", action: {})) {
+                    Text("Saved decisions for 12 files need checking. You can keep reviewing; previous decisions are preserved.")
+                } actions: { Button("Check and Restore…") {} }
+            return Surface(view: AnyView(view.frame(width: width, height: 240, alignment: .top)), size: CGSize(width: width, height: 240))
+        }
+
         func adaptiveActions(width: CGFloat) -> Surface {
             func text(_ key: String) -> String { L10n.render(.init(stringLiteral: key), language: "pt") }
             let view = VStack(spacing: 0) {
@@ -513,8 +539,11 @@ final class CaptureScenariosTests: XCTestCase {
                 videoIsPlayable: true, fileSize: 1))
         }
 
-        func photosPortrait() async throws -> Surface {
-            let fixture = try PhotosVideoFixture()
+        func photosPortrait(scanFails: Bool = false) async throws -> Surface {
+            let fixture = try PhotosVideoFixture(scanVideo: { url in
+                scanFails ? VideoScanInfo(duration: nil, dimensions: nil, codec: nil, frameRate: nil,
+                    isPlayable: false, extractionSucceeded: false) : VideoMetadataExtractor.scanInfo(for: url)
+            })
             portraitFixture = fixture
             let batch = try fixture.batch()
             let lease = try await fixture.session.original(for: XCTUnwrap(batch.reviewItems?.first))
@@ -534,12 +563,13 @@ final class CaptureScenariosTests: XCTestCase {
             portraitFixture = nil
         }
 
-        func audioAlternatives() throws -> Surface {
+        func audioAlternatives(fallback: Bool = false) async throws -> Surface {
             let repository = URL(fileURLWithPath: #filePath)
                 .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             let source = repository.appendingPathComponent("Tests/Fixtures/AudioTrackSelection/alternate-levels.mov")
             let url = media.appendingPathComponent("ALTERNATE_AUDIO.mov")
             try FileManager.default.copyItem(at: source, to: url)
+            if fallback { try await addDefaultAudioFallback(to: url) }
             let values = try url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
             items = [PhotoItem(id: url.path, primaryURL: url, pairedURL: nil, captureDate: nil,
                 cameraModel: nil, lensModel: nil, mediaKind: .audio, duration: 1,

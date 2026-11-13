@@ -47,28 +47,32 @@ struct StatusBanner<Message: View, Actions: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            AdaptiveControlLayout(spacing: 12, separatesGroups: true,
-                                  minimumLeadingWidth: 240) {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Image(systemName: systemImage)
-                        .foregroundStyle(emphasis == .warning ? Color.orange : Color.louppeAccent)
-                        .accessibilityHidden(true)
-                    accessibleMessage
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    if let dismissal {
-                        Button(action: dismissal.action) {
-                            Image(systemName: "xmark")
-                                .frame(width: 36, height: 36)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .help(dismissal.label)
-                        .accessibilityLabel(dismissal.label)
+            HStack(spacing: 10) {
+                AdaptiveControlLayout(spacing: 12, separatesGroups: true,
+                                      minimumLeadingWidth: 240) {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Image(systemName: systemImage)
+                            .foregroundStyle(emphasis == .warning ? Color.orange : Color.louppeAccent)
+                            .accessibilityHidden(true)
+                        accessibleMessage
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    actions()
                 }
-                actions()
+                .louppeAdaptiveButtonSizing()
+                .frame(maxWidth: .infinity)
+                if let dismissal {
+                    Button(action: dismissal.action) {
+                        Image(systemName: "xmark")
+                            .frame(width: 36, height: 36)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .fixedSize()
+                    .help(dismissal.label)
+                    .accessibilityLabel(dismissal.label)
+                }
             }
-            .louppeAdaptiveButtonSizing()
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity)
