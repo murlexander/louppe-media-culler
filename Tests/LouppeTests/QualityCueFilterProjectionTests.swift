@@ -174,6 +174,15 @@ final class QualityCueFilterProjectionTests: XCTestCase {
         XCTAssertTrue(store.effectiveSelection.isEmpty)
         store.rate(.yes)
         XCTAssertEqual(store.items.map(\.rating), [.undecided, .undecided, .undecided])
+        store.toggleSelection(of: 2)
+        XCTAssertEqual(store.selectedIndices, [2], "Command-click must not seed a hidden current photo")
+        XCTAssertEqual(store.effectiveSelection, [2])
+        XCTAssertEqual(store.currentIndex, 2)
+        XCTAssertEqual(store.currentItem?.id, "C.JPG")
+        XCTAssertEqual(store.cleanUpCounts(for: .selection).photos, 1)
+        store.rate(.no)
+        XCTAssertEqual(store.items.map(\.rating), [.undecided, .undecided, .no])
+        XCTAssertEqual(store.cleanUpCounts(for: .selection).photos, 1)
         store.filter.selectedQualityCues = [.highISO, .shadowClipping]
         XCTAssertEqual(visibleIDs(store), ["A.JPG", "C.JPG"])
         store.filter.selectedQualityCues = [.highlightClipping]

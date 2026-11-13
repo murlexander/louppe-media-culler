@@ -3425,13 +3425,12 @@ struct PerformanceChecks {
             makeItem(id: "C.JPG"),
             makeItem(id: "D.JPG"),
         ]
-        let visible = Array(items.indices)
         var selection = SelectionState()
 
         try expect(
             selection.effectiveSelection(
                 currentIndex: 1,
-                visibleIndices: visible,
+                currentIsVisible: true,
                 itemCount: items.count
             ) == [1],
             "empty explicit selection should mean the visible current item"
@@ -3439,7 +3438,7 @@ struct PerformanceChecks {
         let firstReplacement = selection.toggle(
             3,
             currentIndex: 1,
-            visibleIndices: visible,
+            currentIsVisible: true,
             items: items
         )
         try expect(
@@ -3454,7 +3453,7 @@ struct PerformanceChecks {
         let replacement = selection.toggle(
             1,
             currentIndex: 1,
-            visibleIndices: visible,
+            currentIsVisible: true,
             items: items
         )
         try expect(
@@ -3469,7 +3468,7 @@ struct PerformanceChecks {
         try expect(
             selection.effectiveSelection(
                 currentIndex: 1,
-                visibleIndices: [],
+                currentIsVisible: false,
                 itemCount: items.count
             ).isEmpty,
             "zero visible matches must not expose a hidden implicit selection"

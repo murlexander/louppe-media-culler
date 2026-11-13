@@ -31,11 +31,11 @@ struct SelectionState: Equatable {
 
     func effectiveSelection(
         currentIndex: Int,
-        visibleIndices: [Int],
+        currentIsVisible: Bool,
         itemCount: Int
     ) -> Set<Int> {
         if !indices.isEmpty { return indices }
-        guard !visibleIndices.isEmpty,
+        guard currentIsVisible,
               (0..<itemCount).contains(currentIndex) else { return [] }
         return [currentIndex]
     }
@@ -121,13 +121,13 @@ struct SelectionState: Equatable {
     mutating func toggle(
         _ index: Int,
         currentIndex: Int,
-        visibleIndices: [Int],
+        currentIsVisible: Bool,
         items: [PhotoItem]
     ) -> Int? {
         guard items.indices.contains(index) else { return nil }
         var updated = effectiveSelection(
             currentIndex: currentIndex,
-            visibleIndices: visibleIndices,
+            currentIsVisible: currentIsVisible,
             itemCount: items.count
         )
         if updated.contains(index), updated.count > 1 {

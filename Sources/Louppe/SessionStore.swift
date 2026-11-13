@@ -3889,10 +3889,9 @@ final class SessionStore: ObservableObject {
     /// What a rating (F/D) applies to: the multi-selection when one is
     /// active, otherwise just the current photo.
     var effectiveSelection: Set<Int> {
-        if selectedIndices.isEmpty, preparedIndex.location(forItemIndex: currentIndex) == nil { return [] }
         return selectionState.effectiveSelection(
             currentIndex: currentIndex,
-            visibleIndices: visibleIndices,
+            currentIsVisible: preparedIndex.location(forItemIndex: currentIndex) != nil,
             itemCount: items.count
         )
     }
@@ -3984,7 +3983,7 @@ final class SessionStore: ObservableObject {
         let replacementCurrent = selectionState.toggle(
             index,
             currentIndex: currentIndex,
-            visibleIndices: visibleIndices,
+            currentIsVisible: preparedIndex.location(forItemIndex: currentIndex) != nil,
             items: items
         )
         if selectionState.indices != previousIndices {
