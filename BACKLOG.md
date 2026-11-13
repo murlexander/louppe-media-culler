@@ -1,8 +1,9 @@
 # Louppe app backlog
 
-Updated on 5 November 2026. **1.13.1 (16) is published** on GitHub, Sparkle and
-Homebrew ([release record](Docs/RELEASE_1.13.1_PREPARATION_2026-11-04.md)). In
-the App Store, the 1.13.0 (15) submission was withdrawn and 1.13.1 replaces it.
+Updated on 13 November 2026. **1.14.0 (18) is published** on GitHub, Sparkle and
+Homebrew ([release record](Docs/RELEASE_1.14.0_PREPARATION_2026-11-13.md)). The
+App Store has 1.13.2 (17), submitted for review on 8 November; 1.14.0 has no
+Store package yet.
 Implemented changes belong in [CHANGELOG.md](CHANGELOG.md); this backlog
 contains unfinished work only.
 
@@ -11,6 +12,7 @@ contains unfinished work only.
 [Agent work](#agent-work) · [Later and research](#later-and-research)
 
 [App guide](Docs/DEVELOPMENT.md) · [Website backlog](https://github.com/murlexander/louppe-website/blob/main/BACKLOG.md) ·
+[1.14.0 release record](Docs/RELEASE_1.14.0_PREPARATION_2026-11-13.md) ·
 [1.13.1 release record](Docs/RELEASE_1.13.1_PREPARATION_2026-11-04.md) ·
 [1.13 release record](Docs/RELEASE_1.13_PREPARATION_2026-11-04.md) ·
 [1.13 backlog record](Docs/BACKLOG_1.13_2026-11-04.md)
@@ -37,7 +39,10 @@ submission replaces one still in review, so coordinate with the App Store sessio
    fast-forward to `origin` (never the `murlexander` remote) and wait for green CI.
 2. Run the full suite, the window-raising suites (idle ≥ 300 s), the four install
    gates and `Tests/run_performance_checks.sh` on that commit.
-3. `./build_app.sh --developer-id 'Developer ID Application: SAMO DANNI EOOD (P6F95J4ZPA)'`,
+3. After `source Scripts/lib/xcode_env.sh` and
+   `export LOUPPE_SCRATCH_PATH="$LOUPPE_RELEASE_SCRATCH_PATH"` (the Mac's default
+   toolchain is the Command Line Tools, which can't build SwiftUI macros):
+   `./build_app.sh --developer-id 'Developer ID Application: SAMO DANNI EOOD (P6F95J4ZPA)'`,
    `./Scripts/notarize_release.sh --keychain-profile louppe-notary`,
    `./Scripts/prepare_update_feed.sh`, `./Scripts/verify_release.sh --publishing`.
    Keep the app, ZIP, notarization files and feed in
@@ -67,7 +72,6 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 ### 1.15 checks
 
-- [ ] **Live desktop pass** (agent, after a desktop handover): `Scripts/test.sh --foreground`, then `capture_ui.sh --live` of the Sort, Filter, quality-cue and review-status popovers (arrows and rims zoomed, light and dark), open menus, the session Grid and Gallery, and Rename/Organize progress and results.
 - [ ] **VoiceOver:** opening and Ready tile names, reading order and actions after scrolling; Undo after a partly failed Rename or Organize.
 - [ ] **macOS 14:** toolbar popovers, the Range/Year/Date chooser, sheet action rows and accessibility fallbacks.
 - [ ] **Cards and folder switching:** Rename/Organize, Undo and interrupted recovery on an exFAT card; quick Finder, Dock and pinned-folder switching in the signed sandboxed build.
@@ -113,9 +117,9 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 ### Distribution
 
-- [ ] **Apple review of 1.13.1 (16).** The 1.13.0 (15) submission was withdrawn;
-  the App Store session submits 1.13.1 with automatic release. Respond to any
-  review request. 1.12.0 went live on the Store on 22 October 2026.
+- [ ] **App Store 1.14.0 (18).** Package from tag `v1.14.0` (release step 7) and
+  submit; the Sparkle release shipped on 13 November without it. 1.13.2 (17) was
+  submitted on 8 November with automatic release; respond to any review request.
 - [ ] **TestFlight — out of scope (Alex, 4 November 2026).** Every delivery shows
   ITMS-90889: the bundle has no provisioning profile. Enabling TestFlight needs a
   Mac App Store provisioning profile for `com.alexandermarkin.louppe` (team
@@ -126,6 +130,16 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 ## Agent work
 
+- [ ] **1.15 follow-ups from the 1.14.0 release (13 November 2026).**
+  - `PopoverSurfaceTests` fails with ScreenCaptureKit `InvalidTransition` when it
+    runs after `ConnectedDrivesTests` in one `--foreground` run (passes alone);
+    restoring the activation policy alone didn't fix it.
+  - The `sheet-rename-partial` and `sheet-organize-partial` capture scenarios fail
+    live with the same error.
+  - `verify_release.sh` once reported Sparkle code without the hardened runtime
+    although every component carries it; check `print … | grep -q` under
+    `pipefail`.
+  - The Filter search field shows the system blue focus ring, not purple.
 - [ ] **AUD-06 — Remaining projection costs.** Date-grouped projection and filter
   toggles take ~100–130 ms at 100k; the content-check queue walk is ~58% of the
   363 ms Select All → decision. Measure first; preserve serial proofs, ties,
