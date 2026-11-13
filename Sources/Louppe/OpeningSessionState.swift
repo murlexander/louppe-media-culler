@@ -43,7 +43,6 @@ final class OpeningSessionState: ObservableObject {
     @Published var viewMode: ViewMode
     @Published private(set) var keyboardNavigationGeneration: UInt64 = 0
     private(set) var gridColumnCount = 1
-    private var selectionAnchor: Int?
     private var hasCurrentInteraction = false
     private var viewportReceipts: [OpeningViewportSurface: OpeningViewportReceipt] = [:]
     private var userViewportSurfaces: Set<OpeningViewportSurface> = []
@@ -103,19 +102,28 @@ final class OpeningSessionState: ObservableObject {
     func select(_ id: String, extending: Bool = false, toggling: Bool = false) {
         guard let index = indexByID[id] else { return }
         hasCurrentInteraction = true
-        if extending, let anchor = selectionAnchor {
-            selectedIDs = Set(items[min(anchor, index)...max(anchor, index)].map(\.id))
+        if extending {
+            // Ready ranges from current and leaves it as the anchor, including
+            // the initial implicit selection and repeated Shift-clicks.
+            selectedIDs = Set(items[min(currentIndex, index)...max(currentIndex, index)].map(\.id))
         } else if toggling {
-            if !selectedIDs.insert(id).inserted { selectedIDs.remove(id) }
-            selectionAnchor = index
+            let currentID = items[currentIndex].id
+            var updated = selectedIDs.isEmpty ? [currentID] : selectedIDs
+            if updated.contains(id), updated.count > 1 {
+                updated.remove(id)
+            } else {
+                updated.insert(id)
+            }
+            selectedIDs = updated == [currentID] ? [] : updated
+            if !selectedIDs.isEmpty, !selectedIDs.contains(currentID) {
+                // Match Ready's surviving-current rule using the existing ID
+                // map; a small selection never scans the whole inventory.
+                currentIndex = selectedIDs.contains(id) ? index
+                    : selectedIDs.compactMap { indexByID[$0] }.min() ?? currentIndex
+            }
         } else {
-            selectedIDs = [id]
-            selectionAnchor = index
-        }
-        if selectedIDs.isEmpty || selectedIDs.contains(id) {
+            selectedIDs = []
             currentIndex = index
-        } else if let first = items.indices.first(where: { selectedIDs.contains(items[$0].id) }) {
-            currentIndex = first
         }
     }
 
@@ -136,7 +144,6 @@ final class OpeningSessionState: ObservableObject {
     func clearSelection() -> Bool {
         guard !selectedIDs.isEmpty else { return false }
         selectedIDs = []
-        selectionAnchor = nil
         return true
     }
 

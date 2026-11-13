@@ -1638,7 +1638,7 @@ final class HotkeyTests: XCTestCase {
         XCTAssertEqual(opening.viewMode, .gallery)
 
         // Esc clears the opening selection first, then cancels the opening.
-        opening.select(opening.items[2].id)
+        opening.select(opening.items[0].id, extending: true)
         XCTAssertTrue(view.handleKey(keyEvent(code: 53, characters: "\u{1B}"), context: .focusedSession))
         XCTAssertTrue(opening.selectedIDs.isEmpty)
         XCTAssertNotNil(store.openingSession)

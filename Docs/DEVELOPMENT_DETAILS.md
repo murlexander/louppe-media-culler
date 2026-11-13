@@ -456,7 +456,11 @@ are independent; XCTest defaults use disposable storage.
   stale, contains no decisions, and shows the shared toolbar activity indicator.
   It is never used as discovery or persistence input. Final publication transfers
   user navigation only for exact matching physical revisions; automatic cached
-  positioning never supersedes freshly validated saved positions.
+  positioning never supersedes freshly validated saved positions. Opening uses
+  Ready's implicit-current selection: Shift ranges from current without moving
+  it, Command includes the implicit current and keeps a surviving current when
+  removing it, and plain navigation or clearing returns to implicit selection.
+  Handoff expands selected pairs to their physical file IDs.
   Identity passes: discovery capture, a preview barrier only when a preview
   mounts, a check after each cache miss's admission wait and read, none for
   cache hits, and one final file/folder/opened-folder barrier after all slow

@@ -1220,6 +1220,11 @@ or remapping stale numeric positions. After filter/restore, surviving explicit
 selection determines current in prepared visible order, keeping Gallery,
 keyboard ratings, and highlighted selection aligned.
 
+Read-only Opening applies the same implicit-current, range and Command-toggle
+rules directly to its immutable inventory and existing ID map. Ranges visit only
+their span; choosing a surviving current visits only selected IDs. Selection never
+builds a prepared index, scans metadata, or changes inventory/metadata overlays.
+
 ## Verification
 
 Follow [AGENTS.md](../AGENTS.md) for build, test, and real launch. Performance

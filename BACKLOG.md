@@ -135,7 +135,7 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 ## Agent work
 
 - [x] **Grid follow after filtering:** pointer decisions preserve browsing position without suppressing the next keyboard follow.
-- [ ] **Opening modifier selection:** align initial Shift-click and Command-click anchors with the Ready selection model.
+- [x] **Opening modifier selection:** implicit current, range anchors and Command toggles match Ready through physical-file handoff.
 - [ ] **Large XMP jobs:** reduce repeated fresh family-census work in large single folders while preserving mutation/recovery ownership checks.
 
 - [ ] Resolve the selected alternate audio track for meters/waveforms; multi-track files report analysis unavailable until it can be proved without changing playback.
