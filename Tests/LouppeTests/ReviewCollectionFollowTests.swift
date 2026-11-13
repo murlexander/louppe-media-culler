@@ -125,7 +125,10 @@ final class ReviewCollectionFollowTests: XCTestCase {
     private func readyStore() -> SessionStore {
         let suite = "ReviewUI.\(UUID())"
         let defaults = UserDefaults(suiteName: suite)!
-        defaults.register(defaults: [ReviewPreferences.Keys.advancesAfterDecision: false])
+        // register(defaults:) writes the process-wide registration domain and
+        // would turn advancing off for every later test; keep it in this suite.
+        defaults.set(false, forKey: ReviewPreferences.Keys.advancesAfterDecision)
+        addTeardownBlock { UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite) }
         let store = SessionStore(reviewDefaults: defaults)
         store.items = (0..<100).map { index in
             let name = String(format: "PHOTO_%03d.JPG", index)
