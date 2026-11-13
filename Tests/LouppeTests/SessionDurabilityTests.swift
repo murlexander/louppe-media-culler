@@ -3354,6 +3354,81 @@ final class SessionDurabilityTests: XCTestCase {
         XCTAssertEqual(store.sessionSaveStatus, "Saved")
     }
 
+    func testOnlineBackupFallbackRejectsSidecarChangedBeforeReplacement() async throws {
+        try await assertOnlineBackupFallback(change: .sidecar)
+    }
+
+    func testOnlineBackupFallbackRejectsSourceFolderChangedBeforeReplacement() async throws {
+        try await assertOnlineBackupFallback(change: .replacementFolder)
+    }
+
+    func testOnlineBackupFallbackAllowsSourceDisconnectBeforeReplacement() async throws {
+        try await assertOnlineBackupFallback(change: .disconnect)
+    }
+
+    private enum OnlineBackupChange { case sidecar, replacementFolder, disconnect }
+
+    private func assertOnlineBackupFallback(change: OnlineBackupChange) async throws {
+        let fixture = try makeFixture(named: "OnlineBackupValidation")
+        let folder = fixture.photos
+        defer {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: folder.path)
+            try? FileManager.default.removeItem(at: fixture.root)
+        }
+        var session = currentSession(folder: folder,
+            file: folder.appendingPathComponent("A.png"), rating: .yes)
+        let baseline = await SessionPersistence(backupDirectory: fixture.backup)
+            .save(session, for: folder, sequence: 1)
+        XCTAssertEqual(baseline, .savedToSidecar)
+        let backup = try XCTUnwrap(FileManager.default.contentsOfDirectory(
+            at: fixture.backup, includingPropertiesForKeys: nil).first)
+        let originalBackup = try Data(contentsOf: backup)
+        let sidecar = folder.appendingPathComponent(SessionConstants.sidecarName)
+        let originalSidecar = try Data(contentsOf: sidecar)
+        let externalBytes = Data("external sidecar edit".utf8)
+        let retired = fixture.root.appendingPathComponent("Retired")
+        let validationReached = OneShotFlag()
+        let persistence = SessionPersistence(backupDirectory: fixture.backup,
+            beforeBackupValidationForTesting: {
+                guard validationReached.take() else { return }
+                // Restore permissions only after the real sidecar write fails.
+                try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: folder.path)
+                if change != .sidecar {
+                    try FileManager.default.moveItem(at: folder, to: retired)
+                }
+                if change == .replacementFolder {
+                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                }
+                if change != .disconnect {
+                    try externalBytes.write(to: sidecar, options: .atomic)
+                }
+            })
+        let read = await persistence.read(for: folder)
+        let access = try XCTUnwrap(read.access)
+        session.entries[0].rating = Rating.no.rawValue
+        try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: folder.path)
+
+        let result = await persistence.save(session, for: folder, sequence: 1, access: access)
+
+        XCTAssertFalse(validationReached.take(), "The backup validation hook must have run")
+        if change == .disconnect {
+            XCTAssertEqual(result, .savedToBackup(sidecarFailure: .permissionDenied))
+            XCTAssertTrue(result.canDiscardInMemoryState)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: folder.path))
+            XCTAssertEqual(try readSession(at: backup).entries.first?.rating, Rating.no.rawValue)
+            XCTAssertEqual(try readSession(at: backup).snapshotGeneration, 2)
+            XCTAssertEqual(try Data(contentsOf: retired.appendingPathComponent(SessionConstants.sidecarName)), originalSidecar)
+            return
+        }
+        XCTAssertEqual(result, change == .replacementFolder ? .sourceFolderChanged : .sidecarChanged)
+        XCTAssertFalse(result.canDiscardInMemoryState)
+        XCTAssertEqual(try Data(contentsOf: backup), originalBackup)
+        XCTAssertEqual(try Data(contentsOf: sidecar), externalBytes)
+        if change == .replacementFolder {
+            XCTAssertEqual(try Data(contentsOf: retired.appendingPathComponent(SessionConstants.sidecarName)), originalSidecar)
+        }
+    }
+
     func testReadOnlySourceReportsPermissionDeniedWithDurableBackup() async throws {
         let fixture = try makeFixture(named: "ReadOnlySourceReason")
         defer {

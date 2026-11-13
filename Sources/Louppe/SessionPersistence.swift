@@ -901,7 +901,24 @@ actor SessionPersistence: SessionPersistenceClient {
                 try writeBackup(
                     data,
                     for: access.folderIdentity,
-                    expectedRevision: expectedBackupRevision
+                    expectedRevision: expectedBackupRevision,
+                    validateBeforeReplace: {
+                        switch Self.sourceFolderState(
+                            expected: access.folderIdentity,
+                            at: sourceFolder
+                        ) {
+                        case .unavailable: break
+                        case .changed:
+                            throw SaveGuardError.sourceFolderChanged
+                        case .matching:
+                            guard Self.revisionsMatch(
+                                expected: effectiveSidecarRevision,
+                                current: self.sidecarRevision(at: sidecar)
+                            ) else {
+                                throw SaveGuardError.sidecarChanged
+                            }
+                        }
+                    }
                 )
                 recordSuccessfulSave(
                     accessID: access.id,
@@ -912,6 +929,8 @@ actor SessionPersistence: SessionPersistenceClient {
                     sequence: sequence
                 )
                 return .savedToBackup(sidecarFailure: sidecarFailure)
+            } catch SaveGuardError.sourceFolderChanged {
+                return .sourceFolderChanged
             } catch SaveGuardError.sidecarChanged {
                 return .sidecarChanged
             } catch {
