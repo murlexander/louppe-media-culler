@@ -1647,6 +1647,31 @@ final class HotkeyTests: XCTestCase {
         guard case .welcome = store.phase else { return XCTFail("Esc must cancel the opening") }
     }
 
+    func testFirstEscapeAfterOpeningNavigationKeepsScanAndImplicitSelection() {
+        for navigateByKey in [true, false] {
+            let (store, opening) = openingStore(itemCount: 4)
+            let view = SessionView(store: store)
+            for target in [1, 2] {
+                if navigateByKey {
+                    XCTAssertTrue(view.handleKey(keyEvent(code: 124, characters: "\u{F703}"), context: .focusedSession))
+                } else {
+                    opening.select(opening.items[target].id)
+                }
+                XCTAssertTrue(opening.selectedIDs.isEmpty)
+                XCTAssertTrue(view.handleKey(keyEvent(code: 53, characters: "\u{1B}"), context: .focusedSession))
+                XCTAssertTrue(store.openingSession === opening, "First Esc after browsing must preserve the scan")
+                XCTAssertTrue(opening.selectedIDs.isEmpty)
+                XCTAssertEqual(opening.currentIndex, target)
+                // Shift still ranges from the implicit current after Esc.
+                opening.select(opening.items[3].id, extending: true)
+                XCTAssertEqual(opening.selectedIDs, Set(opening.items[target...3].map(\.id)))
+                XCTAssertTrue(view.handleKey(keyEvent(code: 53, characters: "\u{1B}"), context: .focusedSession))
+            }
+            XCTAssertTrue(view.handleKey(keyEvent(code: 53, characters: "\u{1B}"), context: .focusedSession))
+            XCTAssertNil(store.openingSession, "A second Esc without navigation can still cancel")
+        }
+    }
+
     func testOpeningToolbarKeepsOnlyCancelViewBrowserAndInfoLive() {
         let (store, opening) = openingStore(itemCount: 3)
         let view = SessionView(store: store)
@@ -1692,6 +1717,11 @@ final class HotkeyTests: XCTestCase {
         sendKeyEvent(code: 5, characters: "g", in: window)
         XCTAssertEqual(opening.viewMode, .grid)
         XCTAssertTrue(store.items.isEmpty)
+
+        sendKeyEvent(code: 124, characters: "\u{F703}", in: window)
+        sendKeyEvent(code: 53, characters: "\u{1B}", in: window)
+        XCTAssertTrue(store.openingSession === opening, "Real monitor Esc must preserve a navigated opening")
+        XCTAssertTrue(opening.selectedIDs.isEmpty)
 
         let ready = readyStore(itemCount: 3, firstItemIsVideo: false)
         store.items = ready.items

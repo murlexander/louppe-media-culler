@@ -460,6 +460,8 @@ are independent; XCTest defaults use disposable storage.
   Ready's implicit-current selection: Shift ranges from current without moving
   it, Command includes the implicit current and keeps a surviving current when
   removing it, and plain navigation or clearing returns to implicit selection.
+  After browsing, the first Esc clears explicit selection or acknowledges the
+  implicit current; a second Esc without navigation cancels opening.
   Handoff expands selected pairs to their physical file IDs.
   Identity passes: discovery capture, a preview barrier only when a preview
   mounts, a check after each cache miss's admission wait and read, none for

@@ -44,6 +44,7 @@ final class OpeningSessionState: ObservableObject {
     @Published private(set) var keyboardNavigationGeneration: UInt64 = 0
     private(set) var gridColumnCount = 1
     private var hasCurrentInteraction = false
+    private var hasNavigationSinceEscape = false
     private var viewportReceipts: [OpeningViewportSurface: OpeningViewportReceipt] = [:]
     private var userViewportSurfaces: Set<OpeningViewportSurface> = []
 
@@ -102,6 +103,7 @@ final class OpeningSessionState: ObservableObject {
     func select(_ id: String, extending: Bool = false, toggling: Bool = false) {
         guard let index = indexByID[id] else { return }
         hasCurrentInteraction = true
+        hasNavigationSinceEscape = true
         if extending {
             // Ready ranges from current and leaves it as the anchor, including
             // the initial implicit selection and repeated Shift-clicks.
@@ -140,10 +142,13 @@ final class OpeningSessionState: ObservableObject {
 
     func toggleViewMode() { viewMode = viewMode == .gallery ? .grid : .gallery }
 
-    /// Esc's first stage. Keeps the current photo, like Ready.
+    /// Esc first clears explicit selection or acknowledges browsing. Keep this
+    /// separate from implicit selection so a single Esc cannot discard a scan
+    /// after a plain click/arrow, while modifier selection still matches Ready.
     func clearSelection() -> Bool {
-        guard !selectedIDs.isEmpty else { return false }
+        guard !selectedIDs.isEmpty || hasNavigationSinceEscape else { return false }
         selectedIDs = []
+        hasNavigationSinceEscape = false
         return true
     }
 
