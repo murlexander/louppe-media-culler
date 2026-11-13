@@ -1,5 +1,9 @@
 # Version History
 
+## 1.15.0 (19) — 2026-11-13
+
+- Begin the next bug-fix and testing cycle.
+
 ## 1.14.0 (18) — 2026-11-13
 
 - Use the right singular and plural words in every language, and group large counts in Louppe's language so they are easier to read.
