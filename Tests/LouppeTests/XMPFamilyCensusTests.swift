@@ -5,6 +5,101 @@ import XCTest
 @testable import Louppe
 
 final class XMPFamilyCensusTests: XCTestCase {
+    func testNestedStemWithoutApplicationPacketAllowsCanonicalPublicationAndMove() async throws {
+        let root = try folder()
+        let source = try folder(in: root)
+        let destination = try folder(in: root)
+        let raw = source.appendingPathComponent("IMG.NEF")
+        let jpeg = source.appendingPathComponent("IMG.NEF.jpg")
+        try Data("raw".utf8).write(to: raw)
+        try Data("jpeg".utf8).write(to: jpeg)
+        let family = try XCTUnwrap(XMPSidecarResolver.resolve(members: [member(raw), member(jpeg)])
+            .first { $0.members.contains { $0.mediaPath.url == raw } })
+        XCTAssertEqual(family.disposition, .publish)
+        let sidecar = source.appendingPathComponent("IMG.xmp")
+        let validation = try XMPPublicationSourceValidation(family: family, sourceFolder: nil, sourceFolderIdentity: nil)
+        let store = XMPMetadataStore()
+        let prepared = try await store.prepareWrite(path: XMPExactFileSystemPath(url: sidecar), metadata: metadata, sourceValidation: validation)
+        _ = try await store.commit(prepared, sourceValidation: validation)
+        let published = try Data(contentsOf: sidecar)
+        let selected = try item(raw)
+        let xmp = try await XMPExportPlanner.prepare(selected: [selected], familyContextItems: [selected, item(jpeg)], profile: .universal, visibleDecisionKeywords: false, allowExternalLabelReplacement: false)
+        let plan = try ExportWorker.makePlan(for: [selected], in: destination, xmpPlan: xmp, mode: .move)
+        let result = ExportWorker.move([selected], to: destination, xmpPlan: xmp, preparedPlan: plan,
+            journalDirectory: root.appendingPathComponent("Journals")) { _, _ in }
+        XCTAssertEqual(result.movedItemIDs, [selected.id])
+        XCTAssertEqual(result.failedPhotos, 0)
+        XCTAssertFalse(result.requiresRecovery)
+        XCTAssertEqual(try Data(contentsOf: jpeg), Data("jpeg".utf8))
+        XCTAssertEqual(try Data(contentsOf: destination.appendingPathComponent("IMG.NEF")), Data("raw".utf8))
+        XCTAssertEqual(try Data(contentsOf: destination.appendingPathComponent("IMG.xmp")), published)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: sidecar.path))
+    }
+
+    func testTemporaryParentSwapCannotSubstituteMembershipListing() throws {
+        let root = try folder()
+        let source = try folder(in: root)
+        let replacement = try folder(in: root)
+        let held = root.appendingPathComponent("held")
+        let raw = source.appendingPathComponent("PAIR.NEF")
+        try Data("raw".utf8).write(to: raw)
+        let expectation = try XMPFamilyMembership(members: [member(raw)])
+        let jpeg = source.appendingPathComponent("PAIR.JPG")
+        try Data("jpeg".utf8).write(to: jpeg)
+        try Data("foreign raw".utf8).write(to: replacement.appendingPathComponent("PAIR.NEF"))
+        var swapped = false
+        func restore() throws {
+            guard swapped else { return }
+            try FileManager.default.moveItem(at: source, to: replacement)
+            try FileManager.default.moveItem(at: held, to: source)
+            swapped = false
+        }
+        defer { try? restore() }
+        var polls = 0
+        XCTAssertThrowsError(try expectation.validate(isCancelled: {
+            polls += 1
+            do {
+                if polls == 1 {
+                    try FileManager.default.moveItem(at: source, to: held)
+                    try FileManager.default.moveItem(at: replacement, to: source)
+                    swapped = true
+                } else if polls == 2 {
+                    try restore()
+                }
+            } catch { XCTFail("Swap probe failed: \(error)"); return true }
+            return false
+        }))
+        try restore()
+        XCTAssertEqual(try Data(contentsOf: raw), Data("raw".utf8))
+        XCTAssertEqual(try Data(contentsOf: jpeg), Data("jpeg".utf8))
+    }
+
+    func testNestedSiblingAfterPlanProtectsApplicationPacketBeingMoved() async throws {
+        let root = try folder()
+        let source = try folder(in: root)
+        let destination = try folder(in: root)
+        let raw = source.appendingPathComponent("PAIR.NEF")
+        let application = source.appendingPathComponent("PAIR.NEF.xmp")
+        let privateBytes = Data("private processing history".utf8)
+        try Data("raw".utf8).write(to: raw)
+        try privateBytes.write(to: application)
+        let selected = try item(raw)
+        let xmp = try await XMPExportPlanner.prepare(selected: [selected], familyContextItems: [selected], profile: .universal, visibleDecisionKeywords: false, allowExternalLabelReplacement: false)
+        XCTAssertEqual(xmp.applicationPacketCount, 1)
+        let plan = try ExportWorker.makePlan(for: [selected], in: destination, xmpPlan: xmp, mode: .move)
+        let jpeg = source.appendingPathComponent("PAIR.NEF.jpg")
+        try Data("jpeg".utf8).write(to: jpeg)
+        let result = ExportWorker.move([selected], to: destination, xmpPlan: xmp, preparedPlan: plan,
+            journalDirectory: root.appendingPathComponent("Journals")) { _, _ in }
+        XCTAssertEqual(result.movedItemIDs, [])
+        XCTAssertEqual(result.failedPhotos, 1)
+        XCTAssertFalse(result.requiresRecovery)
+        XCTAssertEqual(try Data(contentsOf: raw), Data("raw".utf8))
+        XCTAssertEqual(try Data(contentsOf: jpeg), Data("jpeg".utf8))
+        XCTAssertEqual(try Data(contentsOf: application), privateBytes)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.appendingPathComponent("PAIR.NEF").path))
+    }
+
     func testUnreviewedSiblingBeforeDiscoveryRefusesPublication() throws {
         let root = try folder()
         let raw = root.appendingPathComponent("PAIR.NEF")
@@ -206,7 +301,8 @@ final class XMPFamilyCensusTests: XCTestCase {
             let root = try folder()
             let raw = root.appendingPathComponent("PAIR.NEF")
             try Data("raw".utf8).write(to: raw)
-            let expectation = try XMPFamilyMembership(members: [member(raw)])
+            let expectation = try XMPFamilyMembership(members: [member(raw)],
+                applicationOwnerPaths: [XMPExactFileSystemPath(url: raw)])
             let other = root.appendingPathComponent(name)
             try FileManager.default.createSymbolicLink(at: other, withDestinationURL: raw)
             XCTAssertThrowsError(try expectation.validate(), name)
@@ -294,7 +390,7 @@ final class XMPFamilyCensusTests: XCTestCase {
                 XCTAssertEqual(peakMembers, 1)
                 var usage = rusage()
                 getrusage(RUSAGE_SELF, &usage)
-                print("CENSUS_BENCH families=\(count) dispersed=\(dispersed) enumerations=\(enumerations) entries=\(entries) seconds=\(elapsed) peakMatchedMembers=\(peakMembers) retainedExpectedMembers=\(expectations.count) peakListedEntries=\(dispersed ? 2 : count * 2) workerCount=1 publicationWorkerLimit=\(XMPPublicationPlanner.concurrencyLimit) packetBytesRetainedByCensus=0 processPeakRSSBytes=\(usage.ru_maxrss)")
+                print("CENSUS_BENCH families=\(count) dispersed=\(dispersed) enumerations=\(enumerations) entries=\(entries) seconds=\(elapsed) peakMatchedMembers=\(peakMembers) retainedExpectedMembers=\(expectations.count) peakListedEntries=1 workerCount=1 publicationWorkerLimit=\(XMPPublicationPlanner.concurrencyLimit) packetBytesRetainedByCensus=0 processPeakRSSBytes=\(usage.ru_maxrss)")
                 fflush(nil)
                 // Cancellation is requested on a different thread while the
                 // real directory read/entry walk is in progress; join it here.

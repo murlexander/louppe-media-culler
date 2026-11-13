@@ -465,7 +465,8 @@ enum XMPExportPlanner {
             var family = family
             if family.category.canPublish || !family.applicationPackets.isEmpty,
                let resolved = resolvedByID[family.id] {
-                family.membership = try XMPFamilyMembership(members: resolved.members)
+                family.membership = try XMPFamilyMembership(members: resolved.members,
+                    applicationOwnerPaths: family.applicationPackets.map(\.ownerMediaPath))
             }
             return family
         }

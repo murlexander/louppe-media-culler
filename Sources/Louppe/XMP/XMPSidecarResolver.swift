@@ -367,12 +367,15 @@ struct XMPFamilyMembership: Equatable, Sendable {
     let parent: DurableFileIO.DirectoryBinding
     let paths: Set<XMPExactFileSystemPath>
     let identities: [XMPExactFileSystemPath: FileOperationJournal.FileIdentity]
+    let applicationOwnerPaths: Set<XMPExactFileSystemPath>
 
-    init(members: [XMPStemFamilyMember]) throws {
+    init(members: [XMPStemFamilyMember], applicationOwnerPaths: [XMPExactFileSystemPath] = []) throws {
         guard let first = members.first else { throw Changed() }
         parent = try DurableFileIO.DirectoryBinding(url: first.mediaPath.parent.url)
         paths = Set(members.map(\.mediaPath))
-        guard paths.count == members.count else { throw Changed() }
+        self.applicationOwnerPaths = Set(applicationOwnerPaths)
+        guard paths.count == members.count,
+              self.applicationOwnerPaths.isSubset(of: paths) else { throw Changed() }
         identities = try Dictionary(uniqueKeysWithValues: members.map {
             ($0.mediaPath, try $0.scannedIdentity ?? FileOperationJournal.captureIdentity(at: $0.mediaPath.url))
         })
@@ -391,15 +394,13 @@ struct XMPFamilyMembership: Equatable, Sendable {
         let directory = try XMPExactFileSystemPath(url: parent.url)
         let sensitive = try Self.caseSensitivity(in: directory)
         let stems = try Set(paths.map { Self.key(Self.stem(try Self.name($0)), sensitive) })
-        let keys = try Set(paths.flatMap { path -> [String] in
-            let name = try Self.name(path)
-            return [Self.key(Self.stem(name), sensitive), Self.key(name, sensitive)]
-        })
-        // The second key detects a newly introduced nested-stem owner, e.g.
-        // PAIR.NEF.jpg competing for the application packet PAIR.NEF.xmp.
-        let actual = try Self.census(directory: directory, sensitive: sensitive,
+        let applicationStems = try Set(applicationOwnerPaths.map { Self.key(try Self.name($0), sensitive) })
+        // Nested-stem media matter only when moving their shared application
+        // packet. They do not own this family's canonical packet.
+        let actual = try Self.census(directory: directory, binding: parent,
                                       isCancelled: isCancelled, measured: measured) { name in
-            keys.contains(Self.key(Self.stem(name), sensitive))
+            stems.contains(Self.key(Self.stem(name), sensitive))
+                || applicationStems.contains(Self.key(Self.stem(name), sensitive))
                 || stems.contains(Self.key(name, sensitive))
         }
         guard actual == paths.subtracting(moved) else { throw Changed() }
@@ -418,7 +419,7 @@ struct XMPFamilyMembership: Equatable, Sendable {
         try binding.requireCurrentPath()
         let sensitive = try caseSensitivity(in: packet.parent)
         let packetStem = key(stem(try name(packet)), sensitive)
-        let found = try census(directory: packet.parent, sensitive: sensitive) { name in
+        let found = try census(directory: packet.parent, binding: binding) { name in
             key(stem(name), sensitive) == packetStem || key(name, sensitive) == packetStem
         }
         try binding.requireCurrentPath()
@@ -460,24 +461,43 @@ struct XMPFamilyMembership: Equatable, Sendable {
         return value
     }
 
-    static func census(directory: XMPExactFileSystemPath, sensitive: Bool,
+    static func census(directory: XMPExactFileSystemPath, binding: DurableFileIO.DirectoryBinding,
                        isCancelled: () -> Bool = { false },
                        measured: (Int, Int) -> Void = { _, _ in },
                        matches: (String) -> Bool) throws -> Set<XMPExactFileSystemPath> {
         try autoreleasepool {
             try XMPSidecarResolver.checkCancellation(isCancelled)
-            let entries = try FileManager.default.contentsOfDirectory(at: directory.url, includingPropertiesForKeys: nil)
+            let descriptor = directory.withFileSystemRepresentation {
+                Darwin.open($0, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            }
+            guard descriptor >= 0 else { throw Changed() }
+            var status = Darwin.stat()
+            guard Darwin.fstat(descriptor, &status) == 0,
+                  status.st_mode & mode_t(S_IFMT) == mode_t(S_IFDIR),
+                  status.st_dev == binding.device, status.st_ino == binding.inode,
+                  status.st_birthtimespec.tv_sec == binding.birthSeconds,
+                  status.st_birthtimespec.tv_nsec == binding.birthNanoseconds else {
+                Darwin.close(descriptor)
+                throw Changed()
+            }
+            guard let stream = Darwin.fdopendir(descriptor) else {
+                Darwin.close(descriptor)
+                throw Changed()
+            }
+            defer { Darwin.closedir(stream) }
             var result = Set<XMPExactFileSystemPath>()
-            for (index, entry) in entries.enumerated() {
-                if index.isMultiple(of: 32) { try XMPSidecarResolver.checkCancellation(isCancelled) }
-                // Capture raw entry bytes before any string comparison. Only
-                // possible owners need a full exact-path round trip and lstat.
-                let component = try entry.withUnsafeFileSystemRepresentation { pointer -> Data in
-                    guard let pointer else { throw Changed() }
-                    let bytes = UnsafeRawBufferPointer(start: pointer, count: strlen(pointer))
-                    guard let slash = bytes.lastIndex(of: UInt8(ascii: "/")) else { throw Changed() }
-                    return Data(bytes[(slash + 1)...])
+            var visited = 0
+            while true {
+                if visited.isMultiple(of: 32) { try XMPSidecarResolver.checkCancellation(isCancelled) }
+                errno = 0
+                guard let entry = Darwin.readdir(stream) else {
+                    guard errno == 0 else { throw Changed() }
+                    break
                 }
+                let length = Int(entry.pointee.d_namlen)
+                let component = withUnsafeBytes(of: &entry.pointee.d_name) { Data($0.prefix(length)) }
+                if component == Data(".".utf8) || component == Data("..".utf8) { continue }
+                visited += 1
                 guard let name = String(data: component, encoding: .utf8) else { throw Changed() }
                 guard matches(name),
                       FolderScanner.isRecognizedExtension((name as NSString).pathExtension) else { continue }
@@ -486,7 +506,7 @@ struct XMPFamilyMembership: Equatable, Sendable {
                 result.insert(path)
             }
             try XMPSidecarResolver.checkCancellation(isCancelled)
-            measured(entries.count, result.count)
+            measured(visited, result.count)
             return result
         }
     }

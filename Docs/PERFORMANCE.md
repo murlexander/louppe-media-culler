@@ -81,7 +81,11 @@ persistence reads and final identity checks.
   unselected stem-family scan identities, parent binding, and opened-folder
   authority. Revalidate them in preflight and immediately before commit.
   Fresh family censuses check actual recognized media before final packet
-  publication, source retirement, and recovery cleanup. Unknown members,
+  publication, source retirement, and recovery cleanup. Each census streams
+  names from a descriptor verified against the planned parent binding; a
+  temporary path redirection cannot substitute another directory's listing.
+  Nested-stem owners are checked for application packets actually being moved.
+  Unknown members,
   unreadable entries, and unknown case sensitivity refuse ownership. New owners
   retain the source packet or restore its verified staged copy exclusively.
   A census is a fresh observation, not atomic exclusion of external directory
