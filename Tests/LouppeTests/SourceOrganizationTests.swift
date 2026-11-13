@@ -3,6 +3,61 @@ import XCTest
 @testable import Louppe
 
 final class SourceOrganizationTests: XCTestCase {
+    func testOrganizationRefusesIntermediateSymlinkAfterPreparingDirectories() throws {
+        for existingDirectories in [false, true] {
+            let fixture = try makeFixture(named: "PreparedIntermediateSwap")
+            defer { try? FileManager.default.removeItem(at: fixture.root) }
+            let source = try mediaFile("A.JPG", under: fixture.photos)
+            let item = makeItem(id: "A.JPG", url: source, rating: .yes)
+            let organized = fixture.photos.appendingPathComponent("Organized")
+            let held = fixture.photos.appendingPathComponent("HeldOrganized")
+            let outside = try directory("Outside", under: fixture.root)
+            _ = try directory("Yes", under: outside)
+            if existingDirectories { _ = try directory("Organized/Yes", under: fixture.photos) }
+            let original = try FileOperationJournal.captureIdentity(at: source)
+            let prepared = try plan(fixture: fixture, selected: [item], levels: [.decision])
+            XCTAssertTrue(prepared.canExecute)
+            let result = SourceOrganizationWorker.organize(
+                prepared, journalDirectory: fixture.journals,
+                afterPreparingDestinationDirectories: {
+                    try FileManager.default.moveItem(at: organized, to: held)
+                    try FileManager.default.createSymbolicLink(at: organized, withDestinationURL: outside)
+                }, progress: { _, _ in }
+            )
+            XCTAssertEqual(result.movedFiles, 0)
+            XCTAssertEqual(result.failedItems, 1)
+            XCTAssertEqual(try FileOperationJournal.captureIdentity(at: source), original)
+            XCTAssertEqual(try Data(contentsOf: source), Data("A.JPG".utf8))
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: outside.appendingPathComponent("Yes").path), [])
+            XCTAssertNil(result.undoRecord)
+        }
+    }
+
+    func testOrganizationRefusesIntermediateReplacementAfterOpeningMoveDirectories() throws {
+        let fixture = try makeFixture(named: "BoundIntermediateSwap")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let source = try mediaFile("A.JPG", under: fixture.photos)
+        let item = makeItem(id: "A.JPG", url: source, rating: .yes)
+        let prepared = try plan(fixture: fixture, selected: [item], levels: [.decision])
+        let organized = fixture.photos.appendingPathComponent("Organized")
+        let outside = try directory("Outside", under: fixture.root)
+        let escaped = outside.appendingPathComponent("Organized")
+        let result = ExportWorker.move(
+            [item], to: fixture.photos, preparedPlan: prepared.workerPlan,
+            journalDirectory: fixture.journals, journalKind: .organizeSource,
+            prepareDestinationDirectories: {
+                _ = try self.directory("Organized/Yes", under: fixture.photos)
+            }, sourceFolderIdentity: prepared.sourceFolderIdentity,
+            afterMoveDirectoriesOpened: {
+                try! FileManager.default.moveItem(at: organized, to: escaped)
+                try! FileManager.default.createSymbolicLink(at: organized, withDestinationURL: escaped)
+            }, progress: { _, _ in }
+        )
+        XCTAssertEqual(result.movedFiles, 0)
+        XCTAssertEqual(try Data(contentsOf: source), Data("A.JPG".utf8))
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: escaped.appendingPathComponent("Yes").path), [])
+    }
+
     func testPartialUndoDoesNotClaimAllNamesOrFoldersWereRestored() {
         for outcome in [
             SourceOrganizationOutcome(movedFiles: 1, failedItems: 1, message: nil, wasUndo: true),

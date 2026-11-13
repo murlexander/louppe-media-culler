@@ -3,6 +3,31 @@ import XCTest
 @testable import Louppe
 
 final class DurableFileIOTests: XCTestCase {
+    func testRootRelativeDirectoriesPreserveExactNamesAndRefuseEscapes() throws {
+        let root = try makeTemporaryDirectory(named: "RootRelativeDirectories")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let selected = root.appendingPathComponent("Selected")
+        let outside = root.appendingPathComponent("Selected-sibling")
+        for folder in [selected, outside] {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        }
+        let directory = try DurableFileIO.BoundDirectory(.init(url: selected))
+        for name in ["caf\u{00E9}", "cafe\u{301}"] {
+            let bytes = Data(name.utf8)
+            let expected = try XMPExactFileSystemPath(url: selected).appending(componentBytes: bytes)
+            let created = try directory.openChildDirectory(component: bytes, createIfMissing: true)
+            let existing = try directory.openDescendantDirectory(at: expected.url)
+            XCTAssertEqual(try XMPExactFileSystemPath(url: created.binding.url).bytes, expected.bytes)
+            XCTAssertEqual(existing.binding, created.binding)
+        }
+        XCTAssertThrowsError(try directory.openDescendantDirectory(at: outside))
+        let link = selected.appendingPathComponent("Link")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: outside)
+        XCTAssertThrowsError(try directory.openDescendantDirectory(at: link))
+        XCTAssertThrowsError(try directory.openChildDirectory(component: Data("Link".utf8), createIfMissing: true))
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: outside.path), [])
+    }
+
     func testDescriptorCopyRejectsForeignSourceWhenParentIsRestoredAfterOpen() throws {
         let root = try makeTemporaryDirectory(named: "CopySourceParentSwap")
         defer { try? FileManager.default.removeItem(at: root) }

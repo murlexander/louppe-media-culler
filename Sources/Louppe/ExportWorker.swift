@@ -1215,8 +1215,31 @@ enum ExportWorker {
                 xmpSummary: xmpSummary
             )
         }
+        var sourceRootDirectory: DurableFileIO.BoundDirectory?
+        var preparedDirectoryBindings: [Data: DurableFileIO.DirectoryBinding] = [:]
         do {
             try prepareDestinationDirectories()
+            if sourceFolderIdentity != nil {
+                let root = try DurableFileIO.BoundDirectory(.init(url: destination))
+                sourceRootDirectory = root
+                // Freeze every ancestor after creation, before moving any file.
+                // Keep only identities here; descriptors stay bounded to the
+                // source root and the current file even for large plans.
+                for file in plan.items.flatMap(\.files) {
+                    for url in [file.source, file.target] {
+                        let parent = try XMPExactFileSystemPath(url: url).parent
+                        if preparedDirectoryBindings[parent.bytes] != nil { continue }
+                        let directory = try root.openDescendantDirectory(at: parent.url)
+                        for binding in directory.pathBindings {
+                            let key = try XMPExactFileSystemPath(url: binding.url).bytes
+                            if let prior = preparedDirectoryBindings[key], prior != binding {
+                                throw DurableFileIO.DestinationChanged()
+                            }
+                            preparedDirectoryBindings[key] = binding
+                        }
+                    }
+                }
+            }
             for binding in plan.destinationBindings {
                 try binding.requireCurrentPath()
             }
@@ -1255,6 +1278,21 @@ enum ExportWorker {
         var globalFileIndex = 0
 
         var didOpenMoveDirectories = false
+
+        func openMoveDirectory(for url: URL) throws -> DurableFileIO.BoundDirectory {
+            let parent = try XMPExactFileSystemPath(url: url).parent.url
+            guard let root = sourceRootDirectory else {
+                return try DurableFileIO.BoundDirectory(.init(url: parent))
+            }
+            let directory = try root.openDescendantDirectory(at: parent)
+            for binding in directory.pathBindings {
+                let key = try XMPExactFileSystemPath(url: binding.url).bytes
+                guard preparedDirectoryBindings[key] == binding else {
+                    throw DurableFileIO.DestinationChanged()
+                }
+            }
+            return directory
+        }
 
         itemLoop: for (itemOffset, item) in plan.items.enumerated() {
             let itemFileIndex = globalFileIndex
@@ -1314,15 +1352,9 @@ enum ExportWorker {
                         // target. Bind all exact parents independently so no
                         // plan-format change can redirect either rename.
                         moveDirectories = try (
-                            DurableFileIO.BoundDirectory(
-                                .init(url: XMPExactFileSystemPath(url: file.source).parent.url)
-                            ),
-                            DurableFileIO.BoundDirectory(
-                                .init(url: XMPExactFileSystemPath(url: temporary).parent.url)
-                            ),
-                            DurableFileIO.BoundDirectory(
-                                .init(url: XMPExactFileSystemPath(url: file.target).parent.url)
-                            )
+                            openMoveDirectory(for: file.source),
+                            openMoveDirectory(for: temporary),
+                            openMoveDirectory(for: file.target)
                         )
                         if !didOpenMoveDirectories {
                             didOpenMoveDirectories = true
@@ -1371,7 +1403,7 @@ enum ExportWorker {
                                     guard let moveDirectories else {
                                         throw DurableFileIO.DestinationChanged()
                                     }
-                                    try moveDirectories.temporary.binding
+                                    try moveDirectories.temporary
                                         .requireCurrentPath()
                                     if pathEntryExists(temporary) {
                                         let partialIdentity = try FileOperationJournal
@@ -1418,8 +1450,8 @@ enum ExportWorker {
                                 to: moveDirectories.temporary,
                                 policy: directorySyncPolicy
                             )
-                            try moveDirectories.source.binding.requireCurrentPath()
-                            try moveDirectories.temporary.binding.requireCurrentPath()
+                            try moveDirectories.source.requireCurrentPath()
+                            try moveDirectories.temporary.requireCurrentPath()
                             touched.identity = try verifiedIdentity(
                                 matching: writer.plannedIdentity(at: fileIndex),
                                 at: temporary
@@ -1503,8 +1535,8 @@ enum ExportWorker {
                             to: moveDirectories.target,
                             policy: directorySyncPolicy
                         )
-                        try moveDirectories.temporary.binding.requireCurrentPath()
-                        try moveDirectories.target.binding.requireCurrentPath()
+                        try moveDirectories.temporary.requireCurrentPath()
+                        try moveDirectories.target.requireCurrentPath()
                         touched.identity = try verifiedIdentity(
                             matching: identity,
                             at: file.target

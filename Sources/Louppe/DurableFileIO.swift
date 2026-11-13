@@ -29,6 +29,10 @@ enum DurableFileIO {
             guard fstat(descriptor, &status) == 0 else {
                 throw POSIXError(.EIO)
             }
+            self.init(url: url, status: status)
+        }
+
+        fileprivate init(url: URL, status: stat) {
             self.url = url
             device = status.st_dev
             inode = status.st_ino
@@ -136,8 +140,11 @@ enum DurableFileIO {
     final class BoundDirectory: @unchecked Sendable {
         let binding: DirectoryBinding
         private let descriptor: Int32
+        private let ancestors: [DirectoryBinding]
+        var pathBindings: [DirectoryBinding] { ancestors + [binding] }
 
         init(_ binding: DirectoryBinding) throws {
+            ancestors = []
             self.binding = binding
             descriptor = try openDescriptor(binding.url,
                 flags: O_RDONLY | O_CLOEXEC | O_DIRECTORY | O_NOFOLLOW,
@@ -149,7 +156,101 @@ enum DurableFileIO {
             }
         }
 
+        private init(binding: DirectoryBinding, descriptor: Int32,
+                     ancestors: [DirectoryBinding]) {
+            self.binding = binding
+            self.descriptor = descriptor
+            self.ancestors = ancestors
+        }
+
         deinit { Darwin.close(descriptor) }
+
+        func requireCurrentPath() throws {
+            for ancestor in ancestors { try ancestor.requireCurrentPath() }
+            try binding.requireCurrentPath()
+        }
+
+        /// Open each exact component relative to an already verified parent.
+        /// O_NOFOLLOW applies at every level, including existing directories.
+        func openChildDirectory(
+            component: Data,
+            createIfMissing: Bool = false,
+            syncPolicy: DirectorySyncPolicy = .required
+        ) throws -> BoundDirectory {
+            let child = try XMPExactFileSystemPath(url: binding.url)
+                .appending(componentBytes: component).url
+            try requireCurrentPath()
+            let fd = try withName(child) { name in
+                func openChild() -> Int32 {
+                    var result: Int32
+                    repeat {
+                        result = openat(descriptor, name,
+                            O_RDONLY | O_CLOEXEC | O_DIRECTORY | O_NOFOLLOW)
+                    } while result < 0 && errno == EINTR
+                    return result
+                }
+                var result = openChild()
+                if result < 0, errno == ENOENT, createIfMissing {
+                    var created: Int32
+                    repeat { created = mkdirat(descriptor, name, 0o755) }
+                    while created != 0 && errno == EINTR
+                    guard created == 0 || errno == EEXIST else {
+                        throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+                    }
+                    if created == 0 { try sync(policy: syncPolicy) }
+                    result = openChild()
+                }
+                guard result >= 0 else {
+                    throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+                }
+                return result
+            }
+            var status = stat()
+            guard fstat(fd, &status) == 0, status.st_mode & S_IFMT == S_IFDIR else {
+                Darwin.close(fd)
+                throw DestinationChanged()
+            }
+            let opened = BoundDirectory(binding: .init(url: child, status: status),
+                descriptor: fd, ancestors: pathBindings)
+            try opened.requireCurrentPath()
+            return opened
+        }
+
+        func openDescendantDirectory(at url: URL) throws -> BoundDirectory {
+            let root = try XMPExactFileSystemPath(url: binding.url)
+            let target = try XMPExactFileSystemPath(url: url)
+            if target.bytes == root.bytes {
+                try requireCurrentPath()
+                return self
+            }
+            var prefix = root.bytes
+            if prefix.last != UInt8(ascii: "/") { prefix.append(UInt8(ascii: "/")) }
+            guard target.bytes.starts(with: prefix) else {
+                // Scanner URLs may use /private/var while the selected root
+                // uses /var. Resolve only that root, never target descendants,
+                // and prove the alternate root names the held directory.
+                let resolved = try FileOperationJournal.resolvingSymlinksExactly(binding.url)
+                guard try XMPExactFileSystemPath(url: resolved).bytes != root.bytes else {
+                    throw DestinationChanged()
+                }
+                var status = stat()
+                guard fstat(descriptor, &status) == 0 else { throw DestinationChanged() }
+                let alias = DirectoryBinding(url: resolved, status: status)
+                try alias.requireCurrentPath()
+                try requireCurrentPath()
+                let duplicate = fcntl(descriptor, F_DUPFD_CLOEXEC, 0)
+                guard duplicate >= 0 else {
+                    throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+                }
+                return try BoundDirectory(binding: alias, descriptor: duplicate,
+                    ancestors: pathBindings).openDescendantDirectory(at: url)
+            }
+            var current = self
+            for component in target.bytes.dropFirst(prefix.count).split(separator: UInt8(ascii: "/")) {
+                current = try current.openChildDirectory(component: Data(component))
+            }
+            return current
+        }
 
         private func withName<T>(_ url: URL, _ body: (UnsafePointer<CChar>) throws -> T) throws -> T {
             let path = try XMPExactFileSystemPath(url: url)
@@ -167,7 +268,7 @@ enum DurableFileIO {
         }
 
         private func create(_ url: URL) throws -> Int32 {
-            try binding.requireCurrentPath()
+            try requireCurrentPath()
             let fd = try withName(url) {
                 openat(descriptor, $0, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
             }
@@ -220,7 +321,7 @@ enum DurableFileIO {
             try DurableFileIO.copyDescriptor(sourceFD, to: targetFD, progress: progress)
             try requireOpenedSource()
             try syncDescriptor(targetFD, path: temporary.path, fullSync: true)
-            try binding.requireCurrentPath()
+            try requireCurrentPath()
         }
 
         func write(_ data: Data, to temporary: URL) throws {
@@ -228,11 +329,11 @@ enum DurableFileIO {
             defer { Darwin.close(fd) }
             try writeAll(data, descriptor: fd, path: temporary.path)
             try syncDescriptor(fd, path: temporary.path, fullSync: true)
-            try binding.requireCurrentPath()
+            try requireCurrentPath()
         }
 
         func publish(from temporary: URL, to target: URL) throws {
-            try binding.requireCurrentPath()
+            try requireCurrentPath()
             let result = try withName(temporary) { sourceName in
                 try withName(target) { targetName in
                     renameatx_np(descriptor, sourceName, descriptor, targetName, UInt32(RENAME_EXCL))
@@ -240,7 +341,7 @@ enum DurableFileIO {
             }
             guard result == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
             try syncDescriptor(descriptor, path: binding.url.path, fullSync: true)
-            try binding.requireCurrentPath()
+            try requireCurrentPath()
         }
 
         /// XMP publication holds the original parent through temporary write,
@@ -273,7 +374,7 @@ enum DurableFileIO {
             var flushed = stat()
             guard fstat(fd, &flushed) == 0 else { throw POSIXError(.EIO) }
             try validateBeforePublish()
-            try binding.requireCurrentPath()
+            try requireCurrentPath()
             let result = try withName(temporary) { sourceName in
                 var named = stat()
                 guard fstatat(descriptor, sourceName, &named, AT_SYMLINK_NOFOLLOW) == 0,
@@ -296,7 +397,7 @@ enum DurableFileIO {
             guard result == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
             shouldRemoveTemporary = false
             try syncDescriptor(descriptor, path: binding.url.path, fullSync: true)
-            try binding.requireCurrentPath()
+            try requireCurrentPath()
         }
 
         /// Rename through held parent directories. A path component swapped
@@ -307,8 +408,8 @@ enum DurableFileIO {
             in targetDirectory: BoundDirectory,
             strategy: NoOverwriteRenameStrategy
         ) throws {
-            try binding.requireCurrentPath()
-            try targetDirectory.binding.requireCurrentPath()
+            try requireCurrentPath()
+            try targetDirectory.requireCurrentPath()
             switch strategy {
             case .exclusivePOSIX:
                 let result = try withName(source) { sourceName in

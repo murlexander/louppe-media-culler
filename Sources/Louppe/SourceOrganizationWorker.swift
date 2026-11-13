@@ -52,6 +52,7 @@ enum SourceOrganizationWorker {
     static func organize(
         _ plan: SourceOrganizationPlan,
         journalDirectory: URL? = nil,
+        afterPreparingDestinationDirectories: @escaping () throws -> Void = {},
         progress: @escaping Progress
     ) -> SourceOrganizationResult {
         let result = ExportWorker.move(
@@ -67,6 +68,7 @@ enum SourceOrganizationWorker {
             prepareDestinationDirectories: {
                 try prepareDestinationDirectories(for: plan)
                 try verifyMoveCompatibility(for: plan)
+                try afterPreparingDestinationDirectories()
             },
             sourceFolderIdentity: plan.sourceFolderIdentity,
             progress: progress
@@ -171,10 +173,11 @@ enum SourceOrganizationWorker {
         }.sorted {
             componentCount($0.bytes) < componentCount($1.bytes)
         }
+        let rootDirectory = try DurableFileIO.BoundDirectory(.init(url: root.url))
         for directory in directories {
             try createDirectoryChain(
                 directory,
-                under: root,
+                under: rootDirectory,
                 syncPolicy: plan.storageSafety.directorySyncPolicy
             )
         }
@@ -182,9 +185,10 @@ enum SourceOrganizationWorker {
 
     private static func createDirectoryChain(
         _ directory: XMPExactFileSystemPath,
-        under root: XMPExactFileSystemPath,
+        under rootDirectory: DurableFileIO.BoundDirectory,
         syncPolicy: DurableFileIO.DirectorySyncPolicy
     ) throws {
+        let root = try XMPExactFileSystemPath(url: rootDirectory.binding.url)
         if directory == root { return }
         var prefix = root.bytes
         if prefix.last != UInt8(ascii: "/") {
@@ -195,7 +199,7 @@ enum SourceOrganizationWorker {
         }
         let relative = directory.bytes.dropFirst(prefix.count)
         let components = relative.split(separator: UInt8(ascii: "/"))
-        var current = root
+        var current = rootDirectory
         for rawComponent in components {
             let component = Data(rawComponent)
             guard !component.isEmpty,
@@ -203,51 +207,21 @@ enum SourceOrganizationWorker {
                   component != Data("..".utf8) else {
                 throw WorkerError.unsafeDestination(directory.url)
             }
-            let next = try current.appending(componentBytes: component)
             guard SourceOrganizationPlanner.isScannerVisibleFolderName(
                 String(decoding: component, as: UTF8.self)
             ) else {
-                throw WorkerError.unsafeDestination(next.url)
+                throw WorkerError.unsafeDestination(directory.url)
             }
-            let status = lstat(next)
-            if let status {
-                guard (status.st_mode & mode_t(S_IFMT)) == mode_t(S_IFDIR),
-                      (status.st_mode & mode_t(S_IFMT)) != mode_t(S_IFLNK) else {
-                    throw WorkerError.destinationIsNotDirectory(next.url)
-                }
-            } else {
-                var failure: Int32 = 0
-                let created = next.withFileSystemRepresentation { pointer in
-                    var result: Int32
-                    repeat {
-                        result = Darwin.mkdir(pointer, 0o755)
-                    } while result != 0 && errno == EINTR
-                    if result != 0 { failure = errno }
-                    return result == 0
-                }
-                if !created {
-                    guard failure == EEXIST, let raced = lstat(next),
-                          (raced.st_mode & mode_t(S_IFMT)) == mode_t(S_IFDIR) else {
-                        throw WorkerError.couldNotCreateDirectory(next.url, failure)
-                    }
-                } else {
-                    try DurableFileIO.syncDirectory(
-                        current.url,
-                        fullSync: true,
-                        policy: syncPolicy
-                    )
-                    guard let createdStatus = lstat(next),
-                          (createdStatus.st_mode & mode_t(S_IFMT))
-                            == mode_t(S_IFDIR) else {
-                        throw WorkerError.destinationIsNotDirectory(next.url)
-                    }
-                }
-            }
+            let opened = try current.openChildDirectory(
+                component: component, createIfMissing: true, syncPolicy: syncPolicy
+            )
+            let next = try XMPExactFileSystemPath(url: opened.binding.url)
             let values = try next.url.resourceValues(forKeys: [.isHiddenKey, .isPackageKey])
             guard values.isHidden != true, values.isPackage != true else {
                 throw WorkerError.unsafeDestination(next.url)
             }
-            current = next
+            try opened.requireCurrentPath()
+            current = opened
         }
     }
 
