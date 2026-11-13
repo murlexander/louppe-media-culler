@@ -2161,3 +2161,5 @@
 /* Existing XMP inspection */
 "Louppe couldn't check for existing XMP sidecars." = "Louppe मौजूदा XMP साइडकार फ़ाइलों की जाँच नहीं कर सका।";
 "Try Again" = "फिर से कोशिश करें";
+
+"The sidecar's media family changed or could not be verified. Rescan the folder before changing XMP." = "XMP से जुड़ी मीडिया फ़ाइलें बदल गई हैं या उनकी पुष्टि नहीं हो सकी। XMP बदलने से पहले फ़ोल्डर को फिर से स्कैन करें।";

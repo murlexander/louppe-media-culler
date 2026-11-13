@@ -2178,3 +2178,5 @@
 /* Existing XMP inspection */
 "Louppe couldn't check for existing XMP sidecars." = "Louppe 无法检查现有的 XMP 附属文件。";
 "Try Again" = "重试";
+
+"The sidecar's media family changed or could not be verified. Rescan the folder before changing XMP." = "与 XMP 关联的媒体文件已更改或无法验证。更改 XMP 前请重新扫描文件夹。";

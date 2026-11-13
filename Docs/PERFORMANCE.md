@@ -80,6 +80,15 @@ persistence reads and final identity checks.
   revisions, and SHA-256 fingerprints. Publication also carries selected and
   unselected stem-family scan identities, parent binding, and opened-folder
   authority. Revalidate them in preflight and immediately before commit.
+  Fresh family censuses check actual recognized media before final packet
+  publication, source retirement, and recovery cleanup. Unknown members,
+  unreadable entries, and unknown case sensitivity refuse ownership. New owners
+  retain the source packet or restore its verified staged copy exclusively.
+  A census is a fresh observation, not atomic exclusion of external directory
+  changes. These risky XMP boundaries can inspect N directory entries for each
+  of F families (O(N × F)); large flat XMP jobs can therefore be materially
+  slower. The census retains matching members, not packet batches; ordinary
+  Copy without XMP and already-staged Copy recovery keep their existing paths.
   One held parent descriptor owns temporary creation, rename, cleanup, and
   flush; check the flushed temporary's identity before its same-directory rename. Reads reject
   leaf symlinks/non-regular files, stop at 64 MiB, and retain raw bytes plus

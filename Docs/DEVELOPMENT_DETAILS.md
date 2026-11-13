@@ -283,6 +283,9 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   `captureIdentity(at:volumes:)` and `identity(from:…)` serve opening barriers. Remove started
   generated partials only when their inode was durably recorded. Completed XMP
   retirement recognizes either reserved cleanup path; ambiguity preserves files.
+  Fresh media-family checks also guard retirement and recovery cleanup; a newly
+  present owner keeps its canonical packet or gets the verified staged packet
+  restored without overwriting a collision.
 - Organize checks scanner-visible names and hidden/package flags in preview and
   before moving. Sanitize generated hidden/package-like components and refuse
   unsafe explicit containers.

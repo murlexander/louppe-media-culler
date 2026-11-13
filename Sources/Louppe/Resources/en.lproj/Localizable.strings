@@ -2161,3 +2161,5 @@
 /* Existing XMP inspection */
 "Louppe couldn't check for existing XMP sidecars." = "Louppe couldn't check for existing XMP sidecars.";
 "Try Again" = "Try Again";
+
+"The sidecar's media family changed or could not be verified. Rescan the folder before changing XMP." = "The sidecar's media family changed or could not be verified. Rescan the folder before changing XMP.";
