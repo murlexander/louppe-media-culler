@@ -67,8 +67,8 @@ submission replaces one still in review, so coordinate with the App Store sessio
 
 ## Manual acceptance (needs hardware or Alex)
 
-Agent-runnable work is done and recorded. Each item needs its environment or
-person; none counts as passed until run there. Owner: **Alex** unless noted.
+These are verification gaps, not evidence that each area needs new implementation.
+None counts as passed until run in its stated environment. Owner: **Alex** unless noted.
 
 ### 1.15 checks
 
@@ -137,13 +137,19 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 ## Agent work
 
+Recommended 1.15 implementation cut: finish the XMP job-cost work below. The
+audio-analysis expansion and test-tool follow-ups can wait unless investigation
+reproduces a product failure. Before release, validate the changed safety and UI
+paths in the 1.15 checks above and run the release procedure on the actual
+candidate. Store-specific acceptance applies to the Store package.
+
 - [x] **Grid follow after filtering:** pointer decisions preserve browsing position without suppressing the next keyboard follow.
 - [x] **Opening modifier selection:** implicit current, range anchors and Command toggles match Ready through physical-file handoff.
-- [ ] **Large XMP jobs:** reduce repeated fresh family-census work in large single folders while preserving mutation/recovery ownership checks.
-- [ ] **Suite isolation:** investigate the occasional full-suite `ViewSwitchTests` thumbnail timeout and native wheel-event failure; preserve viewport and media-read assertions.
-- [ ] **Connected-drive accessibility harness:** verify capacity and Choose through system accessibility when XCTest's hosted SwiftUI tree exposes no children.
+- [ ] **Before 1.15 — XMP job cost:** add optimized end-to-end coverage of standalone publication and Export Move at 1k/2k/4k families in flat and dispersed folders, then reduce the confirmed census overhead. Measure complete-job time, directory-entry visits, cancellation latency and retained memory. Preserve fresh descriptor-bound ownership checks at publication, source retirement and recovery; keep the new-owner, Unicode, parent-swap and source-independent Copy regressions. A listing cached across later mutations would reopen the ownership bug; the existing debug census microbenchmark does not establish release-build throughput.
+- [ ] **Follow-up — suite isolation:** investigate the occasional full-suite `ViewSwitchTests` thumbnail timeout and native wheel-event failure; preserve viewport and media-read assertions. Escalate if it reproduces a product failure.
+- [ ] **Follow-up — connected-drive accessibility harness:** verify capacity and Choose through system accessibility when XCTest's hosted SwiftUI tree exposes no children.
 
-- [ ] Resolve the selected alternate audio track for meters/waveforms; multi-track files report analysis unavailable until it can be proved without changing playback.
+- [ ] **Later — alternate-track analysis:** resolve the selected alternate audio track for meters/waveforms; multi-track files report analysis unavailable until it can be proved without changing playback.
 
 - [ ] **1.15 follow-ups from the 1.14.0 release (13 November 2026).**
   - `PopoverSurfaceTests` fails with ScreenCaptureKit `InvalidTransition` when it
@@ -151,9 +157,10 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
     restoring the activation policy alone didn't fix it.
   - The `sheet-rename-partial` and `sheet-organize-partial` capture scenarios fail
     live with the same error.
-  - `verify_release.sh` once reported Sparkle code without the hardened runtime
-    although every component carries it; check `print … | grep -q` under
-    `pipefail`.
+  - Reproduce any `verify_release.sh` hardened-runtime false failure on the
+    actual release candidate before changing the guard; investigate the
+    `print … | grep -q` pipeline under `pipefail` without weakening rejection
+    of unsigned code or missing runtime flags.
   - The Filter search field shows the system blue focus ring, not purple.
 - [ ] **AUD-06 — Remaining projection costs.** Date-grouped projection and filter
   toggles take ~100–130 ms at 100k; the content-check queue walk is ~58% of the
