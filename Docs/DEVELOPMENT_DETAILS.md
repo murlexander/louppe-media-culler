@@ -231,9 +231,14 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   attention. Partial Trash Undo keeps restored originals, rescans, and reports
   failure; never move them back into protected Trash to force pair atomicity.
   Completed Export Move items stay at their destination; incomplete pairs roll back.
+  An already-restored Move still flushes both affected directories before recovery
+  retires its journal; a prior failed flush remains retryable.
 - Plan-v3 paths carry exact filesystem bytes through validation, target
   construction, and recovery. Never normalize them through Swift strings; retain
   v1/v2 compatibility. A staged Copy is written, flushed, and source-verified.
+  Copy validates the opened source descriptor against the journal identity before
+  and after transfer, including ctime; pathname checks alone do not prove which
+  bytes were read.
   The descriptor copy reports bytes after each write and honors a confirmed Stop
   between writes; the stopped partial follows recorded-partial cleanup. Each Copy
   step is flushed once: temporary contents, its folder before staged, then the
@@ -250,7 +255,9 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   Move XMP uses those bound writes/publication. Parent replacement stops work
   without redirecting files; changes after a rename retain an ambiguous journal.
   ExFAT's Foundation fallback and launch recovery remain path-based with identity
-  checks. Reproduce a remaining risk before broadening those paths. A source-folder
+  checks. Organize creates and opens every destination component relative to
+  its verified source root, refuses symlinks at each level, and rechecks retained
+  ancestor identities before moving. Reproduce a remaining risk before broadening those paths. A source-folder
   swap in that rename window can move a same-named foreign file into the reserved
   temporary; recovery keeps it unresolved and the original stays intact. There is
   no safe fix without `RENAME_EXCL` (reproduced 4 November 2026).
