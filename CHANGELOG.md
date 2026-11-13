@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Keep saved decisions tied to verified file content, and detect conflicting folder changes before saving a fallback backup.
+- Keep a hidden current photo out of Command-click selection and Trash targets.
 - Stack dialog actions and warning remedies when long labels need more room, preserving keyboard actions during resize.
 - Use neutral thumbnail selection in inactive windows and expose Sort and Filter titles as VoiceOver headings.
 - Refuse redirected source and destination paths during Copy and Organize.
