@@ -624,7 +624,7 @@
 "No new ratings are waiting to be saved. The session file changed outside Louppe and remains untouched. Restore the version you want before repair." = "कोई नई रेटिंग सहेजना बाकी नहीं है। सत्र फ़ाइल Louppe के बाहर बदली है और उसे नहीं छुआ गया। ठीक करने से पहले मनचाहा संस्करण वापस लाएँ।";
 "No photos were moved. {0}" = "कोई फोटो स्थानांतरित नहीं हुई। {0}";
 "No preview for {0}. You can still rate it — {1}" = "{0} का पूर्वावलोकन नहीं है। आप फिर भी रेटिंग दे सकते हैं — {1}";
-"No readable audio track" = "कोई पढ़ने योग्य ऑडियो ट्रैक नहीं";
+"Audio levels unavailable" = "ऑडियो स्तर उपलब्ध नहीं हैं";
 "No recognised media was found in “{0}”. Choose another folder or check Supported Formats." = "“{0}” में पहचाना जाने वाला मीडिया नहीं मिला। दूसरा फ़ोल्डर चुनें या समर्थित प्रारूप देखें।";
 "No review group is active" = "कोई समीक्षा समूह सक्रिय नहीं है";
 "No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "कोई सहेजा फ़ाइलनाम इस फ़ोल्डर से मेल नहीं खाता। सहेजे निर्णय नहीं बदले हैं। नया सत्र खोलें उन्हें बदलकर वर्तमान फ़ाइलें बिना रेटिंग खोलेगा।";

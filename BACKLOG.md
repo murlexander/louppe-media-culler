@@ -130,6 +130,8 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 ## Agent work
 
+- [ ] Resolve the selected alternate audio track for meters/waveforms; multi-track files report analysis unavailable until it can be proved without changing playback.
+
 - [ ] **1.15 follow-ups from the 1.14.0 release (13 November 2026).**
   - `PopoverSurfaceTests` fails with ScreenCaptureKit `InvalidTransition` when it
     runs after `ConnectedDrivesTests` in one `--foreground` run (passes alone);

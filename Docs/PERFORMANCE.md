@@ -147,7 +147,9 @@ persistence reads and final identity checks.
   disk output. Use 20 bins/second, clamped to 256...6,000 per recording: stereo
   payload is about 144 KiB. The 768,000-envelope budget (roughly 9 MiB of
   three-float payload) evicts multichannel results sooner. Never mix channels
-  for meters/waveforms.
+  for meters/waveforms. Multi-track files report analysis unavailable: the
+  standalone reader cannot prove the player’s selected track, and paused player
+  enabled-track state can lag media selection.
 - `HighResolutionImagePipeline` retains four lazy oriented Core Image recipes
   and runs two 1,024-source-pixel tile renders. Identical requests coalesce;
   stale generations cannot display. Request visible tiles plus one tile margin.

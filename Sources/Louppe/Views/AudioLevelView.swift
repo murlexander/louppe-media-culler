@@ -51,7 +51,7 @@ struct AudioLevelsSection: View {
                         .foregroundStyle(.secondary)
                 }
             } else if loadFailed {
-                Text(L10n.text("No readable audio track"))
+                Text(L10n.text("Audio levels unavailable"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }

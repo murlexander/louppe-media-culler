@@ -354,7 +354,10 @@ final class AudioLevelPipeline: @unchecked Sendable {
     ) async -> AudioLevelAnalysis? {
         guard !Task.isCancelled else { return nil }
         let asset = AVURLAsset(url: url)
-        guard let track = try? await asset.loadTracks(withMediaType: .audio).first,
+        // The reader does not share AVPlayerItem's automatic/manual selection.
+        // Multiple alternatives therefore cannot be labelled as playback levels.
+        guard let tracks = try? await asset.loadTracks(withMediaType: .audio),
+              tracks.count == 1, let track = tracks.first,
               !Task.isCancelled,
               let reader = try? AVAssetReader(asset: asset)
         else { return nil }

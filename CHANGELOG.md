@@ -2,6 +2,7 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Show audio analysis as unavailable for files with alternate audio tracks, instead of presenting measurements from the wrong track.
 - Reject reused release build numbers even after the update feed has been regenerated.
 
 ## 1.14.0 (18) — 2026-11-13

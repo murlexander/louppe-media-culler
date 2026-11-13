@@ -624,7 +624,7 @@
 "No new ratings are waiting to be saved. The session file changed outside Louppe and remains untouched. Restore the version you want before repair." = "No new ratings are waiting to be saved. The session file changed outside Louppe and remains untouched. Restore the version you want before repair.";
 "No photos were moved. {0}" = "No photos were moved. {0}";
 "No preview for {0}. You can still rate it — {1}" = "No preview for {0}. You can still rate it — {1}";
-"No readable audio track" = "No readable audio track";
+"Audio levels unavailable" = "Audio levels unavailable";
 "No recognised media was found in “{0}”. Choose another folder or check Supported Formats." = "No recognised media was found in “{0}”. Choose another folder or check Supported Formats.";
 "No review group is active" = "No review group is active";
 "No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated.";

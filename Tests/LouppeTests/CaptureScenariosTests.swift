@@ -32,6 +32,9 @@ final class CaptureScenariosTests: XCTestCase {
             fixture.ready(mode: .gallery)
             return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         },
+        Scenario(name: "session-audio-alternatives", description: "Gallery and Info for a disposable file with two alternative audio tracks.") { fixture in
+            try fixture.audioAlternatives()
+        },
         Scenario(name: "session-search-stars", description: "Immediate star edit after search narrows the current photo and selection.") { fixture in
             fixture.ready(mode: .grid)
             fixture.store.setIndex(0)
@@ -457,6 +460,22 @@ final class CaptureScenariosTests: XCTestCase {
                 captureDate: Date(timeIntervalSince1970: 1_792_441_000), cameraModel: "Synthetic camera", lensModel: nil,
                 mediaKind: .video, duration: 8, videoDimensions: CGSize(width: 640, height: 360),
                 videoIsPlayable: true, fileSize: 1))
+        }
+
+        func audioAlternatives() throws -> Surface {
+            let repository = URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            let source = repository.appendingPathComponent("Tests/Fixtures/AudioTrackSelection/alternate-levels.mov")
+            let url = media.appendingPathComponent("ALTERNATE_AUDIO.mov")
+            try FileManager.default.copyItem(at: source, to: url)
+            let values = try url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+            items = [PhotoItem(id: url.path, primaryURL: url, pairedURL: nil, captureDate: nil,
+                cameraModel: nil, lensModel: nil, mediaKind: .audio, duration: 1,
+                audioIsPlayable: true, primaryModificationDate: values.contentModificationDate,
+                fileSize: Int64(try XCTUnwrap(values.fileSize)))]
+            ready(mode: .gallery)
+            return Surface(view: AnyView(SessionView(store: store)),
+                size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         }
 
         func ready(mode: ViewMode) {

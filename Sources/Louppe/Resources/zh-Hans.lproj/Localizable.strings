@@ -624,7 +624,7 @@
 "No new ratings are waiting to be saved. The session file changed outside Louppe and remains untouched. Restore the version you want before repair." = "没有等待保存的新评分。会话文件在 Louppe 之外发生了变化，未被修改。修复前，请恢复您要保留的版本。";
 "No photos were moved. {0}" = "未移动任何照片。{0}";
 "No preview for {0}. You can still rate it — {1}" = "无法预览 {0}。仍可为其评分 — {1}";
-"No readable audio track" = "无可读取的音轨";
+"Audio levels unavailable" = "音频电平不可用";
 "No recognised media was found in “{0}”. Choose another folder or check Supported Formats." = "“{0}”中没有已识别的媒体。请选择另一个文件夹或查看支持的格式。";
 "No review group is active" = "当前未启用审阅分组";
 "No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "保存的文件名均不匹配此文件夹。保存的决定未被修改。作为新会话打开会替换这些决定，并以未评分状态打开当前文件。";
