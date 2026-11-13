@@ -19,7 +19,7 @@ final class CaptureScenariosTests: XCTestCase {
     private struct Scenario {
         let name: String
         let description: String
-        let builder: (Fixture) throws -> Surface
+        let builder: @MainActor (Fixture) async throws -> Surface
     }
 
     // --list reads these literal name/description lines without compiling Swift.
@@ -37,6 +37,9 @@ final class CaptureScenariosTests: XCTestCase {
         Scenario(name: "session-gallery-ready", description: "Ready Gallery session with toolbar, Browser and Info.") { fixture in
             fixture.ready(mode: .gallery)
             return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
+        Scenario(name: "session-photos-portrait", description: "Exact rotated Photos original through production acquisition and Gallery playback.") { fixture in
+            try await fixture.photosPortrait()
         },
         Scenario(name: "session-audio-alternatives", description: "Gallery and Info for a disposable file with two alternative audio tracks.") { fixture in
             try fixture.audioAlternatives()
@@ -255,13 +258,18 @@ final class CaptureScenariosTests: XCTestCase {
                     surface = Surface(view: AnyView(SessionView(store: fixture.store)),
                                       size: CGSize(width: 1280, height: 800), requiresToolbar: true)
                 } else {
-                    surface = try scenario.builder(fixture)
+                    surface = try await scenario.builder(fixture)
                 }
                 let controller = OffscreenCapture.host(surface.view, defaults: fixture.defaults,
                     appearance: appearance, bridgesScene: surface.settingsTab == nil)
                 let file = "\(scenario.name)-\(appearance.rawValue)\(live ? "-live-active" : "").png"
                 let prepare: (NSViewController) throws -> Void = { controller in
                     try self.selectSettingsTab(surface.settingsTab, in: controller)
+                    if scenario.name == "session-photos-portrait" {
+                        for surface in OffscreenCapture.descendants(of: controller.view).compactMap({ $0 as? GalleryVideoSurfaceView }) {
+                            print("CAPTURE PHOTOS portrait metadata=\(String(describing: fixture.items.first?.videoDimensions)) presentation=\(surface.presentationSize) bounds=\(surface.bounds) layer=\(surface.playerLayer.frame)")
+                        }
+                    }
                     if scenario.name.hasPrefix("session-sorted-") { fixture.store.sort.ascending = false }
                     if scenario.name == "sheet-export-xmp-failure" {
                         Task { @MainActor in
@@ -297,6 +305,9 @@ final class CaptureScenariosTests: XCTestCase {
                     try await OffscreenCapture.capture(controller, size: surface.size, title: scenario.name,
                         appearance: appearance, to: output.appendingPathComponent(file), requiresToolbar: surface.requiresToolbar,
                         prepare: prepare)
+                }
+                if scenario.name == "session-photos-portrait" {
+                    await fixture.closePortrait()
                 }
                 entries.append((file, scenario.name, scenario.description, appearance.rawValue))
             }
@@ -443,6 +454,8 @@ final class CaptureScenariosTests: XCTestCase {
         let store: SessionStore
         var items: [PhotoItem] = []
         var drives: ConnectedDrivesStore?
+        var portraitFixture: PhotosVideoFixture?
+        var portraitLease: PhotosOriginalLease?
         #if !APP_STORE
         private let updater = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
         #endif
@@ -490,6 +503,27 @@ final class CaptureScenariosTests: XCTestCase {
                 captureDate: Date(timeIntervalSince1970: 1_792_441_000), cameraModel: "Synthetic camera", lensModel: nil,
                 mediaKind: .video, duration: 8, videoDimensions: CGSize(width: 640, height: 360),
                 videoIsPlayable: true, fileSize: 1))
+        }
+
+        func photosPortrait() async throws -> Surface {
+            let fixture = try PhotosVideoFixture()
+            portraitFixture = fixture
+            let batch = try fixture.batch()
+            let lease = try await fixture.session.original(for: XCTUnwrap(batch.reviewItems?.first))
+            portraitLease = lease
+            items = [lease.item]
+            ready(mode: .gallery)
+            return Surface(view: AnyView(SessionView(store: store)),
+                size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        }
+
+        func closePortrait() async {
+            store.videoPlayback.stop()
+            await portraitLease?.close()
+            portraitLease = nil
+            await portraitFixture?.session.stop()
+            portraitFixture?.remove()
+            portraitFixture = nil
         }
 
         func audioAlternatives() throws -> Surface {

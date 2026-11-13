@@ -106,6 +106,7 @@ actor PhotosMediaSession {
     static let maximumPreviewPixels = 2048
     let id = UUID()
     private let provider: any PhotosMediaProvider
+    private let scanVideo: @Sendable (URL) -> VideoScanInfo
     nonisolated let folder: URL
     private let imageGate = PhotosRequestGate(limit: 4, pendingLimit: 64)
     private let originalGate = PhotosRequestGate(limit: 1, pendingLimit: 8)
@@ -119,8 +120,10 @@ actor PhotosMediaSession {
     private(set) var cachedBytes = 0
     private(set) var originalBytes: Int64 = 0
 
-    init(provider: any PhotosMediaProvider, folder: URL, allowNetwork: Bool = false) {
+    init(provider: any PhotosMediaProvider, folder: URL, allowNetwork: Bool = false,
+         scanVideo: @escaping @Sendable (URL) -> VideoScanInfo = { VideoMetadataExtractor.scanInfo(for: $0) }) {
         self.provider = provider; self.folder = folder; self.imageNetwork = allowNetwork
+        self.scanVideo = scanVideo
     }
 #if LOUPPE_TEST_SEAMS
     /// Includes executing and gated requests, without adding another owner.
@@ -229,11 +232,24 @@ actor PhotosMediaSession {
             try Task.checkCancellation()
             guard !stopped else { throw PhotosRepresentationError.retired }
             let identity = try FileOperationJournal.captureIdentity(at: url)
+            let video: VideoScanInfo?
+            if item.isVideo {
+                // Reuse the scanner's bounded (15 s) AVFoundation bridge only
+                // for an explicitly acquired original. Never block this actor:
+                // stop/consent remain responsive while its worker drains. The
+                // original lane and file stay owned until that worker exits.
+                let worker = Task.detached(priority: .userInitiated) { [scanVideo] in scanVideo(url) }
+                video = await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }
+                try Task.checkCancellation()
+                guard !stopped else { throw PhotosRepresentationError.retired }
+                try FileOperationJournal.requireIdentity(identity, at: url)
+            } else { video = nil }
             let metadata = item.primaryFile.metadataSnapshot
             let file = PhotoFile(id: item.id, url: url, displayRelativePath: filename,
                 captureDate: item.captureDate, captureDateEvidence: item.captureDateEvidence,
-                cameraModel: nil, lensModel: nil, mediaKind: item.mediaKind, duration: item.duration,
-                videoIsPlayable: item.isVideo, fileSize: bytes, scannedIdentity: identity,
+                cameraModel: nil, lensModel: nil, mediaKind: item.mediaKind, duration: video?.duration ?? item.duration,
+                videoDimensions: video?.dimensions, videoCodec: video?.codec, videoFrameRate: video?.frameRate,
+                videoIsPlayable: video?.isPlayable ?? item.isVideo, fileSize: bytes, scannedIdentity: identity,
                 rating: metadata.rating, ratedAt: metadata.ratedAt, starRating: metadata.starRating,
                 starsChangedAt: metadata.starsChangedAt, colorLabel: metadata.colorLabel, colorChangedAt: metadata.colorChangedAt)
             originalBytes += bytes

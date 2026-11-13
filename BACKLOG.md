@@ -78,6 +78,8 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 - [ ] **Cards and folder switching:** Rename/Organize, Undo and interrupted recovery on an exFAT card; quick Finder, Dock and pinned-folder switching in the signed sandboxed build.
 - [ ] **Displays and playback:** Retina/non-Retina display changes, resizing and full screen while photos decode; video full screen and Picture in Picture.
 
+- [ ] **Photos portrait playback:** verify full top/bottom fixture bars during live portrait/rotated original playback in light/dark; offscreen AppKit PNGs omit AVPlayerLayer pixels.
+
 ### Hardware and environments
 
 - [ ] **Physical storage.** SD-card and exFAT reconnect of pinned archives;
@@ -131,7 +133,6 @@ person; none counts as passed until run there. Owner: **Alex** unless noted.
 
 ## Agent work
 
-- [ ] **Photos original video:** reproduce and fix portrait originals losing their dimensions and rendering through a landscape crop.
 - [ ] **Grid follow after filtering:** reproduce and fix a filtered-out pointer rating leaving the next keyboard navigation offscreen.
 - [ ] **Opening modifier selection:** align initial Shift-click and Command-click anchors with the Ready selection model.
 - [ ] **Large XMP jobs:** reduce repeated fresh family-census work in large single folders while preserving mutation/recovery ownership checks.

@@ -316,7 +316,11 @@ API; these bounds constrain Louppe's pixels, requests and preheat membership.
 Originals stream only on explicit detail/playback or Copy, with one original
 lane, eight pending original waiters and the unchanged 5 GB aggregate staging
 budget, including held renderer leases. Copy requests/copies/releases one
-asset before the next; it never stages the whole export. Separate original
+asset before the next; it never stages the whole export. Explicit video-original
+acquisition reuses the bounded 15-second metadata scanner off-main, retaining
+its original lane and staged file until the worker exits. The media actor stays
+available for stop/consent; cancellation rejects late metadata and cleans staging
+after worker exit. Opening membership performs no AVAsset reads. Separate original
 consent prevents representation access authorizing full-resource transfers.
 Both permissions persist in General Settings; updates target the captured active
 media actor and latest revision. A permission change never retries an original.

@@ -123,7 +123,12 @@ retry and original progress remain visible. Failed/cancelled preparation keeps
 the outgoing review; closed batches cancel admitted media work.
 
 Original detail/RAW rendering and original video playback acquire a private
-file lease. `PhotosResourceTransfer` streams the primary `.photo`/`.video`
+file lease. Video originals reuse `VideoMetadataExtractor` on a detached worker
+in the serial original lane, propagating oriented dimensions, codec, frame rate,
+duration and playability to Gallery. The existing 15-second scan bridge never
+blocks the media actor or main actor; cancelled scans drain before file/lane
+release, and cannot publish to a retired review. Membership still reads no
+original or AVAsset. `PhotosResourceTransfer` streams the primary `.photo`/`.video`
 resource, one request at a time, within the unchanged 5 GB aggregate staging
 ceiling. Resource requests have separate network consent and real cancellation.
 Leases retain files through rendering/Copy and remove them on release. Live

@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Fit portrait and rotated Photos video originals using their actual oriented dimensions.
+
 - Keep Photos originals needed by interrupted Copy recovery when closing a review or pruning abandoned staging.
 
 - Release abandoned clipping-preview work and its queued image memory when browsing quickly.
