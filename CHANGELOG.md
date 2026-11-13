@@ -2,6 +2,8 @@
 
 ## 1.15.0 (19) — 2026-11-13
 
+- Let Copy work with access to the selected subfolder when its volume root is restricted.
+
 - Finish interrupted Move recovery when an empty former destination folder has been removed.
 
 - Keep Shift-click and Command-click selection consistent while a folder opens and after it is ready. After browsing, the first Esc keeps opening in progress; press Esc again to cancel.

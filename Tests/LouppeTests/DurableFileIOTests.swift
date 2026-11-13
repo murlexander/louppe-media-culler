@@ -1,8 +1,36 @@
+import Darwin
 import Foundation
 import XCTest
 @testable import Louppe
 
 final class DurableFileIOTests: XCTestCase {
+    func testDescriptorCopyDoesNotRequireVolumeRootMetadataAccess() throws {
+        let root = try makeTemporaryDirectory(named: "CopyGrantedSubfolder")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("PHOTO.JPG")
+        let bytes = Data("permitted original".utf8)
+        try bytes.write(to: source)
+        let identity = try FileOperationJournal.captureIdentity(at: source)
+        if ProcessInfo.processInfo.environment["LOUPPE_DENY_VOLUME_ROOT"] == "1" {
+            // This opt-in single-test subprocess initializes Foundation first;
+            // denying root metadata at process launch crashes Foundation itself.
+            let profile = "(version 1) (allow default) (deny file-read-metadata (literal \"\(identity.volumeRootPath)\"))"
+            var message: UnsafeMutablePointer<CChar>?
+            let result = profile.withCString { r15SandboxInit($0, 0, &message) }
+            if let message { r15SandboxFreeError(message) }
+            XCTAssertEqual(result, 0)
+            var status = stat()
+            let rootResult = identity.volumeRootPath.withCString { lstat($0, &status) }
+            XCTAssertEqual(rootResult, -1, "Sandbox probe must deny the planned volume root")
+            XCTAssertEqual(errno, EPERM)
+        }
+        let directory = try DurableFileIO.BoundDirectory(.init(url: root))
+        let temporary = root.appendingPathComponent("partial")
+        try directory.copy(from: source, to: temporary, expectedSourceIdentity: identity)
+        XCTAssertEqual(try Data(contentsOf: temporary), bytes)
+        try FileOperationJournal.requireIdentity(identity, at: source)
+    }
+
     func testRootRelativeDirectoriesPreserveExactNamesAndRefuseEscapes() throws {
         let root = try makeTemporaryDirectory(named: "RootRelativeDirectories")
         defer { try? FileManager.default.removeItem(at: root) }
@@ -355,3 +383,10 @@ final class DurableFileIOTests: XCTestCase {
         return root
     }
 }
+
+// Isolated denial probe only. Never called by ordinary test or capture runs.
+@_silgen_name("sandbox_init")
+private func r15SandboxInit(_ profile: UnsafePointer<CChar>, _ flags: UInt64,
+                            _ error: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>) -> Int32
+@_silgen_name("sandbox_free_error")
+private func r15SandboxFreeError(_ error: UnsafeMutablePointer<CChar>)

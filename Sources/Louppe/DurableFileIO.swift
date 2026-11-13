@@ -290,12 +290,11 @@ enum DurableFileIO {
                 operation: "open source for copy")
             defer { Darwin.close(sourceFD) }
             try afterSourceOpened()
-            // Resolve the planned volume freshly so a reconnect can change its
-            // device number, but never borrow volume facts from a raced source
-            // pathname. The opened file must actually belong to this device.
-            let volume = try FileOperationJournal.captureIdentity(
-                at: URL(fileURLWithPath: expectedSourceIdentity.volumeRootPath)
-            )
+            // Resolve volume facts through the granted source, never its volume
+            // root (which a sandbox grant need not permit). The fresh path's
+            // device and identity must match the descriptor below; a raced
+            // replacement cannot lend its volume facts to the opened file.
+            let volume = try FileOperationJournal.captureIdentity(at: source)
             func requireOpenedSource() throws {
                 var status = stat()
                 guard fstat(sourceFD, &status) == 0 else {
@@ -303,6 +302,7 @@ enum DurableFileIO {
                 }
                 guard status.st_mode & S_IFMT == S_IFREG,
                       UInt64(status.st_dev) == volume.systemNumber,
+                      UInt64(status.st_ino) == volume.fileNumber,
                       FileOperationJournal.identitiesMatch(
                         expected: expectedSourceIdentity,
                         actual: FileOperationJournal.identity(
