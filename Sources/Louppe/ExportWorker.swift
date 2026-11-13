@@ -196,6 +196,15 @@ enum ExportWorker {
         let itemID: String
         let movedItemIDs: [String]
         let files: [PlannedFile]
+        let xmpMembership: XMPFamilyMembership?
+
+        init(itemID: String, movedItemIDs: [String], files: [PlannedFile],
+             xmpMembership: XMPFamilyMembership? = nil) {
+            self.itemID = itemID
+            self.movedItemIDs = movedItemIDs
+            self.files = files
+            self.xmpMembership = xmpMembership
+        }
     }
 
     struct Plan: Sendable, Equatable {
@@ -481,7 +490,8 @@ enum ExportWorker {
                     plannedItems.append(PlannedItem(
                         itemID: group.key,
                         movedItemIDs: group.items.map(\.id),
-                        files: files
+                        files: files,
+                        xmpMembership: family?.membership
                     ))
                     break
                 }
@@ -1055,6 +1065,7 @@ enum ExportWorker {
         prepareDestinationDirectories: @escaping () throws -> Void = {},
         sourceFolderIdentity: SessionPersistence.SourceFolderIdentity? = nil,
         afterMoveDirectoriesOpened: () -> Void = {},
+        beforeXMPSourceRetirement: () throws -> Void = {},
         progress: @escaping Progress,
         byteProgress: @escaping ByteProgress = { _, _ in }
     ) -> MoveResult {
@@ -1360,6 +1371,9 @@ enum ExportWorker {
                             didOpenMoveDirectories = true
                             afterMoveDirectoriesOpened()
                         }
+                        if localFileIndex == 0 {
+                            try item.xmpMembership?.validate()
+                        }
                         for binding in plan.destinationBindings {
                             try binding.requireCurrentPath()
                         }
@@ -1437,6 +1451,26 @@ enum ExportWorker {
                         do {
                             guard let moveDirectories else {
                                 throw DurableFileIO.DestinationChanged()
+                            }
+                            if file.role == .retiredXMPSource || file.role == .applicationXMP {
+                                if file.role == .retiredXMPSource { try beforeXMPSourceRetirement() }
+                                var moved = Set<XMPExactFileSystemPath>()
+                                for prior in touchedForItem where prior.file.role == .media {
+                                    guard case .destination = prior.location,
+                                          let identity = prior.identity else {
+                                        throw XMPFamilyMembership.Changed()
+                                    }
+                                    try requireIdentity(identity, at: prior.file.target, includeStatusChange: true)
+                                    moved.insert(try XMPExactFileSystemPath(url: prior.file.source))
+                                }
+                                try item.xmpMembership?.validate(removing: moved)
+                                // Also protect hand-built/legacy plans lacking
+                                // a reviewed expectation. Any owner forbids retirement.
+                                if file.role == .retiredXMPSource, item.xmpMembership == nil,
+                                   try XMPFamilyMembership.hasPossibleOwners(
+                                    packet: XMPExactFileSystemPath(url: file.source)) {
+                                    throw XMPFamilyMembership.Changed()
+                                }
                             }
                             try writer.requireUnchangedSource(at: fileIndex)
                             try moveDirectories.source.move(
@@ -1761,6 +1795,12 @@ enum ExportWorker {
               let identity = touched.identity else {
             return false
         }
+        do {
+            if try XMPFamilyMembership.retainPacketIfOwned(
+                packet: XMPExactFileSystemPath(url: touched.file.source),
+                artifact: touched.file.target, identity: identity,
+                digest: touched.file.expectedSourceDigest) { return true }
+        } catch { return false }
         return removeRecordedPartialCopy(
             artifact: touched.file.target,
             quarantine: temporary,

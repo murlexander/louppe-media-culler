@@ -151,6 +151,7 @@ enum XMPPublicationCategory: Equatable, Sendable {
 }
 
 struct XMPExportPreparedFamily: Equatable, Sendable {
+    var membership: XMPFamilyMembership? = nil
     let id: String
     let selectedMediaPaths: Set<XMPExactFileSystemPath>
     let allMediaPaths: Set<XMPExactFileSystemPath>

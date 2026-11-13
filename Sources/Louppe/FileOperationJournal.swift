@@ -1278,6 +1278,14 @@ enum FileOperationJournal {
             throw RecoveryError.unverifiedOwnedFile(source)
         }
 
+        if try XMPFamilyMembership.retainPacketIfOwned(
+            packet: XMPExactFileSystemPath(url: source),
+            artifact: candidates.first,
+            identity: state?.resolvedIdentity ?? file.identity,
+            digest: file.expectedSourceDigest) {
+            return RecoveredFileCounts()
+        }
+
         if sourceExists {
             try requireIdentity(
                 file.identity,
@@ -1319,6 +1327,11 @@ enum FileOperationJournal {
         if let digest = file.expectedSourceDigest,
            try contentDigest(at: artifact) != digest {
             throw RecoveryError.unverifiedOwnedFile(artifact)
+        }
+        if try XMPFamilyMembership.retainPacketIfOwned(
+            packet: XMPExactFileSystemPath(url: source), artifact: artifact,
+            identity: current, digest: file.expectedSourceDigest) {
+            return RecoveredFileCounts()
         }
         var result = try removeRecordedPartialCopy(
             artifact,

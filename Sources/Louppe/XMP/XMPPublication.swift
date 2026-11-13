@@ -229,6 +229,7 @@ struct XMPPublicationSourceValidation: Equatable, Sendable {
     }
 
     let members: [Member]
+    let membership: XMPFamilyMembership
     let parent: DurableFileIO.DirectoryBinding
     let sourceFolder: URL?
     let sourceFolderIdentity: SessionPersistence.SourceFolderIdentity?
@@ -238,6 +239,7 @@ struct XMPPublicationSourceValidation: Equatable, Sendable {
         guard let sidecar = family.canonicalSidecar else {
             throw XMPPublicationSourceChanged()
         }
+        membership = try XMPFamilyMembership(members: family.members)
         members = try family.members.map { member in
             guard let identity = member.scannedIdentity,
                   member.mediaPath.parent == sidecar.parent else {
@@ -766,6 +768,7 @@ enum XMPPublicationPlanner {
     ]
 
     static func category(for error: Error) -> XMPPublicationCategory {
+        if error is XMPFamilyMembership.Changed { return .externalModificationConflict }
         if error is XMPPublicationSourceChanged { return .externalModificationConflict }
         if error is DurableFileIO.DestinationChanged { return .externalModificationConflict }
         if let posix = error as? POSIXError, posix.code == .EEXIST {
@@ -877,7 +880,8 @@ enum XMPPublicationWorker {
                                             throw CancellationError()
                                         }
                                     }
-                                )
+                                ),
+                                isCancelled: { cancelFlag.isSet }
                             )
                             switch result.action {
                             case .create: partial.created += 1

@@ -186,7 +186,8 @@ actor XMPMetadataStore {
     func commit(
         _ prepared: XMPPreparedWrite,
         sourceValidation: XMPPublicationSourceValidation? = nil,
-        testHooks: XMPMetadataStoreTestHooks = .none
+        testHooks: XMPMetadataStoreTestHooks = .none,
+        isCancelled: () -> Bool = { false }
     ) throws -> XMPWriteResult {
         try Task.checkCancellation()
         try sourceValidation?.validate()
@@ -195,6 +196,7 @@ actor XMPMetadataStore {
         case .alreadyCurrent:
             try testHooks.beforeFinalValidation?()
             try sourceValidation?.validate()
+            try sourceValidation?.membership.validate(isCancelled: isCancelled)
             let snapshot = try readSnapshot(prepared.path)
             guard snapshot.data == prepared.originalPacket,
                   snapshot.revision == prepared.originalRevision else {
@@ -216,6 +218,7 @@ actor XMPMetadataStore {
                 try testHooks.beforeFinalValidation?()
                 try Task.checkCancellation()
                 try sourceValidation?.validate()
+                try sourceValidation?.membership.validate(isCancelled: isCancelled)
                 guard try self.lstat(prepared.path) == nil else {
                     throw StoreError.fileChanged
                 }
@@ -238,6 +241,7 @@ actor XMPMetadataStore {
                 try testHooks.beforeFinalValidation?()
                 try Task.checkCancellation()
                 try sourceValidation?.validate()
+                try sourceValidation?.membership.validate(isCancelled: isCancelled)
                 let live = try self.readSnapshot(prepared.path)
                 guard live.revision == expectedRevision,
                       live.data == expectedData else {

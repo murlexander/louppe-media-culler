@@ -600,6 +600,8 @@ final class XMPPhase5Tests: XCTestCase {
         let folder = try temporaryDirectory()
         let raw = folder.appendingPathComponent("IMG_0001.NEF")
         let jpeg = folder.appendingPathComponent("IMG_0001.JPG")
+        try Data("raw".utf8).write(to: raw)
+        try Data("jpeg".utf8).write(to: jpeg)
         let metadata = sampleMetadata()
         let identical = try XMPSidecarResolver.resolve(members: [
             XMPStemFamilyMember(mediaURL: raw, metadata: metadata),
@@ -656,7 +658,7 @@ final class XMPPhase5Tests: XCTestCase {
         )
         let insensitive = try XMPSidecarResolver.resolve(
             members: [upperMember, lowerMember],
-            directoryEntries: [],
+            directoryEntries: [upperMember.mediaPath, lowerMember.mediaPath],
             caseSensitiveNames: false
         )
         XCTAssertEqual(insensitive.count, 1)
@@ -664,7 +666,7 @@ final class XMPPhase5Tests: XCTestCase {
 
         let sensitive = try XMPSidecarResolver.resolve(
             members: [upperMember, lowerMember],
-            directoryEntries: [],
+            directoryEntries: [upperMember.mediaPath, lowerMember.mediaPath],
             caseSensitiveNames: true
         )
         XCTAssertEqual(sensitive.count, 2)
@@ -682,7 +684,7 @@ final class XMPPhase5Tests: XCTestCase {
                 XMPStemFamilyMember(mediaPath: composed, metadata: sampleMetadata()),
                 XMPStemFamilyMember(mediaPath: decomposed, metadata: sampleMetadata()),
             ],
-            directoryEntries: [],
+            directoryEntries: [composed, decomposed],
             caseSensitiveNames: true
         )
         XCTAssertEqual(unicode.count, 1)

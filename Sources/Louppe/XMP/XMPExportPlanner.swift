@@ -103,6 +103,7 @@ struct XMPExportPreparedFamily: Equatable, Sendable {
     let finalPacket: Data?
     let applicationPackets: [XMPExportApplicationPacket]
     let sameStemConflict: XMPSameStemConflictDescriptor?
+    var membership: XMPFamilyMembership? = nil
 
     var allFamilyMediaSelected: Bool {
         allMediaPaths.isSubset(of: selectedMediaPaths)
@@ -458,10 +459,15 @@ enum XMPExportPlanner {
                 result.formUnion(familyIDs)
             }
         }
-        let exportableFamilies = preparedFamilies.map { family in
-            splitPairFamilyIDs.contains(family.id)
-                ? family.skippingCrossFolderPair()
-                : family
+        let resolvedByID = Dictionary(uniqueKeysWithValues: families.map { (familyID($0), $0) })
+        let exportableFamilies = try preparedFamilies.map { family in
+            if splitPairFamilyIDs.contains(family.id) { return family.skippingCrossFolderPair() }
+            var family = family
+            if family.category.canPublish || !family.applicationPackets.isEmpty,
+               let resolved = resolvedByID[family.id] {
+                family.membership = try XMPFamilyMembership(members: resolved.members)
+            }
+            return family
         }
         return XMPExportPreparedPlan(
             selectedItemCount: input.selectedItemCount,
