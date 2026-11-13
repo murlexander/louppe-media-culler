@@ -1,6 +1,6 @@
 # Version History
 
-## 1.14.0 (18) — 2026-11-08
+## 1.14.0 (18) — 2026-11-13
 
 - Use the right singular and plural words in every language, and group large counts in Louppe's language so they are easier to read.
 - Show the next photo sooner when browsing, with faster fitted previews and lower memory use.

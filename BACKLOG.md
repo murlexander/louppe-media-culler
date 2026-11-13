@@ -65,14 +65,12 @@ submission replaces one still in review, so coordinate with the App Store sessio
 Agent-runnable work is done and recorded. Each item needs its environment or
 person; none counts as passed until run there. Owner: **Alex** unless noted.
 
-### 1.14.0 release checks
+### 1.15 checks
 
 - [ ] **Live desktop pass** (agent, after a desktop handover): `Scripts/test.sh --foreground`, then `capture_ui.sh --live` of the Sort, Filter, quality-cue and review-status popovers (arrows and rims zoomed, light and dark), open menus, the session Grid and Gallery, and Rename/Organize progress and results.
 - [ ] **VoiceOver:** opening and Ready tile names, reading order and actions after scrolling; Undo after a partly failed Rename or Organize.
 - [ ] **macOS 14:** toolbar popovers, the Range/Year/Date chooser, sheet action rows and accessibility fallbacks.
-- [ ] **Native speakers:** Arabic plural sentences (dual forms, the Lightroom `.acr` companion wording); Hindi zero/singular agreement and the long Trash and companion-file sentences.
 - [ ] **Cards and folder switching:** Rename/Organize, Undo and interrupted recovery on an exFAT card; quick Finder, Dock and pinned-folder switching in the signed sandboxed build.
-- [ ] **Update:** 1.13.2 → 1.14.0 through Sparkle with the final signed archive and feed.
 - [ ] **Displays and playback:** Retina/non-Retina display changes, resizing and full screen while photos decode; video full screen and Picture in Picture.
 
 ### Hardware and environments
