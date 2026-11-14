@@ -1131,6 +1131,7 @@ enum FolderScanner {
                 guard let slot else { return }
                 do {
                     let source = inventoryItems[slot]
+                    recorder?.recordMetadataLookup(metadataIndex?.missReason(for: source.primaryFile) ?? .none)
                     let file = try autoreleasepool {
                         try enrichMetadata(for: source.primaryFile, metadataReaderForTesting: metadataReaderForTesting,
                                            metadataIndex: metadataIndex, checksCacheHits: false,
@@ -1341,6 +1342,21 @@ enum FolderScanner {
         try prepareMissingMetadata(in: files, isCancelled: { false })
     }
 
+    /// Serial post-Ready re-check: no opening admission floor, including
+    /// injected readers. The fresh inventory supplies filesystem date fallbacks.
+    static func recheckMetadata(for file: PhotoFile, index: ArchiveMetadataIndex,
+                                metadataReader: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)?,
+                                foregroundWork: ForegroundWorkCoordinator,
+                                isCancelled: @Sendable () -> Bool) throws -> PhotoFile {
+        let deferredSince = ContinuousClock.now
+        while !foregroundWork.shouldAdmitBackgroundWork(deferredSince: deferredSince) {
+            if isCancelled() { throw CancellationError() }
+            Thread.sleep(forTimeInterval: 0.015)
+        }
+        return try enrichMetadata(for: file, metadataReaderForTesting: metadataReader, metadataIndex: index,
+                                  usesCachedMetadata: false, worker: 0, isCancelled: isCancelled)
+    }
+
     /// A miss waits for admission, then checks identity, reads, and checks
     /// again: the bytes read belong to the scanned file. A cache hit is keyed
     /// by the scanned identity and reads nothing; with `checksCacheHits`
@@ -1352,12 +1368,13 @@ enum FolderScanner {
         metadataReaderForTesting: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)?,
         metadataIndex: ArchiveMetadataIndex? = nil,
         checksCacheHits: Bool = true,
+        usesCachedMetadata: Bool = true,
         worker: Int? = nil,
         foregroundWork: ForegroundWorkCoordinator = .shared,
         isCancelled: @Sendable () -> Bool = { false }
     ) throws -> PhotoFile {
         if isCancelled() { throw CancellationError() }
-        if let cached = metadataIndex?.metadata(for: file) {
+        if usesCachedMetadata, let cached = metadataIndex?.metadata(for: file) {
             if checksCacheHits { try validateMetadataSource(file) }
             let ready = cached.applying(to: file)
             if checksCacheHits { try validateMetadataSource(file) }

@@ -237,6 +237,25 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
         }
     }
 
+    enum MissReason: String, Sendable, Hashable {
+        case hit, none, schema, zone, osBuild, identity
+    }
+
+    private(set) var snapshotReason: MissReason = .none
+    private(set) var needsOSBuildRecheck = false
+
+    private static func contextDifference(_ saved: String, _ current: String) -> MissReason {
+        if saved == current { return .hit }
+        let old = saved.components(separatedBy: "|")
+        let new = current.components(separatedBy: "|")
+        guard old.first == new.first else { return .schema }
+        guard old.count >= 2, new.count >= 2, old[1] == new[1] else { return .zone }
+        // Only the stable four-field context is eligible. Unknown/legacy
+        // layouts remain cold unless the exact localized migration matches.
+        guard old.count == 4, new.count == 4 else { return .schema }
+        return .osBuild
+    }
+
     let cacheURL: URL
     /// Mirrors `PinnedFolderIdentity` equality; also the snapshot filename prefix.
     let protectionKey: String
@@ -288,6 +307,7 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
           cacheDirectory: URL? = nil,
           legacyCacheDirectory: URL? = nil,
           interpretationContext: String? = nil,
+          allowsOSBuildReuse: Bool = false,
           isCancelled: @Sendable () -> Bool = { false }) {
         guard !isCancelled(),
               let identity = folderIdentity ?? (try? SessionPersistence.SourceFolderIdentity.capture(at: folder)),
@@ -313,15 +333,21 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
         // later commit skip conservatively.
         loadedRevision = SnapshotRevision(at: cacheURL)
         let currentData = Self.read(cacheURL, limit: Self.maximumSnapshotBytes, isCancelled: isCancelled)
-        if let current = currentData.flatMap({ Self.decode($0, context: context,
-            folderPath: folderPath, folderBinding: folderBinding, isCancelled: isCancelled) }) {
+        let snapshot = currentData.map {
+            Self.loadSnapshot($0, context: context, folderPath: folderPath, folderBinding: folderBinding,
+                              allowsOSBuildReuse: allowsOSBuildReuse, isCancelled: isCancelled)
+        }
+        snapshotReason = snapshot?.reason ?? .none
+        if let current = snapshot?.entries {
             entries = current
+            needsOSBuildRecheck = snapshot?.reason == .osBuild
         } else if interpretationContext == nil,
                   let localized = currentData.flatMap({ Self.decode($0, context: Self.legacyLocalizedContext,
                     folderPath: folderPath, folderBinding: folderBinding, isCancelled: isCancelled) }) {
             // Only this process's exact old context is accepted: schema, zone
             // and OS build remain strict. Rewrite it once with stable fields.
             entries = localized
+            snapshotReason = .hit
             migratesContext = true
         } else if let legacyURL = legacyDirectory?.appendingPathComponent(
                     Self.legacyBucket(for: identity, path: folderPath) + ".json"),
@@ -331,6 +357,7 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
                         ? Self.decodeLegacy(data, context: Self.legacyLocalizedContext, isCancelled: isCancelled) : nil) {
             // Only reached when v2 is missing or invalid: one extra open attempt.
             entries = legacy
+            snapshotReason = .hit
             migrationSource = legacyURL
         } else {
             entries = [:]
@@ -342,6 +369,12 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
               let entry = entries[FolderScanner.fileSystemIdentityPath(for: file.url)],
               Self.cachedIdentity(entry.identity, matches: expected) else { return nil }
         return entry.metadata
+    }
+
+    func missReason(for file: PhotoFile) -> MissReason {
+        if metadata(for: file) != nil { return .hit }
+        if snapshotReason != .hit && !needsOSBuildRecheck { return snapshotReason }
+        return entries[FolderScanner.fileSystemIdentityPath(for: file.url)] == nil ? .none : .identity
     }
 
     /// A disposable browse projection, possibly incomplete or out of date.
@@ -445,12 +478,14 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
     /// Keeping comparison and encoding here prevents an unvalidated O(n) gap
     /// after that barrier on warm opens that need no cache filesystem work.
     func prepareCommit(_ items: [PhotoItem], isCancelled: @Sendable () -> Bool = { false },
-                       onUnchanged: () -> Void = {}) -> PreparedCommit? {
+                       onUnchanged: () -> Void = {},
+                       recheckedOSBuild: Bool = false) -> PreparedCommit? {
+        guard !needsOSBuildRecheck || recheckedOSBuild else { return nil }
         guard !isCancelled() else { return nil }
         extractionLock.lock()
         let failed = failedExtractions
         let overflowed = failureTrackingOverflowed
-        let migrating = migrationSource != nil || migratesContext
+        let migrating = migrationSource != nil || migratesContext || needsOSBuildRecheck
         extractionLock.unlock()
         guard !overflowed else { return nil }
         var candidates: [Entry] = []
@@ -997,15 +1032,36 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
     /// volume remounted elsewhere) returns paths rebased onto `folderPath`.
     static func decode(_ data: Data, context: String, folderPath: String, folderBinding: String? = nil,
                        isCancelled: @Sendable () -> Bool = { false }) -> [String: Entry]? {
-        guard data.count >= magic.count + 1 + digestBytes, data.count <= maximumSnapshotBytes else { return nil }
-        return data.withUnsafeBytes { raw -> [String: Entry]? in
+        loadSnapshot(data, context: context, folderPath: folderPath, folderBinding: folderBinding ?? folderPath,
+                     allowsOSBuildReuse: false, isCancelled: isCancelled).entries
+    }
+
+    private struct SnapshotLoad {
+        let entries: [String: Entry]?
+        let reason: MissReason
+    }
+
+    private static func loadSnapshot(_ data: Data, context: String, folderPath: String, folderBinding: String,
+                                     allowsOSBuildReuse: Bool,
+                                     isCancelled: @Sendable () -> Bool) -> SnapshotLoad {
+        let absent = SnapshotLoad(entries: nil, reason: .none)
+        guard data.count >= magic.count + 1 + digestBytes, data.count <= maximumSnapshotBytes else { return absent }
+        return data.withUnsafeBytes { raw -> SnapshotLoad in
             let payloadEnd = raw.count - digestBytes
             guard raw.prefix(magic.count).elementsEqual(magic), raw[magic.count] == formatVersion,
                   SHA256.hash(data: UnsafeRawBufferPointer(rebasing: raw[0..<payloadEnd]))
-                    .elementsEqual(raw[payloadEnd...]) else { return nil }
+                    .elementsEqual(raw[payloadEnd...]) else { return absent }
             var reader = Reader(base: raw, offset: magic.count + 1, end: payloadEnd)
-            return try? decodePayload(&reader, context: context, folderPath: folderPath,
-                                      folderBinding: folderBinding ?? folderPath, isCancelled: isCancelled)
+            guard let savedContext = try? reader.string(limit: maximumEntryBytes),
+                  let binding = try? reader.string(limit: maximumEntryBytes) else { return absent }
+            guard binding == folderBinding else { return SnapshotLoad(entries: nil, reason: .identity) }
+            let reason = contextDifference(savedContext, context)
+            guard reason == .hit || (allowsOSBuildReuse && reason == .osBuild) else {
+                return SnapshotLoad(entries: nil, reason: reason)
+            }
+            guard let entries = try? decodePayload(&reader, folderPath: folderPath, isCancelled: isCancelled)
+            else { return absent }
+            return SnapshotLoad(entries: entries, reason: reason)
         }
     }
 
@@ -1014,11 +1070,8 @@ final class ArchiveMetadataIndex: @unchecked Sendable {
         folderPath.hasSuffix("/") ? folderPath : folderPath + "/"
     }
 
-    private static func decodePayload(_ reader: inout Reader, context: String, folderPath: String,
-                                      folderBinding: String,
+    private static func decodePayload(_ reader: inout Reader, folderPath: String,
                                       isCancelled: @Sendable () -> Bool) throws -> [String: Entry]? {
-        guard try reader.string(limit: maximumEntryBytes) == context,
-              try reader.string(limit: maximumEntryBytes) == folderBinding else { return nil }
         let writerPath = try reader.string(limit: maximumEntryBytes)
         // Only entries below the writer's folder can be rebased; others keep
         // their stored path and simply miss.

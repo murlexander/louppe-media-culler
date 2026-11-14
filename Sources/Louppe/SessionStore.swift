@@ -250,8 +250,10 @@ final class SessionStore: ObservableObject {
     /// Quit cancels it. One commit runs at a time; a newer opening replaces
     /// the single waiting one, so stalled writes cannot retain inventories.
     private var metadataIndexCommitTask: Task<Void, Never>?
+    private var metadataIndexRecheckIsRunning = false
     private var pendingMetadataIndexCommit: (commit: SessionOpeningMetadataCommit,
-                                             access: SecurityScopedFolderAccess?)?
+                                             access: SecurityScopedFolderAccess?,
+                                             generation: UInt64)?
 
     #if LOUPPE_TEST_SEAMS
     /// Mounts a read-only opening without a worker. Authoritative items stay
@@ -3329,6 +3331,7 @@ final class SessionStore: ObservableObject {
         }
         invalidateDuplicateBurstAnalysis(rebuildLayout: false)
         scanTask?.cancel()
+        cancelMetadataRechecks()
         scanGeneration &+= 1
         let generation = scanGeneration
         cleanUpGeneration &+= 1
@@ -3538,33 +3541,119 @@ final class SessionStore: ObservableObject {
             // its lease and inventory now. A skipped write only costs a later
             // cache miss.
             pendingMetadataIndexCommit?.access?.stop()
-            pendingMetadataIndexCommit = (commit, access)
+            pendingMetadataIndexCommit = (commit, access, scanGeneration)
             return
         }
-        runMetadataIndexCommit(commit, access: access)
+        runMetadataIndexCommit(commit, access: access, generation: scanGeneration)
     }
 
     private func runMetadataIndexCommit(_ commit: SessionOpeningMetadataCommit,
-                                        access: SecurityScopedFolderAccess?) {
+                                        access: SecurityScopedFolderAccess?, generation: UInt64) {
+        metadataIndexRecheckIsRunning = commit.recheck != nil
         metadataIndexCommitTask = Task.detached(priority: .utility) { [weak self] in
             let cancelled = FolderScanner.CancelFlag()
             await withTaskCancellationHandler {
-                if !Task.isCancelled { commit.run(isCancelled: { cancelled.isSet }) }
+                if let recheck = commit.recheck {
+                    do {
+                        try Task.checkCancellation()
+                        commit.willCommitForTesting?()
+                        let result = try recheck.run(index: commit.index, items: commit.items,
+                                                     isCancelled: { cancelled.isSet })
+                        try Task.checkCancellation()
+                        while !cancelled.isSet {
+                            let accepted: Bool? = await MainActor.run { [weak self] in
+                                guard let self else { return false }
+                                return self.applyMetadataRecheck(result, generation: generation)
+                            }
+                            if let accepted {
+                                if accepted && !cancelled.isSet {
+                                    commit.index.prepareCommit(result.items, isCancelled: { cancelled.isSet },
+                                                               recheckedOSBuild: true)?.commit(isCancelled: { cancelled.isSet })
+                                }
+                                break
+                            }
+                            // An operation may own item indices or pairing.
+                            // Wait without holding up its completion or Quit.
+                            try await Task.sleep(for: .milliseconds(100))
+                        }
+                    } catch {
+                        // Optional cache work: keep the old context and retry on
+                        // a later opening; no partial observations are published.
+                    }
+                } else if !Task.isCancelled { commit.run(isCancelled: { cancelled.isSet }) }
             } onCancel: {
                 cancelled.set()
             }
-            await MainActor.run {
+            await MainActor.run { [weak self] in
                 access?.stop()
                 guard let self else { return }
                 self.metadataIndexCommitTask = nil
+                self.metadataIndexRecheckIsRunning = false
                 guard let next = self.pendingMetadataIndexCommit else { return }
                 self.pendingMetadataIndexCommit = nil
                 if self.isPreparingForTermination {
                     next.access?.stop()
                 } else {
-                    self.runMetadataIndexCommit(next.commit, access: next.access)
+                    self.runMetadataIndexCommit(next.commit, access: next.access, generation: next.generation)
                 }
             }
+        }
+    }
+
+    /// Uses the existing structural replacement/facet/filter path, preserving
+    /// live decisions and navigation. This observation refresh never saves a
+    /// sidecar, advances a decision generation or adds a Quit dependency.
+    #if LOUPPE_TEST_SEAMS
+    private(set) var metadataRecheckDeferralsForTesting = 0
+    #endif
+    private func applyMetadataRecheck(_ result: SessionOpeningMetadataRecheck.Result, generation: UInt64) -> Bool? {
+        guard !Task.isCancelled, scanGeneration == generation, case .ready = phase,
+              !isPreparingForTermination else { return false }
+        guard !isFileOperationRunning, !isXMPPublicationRunning, !isChangingRawJPEGPairingMode else {
+            #if LOUPPE_TEST_SEAMS
+            metadataRecheckDeferralsForTesting += 1
+            #endif
+            return nil
+        }
+        guard !result.changedFiles.isEmpty else { return true }
+        let liveFiles = Dictionary(uniqueKeysWithValues: items.flatMap(\.individualFiles).map { ($0.id, $0) })
+        guard result.changedFiles.allSatisfy({ id, fresh in
+            liveFiles[id]?.scannedIdentity == fresh.scannedIdentity
+        }) else { return false }
+        // Hidden partners stay lightweight, as on a cold paired opening;
+        // their refreshed observations belong only in the cache until split.
+        let changes = result.changedFiles.filter { liveFiles[$0.key]?.metadataIsLoaded == true }
+        guard !changes.isEmpty else { return true }
+        let currentID = currentItem?.id
+        let selectedIDs = selectionState.itemIDs
+        let fallbackIndex = currentIndex
+        func updated(_ file: PhotoFile) -> PhotoFile {
+            guard let fresh = changes[file.id] else { return file }
+            // Apply to the fresh record, so removed EXIF uses the inventory's
+            // creation-date fallback rather than the old cached EXIF date.
+            let replacement = ArchiveMetadataIndex.Metadata(fresh).applying(to: fresh)
+            replacement.restoreMetadata(file.metadataSnapshot)
+            return replacement
+        }
+        invalidateDuplicateBurstAnalysis(rebuildLayout: false)
+        cancelNeighbourPrefetch()
+        setSelectionIndices([])
+        items = FolderScanner.sortItems(items.map {
+            PhotoItem(primaryFile: updated($0.primaryFile), pairedFile: $0.pairedFile.map(updated))
+        })
+        rebuildDerivedData()
+        restoreCurrentItem(itemID: currentID, fallbackIndex: fallbackIndex)
+        if !synchronizeFilterRangesWithAvailableData() { applyFilter() }
+        restoreSelection(itemIDs: selectedIDs, visibleOnly: true)
+        prefetchAroundCurrent()
+        return true
+    }
+
+    private func cancelMetadataRechecks() {
+        if metadataIndexRecheckIsRunning { metadataIndexCommitTask?.cancel() }
+        if pendingMetadataIndexCommit?.commit.recheck != nil {
+            pendingMetadataIndexCommit?.access?.stop()
+            pendingMetadataIndexCommit = nil
         }
     }
 
@@ -7794,6 +7883,7 @@ final class SessionStore: ObservableObject {
         showClippingWarnings = false
         actualSizeViewport.reset()
         scanTask?.cancel()
+        cancelMetadataRechecks()
         scanTask = nil
         openingProgress = nil
         openingSession = nil

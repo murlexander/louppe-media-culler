@@ -29,6 +29,9 @@ struct SessionOpeningMetrics: Sendable {
     let physicalFileCount: Int
     let itemCount: Int
     let elapsed: TimeInterval
+    let metadataSnapshotReason: ArchiveMetadataIndex.MissReason
+    let metadataIndexHits: Int
+    let metadataMissReasons: [ArchiveMetadataIndex.MissReason: Int]
 }
 
 /// One scan owns this recorder. Small locked writes let GCD workers report
@@ -44,6 +47,21 @@ final class SessionOpeningRecorder: @unchecked Sendable {
     private var latestProgress: SessionOpeningProgress?
     private var physicalCount = 0
     private var projectedCount = 0
+    private var snapshotReason: ArchiveMetadataIndex.MissReason = .none
+    private var indexHits = 0
+    private var missReasons: [ArchiveMetadataIndex.MissReason: Int] = [:]
+
+    func recordMetadataSnapshot(_ reason: ArchiveMetadataIndex.MissReason) {
+        lock.withLock { snapshotReason = reason }
+        Self.signposter.emitEvent("Metadata Snapshot", "\(reason.rawValue, privacy: .public)")
+    }
+
+    func recordMetadataLookup(_ reason: ArchiveMetadataIndex.MissReason) {
+        lock.withLock {
+            if reason == .hit { indexHits += 1 }
+            else { missReasons[reason, default: 0] += 1 }
+        }
+    }
 
     func measure<T>(_ stage: SessionOpeningStage, _ operation: () throws -> T) rethrows -> T {
         let start = ProcessInfo.processInfo.systemUptime
@@ -88,7 +106,8 @@ final class SessionOpeningRecorder: @unchecked Sendable {
         return SessionOpeningMetrics(
             secondsByStage: durations, physicalFileCount: physicalCount,
             itemCount: projectedCount,
-            elapsed: ProcessInfo.processInfo.systemUptime - started
+            elapsed: ProcessInfo.processInfo.systemUptime - started,
+            metadataSnapshotReason: snapshotReason, metadataIndexHits: indexHits, metadataMissReasons: missReasons
         )
     }
 
@@ -97,6 +116,6 @@ final class SessionOpeningRecorder: @unchecked Sendable {
     func logReadiness() {
         let metrics = snapshot()
         let publicationMS = (metrics.secondsByStage[.mainPublication] ?? 0) * 1000
-        Self.logger.notice("Opening ready: items=\(metrics.itemCount, privacy: .public) physicalFiles=\(metrics.physicalFileCount, privacy: .public) workerAndPublicationMs=\(metrics.elapsed * 1000, privacy: .public) mainPublicationMs=\(publicationMS, privacy: .public)")
+        Self.logger.notice("Opening ready: items=\(metrics.itemCount, privacy: .public) physicalFiles=\(metrics.physicalFileCount, privacy: .public) workerAndPublicationMs=\(metrics.elapsed * 1000, privacy: .public) mainPublicationMs=\(publicationMS, privacy: .public) metadataSnapshot=\(metrics.metadataSnapshotReason.rawValue, privacy: .public) metadataHits=\(metrics.metadataIndexHits, privacy: .public) metadataMissReasons=\(String(describing: metrics.metadataMissReasons), privacy: .public)")
     }
 }

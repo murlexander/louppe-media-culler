@@ -25,18 +25,60 @@ struct SessionOpeningPreparation: Sendable {
 struct SessionOpeningMetadataCommit: Sendable {
     let index: ArchiveMetadataIndex
     let items: [PhotoItem]
+    var recheck: SessionOpeningMetadataRecheck? = nil
     var willCommitForTesting: (@Sendable () -> Void)? = nil
 
     /// Returns true when cache I/O was attempted.
     @discardableResult
     func run(isCancelled: @Sendable () -> Bool) -> Bool {
-        guard !isCancelled() else { return false }
+        guard recheck == nil, !isCancelled() else { return false }
         willCommitForTesting?()
         var notedUse = false
         let prepared = index.prepareCommit(items, isCancelled: isCancelled, onUnchanged: {
             notedUse = index.noteUsed(isCancelled: isCancelled)
         })
         return prepared?.commit(isCancelled: isCancelled) ?? notedUse
+    }
+}
+
+/// Only an OS-only snapshot mismatch opts into this job. Results stay private
+/// until every reused observation has been reread and the source barrier passes.
+struct SessionOpeningMetadataRecheck: Sendable {
+    let inventory: FolderScanner.Inventory
+    let folderIdentity: SessionPersistence.SourceFolderIdentity
+    let metadataReader: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)?
+    let foregroundWork: ForegroundWorkCoordinator
+
+    struct Result: Sendable {
+        let items: [PhotoItem]
+        let changedFiles: [String: PhotoFile]
+    }
+
+    func run(index: ArchiveMetadataIndex, items: [PhotoItem],
+             isCancelled: @Sendable () -> Bool) throws -> Result {
+        var refreshed: [String: PhotoFile] = [:]
+        var changed: [String: PhotoFile] = [:]
+        for item in inventory.items {
+            for file in item.individualFiles {
+                if isCancelled() { throw CancellationError() }
+                guard let reused = index.metadata(for: file) else { continue }
+                let fresh = try FolderScanner.recheckMetadata(for: file, index: index,
+                    metadataReader: metadataReader, foregroundWork: foregroundWork, isCancelled: isCancelled)
+                refreshed[file.id] = fresh
+                if ArchiveMetadataIndex.Metadata(fresh) != reused { changed[file.id] = fresh }
+            }
+        }
+        let ready = items.map { item in
+            PhotoItem(primaryFile: refreshed[item.primaryFile.id] ?? item.primaryFile,
+                      pairedFile: item.pairedFile.map { refreshed[$0.id] ?? $0 })
+        }
+        try FolderScanner.validateScannedIdentities(ready, isCancelled: isCancelled)
+        try FolderScanner.validateDirectories(in: inventory, isCancelled: isCancelled)
+        guard !isCancelled() else { throw CancellationError() }
+        guard folderIdentity.matches(folder: inventory.root) else {
+            throw FolderScanner.ScanError.filesChangedDuringScan
+        }
+        return Result(items: ready, changedFiles: changed)
     }
 }
 
@@ -48,6 +90,7 @@ enum SessionOpeningWorker {
         var beforeEnumeratingURL: (@Sendable (URL) throws -> Void)? = nil
         var metadataReader: (@Sendable (URL) throws -> MetadataExtractor.ScanInfo)? = nil
         var metadataIndex: ArchiveMetadataIndex? = nil
+        var foregroundWork: ForegroundWorkCoordinator = .shared
         /// Replaces the volume lookup of every identity barrier pass.
         var volumeResolver: FileOperationJournal.VolumeLookup.Resolver? = nil
         /// Runs inside the post-Ready metadata-cache commit, before any work.
@@ -108,7 +151,8 @@ enum SessionOpeningWorker {
                     facets: facets, persistenceResult: saved, preparedIndex: index, preparedSort: sort, folderIndex: nil)
             }
             let metadataIndex = hooks.metadataIndex ?? (hooks.metadataReader == nil
-                ? ArchiveMetadataIndex(folder: folder, folderIdentity: identity, isCancelled: { cancelFlag.isSet }) : nil)
+                ? ArchiveMetadataIndex(folder: folder, folderIdentity: identity, allowsOSBuildReuse: true, isCancelled: { cancelFlag.isSet }) : nil)
+            recorder.recordMetadataSnapshot(metadataIndex?.snapshotReason ?? .none)
             var didPublishCachedPreview = false
             if allowsPreview, expectedPinnedIdentity != nil, let preview, let metadataIndex {
                 let cached = try metadataIndex.openingItems(pairingMode: pairingMode, isCancelled: { cancelFlag.isSet })
@@ -195,7 +239,7 @@ enum SessionOpeningWorker {
                 metadataIndex: metadataIndex, commitsMetadataIndex: false, validatesIdentities: false,
                 metadataReady: didPublishPreview ? metadataReady : nil, metadataInterest: metadataInterest,
                 // Two workers keep reading while the user browses.
-                admissionFloor: 2
+                admissionFloor: 2, foregroundWork: hooks.foregroundWork
             )
             let reviewItems: [PhotoItem]
             if let photosBatch {
@@ -229,6 +273,10 @@ enum SessionOpeningWorker {
                                              preparedIndex: index, preparedSort: sort, folderIndex: folderIndex,
                                              metadataCommit: metadataIndex.map {
                                                  SessionOpeningMetadataCommit(index: $0, items: restoration.items,
+                                                     recheck: $0.needsOSBuildRecheck ? SessionOpeningMetadataRecheck(
+                                                         inventory: restoredInventory, folderIdentity: identity,
+                                                         metadataReader: hooks.metadataReader,
+                                                         foregroundWork: hooks.foregroundWork) : nil,
                                                      willCommitForTesting: hooks.willCommitMetadataIndex)
                                              },
                                              repeatFinalBarrier: { [inventory, identity, items = restoration.items,
