@@ -112,6 +112,118 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
         XCTAssertEqual(try snapshotFiles(in: cache).count, 1)
     }
 
+    func testTurningCuesOffBeforeTheWriteIsDueWritesNothing() async throws {
+        let folder = try makeFolder(["A.jpg", "B.jpg"])
+        let on = CameraQualityWarningPreferences()
+        var off = on
+        off.isClippingEnabled = false
+        for closes in [false, true] {
+            let cache = try temporaryDirectory()
+            let measurements = CueMeasurements()
+            let store = try open(folder, cache: cache, measurements: measurements, viewMode: .grid)
+            // The coalesced write is due long after this test.
+            store.qualityCueEvidenceFlushDelay = .seconds(600)
+            try await waitUntil { store.isQualityCueWalkIdleForTesting && store.qualityCueEvidence.count == 2 }
+            let evidence = try XCTUnwrap(store.qualityCueEvidenceCacheForTesting)
+            XCTAssertTrue(evidence.hasUnsavedChanges)
+
+            store.updateQualityCuePreferences(off)
+            // Pause, Close and Quit write nothing either while cues are off.
+            store.pauseQualityCueAnalysis(userInitiated: true)
+            if closes { close(store) }
+            await store.flushQualityCueEvidenceForTesting()
+            for _ in 0..<40 { await Task.yield() }
+            try await Task.sleep(for: .milliseconds(50))
+            XCTAssertEqual(evidence.snapshotWritesForTesting, 0, "Cues off: the pending write is retired")
+            XCTAssertEqual(try snapshotFiles(in: cache), [])
+            XCTAssertTrue(evidence.hasUnsavedChanges, "The evidence stays in memory")
+            if closes { continue }
+
+            // Cues on again: what was kept is written, and nothing is measured again.
+            store.qualityCueEvidenceFlushDelay = .milliseconds(1)
+            store.resumeQualityCueAnalysis()
+            store.updateQualityCuePreferences(on)
+            try await settle(store, evidence: 2)
+            XCTAssertEqual(evidence.snapshotWritesForTesting, 1)
+            XCTAssertEqual(evidence.storedRecordsForTesting()?.map(\.path), ["A.jpg", "B.jpg"])
+            let calls = await measurements.snapshot
+            XCTAssertEqual(calls.approximate.count, 2)
+            close(store)
+        }
+    }
+
+    func testReopeningAFolderWhileItsWriteIsPendingKeepsExactEvidence() async throws {
+        let folderA = try makeFolder(["A.jpg", "B.jpg"])
+        let folderB = try makeFolder(["X.jpg"])
+        let cache = try temporaryDirectory()
+        // A's snapshot holds estimates only.
+        let seeded = try open(folderA, cache: cache, measurements: CueMeasurements(), viewMode: .grid)
+        try await settle(seeded, evidence: 2)
+        close(seeded)
+
+        let measurements = CueMeasurements()
+        let gate = CueWriteGate()
+        let store = try open(folderA, cache: cache, measurements: measurements, viewMode: .grid)
+        store.qualityCueEvidenceWriteGateForTesting = { await gate.wait() }
+        func show(_ folder: URL) throws {
+            store.items = try scan(folder)
+            store.rebuildDerivedDataForTesting(sourceFolder: folder)
+            store.phase = .ready
+        }
+        try await waitUntil { store.isQualityCueWalkIdleForTesting && store.qualityCueEvidence.count == 2 }
+        store.viewMode = .gallery
+        try await waitUntil { store.qualityEvidence(for: store.items[0])?.isApproximate == false }
+        let first = try XCTUnwrap(store.qualityCueEvidenceCacheForTesting)
+
+        // A → B: A's write with the exact result is still pending.
+        store.viewMode = .grid
+        try show(folderB)
+        try await waitUntil { store.isQualityCueWalkIdleForTesting && store.qualityCueEvidence.count == 1 }
+        XCTAssertFalse(store.qualityCueEvidenceCacheForTesting === first)
+        XCTAssertEqual(first.snapshotWritesForTesting, 0)
+
+        // B → A with a new photo, before that write.
+        try writeImage(to: folderA.appendingPathComponent("C.jpg"), highlightFraction: 0.25, size: 48)
+        try show(folderA)
+        try await waitUntil { store.isQualityCueWalkIdleForTesting && store.qualityCueEvidence.count == 3 }
+        XCTAssertEqual(store.items.map(\.displayName), ["A.jpg", "B.jpg", "C.jpg"])
+        XCTAssertEqual(store.qualityEvidence(for: store.items[0])?.isApproximate, false,
+                       "The reopened folder sees the exact result that is not written yet")
+        XCTAssertEqual(store.qualityEvidence(for: store.items[0])?.highlightCount, CueMeasurements.exactHighlights)
+        let calls = await measurements.snapshot
+        XCTAssertEqual(calls.exact, ["A.jpg"])
+        XCTAssertEqual(calls.approximate, ["X.jpg", "C.jpg"])
+
+        await gate.open()
+        await store.flushQualityCueEvidenceForTesting()
+        let stored = try XCTUnwrap(QualityCueEvidenceCache(folder: folderA, cacheDirectory: cache)?
+            .storedRecordsForTesting())
+        XCTAssertEqual(stored.map(\.path), ["A.jpg", "B.jpg", "C.jpg"])
+        XCTAssertEqual(stored.map(\.record.isApproximate), [false, true, true],
+                       "No later write replaces the exact result with the older estimate")
+        close(store)
+    }
+
+    func testOpenReturnsTheInstanceWithUnsavedEvidenceOnly() throws {
+        let folder = try temporaryDirectory()
+        let directory = try temporaryDirectory()
+        let items = syntheticItems(count: 2, in: folder)
+        let first = try XCTUnwrap(QualityCueEvidenceCache.open(folder: folder, cacheDirectory: directory))
+        first.record(evidence(items[0], highlights: 30, approximate: true), for: items[0])
+        XCTAssertTrue(first.flush())
+        // Everything is on disk: a reopen reads the snapshot.
+        let clean = try XCTUnwrap(QualityCueEvidenceCache.open(folder: folder, cacheDirectory: directory))
+        XCTAssertFalse(clean === first)
+        clean.record(evidence(items[0], highlights: 12), for: items[0])
+        let pending = try XCTUnwrap(QualityCueEvidenceCache.open(folder: folder, cacheDirectory: directory))
+        XCTAssertTrue(pending === clean, "Unsaved evidence has one owner per folder")
+        XCTAssertEqual(pending.evidence(for: items).map(\.1.isApproximate), [false])
+        pending.record(evidence(items[1], highlights: 5, approximate: true), for: items[1])
+        XCTAssertTrue(pending.flush())
+        XCTAssertEqual(pending.storedRecordsForTesting()?.map(\.record.isApproximate), [false, true])
+        XCTAssertFalse(try XCTUnwrap(QualityCueEvidenceCache.open(folder: folder, cacheDirectory: directory)) === pending)
+    }
+
     func testCorruptOrTruncatedSnapshotIsAMissAndIsRebuilt() async throws {
         let folder = try makeFolder(["A.jpg", "B.jpg", "C.jpg"])
         let cache = try temporaryDirectory()
@@ -283,6 +395,67 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
         close(store)
     }
 
+    func testGridMultiSelectionBesideInfoMeasuresNothingExactly() async throws {
+        let folder = try makeFolder(["A.jpg", "B.jpg", "C.jpg"])
+        let measurements = CueMeasurements()
+        let store = try open(folder, cache: try temporaryDirectory(), measurements: measurements, viewMode: .grid)
+        try await settle(store, evidence: 3)
+        // Info shows a selection summary and no histogram.
+        store.selectAllVisible()
+        XCTAssertEqual(store.selectedIndices, [0, 1, 2])
+        store.showMetadataPanel = true
+        for _ in 0..<40 { await Task.yield() }
+        try await settle(store, evidence: 3)
+        store.toggleSelection(of: 2)
+        XCTAssertEqual(store.selectedIndices, [0, 1])
+        for _ in 0..<40 { await Task.yield() }
+        try await settle(store, evidence: 3)
+        var calls = await measurements.snapshot
+        XCTAssertEqual(calls.exact, [], "Several selected photos: nothing is inspected")
+        XCTAssertEqual(store.qualityEvidence(for: store.items[0])?.isApproximate, true)
+
+        // One selected photo is inspected: Info draws its histogram.
+        store.toggleSelection(of: 1)
+        XCTAssertLessThanOrEqual(store.selectedIndices.count, 1)
+        XCTAssertEqual(store.currentIndex, 0)
+        try await waitUntil { store.qualityEvidence(for: store.items[0])?.isApproximate == false }
+        try await settle(store, evidence: 3)
+        calls = await measurements.snapshot
+        XCTAssertEqual(calls.exact, ["A.jpg"])
+
+        // Gallery shows the current photo whatever the selection.
+        store.selectAllVisible()
+        store.viewMode = .gallery
+        store.currentIndex = 1
+        XCTAssertEqual(store.selectedIndices.count, 3)
+        try await waitUntil { store.qualityEvidence(for: store.items[1])?.isApproximate == false }
+        close(store)
+    }
+
+    func testShowingAnotherPhotoRetiresTheExactRequestInFlight() async throws {
+        let folder = try makeFolder(["A.jpg", "B.jpg"])
+        let measurements = CueMeasurements()
+        let store = try open(folder, cache: try temporaryDirectory(), measurements: measurements, viewMode: .grid)
+        try await settle(store, evidence: 2)
+        await measurements.holdExact("A.jpg")
+        store.viewMode = .gallery
+        try await waitUntil { await measurements.snapshot.exact == ["A.jpg"] }
+        store.setIndex(1)
+        try await waitUntil { await measurements.retiredExact == ["A.jpg"] }
+        try await waitUntil { store.qualityEvidence(for: store.items[1])?.isApproximate == false }
+        try await settle(store, evidence: 2)
+        XCTAssertEqual(store.qualityEvidence(for: store.items[0])?.isApproximate, true)
+        var calls = await measurements.snapshot
+        XCTAssertEqual(calls.exact, ["A.jpg", "B.jpg"])
+        // A retired request is no attempt: the photo is measured when shown again.
+        await measurements.releaseExact("A.jpg")
+        store.setIndex(0)
+        try await waitUntil { store.qualityEvidence(for: store.items[0])?.isApproximate == false }
+        calls = await measurements.snapshot
+        XCTAssertEqual(calls.exact, ["A.jpg", "B.jpg", "A.jpg"])
+        close(store)
+    }
+
     func testFailedExactMeasurementKeepsTheEstimateAndIsNotRetried() async throws {
         let folder = try makeFolder(["A.jpg", "B.jpg"])
         let measurements = CueMeasurements(exactFails: true)
@@ -434,6 +607,62 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
         XCTAssertEqual(RawHistogramPipeline.shared.sourceDecodesForTesting, rawRenders)
         let exact = try XCTUnwrap(store.qualityEvidence(for: store.items[shown]))
         XCTAssertGreaterThan(max(exact.width, exact.height), Int(ImagePipeline.thumbPixelSize))
+        close(store)
+    }
+
+    func testGalleryExactMeasurementSharesGallerysFitAndDecodesNothingItself() async throws {
+        // One photo: Gallery prefetches no neighbour's Fit preview.
+        let folder = try makeFolder(["Whole.jxl"], size: 400)
+        let scanned = try scan(folder)
+        let whole = try XCTUnwrap(scanned.first)
+        XCTAssertTrue(ImagePipeline.decodesWholeImage(whole))
+        let full = ImagePipeline.shared.sourceDecodesForTesting
+        let histogram = HistogramPipeline.shared.sourceDecodesForTesting
+
+        // The walk asks before Gallery has requested its Fit preview.
+        let store = makeStore(cache: try temporaryDirectory(), measurements: nil)
+        store.viewMode = .gallery
+        store.showMetadataPanel = true
+        store.items = scanned
+        store.rebuildDerivedDataForTesting(sourceFolder: folder)
+        store.phase = .ready
+        try await waitUntil { store.isQualityCueWalkIdleForTesting }
+        XCTAssertNil(store.qualityEvidence(for: whole))
+        XCTAssertEqual(HistogramPipeline.shared.sourceDecodesForTesting, histogram,
+                       "The cue never decodes a JPEG XL photo that Gallery is about to decode")
+        XCTAssertEqual(ImagePipeline.shared.sourceDecodesForTesting.full, full.full)
+
+        // Gallery decodes and publishes; the cue measures those pixels.
+        let fit = await ImagePipeline.shared.fullImage(for: whole)
+        XCTAssertNotNil(fit)
+        store.reportPhotoRepresentation(.preview, revision: whole.contentRevision)
+        try await waitUntil { store.qualityEvidence(for: whole)?.isApproximate == false }
+        try await settle(store, evidence: 1)
+        XCTAssertGreaterThan(store.qualityEvidence(for: whole)?.sampleCount ?? 0, 0)
+        XCTAssertEqual(HistogramPipeline.shared.sourceDecodesForTesting, histogram)
+        XCTAssertEqual(ImagePipeline.shared.sourceDecodesForTesting.full - full.full, 1)
+        XCTAssertEqual(store.qualityCueEvidenceCacheForTesting?.storedRecordsForTesting()?.map(\.record.isApproximate),
+                       [false])
+        close(store)
+    }
+
+    func testInfoInGridStillMeasuresAJPEGXLPhotoOnItsOwn() async throws {
+        let folder = try makeFolder(["Whole.jxl"], size: 400)
+        let whole = try XCTUnwrap(try scan(folder).first)
+        let histogram = HistogramPipeline.shared.sourceDecodesForTesting
+        let store = makeStore(cache: try temporaryDirectory(), measurements: nil)
+        store.viewMode = .gallery
+        store.showMetadataPanel = true
+        store.items = [whole]
+        store.rebuildDerivedDataForTesting(sourceFolder: folder)
+        store.phase = .ready
+        try await waitUntil { store.isQualityCueWalkIdleForTesting }
+        XCTAssertEqual(HistogramPipeline.shared.sourceDecodesForTesting, histogram)
+        // No single-photo view will decode it now: Info's histogram does.
+        store.viewMode = .grid
+        try await waitUntil { store.qualityEvidence(for: whole)?.isApproximate == false }
+        try await settle(store, evidence: 1)
+        XCTAssertEqual(HistogramPipeline.shared.sourceDecodesForTesting - histogram, 1)
         close(store)
     }
 
@@ -850,6 +1079,15 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
 
 private struct CueEvidenceTimeout: Error {}
 
+/// Holds snapshot writes until opened.
+private actor CueWriteGate {
+    private var isOpen = false
+    func open() { isOpen = true }
+    func wait() async {
+        while !isOpen { try? await Task.sleep(for: .milliseconds(2)) }
+    }
+}
+
 /// Records every measurement by kind. Estimates and exact results differ, so
 /// a test can tell which one a photo holds.
 private actor CueMeasurements {
@@ -864,6 +1102,9 @@ private actor CueMeasurements {
     private(set) var restBoundaries: [Int] = []
     private let highlightPercent: Int
     private let exactFails: Bool
+    private var heldExact: Set<String> = []
+    /// Held exact measurements that ended by cancellation.
+    private(set) var retiredExact: [String] = []
 
     init(highlightPercent: Int = 30, exactFails: Bool = false) {
         self.highlightPercent = highlightPercent
@@ -879,8 +1120,18 @@ private actor CueMeasurements {
             source: .renderedPreview, isApproximate: true)
     }
 
-    func exact(_ item: PhotoItem) -> QualityCueEvidence {
+    func holdExact(_ name: String) { heldExact.insert(name) }
+    func releaseExact(_ name: String) { heldExact.remove(name) }
+
+    func exact(_ item: PhotoItem) async -> QualityCueEvidence {
         exact.append(item.displayName)
+        while heldExact.contains(item.displayName) {
+            if Task.isCancelled {
+                retiredExact.append(item.displayName)
+                return QualityCueEvidence(item: item, analysis: nil, source: .renderedPreview)
+            }
+            try? await Task.sleep(for: .milliseconds(2))
+        }
         let analysis = exactFails ? nil : HistogramAnalysis(bins: [], sampleCount: 100, shadowCount: 2,
             highlightCount: Self.exactHighlights, width: 1_024, height: 768)
         return QualityCueEvidence(item: item, analysis: analysis, source: .renderedPreview)

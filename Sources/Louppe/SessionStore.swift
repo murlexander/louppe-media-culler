@@ -314,7 +314,7 @@ final class SessionStore: ObservableObject {
                         to: items[currentIndex], mode: prefetchRawDisplayMode, decoder: prefetchRawDecoder)
                 }
                 videoPlayback.stop()
-                if needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() }
+                qualityCueShownPhotoDidChange()
             }
         }
     }
@@ -322,12 +322,12 @@ final class SessionStore: ObservableObject {
         didSet {
             if viewMode != oldValue {
                 prefetchAroundCurrent()
-                if needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() }
+                qualityCueShownPhotoDidChange()
             }
         }
     }
     @Published var showMetadataPanel = true {
-        didSet { if showMetadataPanel, needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() } }
+        didSet { if showMetadataPanel != oldValue { qualityCueShownPhotoDidChange() } }
     }
     @Published var showBrowser = true
     /// Remembered per Mac: someone who browses archives by folder keeps
@@ -486,12 +486,20 @@ final class SessionStore: ObservableObject {
     private var qualityCueDeferredIDs: Set<String> = []
     /// One exact measurement per shown photo and session, even when it fails.
     private var qualityCueExactAttemptIDs: Set<String> = []
+    /// The shown photo's exact request in flight, retired when another photo
+    /// is shown or none is inspected.
+    private var qualityCueShownRequest: (id: String, task: Task<QualityCueEvidence?, Never>)?
+    /// Counts Gallery's published previews. A JPEG XL photo found without a
+    /// Fit preview to share waits for the next one instead of decoding.
+    private var qualityCueFitSignal: UInt64 = 0
+    private var qualityCueFitWait: (id: String, signal: UInt64)?
     /// Rebuildable evidence for the open folder, read and written only while
     /// a clipping cue is on. Nil directory: the shared rebuildable cache root.
     private var qualityCueEvidenceCache: QualityCueEvidenceCache?
     private var qualityCueEvidenceRestored = false
     private var qualityCueEvidenceFlushTask: Task<Void, Never>?
     private var qualityCueEvidenceFlushID: UUID?
+    private var qualityCueEvidenceFlushDelayTask: Task<Void, Never>?
     var qualityCueEvidenceCacheDirectory: URL?
     var qualityCueEvidenceFlushDelay: Duration = .seconds(10)
     static let qualityCueApproximateBatchSize = 32
@@ -515,6 +523,11 @@ final class SessionStore: ObservableObject {
     func reportPhotoRepresentation(_ representation: PhotoRepresentation, revision: PhotoContentRevision) {
         guard currentItem?.contentRevision == revision else { return }
         galleryActivity.setPhotoRepresentation(representation, revision: revision)
+        if representation == .preview || representation == .raw {
+            // Gallery's Fit is there to share: a waiting exact cue asks again.
+            qualityCueFitSignal &+= 1
+            if qualityCueFitWait != nil, needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() }
+        }
     }
     @Published var scanError: String?
     /// A legacy folder-path mismatch can be acknowledged only for the exact
@@ -660,6 +673,8 @@ final class SessionStore: ObservableObject {
             if selectedIndices != oldValue {
                 qualityCueSelectionOrder = nil
                 qualityCueSelectionCursor = 0
+                // Info inspects one photo only: the count decides its exact measurement.
+                qualityCueShownPhotoDidChange()
                 if selectedIndices.contains(where: { needsQualityCueMeasurement(at: $0) }) {
                     wakeQualityCueRest()
                 }
@@ -1581,6 +1596,8 @@ final class SessionStore: ObservableObject {
     }
 
     var qualityCueEvidenceCacheForTesting: QualityCueEvidenceCache? { qualityCueEvidenceCache }
+    /// Holds a snapshot write that is about to start.
+    var qualityCueEvidenceWriteGateForTesting: (@Sendable () async -> Void)?
     var isQualityCueWalkIdleForTesting: Bool { qualityCueTask == nil }
 
     /// Writes pending evidence now and waits for the snapshot.
@@ -1949,8 +1966,7 @@ final class SessionStore: ObservableObject {
         qualityCuePreferences = value
         value.save(to: reviewDefaults)
         if !filter.selectedQualityCues.isEmpty { applyFilter() }
-        if value.needsHistogram { startQualityCueAnalysis() }
-        else { pauseQualityCueAnalysis() }
+        qualityCueAvailabilityDidChange()
     }
 
     private func reloadQualityCuePreferences() {
@@ -1959,8 +1975,18 @@ final class SessionStore: ObservableObject {
         qualityCueMatchCache = nil
         qualityCuePreferences = value
         if !filter.selectedQualityCues.isEmpty { applyFilter() }
-        if value.needsHistogram { startQualityCueAnalysis() }
-        else { pauseQualityCueAnalysis() }
+        qualityCueAvailabilityDidChange()
+    }
+
+    /// Cues off stop the walk and retire pending snapshot writes; cues on
+    /// write the evidence kept in memory meanwhile.
+    private func qualityCueAvailabilityDidChange() {
+        if qualityCuePreferences.needsHistogram {
+            startQualityCueAnalysis()
+            flushQualityCueEvidence(immediately: false)
+        } else {
+            pauseQualityCueAnalysis()
+        }
     }
 
     /// Tile appearance changes priority without creating a task per tile.
@@ -1979,12 +2005,32 @@ final class SessionStore: ObservableObject {
         usesDefaultQualityCueMeasurement || qualityCueApproximateMeasurement != nil
     }
 
+    /// Gallery shows the current photo; in Grid, Info draws a histogram for
+    /// one inspected photo only (`MetadataPanel.showsHistogram`).
+    private var showsExactQualityCue: Bool {
+        viewMode == .gallery || (showMetadataPanel && selectedIndices.count <= 1)
+    }
+
     /// The full image is measured once for the photo being shown: in Gallery,
     /// or beside Info, whose histogram requests the same result.
     private func wantsExactQualityCue(at index: Int, evidence: QualityCueEvidence?) -> Bool {
-        guard index == currentIndex, viewMode == .gallery || showMetadataPanel,
-              evidence?.isApproximate != false else { return false }
-        return !qualityCueExactAttemptIDs.contains(items[index].id)
+        guard index == currentIndex, showsExactQualityCue, evidence?.isApproximate != false else { return false }
+        let id = items[index].id
+        if let wait = qualityCueFitWait, wait.id == id, wait.signal == qualityCueFitSignal { return false }
+        return !qualityCueExactAttemptIDs.contains(id)
+    }
+
+    /// Navigation, the view mode, Info or the selection changed what is
+    /// shown: an exact request for a photo no longer shown is retired, and
+    /// the walk looks at the one shown now.
+    private func qualityCueShownPhotoDidChange() {
+        if let shown = qualityCueShownRequest,
+           !(showsExactQualityCue && items.indices.contains(currentIndex) && items[currentIndex].id == shown.id) {
+            shown.task.cancel()
+            qualityCueShownRequest = nil
+        }
+        qualityCueFitWait = nil
+        if needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() }
     }
 
     private func needsQualityCueMeasurement(at index: Int) -> Bool {
@@ -2040,6 +2086,7 @@ final class SessionStore: ObservableObject {
         qualityCueEvidenceRestored = false
         qualityCueDeferredIDs.removeAll()
         qualityCueExactAttemptIDs.removeAll()
+        qualityCueFitWait = nil
         qualityCueMatchCache = nil
         qualityCueMeasuredCount = 0
         qualityCuePhotoCount = items.reduce(0) { $0 + ($1.mediaKind == .photo ? 1 : 0) }
@@ -2064,10 +2111,17 @@ final class SessionStore: ObservableObject {
         let taskID = UUID()
         qualityCueTaskID = taskID
         let authority = mediaReadAccess
-        let measure: @Sendable (PhotoItem) async -> QualityCueEvidence
+        // Nil: a JPEG XL photo in Gallery whose Fit preview is not there yet.
+        let measure: @Sendable (PhotoItem, _ sharesGalleryFit: Bool) async -> QualityCueEvidence?
         if usesDefaultQualityCueMeasurement {
-            measure = { await QualityCueEvidence.measure($0, sourceAccess: authority) }
-        } else { measure = qualityCueMeasurement }
+            measure = { item, sharesGalleryFit in
+                sharesGalleryFit ? await QualityCueEvidence.measureSharedFit(item, sourceAccess: authority)
+                    : await QualityCueEvidence.measure(item, sourceAccess: authority)
+            }
+        } else {
+            let injected = qualityCueMeasurement
+            measure = { item, _ in await injected(item) }
+        }
         let approximate = qualityCueApproximateMeasurement
             ?? { await QualityCueEvidence.approximate($0, sourceAccess: authority) }
         let rest = qualityCueRest
@@ -2100,20 +2154,42 @@ final class SessionStore: ObservableObject {
                 }
                 let interestGeneration = self.qualityCueInterestGeneration
                 let workStart = ContinuousClock.now
+                // The shown photo's exact request has its own handle, so
+                // showing another photo can retire it.
+                let shown = self.qualityCueWalkIsApproximate ? batch.first(where: \.exact) : nil
+                let shownTask = shown.map { request in
+                    Task.detached(priority: .utility) { await measure(request.item, request.sharesGalleryFit) }
+                }
+                if let shown, let shownTask { self.qualityCueShownRequest = (shown.item.id, shownTask) }
+                let fitSignal = self.qualityCueFitSignal
                 let results = await withTaskGroup(of: (QualityCueRequest, QualityCueEvidence?).self) { group in
                     for request in batch {
                         group.addTask(priority: .utility) {
-                            (request, request.exact ? await measure(request.item) : await approximate(request.item))
+                            guard request.exact else { return (request, await approximate(request.item)) }
+                            guard let shownTask else { return (request, await measure(request.item, false)) }
+                            return (request, await withTaskCancellationHandler { await shownTask.value }
+                                onCancel: { shownTask.cancel() })
                         }
                     }
                     var results: [(QualityCueRequest, QualityCueEvidence?)] = []
                     for await result in group { results.append(result) }
                     return results
                 }
+                let retired = shownTask?.isCancelled == true
+                if let shownTask, self.qualityCueShownRequest?.task == shownTask { self.qualityCueShownRequest = nil }
                 guard !Task.isCancelled, self.qualityCueGeneration == generation else { return }
                 var measured: [(String, QualityCueEvidence)] = []
                 for (request, evidence) in results {
                     self.qualityCueCheckingIDs.remove(request.item.id)
+                    if request.exact, shownTask != nil, evidence == nil || (retired && evidence?.sampleCount == 0) {
+                        // Retired, or no Fit preview to share yet: not an
+                        // attempt. Gallery's next preview asks again; outside
+                        // Gallery the next batch measures without it.
+                        if !retired, self.viewMode == .gallery {
+                            self.qualityCueFitWait = (request.item.id, fitSignal)
+                        }
+                        continue
+                    }
                     if request.exact, self.qualityCueWalkIsApproximate {
                         self.qualityCueExactAttemptIDs.insert(request.item.id)
                     }
@@ -2214,6 +2290,9 @@ final class SessionStore: ObservableObject {
     /// main actor. False: the walk was paused or superseded meanwhile.
     private func restoreQualityCueEvidence(generation: UInt64) async -> Bool {
         guard !qualityCueEvidenceRestored else { return true }
+        // A walk paused before it ran reads no snapshot.
+        guard !Task.isCancelled, qualityCueGeneration == generation, qualityCuePreferences.needsHistogram
+        else { return false }
         guard let folder = sourceFolder else {
             qualityCueEvidenceCache = nil
             qualityCueEvidenceRestored = true
@@ -2224,16 +2303,24 @@ final class SessionStore: ObservableObject {
         let existing = qualityCueEvidenceCache
         let items = self.items
         let known = qualityCueEvidence
-        let loading = Task.detached(priority: .utility) { () -> (QualityCueEvidenceCache?, [(String, QualityCueEvidence)]) in
+        let loading = Task.detached(priority: .utility) { () -> (QualityCueEvidenceCache?, [(String, QualityCueEvidence)])? in
+            guard !Task.isCancelled else { return nil }
+            // A folder left a moment ago may still hold unsaved evidence:
+            // `open` returns that instance instead of an older snapshot.
             let cache = existing.flatMap { $0.serves(folder: folder, folderIdentity: identity, cacheDirectory: directory) ? $0 : nil }
-                ?? QualityCueEvidenceCache(folder: folder, folderIdentity: identity, cacheDirectory: directory)
+                ?? QualityCueEvidenceCache.open(folder: folder, folderIdentity: identity, cacheDirectory: directory)
             let hits = cache?.evidence(for: items, excluding: known, isCancelled: { Task.isCancelled }) ?? []
-            if !hits.isEmpty { cache?.noteUsed() }
+            if !hits.isEmpty, !Task.isCancelled { cache?.noteUsed() }
             return (cache, hits)
         }
-        let (cache, hits) = await withTaskCancellationHandler { await loading.value } onCancel: { loading.cancel() }
+        let loaded = await withTaskCancellationHandler { await loading.value } onCancel: { loading.cancel() }
+        guard let (cache, hits) = loaded else { return false }
         // A superseded walk keeps the snapshot it read for the same folder.
-        if sourceFolder == folder { qualityCueEvidenceCache = cache }
+        if sourceFolder == folder {
+            // Evidence kept in memory while cues were off is written, not dropped.
+            if qualityCueEvidenceCache !== cache { flushQualityCueEvidence(immediately: true) }
+            qualityCueEvidenceCache = cache
+        }
         guard !Task.isCancelled, qualityCueGeneration == generation else { return false }
         var start = 0
         while start < hits.count {
@@ -2253,21 +2340,44 @@ final class SessionStore: ObservableObject {
     }
 
     /// Coalesces snapshot writes; `immediately` also ends a pending delay.
-    /// The write itself runs off the main actor at utility priority.
+    /// The write itself runs off the main actor at utility priority. With
+    /// clipping cues off nothing is written: pending writes are retired and
+    /// unsaved evidence stays in memory until cues are on again.
     private func flushQualityCueEvidence(immediately: Bool) {
+        guard qualityCuePreferences.needsHistogram else {
+            qualityCueEvidenceFlushTask?.cancel()
+            qualityCueEvidenceFlushDelayTask?.cancel()
+            qualityCueEvidenceFlushTask = nil
+            qualityCueEvidenceFlushDelayTask = nil
+            qualityCueEvidenceFlushID = nil
+            return
+        }
         guard let cache = qualityCueEvidenceCache, cache.hasUnsavedChanges else { return }
         let previous = qualityCueEvidenceFlushTask
-        if immediately { previous?.cancel() } else if previous != nil { return }
-        let delay = immediately ? .zero : qualityCueEvidenceFlushDelay
+        if immediately { qualityCueEvidenceFlushDelayTask?.cancel() } else if previous != nil { return }
         let id = UUID()
         qualityCueEvidenceFlushID = id
+        let delay = immediately ? nil : Task { [delay = qualityCueEvidenceFlushDelay] in
+            _ = try? await Task.sleep(for: delay)
+        }
+        qualityCueEvidenceFlushDelayTask = delay
         qualityCueEvidenceFlushTask = Task { @MainActor [weak self] in
-            await previous?.value
-            // Cancellation ends the delay; the snapshot is still written.
-            if delay > .zero { try? await Task.sleep(for: delay) }
-            await Task.detached(priority: .utility) { _ = cache.flush() }.value
+            // Cancellation retires this write and the ones it waits for.
+            await withTaskCancellationHandler { await previous?.value } onCancel: { previous?.cancel() }
+            await delay?.value
+            #if LOUPPE_TEST_SEAMS
+            await self?.qualityCueEvidenceWriteGateForTesting?()
+            #endif
+            // Decided here, right before the write: cues may be off by now.
+            if !Task.isCancelled, self?.qualityCuePreferences.needsHistogram != false {
+                let write = Task.detached(priority: .utility) {
+                    if !Task.isCancelled { _ = cache.flush() }
+                }
+                await withTaskCancellationHandler { await write.value } onCancel: { write.cancel() }
+            }
             guard let self, self.qualityCueEvidenceFlushID == id else { return }
             self.qualityCueEvidenceFlushTask = nil
+            self.qualityCueEvidenceFlushDelayTask = nil
             // Evidence recorded while the snapshot was being written.
             self.flushQualityCueEvidence(immediately: false)
         }
@@ -2285,6 +2395,9 @@ final class SessionStore: ObservableObject {
         let item: PhotoItem
         /// The full measurement for the shown photo; otherwise the estimate.
         let exact: Bool
+        /// A JPEG XL photo shown in Gallery: measured from Gallery's Fit
+        /// preview only, so the photo is not decoded a second time.
+        let sharesGalleryFit: Bool
     }
 
     /// The shown photo's exact measurement with at most one other photo (a
@@ -2320,7 +2433,8 @@ final class SessionStore: ObservableObject {
             } else if !exact, batch.isEmpty {
                 capacity = Self.qualityCueApproximateBatchSize
             }
-            batch.append(QualityCueRequest(item: item, exact: exact))
+            batch.append(QualityCueRequest(item: item, exact: exact, sharesGalleryFit:
+                exact && viewMode == .gallery && ImagePipeline.decodesWholeImage(item)))
             return true
         }
         append(currentIndex)

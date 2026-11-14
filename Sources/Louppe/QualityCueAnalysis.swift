@@ -60,6 +60,20 @@ struct QualityCueEvidence: Equatable, Sendable {
                     rawFallback: item.isRaw)
     }
 
+    /// Gallery's exact measurement of a whole-image (JPEG XL) photo: the Fit
+    /// preview Gallery has cached or is decoding, never a decode of its own.
+    /// Nil: no Fit to share yet.
+    static func measureSharedFit(_ item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> Self? {
+        switch await HistogramPipeline.shared.sharedFitAnalysis(for: item, sourceAccess: sourceAccess) {
+        case .measured(let analysis):
+            return Self(item: item, analysis: analysis, source: .renderedPreview)
+        case .failed:
+            return Self(item: item, analysis: nil, source: .renderedPreview)
+        case .noFit:
+            return nil
+        }
+    }
+
     /// The walk's estimate from the thumbnail (a RAW file's embedded preview):
     /// no Fit-size decode and no RAW render. Nil: no cheap source yet.
     static func approximate(_ item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> Self? {

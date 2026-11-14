@@ -50,6 +50,40 @@ final class DecodeBudgetTests: XCTestCase {
         XCTAssertEqual(recipes.recipeBuildsForTesting - recipesBefore, 0, "no 100% recipe before 100% is used")
     }
 
+    func testExactCueAskedBeforeGalleryRegistersItsFitDecodesNothing() async throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gate = FitDecodeGate()
+        defer { gate.releaseAll() }
+        let pipeline = gatedPipeline(root: root.appendingPathComponent("cache"), gate: gate)
+        let histograms = HistogramPipeline(imagePipeline: pipeline)
+        let photo = try jpegItem(in: root, name: "ordered.jxl")
+        // The cue asks first: no Fit to share, and no decode of its own.
+        guard case .noFit = await histograms.sharedFitAnalysis(for: photo) else {
+            return XCTFail("Nothing is cached or decoding yet")
+        }
+        XCTAssertEqual(histograms.waiterCountForTesting(for: photo), 0)
+        // Gallery registers its Fit; the cue asks again while it decodes.
+        let gallery = Task { await pipeline.fullImage(for: photo) != nil }
+        try await waitUntil { gate.started == ["ordered.jxl"] }
+        let cue = Task { await histograms.sharedFitAnalysis(for: photo) }
+        try await waitUntil { pipeline.decodeWaiterCountForTesting(for: photo, full: true) == 2 }
+        // A photo no longer shown gives its place up without a decode.
+        let retired = Task { await histograms.sharedFitAnalysis(for: photo) }
+        try await waitUntil { pipeline.decodeWaiterCountForTesting(for: photo, full: true) == 3 }
+        retired.cancel()
+        guard case .noFit = await retired.value else { return XCTFail("A retired request measures nothing") }
+        XCTAssertEqual(pipeline.decodeWaiterCountForTesting(for: photo, full: true), 2)
+        gate.releaseAll()
+        guard case .measured(let analysis) = await cue.value else { return XCTFail("The shared Fit is measured") }
+        XCTAssertGreaterThan(analysis.sampleCount, 0)
+        let shown = await gallery.value
+        XCTAssertTrue(shown)
+        XCTAssertEqual(gate.started, ["ordered.jxl"])
+        XCTAssertEqual(pipeline.sourceDecodesForTesting.full, 1)
+        XCTAssertEqual(histograms.sourceDecodesForTesting, 0, "The cue measured Gallery's pixels")
+    }
+
     // MARK: 100% recipe dwell
 
     func testFitDwellBuildsNoWholeImageRecipeBeforeZoom() async {

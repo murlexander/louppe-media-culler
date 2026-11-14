@@ -291,6 +291,12 @@ final class HistogramPipeline: @unchecked Sendable {
         case measured(HistogramAnalysis), failed, noCheapSource
     }
 
+    /// Gallery's exact cue measurement of a whole-image photo. `noFit`:
+    /// Gallery has no Fit preview cached or decoding to share yet.
+    enum SharedFitResult: Sendable {
+        case measured(HistogramAnalysis), failed, noFit
+    }
+
     private final class PendingAnalysis {
         var waiters: [UUID: HistogramAnalysisWaiter]
         let operation: BlockOperation
@@ -350,10 +356,41 @@ final class HistogramPipeline: @unchecked Sendable {
     }
 
     func analysis(for item: PhotoItem, purpose: RequestPurpose = .info, sourceAccess: MediaReadAccess? = nil) async -> HistogramAnalysis? {
+        await analysis(for: item, purpose: purpose, sourceAccess: sourceAccess, sharedFit: nil)
+    }
+
+    /// Measures the Fit preview Gallery has cached or is decoding and never
+    /// decodes the photo itself, whichever of the two asked first. After
+    /// `noFit` the caller asks again once Gallery has published. Same result
+    /// key as `analysis`, so Info and the cue share one measurement.
+    func sharedFitAnalysis(for item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> SharedFitResult {
+        guard ImagePipeline.decodesWholeImage(item), item.isSupported else { return .failed }
+        let key = Self.cacheKey(for: item)
+        func cachedResult() -> HistogramAnalysis? {
+            lock.withLock {
+                guard let cached = cache[key] else { return nil }
+                touch(key)
+                return cached
+            }
+        }
+        if let cached = cachedResult() { return .measured(cached) }
+        guard let fit = await imagePipeline.fullImageIfCachedOrInFlight(for: item, sourceAccess: sourceAccess)?
+            .cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            // Info may have measured the photo meanwhile.
+            return cachedResult().map(SharedFitResult.measured) ?? .noFit
+        }
+        return await analysis(for: item, purpose: .backgroundQuality, sourceAccess: sourceAccess, sharedFit: fit)
+            .map(SharedFitResult.measured) ?? .failed
+    }
+
+    /// `sharedFit`: Fit pixels the caller already holds; the worker measures
+    /// them and starts no decode.
+    private func analysis(for item: PhotoItem, purpose: RequestPurpose, sourceAccess: MediaReadAccess?,
+                          sharedFit: CGImage?) async -> HistogramAnalysis? {
         guard item.mediaKind == .photo, item.isSupported else { return nil }
         let key = Self.cacheKey(for: item)
         let measuresFit = ImagePipeline.decodesWholeImage(item)
-        if measuresFit {
+        if measuresFit, sharedFit == nil {
             let cached = lock.withLock { cache[key] }
             // Let a Fit that is already decoding finish; the worker then
             // finds it cached. Joining starts none, so Info in Grid decodes.
@@ -406,7 +443,7 @@ final class HistogramPipeline: @unchecked Sendable {
                     defer { readAccess.finish() }
                     let result = autoreleasepool {
                         measuresFit
-                            ? self.fitAnalysis(for: item, revision: revision)
+                            ? self.fitAnalysis(for: item, revision: revision, sharedFit: sharedFit)
                             : self.decodedAnalysis(revision) { self.decoder($0) }
                     }
                     self.finish(key: key, operation: operation, result: result)
@@ -458,9 +495,10 @@ final class HistogramPipeline: @unchecked Sendable {
     /// The cached Fit preview, else the same bounded decode on this lane,
     /// uncached. Both pass through `analysisPreview`, so Info and the
     /// background walk count identical samples whichever one ran.
-    private func fitAnalysis(for item: PhotoItem, revision: MediaSourceRevision) -> HistogramAnalysis? {
+    private func fitAnalysis(for item: PhotoItem, revision: MediaSourceRevision, sharedFit: CGImage?) -> HistogramAnalysis? {
         // Cached pixels were revision-checked by the decode that produced them.
-        if let fit = imagePipeline.cachedFullImage(for: item)?.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+        if let fit = sharedFit
+            ?? imagePipeline.cachedFullImage(for: item)?.cgImage(forProposedRect: nil, context: nil, hints: nil) {
             return Self.analysisPreview(ofFit: fit).flatMap(ClippingWarningProcessor.analyze)
         }
         return decodedAnalysis(revision) { url in

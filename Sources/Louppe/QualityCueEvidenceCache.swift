@@ -15,6 +15,11 @@ final class QualityCueEvidenceCache: @unchecked Sendable {
     static let maximumTotalBytes = 64 * 1_024 * 1_024
     static let snapshotExtension = "lqc"
     private static let maintenanceLock = NSLock()
+    /// The latest opened instance per snapshot path, so a folder reopened
+    /// while its last write is pending gets the instance holding that
+    /// evidence. Guarded by `maintenanceLock`.
+    nonisolated(unsafe) private static var openInstances: [String: WeakInstance] = [:]
+    private struct WeakInstance { weak var cache: QualityCueEvidenceCache? }
     private static let magic: [UInt8] = [0x4C, 0x50, 0x51, 0x43] // "LPQC"
     private static let formatVersion: UInt8 = 1
     private static let digestBytes = 32
@@ -113,13 +118,7 @@ final class QualityCueEvidenceCache: @unchecked Sendable {
             if !prefixes.contains(prefix) { prefixes.append(prefix) }
         }
         folderPrefixes = prefixes
-        // Same binding as the metadata index: a volume UUID supersedes the
-        // device number and mount root, so a remounted drive keeps its entries.
-        folderBinding = ArchiveMetadataIndex.folderBinding(volumeRootPath: identity.volumeRootPath,
-            volumeUUIDString: identity.volumeUUIDString, systemNumber: identity.systemNumber,
-            fileNumber: identity.fileNumber, birthTime: identity.birthTime, path: folderPath)
-        cacheURL = directory.appendingPathComponent(
-            Self.hex(SHA256.hash(data: Data(folderBinding.utf8))) + "." + Self.snapshotExtension)
+        (folderBinding, cacheURL) = Self.snapshotLocation(folder: folder, identity: identity, directory: directory)
         let analyzer = analyzerContext ?? Self.analyzerContext
         let decoder = decoderContext ?? Self.decoderContext
         self.analyzerContext = analyzer
@@ -131,6 +130,46 @@ final class QualityCueEvidenceCache: @unchecked Sendable {
         entries = Self.read(cacheURL, limit: Self.maximumSnapshotBytes).flatMap {
             Self.decode($0, analyzerContext: analyzer, decoderContext: decoder, folderBinding: binding)
         } ?? [:]
+    }
+
+    /// The folder's cache: the instance that still holds unsaved evidence,
+    /// else a new read of the snapshot. Unsaved evidence has one owner per
+    /// folder, so a reopen sees it and no older snapshot is written over it.
+    /// Call off the main actor.
+    static func open(folder: URL,
+                     folderIdentity: SessionPersistence.SourceFolderIdentity? = nil,
+                     cacheDirectory: URL? = nil) -> QualityCueEvidenceCache? {
+        guard let identity = folderIdentity ?? (try? SessionPersistence.SourceFolderIdentity.capture(at: folder)),
+              let directory = cacheDirectory ?? defaultDirectory else { return nil }
+        let path = snapshotLocation(folder: folder, identity: identity, directory: directory).url.path
+        // No write runs under this lock: evidence is either still marked
+        // unsaved or already in the snapshot read below.
+        maintenanceLock.lock()
+        defer { maintenanceLock.unlock() }
+        if let pending = openInstances[path]?.cache, pending.hasUnsavedChanges {
+            if pending.serves(folder: folder, folderIdentity: identity, cacheDirectory: cacheDirectory) {
+                return pending
+            }
+            // The same folder under another spelling: its evidence goes first.
+            pending.writeSnapshot()
+        }
+        guard let cache = QualityCueEvidenceCache(folder: folder, folderIdentity: identity,
+                                                  cacheDirectory: cacheDirectory) else { return nil }
+        openInstances = openInstances.filter { $0.value.cache != nil }
+        openInstances[path] = WeakInstance(cache: cache)
+        return cache
+    }
+
+    /// Same binding as the metadata index: a volume UUID supersedes the
+    /// device number and mount root, so a remounted drive keeps its entries.
+    private static func snapshotLocation(folder: URL, identity: SessionPersistence.SourceFolderIdentity,
+                                         directory: URL) -> (binding: String, url: URL) {
+        let binding = ArchiveMetadataIndex.folderBinding(volumeRootPath: identity.volumeRootPath,
+            volumeUUIDString: identity.volumeUUIDString, systemNumber: identity.systemNumber,
+            fileNumber: identity.fileNumber, birthTime: identity.birthTime,
+            path: FolderScanner.fileSystemIdentityPath(for: folder))
+        return (binding, directory.appendingPathComponent(
+            hex(SHA256.hash(data: Data(binding.utf8))) + "." + snapshotExtension))
     }
 
     var hasUnsavedChanges: Bool { lock.withLock { isDirty } }
@@ -249,6 +288,12 @@ final class QualityCueEvidenceCache: @unchecked Sendable {
     func flush() -> Bool {
         Self.maintenanceLock.lock()
         defer { Self.maintenanceLock.unlock() }
+        return writeSnapshot()
+    }
+
+    /// The caller holds `maintenanceLock`.
+    @discardableResult
+    private func writeSnapshot() -> Bool {
         lock.lock()
         guard isDirty else {
             lock.unlock()
