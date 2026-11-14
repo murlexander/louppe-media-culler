@@ -153,15 +153,20 @@ persistence reads and final identity checks.
   selected/rendered/nearby photos and walks the remaining session. The walk
   estimates clipping from the 320-pixel thumbnail (memory, then disk, else one
   thumbnail-size decode; RAW uses its embedded preview), 32 per batch, and starts
-  no Fit decode, 1,024-pixel decode or RAW render. The photo shown in Gallery or
-  beside Info is measured exactly once through the histogram pipelines; exact
-  evidence is never replaced by an estimate. A JPEG XL photo without a cached
+  no Fit decode, 1,024-pixel decode or RAW render. The photo shown in Gallery, or
+  the single photo inspected beside Info, is measured exactly once through the
+  histogram pipelines; showing another photo cancels a request in flight. In
+  Gallery a JPEG XL photo is measured only from the Fit preview Gallery has cached
+  or is decoding; the cue starts no decode of its own there. Exact evidence is
+  never replaced by an estimate. A JPEG XL photo without a cached
   thumbnail stays unmeasured until its tile or the photo is shown. While a
   clipping cue is on, evidence persists per opened folder in
   `quality-cue-evidence-v1/<folder key>.lqc` (exact path plus file identity,
   counts not verdicts; 256 folders, 64 MiB, oldest first): a reopen applies hits
   in 2,048-photo publications and measures only new or changed files. Cues off
-  read and write nothing. It retains only revision/source/dimensions/sample
+  read and write nothing. Turning cues off retires a pending write; unsaved
+  evidence stays in memory and is written once cues are on again. A folder
+  reopened while its write is pending reuses the instance holding that evidence. It retains only revision/source/dimensions/sample
   and clipping counts per item; bins/bitmaps stay in the bounded workers above.
   Tile interest is capped at 64 IDs. Selection priority has a retained frontier;
   it does not repeatedly scan completed selections. Evidence publishes once per
@@ -621,7 +626,7 @@ Quit take a finite checkpoint independently of decision durability. See
 | Thumbnails | 1,200 objects; 256 MiB decoded |
 | Full previews | 8 objects; 384 MiB decoded |
 | Clipping previews | 2 objects; 128 MiB decoded |
-| Histograms | 256 numeric results; temporary 1,024-pixel previews. JPEG XL measures the cached or decoding Fit preview, else a temporary uncached 4,096-pixel decode, reduced to 1,024 |
+| Histograms | 256 numeric results; temporary 1,024-pixel previews. JPEG XL measures the cached or decoding Fit preview, else a temporary uncached 4,096-pixel decode (Info, and the cue in Grid), reduced to 1,024 |
 | RAW histograms | 128 numeric results; temporary extended-linear RGBA-float bitmap near 1,024 pixels on longest side |
 | Actual-size tiles | 128 MiB total; 1,024 × 1,024 source-pixel tiles, normal and clipping variants; lazy recipes retain no whole bitmap (JPEG XL recipes do) |
 | Disk thumbnails | 512 MiB; 90-day age; utility pass at most daily after launch delay, plus live passes after 64 MiB of writes before the total is known, then when known total + writes exceed 512 MiB; evicts to 448 MiB; one pass at a time; undeleted files stay counted and fail the pass; live retries after failed passes wait 1, 2, 4, then 8 intervals of writes until one succeeds; test hosts use a disposable root and prune only with injected limits |
