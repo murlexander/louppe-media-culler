@@ -150,9 +150,18 @@ persistence reads and final identity checks.
   exit. Completion matches operation identity before caching or resuming live
   waiters, so retired work cannot consume a renewed same-key request.
 - Quality cues work with Info closed. One session scheduler prioritizes current/
-  selected/rendered/nearby photos, requests at most two items per batch (a JPEG
-  XL photo is measured alone), then
-  walks the remaining session. It retains only revision/source/dimensions/sample
+  selected/rendered/nearby photos and walks the remaining session. The walk
+  estimates clipping from the 320-pixel thumbnail (memory, then disk, else one
+  thumbnail-size decode; RAW uses its embedded preview), 32 per batch, and starts
+  no Fit decode, 1,024-pixel decode or RAW render. The photo shown in Gallery or
+  beside Info is measured exactly once through the histogram pipelines; exact
+  evidence is never replaced by an estimate. A JPEG XL photo without a cached
+  thumbnail stays unmeasured until its tile or the photo is shown. While a
+  clipping cue is on, evidence persists per opened folder in
+  `quality-cue-evidence-v1/<folder key>.lqc` (exact path plus file identity,
+  counts not verdicts; 256 folders, 64 MiB, oldest first): a reopen applies hits
+  in 2,048-photo publications and measures only new or changed files. Cues off
+  read and write nothing. It retains only revision/source/dimensions/sample
   and clipping counts per item; bins/bitmaps stay in the bounded workers above.
   Tile interest is capped at 64 IDs. Selection priority has a retained frontier;
   it does not repeatedly scan completed selections. Evidence publishes once per
@@ -415,7 +424,12 @@ single-decision check measured 0.3 ms on 12 October 2026. Refresh
 only affected sort/filter projections, preserving the current photo. Reuse the
 existing save debounce/deadline. Fingerprint-only checkpoints do not advance the
 user-change generation, so already saved decisions continue to read Saved.
-Fingerprint progress publishes only while recovery records exist.
+Fingerprint progress publishes only while recovery records exist. A fingerprint
+proven after a first rating rides the next save captured within 5 seconds
+(`contentCheckpointDelay`); otherwise it schedules its own save after that wait.
+Close, Open, Rescan, Quit and file operations flush a waiting fingerprint even
+when decisions are already durable; that optional write can make them wait on
+slow storage, but its failure never blocks them.
 
 ## Shared review-metadata storage
 
@@ -486,7 +500,16 @@ reuse. Exact percent-encoded paths, fresh physical identities/revisions, extract
 schema, time zone and OS interpretation context own hits. The context uses the
 numeric OS version and build (`kern.osversion`), not the localized version
 string; a snapshot written under this process's old localized string migrates
-once. On UUID volumes, the
+once. When only the OS version or build differs (schema, time zone and file
+identities still match), the opening reuses the snapshot and reaches Ready warm.
+After Ready a cancellable job, behind foreground admission, rereads each reused
+entry once, then stores the snapshot under the new context and refreshes the open
+session's dates, order and filters where values changed, keeping
+revision-matching cue evidence. A file changed during the recheck is left out
+(a miss next time); a replaced folder or root rejects the job. Close, another
+opening and Quit stop it; it never writes originals or sidecars or changes
+decisions. Opening metrics record the snapshot reason (`hit`, `none`, `schema`,
+`zone`, `osBuild`, `identity`) and per-reason miss counts. On UUID volumes, the
 UUID replaces the device number (`st_dev`) and mount root in the folder key and
 entry match. A remount with a new device number or at `/Volumes/<name> 1` still
 hits; paths are rebased from the snapshot's recorded folder path. UUID-less

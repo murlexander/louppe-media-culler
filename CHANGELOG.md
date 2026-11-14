@@ -8,6 +8,11 @@
 - Keep Shift-click and Command-click selection the same while a folder opens and after it is ready. After browsing an opening folder, the first Esc no longer closes it; press Esc again to cancel.
 - Keep the next keyboard-selected Grid photo in view after a decision hides the current one.
 - Restore sharp 100% detail when panning away and back quickly, and free memory sooner when browsing fast.
+- Keep folders you use opening quickly, even after opening many others, and keep a first scan moving while you browse.
+- Step through photos in Gallery with less work per key, and decode JPEG XL photos half as often with Info open.
+- Open known folders quickly after a macOS update; photo and video details refresh in the background.
+- Show clipping cues soon after a folder opens: Louppe remembers earlier checks, estimates new photos from thumbnails, and measures a photo fully when you open it.
+- Save the folder's session file less often while rating quickly.
 - Drop the Done button from Filter and Sort: choices apply at once, and Esc or a click outside closes them. Reset is now an icon beside the title, and Sort has one too.
 - Keep dialog buttons and warning actions readable when labels are long, with the close button at the far right. Selection in inactive windows is neutral grey, and VoiceOver reads Sort and Filter titles as headings.
 

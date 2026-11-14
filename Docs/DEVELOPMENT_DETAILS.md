@@ -29,6 +29,7 @@ it to every view.
 | `Sources/Louppe/ArchiveNavigationMemory.swift` | Bounded identity-bound per-folder UI positions and separate durable persistence |
 | `Sources/Louppe/SessionStore+ArchiveNavigation.swift` | Folder scope, leading pane, position restore and independent UI-state save checkpoints |
 | `Sources/Louppe/ArchiveMetadataIndex.swift` | Disposable revision-bound metadata observations with bounded per-folder/aggregate storage |
+| `Sources/Louppe/QualityCueEvidenceCache.swift` | Rebuildable per-folder clipping evidence (estimate or exact counts) under the caches root |
 | `Sources/Louppe/ForegroundWorkCoordinator.swift` | Shared cancellable interaction admission between existing bounded worker units |
 | `Sources/Louppe/SessionOpeningWorker.swift` and `SessionOpening*` helpers | Cancellable complete inventory/metadata preparation, saved-decision restoration, facets/index preparation, and opening-stage measurements before session publication |
 | `Sources/Louppe/ImagePipeline.swift` | ImageIO decoding, AVFoundation first frames, thumbnail memory/disk caches, prefetch |
