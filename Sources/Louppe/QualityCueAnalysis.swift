@@ -1,7 +1,9 @@
 import Foundation
 
-/// Small, session-only evidence index. Histograms remain in the existing
-/// bounded pipeline caches; folder indexing retains counts, never bitmaps/bins.
+/// Small evidence index: the session holds one value per photo and
+/// `QualityCueEvidenceCache` keeps complete ones across openings. Histograms
+/// remain in the existing bounded pipeline caches; folder indexing retains
+/// counts, never bitmaps/bins.
 struct QualityCueEvidence: Equatable, Sendable {
     let revision: PhotoContentRevision
     let sampleCount: Int
@@ -11,9 +13,12 @@ struct QualityCueEvidence: Equatable, Sendable {
     let height: Int
     let source: HistogramAnalysisSource
     let rawFallback: Bool
+    /// Measured from the thumbnail by the folder-wide walk. Exact evidence,
+    /// measured when the photo is shown, replaces it and is never replaced by it.
+    let isApproximate: Bool
 
     init(item: PhotoItem, analysis: HistogramAnalysis?, source: HistogramAnalysisSource,
-         rawFallback: Bool = false) {
+         rawFallback: Bool = false, isApproximate: Bool = false) {
         revision = item.contentRevision
         sampleCount = analysis?.sampleCount ?? 0
         shadowCount = analysis?.shadowCount ?? 0
@@ -22,6 +27,7 @@ struct QualityCueEvidence: Equatable, Sendable {
         height = analysis?.height ?? 0
         self.source = source
         self.rawFallback = rawFallback
+        self.isApproximate = isApproximate
     }
 
     var analysis: HistogramAnalysis? {
@@ -52,6 +58,19 @@ struct QualityCueEvidence: Equatable, Sendable {
         let preview = await HistogramPipeline.shared.analysis(for: item, purpose: .backgroundQuality, sourceAccess: sourceAccess)
         return Self(item: item, analysis: preview, source: .renderedPreview,
                     rawFallback: item.isRaw)
+    }
+
+    /// The walk's estimate from the thumbnail (a RAW file's embedded preview):
+    /// no Fit-size decode and no RAW render. Nil: no cheap source yet.
+    static func approximate(_ item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> Self? {
+        switch await HistogramPipeline.shared.approximateAnalysis(for: item, sourceAccess: sourceAccess) {
+        case .measured(let analysis):
+            return Self(item: item, analysis: analysis, source: .renderedPreview, isApproximate: true)
+        case .failed:
+            return Self(item: item, analysis: nil, source: .renderedPreview, isApproximate: true)
+        case .noCheapSource:
+            return nil
+        }
     }
 }
 

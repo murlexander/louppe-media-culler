@@ -280,6 +280,16 @@ final class HistogramPipeline: @unchecked Sendable {
     static let shared = HistogramPipeline()
     static let analysisPixelSize: CGFloat = 1024
     static let resultCacheLimit = 256
+    /// Result-key versions, also part of the persisted cue-evidence context.
+    static let analysisVersion = "histogram-v1-srgb-1024"
+    static let wholeImageAnalysisVersion = "histogram-v2-fit-srgb-1024"
+    static let approximateAnalysisVersion = "histogram-approx-v1-thumbnail-320"
+
+    /// The folder-wide cue walk's estimate. `noCheapSource`: a whole-image
+    /// (JPEG XL) photo whose thumbnail is not cached yet.
+    enum ApproximateResult: Sendable {
+        case measured(HistogramAnalysis), failed, noCheapSource
+    }
 
     private final class PendingAnalysis {
         var waiters: [UUID: HistogramAnalysisWaiter]
@@ -314,6 +324,8 @@ final class HistogramPipeline: @unchecked Sendable {
     private var retiredWaiters: [UUID: [CheckedContinuation<HistogramAnalysis?, Never>]] = [:]
     #if LOUPPE_TEST_SEAMS
     private var sourceDecodes = 0
+    private var approximateThumbnailReuses = 0
+    private var approximateSourceDecodes = 0
     #endif
 
     /// Isolated workers/queues make resource and cancellation contracts testable;
@@ -440,7 +452,7 @@ final class HistogramPipeline: @unchecked Sendable {
     /// Whole-image formats moved to v2 when their input became the Fit preview.
     private static func cacheKey(for item: PhotoItem) -> String {
         ImagePipeline.cacheKey(for: item)
-            + (ImagePipeline.decodesWholeImage(item) ? "|histogram-v2-fit-srgb-1024" : "|histogram-v1-srgb-1024")
+            + "|" + (ImagePipeline.decodesWholeImage(item) ? wholeImageAnalysisVersion : analysisVersion)
     }
 
     /// The cached Fit preview, else the same bounded decode on this lane,
@@ -483,6 +495,80 @@ final class HistogramPipeline: @unchecked Sendable {
         return context.makeImage()
     }
 
+    /// Clipping counts from the 320 px thumbnail: the memory cache, else the
+    /// disk cache, else the same small decode (a RAW file's embedded preview).
+    /// Never a Fit-size decode or a RAW render, and nothing is cached here:
+    /// the caller keeps the counts. A whole-image photo without a cached
+    /// thumbnail is not decoded. The waiter settles after the worker exits,
+    /// so a session's folder lease outlives the native read.
+    func approximateAnalysis(for item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> ApproximateResult {
+        guard item.mediaKind == .photo, item.isSupported, !Task.isCancelled else { return .failed }
+        if let image = imagePipeline.cachedThumbnail(for: item)?.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+            #if LOUPPE_TEST_SEAMS
+            lock.withLock { approximateThumbnailReuses += 1 }
+            #endif
+            return ClippingWarningProcessor.analyze(image).map(ApproximateResult.measured) ?? .failed
+        }
+        guard await foregroundWork.waitForBackgroundAdmission(), !Task.isCancelled else { return .failed }
+        let diskURL = thumbnailDiskRoot.appendingPathComponent(
+            ImagePipeline.diskFileName(for: ImagePipeline.cacheKey(for: item)))
+        let decodesSource = !ImagePipeline.decodesWholeImage(item)
+        let revision = MediaSourceRevision(item)
+        let readAccess = MediaOperationReadAccess(sourceAccess)
+        let cancellation = ApproximateCancellation()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                let operation = BlockOperation { [weak self] in
+                    defer { readAccess.finish() }
+                    guard let self, !cancellation.isCancelled else {
+                        continuation.resume(returning: .failed)
+                        return
+                    }
+                    let result: ApproximateResult = autoreleasepool {
+                        // The key binds the file to this revision's identity.
+                        if let thumbnail = ImagePipeline.decodeImage(url: diskURL, maxPixel: ImagePipeline.thumbPixelSize) {
+                            #if LOUPPE_TEST_SEAMS
+                            self.lock.withLock { self.approximateThumbnailReuses += 1 }
+                            #endif
+                            return ClippingWarningProcessor.analyze(thumbnail).map(ApproximateResult.measured) ?? .failed
+                        }
+                        guard decodesSource else { return .noCheapSource }
+                        guard !cancellation.isCancelled else { return .failed }
+                        #if LOUPPE_TEST_SEAMS
+                        self.lock.withLock { self.approximateSourceDecodes += 1 }
+                        #endif
+                        return revision.read {
+                            ImagePipeline.decodeImage(url: revision.url, maxPixel: ImagePipeline.thumbPixelSize)
+                                .flatMap(ClippingWarningProcessor.analyze)
+                        }.map(ApproximateResult.measured) ?? .failed
+                    }
+                    continuation.resume(returning: result)
+                }
+                operation.qualityOfService = RequestPurpose.backgroundQuality.qualityOfService
+                operation.queuePriority = RequestPurpose.backgroundQuality.queuePriority
+                queue.addOperation(operation)
+            }
+        } onCancel: {
+            cancellation.cancel()
+        }
+    }
+
+    private final class ApproximateCancellation: @unchecked Sendable {
+        private let lock = NSLock()
+        private var cancelled = false
+        var isCancelled: Bool { lock.withLock { cancelled } }
+        func cancel() { lock.withLock { cancelled = true } }
+    }
+
+    /// The shared pipeline's thumbnails live under the rebuildable cache root.
+    private var thumbnailDiskRoot: URL {
+        #if LOUPPE_TEST_SEAMS
+        imagePipeline.diskCacheRootForTesting
+        #else
+        ImagePipeline.sharedDiskCacheRoot
+        #endif
+    }
+
     #if LOUPPE_TEST_SEAMS
     func waiterCountForTesting(for item: PhotoItem) -> Int {
         let key = Self.cacheKey(for: item)
@@ -491,6 +577,12 @@ final class HistogramPipeline: @unchecked Sendable {
 
     /// Source decodes this pipeline started for its own analysis previews.
     var sourceDecodesForTesting: Int { lock.withLock { sourceDecodes } }
+
+    /// Estimates served by a cached thumbnail, and thumbnail-size decodes of
+    /// originals for those without one.
+    var approximateWorkForTesting: (thumbnailReuses: Int, sourceDecodes: Int) {
+        lock.withLock { (approximateThumbnailReuses, approximateSourceDecodes) }
+    }
     #endif
 
     private func finish(key: String, operation: BlockOperation, result: HistogramAnalysis?) {
@@ -721,6 +813,8 @@ final class RawHistogramPipeline: @unchecked Sendable {
     static let analysisPixelSize: CGFloat = 1024
     static let analysisDelayNanoseconds: UInt64 = 700_000_000
     static let resultCacheLimit = 128
+    /// Result-key version, also part of the persisted cue-evidence context.
+    static let analysisVersion = "raw-histogram-v1-appleDefault-linear-1024"
 
     private final class PendingAnalysis {
         var waiters: [UUID: HistogramAnalysisWaiter]
@@ -754,6 +848,9 @@ final class RawHistogramPipeline: @unchecked Sendable {
     private var inFlight: [String: PendingAnalysis] = [:]
     /// Retired requests cannot publish/cache or be confused with a renewed key.
     private var retiredWaiters: [UUID: [CheckedContinuation<HistogramAnalysis?, Never>]] = [:]
+    #if LOUPPE_TEST_SEAMS
+    private var sourceDecodes = 0
+    #endif
 
     init(
         delayNanoseconds: UInt64 = analysisDelayNanoseconds,
@@ -780,7 +877,7 @@ final class RawHistogramPipeline: @unchecked Sendable {
 
     func cachedAnalysis(for item: PhotoItem) -> HistogramAnalysis? {
         guard Self.supportsAnalysis(for: item) else { return nil }
-        let key = ImagePipeline.cacheKey(for: item) + "|raw-histogram-v1-appleDefault-linear-1024"
+        let key = ImagePipeline.cacheKey(for: item) + "|" + Self.analysisVersion
         lock.lock()
         let result = cache[key]
         if result != nil { touch(key) }
@@ -806,7 +903,7 @@ final class RawHistogramPipeline: @unchecked Sendable {
         guard !Task.isCancelled else { return nil }
         if let cached = cachedAnalysis(for: item) { return cached }
 
-        let key = ImagePipeline.cacheKey(for: item) + "|raw-histogram-v1-appleDefault-linear-1024"
+        let key = ImagePipeline.cacheKey(for: item) + "|" + Self.analysisVersion
         let revision = MediaSourceRevision(item)
         let requestID = UUID()
         return await withTaskCancellationHandler {
@@ -852,6 +949,9 @@ final class RawHistogramPipeline: @unchecked Sendable {
                     guard let self, let operation, !operation.isCancelled
                     else { return }
                     defer { readAccess.finish() }
+                    #if LOUPPE_TEST_SEAMS
+                    self.lock.withLock { self.sourceDecodes += 1 }
+                    #endif
                     let result = autoreleasepool {
                         revision.read { self.decoder(revision.url) }
                     }
@@ -897,9 +997,12 @@ final class RawHistogramPipeline: @unchecked Sendable {
 
     #if LOUPPE_TEST_SEAMS
     func waiterCountForTesting(for item: PhotoItem) -> Int {
-        let key = ImagePipeline.cacheKey(for: item) + "|raw-histogram-v1-appleDefault-linear-1024"
+        let key = ImagePipeline.cacheKey(for: item) + "|" + Self.analysisVersion
         return lock.withLock { inFlight[key]?.waiters.count ?? 0 }
     }
+
+    /// RAW renders this pipeline started; cached results do not count.
+    var sourceDecodesForTesting: Int { lock.withLock { sourceDecodes } }
     #endif
 
     private func finish(key: String, operation: BlockOperation, result: HistogramAnalysis?) {

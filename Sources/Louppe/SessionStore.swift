@@ -319,9 +319,16 @@ final class SessionStore: ObservableObject {
         }
     }
     @Published var viewMode: ViewMode = .gallery {
-        didSet { if viewMode != oldValue { prefetchAroundCurrent() } }
+        didSet {
+            if viewMode != oldValue {
+                prefetchAroundCurrent()
+                if needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() }
+            }
+        }
     }
-    @Published var showMetadataPanel = true
+    @Published var showMetadataPanel = true {
+        didSet { if showMetadataPanel, needsQualityCueMeasurement(at: currentIndex) { wakeQualityCueRest() } }
+    }
     @Published var showBrowser = true
     /// Remembered per Mac: someone who browses archives by folder keeps
     /// Folders after relaunch. Flat shoots still show only the Browser.
@@ -471,6 +478,26 @@ final class SessionStore: ObservableObject {
     private var qualityCueMeasuredCount = 0
     private var qualityCueInterestIDs: [String] = []
     private var qualityCuePreferencesObserver: AnyCancellable?
+    /// The walk's cheap estimate. Nil uses the thumbnail estimate; with an
+    /// injected exact measurement and no estimate, tests walk exactly.
+    var qualityCueApproximateMeasurement: (@Sendable (PhotoItem) async -> QualityCueEvidence?)?
+    /// Photos without a cheap source (a JPEG XL photo with no thumbnail yet).
+    /// Tile interest retries them; the walk does not decode them.
+    private var qualityCueDeferredIDs: Set<String> = []
+    /// One exact measurement per shown photo and session, even when it fails.
+    private var qualityCueExactAttemptIDs: Set<String> = []
+    /// Rebuildable evidence for the open folder, read and written only while
+    /// a clipping cue is on. Nil directory: the shared rebuildable cache root.
+    private var qualityCueEvidenceCache: QualityCueEvidenceCache?
+    private var qualityCueEvidenceRestored = false
+    private var qualityCueEvidenceFlushTask: Task<Void, Never>?
+    private var qualityCueEvidenceFlushID: UUID?
+    var qualityCueEvidenceCacheDirectory: URL?
+    var qualityCueEvidenceFlushDelay: Duration = .seconds(10)
+    static let qualityCueApproximateBatchSize = 32
+    static let qualityCueRestoreBatchSize = 2_048
+    static let qualityCueSweepLimit = 2_048
+    static let qualityCueThumbnailRetryLimit = 40
 
     /// Decode count, fitted detail and fitted scale publish on their own
     /// object: they change several times per Gallery step.
@@ -1553,6 +1580,18 @@ final class SessionStore: ObservableObject {
         (qualityCueMeasuredCount, qualityCuePhotoCount)
     }
 
+    var qualityCueEvidenceCacheForTesting: QualityCueEvidenceCache? { qualityCueEvidenceCache }
+    var isQualityCueWalkIdleForTesting: Bool { qualityCueTask == nil }
+
+    /// Writes pending evidence now and waits for the snapshot.
+    func flushQualityCueEvidenceForTesting() async {
+        flushQualityCueEvidence(immediately: true)
+        while let task = qualityCueEvidenceFlushTask {
+            await task.value
+            if qualityCueEvidenceFlushTask == task { return }
+        }
+    }
+
     /// Gives model-focused tests the same derived-data boundary as a completed
     /// folder scan without requiring filesystem setup.
     func rebuildDerivedDataForTesting(sourceFolder: URL? = nil) {
@@ -1888,7 +1927,7 @@ final class SessionStore: ObservableObject {
                 return (MediaNumeric.iso(item.iso) != nil || MediaNumeric.shutterSpeed(item.shutterSpeed) != nil)
                     ? .partial : .unavailable
             }
-            if evidence.rawFallback { return .partial }
+            if evidence.rawFallback || evidence.isApproximate { return .partial }
         }
         if (preferences.isHighISOEnabled && MediaNumeric.iso(item.iso) == nil)
             || (preferences.isSlowShutterEnabled && MediaNumeric.shutterSpeed(item.shutterSpeed) == nil) {
@@ -1929,19 +1968,41 @@ final class SessionStore: ObservableObject {
         qualityCueInterestIDs.removeAll { $0 == item.id }
         qualityCueInterestIDs.insert(item.id, at: 0)
         if qualityCueInterestIDs.count > 64 { qualityCueInterestIDs.removeLast() }
+        // The tile's thumbnail may have arrived since the walk passed it.
+        qualityCueDeferredIDs.remove(item.id)
         if qualityEvidence(for: item) == nil { wakeQualityCueRest() }
+    }
+
+    /// The walk estimates from thumbnails unless a test injected only an
+    /// exact measurement.
+    private var qualityCueWalkIsApproximate: Bool {
+        usesDefaultQualityCueMeasurement || qualityCueApproximateMeasurement != nil
+    }
+
+    /// The full image is measured once for the photo being shown: in Gallery,
+    /// or beside Info, whose histogram requests the same result.
+    private func wantsExactQualityCue(at index: Int, evidence: QualityCueEvidence?) -> Bool {
+        guard index == currentIndex, viewMode == .gallery || showMetadataPanel,
+              evidence?.isApproximate != false else { return false }
+        return !qualityCueExactAttemptIDs.contains(items[index].id)
     }
 
     private func needsQualityCueMeasurement(at index: Int) -> Bool {
         guard items.indices.contains(index) else { return false }
         let item = items[index]
-        return item.mediaKind == .photo && item.isSupported
-            && qualityEvidence(for: item) == nil && !qualityCueCheckingIDs.contains(item.id)
+        guard item.mediaKind == .photo, item.isSupported, !qualityCueCheckingIDs.contains(item.id) else { return false }
+        let evidence = qualityEvidence(for: item)
+        guard qualityCueWalkIsApproximate else { return evidence == nil }
+        return wantsExactQualityCue(at: index, evidence: evidence)
+            || (evidence == nil && !qualityCueDeferredIDs.contains(item.id))
     }
 
+    /// Interest after the walk has finished starts it again: a shown photo
+    /// still needs its exact measurement.
     private func wakeQualityCueRest() {
         qualityCueInterestGeneration &+= 1
         qualityCueRestTask?.cancel()
+        if qualityCueTask == nil, sourceFolder != nil { startQualityCueAnalysis() }
     }
 
     /// Automatic suspension preserves the user's separate Pause choice.
@@ -1962,6 +2023,8 @@ final class SessionStore: ObservableObject {
             applyFilter(preservingCurrent: true)
         }
         if !isQualityCueAnalysisPaused { isQualityCueAnalysisPaused = true }
+        // Pause, file work, Close and Quit keep what was measured so far.
+        flushQualityCueEvidence(immediately: true)
     }
 
     func resumeQualityCueAnalysis() {
@@ -1974,6 +2037,9 @@ final class SessionStore: ObservableObject {
         pauseQualityCueAnalysis()
         qualityCuePublication.objectWillChange.send()
         qualityCueEvidence.removeAll()
+        qualityCueEvidenceRestored = false
+        qualityCueDeferredIDs.removeAll()
+        qualityCueExactAttemptIDs.removeAll()
         qualityCueMatchCache = nil
         qualityCueMeasuredCount = 0
         qualityCuePhotoCount = items.reduce(0) { $0 + ($1.mediaKind == .photo ? 1 : 0) }
@@ -1981,9 +2047,11 @@ final class SessionStore: ObservableObject {
         isQualityCueAnalysisPaused = keepingPaused || qualityCueUserPaused
     }
 
-    /// Two interested items at a time, followed by adaptive rest. Selection
-    /// priority has a retained frontier; Select All never restarts an O(N) walk
-    /// for each pair. New current/tile/selection interest can interrupt rest.
+    /// Evidence persisted for this folder first, then the walk: thumbnail
+    /// estimates in batches, the shown photo measured exactly, each batch
+    /// followed by adaptive rest. Selection priority has a retained frontier;
+    /// Select All never restarts an O(N) walk for each batch. New
+    /// current/tile/selection interest can interrupt rest.
     func startQualityCueAnalysis() {
         guard photosBatch?.mediaSession == nil, case .ready = phase, !isFileOperationRunning,
               qualityCuePreferences.needsHistogram, !qualityCueUserPaused else { return }
@@ -2000,6 +2068,8 @@ final class SessionStore: ObservableObject {
         if usesDefaultQualityCueMeasurement {
             measure = { await QualityCueEvidence.measure($0, sourceAccess: authority) }
         } else { measure = qualityCueMeasurement }
+        let approximate = qualityCueApproximateMeasurement
+            ?? { await QualityCueEvidence.approximate($0, sourceAccess: authority) }
         let rest = qualityCueRest
         let lease = sourceFolderAccess?.makeIndependentAccess()
         qualityCueTask = Task { @MainActor [weak self] in
@@ -2007,52 +2077,57 @@ final class SessionStore: ObservableObject {
                 lease?.stop()
                 self?.finishQualityCueTask(taskID)
             }
+            guard await self?.restoreQualityCueEvidence(generation: generation) == true else { return }
             var lastFilterRefresh = ContinuousClock.now
+            var thumbnailRetries = 0
             while !Task.isCancelled {
                 guard await ForegroundWorkCoordinator.shared.waitForBackgroundAdmission(),
                       !Task.isCancelled else { return }
-                guard let self,
-                      let batch = self.nextQualityCueBatch(generation: generation), !batch.isEmpty else { break }
+                guard let self, let batch = self.nextQualityCueBatch(generation: generation) else { break }
+                if batch.isEmpty {
+                    // The bounded sweep passed only measured photos so far.
+                    if self.qualityCueCursor < self.items.count {
+                        await Task.yield()
+                        continue
+                    }
+                    // A tile on screen whose thumbnail is still decoding: look
+                    // again shortly instead of decoding the photo here.
+                    guard thumbnailRetries < Self.qualityCueThumbnailRetryLimit,
+                          self.retryDeferredQualityCueInterest() else { break }
+                    thumbnailRetries += 1
+                    await rest(.milliseconds(250))
+                    continue
+                }
                 let interestGeneration = self.qualityCueInterestGeneration
                 let workStart = ContinuousClock.now
-                let results = await withTaskGroup(of: (String, QualityCueEvidence).self) { group in
-                    for item in batch {
-                        group.addTask(priority: .utility) { (item.id, await measure(item)) }
+                let results = await withTaskGroup(of: (QualityCueRequest, QualityCueEvidence?).self) { group in
+                    for request in batch {
+                        group.addTask(priority: .utility) {
+                            (request, request.exact ? await measure(request.item) : await approximate(request.item))
+                        }
                     }
-                    var results: [(String, QualityCueEvidence)] = []
+                    var results: [(QualityCueRequest, QualityCueEvidence?)] = []
                     for await result in group { results.append(result) }
                     return results
                 }
                 guard !Task.isCancelled, self.qualityCueGeneration == generation else { return }
-                // Cue readers only; a changed cue filter publishes through applyFilter.
-                self.qualityCuePublication.objectWillChange.send()
-                for (id, evidence) in results {
-                    self.qualityCueCheckingIDs.remove(id)
-                    guard let index = self.preparedIndex.itemIndex(forID: id),
-                          self.items[index].contentRevision == evidence.revision else { continue }
-                    let selectedCues = QualityCueMatch(self.filter.selectedQualityCues)
-                    let previouslyMatched = !selectedCues.isEmpty
-                        && !(self.qualityCueMatchCache?[index] ?? self.qualityCueMatch(for: self.items[index], preferences: self.qualityCuePreferences))
-                            .intersection(selectedCues).isEmpty
-                    let wasMeasured = (self.qualityCueEvidence[id]?.sampleCount ?? 0) > 0
-                    let isMeasured = evidence.sampleCount > 0
-                    if self.items[index].mediaKind == .photo, wasMeasured != isMeasured {
-                        self.qualityCueMeasuredCount += isMeasured ? 1 : -1
+                var measured: [(String, QualityCueEvidence)] = []
+                for (request, evidence) in results {
+                    self.qualityCueCheckingIDs.remove(request.item.id)
+                    if request.exact, self.qualityCueWalkIsApproximate {
+                        self.qualityCueExactAttemptIDs.insert(request.item.id)
                     }
-                    self.qualityCueEvidence[id] = evidence
-                    if self.qualityCueMatchCache != nil || !selectedCues.isEmpty {
-                        let matches = self.qualityCueMatch(for: self.items[index], preferences: self.qualityCuePreferences)
-                        if self.qualityCueMatchCache != nil {
-                            self.qualityCueMatchCache?[index] = matches
-                            #if LOUPPE_TEST_SEAMS
-                            self.qualityCueMatchUpdatesForTesting += 1
-                            #endif
-                        }
-                        let currentlyMatches = !matches.intersection(selectedCues).isEmpty
-                        if !selectedCues.isEmpty, previouslyMatched != currentlyMatches {
-                            self.qualityCueFilterNeedsRefresh = true
-                        }
+                    if let evidence {
+                        measured.append((request.item.id, evidence))
+                    } else {
+                        self.qualityCueDeferredIDs.insert(request.item.id)
                     }
+                }
+                if !measured.isEmpty {
+                    // Cue readers only; a changed cue filter publishes through applyFilter.
+                    self.qualityCuePublication.objectWillChange.send()
+                    self.applyQualityCueResults(measured, persisting: true)
+                    self.flushQualityCueEvidence(immediately: false)
                 }
                 // Visibility uses any selected cue. Another cue on an already
                 // matching item cannot require a complete filter projection.
@@ -2094,11 +2169,131 @@ final class SessionStore: ObservableObject {
         if restart { startQualityCueAnalysis() }
     }
 
-    /// Two photos per batch, or one whole-image photo alone: its source decode
-    /// shares the full-decode lanes with Gallery's Fit.
-    private func nextQualityCueBatch(generation: UInt64) -> [PhotoItem]? {
+    /// Accepts measured or restored evidence for the current revisions. Exact
+    /// evidence always wins: an estimate, or a failed measurement, never
+    /// replaces evidence that has samples. The caller publishes.
+    private func applyQualityCueResults(_ results: some Sequence<(String, QualityCueEvidence)>, persisting: Bool) {
+        // One borrowed value avoids a `@Published` read per result.
+        let items = self.items
+        let preferences = qualityCuePreferences
+        let selectedCues = QualityCueMatch(filter.selectedQualityCues)
+        for (id, evidence) in results {
+            guard let index = preparedIndex.itemIndex(forID: id),
+                  items[index].contentRevision == evidence.revision else { continue }
+            let existing = qualityCueEvidence[id]
+            if let existing, existing.sampleCount > 0,
+               evidence.sampleCount == 0 || (evidence.isApproximate && !existing.isApproximate) { continue }
+            let previouslyMatched = !selectedCues.isEmpty
+                && !(qualityCueMatchCache?[index] ?? qualityCueMatch(for: items[index], preferences: preferences))
+                    .intersection(selectedCues).isEmpty
+            let wasMeasured = (existing?.sampleCount ?? 0) > 0
+            let isMeasured = evidence.sampleCount > 0
+            if items[index].mediaKind == .photo, wasMeasured != isMeasured {
+                qualityCueMeasuredCount += isMeasured ? 1 : -1
+            }
+            qualityCueEvidence[id] = evidence
+            if persisting { qualityCueEvidenceCache?.record(evidence, for: items[index]) }
+            if qualityCueMatchCache != nil || !selectedCues.isEmpty {
+                let matches = qualityCueMatch(for: items[index], preferences: preferences)
+                if qualityCueMatchCache != nil {
+                    qualityCueMatchCache?[index] = matches
+                    #if LOUPPE_TEST_SEAMS
+                    qualityCueMatchUpdatesForTesting += 1
+                    #endif
+                }
+                let currentlyMatches = !matches.intersection(selectedCues).isEmpty
+                if !selectedCues.isEmpty, previouslyMatched != currentlyMatches {
+                    qualityCueFilterNeedsRefresh = true
+                }
+            }
+        }
+    }
+
+    /// Applies this folder's persisted evidence before anything is measured,
+    /// in a few large publications. The snapshot is read and matched off the
+    /// main actor. False: the walk was paused or superseded meanwhile.
+    private func restoreQualityCueEvidence(generation: UInt64) async -> Bool {
+        guard !qualityCueEvidenceRestored else { return true }
+        guard let folder = sourceFolder else {
+            qualityCueEvidenceCache = nil
+            qualityCueEvidenceRestored = true
+            return true
+        }
+        let identity = persistenceAccess?.folderIdentity
+        let directory = qualityCueEvidenceCacheDirectory
+        let existing = qualityCueEvidenceCache
+        let items = self.items
+        let known = qualityCueEvidence
+        let loading = Task.detached(priority: .utility) { () -> (QualityCueEvidenceCache?, [(String, QualityCueEvidence)]) in
+            let cache = existing.flatMap { $0.serves(folder: folder, folderIdentity: identity, cacheDirectory: directory) ? $0 : nil }
+                ?? QualityCueEvidenceCache(folder: folder, folderIdentity: identity, cacheDirectory: directory)
+            let hits = cache?.evidence(for: items, excluding: known, isCancelled: { Task.isCancelled }) ?? []
+            if !hits.isEmpty { cache?.noteUsed() }
+            return (cache, hits)
+        }
+        let (cache, hits) = await withTaskCancellationHandler { await loading.value } onCancel: { loading.cancel() }
+        // A superseded walk keeps the snapshot it read for the same folder.
+        if sourceFolder == folder { qualityCueEvidenceCache = cache }
+        guard !Task.isCancelled, qualityCueGeneration == generation else { return false }
+        var start = 0
+        while start < hits.count {
+            let end = min(start + Self.qualityCueRestoreBatchSize, hits.count)
+            qualityCuePublication.objectWillChange.send()
+            applyQualityCueResults(hits[start..<end], persisting: false)
+            start = end
+            if start < hits.count {
+                await Task.yield()
+                guard !Task.isCancelled, qualityCueGeneration == generation else { return false }
+            }
+        }
+        qualityCueEvidenceRestored = true
+        // A selected cue filter shows restored matches before any measuring.
+        if qualityCueFilterNeedsRefresh { applyFilter(preservingCurrent: true) }
+        return true
+    }
+
+    /// Coalesces snapshot writes; `immediately` also ends a pending delay.
+    /// The write itself runs off the main actor at utility priority.
+    private func flushQualityCueEvidence(immediately: Bool) {
+        guard let cache = qualityCueEvidenceCache, cache.hasUnsavedChanges else { return }
+        let previous = qualityCueEvidenceFlushTask
+        if immediately { previous?.cancel() } else if previous != nil { return }
+        let delay = immediately ? .zero : qualityCueEvidenceFlushDelay
+        let id = UUID()
+        qualityCueEvidenceFlushID = id
+        qualityCueEvidenceFlushTask = Task { @MainActor [weak self] in
+            await previous?.value
+            // Cancellation ends the delay; the snapshot is still written.
+            if delay > .zero { try? await Task.sleep(for: delay) }
+            await Task.detached(priority: .utility) { _ = cache.flush() }.value
+            guard let self, self.qualityCueEvidenceFlushID == id else { return }
+            self.qualityCueEvidenceFlushTask = nil
+            // Evidence recorded while the snapshot was being written.
+            self.flushQualityCueEvidence(immediately: false)
+        }
+    }
+
+    /// Deferred photos whose tile is on screen get another look.
+    private func retryDeferredQualityCueInterest() -> Bool {
+        let waiting = qualityCueInterestIDs.filter(qualityCueDeferredIDs.contains)
+        guard !waiting.isEmpty else { return false }
+        qualityCueDeferredIDs.subtract(waiting)
+        return true
+    }
+
+    private struct QualityCueRequest: Sendable {
+        let item: PhotoItem
+        /// The full measurement for the shown photo; otherwise the estimate.
+        let exact: Bool
+    }
+
+    /// The shown photo's exact measurement with at most one other photo (a
+    /// whole-image photo alone: its source decode shares the full-decode
+    /// lanes with Gallery's Fit), else a batch of thumbnail estimates.
+    private func nextQualityCueBatch(generation: UInt64) -> [QualityCueRequest]? {
         guard qualityCueGeneration == generation else { return nil }
-        var batch: [PhotoItem] = []
+        let approximates = qualityCueWalkIsApproximate
+        var batch: [QualityCueRequest] = []
         var capacity = 2
         /// False only when a whole-image photo must wait for the next batch,
         /// so a cursor does not step past it.
@@ -2106,14 +2301,26 @@ final class SessionStore: ObservableObject {
             guard batch.count < capacity, items.indices.contains(index) else { return true }
             let item = items[index]
             guard item.mediaKind == .photo, item.isSupported,
-                  qualityEvidence(for: item) == nil,
                   !qualityCueCheckingIDs.contains(item.id),
-                  !batch.contains(where: { $0.id == item.id }) else { return true }
-            if ImagePipeline.wholeImageThumbnailExtensions.contains(item.primaryURL.pathExtension.lowercased()) {
+                  !batch.contains(where: { $0.item.id == item.id }) else { return true }
+            let evidence = qualityEvidence(for: item)
+            let exact: Bool
+            if !approximates {
+                guard evidence == nil else { return true }
+                exact = true
+            } else if wantsExactQualityCue(at: index, evidence: evidence) {
+                exact = true
+            } else {
+                guard evidence == nil, !qualityCueDeferredIDs.contains(item.id) else { return true }
+                exact = false
+            }
+            if exact, ImagePipeline.wholeImageThumbnailExtensions.contains(item.primaryURL.pathExtension.lowercased()) {
                 guard batch.isEmpty else { return false }
                 capacity = 1
+            } else if !exact, batch.isEmpty {
+                capacity = Self.qualityCueApproximateBatchSize
             }
-            batch.append(item)
+            batch.append(QualityCueRequest(item: item, exact: exact))
             return true
         }
         append(currentIndex)
@@ -2135,11 +2342,16 @@ final class SessionStore: ObservableObject {
             if batch.count == capacity { break }
         }
         for offset in [1, -1, 2, -2, 3] { append(currentIndex + offset) }
-        while batch.count < capacity, qualityCueCursor < items.count, append(qualityCueCursor) {
+        // Bounded per turn: a restored folder has thousands of measured
+        // photos to pass, and each probe compares a content revision.
+        var probes = 0
+        while batch.count < capacity, qualityCueCursor < items.count,
+              probes < Self.qualityCueSweepLimit, append(qualityCueCursor) {
             qualityCueCursor += 1
+            probes += 1
         }
         // Checking state has no UI reader; the results publish once.
-        for item in batch { qualityCueCheckingIDs.insert(item.id) }
+        for request in batch { qualityCueCheckingIDs.insert(request.item.id) }
         return batch
     }
 
