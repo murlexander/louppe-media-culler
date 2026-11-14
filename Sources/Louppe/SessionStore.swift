@@ -1026,6 +1026,12 @@ final class SessionStore: ObservableObject {
     private var saveDebounce: DispatchWorkItem?
     private var foregroundDeferredSaveTask: Task<Void, Never>?
     private var saveDeadline: DispatchWorkItem?
+    /// Newly proven fingerprints of reviewed files that no captured snapshot
+    /// holds yet. Any save within `contentCheckpointDelay` carries them;
+    /// otherwise `contentCheckpointWork` schedules one, and every discard
+    /// barrier flushes them.
+    private var contentCheckpointPending = false
+    private var contentCheckpointWork: DispatchWorkItem?
     private var saveTrailingGeneration: UInt64 = 0
     private var saveCycleGeneration: UInt64 = 0
     private var pendingPersistenceTask: Task<SaveOutcome, Never>?
@@ -1090,6 +1096,7 @@ final class SessionStore: ObservableObject {
 #if LOUPPE_TEST_SEAMS
     private(set) var recoveryBatchesAppliedForTesting = 0
     var pendingRecoveryResultCountForTesting: Int { pendingContentResults.count }
+    var contentCheckpointIsPendingForTesting: Bool { contentCheckpointPending }
 #endif
     private var prefetchDebounce: DispatchWorkItem?
     private var fullImagePrefetchTask: Task<Void, Never>?
@@ -1127,6 +1134,7 @@ final class SessionStore: ObservableObject {
     private let photosDecisions: PhotosReviewDecisions
     private let saveTrailingDelay: TimeInterval
     private let saveMaximumDelay: TimeInterval
+    private let contentCheckpointDelay: TimeInterval
     /// Nil selects the production Application Support journal directory.
     /// Tests can inject a disposable root and must explicitly opt into launch
     /// recovery, so constructing a view-model can never touch live user files.
@@ -1263,6 +1271,7 @@ final class SessionStore: ObservableObject {
         photosOrganization: any PhotosLibraryOrganizationClient = PhotosLibraryOrganizationService.shared,
         saveTrailingDelay: TimeInterval = 0.5,
         saveMaximumDelay: TimeInterval = 5,
+        contentCheckpointDelay: TimeInterval = 5,
         operationJournalDirectory: URL? = nil,
         automaticallyRecoversInterruptedOperations: Bool = false,
         reviewDefaults: UserDefaults = .standard,
@@ -1337,6 +1346,7 @@ final class SessionStore: ObservableObject {
         // maximum dirty age, while tests deliberately put the hard deadline
         // first to prove it is not just the trailing debounce firing.
         self.saveMaximumDelay = max(0, saveMaximumDelay)
+        self.contentCheckpointDelay = max(0, contentCheckpointDelay)
         self.operationJournalDirectory = operationJournalDirectory
         // ImageIO's RAW reader can register defaults on a metadata worker.
         // Combine does not move notification delivery to the owner's actor.
@@ -6815,6 +6825,7 @@ final class SessionStore: ObservableObject {
 
     private func resetSessionRecovery() {
         pauseSessionContentChecks()
+        cancelContentCheckpoint()
         objectWillChange.send()
         sessionRecoveryEntryStorage = []
         isSessionRecoveryPresented = false
@@ -6925,7 +6936,7 @@ final class SessionStore: ObservableObject {
             // initial save or replace the existing coalescing authority.
             if self.contentResultsNeedCheckpoint {
                 self.contentResultsNeedCheckpoint = false
-                self.scheduleSave(markChanged: false)
+                self.scheduleContentCheckpoint()
             }
             // An explicit restoration is immediate; prepare its portable
             // fingerprint afterward, while normal reviewing remains available.
@@ -7045,6 +7056,31 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    /// While culling, the next rating's save usually follows within seconds;
+    /// let it carry these fingerprints instead of writing the sidecar twice.
+    private func scheduleContentCheckpoint() {
+        contentCheckpointPending = true
+        // A save that has not captured its snapshot yet carries them already.
+        guard saveDebounce == nil, !saveRequestedWhilePersistenceBusy,
+              contentCheckpointWork == nil else { return }
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.contentCheckpointWork = nil
+            // A transition's barrier flushes the pending fingerprints itself.
+            guard self.contentCheckpointPending, !self.isSessionTransitioning,
+                  !self.isPreparingForTermination else { return }
+            self.scheduleSave(markChanged: false)
+        }
+        contentCheckpointWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + contentCheckpointDelay, execute: work)
+    }
+
+    private func cancelContentCheckpoint() {
+        contentCheckpointWork?.cancel()
+        contentCheckpointWork = nil
+        contentCheckpointPending = false
+    }
+
     private func cancelScheduledSave() {
         foregroundDeferredSaveTask?.cancel()
         foregroundDeferredSaveTask = nil
@@ -7126,6 +7162,13 @@ final class SessionStore: ObservableObject {
         }
 
         if currentSessionIsDurable {
+            // Decisions are durable; still write fingerprints proven since the
+            // last snapshot. Their failure never blocks the transition.
+            if contentCheckpointPending, let request = makeSaveRequest() {
+                let outcome = await enqueuePersistenceSave(request).value
+                applyPersistenceResult(outcome.result, request: outcome.request)
+                if outcome.result.canDiscardInMemoryState { return outcome.result }
+            }
             return awaitedResult?.canDiscardInMemoryState == true
                 ? awaitedResult
                 : nil
@@ -7455,6 +7498,7 @@ final class SessionStore: ObservableObject {
             recoveryEntries: sessionRecoveryEntries
         )
         sessionContentCapturedProofs = sessionContentProofs
+        cancelContentCheckpoint()
         saveSequence &+= 1
         return SaveRequest(
             folder: folder,
