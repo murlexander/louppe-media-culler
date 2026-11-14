@@ -481,8 +481,7 @@ final class SessionStore: ObservableObject {
     /// The walk's cheap estimate. Nil uses the thumbnail estimate; with an
     /// injected exact measurement and no estimate, tests walk exactly.
     var qualityCueApproximateMeasurement: (@Sendable (PhotoItem) async -> QualityCueEvidence?)?
-    /// Photos without a cheap source (a JPEG XL photo with no thumbnail yet).
-    /// Tile interest retries them; the walk does not decode them.
+    /// Tile interest retries an estimate that returned no source.
     private var qualityCueDeferredIDs: Set<String> = []
     /// One exact measurement per shown photo and session, even when it fails.
     private var qualityCueExactAttemptIDs: Set<String> = []
@@ -505,7 +504,6 @@ final class SessionStore: ObservableObject {
     static let qualityCueApproximateBatchSize = 32
     static let qualityCueRestoreBatchSize = 2_048
     static let qualityCueSweepLimit = 2_048
-    static let qualityCueThumbnailRetryLimit = 40
 
     /// Decode count, fitted detail and fitted scale publish on their own
     /// object: they change several times per Gallery step.
@@ -2122,8 +2120,12 @@ final class SessionStore: ObservableObject {
             let injected = qualityCueMeasurement
             measure = { item, _ in await injected(item) }
         }
-        let approximate = qualityCueApproximateMeasurement
-            ?? { await QualityCueEvidence.approximate($0, sourceAccess: authority) }
+        let approximate: @Sendable (PhotoItem, _ buildsThumbnail: Bool) async -> QualityCueEvidence?
+        if let injected = qualityCueApproximateMeasurement {
+            approximate = { item, _ in await injected(item) }
+        } else {
+            approximate = { await QualityCueEvidence.approximate($0, sourceAccess: authority, buildsThumbnail: $1) }
+        }
         let rest = qualityCueRest
         let lease = sourceFolderAccess?.makeIndependentAccess()
         qualityCueTask = Task { @MainActor [weak self] in
@@ -2133,23 +2135,14 @@ final class SessionStore: ObservableObject {
             }
             guard await self?.restoreQualityCueEvidence(generation: generation) == true else { return }
             var lastFilterRefresh = ContinuousClock.now
-            var thumbnailRetries = 0
             while !Task.isCancelled {
                 guard await ForegroundWorkCoordinator.shared.waitForBackgroundAdmission(),
                       !Task.isCancelled else { return }
                 guard let self, let batch = self.nextQualityCueBatch(generation: generation) else { break }
                 if batch.isEmpty {
                     // The bounded sweep passed only measured photos so far.
-                    if self.qualityCueCursor < self.items.count {
-                        await Task.yield()
-                        continue
-                    }
-                    // A tile on screen whose thumbnail is still decoding: look
-                    // again shortly instead of decoding the photo here.
-                    guard thumbnailRetries < Self.qualityCueThumbnailRetryLimit,
-                          self.retryDeferredQualityCueInterest() else { break }
-                    thumbnailRetries += 1
-                    await rest(.milliseconds(250))
+                    guard self.qualityCueCursor < self.items.count else { break }
+                    await Task.yield()
                     continue
                 }
                 let interestGeneration = self.qualityCueInterestGeneration
@@ -2165,7 +2158,9 @@ final class SessionStore: ObservableObject {
                 let results = await withTaskGroup(of: (QualityCueRequest, QualityCueEvidence?).self) { group in
                     for request in batch {
                         group.addTask(priority: .utility) {
-                            guard request.exact else { return (request, await approximate(request.item)) }
+                            guard request.exact else {
+                                return (request, await approximate(request.item, request.buildsThumbnail))
+                            }
                             guard let shownTask else { return (request, await measure(request.item, false)) }
                             return (request, await withTaskCancellationHandler { await shownTask.value }
                                 onCancel: { shownTask.cancel() })
@@ -2383,14 +2378,6 @@ final class SessionStore: ObservableObject {
         }
     }
 
-    /// Deferred photos whose tile is on screen get another look.
-    private func retryDeferredQualityCueInterest() -> Bool {
-        let waiting = qualityCueInterestIDs.filter(qualityCueDeferredIDs.contains)
-        guard !waiting.isEmpty else { return false }
-        qualityCueDeferredIDs.subtract(waiting)
-        return true
-    }
-
     private struct QualityCueRequest: Sendable {
         let item: PhotoItem
         /// The full measurement for the shown photo; otherwise the estimate.
@@ -2398,11 +2385,14 @@ final class SessionStore: ObservableObject {
         /// A JPEG XL photo shown in Gallery: measured from Gallery's Fit
         /// preview only, so the photo is not decoded a second time.
         let sharesGalleryFit: Bool
+        /// Missing whole-image thumbnails are built once through the tile pipeline.
+        let buildsThumbnail: Bool
     }
 
     /// The shown photo's exact measurement with at most one other photo (a
     /// whole-image photo alone: its source decode shares the full-decode
-    /// lanes with Gallery's Fit), else a batch of thumbnail estimates.
+    /// lanes with Gallery's Fit), else a batch of thumbnail estimates. A
+    /// JPEG XL estimate also runs alone: its missing thumbnail decodes whole.
     private func nextQualityCueBatch(generation: UInt64) -> [QualityCueRequest]? {
         guard qualityCueGeneration == generation else { return nil }
         let approximates = qualityCueWalkIsApproximate
@@ -2427,14 +2417,16 @@ final class SessionStore: ObservableObject {
                 guard evidence == nil, !qualityCueDeferredIDs.contains(item.id) else { return true }
                 exact = false
             }
-            if exact, ImagePipeline.wholeImageThumbnailExtensions.contains(item.primaryURL.pathExtension.lowercased()) {
+            let wholeImage = ImagePipeline.decodesWholeImage(item)
+            if wholeImage {
                 guard batch.isEmpty else { return false }
                 capacity = 1
             } else if !exact, batch.isEmpty {
                 capacity = Self.qualityCueApproximateBatchSize
             }
             batch.append(QualityCueRequest(item: item, exact: exact, sharesGalleryFit:
-                exact && viewMode == .gallery && ImagePipeline.decodesWholeImage(item)))
+                exact && viewMode == .gallery && wholeImage,
+                buildsThumbnail: approximates && !exact && wholeImage))
             return true
         }
         append(currentIndex)

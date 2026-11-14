@@ -175,6 +175,7 @@ final class ImagePipeline: @unchecked Sendable {
     private let diskCacheRoot: URL
     // Optional writes retain at most 1/32 of the thumbnail cache's byte budget.
     // Count also bounds tiny images/queue bookkeeping; the active write counts.
+    // The cue walk may reserve one more thumbnail and drains before its next build.
     static let pendingDiskWriteByteLimit = 8 * 1024 * 1024
     static let pendingDiskWriteCountLimit = 32
     static let neighbourPrefetchLimit = 4 // Existing [+1, +2, +3, -1] window.
@@ -222,6 +223,11 @@ final class ImagePipeline: @unchecked Sendable {
         var isPrefetch = false
         /// Admitted after visible full decodes only, not shared demand.
         var leadsNeighbours = false
+        /// A thumbnail only background work has asked for (the cue walk):
+        /// its pixels go to the disk cache, not the memory cache.
+        var isBackgroundThumbnail = false
+        /// A cue waiter requires disk output even if a tile joins/promotes it.
+        var needsThumbnailDiskWrite = false
 
         init(waiters: [UUID: CheckedContinuation<NSImage?, Never>], operation: BlockOperation, readAccess: MediaOperationReadAccess) {
             self.waiters = waiters
@@ -415,7 +421,13 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
 
-    func thumbnail(for item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> NSImage? {
+    /// `background`: the cue walk building a thumbnail nobody is looking at.
+    /// Same key, coalescing and disk cache as a tile's request, but it waits
+    /// for background admission like neighbour prefetch and is no foreground
+    /// demand, and its pixels are written to disk and left out of the memory
+    /// cache, so they evict no tile on screen. A tile that asks meanwhile
+    /// joins, starts the decode at once and caches the result as usual.
+    func thumbnail(for item: PhotoItem, sourceAccess: MediaReadAccess? = nil, background: Bool = false) async -> NSImage? {
         guard !item.isAudio && !item.isText, !Task.isCancelled else { return nil }
         let key = Self.cacheKey(for: item)
         if let cached = thumbCache.object(forKey: key as NSString) { return cached }
@@ -424,8 +436,8 @@ final class ImagePipeline: @unchecked Sendable {
         return await decodeOnce(
             kind: wholeImage ? .wholeImageThumbnail : .thumbnail,
             key: key,
-            qualityOfService: .userInitiated,
-            queuePriority: .normal,
+            qualityOfService: background ? .utility : .userInitiated,
+            queuePriority: background ? .low : .normal,
             sourceAccess: sourceAccess
         ) { [self] in
             loadThumbnailSync(item: item, revision: revision, key: key)
@@ -618,13 +630,18 @@ final class ImagePipeline: @unchecked Sendable {
                 if let pending = inFlight[request] {
                     pending.readAccess.retainIfNeeded(sourceAccess)
                     pending.waiters[waiterID] = continuation
-                    // Visible work can promote an existing neighbour prefetch.
+                    if queuePriority == .low, kind != .full { pending.needsThumbnailDiskWrite = true }
+                    // Visible work can promote an existing neighbour prefetch,
+                    // and a tile the cue walk's thumbnail build.
                     var next: (DecodeRequest, BlockOperation)?
-                    if queuePriority == .veryHigh {
-                        pending.operation.queuePriority = .veryHigh
+                    let promotes = queuePriority == .veryHigh
+                        || (pending.isBackgroundThumbnail && queuePriority != .low)
+                    if promotes {
+                        pending.operation.queuePriority = queuePriority
                         pending.operation.qualityOfService = qualityOfService
                         pending.admissionTask?.cancel()
                         pending.admissionTask = nil
+                        pending.isBackgroundThumbnail = false
                         // Promoted work no longer counts against the neighbour lane.
                         if pending.isPrefetch {
                             pending.isPrefetch = false
@@ -640,7 +657,7 @@ final class ImagePipeline: @unchecked Sendable {
                     }
                     let operation = pending.operation
                     inFlightLock.unlock()
-                    if queuePriority == .veryHigh { submit(request, operation: operation) }
+                    if promotes { submit(request, operation: operation) }
                     if let next { submit(next.0, operation: next.1) }
                     return
                 }
@@ -664,7 +681,11 @@ final class ImagePipeline: @unchecked Sendable {
                 operation.qualityOfService = qualityOfService
                 operation.queuePriority = queuePriority
                 let pending = PendingDecode(waiters: [waiterID: continuation], operation: operation, readAccess: readAccess)
-                pending.isPrefetch = queuePriority == .low
+                // The neighbour lane is one of the two full-decode lanes;
+                // thumbnails have their own queue.
+                pending.isPrefetch = queuePriority == .low && kind == .full
+                pending.isBackgroundThumbnail = queuePriority == .low && kind != .full
+                pending.needsThumbnailDiskWrite = pending.isBackgroundThumbnail
                 inFlight[request] = pending
                 if queuePriority == .low {
                     pending.leadsNeighbours = leadsNeighbours
@@ -724,8 +745,16 @@ final class ImagePipeline: @unchecked Sendable {
     private func admissionTask(for request: DecodeRequest, operation: BlockOperation, leads: Bool) -> Task<Void, Never> {
         let admission = leads ? visibleFullDecodes : foregroundWork
         return Task.detached(priority: .utility) { [weak self, weak operation, admission] in
-            guard await admission.waitForBackgroundAdmission(), !Task.isCancelled,
-                  let self, let operation else { return }
+            // A cue thumbnail has no visible consumer and needs a whole-image
+            // decode. Keep yielding while demand is held, including beyond
+            // the coordinator's per-wait escape; visible joins bypass this.
+            while true {
+                guard await admission.waitForBackgroundAdmission(), !Task.isCancelled else { return }
+                if request.kind == .full || admission.shouldAdmitBackgroundWork(deferredSince: .now) { break }
+                // Overflow can bypass the admission hint; never spin there.
+                try? await Task.sleep(for: .milliseconds(20))
+            }
+            guard let self, let operation else { return }
             self.submit(request, operation: operation)
         }
     }
@@ -802,12 +831,15 @@ final class ImagePipeline: @unchecked Sendable {
         inFlight.removeValue(forKey: request)
         if let result, !operation.isCancelled {
             switch request.kind {
-            case .thumbnail, .wholeImageThumbnail: thumbCache.setObject(result.image, forKey: request.key as NSString, cost: result.cost)
+            case .thumbnail, .wholeImageThumbnail:
+                if !pending.isBackgroundThumbnail {
+                    thumbCache.setObject(result.image, forKey: request.key as NSString, cost: result.cost)
+                }
             case .full: fullCache.setObject(result.image, forKey: request.key as NSString, cost: result.cost)
             }
             if let write = result.diskWrite {
                 // Only a live operation may warm memory or schedule disk I/O.
-                enqueueDiskWrite(image: write.image, url: write.url)
+                enqueueDiskWrite(image: write.image, url: write.url, builtForDisk: pending.needsThumbnailDiskWrite)
             }
         }
         let waiters = Array(pending.waiters.values)
@@ -815,15 +847,20 @@ final class ImagePipeline: @unchecked Sendable {
         for waiter in waiters { waiter.resume(returning: result?.image) }
     }
 
-    private func enqueueDiskWrite(image: CGImage, url: URL) {
+    /// `builtForDisk`: a background thumbnail, decoded for this write and
+    /// held nowhere else. Reserve one extra thumbnail slot against a tile
+    /// burst; the cue walk drains writes before building the next thumbnail.
+    private func enqueueDiskWrite(image: CGImage, url: URL, builtForDisk: Bool = false) {
         diskWriteLock.lock()
         let cost = Self.cost(of: image)
         guard diskWrites[url] == nil else {
             diskWriteLock.unlock()
             return // Already queued for this key.
         }
-        guard diskWrites.count < Self.pendingDiskWriteCountLimit,
-              cost <= Self.pendingDiskWriteByteLimit - diskWriteBytes else {
+        let reservedCount = builtForDisk ? 1 : 0
+        let reservedBytes = builtForDisk ? cost : 0
+        guard diskWrites.count < Self.pendingDiskWriteCountLimit + reservedCount,
+              cost <= Self.pendingDiskWriteByteLimit + reservedBytes - diskWriteBytes else {
             droppedDiskWrites += 1
             diskWriteLock.unlock()
             return // Cache output is optional; visible pixels have priority.
@@ -920,7 +957,7 @@ final class ImagePipeline: @unchecked Sendable {
 
     func decodeWaiterCountForTesting(for item: PhotoItem, full: Bool = false) -> Int {
         let key = full ? Self.fullCacheKey(for: item, mode: .fast) : Self.cacheKey(for: item)
-        let request = DecodeRequest(kind: full ? .full : .thumbnail, key: key)
+        let request = DecodeRequest(kind: full ? .full : (Self.decodesWholeImage(item) ? .wholeImageThumbnail : .thumbnail), key: key)
         return inFlightLock.withLock { inFlight[request]?.waiters.count ?? 0 }
     }
 
@@ -940,6 +977,10 @@ final class ImagePipeline: @unchecked Sendable {
         )
         if let cgImage = Self.decodeImage(url: diskURL, maxPixel: Self.thumbPixelSize) {
             return DecodedImage(cgImage)
+        }
+        // A background build's pixels wait here until their write lands.
+        if let unwritten = diskWriteLock.withLock({ diskWrites[diskURL] }) {
+            return DecodedImage(unwritten)
         }
         if let promoted = promoteV5Thumbnail(for: item, to: diskURL) {
             return promoted

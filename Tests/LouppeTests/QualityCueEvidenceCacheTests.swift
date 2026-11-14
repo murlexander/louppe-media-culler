@@ -569,31 +569,23 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
         store.items = scanned
         store.rebuildDerivedDataForTesting(sourceFolder: folder)
         store.phase = .ready
-        try await settle(store, evidence: 3)
+        try await settle(store, evidence: 4)
 
         XCTAssertEqual(ImagePipeline.shared.sourceDecodesForTesting.full, full.full, "No Fit-size decode")
-        XCTAssertEqual(ImagePipeline.shared.sourceDecodesForTesting.thumbnail, full.thumbnail,
-                       "The walk starts no thumbnail decode, so no whole JPEG XL decode")
+        XCTAssertEqual(ImagePipeline.shared.sourceDecodesForTesting.thumbnail - full.thumbnail, 1,
+                       "Only the JPEG XL photo's missing thumbnail is built: one whole-image decode")
         XCTAssertEqual(HistogramPipeline.shared.sourceDecodesForTesting, histogram, "No 1,024-pixel analysis decode")
         XCTAssertEqual(RawHistogramPipeline.shared.sourceDecodesForTesting, rawRenders, "No RAW render")
         XCTAssertEqual(HistogramPipeline.shared.approximateWorkForTesting.sourceDecodes - estimates.sourceDecodes, 3,
-                       "Photos without a cached thumbnail take one thumbnail-size decode")
-        XCTAssertNil(store.qualityEvidence(for: whole), "A JPEG XL photo without a thumbnail waits")
+                       "Other photos without a cached thumbnail take one thumbnail-size decode and leave none behind")
+        XCTAssertEqual(HistogramPipeline.shared.approximateWorkForTesting.thumbnailBuilds - estimates.thumbnailBuilds, 1)
+        XCTAssertEqual(store.qualityEvidence(for: whole)?.isApproximate, true)
         let rawEvidence = try XCTUnwrap(store.qualityEvidence(for: raw))
         XCTAssertTrue(rawEvidence.isApproximate)
         XCTAssertEqual(rawEvidence.source, .renderedPreview)
         XCTAssertLessThanOrEqual(max(rawEvidence.width, rawEvidence.height), Int(ImagePipeline.thumbPixelSize))
         XCTAssertGreaterThan(rawEvidence.sampleCount, 0)
 
-        // The tile's thumbnail arrives; its appearance retries the estimate.
-        _ = await ImagePipeline.shared.thumbnail(for: whole)
-        store.prioritizeQualityCues(for: whole)
-        try await waitUntil { store.qualityEvidence(for: whole) != nil }
-        try await settle(store, evidence: 4)
-        XCTAssertEqual(store.qualityEvidence(for: whole)?.isApproximate, true)
-        XCTAssertEqual(HistogramPipeline.shared.approximateWorkForTesting.thumbnailReuses - estimates.thumbnailReuses, 1)
-        XCTAssertEqual(HistogramPipeline.shared.sourceDecodesForTesting, histogram)
-        XCTAssertEqual(ImagePipeline.shared.sourceDecodesForTesting.full, full.full)
         XCTAssertEqual(store.qualityCueEvidenceCacheForTesting?.storedRecordsForTesting()?.map(\.record.isApproximate),
                        [true, true, true, true])
 
@@ -627,10 +619,13 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
         store.rebuildDerivedDataForTesting(sourceFolder: folder)
         store.phase = .ready
         try await waitUntil { store.isQualityCueWalkIdleForTesting }
-        XCTAssertNil(store.qualityEvidence(for: whole))
+        XCTAssertEqual(store.qualityEvidence(for: whole)?.isApproximate, true,
+                       "Until Gallery's Fit is there the photo has the estimate from its thumbnail")
         XCTAssertEqual(HistogramPipeline.shared.sourceDecodesForTesting, histogram,
                        "The cue never decodes a JPEG XL photo that Gallery is about to decode")
         XCTAssertEqual(ImagePipeline.shared.sourceDecodesForTesting.full, full.full)
+        XCTAssertEqual(ImagePipeline.shared.sourceDecodesForTesting.thumbnail - full.thumbnail, 1,
+                       "The thumbnail its Browser tile needs anyway")
 
         // Gallery decodes and publishes; the cue measures those pixels.
         let fit = await ImagePipeline.shared.fullImage(for: whole)
@@ -692,7 +687,9 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
         XCTAssertEqual(images.sourceDecodesForTesting.full, decodes.full)
 
         // Without a thumbnail a JPEG XL photo is left alone; others decode small.
-        let empty = HistogramPipeline(imagePipeline: ImagePipeline(testingDiskCacheRoot: try temporaryDirectory()))
+        let emptyRoot = try temporaryDirectory()
+        let emptyImages = ImagePipeline(testingDiskCacheRoot: emptyRoot)
+        let empty = HistogramPipeline(imagePipeline: emptyImages)
         for item in scanned {
             let result = await empty.approximateAnalysis(for: item)
             if ImagePipeline.decodesWholeImage(item) {
@@ -703,6 +700,307 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
         }
         XCTAssertEqual(empty.approximateWorkForTesting.sourceDecodes, 1)
         XCTAssertEqual(empty.sourceDecodesForTesting, 0)
+        XCTAssertEqual(emptyImages.sourceDecodesForTesting.thumbnail, 0)
+
+        // Asked to build: the JPEG XL photo alone goes through the thumbnail
+        // pipeline and leaves its thumbnail on disk; the JPEG stays as it was.
+        for item in scanned {
+            guard case .measured(let analysis) = await empty.approximateAnalysis(for: item, buildsThumbnail: true) else {
+                return XCTFail("\(item.displayName) is measured")
+            }
+            XCTAssertEqual(max(analysis.width, analysis.height), Int(ImagePipeline.thumbPixelSize))
+            XCTAssertEqual(analysis.highlightPercentage, 25, accuracy: 2)
+        }
+        XCTAssertEqual(empty.approximateWorkForTesting.sourceDecodes, 2)
+        XCTAssertEqual(empty.approximateWorkForTesting.thumbnailBuilds, 1)
+        XCTAssertEqual(emptyImages.sourceDecodesForTesting.thumbnail, 1)
+        XCTAssertEqual(empty.sourceDecodesForTesting, 0)
+        await emptyImages.waitForPendingDiskWrites()
+        let whole = try XCTUnwrap(scanned.first(where: ImagePipeline.decodesWholeImage))
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: emptyRoot.path),
+                       [ImagePipeline.diskFileName(for: ImagePipeline.cacheKey(for: whole))])
+        XCTAssertTrue(scanned.allSatisfy { emptyImages.cachedThumbnail(for: $0) == nil })
+    }
+
+    // MARK: - JPEG XL thumbnails built by the walk
+
+    func testWalkBuildsEachMissingJPEGXLThumbnailOnceAndItsTileReadsTheDisk() async throws {
+        let folder = try makeFolder(["A.jxl", "B.jxl", "C.jxl", "D.jpg"], size: 400)
+        if let path = ProcessInfo.processInfo.environment["LOUPPE_CUE_JXL_FILE"] {
+            for name in ["A.jxl", "B.jxl", "C.jxl"] {
+                let destination = folder.appendingPathComponent(name)
+                try FileManager.default.removeItem(at: destination)
+                try FileManager.default.copyItem(at: URL(fileURLWithPath: path), to: destination)
+            }
+        }
+        let scanned = try scan(folder)
+        let whole = scanned.filter(ImagePipeline.decodesWholeImage)
+        XCTAssertEqual(whole.count, 3)
+        let cache = try temporaryDirectory()
+        let images = ImagePipeline.shared
+        let decodes = images.sourceDecodesForTesting
+        let histogram = HistogramPipeline.shared.sourceDecodesForTesting
+        let estimates = HistogramPipeline.shared.approximateWorkForTesting
+        func thumbnailDecodes() -> Int { images.sourceDecodesForTesting.thumbnail - decodes.thumbnail }
+
+        // Each rest ends a batch: record the whole-image decodes so far.
+        let batches = CueBatchLog()
+        let store = makeStore(cache: cache, measurements: nil, rest: {
+            batches.record(ImagePipeline.shared.sourceDecodesForTesting.thumbnail - decodes.thumbnail)
+        })
+        store.viewMode = .grid
+        store.showMetadataPanel = false
+        store.items = scanned
+        store.rebuildDerivedDataForTesting(sourceFolder: folder)
+        store.phase = .ready
+        try await settle(store, evidence: 4)
+
+        XCTAssertEqual(thumbnailDecodes(), 3, "One whole-image thumbnail decode per JPEG XL photo")
+        XCTAssertEqual(store.qualityCueCoverageCountsForTesting.measured, 4)
+        XCTAssertEqual(store.qualityCueCoverageCountsForTesting.total, 4)
+        XCTAssertEqual(batches.largestStep, 1, "One JPEG XL photo per batch")
+        XCTAssertEqual(images.sourceDecodesForTesting.full, decodes.full)
+        XCTAssertEqual(HistogramPipeline.shared.sourceDecodesForTesting, histogram)
+        XCTAssertEqual(HistogramPipeline.shared.approximateWorkForTesting.thumbnailBuilds - estimates.thumbnailBuilds, 3)
+        XCTAssertEqual(HistogramPipeline.shared.approximateWorkForTesting.sourceDecodes - estimates.sourceDecodes, 1,
+                       "The JPEG keeps its own small decode")
+        XCTAssertTrue(whole.allSatisfy { store.qualityEvidence(for: $0)?.isApproximate == true })
+        XCTAssertTrue(whole.allSatisfy { (store.qualityEvidence(for: $0)?.sampleCount ?? 0) > 0 })
+
+        // On disk under the Browser's key, and not in the memory cache.
+        await images.waitForPendingDiskWrites()
+        for item in whole {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: diskThumbnail(of: item, in: images).path))
+            XCTAssertNil(images.cachedThumbnail(for: item), "The walk's thumbnail takes no tile's place in memory")
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: diskThumbnail(of: scanned[3], in: images).path),
+                       "JPEG estimates write no thumbnail")
+
+        // Their tiles decode nothing.
+        for item in whole {
+            let tile = await images.thumbnail(for: item)
+            XCTAssertNotNil(tile)
+        }
+        XCTAssertEqual(thumbnailDecodes(), 3, "A tile reads the thumbnail the walk wrote")
+        close(store)
+
+        // Reopen: nothing is decoded and nothing is measured.
+        let measured = HistogramPipeline.shared.approximateWorkForTesting
+        let reopened = makeStore(cache: cache, measurements: nil)
+        reopened.viewMode = .grid
+        reopened.showMetadataPanel = false
+        reopened.items = scanned
+        reopened.rebuildDerivedDataForTesting(sourceFolder: folder)
+        reopened.phase = .ready
+        try await settle(reopened, evidence: 4)
+        XCTAssertEqual(thumbnailDecodes(), 3)
+        let after = HistogramPipeline.shared.approximateWorkForTesting
+        XCTAssertEqual([after.thumbnailReuses, after.sourceDecodes, after.thumbnailBuilds],
+                       [measured.thumbnailReuses, measured.sourceDecodes, measured.thumbnailBuilds])
+        XCTAssertEqual(HistogramPipeline.shared.sourceDecodesForTesting, histogram)
+        print("JXL-WALK: 3 photos, 3 thumbnail source decodes, 3 disk thumbnails, 0 memory admissions; "
+              + "tiles: 0 source decodes; reopen: 0 source decodes, 0 measurements; max 1 JXL per batch")
+        close(reopened)
+    }
+
+    func testWalkDecodesNoJPEGXLPhotoThatAlreadyHasAThumbnail() async throws {
+        let folder = try makeFolder(["A.jxl", "B.jxl", "C.jxl"], size: 400)
+        let scanned = try scan(folder)
+        let images = ImagePipeline.shared
+        // The Browser showed them earlier; one is still in the memory cache.
+        for item in scanned { _ = await images.thumbnail(for: item) }
+        await images.waitForPendingDiskWrites()
+        for item in scanned.dropFirst() { images.evictThumbnailForTesting(for: item) }
+        let decodes = images.sourceDecodesForTesting
+        let estimates = HistogramPipeline.shared.approximateWorkForTesting
+
+        let store = makeStore(cache: try temporaryDirectory(), measurements: nil)
+        store.viewMode = .grid
+        store.showMetadataPanel = false
+        store.items = scanned
+        store.rebuildDerivedDataForTesting(sourceFolder: folder)
+        store.phase = .ready
+        try await settle(store, evidence: 3)
+
+        XCTAssertEqual(images.sourceDecodesForTesting.thumbnail, decodes.thumbnail, "A cached thumbnail is measured as it is")
+        XCTAssertEqual(images.sourceDecodesForTesting.full, decodes.full)
+        let after = HistogramPipeline.shared.approximateWorkForTesting
+        XCTAssertEqual(after.thumbnailReuses - estimates.thumbnailReuses, 3)
+        XCTAssertEqual(after.thumbnailBuilds, estimates.thumbnailBuilds)
+        XCTAssertEqual(after.sourceDecodes, estimates.sourceDecodes)
+        XCTAssertTrue(scanned.dropFirst().allSatisfy { images.cachedThumbnail(for: $0) == nil })
+        close(store)
+    }
+
+    func testWalkBuildsNoThumbnailWhileForegroundDemandIsHeld() async throws {
+        let folder = try makeFolder(["A.jxl", "B.jxl"], size: 400)
+        let scanned = try scan(folder)
+        let images = ImagePipeline.shared
+        let decodes = images.sourceDecodesForTesting
+        // Hold beyond all of the walk's ordinary 750 ms admission escapes:
+        // a missing whole-image thumbnail must still yield to browsing.
+        let demand = ForegroundWorkCoordinator.shared.beginForegroundDemand()
+        defer { demand.finish() }
+        let store = makeStore(cache: try temporaryDirectory(), measurements: nil)
+        store.viewMode = .grid
+        store.showMetadataPanel = false
+        store.items = scanned
+        store.rebuildDerivedDataForTesting(sourceFolder: folder)
+        store.phase = .ready
+        try await Task.sleep(for: .seconds(5))
+        XCTAssertEqual(images.sourceDecodesForTesting.thumbnail, decodes.thumbnail)
+        XCTAssertEqual(store.qualityCueEvidence.count, 0)
+        demand.finish()
+        try await settle(store, evidence: 2)
+        XCTAssertEqual(images.sourceDecodesForTesting.thumbnail - decodes.thumbnail, 2)
+        close(store)
+    }
+
+    func testBackgroundThumbnailWaitsForAdmissionAndATileStartsItAtOnce() async throws {
+        let folder = try makeFolder(["A.jxl", "B.jxl"], size: 400)
+        let scanned = try scan(folder)
+        let (first, second) = (scanned[0], scanned[1])
+        let coordinator = ForegroundWorkCoordinator(maximumDeferral: .milliseconds(20))
+        let demand = coordinator.beginForegroundDemand()
+        defer { demand.finish() }
+        let images = ImagePipeline(testingDiskCacheRoot: try temporaryDirectory(), foregroundWork: coordinator)
+        let histograms = HistogramPipeline(foregroundWork: coordinator, imagePipeline: images)
+
+        // Held behind foreground demand: no decode, and no demand of its own.
+        let build = Task { await images.thumbnail(for: first, background: true) }
+        try await waitUntil { coordinator.waitingCountForTesting == 1 }
+        XCTAssertEqual(coordinator.foregroundDemandCountForTesting, 1)
+        let walk = Task { await histograms.approximateAnalysis(for: second, buildsThumbnail: true) }
+        try await waitUntil { coordinator.waitingCountForTesting == 2 }
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(images.sourceDecodesForTesting.thumbnail, 0)
+
+        // The first photo's tile appears: one decode, now, shared with the build.
+        let tile = await images.thumbnail(for: first)
+        XCTAssertNotNil(tile)
+        let built = await build.value
+        XCTAssertNotNil(built)
+        XCTAssertEqual(images.sourceDecodesForTesting.thumbnail, 1)
+        XCTAssertNotNil(images.cachedThumbnail(for: first), "A tile's request caches as usual")
+
+        // Browsing settles: the second is built, measured and written, not cached.
+        demand.finish()
+        guard case .measured(let analysis) = await walk.value else { return XCTFail("The built thumbnail is measured") }
+        XCTAssertEqual(analysis.highlightPercentage, 25, accuracy: 2)
+        XCTAssertEqual(images.sourceDecodesForTesting.thumbnail, 2)
+        XCTAssertNil(images.cachedThumbnail(for: second))
+        await images.waitForPendingDiskWrites()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: diskThumbnail(of: second, in: images).path))
+    }
+
+    func testBackgroundThumbnailWriteSurvivesATileBurstAndServesItsTileBeforeItLands() async throws {
+        // A tile can join before decode completion, or after it while the
+        // write is queued. Both retain the walk's disk output under saturation.
+        for joinsDuringDecode in [false, true] {
+            let folder = try makeFolder((0..<40).map { String(format: "T%02d.jpg", $0) } + ["Whole.jxl"], size: 16)
+            let scanned = try scan(folder)
+            let whole = try XCTUnwrap(scanned.first(where: ImagePipeline.decodesWholeImage))
+            let tiles = scanned.filter { !ImagePipeline.decodesWholeImage($0) }
+            let gate = CueDiskWriteGate(), decodeGate = CueDiskWriteGate()
+            defer { gate.open(); decodeGate.open() }
+            let images = ImagePipeline(testingDiskCacheRoot: try temporaryDirectory(),
+                foregroundWork: ForegroundWorkCoordinator(),
+                testingDiskWriter: { _, _ in gate.write() }, decoder: { url, bound in
+                    if joinsDuringDecode, url.pathExtension == "jxl" { decodeGate.write() }
+                    return ImagePipeline.decodeImage(url: url, maxPixel: bound)
+                })
+            // A cold Grid fills the optional write allowance behind a slow disk.
+            for tile in tiles {
+                let pixels = await images.thumbnail(for: tile)
+                XCTAssertNotNil(pixels)
+            }
+            try await waitUntil { gate.calls == 1 }
+            XCTAssertEqual(images.pendingDiskWritesForTesting.count, ImagePipeline.pendingDiskWriteCountLimit)
+            let dropped = images.droppedDiskWritesForTesting
+            XCTAssertEqual(dropped, tiles.count - ImagePipeline.pendingDiskWriteCountLimit)
+
+            let build = Task { await images.thumbnail(for: whole, background: true) }
+            let joinedTile: Task<Bool, Never>?
+            if joinsDuringDecode {
+                try await waitUntil { decodeGate.calls == 1 }
+                joinedTile = Task { await images.thumbnail(for: whole) != nil }
+                try await waitUntil { images.decodeWaiterCountForTesting(for: whole) == 2 }
+                decodeGate.open()
+            } else {
+                joinedTile = nil
+            }
+            let built = await build.value
+            XCTAssertNotNil(built)
+            if let joinedTile {
+                let tile = await joinedTile.value
+                XCTAssertTrue(tile)
+            } else {
+                XCTAssertNil(images.cachedThumbnail(for: whole))
+            }
+            XCTAssertEqual(images.pendingDiskWritesForTesting.count, ImagePipeline.pendingDiskWriteCountLimit + 1)
+            XCTAssertEqual(images.droppedDiskWritesForTesting, dropped)
+
+            // The tile reads queued pixels before the write lands, even after
+            // memory eviction of a promoted result; never a second source decode.
+            images.evictThumbnailForTesting(for: whole)
+            let decodes = images.sourceDecodesForTesting.thumbnail
+            let tile = await images.thumbnail(for: whole)
+            XCTAssertNotNil(tile)
+            XCTAssertEqual(images.sourceDecodesForTesting.thumbnail, decodes)
+            gate.open()
+            await images.waitForPendingDiskWrites()
+            XCTAssertEqual(gate.calls, ImagePipeline.pendingDiskWriteCountLimit + 1)
+        }
+    }
+
+    func testCancelledBackgroundThumbnailAdmissionDecodesAndWritesNothing() async throws {
+        let folder = try makeFolder(["A.jxl"], size: 400)
+        let item = try XCTUnwrap(scan(folder).first)
+        let coordinator = ForegroundWorkCoordinator(maximumDeferral: .milliseconds(20))
+        let demand = coordinator.beginForegroundDemand()
+        defer { demand.finish() }
+        let root = try temporaryDirectory()
+        let images = ImagePipeline(testingDiskCacheRoot: root, foregroundWork: coordinator)
+        let build = Task { await images.thumbnail(for: item, background: true) }
+        try await waitUntil { coordinator.waitingCountForTesting == 1 }
+        build.cancel()
+        let result = await build.value
+        XCTAssertNil(result)
+        XCTAssertEqual(coordinator.waitingCountForTesting, 0)
+        demand.finish()
+        await images.waitForPendingDiskWrites()
+        XCTAssertEqual(images.sourceDecodesForTesting.thumbnail, 0)
+        XCTAssertNil(images.cachedThumbnail(for: item))
+        XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: root.path).isEmpty)
+    }
+
+    func testJPEGXLWalkDoesNothingWithCuesOff() async throws {
+        let folder = try makeFolder(["A.jxl", "B.jxl"], size: 400)
+        let scanned = try scan(folder)
+        let images = ImagePipeline.shared
+        let decodes = images.sourceDecodesForTesting
+        let work = HistogramPipeline.shared.approximateWorkForTesting
+        let cache = try temporaryDirectory()
+        let store = makeStore(cache: cache, measurements: nil,
+                              preferences: CameraQualityWarningPreferences(isClippingEnabled: false))
+        store.viewMode = .grid
+        store.showMetadataPanel = false
+        store.items = scanned
+        store.rebuildDerivedDataForTesting(sourceFolder: folder)
+        store.phase = .ready
+        try await Task.sleep(for: .milliseconds(100))
+        await store.flushQualityCueEvidenceForTesting()
+        XCTAssertTrue(store.isQualityCueWalkIdleForTesting)
+        XCTAssertTrue(store.qualityCueEvidence.isEmpty)
+        XCTAssertNil(store.qualityCueEvidenceCacheForTesting)
+        XCTAssertEqual(images.sourceDecodesForTesting.thumbnail, decodes.thumbnail)
+        XCTAssertEqual(images.sourceDecodesForTesting.full, decodes.full)
+        let after = HistogramPipeline.shared.approximateWorkForTesting
+        XCTAssertEqual([after.thumbnailReuses, after.sourceDecodes, after.thumbnailBuilds],
+                       [work.thumbnailReuses, work.sourceDecodes, work.thumbnailBuilds])
+        XCTAssertTrue(try snapshotFiles(in: cache).isEmpty)
+        XCTAssertTrue(scanned.allSatisfy { !FileManager.default.fileExists(atPath: diskThumbnail(of: $0, in: images).path) })
+        close(store)
     }
 
     // MARK: - Snapshot rules
@@ -893,7 +1191,8 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
             [ImagePipeline.shared.sourceDecodesForTesting.full, HistogramPipeline.shared.sourceDecodesForTesting,
              RawHistogramPipeline.shared.sourceDecodesForTesting,
              HistogramPipeline.shared.approximateWorkForTesting.sourceDecodes,
-             HistogramPipeline.shared.approximateWorkForTesting.thumbnailReuses]
+             HistogramPipeline.shared.approximateWorkForTesting.thumbnailReuses,
+             HistogramPipeline.shared.approximateWorkForTesting.thumbnailBuilds]
         }
         func opened() async throws -> SessionStore {
             let store = makeStore(cache: cache, measurements: nil)
@@ -912,9 +1211,9 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
         let first = try await opened()
         var delta = zip(counters(), before).map(-)
         print("CUE-REAL first walk: photos \(photos.count), full \(delta[0]), 1024 \(delta[1]), raw \(delta[2]), "
-              + "estimate decodes \(delta[3]), thumbnail reuses \(delta[4])")
+              + "estimate decodes \(delta[3]), thumbnail reuses \(delta[4]), thumbnails built \(delta[5])")
         XCTAssertEqual(Array(delta[0...2]), [0, 0, 0])
-        XCTAssertEqual(delta[3] + delta[4], photos.count)
+        XCTAssertEqual(delta[3] + delta[4] + delta[5], photos.count)
 
         before = counters()
         first.setIndex(raw)
@@ -935,7 +1234,7 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
         delta = zip(counters(), before).map(-)
         print("CUE-REAL reopen: full \(delta[0]), 1024 \(delta[1]), raw \(delta[2]), "
               + "estimate decodes \(delta[3]), thumbnail reuses \(delta[4])")
-        XCTAssertEqual(delta, [0, 0, 0, 0, 0])
+        XCTAssertEqual(delta, [0, 0, 0, 0, 0, 0])
         XCTAssertEqual(second.qualityEvidence(for: second.items[raw])?.isApproximate, false)
         close(second)
     }
@@ -1011,8 +1310,14 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
                            isApproximate: approximate)
     }
 
+    private func diskThumbnail(of item: PhotoItem, in images: ImagePipeline) -> URL {
+        images.diskCacheRootForTesting.appendingPathComponent(
+            ImagePipeline.diskFileName(for: ImagePipeline.cacheKey(for: item)))
+    }
+
     private func makeStore(cache: URL, measurements: CueMeasurements?,
-                           preferences: CameraQualityWarningPreferences = .init()) -> SessionStore {
+                           preferences: CameraQualityWarningPreferences = .init(),
+                           rest: (@Sendable () -> Void)? = nil) -> SessionStore {
         let name = "QualityCueEvidenceCacheTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: name)!
         preferences.save(to: defaults)
@@ -1027,7 +1332,10 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
         } else {
             store = SessionStore(reviewDefaults: defaults,
                 qualityCueResources: { .init(lowPower: false, thermal: .nominal) },
-                qualityCueRest: { _ in await Task.yield() })
+                qualityCueRest: { _ in
+                    rest?()
+                    await Task.yield()
+                })
         }
         store.qualityCueEvidenceCacheDirectory = cache
         store.qualityCueEvidenceFlushDelay = .milliseconds(1)
@@ -1078,6 +1386,34 @@ final class QualityCueEvidenceCacheTests: XCTestCase {
 }
 
 private struct CueEvidenceTimeout: Error {}
+
+/// Whole-image thumbnail decodes counted at the end of each walk batch.
+private final class CueBatchLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var counts = [0]
+    func record(_ count: Int) { lock.withLock { counts.append(count) } }
+    var largestStep: Int { lock.withLock { zip(counts.dropFirst(), counts).map(-).max() ?? 0 } }
+}
+
+/// Holds thumbnail disk writes inside the writer until opened.
+private final class CueDiskWriteGate: @unchecked Sendable {
+    private let condition = NSCondition()
+    private var isOpen = false
+    private var started = 0
+    var calls: Int { condition.withLock { started } }
+    func write() {
+        condition.withLock {
+            started += 1
+            while !isOpen { condition.wait() }
+        }
+    }
+    func open() {
+        condition.withLock {
+            isOpen = true
+            condition.broadcast()
+        }
+    }
+}
 
 /// Holds snapshot writes until opened.
 private actor CueWriteGate {

@@ -286,9 +286,17 @@ final class HistogramPipeline: @unchecked Sendable {
     static let approximateAnalysisVersion = "histogram-approx-v1-thumbnail-320"
 
     /// The folder-wide cue walk's estimate. `noCheapSource`: a whole-image
-    /// (JPEG XL) photo whose thumbnail is not cached yet.
+    /// (JPEG XL) photo whose thumbnail is not cached yet. The walk permits
+    /// `buildsThumbnail` for one such photo per batch.
     enum ApproximateResult: Sendable {
         case measured(HistogramAnalysis), failed, noCheapSource
+    }
+
+    /// Photos whose missing thumbnail the walk builds through the thumbnail
+    /// pipeline (the Browser's key and disk cache) and then measures. Others
+    /// are decoded small here and leave no thumbnail behind.
+    static func estimatesThroughThumbnailPipeline(_ item: PhotoItem) -> Bool {
+        ImagePipeline.decodesWholeImage(item)
     }
 
     /// Gallery's exact cue measurement of a whole-image photo. `noFit`:
@@ -332,6 +340,7 @@ final class HistogramPipeline: @unchecked Sendable {
     private var sourceDecodes = 0
     private var approximateThumbnailReuses = 0
     private var approximateSourceDecodes = 0
+    private var approximateThumbnailBuilds = 0
     #endif
 
     /// Isolated workers/queues make resource and cancellation contracts testable;
@@ -537,9 +546,12 @@ final class HistogramPipeline: @unchecked Sendable {
     /// disk cache, else the same small decode (a RAW file's embedded preview).
     /// Never a Fit-size decode or a RAW render, and nothing is cached here:
     /// the caller keeps the counts. A whole-image photo without a cached
-    /// thumbnail is not decoded. The waiter settles after the worker exits,
-    /// so a session's folder lease outlives the native read.
-    func approximateAnalysis(for item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> ApproximateResult {
+    /// thumbnail is decoded only with `buildsThumbnail`: the thumbnail
+    /// pipeline then builds it in the background and writes it to the disk
+    /// cache, so its tile decodes nothing later. The waiter settles after the
+    /// worker exits, so a session's folder lease outlives the native read.
+    func approximateAnalysis(for item: PhotoItem, sourceAccess: MediaReadAccess? = nil,
+                             buildsThumbnail: Bool = false) async -> ApproximateResult {
         guard item.mediaKind == .photo, item.isSupported, !Task.isCancelled else { return .failed }
         if let image = imagePipeline.cachedThumbnail(for: item)?.cgImage(forProposedRect: nil, context: nil, hints: nil) {
             #if LOUPPE_TEST_SEAMS
@@ -550,11 +562,14 @@ final class HistogramPipeline: @unchecked Sendable {
         guard await foregroundWork.waitForBackgroundAdmission(), !Task.isCancelled else { return .failed }
         let diskURL = thumbnailDiskRoot.appendingPathComponent(
             ImagePipeline.diskFileName(for: ImagePipeline.cacheKey(for: item)))
-        let decodesSource = !ImagePipeline.decodesWholeImage(item)
+        let usesThumbnailPipeline = Self.estimatesThroughThumbnailPipeline(item)
+        // The walk rations whole-image builds; cheap formats need no ration.
+        let buildsNow = buildsThumbnail || !ImagePipeline.decodesWholeImage(item)
         let revision = MediaSourceRevision(item)
         let readAccess = MediaOperationReadAccess(sourceAccess)
         let cancellation = ApproximateCancellation()
-        return await withTaskCancellationHandler {
+        // Nil: no thumbnail on disk, and the thumbnail pipeline builds it.
+        let estimate: ApproximateResult? = await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
                 let operation = BlockOperation { [weak self] in
                     defer { readAccess.finish() }
@@ -562,7 +577,7 @@ final class HistogramPipeline: @unchecked Sendable {
                         continuation.resume(returning: .failed)
                         return
                     }
-                    let result: ApproximateResult = autoreleasepool {
+                    let result: ApproximateResult? = autoreleasepool {
                         // The key binds the file to this revision's identity.
                         if let thumbnail = ImagePipeline.decodeImage(url: diskURL, maxPixel: ImagePipeline.thumbPixelSize) {
                             #if LOUPPE_TEST_SEAMS
@@ -570,7 +585,7 @@ final class HistogramPipeline: @unchecked Sendable {
                             #endif
                             return ClippingWarningProcessor.analyze(thumbnail).map(ApproximateResult.measured) ?? .failed
                         }
-                        guard decodesSource else { return .noCheapSource }
+                        if usesThumbnailPipeline { return buildsNow ? nil : .noCheapSource }
                         guard !cancellation.isCancelled else { return .failed }
                         #if LOUPPE_TEST_SEAMS
                         self.lock.withLock { self.approximateSourceDecodes += 1 }
@@ -589,6 +604,18 @@ final class HistogramPipeline: @unchecked Sendable {
         } onCancel: {
             cancellation.cancel()
         }
+        if let estimate { return estimate }
+        guard !Task.isCancelled else { return .failed }
+        #if LOUPPE_TEST_SEAMS
+        lock.withLock { approximateThumbnailBuilds += 1 }
+        #endif
+        guard let thumbnail = await imagePipeline.thumbnail(for: item, sourceAccess: sourceAccess, background: true)?
+            .cgImage(forProposedRect: nil, context: nil, hints: nil) else { return .failed }
+        // One walk build at a time, including its disk write: the reserved
+        // write slot stays bounded and a later tile reads this same key.
+        await imagePipeline.waitForPendingDiskWrites()
+        guard !Task.isCancelled else { return .failed }
+        return ClippingWarningProcessor.analyze(thumbnail).map(ApproximateResult.measured) ?? .failed
     }
 
     private final class ApproximateCancellation: @unchecked Sendable {
@@ -616,10 +643,11 @@ final class HistogramPipeline: @unchecked Sendable {
     /// Source decodes this pipeline started for its own analysis previews.
     var sourceDecodesForTesting: Int { lock.withLock { sourceDecodes } }
 
-    /// Estimates served by a cached thumbnail, and thumbnail-size decodes of
-    /// originals for those without one.
-    var approximateWorkForTesting: (thumbnailReuses: Int, sourceDecodes: Int) {
-        lock.withLock { (approximateThumbnailReuses, approximateSourceDecodes) }
+    /// Estimates served by a cached thumbnail, thumbnail-size decodes of
+    /// originals for those without one, and thumbnails requested from the
+    /// thumbnail pipeline.
+    var approximateWorkForTesting: (thumbnailReuses: Int, sourceDecodes: Int, thumbnailBuilds: Int) {
+        lock.withLock { (approximateThumbnailReuses, approximateSourceDecodes, approximateThumbnailBuilds) }
     }
     #endif
 

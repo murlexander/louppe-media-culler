@@ -75,9 +75,12 @@ struct QualityCueEvidence: Equatable, Sendable {
     }
 
     /// The walk's estimate from the thumbnail (a RAW file's embedded preview):
-    /// no Fit-size decode and no RAW render. Nil: no cheap source yet.
-    static func approximate(_ item: PhotoItem, sourceAccess: MediaReadAccess? = nil) async -> Self? {
-        switch await HistogramPipeline.shared.approximateAnalysis(for: item, sourceAccess: sourceAccess) {
+    /// no Fit-size decode and no RAW render. Nil: no cheap source yet, which
+    /// `buildsThumbnail` resolves by building the missing thumbnail.
+    static func approximate(_ item: PhotoItem, sourceAccess: MediaReadAccess? = nil,
+                            buildsThumbnail: Bool = false) async -> Self? {
+        switch await HistogramPipeline.shared.approximateAnalysis(
+            for: item, sourceAccess: sourceAccess, buildsThumbnail: buildsThumbnail) {
         case .measured(let analysis):
             return Self(item: item, analysis: analysis, source: .renderedPreview, isApproximate: true)
         case .failed:
