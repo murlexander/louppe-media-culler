@@ -316,6 +316,203 @@ final class OSBuildMetadataTests: XCTestCase {
         store.beginTerminationPreparation()
     }
 
+    func testRefreshPreservesMeasuredEvidenceCoverageAndCueFilterWithoutRemeasuring() async throws {
+        let fixture = try ArchiveMetadataFixture(names: ["A.JPG", "B.JPG"])
+        defer { fixture.remove() }
+        try seed(fixture)
+        let probe = OSBuildProbe(changedName: "A.JPG", changedDate: Date(timeIntervalSince1970: 2_000_000_000))
+        defer { probe.release.signal() }
+        let measurements = OSBuildMeasurements()
+        let store = makeStore(fixture, qualityCueMeasurement: { await measurements.measure($0) })
+        store.openingWorkerHooksForTesting = .init(metadataReader: { probe.read($0) }, metadataIndex: try index(fixture),
+                                                   willCommitMetadataIndex: { probe.hold() })
+        store.openFolder(fixture.source)
+        try await until { probe.isHeld }
+        store.startQualityCueAnalysis()
+        try await until { store.qualityCueEvidence.count == 2 }
+        store.pauseQualityCueAnalysis(userInitiated: true)
+        let evidence = store.qualityCueEvidence
+        store.filter.selectedQualityCues = [.highlightClipping]
+        XCTAssertEqual(store.visibleIndices.map { store.items[$0].id }, ["A.JPG"])
+        XCTAssertEqual(store.qualityCueCoverageCountsForTesting.measured, 2)
+        probe.release.signal()
+        await store.waitForMetadataIndexCommitForTesting()
+        XCTAssertEqual(store.items.map(\.id), ["B.JPG", "A.JPG"])
+        XCTAssertEqual(store.qualityCueEvidence, evidence)
+        XCTAssertEqual(store.qualityCueCoverageCountsForTesting.measured, 2)
+        XCTAssertEqual(store.qualityCueCoverageCountsForTesting.total, 2)
+        XCTAssertEqual(store.visibleIndices.map { store.items[$0].id }, ["A.JPG"])
+        XCTAssertTrue(store.isQualityCueAnalysisPaused)
+        store.resumeQualityCueAnalysis()
+        for _ in 0..<20 { await Task.yield() }
+        let count = await measurements.count
+        XCTAssertEqual(count, 2, "A metadata refresh cannot repeat histogram work")
+        store.beginTerminationPreparation()
+        try fixture.assertOriginalBytes()
+        print("OSBUILD evidence: measured=2 before/after; histogram measurements=2 total; cue membership=A")
+    }
+
+    func testMovedFileBeforeRecheckIsDroppedAndOtherMetadataCommits() async throws {
+        try await recheckWithChangedFile(movedBeforeRead: true)
+    }
+
+    func testModifiedFileDuringRecheckIsDroppedAndOtherMetadataCommits() async throws {
+        try await recheckWithChangedFile(movedBeforeRead: false)
+    }
+
+    func testStatusOnlyChangeDuringRecheckIsDroppedAndOtherMetadataCommits() async throws {
+        try await recheckWithChangedFile(movedBeforeRead: false, statusOnly: true)
+    }
+
+    private func recheckWithChangedFile(movedBeforeRead: Bool, statusOnly: Bool = false) async throws {
+        let fixture = try ArchiveMetadataFixture(names: ["A.JPG", "B.JPG"])
+        defer { fixture.remove() }
+        try seed(fixture)
+        let index = try index(fixture)
+        let probe = OSBuildProbe(changedName: "A.JPG", changedDate: Date(timeIntervalSince1970: 2_000_000_000))
+        defer { probe.release.signal() }
+        let replacement = try ArchiveMetadataFixture.jpeg(camera: "Changed camera")
+        let store = makeStore(fixture)
+        store.openingWorkerHooksForTesting = .init(metadataReader: { url in
+            let info = probe.read(url)
+            if !movedBeforeRead && url.lastPathComponent == "B.JPG" {
+                if statusOnly {
+                    try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+                } else {
+                    try replacement.write(to: url, options: .atomic)
+                }
+            }
+            return info
+        }, metadataIndex: index, willCommitMetadataIndex: { probe.hold() })
+        store.openFolder(fixture.source)
+        try await until { probe.isHeld }
+        let b = fixture.source.appendingPathComponent("B.JPG")
+        let removed = fixture.root.appendingPathComponent("removed.JPG")
+        if movedBeforeRead {
+            try FileManager.default.moveItem(at: b, to: removed)
+            store.items.removeAll { $0.id == "B.JPG" }
+            store.rebuildDerivedDataForTesting()
+        }
+        probe.release.signal()
+        await store.waitForMetadataIndexCommitForTesting()
+        XCTAssertEqual(store.items.first { $0.id == "A.JPG" }?.captureDate, probe.changedDate)
+        XCTAssertEqual(index.storedEntriesForTesting()?.map { URL(fileURLWithPath: $0.path).lastPathComponent }, ["A.JPG"])
+        let reopenedIndex = try self.index(fixture)
+        XCTAssertEqual(reopenedIndex.snapshotReason, .hit)
+        XCTAssertFalse(reopenedIndex.needsOSBuildRecheck)
+        if movedBeforeRead { try FileManager.default.moveItem(at: removed, to: b) }
+        let reads = ArchiveMetadataReads()
+        _ = try FolderScanner.prepareMetadata(in: FolderScanner.discoverInventory(fixture.source),
+            metadataReaderForTesting: { reads.read($0) }, metadataIndex: reopenedIndex)
+        XCTAssertEqual(reads.total, 1, "Only the skipped file must miss next time")
+        XCTAssertEqual(try Data(contentsOf: fixture.source.appendingPathComponent("A.JPG")), fixture.originals["A.JPG"])
+        store.beginTerminationPreparation()
+        print("OSBUILD per-file skip: moved=\(movedBeforeRead); new-context entries=1; next-open reads=1")
+    }
+
+    func testFinalBarrierDropsAFileChangedAfterItsRecheckRead() async throws {
+        let fixture = try ArchiveMetadataFixture(names: ["A.JPG", "B.JPG"])
+        defer { fixture.remove() }
+        try seed(fixture)
+        let index = try index(fixture)
+        let probe = OSBuildProbe(changedName: "B.JPG", changedDate: Date(timeIntervalSince1970: 2_000_000_000))
+        let store = makeStore(fixture)
+        store.openingWorkerHooksForTesting = .init(metadataReader: { url in
+            let info = probe.read(url)
+            if url.lastPathComponent == "B.JPG" {
+                try FileManager.default.moveItem(at: fixture.source.appendingPathComponent("A.JPG"),
+                                                 to: fixture.root.appendingPathComponent("removed.JPG"))
+            }
+            return info
+        }, metadataIndex: index)
+        store.openFolder(fixture.source)
+        try await until { if case .ready = store.phase { return true }; return false }
+        await store.waitForMetadataIndexCommitForTesting()
+        XCTAssertEqual(probe.readsByName, ["A.JPG": 1, "B.JPG": 1])
+        XCTAssertEqual(store.items.first { $0.id == "B.JPG" }?.captureDate, probe.changedDate)
+        XCTAssertEqual(index.storedEntriesForTesting()?.count, 1)
+        XCTAssertTrue(index.storedEntriesForTesting()?.first?.path.hasSuffix("B.JPG") == true)
+        XCTAssertEqual(try self.index(fixture).snapshotReason, .hit)
+        store.beginTerminationPreparation()
+    }
+
+    func testFileRemovedWhilePublicationWaitsDoesNotRejectOtherChangesOrEnterSnapshot() async throws {
+        let fixture = try ArchiveMetadataFixture(names: ["A.JPG", "B.JPG"])
+        defer { fixture.remove() }
+        try seed(fixture)
+        let index = try index(fixture)
+        let probe = OSBuildProbe()
+        defer { probe.release.signal() }
+        let store = makeStore(fixture)
+        let date = Date(timeIntervalSince1970: 2_000_000_000)
+        store.openingWorkerHooksForTesting = .init(metadataReader: { url in
+            var info = probe.read(url)
+            info.captureDate = date
+            info.captureDateEvidence = .init(date: date, source: .exifOriginal)
+            return info
+        }, metadataIndex: index, willCommitMetadataIndex: { probe.hold() })
+        store.openFolder(fixture.source)
+        try await until { probe.isHeld }
+        XCTAssertTrue(store.exportWillStart(mode: .copy))
+        probe.release.signal()
+        try await until { store.metadataRecheckDeferralsForTesting > 0 }
+        try FileManager.default.moveItem(at: fixture.source.appendingPathComponent("A.JPG"),
+                                         to: fixture.root.appendingPathComponent("removed.JPG"))
+        store.items.removeAll { $0.id == "A.JPG" }
+        store.rebuildDerivedDataForTesting()
+        store.finishExport(mode: .copy, movedIDs: [], requiresRecovery: false)
+        await store.waitForMetadataIndexCommitForTesting()
+        XCTAssertEqual(store.items.map(\.id), ["B.JPG"])
+        XCTAssertEqual(store.items.first?.captureDate, date)
+        XCTAssertEqual(index.storedEntriesForTesting()?.count, 1)
+        XCTAssertTrue(index.storedEntriesForTesting()?.first?.path.hasSuffix("B.JPG") == true)
+        XCTAssertEqual(try self.index(fixture).snapshotReason, .hit)
+        store.beginTerminationPreparation()
+    }
+
+    func testDuplicateLiveIDsDoNotTrapDuringRefresh() async throws {
+        let fixture = try ArchiveMetadataFixture(names: ["A.JPG"])
+        defer { fixture.remove() }
+        try seed(fixture)
+        let probe = OSBuildProbe(changedName: "A.JPG", changedDate: Date(timeIntervalSince1970: 2_000_000_000))
+        defer { probe.release.signal() }
+        let store = makeStore(fixture)
+        store.openingWorkerHooksForTesting = .init(metadataReader: { probe.read($0) }, metadataIndex: try index(fixture),
+                                                   willCommitMetadataIndex: { probe.hold() })
+        store.openFolder(fixture.source)
+        try await until { probe.isHeld }
+        store.items.append(try XCTUnwrap(store.items.first))
+        store.rebuildDerivedDataForTesting()
+        probe.release.signal()
+        await store.waitForMetadataIndexCommitForTesting()
+        XCTAssertEqual(store.items.count, 2)
+        XCTAssertTrue(store.items.allSatisfy { $0.captureDate == probe.changedDate })
+        store.beginTerminationPreparation()
+    }
+
+    func testReplacedDirectoryStillRejectsEntireRecheck() async throws {
+        let fixture = try ArchiveMetadataFixture(names: ["sub/A.JPG"])
+        defer { fixture.remove() }
+        try seed(fixture)
+        let index = try index(fixture)
+        let before = try Data(contentsOf: index.cacheURL)
+        let probe = OSBuildProbe()
+        defer { probe.release.signal() }
+        let store = makeStore(fixture)
+        store.openingWorkerHooksForTesting = .init(metadataReader: { probe.read($0) }, metadataIndex: index,
+                                                   willCommitMetadataIndex: { probe.hold() })
+        store.openFolder(fixture.source)
+        try await until { probe.isHeld }
+        let sub = fixture.source.appendingPathComponent("sub")
+        try FileManager.default.moveItem(at: sub, to: fixture.root.appendingPathComponent("old-sub"))
+        try FileManager.default.createDirectory(at: sub, withIntermediateDirectories: false)
+        probe.release.signal()
+        await store.waitForMetadataIndexCommitForTesting()
+        XCTAssertEqual(try Data(contentsOf: index.cacheURL), before)
+        XCTAssertNil(index.storedEntriesForTesting())
+        store.beginTerminationPreparation()
+    }
+
     private func seed(_ fixture: ArchiveMetadataFixture) throws {
         let writer = try index(fixture, context: contextA, reuse: false)
         _ = try FolderScanner.prepareMetadata(in: FolderScanner.discoverInventory(fixture.source),
@@ -327,14 +524,16 @@ final class OSBuildMetadataTests: XCTestCase {
             interpretationContext: context ?? contextB, allowsOSBuildReuse: reuse))
     }
 
-    private func makeStore(_ fixture: ArchiveMetadataFixture) -> SessionStore {
+    private func makeStore(_ fixture: ArchiveMetadataFixture,
+                           qualityCueMeasurement: (@Sendable (PhotoItem) async -> QualityCueEvidence)? = nil) -> SessionStore {
         let name = "Louppe-OSBuild-\(UUID())"
         let defaults = UserDefaults(suiteName: name)!
         addTeardownBlock { defaults.removePersistentDomain(forName: name) }
         return SessionStore(persistence: SessionPersistence(backupDirectory: fixture.root.appendingPathComponent("backups")),
             reviewDefaults: defaults,
             pinnedFolders: PinnedFoldersStore(storageDirectory: fixture.root.appendingPathComponent("pins"),
-                                               observesSystemChanges: false))
+                                               observesSystemChanges: false),
+            qualityCueMeasurement: qualityCueMeasurement)
     }
 
     private func until(_ predicate: () throws -> Bool) async throws {
@@ -373,5 +572,14 @@ private final class OSBuildProbe: @unchecked Sendable {
             info.captureDateEvidence = changedDate.map { CaptureDateEvidence(date: $0, source: .exifOriginal) }
         }
         return info
+    }
+}
+
+private actor OSBuildMeasurements {
+    private(set) var count = 0
+    func measure(_ item: PhotoItem) -> QualityCueEvidence {
+        count += 1
+        return QualityCueEvidence(item: item, analysis: HistogramAnalysis(bins: [], sampleCount: 100,
+            shadowCount: 0, highlightCount: item.id == "A.JPG" ? 20 : 0), source: .renderedPreview)
     }
 }

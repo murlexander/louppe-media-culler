@@ -58,21 +58,42 @@ struct SessionOpeningMetadataRecheck: Sendable {
              isCancelled: @Sendable () -> Bool) throws -> Result {
         var refreshed: [String: PhotoFile] = [:]
         var changed: [String: PhotoFile] = [:]
+        var skipped: Set<String> = []
         for item in inventory.items {
             for file in item.individualFiles {
                 if isCancelled() { throw CancellationError() }
                 guard let reused = index.metadata(for: file) else { continue }
-                let fresh = try FolderScanner.recheckMetadata(for: file, index: index,
-                    metadataReader: metadataReader, foregroundWork: foregroundWork, isCancelled: isCancelled)
-                refreshed[file.id] = fresh
-                if ArchiveMetadataIndex.Metadata(fresh) != reused { changed[file.id] = fresh }
+                do {
+                    let fresh = try FolderScanner.recheckMetadata(for: file, index: index,
+                        metadataReader: metadataReader, foregroundWork: foregroundWork, isCancelled: isCancelled)
+                    refreshed[file.id] = fresh
+                    if ArchiveMetadataIndex.Metadata(fresh) != reused { changed[file.id] = fresh }
+                } catch FolderScanner.ScanError.fileChangedDuringMetadataLoad {
+                    skipped.insert(file.id)
+                }
             }
         }
-        let ready = items.map { item in
-            PhotoItem(primaryFile: refreshed[item.primaryFile.id] ?? item.primaryFile,
-                      pairedFile: item.pairedFile.map { refreshed[$0.id] ?? $0 })
+        // A changed/missing file costs only its own next-opening cache miss.
+        // Keep the complete directory and opened-root barriers fatal below.
+        let volumes = FileOperationJournal.VolumeLookup()
+        func validated(_ file: PhotoFile) throws -> PhotoFile? {
+            guard !skipped.contains(file.id) else { return nil }
+            let fresh = refreshed[file.id] ?? file
+            do {
+                try FolderScanner.validateScannedIdentities([PhotoItem(primaryFile: fresh)],
+                    isCancelled: isCancelled, volumes: volumes)
+                return fresh
+            } catch FolderScanner.ScanError.filesChangedDuringScan {
+                changed.removeValue(forKey: file.id)
+                return nil
+            }
         }
-        try FolderScanner.validateScannedIdentities(ready, isCancelled: isCancelled)
+        let ready = try items.compactMap { item -> PhotoItem? in
+            let primary = try validated(item.primaryFile)
+            let paired = try item.pairedFile.flatMap { try validated($0) }
+            if let primary { return PhotoItem(primaryFile: primary, pairedFile: paired) }
+            return paired.map { PhotoItem(primaryFile: $0) }
+        }
         try FolderScanner.validateDirectories(in: inventory, isCancelled: isCancelled)
         guard !isCancelled() else { throw CancellationError() }
         guard folderIdentity.matches(folder: inventory.root) else {

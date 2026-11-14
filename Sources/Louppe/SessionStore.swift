@@ -1099,6 +1099,7 @@ final class SessionStore: ObservableObject {
     private(set) var recoveryBatchesAppliedForTesting = 0
     var pendingRecoveryResultCountForTesting: Int { pendingContentResults.count }
     var contentCheckpointIsPendingForTesting: Bool { contentCheckpointPending }
+    var contentResultsNeedCheckpointForTesting: Bool { contentResultsNeedCheckpoint }
 #endif
     private var prefetchDebounce: DispatchWorkItem?
     private var fullImagePrefetchTask: Task<Void, Never>?
@@ -3560,17 +3561,20 @@ final class SessionStore: ObservableObject {
                         let result = try recheck.run(index: commit.index, items: commit.items,
                                                      isCancelled: { cancelled.isSet })
                         try Task.checkCancellation()
-                        while !cancelled.isSet {
-                            let accepted: Bool? = await MainActor.run { [weak self] in
-                                guard let self else { return false }
+                        publication: while !cancelled.isSet {
+                            let publication = await MainActor.run { [weak self] in
+                                guard let self else { return MetadataRecheckPublication.rejected }
                                 return self.applyMetadataRecheck(result, generation: generation)
                             }
-                            if let accepted {
-                                if accepted && !cancelled.isSet {
-                                    commit.index.prepareCommit(result.items, isCancelled: { cancelled.isSet },
+                            switch publication {
+                            case .accepted(let items):
+                                if !cancelled.isSet {
+                                    commit.index.prepareCommit(items, isCancelled: { cancelled.isSet },
                                                                recheckedOSBuild: true)?.commit(isCancelled: { cancelled.isSet })
                                 }
-                                break
+                                break publication
+                            case .rejected: break publication
+                            case .deferred: break
                             }
                             // An operation may own item indices or pairing.
                             // Wait without holding up its completion or Quit.
@@ -3606,24 +3610,41 @@ final class SessionStore: ObservableObject {
     #if LOUPPE_TEST_SEAMS
     private(set) var metadataRecheckDeferralsForTesting = 0
     #endif
-    private func applyMetadataRecheck(_ result: SessionOpeningMetadataRecheck.Result, generation: UInt64) -> Bool? {
+    private enum MetadataRecheckPublication: Sendable {
+        case deferred, rejected
+        case accepted([PhotoItem])
+    }
+
+    private func applyMetadataRecheck(_ result: SessionOpeningMetadataRecheck.Result,
+                                      generation: UInt64) -> MetadataRecheckPublication {
         guard !Task.isCancelled, scanGeneration == generation, case .ready = phase,
-              !isPreparingForTermination else { return false }
+              !isPreparingForTermination else { return .rejected }
         guard !isFileOperationRunning, !isXMPPublicationRunning, !isChangingRawJPEGPairingMode else {
             #if LOUPPE_TEST_SEAMS
             metadataRecheckDeferralsForTesting += 1
             #endif
-            return nil
+            return .deferred
         }
-        guard !result.changedFiles.isEmpty else { return true }
-        let liveFiles = Dictionary(uniqueKeysWithValues: items.flatMap(\.individualFiles).map { ($0.id, $0) })
-        guard result.changedFiles.allSatisfy({ id, fresh in
-            liveFiles[id]?.scannedIdentity == fresh.scannedIdentity
-        }) else { return false }
+        let liveFiles = Dictionary(items.flatMap(\.individualFiles).map { ($0.id, $0) },
+                                   uniquingKeysWith: { first, _ in first })
+        // An operation may have removed/replaced files while publication waited.
+        // Such observations must stay out of the new-context snapshot too.
+        func retained(_ file: PhotoFile) -> PhotoFile? {
+            guard let live = liveFiles[file.id], live.scannedIdentity == file.scannedIdentity else { return nil }
+            return file
+        }
+        let snapshot = result.items.compactMap { item -> PhotoItem? in
+            let primary = retained(item.primaryFile)
+            let paired = item.pairedFile.flatMap(retained)
+            if let primary { return PhotoItem(primaryFile: primary, pairedFile: paired) }
+            return paired.map { PhotoItem(primaryFile: $0) }
+        }
         // Hidden partners stay lightweight, as on a cold paired opening;
         // their refreshed observations belong only in the cache until split.
-        let changes = result.changedFiles.filter { liveFiles[$0.key]?.metadataIsLoaded == true }
-        guard !changes.isEmpty else { return true }
+        let changes = result.changedFiles.filter { id, fresh in
+            liveFiles[id]?.metadataIsLoaded == true && liveFiles[id]?.scannedIdentity == fresh.scannedIdentity
+        }
+        guard !changes.isEmpty else { return .accepted(snapshot) }
         let currentID = currentItem?.id
         let selectedIDs = selectionState.itemIDs
         let fallbackIndex = currentIndex
@@ -3638,15 +3659,23 @@ final class SessionStore: ObservableObject {
         invalidateDuplicateBurstAnalysis(rebuildLayout: false)
         cancelNeighbourPrefetch()
         setSelectionIndices([])
+        let evidence = qualityCueEvidence
         items = FolderScanner.sortItems(items.map {
             PhotoItem(primaryFile: updated($0.primaryFile), pairedFile: $0.pairedFile.map(updated))
         })
+        // The refresh changes scan observations, not photo content. Restore
+        // revision-matching measurements before rebuilding the cue projection.
+        for item in items {
+            guard let retained = evidence[item.id], retained.revision == item.contentRevision else { continue }
+            qualityCueEvidence[item.id] = retained
+            if retained.sampleCount > 0 { qualityCueMeasuredCount += 1 }
+        }
         rebuildDerivedData()
         restoreCurrentItem(itemID: currentID, fallbackIndex: fallbackIndex)
         if !synchronizeFilterRangesWithAvailableData() { applyFilter() }
         restoreSelection(itemIDs: selectedIDs, visibleOnly: true)
         prefetchAroundCurrent()
-        return true
+        return .accepted(snapshot)
     }
 
     private func cancelMetadataRechecks() {
@@ -7253,7 +7282,7 @@ final class SessionStore: ObservableObject {
         if currentSessionIsDurable {
             // Decisions are durable; still write fingerprints proven since the
             // last snapshot. Their failure never blocks the transition.
-            if contentCheckpointPending, let request = makeSaveRequest() {
+            if contentCheckpointPending || contentResultsNeedCheckpoint, let request = makeSaveRequest() {
                 let outcome = await enqueuePersistenceSave(request).value
                 applyPersistenceResult(outcome.result, request: outcome.request)
                 if outcome.result.canDiscardInMemoryState { return outcome.result }
@@ -7588,6 +7617,7 @@ final class SessionStore: ObservableObject {
         )
         sessionContentCapturedProofs = sessionContentProofs
         cancelContentCheckpoint()
+        contentResultsNeedCheckpoint = false
         saveSequence &+= 1
         return SaveRequest(
             folder: folder,
