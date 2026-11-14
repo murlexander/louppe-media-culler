@@ -158,8 +158,11 @@ persistence reads and final identity checks.
   histogram pipelines; showing another photo cancels a request in flight. In
   Gallery a JPEG XL photo is measured only from the Fit preview Gallery has cached
   or is decoding; the cue starts no decode of its own there. Exact evidence is
-  never replaced by an estimate. A JPEG XL photo without a cached
-  thumbnail stays unmeasured until its tile or the photo is shown. While a
+  never replaced by an estimate. The walk measures one JPEG XL photo per batch;
+  a missing JPEG XL thumbnail is built through the shared thumbnail pipeline
+  once foreground demand settles and written under the Browser's disk-cache
+  key, without admitting its pixels to thumbnail memory, so a later tile is a
+  disk hit. While a
   clipping cue is on, evidence persists per opened folder in
   `quality-cue-evidence-v1/<folder key>.lqc` (exact path plus file identity,
   counts not verdicts; 256 folders, 64 MiB, oldest first): a reopen applies hits
