@@ -124,7 +124,8 @@ The owner and several agents often work on this checkout at the same time.
   trailing values, automatic picker and toggle styling. Toolbar popovers (Sort,
   Filter) share Filter's compact layout: bold title, compact rows and
   checkboxes, Divider-separated sections, 14-point margins, 340-point width,
-  footer with Done trailing; keep semantic differences such as multi-selection
+  Reset icon beside the title and no Done button (choices apply at once; Esc or
+  a click outside closes); keep semantic differences such as multi-selection
   checkboxes and action menus.
 - Dropdowns outside grouped Forms are a `Menu` with `.menuStyle(.button)` and
   `.buttonStyle(.borderless)`, as in `ArchiveBreadcrumbView`; put a choice

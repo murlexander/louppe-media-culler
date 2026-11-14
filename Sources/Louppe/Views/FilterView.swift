@@ -93,7 +93,8 @@ struct FilterView: View {
 
     var body: some View {
         CompactToolbarPopover(title: L10n.text("Filter"), height: 560,
-                              done: { store.isFilterPresented = false }) {
+                              done: { store.isFilterPresented = false },
+                              reset: resetFilter, canReset: canResetFilter) {
             if let batch = store.photosBatch {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
@@ -115,13 +116,11 @@ struct FilterView: View {
                 rawJPEGPairingToggle
             }
             filterSections
-        } footerLeading: {
+        } footer: {
             Text(L10n.text("Showing \(L10n.number(store.visibleIndices.count)) of \(L10n.number(store.items.count))"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
-        } footerActions: {
-            resetButton
         }
         .onAppear {
             syncAllSettingDrafts()
@@ -784,14 +783,15 @@ struct FilterView: View {
         }
     }
 
-    private var resetButton: some View {
-        Button(L10n.text("Reset")) {
-            focusedSettingField = nil
-            store.exitGroupedReview()
-            store.resetFilter()
-            syncAllSettingDrafts()
-        }
-        .disabled(!store.filterCanReset && !store.isGroupedReviewActive && !store.isDuplicateBurstAnalysisRunning)
+    private func resetFilter() {
+        focusedSettingField = nil
+        store.exitGroupedReview()
+        store.resetFilter()
+        syncAllSettingDrafts()
+    }
+
+    private var canResetFilter: Bool {
+        store.filterCanReset || store.isGroupedReviewActive || store.isDuplicateBurstAnalysisRunning
     }
 
     // MARK: - Filter bindings

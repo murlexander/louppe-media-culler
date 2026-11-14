@@ -1683,6 +1683,15 @@ final class SessionStore: ObservableObject {
             || (isGroupedReviewActive && groupedReviewMode != .captureBursts)
     }
 
+    /// Sort's Reset: the Settings order and grouping, and normal review again.
+    /// A burst review stays; it belongs to Filter.
+    func resetSort() {
+        let preferences = ReviewPreferences.load(from: reviewDefaults)
+        if isGroupedReviewActive && groupedReviewMode != .captureBursts { exitGroupedReview() }
+        sort = preferences.defaultSort
+        isGroupingEnabled = preferences.isGroupingEnabled
+    }
+
     var isDuplicateBurstAnalysisRunning: Bool {
         duplicateBurstAnalysisState == .analyzing
     }

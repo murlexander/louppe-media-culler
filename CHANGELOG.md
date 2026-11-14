@@ -8,6 +8,7 @@
 - Keep Shift-click and Command-click selection the same while a folder opens and after it is ready. After browsing an opening folder, the first Esc no longer closes it; press Esc again to cancel.
 - Keep the next keyboard-selected Grid photo in view after a decision hides the current one.
 - Restore sharp 100% detail when panning away and back quickly, and free memory sooner when browsing fast.
+- Drop the Done button from Filter and Sort: choices apply at once, and Esc or a click outside closes them. Reset is now an icon beside the title, and Sort has one too.
 - Keep dialog buttons and warning actions readable when labels are long, with the close button at the far right. Selection in inactive windows is neutral grey, and VoiceOver reads Sort and Filter titles as headings.
 
 - Let Organize move photos without XMP beside hidden or similarly named files, and move shared XMP when all its owners keep their names and move together.

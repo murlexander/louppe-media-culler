@@ -7,7 +7,8 @@ struct SortView: View {
     @ObservedObject var store: SessionStore
 
     var body: some View {
-        CompactToolbarPopover(title: L10n.text("Sort"), done: { store.isSortPresented = false }) {
+        CompactToolbarPopover(title: L10n.text("Sort"), done: { store.isSortPresented = false },
+                              reset: store.resetSort, canReset: store.isSortActive) {
             VStack(alignment: .leading, spacing: 8) {
                 pickerRow(L10n.text("Sort by"), value: store.sort.key.popoverLabel,
                           selection: $store.sort.key, identifier: "louppe.sortKey") {
@@ -98,8 +99,6 @@ struct SortView: View {
                 }
                 caption(store.duplicateBurstAnalysisSummary)
             }
-
-            Divider()
         }
     }
 

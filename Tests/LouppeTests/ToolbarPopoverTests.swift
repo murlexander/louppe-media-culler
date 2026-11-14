@@ -123,6 +123,46 @@ final class ToolbarPopoverTests: XCTestCase {
         }
     }
 
+    func testPopoversHaveNoDoneButtonAndResetSitsBesideTheTitle() async throws {
+        let suite = "ToolbarPopoverTests.Reset.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SessionStore(reviewDefaults: defaults)
+        for (isFilter, title) in [(true, L10n.text("Filter")), (false, L10n.text("Sort"))] {
+            let host = NSHostingView(rootView: (isFilter
+                ? AnyView(FilterView(store: store)) : AnyView(SortView(store: store)))
+                .environment(\.accessibilityEnabled, true))
+            let window = mount(host)
+            defer { window.close() }
+            try await Task.sleep(for: .milliseconds(100))
+            host.layoutSubtreeIfNeeded()
+            let elements = accessibilityElements(in: host)
+            let labels = elements.compactMap { accessibilityString($0, "accessibilityLabel") }
+            XCTAssertFalse(labels.contains(L10n.text("Done")), "\(title) applies choices at once; no Done button")
+            let reset = try XCTUnwrap(elements.first { accessibilityString($0, "accessibilityLabel") == L10n.text("Reset") })
+            let heading = try XCTUnwrap(elements.first { accessibilityString($0, "accessibilityLabel") == title })
+            let resetFrame = try XCTUnwrap(reset.value(forKey: "accessibilityFrame") as? NSValue).rectValue
+            let headingFrame = try XCTUnwrap(heading.value(forKey: "accessibilityFrame") as? NSValue).rectValue
+            XCTAssertLessThan(abs(resetFrame.midY - headingFrame.midY), 6, "Reset shares the title's row")
+            XCTAssertGreaterThan(resetFrame.minX, headingFrame.maxX)
+        }
+    }
+
+    func testSortResetRestoresTheSettingsOrderAndGrouping() throws {
+        let suite = "ToolbarPopoverTests.SortReset.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SessionStore(reviewDefaults: defaults)
+        XCTAssertFalse(store.isSortActive)
+        store.sort.key = .name
+        store.sort.ascending = false
+        store.isGroupingEnabled.toggle()
+        XCTAssertTrue(store.isSortActive)
+        store.resetSort()
+        XCTAssertEqual(store.sort, ReviewPreferences.load(from: defaults).defaultSort)
+        XCTAssertFalse(store.isSortActive)
+    }
+
     func testToolbarPopoversShareTheirScaffoldAndOwnedDropdownsStayModern() throws {
         let repository = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -130,7 +170,7 @@ final class ToolbarPopoverTests: XCTestCase {
         for file in ["SortView.swift", "FilterView.swift"] {
             let source = try String(contentsOf: views.appendingPathComponent(file), encoding: .utf8)
             XCTAssertFalse(source.contains(".padding(14)"), "Popover margins belong to the scaffold")
-            XCTAssertFalse(source.contains(".keyboardShortcut(.cancelAction)"), "Done belongs to the scaffold")
+            XCTAssertFalse(source.contains(".keyboardShortcut(.cancelAction)"), "Esc belongs to the scaffold")
         }
         let deprecated = try NSRegularExpression(pattern:
             #"\.pickerStyle\s*\(\s*\.menu\s*\)|\.menuStyle\s*\(\s*\.(?:borderedButton|borderlessButton)\s*\)"#)
