@@ -12,7 +12,7 @@ text alongside your photos. [Watch the walkthrough](https://louppe.eu/#review-de
 
 Requires **Apple silicon and macOS 14 or newer**. Intel Macs are unsupported.
 
-- [Mac App Store](https://apps.apple.com/app/louppe/id6820131477)
+- [Mac App Store](https://apps.apple.com/app/louppe/id6820131477?pt=128797295&ct=github-readme&mt=12)
 - [Direct download](https://github.com/murlexander/louppe-media-culler/releases/latest)
   — download `Louppe.zip`, unzip it, and drag `Louppe.app` into Applications.
   The public download is signed and notarized by Apple; macOS may ask you to
