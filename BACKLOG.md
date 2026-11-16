@@ -1,10 +1,10 @@
 # Louppe app backlog
 
-Updated on 14 November 2026. **1.14.0 (18) is published** on GitHub, Sparkle and
+Updated on 16 November 2026. **1.14.0 (18) is published** on GitHub, Sparkle and
 Homebrew ([release record](Docs/RELEASE_1.14.0_PREPARATION_2026-11-13.md)).
-**1.14.1 (19) is built from `0f8b861` but not published**: the notarized ZIP, the
-signed feed and the Store package wait in ignored
-`dist/release-preparation/1.14.1-19-2026-11-14/` for Alex's go-ahead. The App
+**1.14.1 (19) is rebuilt from `2e2f061` plus release documentation but not published**:
+the notarized ZIP, signed feed and Store package wait in ignored
+`dist/release-preparation/1.14.1-19-2026-11-16/` for Alex's go-ahead. The App
 Store has 1.13.2 (17), submitted for review on 8 November.
 Implemented changes belong in [CHANGELOG.md](CHANGELOG.md); this backlog
 contains unfinished work only.
@@ -127,8 +127,10 @@ None counts as passed until run in its stated environment. Owner: **Alex** unles
 
 ### Distribution
 
-- [ ] **App Store 1.14.1 (19).** Upload the package built from `0f8b861` (or rebuild
-  from tag `v1.14.1`, release step 7) and submit for review (Alex, 13 November 2026); 1.14.0 had no Store build. 1.13.2 (17) was
+- [ ] **App Store 1.14.1 (19).** Upload the package rebuilt from `2e2f061` plus
+  release documentation in `dist/release-preparation/1.14.1-19-2026-11-16/store/`
+  (or rebuild from tag `v1.14.1`, release step 7) and submit for review after
+  Alex's approval; 1.14.0 had no Store build. 1.13.2 (17) was
   submitted on 8 November with automatic release; respond to any review request.
 - [ ] **TestFlight — out of scope (Alex, 4 November 2026).** Every delivery shows
   ITMS-90889: the bundle has no provisioning profile. Enabling TestFlight needs a

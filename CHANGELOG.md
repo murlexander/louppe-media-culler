@@ -1,6 +1,6 @@
 # Version History
 
-## 1.14.1 (19) — 2026-11-13
+## 1.14.1 (19) — 2026-11-16
 
 - Explain the chosen key under the Settings keyboard map, and assign a free key to an action from there. Pointing at a shortcut lights its key; a filtered shortcut group can be collapsed. Thanks to Andrey Markin (@Mark-Life) for the keyboard map refinements in this update.
 - Show audio levels for iPhone spatial-audio videos and other recordings whose extra tracks fall back to the main one.
