@@ -61,6 +61,23 @@ final class PairComponentCleanUpScopeTests: XCTestCase {
         }
     }
 
+    /// Trash Paired JPEGs/RAWs name JPEG, so a RAW paired with HEIF or
+    /// JPEG XL is never their target.
+    func testNonJPEGCompanionPairsAreNotPairMemberCleanUpTargets() throws {
+        for companion in ["HEIC", "jxl"] {
+            for together in [false, true] {
+                let fixture = try makePair(together: together, companionExtension: companion)
+                defer { try? FileManager.default.removeItem(at: fixture.root) }
+                let store = fixture.store
+                XCTAssertEqual(store.rawJPEGPairCount, 1)
+                store.cleanUpScope = .all
+                for mode in [CleanUpMode.pairedJPEGs, .pairedRAWs] {
+                    assertTargets(store, mode: mode, count: 0, bytes: 0)
+                }
+            }
+        }
+    }
+
     private func assertTargets(
         _ store: SessionStore,
         mode: CleanUpMode,
@@ -76,7 +93,7 @@ final class PairComponentCleanUpScopeTests: XCTestCase {
         XCTAssertEqual(counts.bytes, bytes, file: file, line: line)
     }
 
-    private func makePair(together: Bool) throws -> (
+    private func makePair(together: Bool, companionExtension: String = "JPG") throws -> (
         root: URL, raw: URL, jpeg: URL, store: SessionStore
     ) {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(
@@ -84,7 +101,7 @@ final class PairComponentCleanUpScopeTests: XCTestCase {
         )
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let rawURL = root.appendingPathComponent("PAIR.NEF")
-        let jpegURL = root.appendingPathComponent("PAIR.JPG")
+        let jpegURL = root.appendingPathComponent("PAIR.\(companionExtension)")
         try Data("raw".utf8).write(to: rawURL)
         try Data("jpeg".utf8).write(to: jpegURL)
         let raw = PhotoFile(
@@ -93,7 +110,7 @@ final class PairComponentCleanUpScopeTests: XCTestCase {
             starRating: .five, colorLabel: .purple
         )
         let jpeg = PhotoFile(
-            id: "PAIR.JPG", url: jpegURL, captureDate: nil, cameraModel: nil,
+            id: "PAIR.\(companionExtension)", url: jpegURL, captureDate: nil, cameraModel: nil,
             lensModel: nil, fileSize: 4, rating: .no,
             starRating: .one, colorLabel: .red
         )

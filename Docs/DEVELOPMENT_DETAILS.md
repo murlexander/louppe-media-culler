@@ -22,7 +22,7 @@ it to every view.
 | `Sources/Louppe/DurableFileIO.swift` | POSIX write/sync/rename/directory-sync boundary shared by sessions and file-operation journals |
 | `Sources/Louppe/FileOperationJournal.swift` | Per-file durable Copy/Move/Rename/Organize/Trash/undo checkpoints, stable file identity, and launch recovery |
 | `Sources/Louppe/CleanUpWorker.swift` | Background Trash/restore file loops, progress throttling, pair rollback, O(n+k) restoration merge |
-| `Sources/Louppe/FolderScanner.swift` | Recursive scans, deterministic volume-aware RAW+JPEG pairing, lazy JPEG metadata, pairing projection, chronological sort |
+| `Sources/Louppe/FolderScanner.swift` | Recursive scans, deterministic volume-aware RAW+companion pairing, lazy JPEG metadata, pairing projection, chronological sort |
 | `Sources/Louppe/PinnedFolders.swift` | Durable identity-bound pins/bookmarks and bounded independent current/viewport positions, separate from decisions/caches |
 | `Sources/Louppe/PinnedFolderPreparation.swift` | Serial, cancellable background cache warm-up for pinned folders while Welcome is idle |
 | `Sources/Louppe/ArchiveFolderIndex.swift` | Exact directory manifest, deterministic native-tree nodes, pair-aware counts and subtree membership postings |
@@ -515,6 +515,11 @@ are independent; XCTest defaults use disposable storage.
   root path, on-disk name bytes). Saved decisions, caches and sidecar matching
   key on them; `FolderScannerDiscoveryEquivalenceTests` compares both walks,
   including on exFAT and HFS+ via `LOUPPE_DISCOVERY_FIXTURE_PARENT`.
+- A RAW pairs with one same-stem companion from the first tier present in
+  `FolderScanner.rawCompanionExtensionTiers` (JPEG, HEIF, JPEG XL); an ambiguous
+  tier pairs nothing. HEIF and JPEG XL count only in the RAW's own folder, since
+  phones reuse camera names like `IMG_1234.HEIC`. "JPEG" in pair names and the XMP resolver means that
+  companion, but Trash Paired JPEGs/RAWs act only on JPEG companions.
 - Pairing projects physical `PhotoFile` records. Grouped scans keep hidden JPEGs
   lightweight; the first split loads missing metadata off-main, and later toggles
   reuse it without rescan. Different decisions form Mixed, treated as undecided

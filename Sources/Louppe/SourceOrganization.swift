@@ -335,9 +335,7 @@ enum SourceOrganizationPlanner {
                     )
                   }),
                   let jpeg = item.individualFiles.first(where: {
-                    ["jpg", "jpeg"].contains(
-                        $0.url.pathExtension.lowercased()
-                    )
+                    FolderScanner.isRAWCompanionExtension($0.url.pathExtension)
                   }) else { return nil }
             return SourceOrganizationPairedFiles(
                 rawFileID: raw.id,

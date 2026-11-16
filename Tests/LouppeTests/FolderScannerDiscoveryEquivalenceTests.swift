@@ -557,6 +557,18 @@ final class FolderScannerDiscoveryEquivalenceTests: XCTestCase {
         try file("archive/amb2/AMB_2.NEF")
         try file("archive/amb2/AMB_2.JPG")
         try file("archive/amb3/AMB_2.jpeg")
+        // RAW companion tiers: JPEG first, then HEIF, then JPEG XL beside the RAW.
+        try file("archive/tier/TIER_1.3FR")
+        try file("archive/tier/TIER_1.JPG")
+        try file("archive/tier/TIER_1.HEIC")
+        try file("archive/tier/TIER_2.CR3")
+        try file("archive/tier/TIER_2.hif")
+        try file("archive/tier/TIER_2.HEIF")
+        try file("archive/tier/TIER_2.jxl")
+        try file("archive/tier/TIER_3.NEF")
+        try file("archive/phone/TIER_3.HEIC")
+        try file("archive/tier/TIER_4.ARW")
+        try file("archive/tier/TIER_4.heic")
     }
 
     // MARK: Assertions

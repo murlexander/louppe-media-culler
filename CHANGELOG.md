@@ -23,6 +23,7 @@
 - Finish interrupted Move recovery even when an emptied source or destination folder was removed, and keep recovery pending until restored files are safely saved.
 - Keep Photos originals that interrupted Copy recovery still needs, respect turned-off iCloud downloads for waiting requests, and keep file commands available while old Photos temporary files are removed.
 - Keep folder pins and positions safe when saves overlap or a write is interrupted, and tie saved decisions to verified file content.
+- Pair RAW files, including Hasselblad .3FR, with a same-named HEIC/HEIF or JPEG XL file when there is no JPEG. The grouped item shows its real type, such as RAW + HEIC. Thanks to 人民艺术家 (@Wanguy) for reporting this.
 
 ## 1.14.0 (18) — 2026-11-13
 

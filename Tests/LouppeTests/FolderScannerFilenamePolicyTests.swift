@@ -62,6 +62,67 @@ final class FolderScannerFilenamePolicyTests: XCTestCase {
         XCTAssertEqual(pairs.first?.jpeg.url.lastPathComponent, "MATCH.JPG")
     }
 
+    /// Issue #5: Hasselblad .3FR and every other RAW pair with a same-stem
+    /// JPEG, else HEIF, else JPEG XL. An ambiguous preferred tier never falls
+    /// back to a lower one.
+    func testScanPairsRAWWithItsPreferredSameStemCompanion() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("Louppe-Companions-\(UUID().uuidString)")
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: root) }
+        for name in [
+            "B0001.3FR", "B0001.JPG",
+            "B0002.3FR", "B0002.HEIC",
+            "B0003.fff", "B0003.hif",
+            "N0004.NEF", "N0004.jxl",
+            "B0005.3FR", "B0005.JPG", "B0005.HEIC",
+            "B0006.3FR", "B0006.JPG", "B0006.jpeg", "B0006.HEIC",
+            "B0007.3FR", "B0007.HEIF", "B0007.jxl",
+            // Canon and iPhone reuse names: a HEIF elsewhere never pairs.
+            "Canon/IMG_0008.CR3", "iPhone/IMG_0008.HEIC",
+            "Canon/IMG_0009.CR3", "Canon/IMG_0009.HIF", "iPhone/IMG_0009.HEIC",
+            "Card1/DSC_0010.NEF", "Card2/DSC_0010.JPG",
+        ] {
+            let url = root.appendingPathComponent(name)
+            try fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data(name.utf8).write(to: url)
+        }
+
+        let items = try FolderScanner.scan(root, pairingMode: .together) { _ in }
+        let pairs = Dictionary(uniqueKeysWithValues: items.map {
+            ($0.primaryURL.lastPathComponent, $0.pairedURL?.lastPathComponent)
+        })
+
+        XCTAssertEqual(pairs["B0001.3FR"], "B0001.JPG")
+        XCTAssertEqual(pairs["B0002.3FR"], "B0002.HEIC")
+        XCTAssertEqual(pairs["B0003.fff"], "B0003.hif")
+        XCTAssertEqual(pairs["N0004.NEF"], "N0004.jxl")
+        XCTAssertEqual(pairs["B0005.3FR"], "B0005.JPG")
+        XCTAssertEqual(pairs["B0005.HEIC"], .some(nil))
+        for name in ["B0006.3FR", "B0006.JPG", "B0006.jpeg", "B0006.HEIC"] {
+            XCTAssertEqual(pairs[name], .some(nil), name)
+        }
+        XCTAssertEqual(pairs["B0007.3FR"], "B0007.HEIF")
+        XCTAssertEqual(pairs["B0007.jxl"], .some(nil))
+        XCTAssertEqual(pairs["IMG_0008.CR3"], .some(nil))
+        XCTAssertEqual(pairs["IMG_0008.HEIC"], .some(nil))
+        XCTAssertEqual(pairs["IMG_0009.CR3"], "IMG_0009.HIF")
+        XCTAssertEqual(pairs["IMG_0009.HEIC"], .some(nil))
+        XCTAssertEqual(pairs["DSC_0010.NEF"], "DSC_0010.JPG")
+        XCTAssertEqual(items.count, 17)
+
+        let labels = Dictionary(uniqueKeysWithValues: items.map {
+            ($0.primaryURL.lastPathComponent, $0.fileTypeLabel)
+        })
+        XCTAssertEqual(labels["B0001.3FR"], "RAW + JPEG")
+        XCTAssertEqual(labels["B0002.3FR"], "RAW + HEIC")
+        XCTAssertEqual(labels["N0004.NEF"], "RAW + JXL")
+
+        let separate = try FolderScanner.scan(root, pairingMode: .separate) { _ in }
+        XCTAssertEqual(separate.count, 25)
+        XCTAssertTrue(separate.allSatisfy { $0.pairedFile == nil })
+    }
+
     func testAccentedAndUnaccentedNamesNeverPair() {
         let files = [
             mediaURL("cafe.NEF"),

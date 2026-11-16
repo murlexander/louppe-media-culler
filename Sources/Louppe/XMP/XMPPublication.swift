@@ -81,6 +81,7 @@ enum XMPMetadataDimension: String, CaseIterable, Hashable, Sendable {
 struct XMPSameStemConflictDescriptor: Equatable, Sendable, Identifiable {
     enum Role: String, Equatable, Sendable {
         case raw
+        /// The RAW's same-stem companion: JPEG, HEIF or JPEG XL.
         case jpeg
         case other
     }
@@ -135,8 +136,8 @@ struct XMPSameStemConflictDescriptor: Equatable, Sendable, Identifiable {
               FolderScanner.rawExtensions.contains(
                 raw.exactPath.url.pathExtension.lowercased()
               ),
-              ["jpg", "jpeg"].contains(
-                jpeg.exactPath.url.pathExtension.lowercased()
+              FolderScanner.isRAWCompanionExtension(
+                jpeg.exactPath.url.pathExtension
               ) else { return false }
 
         var actualDifferences: Set<XMPMetadataDimension> = []
@@ -167,7 +168,7 @@ struct XMPSameStemConflictDescriptor: Equatable, Sendable, Identifiable {
             let role: Role
             if FolderScanner.rawExtensions.contains(ext) {
                 role = .raw
-            } else if ext == "jpg" || ext == "jpeg" {
+            } else if FolderScanner.isRAWCompanionExtension(ext) {
                 role = .jpeg
             } else {
                 role = .other

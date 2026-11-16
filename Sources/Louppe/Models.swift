@@ -770,7 +770,7 @@ struct PhotoItem: Identifiable, Sendable {
     var pairedURL: URL? { pairedFile?.url }
     var displayName: String { primaryFile.displayName }
     var fileTypeLabel: String {
-        pairedFile == nil ? primaryFile.fileTypeLabel : "RAW + JPEG"
+        pairedFile.map { "RAW + \($0.fileTypeLabel)" } ?? primaryFile.fileTypeLabel
     }
     var mediaKind: MediaKind { primaryFile.mediaKind }
     var duration: TimeInterval? { primaryFile.duration }

@@ -170,9 +170,10 @@ unavailable originals must be made accessible in Photos first.
   changes ratings or files automatically. **View → Review Groups** offers the
   same groups; **Return to Normal Review** exits them.
 - **Filter** can group matching RAW+JPEG files as one item while retaining
-  separate decisions, stars, and colors.
+  separate decisions, stars, and colors. Without a same-named JPEG, a RAW pairs
+  with its HEIC/HEIF, then JPEG XL file in the same folder.
 - **Clean Up** supports All Media, Filtered, and Selected scopes, plus
-  RAW-only or JPEG-only Trash for unambiguous pairs. **⌘Z** restores the batch
+  RAW-only or JPEG-only Trash for unambiguous RAW+JPEG pairs. **⌘Z** restores the batch
   before closing the session, while files remain in Trash. **⌘⌫** trashes the
   selection without a dialog; marking **No** never trashes anything.
 - **Organize Source Folder** previews nested folders before moving files.

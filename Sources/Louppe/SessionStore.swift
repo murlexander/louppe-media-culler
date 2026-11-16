@@ -5093,7 +5093,7 @@ final class SessionStore: ObservableObject {
     /// Structural boundary, after pairing and the physical-file map are ready.
     private func rebuildCleanUpAvailability() {
         cleanUpFacts = items.map { CleanUpFact.decision($0.ratingState) }
-        for pair in rawJPEGPairs {
+        for pair in pairMemberCleanUpPairs {
             if let index = itemIndexByFileID[pair.jpeg.id] { cleanUpFacts[index] |= CleanUpFact.jpeg }
             if let index = itemIndexByFileID[pair.raw.id] { cleanUpFacts[index] |= CleanUpFact.raw }
         }
@@ -5180,6 +5180,13 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    /// Trash Paired JPEGs/RAWs name JPEG in their commands and dialogs, so
+    /// they act only on pairs whose companion is a JPEG. HEIF and JPEG XL
+    /// companions stay paired for review and are never their target.
+    private var pairMemberCleanUpPairs: [(raw: PhotoFile, jpeg: PhotoFile)] {
+        rawJPEGPairs.filter { FolderScanner.rawCompanionTier($0.jpeg.url.pathExtension) == 0 }
+    }
+
     /// One single-file worker snapshot per qualifying pair. Pair discovery is
     /// independent of whether the review UI currently shows both files as one
     /// item or separately; scope membership follows the member being removed.
@@ -5188,7 +5195,7 @@ final class SessionStore: ObservableObject {
     ) -> [CleanUpPhotoSnapshot] {
         guard mode == .pairedJPEGs || mode == .pairedRAWs else { return [] }
         let candidateIndices = Set(cleanUpCandidates)
-        return rawJPEGPairs.compactMap { pair in
+        return pairMemberCleanUpPairs.compactMap { pair in
             let target = mode == .pairedJPEGs ? pair.jpeg : pair.raw
             guard let index = itemIndexByFileID[target.id],
                   candidateIndices.contains(index)

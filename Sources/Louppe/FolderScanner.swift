@@ -49,6 +49,34 @@ enum FolderScanner {
         "rwl",                      // Leica
     ]
 
+    /// Same-stem files a RAW pairs with, in order of preference: JPEG, then
+    /// HEIF (Canon and Sony write `.hif`), then JPEG XL. Only the first tier
+    /// present in a stem group may pair; while a camera's RAW + JPEG + HEIF
+    /// all exist, the JPEG pairs and the HEIF stays independent. A JPEG may
+    /// sit anywhere in the opened folder (cameras that write RAW and JPEG to
+    /// separate cards); HEIF and JPEG XL count only in the RAW's own folder,
+    /// because phones reuse camera names such as `IMG_1234.HEIC`.
+    static let rawCompanionExtensionTiers: [Set<String>] = [
+        ["jpg", "jpeg"],
+        ["heic", "heif", "hif"],
+        ["jxl"],
+    ]
+
+    /// The preference tier of a RAW companion extension (0 is JPEG), or nil.
+    static func rawCompanionTier(_ ext: String) -> Int? {
+        let lowered = ext.lowercased()
+        return rawCompanionExtensionTiers.firstIndex { $0.contains(lowered) }
+    }
+
+    static func isRAWCompanionExtension(_ ext: String) -> Bool {
+        rawCompanionTier(ext) != nil
+    }
+
+    /// The folder part of a `fileSystemIdentityPath`.
+    fileprivate static func parentIdentityPath(_ identityPath: String) -> Substring {
+        identityPath[..<(identityPath.lastIndex(of: "/") ?? identityPath.startIndex)]
+    }
+
     /// Types we can actually decode and preview: RAWs above, plus the
     /// still-image formats ImageIO handles.
     static let supportedExtensions: Set<String> = rawExtensions.union([
@@ -461,8 +489,8 @@ enum FolderScanner {
 
     /// Test-only reference: the pairing and lightweight-record code exactly as
     /// it was before the 30 October 2026 optimization (URL-keyed facts,
-    /// per-call path work, serial construction). Equivalence tests compare
-    /// `pairInventory` against it.
+    /// per-call path work, serial construction), with the current RAW
+    /// companion tiers. Equivalence tests compare `pairInventory` against it.
     private static func legacyPairInventory(
         root: URL, files: [URL], facts: [FileFacts?], directories: [ArchiveFolderIndex.Directory],
         pairingMode: RawJPEGPairingMode
@@ -503,7 +531,13 @@ enum FolderScanner {
             }
             for media in independentMedia { pairs.append((media, nil)) }
             let raws = images.filter { rawExtensions.contains($0.pathExtension.lowercased()) }
-            let jpegs = images.filter { ["jpg", "jpeg"].contains($0.pathExtension.lowercased()) }
+            let rawParent = raws.count == 1 ? parentIdentityPath(fileSystemIdentityPath(for: raws[0])) : nil
+            let jpegs = rawCompanionExtensionTiers.enumerated().lazy.map { tier, extensions in
+                images.filter {
+                    extensions.contains($0.pathExtension.lowercased())
+                        && (tier == 0 || parentIdentityPath(fileSystemIdentityPath(for: $0)) == rawParent)
+                }
+            }.first { !$0.isEmpty } ?? []
             if raws.count == 1, jpegs.count == 1, let raw = raws.first, let jpeg = jpegs.first {
                 pairIDs.append((relativeFileIdentity(of: raw, under: root),
                                 relativeFileIdentity(of: jpeg, under: root)))
@@ -881,7 +915,7 @@ enum FolderScanner {
     /// One file's pairing facts, computed once: the stable sort path and the
     /// classification that `pairFiles` and `lightweightFile` both use.
     fileprivate struct PairingCandidate {
-        enum Role { case independent, raw, jpeg, otherImage }
+        enum Role { case independent, raw, companion(tier: Int), otherImage }
 
         let url: URL
         /// `fileSystemIdentityPath(for: url)`.
@@ -901,7 +935,7 @@ enum FolderScanner {
                 role = .independent
             } else {
                 role = FolderScanner.rawExtensions.contains(lowered) ? .raw
-                    : (lowered == "jpg" || lowered == "jpeg" ? .jpeg : .otherImage)
+                    : (FolderScanner.rawCompanionTier(lowered).map { .companion(tier: $0) } ?? .otherImage)
             }
         }
     }
@@ -929,20 +963,26 @@ enum FolderScanner {
             let members = grouped.count == 1 ? grouped
                 : grouped.sorted { candidates[$0].identityPath < candidates[$1].identityPath }
             // Video and audio are always independent media, even when a
-            // camera gives them the same base name as a RAW. Only RAW + JPEG
-            // is a pair; grouping any other format would hide an original
-            // from the review session.
+            // camera gives them the same base name as a RAW. Only a RAW and
+            // its preferred companion (JPEG, else HEIF, else JPEG XL) form a
+            // pair; grouping any other format would hide an original from
+            // the review session.
             var images: [Int] = []
             var raws: [Int] = []
-            var jpegs: [Int] = []
+            var companionsByTier = Array(repeating: [Int](), count: rawCompanionExtensionTiers.count)
             for index in members {
                 switch candidates[index].role {
                 case .independent: pairs.append((index, nil))
                 case .raw: images.append(index); raws.append(index)
-                case .jpeg: images.append(index); jpegs.append(index)
+                case .companion(let tier): images.append(index); companionsByTier[tier].append(index)
                 case .otherImage: images.append(index)
                 }
             }
+            let rawParent = raws.count == 1 ? parentIdentityPath(candidates[raws[0]].identityPath) : nil
+            let jpegs = companionsByTier.enumerated().lazy.map { tier, members in
+                tier == 0 ? members
+                    : members.filter { parentIdentityPath(candidates[$0].identityPath) == rawParent }
+            }.first { !$0.isEmpty } ?? []
 
             if raws.count == 1, jpegs.count == 1 {
                 physicalPair?(raws[0], jpegs[0])
@@ -950,7 +990,8 @@ enum FolderScanner {
 
             // A shared stem is not enough evidence when more than one file
             // could fill either side. Never let sort order arbitrarily decide
-            // which original owns a JPEG: ambiguous groups stay independent.
+            // which original owns a companion: ambiguous groups stay
+            // independent, and a lower tier never replaces an ambiguous one.
             if pairingMode == .together, raws.count == 1, jpegs.count == 1 {
                 let raw = raws[0], jpeg = jpegs[0]
                 pairs.append((raw, jpeg))
@@ -965,7 +1006,7 @@ enum FolderScanner {
         return pairs
     }
 
-    /// Resolves the same unambiguous one-RAW/one-JPEG relationships used by
+    /// Resolves the same unambiguous one-RAW/one-companion relationships used by
     /// the grouped review projection while retaining the complete scanned
     /// physical-file records needed by pair-member Clean Up.
     static func rawJPEGPairs(
