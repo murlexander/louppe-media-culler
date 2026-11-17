@@ -23,6 +23,6 @@ The idle-gated Sparkle update of an isolated public 1.14.0 (18) archive (SHA-256
 
 ## App Store
 
-Package built from `38e2f4d`: `store/Louppe.pkg`, 8,131,821 bytes, SHA-256 `ef853937609d9b44c47411f6c3730179d158d638cb19c7a6bc72f376f11e6d77`. The Store has 1.13.2 (17), released 9 November, so nothing is in review. Delivery through Transporter waits for Alex.
+Package built from `38e2f4d`: `store/Louppe.pkg`, 8,131,821 bytes, SHA-256 `ef853937609d9b44c47411f6c3730179d158d638cb19c7a6bc72f376f11e6d77`. Alex clicked Deliver in Transporter on 17 November; build 19 processed as VALID. Version `a22ed25e-9721-4238-83c8-2625578d86c2` (1.14.1, build 19, export compliance `usesNonExemptEncryption=false`) carries What's New for all 11 locales covering 1.14.0 and 1.14.1 (`store/whats-new-1.14.1.json`), inherited descriptions, promotional text and 8 screenshots, review notes with a 1.14.1 first paragraph, and the unchanged `sample-media.zip` (33,273,155 bytes, re-uploaded; attachments don't carry over to a new version). Submission `276a88bb-8a1e-4fa9-a7e8-161daf9052c7` is **WAITING_FOR_REVIEW**, releasing automatically after approval.
 
 Artifacts, the update driver and logs are retained in ignored `dist/release-preparation/1.14.1-19-2026-11-16/`.

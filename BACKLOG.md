@@ -1,9 +1,9 @@
 # Louppe app backlog
 
 Updated on 17 November 2026. **1.14.1 (19) is published** on GitHub, Sparkle and
-Homebrew ([release record](Docs/RELEASE_1.14.1_PREPARATION_2026-11-17.md)). The
-App Store has 1.13.2 (17), released 9 November; the 1.14.1 package waits for
-Alex to deliver it in Transporter.
+Homebrew ([release record](Docs/RELEASE_1.14.1_PREPARATION_2026-11-17.md)). 1.14.1 was
+submitted to the App Store on 17 November and is Waiting for Review, releasing
+automatically after approval; the Store has 1.13.2 (17) until then.
 Implemented changes belong in [CHANGELOG.md](CHANGELOG.md); this backlog
 contains unfinished work only.
 
@@ -126,9 +126,8 @@ None counts as passed until run in its stated environment. Owner: **Alex** unles
 
 ### Distribution
 
-- [ ] **App Store 1.14.1 (19).** Deliver `dist/release-preparation/1.14.1-19-2026-11-16/store/Louppe.pkg`
-  (built from tag `v1.14.1`) in Transporter and submit for review (Alex); 1.14.0 had no
-  Store build. 1.13.2 (17) was released on 9 November.
+- [ ] **App Store 1.14.1 (19).** Waiting for Review since 17 November (automatic
+  release); respond to any review request.
 - [ ] **TestFlight — out of scope (Alex, 4 November 2026).** Every delivery shows
   ITMS-90889: the bundle has no provisioning profile. Enabling TestFlight needs a
   Mac App Store provisioning profile for `com.alexandermarkin.louppe` (team

@@ -1,6 +1,8 @@
 # App Store listing and search (ASO) — 4 November 2026
 
-Current Store state, verified 8 November: **1.13.1 (16) is Ready for Distribution**. Security update **1.13.2 (17) was submitted and is Waiting for Review**, with automatic release after approval. Apple accepted the delivered build as VALID / VALID_BINARY; export compliance is confirmed as Apple-system cryptography only (`usesNonExemptEncryption=false`).
+Current Store state, verified 17 November: **1.13.2 (17) is Ready for Distribution**. **1.14.1 (19) was submitted on 17 November and is Waiting for Review**, with automatic release after approval; its What's New covers 1.14.0 and 1.14.1 in all 11 locales, other metadata and screenshots are inherited, and export compliance is unchanged (`usesNonExemptEncryption=false`). See [1.14.1 release record](RELEASE_1.14.1_PREPARATION_2026-11-17.md).
+
+Previous state (8 November): 1.13.1 (16) was Ready for Distribution and security update 1.13.2 (17) was Waiting for Review. Apple accepted the delivered build as VALID / VALID_BINARY; export compliance is confirmed as Apple-system cryptography only (`usesNonExemptEncryption=false`).
 
 All 11 localized security notes and exact existing promotional text are saved; descriptions, keywords, 88 screenshots and existing ratings are preserved. Review notes identify the parser maintenance update. The attached `sample-media.zip` is a 33,273,155-byte subset of the unchanged existing review files, below the browser transfer limit. Alex completed the Transporter Deliver click; build selection, compliance and final submission were then completed and verified in App Store Connect. See [1.13.2 release record](RELEASE_1.13.2_PREPARATION_2026-11-08.md).
 
