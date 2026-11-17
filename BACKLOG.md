@@ -1,11 +1,9 @@
 # Louppe app backlog
 
-Updated on 16 November 2026. **1.14.0 (18) is published** on GitHub, Sparkle and
-Homebrew ([release record](Docs/RELEASE_1.14.0_PREPARATION_2026-11-13.md)).
-**1.14.1 (19) is rebuilt from `2e2f061` plus release documentation but not published**:
-the notarized ZIP, signed feed and Store package wait in ignored
-`dist/release-preparation/1.14.1-19-2026-11-16/` for Alex's go-ahead. The App
-Store has 1.13.2 (17), submitted for review on 8 November.
+Updated on 17 November 2026. **1.14.1 (19) is published** on GitHub, Sparkle and
+Homebrew ([release record](Docs/RELEASE_1.14.1_PREPARATION_2026-11-17.md)). The
+App Store has 1.13.2 (17), released 9 November; the 1.14.1 package waits for
+Alex to deliver it in Transporter.
 Implemented changes belong in [CHANGELOG.md](CHANGELOG.md); this backlog
 contains unfinished work only.
 
@@ -14,6 +12,7 @@ contains unfinished work only.
 [Agent work](#agent-work) · [Later and research](#later-and-research)
 
 [App guide](Docs/DEVELOPMENT.md) · [Website backlog](https://github.com/murlexander/louppe-website/blob/main/BACKLOG.md) ·
+[1.14.1 release record](Docs/RELEASE_1.14.1_PREPARATION_2026-11-17.md) ·
 [1.14.0 release record](Docs/RELEASE_1.14.0_PREPARATION_2026-11-13.md) ·
 [1.13.1 release record](Docs/RELEASE_1.13.1_PREPARATION_2026-11-04.md) ·
 [1.13 release record](Docs/RELEASE_1.13_PREPARATION_2026-11-04.md) ·
@@ -127,11 +126,9 @@ None counts as passed until run in its stated environment. Owner: **Alex** unles
 
 ### Distribution
 
-- [ ] **App Store 1.14.1 (19).** Upload the package rebuilt from `2e2f061` plus
-  release documentation in `dist/release-preparation/1.14.1-19-2026-11-16/store/`
-  (or rebuild from tag `v1.14.1`, release step 7) and submit for review after
-  Alex's approval; 1.14.0 had no Store build. 1.13.2 (17) was
-  submitted on 8 November with automatic release; respond to any review request.
+- [ ] **App Store 1.14.1 (19).** Deliver `dist/release-preparation/1.14.1-19-2026-11-16/store/Louppe.pkg`
+  (built from tag `v1.14.1`) in Transporter and submit for review (Alex); 1.14.0 had no
+  Store build. 1.13.2 (17) was released on 9 November.
 - [ ] **TestFlight — out of scope (Alex, 4 November 2026).** Every delivery shows
   ITMS-90889: the bundle has no provisioning profile. Enabling TestFlight needs a
   Mac App Store provisioning profile for `com.alexandermarkin.louppe` (team
