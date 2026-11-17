@@ -19,7 +19,7 @@ Alex approved the rebuilt candidate ("all looks fine, start publishing the new v
 
 `/Applications/Louppe.app` holds the released build since 16 November (Louppe was not running); its files match the candidate, and its signatures, Gatekeeper and stapling pass.
 
-The idle-gated Sparkle update of an isolated public 1.14.0 (18) archive (SHA-256 `f1902666…70ad`) runs from `run-idle-checks.sh` once the Mac is idle for 300 s; its result is in `idle-checks.log`.
+The idle-gated Sparkle check failed twice for harness reasons: with the headless driver ad-hoc signed, Sparkle 2.10.1 refused to start its installer (error 4005; Autoupdate needs a host signed with the same team ID). With the driver linked to the public 1.14.0 archive's Sparkle and signed with the Developer ID identity (team P6F95J4ZPA), the third run (idle 373 s) updated an isolated public 1.14.0 (18) copy (SHA-256 `f1902666…70ad`) to 1.14.1 (19) from the public feed: all 9,233,355 bytes downloaded and installed without launching the app, the updated `Contents/` matches the release, and strict signatures, Gatekeeper and stapling pass. The installed app still matches the release; Alex's preferences are unchanged apart from the app's own thumbnail-prune timestamp. Sign the driver this way in future runs.
 
 ## App Store
 
