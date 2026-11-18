@@ -33,6 +33,13 @@ final class FakeOpenWithWorkspace: OpenWithWorkspace, @unchecked Sendable {
     func displayName(ofApplicationAt url: URL) -> String { apps[url]?.name ?? url.lastPathComponent }
     func version(ofApplicationAt url: URL) -> String? { apps[url]?.version }
     func defaultApplicationURL(toOpen fileURL: URL) -> URL? { defaults[fileURL.standardizedFileURL] }
+    private(set) var iconsGiven: [(url: URL, icon: NSImage, onMain: Bool)] = []
+    func icon(ofApplicationAt url: URL) -> NSImage {
+        let icon = NSImage(size: NSSize(width: 32, height: 32))
+        lock.withLock { iconsGiven.append((url, icon, Thread.isMainThread)) }
+        return icon
+    }
+    var iconCount: Int { lock.withLock { iconsGiven.count } }
     func open(_ urls: [URL], withApplicationAt applicationURL: URL,
               completion: @escaping @Sendable ((any Error)?) -> Void) {
         lock.withLock { opens.append((urls, applicationURL)) }
@@ -281,12 +288,24 @@ final class OpenWithTests: XCTestCase {
                 .map(\.title)
         }
         // Opening the menu starts the off-main refresh.
+        let iconsBefore = workspace.iconCount
         coordinator.perform(willShow, with: button.cell, with: menu)
         await PhotoEditorCatalog.shared.waitForRefreshForTesting()
+        let refreshIcons = workspace.iconsGiven.dropFirst(iconsBefore)
+        XCTAssertEqual(refreshIcons.count, 2, "The refresh fetches one icon per installed copy")
+        XCTAssertFalse(refreshIcons.contains(where: \.onMain), "Icons are fetched off the main thread")
         try await SelectionInteractionFixture.settle(host)
         // The next opening lists the newly installed editor.
+        let iconsAfterRefresh = workspace.iconCount
         coordinator.perform(willShow, with: button.cell, with: menu)
+        try await SelectionInteractionFixture.settle(host)
         XCTAssertEqual(rows(), ["Capture One", "Preview", L10n.text("Default App")])
+        XCTAssertEqual(workspace.iconCount, iconsAfterRefresh, "Rendering the menu asks for no icons")
+        for editor in PhotoEditorCatalog.shared.editors {
+            let given = try XCTUnwrap(refreshIcons.first { $0.url == editor.url })
+            XCTAssertTrue(PhotoEditorCatalog.shared.icon(for: editor) === given.icon, "Each row shows its own copy's icon")
+            XCTAssertEqual(PhotoEditorCatalog.shared.icon(for: editor)?.size, NSSize(width: 16, height: 16))
+        }
         XCTAssertEqual(workspace.openCount, 0)
     }
 

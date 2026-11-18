@@ -59,6 +59,8 @@ protocol OpenWithWorkspace: Sendable {
     func displayName(ofApplicationAt url: URL) -> String
     func version(ofApplicationAt url: URL) -> String?
     func defaultApplicationURL(toOpen fileURL: URL) -> URL?
+    /// The app's Finder icon. Called only off-main, by the catalog refresh.
+    func icon(ofApplicationAt url: URL) -> NSImage
     func open(_ urls: [URL], withApplicationAt applicationURL: URL,
               completion: @escaping @Sendable ((any Error)?) -> Void)
 }
@@ -89,6 +91,11 @@ struct LiveOpenWithWorkspace: OpenWithWorkspace {
         NSWorkspace.shared.urlForApplication(toOpen: fileURL)
     }
 
+    /// Apple documents `icon(forFile:)` as safe to call from any thread.
+    func icon(ofApplicationAt url: URL) -> NSImage {
+        NSWorkspace.shared.icon(forFile: url.path)
+    }
+
     func open(_ urls: [URL], withApplicationAt applicationURL: URL,
               completion: @escaping @Sendable ((any Error)?) -> Void) {
         let configuration = NSWorkspace.OpenConfiguration()
@@ -98,8 +105,9 @@ struct LiveOpenWithWorkspace: OpenWithWorkspace {
     }
 }
 
-/// A short-lived snapshot of installed editors. Lookups run off-main and are
-/// never repeated per tile or per redraw; menus read the published list.
+/// A short-lived snapshot of installed editors and their icons. Lookups run
+/// off-main and are never repeated per tile or per redraw; menus read the
+/// published list and never ask the workspace for an icon.
 @MainActor
 final class PhotoEditorCatalog: ObservableObject {
     static let shared = PhotoEditorCatalog(workspace: LiveOpenWithWorkspace())
@@ -140,34 +148,54 @@ final class PhotoEditorCatalog: ObservableObject {
         let workspace = workspace
         staleDuringRefresh = false
         refreshTask = Task { [weak self] in
-            let editors = await Task.detached(priority: .utility) {
-                Self.resolve(using: workspace)
+            let snapshot = await Task.detached(priority: .utility) {
+                Self.snapshot(using: workspace)
             }.value
             guard let self else { return }
             self.refreshTask = nil
             self.refreshedAt = self.staleDuringRefresh ? nil : .now
-            if self.editors != editors { self.editors = editors }
+            self.publish(snapshot)
         }
+    }
+
+    /// Editors with an icon for each installed copy, keyed by its path.
+    struct Snapshot: @unchecked Sendable {
+        // The icons are created for this snapshot and not shared until the
+        // main actor publishes them, so handing them over is safe.
+        let editors: [PhotoEditorApplication]
+        let icons: [String: NSImage]
+    }
+
+    nonisolated static func snapshot(using workspace: any OpenWithWorkspace) -> Snapshot {
+        let editors = resolve(using: workspace)
+        var icons: [String: NSImage] = [:]
+        for editor in editors where icons[editor.id] == nil {
+            let icon = workspace.icon(ofApplicationAt: editor.url)
+            icon.size = NSSize(width: 16, height: 16)
+            icons[editor.id] = icon
+        }
+        return Snapshot(editors: editors, icons: icons)
+    }
+
+    /// Icons and rows change together, so a row never shows another copy's icon.
+    private func publish(_ snapshot: Snapshot) {
+        icons = snapshot.icons
+        if editors != snapshot.editors { editors = snapshot.editors }
     }
 
     #if LOUPPE_TEST_SEAMS
     func waitForRefreshForTesting() async { await refreshTask?.value }
     #endif
 
-    func icon(for editor: PhotoEditorApplication) -> NSImage {
-        if let icon = icons[editor.id] { return icon }
-        let icon = NSWorkspace.shared.icon(forFile: editor.url.path)
-        icon.size = NSSize(width: 16, height: 16)
-        icons[editor.id] = icon
-        return icon
-    }
+    /// The icon fetched with the published list; never a workspace lookup.
+    func icon(for editor: PhotoEditorApplication) -> NSImage? { icons[editor.id] }
 
     #if LOUPPE_TEST_SEAMS
     func replaceWorkspaceForTesting(_ workspace: any OpenWithWorkspace) async {
         await refreshTask?.value
         self.workspace = workspace
         refreshedAt = nil
-        editors = Self.resolve(using: workspace)
+        publish(Self.snapshot(using: workspace))
         refreshedAt = .now
     }
     #endif

@@ -29,7 +29,9 @@ struct OpenWithMenuItems: View {
                 Label {
                     Text(editor.title)
                 } icon: {
-                    Image(nsImage: catalog.icon(for: editor))
+                    if let icon = catalog.icon(for: editor) {
+                        Image(nsImage: icon)
+                    }
                 }
             }
         }
