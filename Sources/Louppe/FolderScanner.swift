@@ -24,6 +24,10 @@ enum FolderScanner {
             case .fileChangedDuringMetadataLoad:
                 return L10n.text("A media file changed after scanning. Use Rescan Folder before reviewing the files separately.")
             case .unreadableFolder(let url, let error):
+                // Foundation's own message names the wrong item for such paths.
+                if let path = FolderScanner.displayPathIfNotUnicode(url) {
+                    return L10n.text("macOS can't open \(path): its name isn't valid Unicode, probably because another computer named it. Rename it there and scan again. Nothing was saved.")
+                }
                 return L10n.text("Couldn't read \(url.path). Nothing was saved. Check folder access and rescan. \(error.localizedDescription)")
             }
         }
@@ -1645,6 +1649,38 @@ enum FolderScanner {
     /// all derive their spelling here so they cannot diverge again.
     static func scannerURL(fileSystemRepresentation path: UnsafePointer<CChar>, isDirectory: Bool) -> URL {
         NSURL(fileURLWithFileSystemRepresentation: path, isDirectory: isDirectory, relativeTo: nil) as URL
+    }
+
+    /// A path for display when its bytes aren't valid UTF-8, with each
+    /// undecodable byte shown as U+FFFD; nil for every other path.
+    ///
+    /// Such names come from other systems, for example a Windows name with an
+    /// unpaired UTF-16 surrogate on a FAT or exFAT card. macOS lists them but
+    /// `lstat`/`opendir` refuse them (ENOENT, EINVAL), and HFS+ and FAT store
+    /// new non-UTF-8 names as literal `%XX` text. Files never get a file ID:
+    /// `URL.pathExtension` is empty for such paths, so discovery skips them as
+    /// unrecognized, and sidecar validation keeps refusing `%XX` escapes that
+    /// aren't UTF-8. A folder with such a name still fails the scan visibly,
+    /// as any unreadable folder does; this names it correctly.
+    static func displayPathIfNotUnicode(_ url: URL) -> String? {
+        let encoded = Array(url.path(percentEncoded: true).utf8)
+        var bytes: [UInt8] = []
+        bytes.reserveCapacity(encoded.count)
+        var index = 0
+        while index < encoded.count {
+            if encoded[index] == 0x25, index + 2 < encoded.count,
+               let byte = UInt8(String(decoding: encoded[(index + 1)...(index + 2)], as: UTF8.self), radix: 16) {
+                bytes.append(byte)
+                index += 3
+            } else {
+                bytes.append(encoded[index])
+                index += 1
+            }
+        }
+        guard String(bytes: bytes, encoding: .utf8) == nil else { return nil }
+        // A folder URL ends in `/`; `URL.path` drops it, and so does this.
+        if bytes.count > 1, bytes.last == 0x2F { bytes.removeLast() }
+        return String(decoding: bytes, as: UTF8.self)
     }
 
     /// `url` re-spelled as discovery would produce it, for IDs predicted from

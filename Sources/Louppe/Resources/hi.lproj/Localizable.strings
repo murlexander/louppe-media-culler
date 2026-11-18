@@ -261,6 +261,7 @@
 "Could not read that folder." = "वह फ़ोल्डर पढ़ा नहीं जा सका।";
 "Couldn't prepare safe saving for this folder. Nothing was saved; open it again." = "इस फ़ोल्डर में सुरक्षित रूप से सहेजना तैयार नहीं हो सका। कुछ भी नहीं सहेजा गया; इसे फिर खोलें।";
 "Couldn't read {0}. Nothing was saved. Check folder access and rescan. {1}" = "{0} पढ़ा नहीं जा सका। कुछ भी नहीं सहेजा गया। फ़ोल्डर का पहुँच अधिकार जाँचें और फिर स्कैन करें। {1}";
+"macOS can't open {0}: its name isn't valid Unicode, probably because another computer named it. Rename it there and scan again. Nothing was saved." = "macOS {0} को नहीं खोल सकता: इसका नाम मान्य Unicode नहीं है, शायद इसे किसी दूसरे कंप्यूटर ने यह नाम दिया। वहीं इसका नाम बदलें और फिर स्कैन करें। कुछ भी नहीं सहेजा गया।";
 "Couldn’t save to the media folder or backup. Retry." = "मीडिया फ़ोल्डर या बैकअप में नहीं सहेजा जा सका। फिर आज़माएँ।";
 "Create" = "बनाएँ";
 "Create Copy routes, each with its own chosen folder" = "कॉपी मार्ग बनाएँ, हर मार्ग का अपना चुना फ़ोल्डर होगा";

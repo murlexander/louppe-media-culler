@@ -261,6 +261,7 @@
 "Could not read that folder." = "Could not read that folder.";
 "Couldn't prepare safe saving for this folder. Nothing was saved; open it again." = "Couldn't prepare safe saving for this folder. Nothing was saved; open it again.";
 "Couldn't read {0}. Nothing was saved. Check folder access and rescan. {1}" = "Couldn't read {0}. Nothing was saved. Check folder access and rescan. {1}";
+"macOS can't open {0}: its name isn't valid Unicode, probably because another computer named it. Rename it there and scan again. Nothing was saved." = "macOS can't open {0}: its name isn't valid Unicode, probably because another computer named it. Rename it there and scan again. Nothing was saved.";
 "Couldn’t save to the media folder or backup. Retry." = "Couldn’t save to the media folder or backup. Retry.";
 "Create" = "Create";
 "Create Copy routes, each with its own chosen folder" = "Create Copy routes, each with its own chosen folder";

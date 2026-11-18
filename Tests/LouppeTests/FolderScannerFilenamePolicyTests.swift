@@ -17,6 +17,62 @@ final class FolderScannerFilenamePolicyTests: XCTestCase {
         XCTAssertThrowsError(try FolderScanner.scan(root) { _ in })
     }
 
+    /// macOS lists names that aren't UTF-8 (a Windows name with an unpaired
+    /// surrogate on FAT or exFAT reads as CESU bytes) but can't open them, and
+    /// APFS, HFS+, FAT and exFAT never create one. Such a file must never get
+    /// a file ID, so it can't block saving; ordinary IDs are unaffected.
+    func testNonUnicodeNamesNeverBecomeFileIDs() {
+        func url(_ bytes: [UInt8]) -> URL {
+            let path = (Array("/Volumes/CARD/".utf8) + bytes).map(CChar.init(bitPattern:)) + [0]
+            return path.withUnsafeBufferPointer {
+                FolderScanner.scannerURL(fileSystemRepresentation: $0.baseAddress!, isDirectory: false)
+            }
+        }
+        let invalid: [[UInt8]] = [Array("bad".utf8) + [0xFF] + Array(".jpg".utf8),
+                                  [0xED, 0xA0, 0x80] + Array("QQQphoto.NEF".utf8),
+                                  Array("Trip".utf8) + [0xE9] + Array("/photo.jpg".utf8)]
+        for bytes in invalid {
+            let file = url(bytes)
+            // Discovery recognizes media by this extension; empty means skipped.
+            XCTAssertEqual(file.pathExtension, "", file.absoluteString)
+            let id = String(file.path(percentEncoded: true).dropFirst("/Volumes/CARD/".count))
+            XCTAssertTrue(id.contains("%"), id)
+            XCTAssertNil(SessionPersistence.canonicalExactFileID(id), id)
+            XCTAssertNotNil(FolderScanner.displayPathIfNotUnicode(file), id)
+        }
+        for name in ["IMG_0001.JPG", "café.jpg", "a;b.jpg", "100%.jpg", "%FF.jpg", "日本/写真.heic"] {
+            let file = url(Array(name.utf8))
+            let id = String(file.path(percentEncoded: true).dropFirst("/Volumes/CARD/".count))
+            XCTAssertEqual(SessionPersistence.canonicalExactFileID(id), id, name)
+            XCTAssertNil(FolderScanner.displayPathIfNotUnicode(file), name)
+            XCTAssertFalse(file.pathExtension.isEmpty, name)
+        }
+    }
+
+    /// Reproduced on a disposable exFAT image: a folder named on Windows with
+    /// an unpaired surrogate fails `opendir` with EINVAL, and Foundation's
+    /// message named an empty path and an unrelated file.
+    func testUnreadableNonUnicodeFolderErrorNamesTheFolder() throws {
+        let path = (Array("/Volumes/CARD/".utf8) + [0xED, 0xA0, 0x80] + Array("QQQfolder".utf8))
+            .map(CChar.init(bitPattern:)) + [0]
+        let folder = path.withUnsafeBufferPointer {
+            FolderScanner.scannerURL(fileSystemRepresentation: $0.baseAddress!, isDirectory: true)
+        }
+        let underlying = NSError(domain: NSCocoaErrorDomain, code: NSFileReadUnknownError, userInfo: [
+            NSURLErrorKey: folder, NSUnderlyingErrorKey: NSError(domain: NSPOSIXErrorDomain, code: Int(EINVAL)),
+        ])
+        // Each byte of the invalid sequence shows as U+FFFD; the rest is exact.
+        let repaired = "/Volumes/CARD/\u{FFFD}\u{FFFD}\u{FFFD}QQQfolder"
+        XCTAssertEqual(FolderScanner.displayPathIfNotUnicode(folder), repaired)
+        XCTAssertEqual(FolderScanner.ScanError.unreadableFolder(folder, underlying).errorDescription,
+                       L10n.text("macOS can't open \(repaired): its name isn't valid Unicode, probably because another computer named it. Rename it there and scan again. Nothing was saved."))
+
+        let ordinary = URL(fileURLWithPath: "/Volumes/CARD/Locked", isDirectory: true)
+        XCTAssertNil(FolderScanner.displayPathIfNotUnicode(ordinary))
+        XCTAssertEqual(FolderScanner.ScanError.unreadableFolder(ordinary, underlying).errorDescription,
+                       L10n.text("Couldn't read \(ordinary.path). Nothing was saved. Check folder access and rescan. \(underlying.localizedDescription)"))
+    }
+
     func testScanHonorsCancellationAtFinalValidation() throws {
         let fm = FileManager.default
         let root = fm.temporaryDirectory.appendingPathComponent("LouppeCancelScan-\(UUID())")

@@ -3436,14 +3436,27 @@ struct PerformanceChecks {
                        "normalization should keep scanner IDs and rewrite only the legacy `;` spelling")
             return duration
         }
-        let plain = try measure((0..<count).map { String(format: "Day%03d/IMG_%06d.JPG", $0 % 100, $0) })
-        let spaced = try measure((0..<count).map { String(format: "Day%%20%03d/IMG%%20%06d.JPG", $0 % 100, $0) })
+        let plainIDs = (0..<count).map { String(format: "Day%03d/IMG_%06d.JPG", $0 % 100, $0) }
+        let spacedIDs = (0..<count).map { String(format: "Day%%20%03d/IMG%%20%06d.JPG", $0 % 100, $0) }
+        // Alternate three plain/spaced pairs and use the medians, so one
+        // pause on a shared CI runner can't flip the comparison.
+        var pairs: [(plain: Duration, spaced: Duration)] = []
+        for _ in 0..<3 { pairs.append((try measure(plainIDs), try measure(spacedIDs))) }
+        let plain = pairs.map(\.plain).sorted()[1]
+        let spaced = pairs.map(\.spaced).sorted()[1]
+        let ratio = pairs.map { $0.plain / $0.spaced }.sorted()[1]
         let legacy = try measure((0..<count).map { String(format: "Day;%03d/IMG_%06d.JPG", $0 % 100, $0) })
         print(
-            "Exact file IDs \(count): validate + normalize plain \(milliseconds(plain)) ms, "
-                + "spaced \(milliseconds(spaced)) ms, legacy `;` \(milliseconds(legacy)) ms"
+            "Exact file IDs \(count) (median of 3): validate + normalize plain \(milliseconds(plain)) ms, "
+                + "spaced \(milliseconds(spaced)) ms, ratio \(String(format: "%.2f", ratio)); "
+                + "legacy `;` \(milliseconds(legacy)) ms"
         )
         try expect(plain < .seconds(2), "validating 100,000 plain IDs should stay well under 2 s")
+        // Losing the fast path makes plain IDs cost about what spaced ones do
+        // (0.92–0.96 of spaced, unoptimized and -O), which the absolute bound
+        // misses; with it plain is 0.29–0.54 of spaced.
+        try expect(ratio < 0.75,
+                   "plain IDs should stay on the fast path: median plain/spaced ratio \(String(format: "%.2f", ratio)) is not under 0.75")
     }
 
     /// Discovery plus nested-session merge on a real disposable tree: once

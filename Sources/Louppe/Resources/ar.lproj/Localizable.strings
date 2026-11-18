@@ -261,6 +261,7 @@
 "Could not read that folder." = "تعذّر قراءة هذا المجلد.";
 "Couldn't prepare safe saving for this folder. Nothing was saved; open it again." = "تعذّر تجهيز الحفظ الآمن لهذا المجلد. لم يُحفظ شيء؛ افتحه مجددًا.";
 "Couldn't read {0}. Nothing was saved. Check folder access and rescan. {1}" = "تعذّر قراءة {0}. لم يُحفظ شيء. تحقق من صلاحية الوصول إلى المجلد وأعد فحصه. {1}";
+"macOS can't open {0}: its name isn't valid Unicode, probably because another computer named it. Rename it there and scan again. Nothing was saved." = "لا يستطيع macOS فتح {0}: اسمه ليس Unicode صالحًا، ربما لأن حاسوبًا آخر سمّاه. أعد تسميته هناك ثم أعد الفحص. لم يُحفظ شيء.";
 "Couldn’t save to the media folder or backup. Retry." = "تعذّر الحفظ في مجلد الوسائط أو النسخة الاحتياطية. أعد المحاولة.";
 "Create" = "إنشاء";
 "Create Copy routes, each with its own chosen folder" = "إنشاء مسارات نسخ، لكل منها مجلد مختار مستقل";

@@ -359,7 +359,12 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   helper; never rebuild an ID with Swift's `URL(fileURLWithFileSystemRepresentation:)`.
   1.7–1.14 accepted only a literal `;`; that spelling still reads, keys and
   normalizes to `%3B`, so one file cannot hold two entries. Invalid UTF-8 names
-  stay rejected, as before.
+  stay rejected, as before, and never reach a snapshot: APFS and exFAT refuse
+  them, HFS+ and FAT store them as literal `%XX` text, and names another system
+  wrote (a Windows unpaired surrogate on FAT/exFAT) list as non-UTF-8 bytes
+  that `lstat`/`opendir` refuse. Discovery skips such files because their
+  `URL.pathExtension` is empty; such a folder fails the scan visibly, named by
+  `FolderScanner.displayPathIfNotUnicode`.
 - Saves use compact sorted JSON, preserving deterministic keys and every schema
   field/history. Exact bytes still own CAS lineage.
 - Decoding, CAS revision reads, and encoding share a 512 MiB ceiling.

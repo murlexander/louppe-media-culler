@@ -15,6 +15,7 @@
 - Press P in Gallery to outline sharp, in-focus edges and see where focus landed without zooming; it works at Fit and 100%, with or without the clipping overlay (also in View → Focus Peaking).
 - Save decisions in folders whose file names contain a semicolon; since 1.7 such folders couldn't save. Renaming a photo to a name with a semicolon also keeps it selected and undoable.
 - Show about eleven photos in the Browser where eight fitted before. On narrow portraits, stars and color labels sit beside the photo instead of covering the Yes/No mark or the video length.
+- Name the folder when a card can't be opened because a folder on it has a name macOS can't read (usually one made on Windows), instead of an empty path and an unrelated file name.
 
 ## 1.14.1 (19) — 2026-11-16
 

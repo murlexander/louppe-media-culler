@@ -261,6 +261,7 @@
 "Could not read that folder." = "Não foi possível ler essa pasta.";
 "Couldn't prepare safe saving for this folder. Nothing was saved; open it again." = "Não foi possível preparar o salvamento seguro nesta pasta. Nada foi salvo; abra-a novamente.";
 "Couldn't read {0}. Nothing was saved. Check folder access and rescan. {1}" = "Não foi possível ler {0}. Nada foi salvo. Verifique o acesso à pasta e faça uma nova verificação. {1}";
+"macOS can't open {0}: its name isn't valid Unicode, probably because another computer named it. Rename it there and scan again. Nothing was saved." = "O macOS não consegue abrir {0}: o nome não é Unicode válido, provavelmente porque outro computador o nomeou. Renomeie-o lá e faça uma nova verificação. Nada foi salvo.";
 "Couldn’t save to the media folder or backup. Retry." = "Não foi possível salvar na pasta de mídia nem no backup. Tente novamente.";
 "Create" = "Criar";
 "Create Copy routes, each with its own chosen folder" = "Criar rotas de cópia, cada uma com sua própria pasta escolhida";
