@@ -465,6 +465,45 @@ final class OriginalFileDragTests: XCTestCase {
         XCTAssertTrue(started.isEmpty)
     }
 
+    func testIdentityCheckMakesOneStatPerOriginalAndKeepsItsRules() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("DragIdentity-\(UUID())")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        func make(_ name: String) throws -> URL {
+            let url = root.appendingPathComponent(name)
+            try Data(name.utf8).write(to: url)
+            return url
+        }
+        let names = ["current.JPG", "touched.JPG", "replaced.JPG", "missing.JPG", "link.JPG", "folder.JPG"]
+        var files = try names.enumerated().map { offset, name in
+            let url = try make(name)
+            return OriginalFileTarget(fileID: name, url: url, itemIndex: offset,
+                                      identity: try FileOperationJournal.captureIdentity(at: url))
+        }
+        let legacyFile = try make("legacy.JPG")
+        let legacyLink = root.appendingPathComponent("legacy-link.JPG")
+        try FileManager.default.createSymbolicLink(at: legacyLink, withDestinationURL: legacyFile)
+        files.append(OriginalFileTarget(fileID: "legacy", url: legacyFile, itemIndex: 6))
+        files.append(OriginalFileTarget(fileID: "legacy-link", url: legacyLink, itemIndex: 7))
+
+        try touchMetadataLikeLaunchServices(files[1].url) // ctime only: still current.
+        try FileManager.default.moveItem(at: files[2].url, to: root.appendingPathComponent("aside"))
+        try Data("new bytes".utf8).write(to: files[2].url) // Same name, new file.
+        try FileManager.default.removeItem(at: files[3].url)
+        try FileManager.default.removeItem(at: files[4].url)
+        try FileManager.default.createSymbolicLink(at: files[4].url, withDestinationURL: files[0].url)
+        try FileManager.default.removeItem(at: files[5].url)
+        try FileManager.default.createDirectory(at: files[5].url, withIntermediateDirectories: false)
+
+        let targets = OriginalFileTargets(files: files, leaderFileIndex: 2)
+        OriginalFileTargets.statCallsForTesting = 0
+        let present = try XCTUnwrap(targets.existing())
+        XCTAssertEqual(OriginalFileTargets.statCallsForTesting, files.count, "One lstat per original")
+        XCTAssertEqual(present.files.map(\.fileID), ["current.JPG", "touched.JPG", "legacy"],
+                       "Replacement, missing file, symlink and folder are left out; xattr-only changes stay")
+        XCTAssertEqual(present.leaderFileIndex, 0, "A missing leader falls back to the first present file")
+    }
+
     func testInactiveWindowClicksBehaveNormallyAndDragsDoNotOrderFront() async throws {
         let fixture = try SelectionInteractionFixture()
         defer { fixture.remove() }

@@ -27,10 +27,19 @@ struct OriginalFileTarget: Equatable, Sendable {
     /// time is ignored, as in Clean Up's checks: extended attributes macOS
     /// writes on open (`com.apple.lastuseddate#PS`, `com.apple.macl`) and
     /// permission changes bump it without changing the file.
+    /// One `lstat` per file serves both the type check and the identity.
     func isCurrentOriginal(volumes: FileOperationJournal.VolumeLookup = .init()) -> Bool {
-        guard OriginalFileTargets.isRegularFile(at: url) else { return false }
+        guard let status = OriginalFileTargets.regularFileStatus(at: url) else { return false }
         guard let identity else { return true } // Synthetic/legacy items.
-        guard let actual = try? FileOperationJournal.captureIdentity(at: url, volumes: volumes) else { return false }
+        let actual: FileOperationJournal.FileIdentity
+        if let volume = volumes.volume(device: status.st_dev, containing: url) {
+            actual = FileOperationJournal.identity(from: status, volumeRootPath: volume.rootPath,
+                                                   volumeUUIDString: volume.uuid)
+        } else {
+            // Same fallback as `captureIdentity(at:volumes:)`.
+            guard let captured = try? FileOperationJournal.captureIdentity(at: url) else { return false }
+            actual = captured
+        }
         return FileOperationJournal.identitiesMatch(expected: identity, actual: actual, includeStatusChange: false)
     }
 }
@@ -98,11 +107,27 @@ struct OriginalFileTargets: Equatable, Sendable {
         return cancelled.isCancelled ? nil : flags
     }
 
-    static func isRegularFile(at url: URL) -> Bool {
-        var status = stat()
-        guard lstat(url.path, &status) == 0 else { return false }
-        return (status.st_mode & S_IFMT) == S_IFREG
+    #if LOUPPE_TEST_SEAMS
+    /// Counts `lstat` calls made by the existence checks.
+    nonisolated(unsafe) static var statCallsForTesting: Int = 0
+    private static let statCounterLock = NSLock()
+    #endif
+
+    /// The `lstat` of a regular file at the URL's exact filesystem path, or
+    /// nil for a missing file, a symlink or any other file type.
+    static func regularFileStatus(at url: URL) -> Darwin.stat? {
+        #if LOUPPE_TEST_SEAMS
+        statCounterLock.withLock { statCallsForTesting += 1 }
+        #endif
+        var status = Darwin.stat()
+        let result: Int32 = url.withUnsafeFileSystemRepresentation { path in
+            guard let path else { return -1 }
+            return Darwin.lstat(path, &status)
+        }
+        guard result == 0, (status.st_mode & S_IFMT) == S_IFREG else { return nil }
+        return status
     }
+
 }
 
 extension SessionStore {
