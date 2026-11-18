@@ -177,10 +177,11 @@ remain unverified for 1.14.1.
     18 November 2026).** Only Yes/No advance (already true; the Settings toggle
     stays). Clear All Decisions already leaves stars and labels alone. Add
     **Clear Stars and Labels…** to the menu beside it: same folder scope,
-    confirmation and Undo. Proposals awaiting Alex: **R** unmarks the selected
-    items without advancing, with Clear All Decisions in the menu only; advance
-    goes to the next item and stops at the end instead of wrapping to the first
-    unmarked one.
+    confirmation and Undo. Pressing a decision's key (or button) again on a photo
+    already marked that way makes it Unmarked, without advancing; Undo restores
+    it, key auto-repeat never toggles, and **R** keeps Clear All Decisions.
+    Advance goes to the next item and stops at the end instead of wrapping to
+    the first unmarked one.
   - **Scroller date label.** While dragging the existing native Grid scroller
     knob, show only the year and month under it, formatted by
     `AppDateFormat.yearAndMonth`. Nothing on hover, no new bar or command.
@@ -222,6 +223,7 @@ remain unverified for 1.14.1.
 - [ ] **AUD-20 — Expat 2.10.0.** Adopt it in the next dependency refresh (its four
   CVEs are unreachable in Louppe), with the vendored-file and license checks.
 - [ ] **Agent tooling follow-ups (audit of 20 agent threads, 9 November 2026).**
+  The CI docs-only skip and the Homebrew push retry join the 18 November batch.
   The entry-point scripts landed; these remain, highest value first.
   - A guarded installed-app smoke driver (screen lock, frontmost app and point
     ownership checked before every event) for folder click focus, view switching
