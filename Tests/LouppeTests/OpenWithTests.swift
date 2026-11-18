@@ -586,6 +586,105 @@ final class OpenWithTests: XCTestCase {
         XCTAssertNil(store.pendingOpenWith)
     }
 
+    func testOpenSendsOnlyTheFilesTheQuestionNamed() async throws {
+        let fixture = try SelectionInteractionFixture()
+        defer { fixture.remove() }
+        let store = try fixture.readyStore(count: 53)
+        store.setIndex(0)
+        store.selectAllVisible()
+        let workspace = FakeOpenWithWorkspace()
+        let preview = workspace.install("/System/Applications/Preview.app", "com.apple.Preview")
+        let editor = try XCTUnwrap(PhotoEditorCatalog.resolve(using: workspace).first)
+
+        // Offline when asked, back before Open: still not opened.
+        let late = store.items[52].primaryURL
+        let aside = late.appendingPathExtension("aside")
+        try FileManager.default.moveItem(at: late, to: aside)
+        OriginalFilesOpener.open(.selection, with: .editor(editor), store: store, workspace: workspace)
+        try await waitUntil { store.pendingOpenWith != nil }
+        let pending = try XCTUnwrap(store.pendingOpenWith)
+        XCTAssertEqual(pending.title, "Open 52 files in Preview?")
+        try FileManager.default.moveItem(at: aside, to: late)
+        OriginalFilesOpener.confirm(pending, store: store)
+        try await waitUntil { store.originalHandoffAlert != nil }
+        XCTAssertEqual(workspace.openCount, 1)
+        XCTAssertEqual(workspace.opens[0].urls, store.items.prefix(52).map(\.primaryURL), "Only the named files, in order")
+        XCTAssertEqual(store.originalHandoffAlert?.message,
+                       L10n.plural("%lld originals are missing or changed since Louppe scanned them, so they weren't opened. Rescan the folder or reconnect its drive.", 1))
+        store.originalHandoffAlert = nil
+
+        // No default app when asked, one gained before Open: still not opened.
+        let unhandled = store.items[0].primaryURL.standardizedFileURL
+        for item in store.items.dropFirst() { workspace.defaults[item.primaryURL.standardizedFileURL] = preview }
+        OriginalFilesOpener.open(.selection, with: .defaultApplication, store: store, workspace: workspace)
+        try await waitUntil { store.pendingOpenWith != nil }
+        let defaultPending = try XCTUnwrap(store.pendingOpenWith)
+        XCTAssertEqual(defaultPending.title, "Open 52 files in their default apps?")
+        workspace.defaults[unhandled] = preview
+        OriginalFilesOpener.confirm(defaultPending, store: store)
+        try await waitUntil { store.originalHandoffAlert != nil }
+        XCTAssertEqual(workspace.openCount, 2)
+        XCTAssertEqual(workspace.opens[1].urls.count, 52)
+        XCTAssertFalse(workspace.opens[1].urls.map(\.standardizedFileURL).contains(unhandled))
+        XCTAssertEqual(store.originalHandoffAlert?.message,
+                       L10n.plural("No app on this Mac opens %lld of these files by default. Choose an app from Open With instead.", 1))
+    }
+
+    func testLatePlansAreDroppedAfterARescanOrOutsideReady() async throws {
+        let fixture = try SelectionInteractionFixture()
+        defer { fixture.remove() }
+        let source = try fixture.readyStore(count: 52)
+        let folder = fixture.root.appendingPathComponent("Media", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        for item in source.items {
+            try FileManager.default.copyItem(at: item.primaryURL, to: folder.appendingPathComponent(item.primaryURL.lastPathComponent))
+        }
+        let store = fixture.store()
+        store.openFolder(folder)
+        try await waitForReady(store, folder: folder, count: 52)
+        defer { store.beginTerminationPreparation() }
+        store.setIndex(store.visibleIndices[0])
+        let fake = FakeOpenWithWorkspace()
+        _ = fake.install("/System/Applications/Preview.app", "com.apple.Preview")
+        let editor = try XCTUnwrap(PhotoEditorCatalog.resolve(using: fake).first)
+        let workspace = StallingOpenWithWorkspace(fake)
+        var planned = 0
+        OriginalFilesOpener.didFinishPlanning = { _ in planned += 1 }
+
+        // A same-folder rescan while a direct (≤ 50) Open With plans.
+        store.setSelection(Set(store.visibleIndices.prefix(3)))
+        workspace.stall()
+        OriginalFilesOpener.open(.selection, with: .editor(editor), store: store, workspace: workspace)
+        try await waitUntil { workspace.isStalled }
+        store.rescan()
+        try await waitForReady(store, folder: folder, count: 52)
+        workspace.release()
+        try await waitUntil { planned == 1 }
+        try await Task.sleep(for: .milliseconds(30))
+        XCTAssertEqual(fake.openCount, 0, "A plan from before the rescan opens nothing")
+        XCTAssertNil(store.originalHandoffAlert)
+
+        // The session leaves Ready while the confirmed files are checked again.
+        store.selectAllVisible()
+        OriginalFilesOpener.open(.selection, with: .editor(editor), store: store, workspace: workspace)
+        try await waitUntil { store.pendingOpenWith != nil }
+        let pending = try XCTUnwrap(store.pendingOpenWith)
+        workspace.stall()
+        OriginalFilesOpener.confirm(pending, store: store)
+        try await waitUntil { workspace.isStalled }
+        store.phase = .scanning(found: 0)
+        workspace.release()
+        try await waitUntil { planned == 3 }
+        try await Task.sleep(for: .milliseconds(30))
+        XCTAssertEqual(fake.openCount, 0, "Nothing is sent once the session is not Ready")
+        store.phase = .ready
+
+        // Unchanged session: the same request goes through.
+        store.setSelection(Set(store.visibleIndices.prefix(3)))
+        OriginalFilesOpener.open(.selection, with: .editor(editor), store: store, workspace: workspace)
+        try await waitUntil { fake.openCount == 1 }
+    }
+
     func testRequestIsDroppedWhenAnotherPresentationAppearsWhilePlanning() async throws {
         let fixture = try SelectionInteractionFixture()
         defer { fixture.remove() }
@@ -638,6 +737,17 @@ final class OpenWithTests: XCTestCase {
 
     // MARK: - Helpers
 
+    private func waitForReady(_ store: SessionStore, folder: URL, count: Int) async throws {
+        let deadline = ContinuousClock.now + .seconds(10)
+        while ContinuousClock.now < deadline {
+            if case .ready = store.phase, !store.isSessionTransitioning,
+               store.sourceFolder?.standardizedFileURL == folder.standardizedFileURL,
+               store.items.count == count { return }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTFail("The folder did not open: \(store.scanError ?? "no scan error")")
+    }
+
     private func waitUntil(_ condition: @MainActor () -> Bool) async throws {
         let deadline = ContinuousClock.now + .seconds(5)
         while !condition() {
@@ -656,5 +766,37 @@ final class OpenWithTests: XCTestCase {
         let url = root.appendingPathComponent(name)
         try Data(name.utf8).write(to: url)
         return url.standardizedFileURL
+    }
+}
+
+/// Holds planning inside Launch Services lookups, like a slow volume or a
+/// busy Launch Services daemon.
+final class StallingOpenWithWorkspace: OpenWithWorkspace, @unchecked Sendable {
+    private let base: FakeOpenWithWorkspace
+    private let condition = NSCondition()
+    private var stalling = false
+    private var waiting = false
+    init(_ base: FakeOpenWithWorkspace) { self.base = base }
+
+    func stall() { condition.lock(); stalling = true; condition.unlock() }
+    func release() { condition.lock(); stalling = false; condition.broadcast(); condition.unlock() }
+    var isStalled: Bool { condition.lock(); defer { condition.unlock() }; return waiting }
+    private func pause() {
+        condition.lock()
+        while stalling { waiting = true; condition.wait() }
+        waiting = false
+        condition.unlock()
+    }
+
+    func applicationURLs(bundleIdentifier: String) -> [URL] { base.applicationURLs(bundleIdentifier: bundleIdentifier) }
+    func applicationURLs(toOpen contentType: UTType) -> [URL] { base.applicationURLs(toOpen: contentType) }
+    func bundleIdentifier(ofApplicationAt url: URL) -> String? { pause(); return base.bundleIdentifier(ofApplicationAt: url) }
+    func displayName(ofApplicationAt url: URL) -> String { base.displayName(ofApplicationAt: url) }
+    func version(ofApplicationAt url: URL) -> String? { base.version(ofApplicationAt: url) }
+    func defaultApplicationURL(toOpen fileURL: URL) -> URL? { pause(); return base.defaultApplicationURL(toOpen: fileURL) }
+    func icon(ofApplicationAt url: URL) -> NSImage { base.icon(ofApplicationAt: url) }
+    func open(_ urls: [URL], withApplicationAt applicationURL: URL,
+              completion: @escaping @Sendable ((any Error)?) -> Void) {
+        base.open(urls, withApplicationAt: applicationURL, completion: completion)
     }
 }

@@ -304,7 +304,8 @@ struct OpenWithPlan: Equatable, Sendable {
 
 /// A planned Open With above `OpenWithPlan.confirmationLimit`, held with its
 /// read access until the confirmation is answered. Nothing opens before then;
-/// Open plans again from `targets`, so files changed meanwhile are left out.
+/// Open checks only the files the question named again, so files changed
+/// meanwhile are left out and none are added.
 struct PendingOpenWith: Identifiable {
     let id = UUID()
     let targets: OriginalFileTargets
@@ -313,7 +314,15 @@ struct PendingOpenWith: Identifiable {
     let choice: OpenWithChoice
     let workspace: any OpenWithWorkspace
     let readToken: MediaReadAccess.Token?
-    let sourceFolder: URL?
+    let session: OriginalHandoffSession
+
+    /// The originals the question named, in request order.
+    var confirmedTargets: OriginalFileTargets? {
+        let named = Set(plan.requests.flatMap(\.urls))
+        let files = targets.files.filter { named.contains($0.url) }
+        guard !files.isEmpty else { return nil }
+        return OriginalFileTargets(files: files, leaderFileIndex: 0)
+    }
 
     var title: String {
         switch choice {
@@ -352,20 +361,22 @@ enum OriginalFilesOpener {
         }
         let workspace = workspace ?? PhotoEditorCatalog.shared.workspace
         let token = store.mediaReadAccess?.begin()
-        let source = store.sourceFolder
+        let session = store.originalHandoffSession
         Task { @MainActor [weak store] in
             let plan = await makePlan(targets: targets, choice: choice, workspace: workspace, readToken: token)
             #if LOUPPE_TEST_SEAMS
             didFinishPlanning?(plan)
             #endif
-            guard let store, store.sourceFolder == source else { return }
+            // A rescan, another folder, Close or a file operation that began
+            // while planning drops the request; nothing opens.
+            guard let store, store.isCurrentOriginalHandoffSession(session) else { return }
             if plan.requiresConfirmation && !plan.editorUnavailable {
                 // Another sheet, alert or the palette came up while planning:
                 // the alert could stay hidden behind it and hold the session
                 // gate, so the request is dropped and nothing opens.
                 guard !store.isSessionCommandPresentationActive else { return }
                 store.pendingOpenWith = PendingOpenWith(targets: targets, plan: plan, choice: choice,
-                    workspace: workspace, readToken: token, sourceFolder: source)
+                    workspace: workspace, readToken: token, session: session)
                 return
             }
             execute(plan, choice: choice, store: store, workspace: workspace, readToken: token)
@@ -375,19 +386,27 @@ enum OriginalFilesOpener {
     /// The confirmation's Open button. The alert may clear its binding before
     /// running the action, so the presented value is passed in rather than
     /// read back from the store; one confirmation opens at most once. The
-    /// files are checked again off-main, and Open never asks twice, even if
-    /// the count changed; files that dropped out are reported as missing.
+    /// files the question named are checked again off-main, and Open never
+    /// asks twice, even if the count changed; files that dropped out are
+    /// reported as missing. A file that became available or gained a default
+    /// app while the question was open is not added.
     static func confirm(_ pending: PendingOpenWith, store: SessionStore) {
         guard store.confirmedOpenWithID != pending.id else { return }
         store.confirmedOpenWithID = pending.id
         if store.pendingOpenWith?.id == pending.id { store.pendingOpenWith = nil }
         Task { @MainActor [weak store] in
-            let plan = await makePlan(targets: pending.targets, choice: pending.choice,
+            var plan = OpenWithPlan()
+            if let confirmed = pending.confirmedTargets {
+                plan = await makePlan(targets: confirmed, choice: pending.choice,
                                       workspace: pending.workspace, readToken: pending.readToken)
+            }
+            // Files the question already left out stay reported.
+            plan.missing = pending.plan.missing + plan.missing
+            plan.unhandled = pending.plan.unhandled + plan.unhandled
             #if LOUPPE_TEST_SEAMS
             didFinishPlanning?(plan)
             #endif
-            guard let store, store.sourceFolder == pending.sourceFolder else { return }
+            guard let store, store.isCurrentOriginalHandoffSession(pending.session) else { return }
             execute(plan, choice: pending.choice, store: store,
                     workspace: pending.workspace, readToken: pending.readToken)
         }

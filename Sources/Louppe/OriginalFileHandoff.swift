@@ -130,7 +130,25 @@ struct OriginalFileTargets: Equatable, Sendable {
 
 }
 
+/// The session an Open With request was admitted in: its folder and scan
+/// generation. A rescan, Close or another folder makes it stale.
+struct OriginalHandoffSession: Equatable, Sendable {
+    let sourceFolder: URL?
+    let generation: UInt64
+}
+
 extension SessionStore {
+    var originalHandoffSession: OriginalHandoffSession {
+        // The scan generation changes with every scan, rescan and Close.
+        OriginalHandoffSession(sourceFolder: sourceFolder, generation: xmpConflictSessionGeneration)
+    }
+
+    /// Checked just before anything is sent: the same session, still Ready,
+    /// and no file operation running.
+    func isCurrentOriginalHandoffSession(_ session: OriginalHandoffSession) -> Bool {
+        originalHandoffSession == session && canHandOffOriginals
+    }
+
     /// In-memory availability for drag-out and Open With. Apple Photos
     /// sources are excluded: their synthetic URLs are cache keys, not files.
     /// This performs no I/O, so menus and tiles may evaluate it freely.

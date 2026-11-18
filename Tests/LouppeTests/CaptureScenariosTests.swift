@@ -1018,7 +1018,7 @@ extension CaptureScenariosTests {
         fixture.store.pendingOpenWith = PendingOpenWith(targets: targets,
             plan: OpenWithPlan(requests: [.init(applicationURL: editor.url, urls: urls)]),
             choice: defaultApp ? .defaultApplication : .editor(editor),
-            workspace: FakeOpenWithWorkspace(), readToken: nil, sourceFolder: fixture.store.sourceFolder)
+            workspace: FakeOpenWithWorkspace(), readToken: nil, session: fixture.store.originalHandoffSession)
         return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
     }
 
