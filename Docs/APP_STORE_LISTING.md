@@ -1,6 +1,6 @@
 # App Store listing and search (ASO) — 4 November 2026
 
-Current Store state, verified 17 November: **1.13.2 (17) is Ready for Distribution**. **1.14.1 (19) was submitted on 17 November and is Waiting for Review**, with automatic release after approval; its What's New covers 1.14.0 and 1.14.1 in all 11 locales, other metadata and screenshots are inherited, and export compliance is unchanged (`usesNonExemptEncryption=false`). See [1.14.1 release record](RELEASE_1.14.1_PREPARATION_2026-11-17.md).
+Current Store state, verified 18 November: **1.14.1 (19) is live**, released automatically on 18 November after review (submitted 17 November); its What's New covers 1.14.0 and 1.14.1 in all 11 locales, other metadata and screenshots are inherited, and export compliance is unchanged (`usesNonExemptEncryption=false`). See [1.14.1 release record](RELEASE_1.14.1_PREPARATION_2026-11-17.md).
 
 Previous state (8 November): 1.13.1 (16) was Ready for Distribution and security update 1.13.2 (17) was Waiting for Review. Apple accepted the delivered build as VALID / VALID_BINARY; export compliance is confirmed as Apple-system cryptography only (`usesNonExemptEncryption=false`).
 
