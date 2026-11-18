@@ -1570,9 +1570,20 @@ actor SessionPersistence: SessionPersistenceClient {
     static func normalizingExactFileIDs(in session: SessionFile) -> SessionFile {
         guard session.fileIDEncoding == .percentEncodedFileSystemPath else { return session }
         // Only a literal `;` is ever rewritten; skip the URL rebuild otherwise.
+        func hasSemicolon(_ id: String) -> Bool { id.utf8.contains(0x3B) }
         func canonical(_ id: String) -> String {
-            id.utf8.contains(0x3B) ? canonicalExactFileID(id) ?? id : id
+            hasSemicolon(id) ? canonicalExactFileID(id) ?? id : id
         }
+        func needsRewrite(_ entry: SessionEntry) -> Bool {
+            hasSemicolon(entry.filename) || entry.pairedFilename.map(hasSemicolon) == true
+        }
+        // The common case: return the decoded value as is. Writing through
+        // `result.entries` would copy the whole entries array (tens of MB at
+        // 100,000 files) on every open even when nothing changes.
+        guard session.entries.contains(where: needsRewrite)
+                || session.recoveryEntries?.contains(where: {
+                    needsRewrite($0.entry) || $0.resolvedFileID.map(hasSemicolon) == true
+                }) == true else { return session }
         func normalize(_ entry: inout SessionEntry) {
             entry.filename = canonical(entry.filename)
             entry.pairedFilename = entry.pairedFilename.map(canonical)

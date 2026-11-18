@@ -3434,6 +3434,13 @@ struct PerformanceChecks {
             try expect(keys == ids.count, "every scanner-spelled ID should validate")
             try expect(normalized?.entries.last?.filename == ids.last?.replacingOccurrences(of: ";", with: "%3B"),
                        "normalization should keep scanner IDs and rewrite only the legacy `;` spelling")
+            // Without a `;` the decoded entries come back as is: no
+            // copy-on-write of the whole array on every open.
+            let shared = session.entries.withUnsafeBufferPointer { original in
+                normalized?.entries.withUnsafeBufferPointer { $0.baseAddress == original.baseAddress } ?? false
+            }
+            try expect(shared == !ids.contains { $0.contains(";") },
+                       "normalization should copy entries only when an ID contains `;`")
             return duration
         }
         let plainIDs = (0..<count).map { String(format: "Day%03d/IMG_%06d.JPG", $0 % 100, $0) }
