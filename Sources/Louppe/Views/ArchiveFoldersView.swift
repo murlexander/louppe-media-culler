@@ -8,8 +8,6 @@ struct ArchiveFoldersView: NSViewRepresentable {
     let selectedFolderID: String
     let expandedFolderIDs: Set<String>
     let includesDescendants: Bool
-    var progress: ArchiveFolderProgress? = nil
-    var progressRevision = 0
     let onSelect: (String) -> Void
     let onExpansionChange: (Set<String>) -> Void
     let onIncludesDescendantsChange: (Bool) -> Void
@@ -42,8 +40,6 @@ struct ArchiveFoldersView: NSViewRepresentable {
         private var selectedFolderID: String?
         private var pendingExpansionReport = false
         private var appliedSource: Set<String>?
-        private var progressRevision: Int?
-        private var progressGeneration: UUID?
         private(set) var reloadCount = 0
         private weak var outline: OutlineView?
 
@@ -131,17 +127,7 @@ struct ArchiveFoldersView: NSViewRepresentable {
             if (changedCounts || changedDirection) && !changedIndex && outline.numberOfRows > 0 {
                 outline.reloadData(forRowIndexes: IndexSet(integersIn: 0..<outline.numberOfRows),
                                    columnIndexes: IndexSet(integer: 0))
-            } else if !changedIndex, progressRevision != owner.progressRevision
-                        || progressGeneration != owner.progress?.generation {
-                // A decision changed: refresh only the rows on screen.
-                let visible = outline.rows(in: outline.visibleRect)
-                if visible.length > 0 {
-                    outline.reloadData(forRowIndexes: IndexSet(integersIn: visible.location..<NSMaxRange(visible)),
-                                       columnIndexes: IndexSet(integer: 0))
-                }
             }
-            progressRevision = owner.progressRevision
-            progressGeneration = owner.progress?.generation
             if firstMount, outline.selectedRow >= 0 {
                 // A remembered folder late in the tree starts on screen.
                 outline.scrollRowToVisible(outline.selectedRow)
@@ -237,9 +223,7 @@ struct ArchiveFoldersView: NSViewRepresentable {
             let node = folder.node
             let name = node.id == owner.index.rootID ? L10n.text("All Media") : node.name
             let count = node.id.isEmpty || owner.includesDescendants ? node.subtreeCount : node.directCount
-            let complete = owner.progress?.isComplete(node.id, includesDescendants: owner.includesDescendants,
-                                                      index: owner.index) ?? false
-            cell.configure(id: node.id, name: name, count: count, isComplete: complete,
+            cell.configure(id: node.id, name: name, count: count,
                            direction: outlineView.userInterfaceLayoutDirection)
             return cell
         }
@@ -411,9 +395,6 @@ struct ArchiveFoldersView: NSViewRepresentable {
     final class FolderCell: NSTableCellView {
         let nameField = NSTextField(labelWithString: "")
         let countField = NSTextField(labelWithString: "")
-        /// Quiet completion mark: every item in this folder has Yes or No.
-        let completeView = NSImageView()
-        private var completeWidth: NSLayoutConstraint!
 
         init() {
             super.init(frame: .zero)
@@ -430,16 +411,10 @@ struct ArchiveFoldersView: NSViewRepresentable {
             countField.alignment = .right
             countField.setContentCompressionResistancePriority(.required, for: .horizontal)
             countField.setAccessibilityElement(false)
-            completeView.image = NSImage(systemSymbolName: "checkmark", accessibilityDescription: nil)?
-                .withSymbolConfiguration(.init(pointSize: NSFont.smallSystemFontSize, weight: .semibold))
-            completeView.contentTintColor = .secondaryLabelColor
-            completeView.setAccessibilityElement(false)
-            completeView.isHidden = true
-            for view in [icon, nameField, completeView, countField] {
+            for view in [icon, nameField, countField] {
                 view.translatesAutoresizingMaskIntoConstraints = false
                 addSubview(view)
             }
-            completeWidth = completeView.widthAnchor.constraint(equalToConstant: 0)
             NSLayoutConstraint.activate([
                 icon.leadingAnchor.constraint(equalTo: leadingAnchor),
                 icon.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -447,9 +422,6 @@ struct ArchiveFoldersView: NSViewRepresentable {
                 icon.heightAnchor.constraint(equalToConstant: 16),
                 nameField.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 5),
                 nameField.centerYAnchor.constraint(equalTo: centerYAnchor),
-                completeWidth,
-                completeView.trailingAnchor.constraint(equalTo: countField.leadingAnchor, constant: -3),
-                completeView.centerYAnchor.constraint(equalTo: centerYAnchor),
                 countField.centerYAnchor.constraint(equalTo: centerYAnchor)
             ])
             // Extreme nesting can leave less room than the fixed parts need.
@@ -458,14 +430,14 @@ struct ArchiveFoldersView: NSViewRepresentable {
             let trailing = countField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4)
             trailing.priority = .defaultHigh
             trailing.isActive = true
-            let nameFits = nameField.trailingAnchor.constraint(lessThanOrEqualTo: completeView.leadingAnchor, constant: -6)
+            let nameFits = nameField.trailingAnchor.constraint(lessThanOrEqualTo: countField.leadingAnchor, constant: -6)
             nameFits.priority = .defaultHigh
             nameFits.isActive = true
         }
 
         required init?(coder: NSCoder) { nil }
 
-        func configure(id: String, name: String, count: Int, isComplete: Bool = false,
+        func configure(id: String, name: String, count: Int,
                        direction: NSUserInterfaceLayoutDirection = .leftToRight) {
             userInterfaceLayoutDirection = direction
             for view in subviews { view.userInterfaceLayoutDirection = direction }
@@ -475,13 +447,9 @@ struct ArchiveFoldersView: NSViewRepresentable {
             // Empty folders stay listed but recede, so media-bearing rows lead.
             nameField.textColor = count == 0 ? .secondaryLabelColor : .labelColor
             countField.stringValue = L10n.number(count)
-            completeView.isHidden = !isComplete
-            completeWidth.constant = isComplete ? 12 : 0
-            toolTip = isComplete ? name + "\n" + L10n.text("All reviewed") : name
+            toolTip = name
             setAccessibilityIdentifier("archive.folder.\(id)")
-            var label = name + ", " + L10n.plural("%lld items", count)
-            if isComplete { label += ", " + L10n.text("All reviewed") }
-            nameField.setAccessibilityLabel(label)
+            nameField.setAccessibilityLabel(name + ", " + L10n.plural("%lld items", count))
         }
     }
 }

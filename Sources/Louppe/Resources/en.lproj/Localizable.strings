@@ -2,7 +2,6 @@
 "  ·  grouped review" = "  ·  grouped review";
 "  ·  {0} mixed" = "  ·  {0} mixed";
 "  ·  {0} selected" = "  ·  {0} selected";
-"  ·  {0}/{1} reviewed" = "  ·  {0}/{1} reviewed";
 " (including {0})" = " (including {0})";
 " (of {0} total)" = " (of {0} total)";
 " ({0} and {1})" = " ({0} and {1})";
@@ -105,9 +104,9 @@
 "Application" = "Application";
 "Application packets copied unchanged" = "Application packets copied unchanged";
 "Applies to video and audio playback." = "Applies to video and audio playback.";
-"Apply No; advance if enabled in Review settings" = "Apply No; advance if enabled in Review settings";
+"Mark No; advance if enabled in Review settings. Press again to make it Unmarked." = "Mark No; advance if enabled in Review settings. Press again to make it Unmarked.";
 "Apply Resolutions" = "Apply Resolutions";
-"Apply Yes; advance if enabled in Review settings" = "Apply Yes; advance if enabled in Review settings";
+"Mark Yes; advance if enabled in Review settings. Press again to make it Unmarked." = "Mark Yes; advance if enabled in Review settings. Press again to make it Unmarked.";
 "Apply a portable color label to the current photo or selection" = "Apply a portable color label to the current photo or selection";
 "Apply a portable star rating to the current photo or selection" = "Apply a portable star rating to the current photo or selection";
 "Apply the same choice to all conflicts" = "Apply the same choice to all conflicts";
@@ -279,8 +278,6 @@
 "Date taken" = "Date taken";
 "Date taken from" = "Date taken from";
 "Date taken to" = "Date taken to";
-"Decide No" = "Decide No";
-"Decide Yes" = "Decide Yes";
 "Decision" = "Decision";
 "Decision No" = "Decision No";
 "Decision Yes" = "Decision Yes";
@@ -345,8 +342,6 @@
 "Extend the selection from the current item to the last visible item" = "Extend the selection from the current item to the last visible item";
 "External modification conflict" = "External modification conflict";
 "F Yes · D No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place." = "F Yes · D No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place.";
-"F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Arrows browse; ⌘Z undoes. Decisions save automatically; No never trashes files." = "F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Arrows browse; ⌘Z undoes. Decisions save automatically; No never trashes files.";
-"F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Stars (0–5) and color labels are independent." = "F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Stars (0–5) and color labels are independent.";
 "Failed" = "Failed";
 "Fast" = "Fast";
 "Fast photo, video, and audio culling for creators.\n\n" = "Fast photo, video, and audio culling for creators.\n\n";
@@ -391,7 +386,7 @@
 "Folders Z–A" = "Folders Z–A";
 "Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session." = "Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session.";
 "For {0}, rollback also failed; check both the source folder and Trash." = "For {0}, rollback also failed; check both the source folder and Trash.";
-"Forgets saved decisions for this folder and opens the current files unrated" = "Forgets saved decisions for this folder and opens the current files unrated";
+"Forgets saved decisions for this folder and opens the current files as Unmarked" = "Forgets saved decisions for this folder and opens the current files as Unmarked";
 "Format" = "Format";
 "Frame rate" = "Frame rate";
 "From" = "From";
@@ -428,7 +423,6 @@
 "Include XMP sidecars (off by default)" = "Include XMP sidecars (off by default)";
 "Include XMP sidecars for editing apps" = "Include XMP sidecars for editing apps";
 "Included XMP sidecars follow media." = "Included XMP sidecars follow media.";
-"Includes {0} No and {1} Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder." = "Includes {0} No and {1} Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.";
 "Increase thumbnail size in Grid" = "Increase thumbnail size in Grid";
 "Inspect the current Gallery video half a second earlier" = "Inspect the current Gallery video half a second earlier";
 "Inspect the current Gallery video half a second later" = "Inspect the current Gallery video half a second later";
@@ -521,7 +515,6 @@
 "Manual" = "Manual";
 "Mark No" = "Mark No";
 "Mark Yes" = "Mark Yes";
-"Mark Yes / No; advance by default (Settings → Review)" = "Mark Yes / No; advance by default (Settings → Review)";
 "Mark clipping estimated from the displayed preview" = "Mark clipping estimated from the displayed preview";
 "Mark some items Yes (press F) before exporting." = "Mark some items Yes (press F) before exporting.";
 "Match" = "Match";
@@ -579,7 +572,6 @@
 "Move {0} files?" = "Move {0} files?";
 "Move {0} later" = "Move {0} later";
 "Trash {0} marked No?" = "Trash {0} marked No?";
-"Trash {0} marked No or Undecided?" = "Trash {0} marked No or Undecided?";
 "Trash {0}?" = "Trash {0}?";
 "Trash No" = "Trash No";
 "Trash No…" = "Trash No…";
@@ -627,7 +619,7 @@
 "Audio levels unavailable" = "Audio levels unavailable";
 "No recognised media was found in “{0}”. Choose another folder or check Supported Formats." = "No recognised media was found in “{0}”. Choose another folder or check Supported Formats.";
 "No review group is active" = "No review group is active";
-"No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated.";
+"No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked." = "No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked.";
 "No stars" = "No stars";
 "No still-photo capture times were within the selected burst interval." = "No still-photo capture times were within the selected burst interval.";
 "None" = "None";
@@ -824,13 +816,11 @@
 "Review Rename…" = "Review Rename…";
 "Review Sidecars…" = "Review Sidecars…";
 "Review a visual overview of the folder" = "Review a visual overview of the folder";
-"Review complete: {0} Yes · {1} No" = "Review complete: {0} Yes · {1} No";
 "Review folders before their subfolders; files stay chronological." = "Review folders before their subfolders; files stay chronological.";
 "Review groups" = "Review groups";
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette (⌘K). Search for RAW, JPEG, or pairing." = "Review matching RAW + JPEG files together or separately in Filter or the Command Palette (⌘K). Search for RAW, JPEG, or pairing.";
 "Review metadata" = "Review metadata";
 "Review one photo, video, or audio file at a time" = "Review one photo, video, or audio file at a time";
-"Review progress and decision totals" = "Review progress and decision totals";
 "Review the current video or audio recording at double speed" = "Review the current video or audio recording at double speed";
 "Review the current video or audio recording at normal speed" = "Review the current video or audio recording at normal speed";
 "Play the current video or audio recording at 1.5× speed" = "Play the current video or audio recording at 1.5× speed";
@@ -1088,8 +1078,8 @@
 "This media family has ambiguous XMP filenames." = "This media family has ambiguous XMP filenames.";
 "This media file couldn't be played." = "This media file couldn't be played.";
 "This pair spans source folders. Both sidecars stay at the source because they cannot safely share one destination name." = "This pair spans source folders. Both sidecars stay at the source because they cannot safely share one destination name.";
-"This replaces this folder’s saved decisions and opens its files unrated. Photos and videos stay unchanged." = "This replaces this folder’s saved decisions and opens its files unrated. Photos and videos stay unchanged.";
-"This session came from another location; no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "This session came from another location; no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated.";
+"This replaces this folder’s saved decisions and opens its files as Unmarked. Photos and videos stay unchanged." = "This replaces this folder’s saved decisions and opens its files as Unmarked. Photos and videos stay unchanged.";
+"This session came from another location, and no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked." = "This session came from another location, and no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked.";
 "This storage does not support the collision-safe rename needed to move {0}." = "This storage does not support the collision-safe rename needed to move {0}.";
 "This video's format or codec isn't supported by macOS." = "This video's format or codec isn't supported by macOS.";
 "This view is already selected" = "This view is already selected";
@@ -1106,8 +1096,8 @@
 "Toggle the thumbnail browser in Gallery" = "Toggle the thumbnail browser in Gallery";
 "Top level" = "Top level";
 "Total size" = "Total size";
-"Trash No + Undecided" = "Trash No + Undecided";
-"Trash No + Undecided…" = "Trash No + Undecided…";
+"Trash No + Unmarked" = "Trash No + Unmarked";
+"Trash No + Unmarked…" = "Trash No + Unmarked…";
 "Treat matching RAW + JPEG as one photo" = "Treat matching RAW + JPEG as one photo";
 "Treat matching RAW and JPEG as one photo" = "Treat matching RAW and JPEG as one photo";
 "Try a different search term." = "Try a different search term.";
@@ -1117,7 +1107,7 @@
 "Types" = "Types";
 "Unavailable" = "Unavailable";
 "Uncertain files remain untouched. Reviewing stays available; Copy, Move, Rename, Organize, and Clean Up are paused until recovery finishes." = "Uncertain files remain untouched. Reviewing stays available; Copy, Move, Rename, Organize, and Clean Up are paused until recovery finishes.";
-"Undecided" = "Undecided";
+"Unmarked" = "Unmarked";
 "Undo" = "Undo";
 "Undo Clean Up with ⌘Z before closing this session, while the files remain in Trash." = "Undo Clean Up with ⌘Z before closing this session, while the files remain in Trash.";
 "Undo Louppe Action" = "Undo Louppe Action";
@@ -1192,7 +1182,7 @@
 "Waveform unavailable" = "Waveform unavailable";
 "White balance" = "White balance";
 "Widest first" = "Widest first";
-"Within this scope, Yes and unrated items stay in the folder." = "Within this scope, Yes and Undecided items stay in the folder.";
+"Within this scope, Yes and Unmarked items stay in the folder." = "Within this scope, Yes and Unmarked items stay in the folder.";
 "Write Sidecars" = "Write Sidecars";
 "Write decisions, stars, and colors to XMP sidecars for editing apps. Originals stay unchanged." = "Write decisions, stars, and colors to XMP sidecars for editing apps. Originals stay unchanged.";
 "Writing Metadata (XMP)…" = "Writing Metadata (XMP)…";
@@ -1294,7 +1284,6 @@
 "near duplicates" = "near duplicates";
 "next row" = "next row";
 "no color" = "no color";
-"no decision" = "no decision";
 "none" = "none";
 "normal review" = "normal review";
 "open folder" = "open folder";
@@ -1416,11 +1405,8 @@
 "{0} fps" = "{0} fps";
 "{0} hour" = "{0} hour";
 "{0} hours" = "{0} hours";
-"{0} included RAW+JPEG pair has different file decisions and is treated as undecided." = "{0} included RAW+JPEG pair has different file decisions and is treated as undecided.";
-"{0} included RAW+JPEG pairs have different file decisions and are treated as undecided." = "{0} included RAW+JPEG pairs have different file decisions and are treated as undecided.";
 "{0} item couldn't be moved completely. " = "{0} item couldn't be moved completely. ";
 "{0} item match more than one route: {1}." = "{0} item matches more than one route: {1}.";
-"{0} item still undecided in this scope — they won't be exported." = "{0} item is still undecided in this scope — it won't be exported.";
 "{0} item · {1} media file" = "{0} item · {1} media file";
 "{0} item · {1} media files" = "{0} item · {1} media files";
 "{0} items" = "{0} items";
@@ -1430,7 +1416,6 @@
 "{0} items found" = "{0} items found";
 "{0} items have" = "{0} items have";
 "{0} items match more than one route: {1}." = "{0} items match more than one route: {1}.";
-"{0} items still undecided in this scope — they won't be exported." = "{0} items are still undecided in this scope — they won't be exported.";
 "{0} items will be copied" = "{0} items will be copied";
 "{0} items will be moved" = "{0} items will be moved";
 "{0} items will be prepared for XMP publication" = "{0} items will be prepared for XMP publication";
@@ -1572,7 +1557,7 @@
 
 "I confirm the selected files are the same photos or videos." = "I confirm the selected files are the same photos or videos.";
 
-"Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files." = "Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files.";
+"Restoring applies the selected previous decisions only to files with no current decision, stars, color label, or recorded metadata change. Media files stay unchanged." = "Restoring applies the selected previous decisions only to files with no current decision, stars, color label, or recorded metadata change. Media files stay unchanged.";
 
 "Keep Current Decisions" = "Keep Current Decisions";
 
@@ -1698,7 +1683,6 @@
 "Show or hide the red preview clipping overlay ({0})" = "Show or hide the red preview clipping overlay ({0})";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%." = "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%.";
 "Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts." = "Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts.";
-"{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent.";
 "Match shortcuts by" = "Match shortcuts by";
 "Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard." = "Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard.";
 "Customize shortcuts" = "Customize shortcuts";
@@ -1747,7 +1731,7 @@
 "Change playback speed; previous / next item without playback" = "Change playback speed; previous / next item without playback";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size.";
 "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts.";
-"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent." = "Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent.";
+"Use your assigned shortcuts to mark an item Yes or No. Press again to make it Unmarked; that never advances. By default, a new mark advances to the next item and stops at the end (Settings → General → Review). Stars and color labels are independent." = "Use your assigned shortcuts to mark an item Yes or No. Press again to make it Unmarked; that never advances. By default, a new mark advances to the next item and stops at the end (Settings → General → Review). Stars and color labels are independent.";
 "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap.";
 "Find a shortcut" = "Find a shortcut";
 "No matching shortcuts." = "No matching shortcuts.";
@@ -2100,7 +2084,6 @@
 "Show Folders" = "Show Folders";
 "Expand All" = "Expand All";
 "Collapse All" = "Collapse All";
-"All reviewed" = "All reviewed";
 "Next Unfinished Folder" = "Next Unfinished Folder";
 "Folders width" = "Folders width";
 "Folder: {0}, including subfolders" = "Folder: {0}, including subfolders";
@@ -2112,7 +2095,7 @@
 "Folder navigation could not be saved. Previous positions are retained." = "Folder navigation could not be saved. Previous positions are retained.";
 
 "Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered.";
-"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together.";
+"File actions, Clear All Decisions and Clear Stars and Labels follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "File actions, Clear All Decisions and Clear Stars and Labels follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together.";
 "Reset Folder Navigation" = "Reset Folder Navigation";
 "Clear Yes/No decisions in this folder ({0})" = "Clear Yes/No decisions in this folder ({0})";
 
@@ -2168,3 +2151,12 @@
 "Try Again" = "Try Again";
 
 "The sidecar's media family changed or could not be verified. Rescan the folder before changing XMP." = "The sidecar's media family changed or could not be verified. Rescan the folder before changing XMP.";
+"  ·  {0} Yes" = "  ·  {0} Yes";
+"  ·  {0} No" = "  ·  {0} No";
+"Review tips" = "Review tips";
+"Clear Stars and Labels…" = "Clear Stars and Labels…";
+"Clear Stars and Labels?" = "Clear Stars and Labels?";
+"Clear Stars and Labels" = "Clear Stars and Labels";
+"Remove stars and color labels while keeping Yes and No decisions" = "Remove stars and color labels while keeping Yes and No decisions";
+"reset stars" = "reset stars";
+"remove color labels" = "remove color labels";

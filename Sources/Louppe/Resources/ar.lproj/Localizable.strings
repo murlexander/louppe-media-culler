@@ -2,7 +2,6 @@
 "  ·  grouped review" = "  ·  مراجعة مجمّعة";
 "  ·  {0} mixed" = "  ·  {0} مختلطة";
 "  ·  {0} selected" = "  ·  {0} محددة";
-"  ·  {0}/{1} reviewed" = "  ·  تمت مراجعة {0} من {1}";
 " (including {0})" = " (بما في ذلك {0})";
 " (of {0} total)" = " (المجموع {0})";
 " ({0} and {1})" = " ({0} و{1})";
@@ -105,9 +104,9 @@
 "Application" = "التطبيق";
 "Application packets copied unchanged" = "حزم التطبيقات المنسوخة دون تغيير";
 "Applies to video and audio playback." = "ينطبق على تشغيل الفيديو والصوت.";
-"Apply No; advance if enabled in Review settings" = "تحديد لا؛ والانتقال إلى التالي إذا فُعّل ذلك في إعدادات المراجعة";
+"Mark No; advance if enabled in Review settings. Press again to make it Unmarked." = "تحديد لا؛ والانتقال إلى التالي إذا فُعّل ذلك في إعدادات المراجعة. اضغط مرة أخرى لجعله بلا تحديد.";
 "Apply Resolutions" = "تطبيق الحلول";
-"Apply Yes; advance if enabled in Review settings" = "تحديد نعم؛ والانتقال إلى التالي إذا فُعّل ذلك في إعدادات المراجعة";
+"Mark Yes; advance if enabled in Review settings. Press again to make it Unmarked." = "تحديد نعم؛ والانتقال إلى التالي إذا فُعّل ذلك في إعدادات المراجعة. اضغط مرة أخرى لجعله بلا تحديد.";
 "Apply a portable color label to the current photo or selection" = "تطبيق تصنيف لوني قابل للنقل إلى تطبيقات أخرى على الصورة الحالية أو العناصر المحددة";
 "Apply a portable star rating to the current photo or selection" = "تطبيق تقييم نجوم قابل للنقل إلى تطبيقات أخرى على الصورة الحالية أو العناصر المحددة";
 "Apply the same choice to all conflicts" = "تطبيق الخيار نفسه على جميع التعارضات";
@@ -279,8 +278,6 @@
 "Date taken" = "تاريخ الالتقاط";
 "Date taken from" = "تاريخ الالتقاط من";
 "Date taken to" = "تاريخ الالتقاط إلى";
-"Decide No" = "تحديد لا";
-"Decide Yes" = "تحديد نعم";
 "Decision" = "القرار";
 "Decision No" = "القرار: لا";
 "Decision Yes" = "القرار: نعم";
@@ -345,8 +342,6 @@
 "Extend the selection from the current item to the last visible item" = "توسيع التحديد من العنصر الحالي إلى آخر عنصر ظاهر";
 "External modification conflict" = "تعارض بسبب تعديل خارجي";
 "F Yes · D No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place." = "F نعم · D لا · الأسهم للتصفح · ⌘Z للتراجع. تُحفظ القرارات تلقائيًا؛ يبقي قرار لا الملفات في مكانها.";
-"F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Arrows browse; ⌘Z undoes. Decisions save automatically; No never trashes files." = "يحدد F قرار نعم وD قرار لا. ينتقل كلاهما افتراضيًا إلى العنصر التالي غير المحسوم (الإعدادات → المراجعة). الأسهم للتصفح و⌘Z للتراجع. تُحفظ القرارات تلقائيًا؛ لا ينقل قرار لا الملفات إلى سلة المهملات أبدًا.";
-"F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Stars (0–5) and color labels are independent." = "يحدد F قرار نعم ويحدد D قرار لا. ينتقل كلاهما افتراضيًا إلى العنصر التالي غير المحسوم (الإعدادات → المراجعة). النجوم (⁦0–5⁩) والتصنيفات اللونية مستقلة.";
 "Failed" = "فشل";
 "Fast" = "سريع";
 "Fast photo, video, and audio culling for creators.\n\n" = "فرز سريع للصور والفيديو والصوت للمبدعين.\n\n";
@@ -391,7 +386,7 @@
 "Folders Z–A" = "المجلدات Z–A";
 "Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session." = "لا تتغير المجلدات أو المحتويات أو الامتدادات. لا يُكتب فوق أي ملف. استعد جميع الأسماء السابقة باستخدام ⌘Z قبل إغلاق الجلسة.";
 "For {0}, rollback also failed; check both the source folder and Trash." = "تعذّر أيضًا التراجع عن {0}؛ تحقق من المجلد المصدر وسلة المهملات.";
-"Forgets saved decisions for this folder and opens the current files unrated" = "يتجاهل القرارات المحفوظة لهذا المجلد ويفتح الملفات الحالية دون تقييم";
+"Forgets saved decisions for this folder and opens the current files as Unmarked" = "يتجاهل القرارات المحفوظة لهذا المجلد ويفتح الملفات الحالية بلا تحديد";
 "Format" = "الشكل";
 "Frame rate" = "معدل الإطارات";
 "From" = "من";
@@ -428,7 +423,6 @@
 "Include XMP sidecars (off by default)" = "تضمين ملفات XMP المصاحبة (معطّل افتراضيًا)";
 "Include XMP sidecars for editing apps" = "تضمين ملفات XMP المصاحبة لتطبيقات التحرير";
 "Included XMP sidecars follow media." = "تتبع ملفات XMP المصاحبة المضمّنة وسائطها.";
-"Includes {0} No and {1} Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder." = "يشمل {0} عناصر بقرار لا و{1} عناصر غير محسومة. لا تحمي النجوم والتصنيفات اللونية هذه العناصر. تبقى أزواج RAW + JPEG ذات القرارات المختلفة في المجلد.";
 "Increase thumbnail size in Grid" = "تكبير الصور المصغرة في الشبكة";
 "Inspect the current Gallery video half a second earlier" = "فحص فيديو المعرض الحالي قبل نصف ثانية";
 "Inspect the current Gallery video half a second later" = "فحص فيديو المعرض الحالي بعد نصف ثانية";
@@ -521,7 +515,6 @@
 "Manual" = "يدوي";
 "Mark No" = "تحديد لا";
 "Mark Yes" = "تحديد نعم";
-"Mark Yes / No; advance by default (Settings → Review)" = "تحديد نعم أو لا؛ الانتقال تلقائيًا افتراضيًا (الإعدادات → مراجعة)";
 "Mark clipping estimated from the displayed preview" = "تحديد فقدان التفاصيل المقدّر من المعاينة المعروضة";
 "Mark some items Yes (press F) before exporting." = "حدد بعض العناصر بقرار نعم (اضغط F) قبل التصدير.";
 "Match" = "تطابق";
@@ -579,7 +572,6 @@
 "Move {0} files?" = "نقل {0} ملفات؟";
 "Move {0} later" = "تأخير {0}";
 "Trash {0} marked No?" = "نقل {0} عناصر بقرار «لا» إلى سلة المهملات؟";
-"Trash {0} marked No or Undecided?" = "نقل {0} بقرار «لا» أو غير المحسومة إلى سلة المهملات؟";
 "Trash {0}?" = "نقل {0} إلى سلة المهملات؟";
 "Trash No" = "نقل عناصر «لا» إلى سلة المهملات";
 "Trash No…" = "نقل عناصر لا إلى سلة المهملات…";
@@ -627,7 +619,7 @@
 "Audio levels unavailable" = "مستويات الصوت غير متاحة";
 "No recognised media was found in “{0}”. Choose another folder or check Supported Formats." = "لم يُعثر على وسائط معروفة في «{0}». اختر مجلدًا آخر أو تحقق من التنسيقات المدعومة.";
 "No review group is active" = "لا توجد مجموعة مراجعة نشطة";
-"No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "لا تطابق أسماء الملفات المحفوظة هذا المجلد. لم تتغير القرارات المحفوظة. فتح كجلسة جديدة يستبدلها ويفتح الملفات الحالية دون تقييم.";
+"No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked." = "لا تطابق أسماء الملفات المحفوظة هذا المجلد. لم تتغير القرارات المحفوظة. فتح كجلسة جديدة يستبدلها ويفتح الملفات الحالية بلا تحديد.";
 "No stars" = "بلا تقييم بالنجوم";
 "No still-photo capture times were within the selected burst interval." = "لم تقع أوقات التقاط أي صور ثابتة ضمن الفاصل المحدد للتصوير المتتابع.";
 "None" = "لا شيء";
@@ -824,13 +816,11 @@
 "Review Rename…" = "مراجعة إعادة التسمية…";
 "Review Sidecars…" = "مراجعة الملفات المصاحبة…";
 "Review a visual overview of the folder" = "مراجعة نظرة مرئية عامة للمجلد";
-"Review complete: {0} Yes · {1} No" = "اكتملت المراجعة: {0} نعم · {1} لا";
 "Review folders before their subfolders; files stay chronological." = "مراجعة المجلدات قبل مجلداتها الفرعية؛ تبقى الملفات مرتبة زمنيًا.";
 "Review groups" = "مجموعات المراجعة";
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette (⌘K). Search for RAW, JPEG, or pairing." = "راجع ملفات RAW + JPEG المتطابقة معًا أو منفصلة عبر التصفية أو لوحة الأوامر (⌘K). ابحث عن RAW أو JPEG أو الاقتران.";
 "Review metadata" = "بيانات المراجعة الوصفية";
 "Review one photo, video, or audio file at a time" = "استعراض صورة واحدة أو فيديو أو ملف صوتي في وقت واحد";
-"Review progress and decision totals" = "استعراض التقدم المحرز ومجاميع القرارات";
 "Review the current video or audio recording at double speed" = "مراجعة الفيديو أو التسجيل الصوتي الحالي بسرعة 2×";
 "Review the current video or audio recording at normal speed" = "مراجعة الفيديو أو التسجيل الصوتي الحالي بالسرعة العادية";
 "Play the current video or audio recording at 1.5× speed" = "تشغيل الفيديو أو التسجيل الصوتي الحالي بسرعة 1.5×";
@@ -1088,8 +1078,8 @@
 "This media family has ambiguous XMP filenames." = "لهذه المجموعة من الوسائط أسماء ملفات XMP ملتبسة.";
 "This media file couldn't be played." = "تعذّر تشغيل ملف الوسائط هذا.";
 "This pair spans source folders. Both sidecars stay at the source because they cannot safely share one destination name." = "يمتد هذا الزوج بين مجلدات مصدر مختلفة. يبقى الملفان المصاحبان في المصدر لأنهما لا يستطيعان مشاركة اسم وجهة واحد بأمان.";
-"This replaces this folder’s saved decisions and opens its files unrated. Photos and videos stay unchanged." = "يستبدل هذا القرارات المحفوظة لهذا المجلد ويفتح ملفاته دون تقييم. لا تتغير الصور والفيديوهات.";
-"This session came from another location; no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "تأتي هذه الجلسة من موقع آخر؛ تعذّر التحقق من الملفات الأصلية نفسها هنا. لم تتغير القرارات المحفوظة. فتح كجلسة جديدة يستبدلها ويفتح الملفات الحالية دون تقييم.";
+"This replaces this folder’s saved decisions and opens its files as Unmarked. Photos and videos stay unchanged." = "يستبدل هذا القرارات المحفوظة لهذا المجلد ويفتح ملفاته بلا تحديد. لا تتغير الصور والفيديوهات.";
+"This session came from another location, and no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked." = "تأتي هذه الجلسة من موقع آخر، وتعذّر التحقق من الملفات الأصلية نفسها هنا. لم تتغير القرارات المحفوظة. فتح كجلسة جديدة يستبدلها ويفتح الملفات الحالية بلا تحديد.";
 "This storage does not support the collision-safe rename needed to move {0}." = "لا تدعم وحدة التخزين هذه إعادة التسمية الآمنة من التعارضات اللازمة لنقل {0}.";
 "This video's format or codec isn't supported by macOS." = "لا يدعم macOS تنسيق هذا الفيديو أو برنامج ترميزه.";
 "This view is already selected" = "هذا العرض محدد بالفعل";
@@ -1106,8 +1096,8 @@
 "Toggle the thumbnail browser in Gallery" = "تبديل متصفح الصور المصغرة في المعرض";
 "Top level" = "المستوى الأعلى";
 "Total size" = "الحجم الإجمالي";
-"Trash No + Undecided" = "نقل عناصر لا وغير المحسومة إلى سلة المهملات";
-"Trash No + Undecided…" = "نقل عناصر لا وغير المحسومة إلى سلة المهملات…";
+"Trash No + Unmarked" = "نقل عناصر لا والعناصر بلا تحديد إلى سلة المهملات";
+"Trash No + Unmarked…" = "نقل عناصر لا والعناصر بلا تحديد إلى سلة المهملات…";
 "Treat matching RAW + JPEG as one photo" = "معالجة مطابقة RAW + JPEG كصورة واحدة";
 "Treat matching RAW and JPEG as one photo" = "معالجة مطابقة RAW و JPEG كصورة واحدة";
 "Try a different search term." = "جرّب عبارة بحث أخرى.";
@@ -1117,7 +1107,7 @@
 "Types" = "الأنواع";
 "Unavailable" = "غير متاح";
 "Uncertain files remain untouched. Reviewing stays available; Copy, Move, Rename, Organize, and Clean Up are paused until recovery finishes." = "لا تتغير الملفات غير المؤكدة. تظل المراجعة متاحة؛ ويتوقف النسخ والنقل وإعادة التسمية والتنظيم والتنظيف حتى ينتهي الاسترداد.";
-"Undecided" = "لم يُحسم";
+"Unmarked" = "بلا تحديد";
 "Undo" = "تراجع";
 "Undo Clean Up with ⌘Z before closing this session, while the files remain in Trash." = "تراجع عن التنظيف باستخدام ⌘Z قبل إغلاق هذه الجلسة، ما دامت الملفات في سلة المهملات.";
 "Undo Louppe Action" = "التراجع عن إجراء Louppe";
@@ -1192,7 +1182,7 @@
 "Waveform unavailable" = "الشكل الموجي غير متاح";
 "White balance" = "توازن الأبيض";
 "Widest first" = "الأوسع أولًا";
-"Within this scope, Yes and unrated items stay in the folder." = "ضمن هذا النطاق، تبقى عناصر نعم والعناصر غير المحسومة في المجلد.";
+"Within this scope, Yes and Unmarked items stay in the folder." = "ضمن هذا النطاق، تبقى عناصر نعم والعناصر بلا تحديد في المجلد.";
 "Write Sidecars" = "كتابة الملفات المصاحبة";
 "Write decisions, stars, and colors to XMP sidecars for editing apps. Originals stay unchanged." = "كتابة القرارات والنجوم والألوان إلى ملفات XMP المصاحبة لتطبيقات التحرير. تبقى الملفات الأصلية دون تغيير.";
 "Writing Metadata (XMP)…" = "كتابة البيانات الوصفية (XMP)…";
@@ -1294,7 +1284,6 @@
 "near duplicates" = "نسخ شبه متطابقة";
 "next row" = "الصف القادم";
 "no color" = "لا لون";
-"no decision" = "لا قرار";
 "none" = "لا شيء";
 "normal review" = "الاستعراض العادي";
 "open folder" = "فتح المجلد";
@@ -1416,11 +1405,8 @@
 "{0} fps" = "{0} fps";
 "{0} hour" = "{0} ساعة";
 "{0} hours" = "{0} ساعات";
-"{0} included RAW+JPEG pair has different file decisions and is treated as undecided." = "لزوج RAW+JPEG مضمن واحد ({0}) قرارات مختلفة للملفين؛ يُعامل كغير محسوم.";
-"{0} included RAW+JPEG pairs have different file decisions and are treated as undecided." = "لأزواج RAW+JPEG المضمنة وعددها {0} قرارات مختلفة للملفات؛ تُعامل كغير محسومة.";
 "{0} item couldn't be moved completely. " = "تعذّر نقل {0} عنصر بالكامل. ";
 "{0} item match more than one route: {1}." = "يطابق {0} عنصر أكثر من مسار: {1}.";
-"{0} item still undecided in this scope — they won't be exported." = "ما زال عنصر واحد ({0}) غير محسوم ضمن هذا النطاق؛ لن يُصدّر.";
 "{0} item · {1} media file" = "{0} عنصر · {1} ملف وسائط";
 "{0} item · {1} media files" = "{0} عنصر · {1} ملفات وسائط";
 "{0} items" = "{0} عناصر";
@@ -1430,7 +1416,6 @@
 "{0} items found" = "عُثر على {0} عناصر";
 "{0} items have" = "{0} عناصر لها";
 "{0} items match more than one route: {1}." = "تطابق {0} عناصر أكثر من مسار: {1}.";
-"{0} items still undecided in this scope — they won't be exported." = "ما زالت {0} عناصر غير محسومة ضمن هذا النطاق؛ لن تُصدّر.";
 "{0} items will be copied" = "سيُنسخ {0} من العناصر";
 "{0} items will be moved" = "سيُنقل {0} من العناصر";
 "{0} items will be prepared for XMP publication" = "سيُجهّز {0} عناصر لكتابة XMP";
@@ -1572,7 +1557,7 @@
 
 "I confirm the selected files are the same photos or videos." = "أؤكد أن الملفات المحددة هي الصور أو الفيديوهات نفسها.";
 
-"Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files." = "تطبق الاستعادة القرارات السابقة المحددة فقط على الملفات التي لم تراجعها. لا تُغيّر ملفات الوسائط.";
+"Restoring applies the selected previous decisions only to files with no current decision, stars, color label, or recorded metadata change. Media files stay unchanged." = "تطبق الاستعادة القرارات السابقة المحددة فقط على الملفات التي ليس لها قرار حالي أو نجوم أو تصنيف لوني أو تغيير مسجّل في البيانات الوصفية. لا تتغير ملفات الوسائط.";
 
 "Keep Current Decisions" = "الاحتفاظ بالقرارات الحالية";
 
@@ -1698,7 +1683,6 @@
 "Show or hide the red preview clipping overlay ({0})" = "إظهار أو إخفاء طبقة تحذير تجاوز النطاق اللوني الحمراء في المعاينة ({0})";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%." = "كبّر باستخدام شريط التمرير أو إيماءة القرص؛ وحرّك الصورة بالتمرير بإصبعين أو السحب. يعيد {0} التكبير المخصص إلى 100% في المنتصف، ثم يبدّل إلى الملاءمة. يبدّل {1} حجم الهاتف. انقر مرتين على نقطة لفحصها عند 100%.";
 "Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts." = "غيّر مفاتيح المراجعة وسلوك تخطيط لوحة المفاتيح من الإعدادات → اختصارات لوحة المفاتيح.";
-"{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "يضع {0} علامة نعم؛ ويضع {1} علامة لا. ينتقل كلاهما افتراضيًا إلى العنصر التالي غير المحسوم (الإعدادات → المراجعة). النجوم وتسميات الألوان مستقلة.";
 "Match shortcuts by" = "مطابقة الاختصارات حسب";
 "Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard." = "تحافظ المواضع الفعلية على حركات الأصابع نفسها في Dvorak والتخطيطات الأخرى. تشير أسماء المواضع إلى لوحة مفاتيح QWERTY.";
 "Customize shortcuts" = "تخصيص الاختصارات";
@@ -1747,7 +1731,7 @@
 "Change playback speed; previous / next item without playback" = "تغيير سرعة التشغيل؛ العنصر السابق / التالي للوسائط غير القابلة للتشغيل";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "كبّر باستخدام شريط التمرير أو إيماءة القرص؛ حرّك بالتمرير بإصبعين أو بالسحب. انقر مرتين على نقطة لفحصها بنسبة 100%. استخدم عناصر حجم الصورة للعودة إلى الملاءمة أو 100% أو حجم الهاتف.";
 "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "يوضح كل مفتاح أدناه متى يُستخدم. لا تؤدي المفاتيح المشتركة إجراءات مختلفة إلا في طرق عرض أو سياقات وسائط منفصلة.";
-"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent." = "ضع علامة نعم أو لا باستخدام الأزرار أو الاختصارات المعيّنة. ينتقل كلاهما افتراضيًا إلى العنصر التالي غير المحسوم (الإعدادات ← عام ← المراجعة). النجوم وتسميات الألوان مستقلة.";
+"Use your assigned shortcuts to mark an item Yes or No. Press again to make it Unmarked; that never advances. By default, a new mark advances to the next item and stops at the end (Settings → General → Review). Stars and color labels are independent." = "استخدم الاختصارات المعيّنة لوضع علامة نعم أو لا على عنصر. اضغط مرة أخرى لجعله بلا تحديد؛ ولا ينقلك ذلك إلى عنصر آخر. افتراضيًا، تنقلك العلامة الجديدة إلى العنصر التالي وتتوقف عند النهاية (الإعدادات ← عام ← المراجعة). النجوم وتسميات الألوان مستقلة.";
 "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "أضف عدة مفاتيح لإجراء واحد. يمكن مشاركة مفتاح فقط عندما لا تتداخل سياقات العرض والوسائط الخاصة به.";
 "Find a shortcut" = "البحث عن اختصار";
 "No matching shortcuts." = "لا توجد اختصارات مطابقة.";
@@ -2100,7 +2084,6 @@
 "Show Folders" = "إظهار المجلدات";
 "Expand All" = "توسيع الكل";
 "Collapse All" = "طي الكل";
-"All reviewed" = "تمت مراجعة الكل";
 "Next Unfinished Folder" = "المجلد التالي غير المكتمل";
 "Folders width" = "عرض المجلدات";
 "Folder: {0}, including subfolders" = "المجلد: {0}، بما في ذلك المجلدات الفرعية";
@@ -2112,7 +2095,7 @@
 "Folder navigation could not be saved. Previous positions are retained." = "تعذر حفظ التنقل بين المجلدات. تم الاحتفاظ بالمواضع السابقة.";
 
 "Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "بدّل الشريط الجانبي بين المتصفح والمجلدات بالأزرار في أعلاه؛ وفي الشبكة استخدم زر الشريط الجانبي. تصفّح دون إعادة فتح الأرشيف؛ يتم تذكّر المواضع.";
-"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "تتبع إجراءات الملفات ومسح كل القرارات المجلد المختار. اختر كل الوسائط للإجراءات على الأرشيف بالكامل. تبقى أزواج RAW + JPEG معًا.";
+"File actions, Clear All Decisions and Clear Stars and Labels follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "تتبع إجراءات الملفات ومسح كل القرارات ومسح النجوم والتصنيفات المجلد المختار. اختر كل الوسائط للإجراءات على الأرشيف بالكامل. تبقى أزواج RAW + JPEG معًا.";
 "Reset Folder Navigation" = "إعادة تعيين التنقل بين المجلدات";
 "Clear Yes/No decisions in this folder ({0})" = "مسح قرارات نعم/لا في هذا المجلد ({0})";
 
@@ -2168,3 +2151,12 @@
 "Louppe couldn't check for existing XMP sidecars." = "تعذّر على Louppe التحقق من ملفات XMP الجانبية الموجودة.";
 
 "The sidecar's media family changed or could not be verified. Rescan the folder before changing XMP." = "تغيّرت ملفات الوسائط المرتبطة بـ XMP أو تعذّر التحقق منها. أعد فحص المجلد قبل تغيير XMP.";
+"  ·  {0} Yes" = "  ·  نعم {0}";
+"  ·  {0} No" = "  ·  لا {0}";
+"Review tips" = "نصائح المراجعة";
+"Clear Stars and Labels…" = "مسح النجوم والتصنيفات…";
+"Clear Stars and Labels?" = "مسح النجوم والتصنيفات؟";
+"Clear Stars and Labels" = "مسح النجوم والتصنيفات";
+"Remove stars and color labels while keeping Yes and No decisions" = "إزالة النجوم والتصنيفات اللونية مع الاحتفاظ بقرارات نعم ولا";
+"reset stars" = "إعادة ضبط النجوم";
+"remove color labels" = "إزالة التصنيفات اللونية";

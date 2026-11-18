@@ -347,6 +347,38 @@ final class PhotosLibraryTests: XCTestCase {
         if !condition() { throw CocoaError(.userCancelled) }
     }
 
+    func testClearStarsAndLabelsSavesLocalReviewMetadataAndKeepsOtherAssets() async throws {
+        let fixture = try Fixture(total: 105)
+        defer { fixture.remove() }
+        let store = fixture.store()
+        await store.photosBrowser.load()
+        store.openPhotosBatch(page: 1)
+        try await wait {
+            guard case .ready = store.phase else { return false }
+            return store.photosBatch?.range.page == 1 && store.items.count == 5 && !store.isFileOperationRunning
+        }
+        store.setColorLabel(.blue, at: 0)
+        let outside = try XCTUnwrap(store.photosBatch?.assetIDsByPath[try XCTUnwrap(store.items.first?.primaryURL.path)])
+        store.openPhotosBatch(page: 0, continuing: true)
+        try await wait {
+            guard case .ready = store.phase else { return false }
+            return store.photosBatch?.range.page == 0 && store.items.count == 100 && !store.isFileOperationRunning
+        }
+        store.rate(.yes, at: 0)
+        store.setStarRating(.four, at: 0)
+        store.setColorLabel(.red, at: 1)
+        let first = try XCTUnwrap(store.photosBatch?.assetIDsByPath[store.items[0].primaryURL.path])
+        let second = try XCTUnwrap(store.photosBatch?.assetIDsByPath[store.items[1].primaryURL.path])
+        XCTAssertTrue(store.canClearArchiveStarsAndLabels)
+        store.requestClearStarsAndLabels()
+        _ = await store.saveSessionForTermination()
+        let saved = try await fixture.decisions.load()
+        XCTAssertEqual(saved[first]?.rating, .yes, "decisions stay")
+        XCTAssertNil(saved[first]?.stars)
+        XCTAssertNil(saved[second]?.color)
+        XCTAssertEqual(saved[outside]?.color, .blue, "assets outside the loaded selection survive the merge")
+    }
+
     private struct Fixture {
         let root: URL
         let ordinaryFolder: URL

@@ -274,6 +274,13 @@ private struct FocusedLouppeSessionCommands: Commands {
                 actionableStore?.archiveRatedCount == 0
                     || actionableStore?.isFileOperationRunning != false
             )
+
+            Button {
+                actionableStore?.requestClearStarsAndLabels()
+            } label: {
+                Text(L10n.text("Clear Stars and Labels…"))
+            }
+            .disabled(actionableStore?.canClearArchiveStarsAndLabels != true)
         }
 
         CommandGroup(after: .saveItem) {

@@ -191,55 +191,44 @@ final class ArchiveFolderIndexTests: XCTestCase {
         XCTAssertEqual(index.nodes.count, 1_001)
     }
 
-    func testFolderProgressCountsCrossFolderPairsOnceAtSharedAncestors() {
-        // A pair split across raw/ and jpeg/ belongs to both folders, but
-        // counts once at shoot/ and All Media, exactly like the item counts.
+    func testFolderProgressCountsDirectItemsOncePerPhysicalParent() {
+        // A pair split across raw/ and jpeg/ is a direct item of both folders.
+        // Next Unfinished Folder reads only direct counts; ancestors get none.
         let pair = PhotoItem(primaryFile: file("shoot/raw/A.NEF"), pairedFile: file("shoot/jpeg/A.JPG"))
         let jpegOnly = photo("shoot/jpeg/B.JPG")
         let other = photo("other/C.JPG")
+        let samePair = PhotoItem(primaryFile: file("other/D.NEF"), pairedFile: file("other/D.JPG"))
         let index = ArchiveFolderIndex(root: syntheticRoot, directories: [directory("empty")],
-                                       items: [pair, jpegOnly, other])
-        var reviewed: Set<Int> = []
-        let progress = ArchiveFolderProgress(index: index) { reviewed.contains($0) }
-        func count(_ id: String, _ descendants: Bool = true) -> Int {
-            progress.reviewedCount(for: id, includesDescendants: descendants, index: index)
-        }
-        XCTAssertEqual(count(""), 0)
+                                       items: [pair, jpegOnly, other, samePair])
+        let progress = ArchiveFolderProgress(index: index) { _ in false }
+        func count(_ id: String) -> Int { progress.directReviewedCount(for: id, index: index) }
+        XCTAssertEqual(count("shoot/raw"), 0)
         XCTAssertTrue(progress.set(item: 0, reviewed: true, index: index))
         XCTAssertFalse(progress.set(item: 0, reviewed: true, index: index), "repeated state is a no-op")
         XCTAssertEqual(count("shoot/raw"), 1)
         XCTAssertEqual(count("shoot/jpeg"), 1)
-        XCTAssertEqual(count("shoot"), 1, "a split pair counts once at the shared parent")
-        XCTAssertEqual(count(""), 1)
-        XCTAssertTrue(progress.isComplete("shoot/raw", includesDescendants: true, index: index))
-        XCTAssertFalse(progress.isComplete("shoot/jpeg", includesDescendants: true, index: index))
-        XCTAssertFalse(progress.isComplete("shoot", includesDescendants: true, index: index))
-        XCTAssertFalse(progress.isComplete("empty", includesDescendants: true, index: index), "empty folders are never complete")
+        XCTAssertEqual(count("shoot"), 0, "ancestors keep no reviewed tally")
+        XCTAssertEqual(count(""), 0)
+        XCTAssertEqual(count("empty"), 0)
+        progress.set(item: 3, reviewed: true, index: index)
+        XCTAssertEqual(count("other"), 1, "a same-folder pair counts once")
         progress.set(item: 1, reviewed: true, index: index)
-        XCTAssertTrue(progress.isComplete("shoot", includesDescendants: true, index: index))
-        XCTAssertFalse(progress.isComplete("shoot", includesDescendants: false, index: index),
-                       "direct mode: shoot has no direct media")
-        XCTAssertFalse(progress.isComplete("", includesDescendants: true, index: index))
-        progress.set(item: 2, reviewed: true, index: index)
-        XCTAssertTrue(progress.isComplete("", includesDescendants: false, index: index), "All Media always includes subfolders")
+        XCTAssertEqual(count("shoot/jpeg"), 2)
         progress.set(item: 0, reviewed: false, index: index)
-        XCTAssertEqual(count("shoot"), 1)
-        XCTAssertEqual(count(""), 2)
-        XCTAssertFalse(progress.isComplete("shoot/raw", includesDescendants: true, index: index))
-        let rebuilt = ArchiveFolderProgress(index: index) { $0 != 0 }
+        XCTAssertEqual(count("shoot/raw"), 0)
+        XCTAssertEqual(count("shoot/jpeg"), 1)
+        let rebuilt = ArchiveFolderProgress(index: index) { $0 == 1 || $0 == 3 }
         for id in index.orderedFolderIDs {
-            for descendants in [true, false] {
-                XCTAssertEqual(rebuilt.reviewedCount(for: id, includesDescendants: descendants, index: index),
-                               count(id, descendants), "incremental and rebuilt counts agree for \(id)")
-            }
+            XCTAssertEqual(rebuilt.directReviewedCount(for: id, index: index), count(id),
+                           "incremental and rebuilt counts agree for \(id)")
         }
-        let replaced = index.reproject(items: [pair, jpegOnly, other])
+        let replaced = index.reproject(items: [pair, jpegOnly, other, samePair])
         XCTAssertFalse(progress.set(item: 0, reviewed: true, index: replaced), "a replaced index is rejected")
         XCTAssertEqual(index.url(for: "shoot/raw")?.path, syntheticRoot.appendingPathComponent("shoot/raw").path)
         XCTAssertNil(index.url(for: "missing"))
     }
 
-    func testFolderProgressStaysLinearInDepthIncludingDeepSplitPairs() {
+    func testFolderProgressDoesNotWalkAncestorsInDeepArchives() {
         var path = "d0"
         for level in 1..<200 { path += "/d\(level)" }
         var items = (0..<2_000).map { photo(path + "/IMG_\($0).JPG") }
@@ -248,11 +237,11 @@ final class ArchiveFolderIndexTests: XCTestCase {
         let clock = ContinuousClock()
         var progress: ArchiveFolderProgress!
         let elapsed = clock.measure { progress = ArchiveFolderProgress(index: index) { _ in true } }
-        XCTAssertLessThan(elapsed, .seconds(1), "init is O(items × depth), not quadratic in depth")
-        XCTAssertEqual(progress.reviewedCount(for: "", includesDescendants: true, index: index), 2_001)
-        XCTAssertEqual(progress.reviewedCount(for: path, includesDescendants: true, index: index), 2_001,
-                       "the deep split pair counts once at its shared parent")
-        XCTAssertTrue(progress.isComplete(path + "/raw", includesDescendants: true, index: index))
+        XCTAssertLessThan(elapsed, .seconds(1), "init is O(items × parent folders), independent of depth")
+        XCTAssertEqual(progress.directReviewedCount(for: path, index: index), 2_000)
+        XCTAssertEqual(progress.directReviewedCount(for: "", index: index), 0)
+        XCTAssertEqual(progress.directReviewedCount(for: path + "/raw", index: index), 1)
+        XCTAssertEqual(progress.directReviewedCount(for: path + "/jpeg", index: index), 1)
     }
 
     private func directory(_ id: String, name: String? = nil) -> ArchiveFolderIndex.Directory {

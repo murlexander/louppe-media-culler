@@ -364,6 +364,50 @@ final class MenuShortcutColumnsTests: XCTestCase {
         XCTAssertEqual(item.keyEquivalent, "")
     }
 
+    /// The real Edit menu exists only in the running app (verify live). Here:
+    /// its declared order and the native R hint, which belongs to Clear All
+    /// Decisions only; Clear Stars and Labels has no key.
+    func testEditClearCommandsKeepOrderAndOnlyDecisionsShowTheRHint() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let app = try String(contentsOf: root.appendingPathComponent("Sources/Louppe/LouppeApp.swift"), encoding: .utf8)
+        let group = try XCTUnwrap(app.range(of: "CommandGroup(after: .undoRedo)"))
+        let titles = ["Undo Louppe Action", "Clear All Decisions…", "Clear Stars and Labels…"].map { title in
+            app.range(of: "L10n.text(\"\(title)\")", range: group.upperBound..<app.endIndex)?.lowerBound
+        }
+        let positions = try titles.map { try XCTUnwrap($0) }
+        XCTAssertEqual(positions, positions.sorted(), "Undo, Clear All Decisions, then Clear Stars and Labels")
+        let nextGroup = try XCTUnwrap(app.range(of: "CommandGroup(", range: group.upperBound..<app.endIndex))
+        XCTAssertLessThan(positions[2], nextGroup.lowerBound, "both clears share the Edit group")
+
+        let shared = NSApplication.shared
+        let previous = shared.mainMenu
+        defer { shared.mainMenu = previous }
+        let main = NSMenu(title: "Main")
+        let edit = NSMenu(title: "Edit")
+        let editItem = NSMenuItem(title: "Edit", action: nil, keyEquivalent: "")
+        editItem.submenu = edit
+        main.addItem(editItem)
+        let target = MenuActionTarget()
+        let decisions = NSMenuItem(title: L10n.text("Clear All Decisions…"),
+                                   action: #selector(MenuActionTarget.performMenuAction(_:)), keyEquivalent: "")
+        let metadata = NSMenuItem(title: L10n.text("Clear Stars and Labels…"),
+                                  action: #selector(MenuActionTarget.performMenuAction(_:)), keyEquivalent: "")
+        decisions.target = target
+        metadata.target = target
+        edit.autoenablesItems = false
+        edit.addItem(decisions)
+        edit.addItem(metadata)
+        shared.mainMenu = main
+        let store = SessionStore(automaticallyRecoversInterruptedOperations: false)
+        let columns = MenuShortcutColumns(store: store)
+        columns.refresh()
+        NotificationCenter.default.post(name: NSMenu.didBeginTrackingNotification, object: edit)
+        XCTAssertEqual(decisions.keyEquivalent, "R")
+        XCTAssertEqual(metadata.keyEquivalent, "")
+        NotificationCenter.default.post(name: NSMenu.didEndTrackingNotification, object: edit)
+        withExtendedLifetime((columns, target, store)) {}
+    }
+
     private func event(_ character: String, code: UInt16, modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
         NSEvent.keyEvent(
             with: .keyDown, location: .zero, modifierFlags: modifiers, timestamp: 0,

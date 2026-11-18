@@ -349,10 +349,14 @@ final class LocalizationTests: XCTestCase {
     }
 
     func testArabicCountersAndPhotographicLabels() {
-        let reviewed: L10n.Message = "  ·  \(7)/\(16) reviewed"
+        let position: L10n.Message = "Item \(7) of \(16)"
         let showing: L10n.Message = "Showing \(7) of \(16)"
-        XCTAssertEqual(L10n.render(reviewed, language: "ar"), "  ·  تمت مراجعة 7 من 16")
-        for message in [reviewed, showing] {
+        XCTAssertEqual(L10n.render(position, language: "ar"), "العنصر 7 من 16")
+        // Toolbar totals are whole clauses: label and count reorder together.
+        XCTAssertEqual(L10n.render("  ·  \(18) Yes", language: "ar"), "  ·  نعم 18")
+        XCTAssertEqual(L10n.render("  ·  \(4) No", language: "ar"), "  ·  لا 4")
+        XCTAssertEqual(L10n.render("  ·  \(18) Yes", language: "zh-Hans"), "  ·  是 18")
+        for message in [position, showing] {
             let value = L10n.render(message, language: "ar")
             XCTAssertFalse(value.contains("{"))
             XCTAssertFalse(value.contains("}"))
@@ -365,6 +369,65 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(L10n.render("Focal length", language: "ar"), "البعد البؤري")
     }
 
+    /// A letter from another non-Latin catalog's script (for example a
+    /// Devanagari letter inside an Arabic word) is a typo nobody can see in
+    /// review. Latin brand and unit tokens stay allowed everywhere.
+    func testCatalogValuesNeverMixArabicDevanagariAndHanLetters() throws {
+        let ranges: [(name: String, ranges: [ClosedRange<UInt32>])] = [
+            ("ar", [0x0600...0x06FF, 0x0750...0x077F, 0x08A0...0x08FF, 0xFB50...0xFDFF, 0xFE70...0xFEFF]),
+            ("hi", [0x0900...0x097F, 0xA8E0...0xA8FF]),
+            ("zh-Hans", [0x3400...0x4DBF, 0x4E00...0x9FFF, 0xF900...0xFAFF]),
+        ]
+        func foreign(_ value: String, in language: String) -> String? {
+            for script in ranges where script.name != language {
+                if value.unicodeScalars.contains(where: { scalar in script.ranges.contains { $0.contains(scalar.value) } }) {
+                    return script.name
+                }
+            }
+            return nil
+        }
+        func strings(_ value: Any) -> [String] {
+            if let text = value as? String { return [text] }
+            if let dictionary = value as? [String: Any] { return dictionary.values.flatMap(strings) }
+            return []
+        }
+        for language in L10n.supportedLanguages {
+            for (key, value) in try catalog(language) {
+                XCTAssertNil(foreign(value, in: language), "\(language) value for \(key): \(value)")
+            }
+            for (key, entry) in try pluralCatalog(language) {
+                for value in strings(entry) {
+                    XCTAssertNil(foreign(value, in: language), "\(language) plural \(key): \(value)")
+                }
+            }
+        }
+    }
+
+    /// Item B: the decision label is Unmarked in every language, and the
+    /// review-progress, completion, checkmark and Export-warning copy is gone.
+    func testUnmarkedLabelAndRetiredProgressCopy() throws {
+        let unmarked = ["en": "Unmarked", "es": "Sin marcar", "pt": "Sem marcação",
+                        "zh-Hans": "未标记", "hi": "अचिह्नित", "ar": "بلا تحديد"]
+        let retired = ["Undecided", "  ·  {0}/{1} reviewed", "Review complete: {0} Yes · {1} No", "All reviewed",
+                       "Review progress and decision totals", "no decision", "Trash No + Undecided…",
+                       "Mark or clear Yes", "Mark or clear No", "Decide Yes", "Decide No"]
+        let retiredPlurals = ["%lld items still undecided in this scope — they won't be exported.",
+                              "Trash %lld items marked No or Undecided?"]
+        for language in L10n.supportedLanguages {
+            let strings = try catalog(language)
+            XCTAssertEqual(strings["Unmarked"], unmarked[language], language)
+            for key in retired { XCTAssertNil(strings[key], "\(language): \(key)") }
+            let path = try XCTUnwrap(L10n.resourceBundle.path(forResource: "Localizable", ofType: "stringsdict",
+                                                              inDirectory: nil, forLocalization: language))
+            let plurals = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: Any])
+            for key in retiredPlurals { XCTAssertNil(plurals[key], "\(language): \(key)") }
+            XCTAssertNotNil(plurals["Clear stars and color labels from %lld items. Yes and No decisions stay unchanged. Undo with ⌘Z."])
+        }
+        XCTAssertEqual(L10n.renderPlural("Clear stars and color labels from %lld items. Yes and No decisions stay unchanged. Undo with ⌘Z.",
+                                         counts: [2], language: "ar"),
+                       "مسح النجوم والتصنيفات اللونية من عنصرين. تبقى قرارات نعم ولا دون تغيير. تراجع باستخدام ⌘Z.")
+    }
+
     func testUnchangedEnglishTextIsLimitedToBrandsUnitsAndSharedWords() throws {
         let technical: Set<String> = ["Adobe Bridge", "Adobe Lightroom Classic", "Capture One",
                                       // Printed Mac modifier names, also used by localized keyboards.
@@ -373,7 +436,7 @@ final class LocalizationTests: XCTestCase {
                                       // Labels and values are already localized; only punctuation is shared.
                                       "{0}: {1}", "{0} · {1}"]
         let shared: [String: Set<String>] = [
-            "es": ["Audio", "Color", "Color: {0}", "General", "Manual", "Mono", "No", "OK", "audio", "{0} s", "s"],
+            "es": ["Audio", "Color", "Color: {0}", "General", "Manual", "Mono", "No", "  ·  {0} No", "OK", "audio", "{0} s", "s"],
             "pt": ["1 item", "Codec", "Manual", "Mono", "OK", "Picture in Picture", "Volume", "item", "{0} s", "s"]
         ]
         for language in L10n.supportedLanguages where language != "en" {

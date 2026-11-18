@@ -255,7 +255,7 @@ struct ExportView: View {
                     HStack(spacing: 12) {
                         ratingTile(.yes, count: scopeRatingCount(.yes), label: L10n.text("Yes"), color: .green)
                         ratingTile(.no, count: scopeRatingCount(.no), label: L10n.text("No"), color: .red)
-                        ratingTile(.undecided, count: scopeRatingCount(.undecided), label: L10n.text("Undecided"), color: .secondary)
+                        ratingTile(.undecided, count: scopeRatingCount(.undecided), label: L10n.text("Unmarked"), color: .secondary)
                     }
 
                     LabeledContent(L10n.text("Stars")) {
@@ -321,7 +321,7 @@ struct ExportView: View {
                     exportPreview
 
                     if selectionSnapshot.mixedDecisionCount > 0 {
-                        Text(L10n.plural("%lld included RAW+JPEG pairs have different file decisions and are treated as undecided.", selectionSnapshot.mixedDecisionCount))
+                        Text(L10n.plural("%lld included RAW+JPEG pairs have different file decisions and are treated as Unmarked.", selectionSnapshot.mixedDecisionCount))
                             .font(.caption)
                             .foregroundStyle(.orange)
                             .multilineTextAlignment(.leading)
@@ -332,13 +332,6 @@ struct ExportView: View {
                             .font(.caption)
                             .foregroundStyle(.orange)
                             .multilineTextAlignment(.leading)
-                    }
-
-                    if scopeRatingCount(.undecided) > 0 && !selectedRatings.contains(.undecided) {
-                        let count = scopeRatingCount(.undecided)
-                        Text(L10n.plural("%lld items still undecided in this scope — they won't be exported.", count))
-                            .font(.caption)
-                            .foregroundStyle(.orange)
                     }
                 }
 

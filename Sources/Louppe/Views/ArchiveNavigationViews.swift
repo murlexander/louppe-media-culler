@@ -25,8 +25,6 @@ struct ArchiveLeadingPaneView: View {
                     selectedFolderID: store.archiveSelectedFolderID,
                     expandedFolderIDs: store.archiveExpandedFolderIDs,
                     includesDescendants: store.archiveIncludesDescendants,
-                    progress: store.archiveFolderProgress,
-                    progressRevision: store.archiveFolderProgressRevision,
                     onSelect: { store.selectArchiveFolder($0) },
                     onExpansionChange: { store.setArchiveExpandedFolders($0) },
                     onIncludesDescendantsChange: { store.setArchiveIncludesDescendants($0) })

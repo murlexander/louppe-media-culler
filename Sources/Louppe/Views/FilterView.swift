@@ -278,7 +278,7 @@ struct FilterView: View {
                 Text(L10n.text("All"))
                     .accessibilityLabel(L10n.text("All decisions"))
                     .tag(Optional(QuickDecision.all))
-                Text(L10n.text("Undecided")).tag(Optional(QuickDecision.undecided))
+                Text(L10n.text("Unmarked")).tag(Optional(QuickDecision.undecided))
                 Text(L10n.text("Yes")).tag(Optional(QuickDecision.yes))
                 Text(L10n.text("No")).tag(Optional(QuickDecision.no))
             }
@@ -338,7 +338,7 @@ struct FilterView: View {
                     set: \.excludedDecisionStates
                 )
                 metadataToggle(
-                    L10n.text("Undecided"),
+                    L10n.text("Unmarked"),
                     count: store.plainUndecidedCount,
                     value: PhotoItemRatingState.undecided,
                     set: \.excludedDecisionStates

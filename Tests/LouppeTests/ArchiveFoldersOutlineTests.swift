@@ -108,6 +108,17 @@ final class ArchiveFoldersOutlineTests: XCTestCase {
         XCTAssertFalse(cell.imageView?.isAccessibilityElement() ?? true)
     }
 
+    /// Unmarked is a normal state: an all-decided folder shows only its
+    /// ordinary count, with no checkmark, tooltip suffix or spoken status.
+    func testFolderRowHasNoCompletionMark() {
+        let cell = ArchiveFoldersView.FolderCell()
+        cell.configure(id: "done", name: "Done", count: 3)
+        XCTAssertEqual(cell.subviews.compactMap { $0 as? NSImageView }.count, 1, "only the folder icon")
+        XCTAssertEqual(cell.toolTip, "Done")
+        XCTAssertEqual(cell.nameField.accessibilityLabel(), "Done, " + L10n.plural("%lld items", 3))
+        XCTAssertEqual(cell.countField.stringValue, L10n.number(3))
+    }
+
     func testNativeWheelAndDirectBoundsChangesStayVerticalAndDismantleDetachesCallbacks() throws {
         let fixture = Fixture(folderCount: 200)
         defer { fixture.close() }

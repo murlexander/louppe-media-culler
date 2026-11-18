@@ -50,7 +50,7 @@ extension SessionStore {
               let progress = archiveFolderProgress else { return nil }
         return index.directories.dropFirst(position + 1).first { directory in
             guard !directory.id.isEmpty, let node = index.node(for: directory.id), node.directCount > 0 else { return false }
-            return progress.reviewedCount(for: directory.id, includesDescendants: false, index: index) < node.directCount
+            return progress.directReviewedCount(for: directory.id, index: index) < node.directCount
         }?.id
     }
 

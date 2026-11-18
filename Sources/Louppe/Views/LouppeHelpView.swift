@@ -75,7 +75,7 @@ struct LouppeHelpView: View {
                         .accessibilityAddTraits(.isHeader)
                     Text(L10n.text("Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered."))
                     Text(L10n.text("Use View or the Command Palette to switch sidebar content, expand folders, or go to a folder. Folder navigation skips folders without direct media."))
-                    Text(L10n.text("File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together."))
+                    Text(L10n.text("File actions, Clear All Decisions and Clear Stars and Labels follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together."))
                 }
 
                 Divider()
@@ -187,7 +187,7 @@ struct LouppeQuickStartContent: View {
         let paletteName = paletteShortcut.isEmpty ? L10n.text("Command Palette") : L10n.text("Command Palette (\(paletteShortcut))")
         VStack(alignment: .leading, spacing: 8) {
             Text(L10n.text("Choose or drop a media folder. Louppe scans its subfolders and opens Gallery or Grid."))
-            Text(L10n.text("Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent."))
+            Text(L10n.text("Use your assigned shortcuts to mark an item Yes or No. Press again to make it Unmarked; that never advances. By default, a new mark advances to the next item and stops at the end (Settings → General → Review). Stars and color labels are independent."))
             Text(L10n.text("Export copies chosen media. Clean Up asks before moving rejects to the macOS Trash."))
             Text(L10n.text("To rename keepers, filter to Yes, open \(paletteName) → Rename Files…, and choose Filtered. Preview the names before confirming; ⌘Z restores the previous names."))
             Text(L10n.text("Decisions, stars, and colors save automatically. Reopen the folder to continue. No never trashes files. Export → Metadata (XMP) shares ratings with compatible editing apps."))

@@ -39,8 +39,6 @@ struct ArchiveFolderIndex: Sendable {
     let expandableFolderIDs: [String]
     /// Folder ordinals in outline pre-order; ordinal 0 is All Media.
     let orderedFolderIDs: [String]
-    /// Parent ordinal of each folder (All Media points to itself).
-    let parentOrdinals: [Int32]
     /// Each item's physical parent folders, flattened: item `i` owns
     /// `itemFolderOrdinals[itemFolderOffsets[i]..<itemFolderOffsets[i + 1]]`.
     let itemFolderOffsets: [Int32]
@@ -196,7 +194,6 @@ struct ArchiveFolderIndex: Sendable {
         nodes = preparedNodes
         expandableFolderIDs = ordered.filter { children[$0]?.isEmpty == false }
         orderedFolderIDs = ordered
-        parentOrdinals = parents.map(Int32.init)
         itemFolderOffsets = folderOffsets
         itemFolderOrdinals = folderMemberships
         ordinalByID = ordinals

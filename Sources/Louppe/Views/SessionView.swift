@@ -165,6 +165,15 @@ struct SessionView: View {
             } message: {
                 Text(clearAllRatingsMessage)
             }
+            .alert(L10n.text("Clear Stars and Labels?"), isPresented: $store.isClearStarsAndLabelsConfirmationPresented) {
+                Button(L10n.text("Clear Stars and Labels"), role: .destructive) {
+                    store.clearStarsAndLabels()
+                }
+                .keyboardShortcut(.defaultAction)
+                Button(L10n.text("Cancel"), role: .cancel) {}
+            } message: {
+                Text(clearStarsAndLabelsMessage)
+            }
             .alert(
                 legacyMigrationTitle,
                 isPresented: legacyMigrationConfirmationPresented
@@ -227,6 +236,11 @@ struct SessionView: View {
     private var clearAllRatingsMessage: String {
         let count = store.archiveRatedCount
         return L10n.plural("Clear Yes/No decisions from %lld items. Stars and color labels stay unchanged. Undo with ⌘Z.", count)
+    }
+
+    private var clearStarsAndLabelsMessage: String {
+        L10n.plural("Clear stars and color labels from %lld items. Yes and No decisions stay unchanged. Undo with ⌘Z.",
+                    store.clearStarsAndLabelsConfirmationCount)
     }
 
     private var isCleanUpConfirmPresented: Binding<Bool> {
@@ -294,7 +308,7 @@ struct SessionView: View {
         case .trashNo:
             return L10n.plural("Trash %lld items marked No?", counts.photos)
         case .keepOnlyYes:
-            return L10n.plural("Trash %lld items marked No or Undecided?", counts.photos)
+            return L10n.plural("Trash %lld No or Unmarked items?", counts.photos)
         case .pairedJPEGs:
             return L10n.plural("Trash JPEG from %lld RAW + JPEG pairs?", counts.photos)
         case .pairedRAWs:
@@ -330,10 +344,10 @@ struct SessionView: View {
         case .selection:
             parts.append(L10n.text("Only selected items leave the folder."))
         case .trashNo:
-            parts.append(L10n.text("Within this scope, Yes and unrated items stay in the folder."))
+            parts.append(L10n.text("Within this scope, Yes and Unmarked items stay in the folder."))
         case .keepOnlyYes:
             let decisions = store.cleanUpDecisionBreakdown(for: mode)
-            parts.insert(L10n.plural("Includes %lld No and %lld Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.", counts: [decisions.no, decisions.undecided]), at: 0)
+            parts.insert(L10n.plural("Includes %lld No and %lld Unmarked items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.", counts: [decisions.no, decisions.undecided]), at: 0)
         case .pairedJPEGs, .pairedRAWs:
             break // These modes return through their dedicated message above.
         }
@@ -359,14 +373,20 @@ struct SessionView: View {
         return parts.joined(separator: "\n")
     }
 
-    private var subtitle: String {
+    /// Ready toolbar status line (internal for tests).
+    var subtitle: String {
         guard !store.items.isEmpty else { return "" }
         let position = store.currentVisiblePosition.map { $0 + 1 } ?? 0
         var text = L10n.text("Item \(L10n.number(position)) of \(L10n.number(store.visibleIndices.count))")
         if store.isFilterActive {
             text += L10n.text(" (of \(L10n.number(store.archiveScopeCount)) total)")
         }
-        text += L10n.text("  ·  \(L10n.number(store.archiveReviewedCount))/\(L10n.number(store.archiveScopeCount)) reviewed")
+        // Folder-wide totals from O(1) scoped tallies. No appears only once
+        // something is marked No; Unmarked is a normal state, not a backlog.
+        text += L10n.text("  ·  \(L10n.number(store.archiveYesCount)) Yes")
+        if store.archiveNoCount > 0 {
+            text += L10n.text("  ·  \(L10n.number(store.archiveNoCount)) No")
+        }
         if store.archiveMixedCount > 0 {
             text += L10n.text("  ·  \(L10n.number(store.archiveMixedCount)) mixed")
         }
@@ -379,10 +399,8 @@ struct SessionView: View {
         return text
     }
 
-    private var hasReviewStatusDetails: Bool {
-        showQuickStart
-            || (store.isReviewComplete && !store.isGroupedReviewActive)
-    }
+    /// The status opens only the quick-start tips, while they are enabled.
+    private var hasReviewStatusDetails: Bool { showQuickStart }
 
     @ViewBuilder
     private var principalStatus: some View {
@@ -400,7 +418,7 @@ struct SessionView: View {
                     SessionReviewStatus(store: store)
                         .louppePopoverSurface()
                 }
-                .accessibilityLabel(L10n.text("Review progress and decision totals"))
+                .accessibilityLabel(L10n.text("Review tips"))
                 .accessibilityValue("\(subtitle), \(store.sessionSaveStatus)")
             } else {
                 statusLabel
@@ -1004,6 +1022,9 @@ struct SessionView: View {
             guard context.acceptsNavigationShortcuts,
                   acceptsNavigationModifiers else { return false }
         }
+        // A held decision key must never toggle back or mark the items it
+        // advances onto: consume its auto-repeat without any change.
+        if event.isARepeat, shortcut.action == .yes || shortcut.action == .no { return true }
         return performReviewShortcut(shortcut.action)
     }
 
@@ -1500,7 +1521,7 @@ struct CleanUpMenuItems: View {
             store.requestCleanUp(.trashNo)
         }
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .trashNo))
-        Button(L10n.text("Trash No + Undecided…")) {
+        Button(L10n.text("Trash No + Unmarked…")) {
             store.requestCleanUp(.keepOnlyYes)
         }
         .disabled(store.isNewFileOperationBlocked || !store.hasCleanUpTargets(for: .keepOnlyYes))

@@ -2,7 +2,6 @@
 "  ·  grouped review" = "  ·  revisión agrupada";
 "  ·  {0} mixed" = "  ·  {0} mixtos";
 "  ·  {0} selected" = "  ·  {0} seleccionados";
-"  ·  {0}/{1} reviewed" = "  ·  {0}/{1} revisados";
 " (including {0})" = " (incluyendo {0})";
 " (of {0} total)" = " (de {0} total)";
 " ({0} and {1})" = " ({0} y {1})";
@@ -105,9 +104,9 @@
 "Application" = "Aplicación";
 "Application packets copied unchanged" = "Paquetes de aplicación copiados sin cambios";
 "Applies to video and audio playback." = "Se aplica a la reproducción de vídeo y audio.";
-"Apply No; advance if enabled in Review settings" = "Marcar No; avanzar si está activado en Ajustes → Revisión";
+"Mark No; advance if enabled in Review settings. Press again to make it Unmarked." = "Marcar No; avanzar si está activado en Ajustes → Revisión. Vuelve a pulsar para dejarlo sin marcar.";
 "Apply Resolutions" = "Aplicar soluciones";
-"Apply Yes; advance if enabled in Review settings" = "Marcar Sí; avanzar si está activado en Ajustes → Revisión";
+"Mark Yes; advance if enabled in Review settings. Press again to make it Unmarked." = "Marcar Sí; avanzar si está activado en Ajustes → Revisión. Vuelve a pulsar para dejarlo sin marcar.";
 "Apply a portable color label to the current photo or selection" = "Aplicar una etiqueta de color compatible con otras apps a la foto o selección actual";
 "Apply a portable star rating to the current photo or selection" = "Aplicar una valoración por estrellas compatible con otras apps a la foto o selección actual";
 "Apply the same choice to all conflicts" = "Aplicar la misma opción a todos los conflictos";
@@ -279,8 +278,6 @@
 "Date taken" = "Fecha de captura";
 "Date taken from" = "Fecha de captura desde";
 "Date taken to" = "Fecha de captura hasta";
-"Decide No" = "Marcar No";
-"Decide Yes" = "Marcar Sí";
 "Decision" = "Decisión";
 "Decision No" = "Decisión No";
 "Decision Yes" = "Decisión Sí";
@@ -345,8 +342,6 @@
 "Extend the selection from the current item to the last visible item" = "Extender la selección desde el elemento actual hasta el último elemento visible";
 "External modification conflict" = "Conflicto por modificación externa";
 "F Yes · D No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place." = "F Sí · D No · flechas para navegar · ⌘Z deshace. Las decisiones se guardan automáticamente; No deja los archivos en su sitio.";
-"F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Arrows browse; ⌘Z undoes. Decisions save automatically; No never trashes files." = "F marca Sí; D marca No. Ambos avanzan al siguiente elemento sin decidir por defecto (Ajustes → Revisión). Las flechas navegan; ⌘Z deshace. Las decisiones se guardan automáticamente; marcar No nunca envía archivos a la Papelera.";
-"F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Stars (0–5) and color labels are independent." = "F marca Sí; D marca No. Ambos avanzan al siguiente elemento sin decidir por defecto (Ajustes → Revisión). Las estrellas (0–5) y etiquetas de color son independientes.";
 "Failed" = "Falló";
 "Fast" = "Rápido";
 "Fast photo, video, and audio culling for creators.\n\n" = "Selección rápida de fotos, vídeo y audio para creadores.\n\n";
@@ -391,7 +386,7 @@
 "Folders Z–A" = "Carpetas Z–A";
 "Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session." = "Las carpetas, contenidos y extensiones no cambian. No se sobrescribe nada. Restaura todos los nombres anteriores con ⌘Z antes de cerrar la sesión.";
 "For {0}, rollback also failed; check both the source folder and Trash." = "También falló la reversión de {0}; comprueba la carpeta de origen y la Papelera.";
-"Forgets saved decisions for this folder and opens the current files unrated" = "Olvida las decisiones guardadas de esta carpeta y abre los archivos actuales sin valorar";
+"Forgets saved decisions for this folder and opens the current files as Unmarked" = "Olvida las decisiones guardadas de esta carpeta y abre los archivos actuales sin marcar";
 "Format" = "Formato";
 "Frame rate" = "Fotogramas por segundo";
 "From" = "Desde";
@@ -428,7 +423,6 @@
 "Include XMP sidecars (off by default)" = "Incluir archivos XMP auxiliares (desactivado por defecto)";
 "Include XMP sidecars for editing apps" = "Incluir archivos XMP auxiliares para apps de edición";
 "Included XMP sidecars follow media." = "Los archivos XMP incluidos acompañan a los medios.";
-"Includes {0} No and {1} Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder." = "Incluye {0} elementos marcados No y {1} sin decidir. Las estrellas y etiquetas de color no protegen estos elementos. Los pares RAW + JPEG con decisiones distintas permanecen en la carpeta.";
 "Increase thumbnail size in Grid" = "Aumentar el tamaño de las miniaturas en Cuadrícula";
 "Inspect the current Gallery video half a second earlier" = "Ver el vídeo actual de Galería medio segundo antes";
 "Inspect the current Gallery video half a second later" = "Ver el vídeo actual de Galería medio segundo después";
@@ -521,7 +515,6 @@
 "Manual" = "Manual";
 "Mark No" = "Marcar No";
 "Mark Yes" = "Marcar Sí";
-"Mark Yes / No; advance by default (Settings → Review)" = "Marcar Sí / No; avanzar por defecto (Ajustes → Revisión)";
 "Mark clipping estimated from the displayed preview" = "Marcar el recorte tonal estimado en la vista previa mostrada";
 "Mark some items Yes (press F) before exporting." = "Marca algunos elementos Sí (pulsa F) antes de exportar.";
 "Match" = "Coincidencia";
@@ -579,7 +572,6 @@
 "Move {0} files?" = "¿Trasladar {0} archivos?";
 "Move {0} later" = "Bajar {0}";
 "Trash {0} marked No?" = "¿Llevar {0} marcados No a la Papelera?";
-"Trash {0} marked No or Undecided?" = "¿Llevar {0} marcados No o Sin decidir a la Papelera?";
 "Trash {0}?" = "¿Llevar {0} a la Papelera?";
 "Trash No" = "Llevar No a la Papelera";
 "Trash No…" = "Llevar No a la Papelera…";
@@ -627,7 +619,7 @@
 "Audio levels unavailable" = "Niveles de audio no disponibles";
 "No recognised media was found in “{0}”. Choose another folder or check Supported Formats." = "No se encontraron medios reconocidos en «{0}». Elige otra carpeta o consulta Formatos compatibles.";
 "No review group is active" = "No hay ningún grupo de revisión activo";
-"No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "Ningún nombre guardado coincide con esta carpeta. Las decisiones guardadas no cambian. Abrir como nueva sesión las sustituye y abre los archivos actuales sin valorar.";
+"No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked." = "Ningún nombre guardado coincide con esta carpeta. Las decisiones guardadas no cambian. Abrir como nueva sesión las sustituye y abre los archivos actuales sin marcar.";
 "No stars" = "Sin estrellas";
 "No still-photo capture times were within the selected burst interval." = "Ninguna hora de captura de las fotos entraba en el intervalo de ráfaga seleccionado.";
 "None" = "Ninguno";
@@ -824,13 +816,11 @@
 "Review Rename…" = "Revisar cambio de nombres…";
 "Review Sidecars…" = "Revisar archivos auxiliares…";
 "Review a visual overview of the folder" = "Revisar una vista general de la carpeta";
-"Review complete: {0} Yes · {1} No" = "Revisión completa: {0} Sí · {1} No";
 "Review folders before their subfolders; files stay chronological." = "Revisa las carpetas antes de sus subcarpetas; los archivos mantienen el orden cronológico.";
 "Review groups" = "Grupos de revisión";
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette (⌘K). Search for RAW, JPEG, or pairing." = "Revisa los archivos RAW + JPEG coincidentes juntos o por separado desde Filtrar o la Paleta de comandos (⌘K). Busca RAW, JPEG o emparejamiento.";
 "Review metadata" = "Revisión de metadatos";
 "Review one photo, video, or audio file at a time" = "Revisar una foto, vídeo o archivo de audio a la vez";
-"Review progress and decision totals" = "Progreso de revisión y totales de decisiones";
 "Review the current video or audio recording at double speed" = "Revisar el vídeo o audio actual a velocidad 2×";
 "Review the current video or audio recording at normal speed" = "Revisar el vídeo o audio actual a velocidad normal";
 "Play the current video or audio recording at 1.5× speed" = "Reproduce el vídeo o audio actual a una velocidad de 1.5×";
@@ -1088,8 +1078,8 @@
 "This media family has ambiguous XMP filenames." = "Esta familia de medios tiene nombres XMP ambiguos.";
 "This media file couldn't be played." = "No se pudo reproducir este archivo de medios.";
 "This pair spans source folders. Both sidecars stay at the source because they cannot safely share one destination name." = "Este par abarca varias carpetas de origen. Los dos archivos auxiliares quedan en el origen porque no pueden compartir un nombre de destino con seguridad.";
-"This replaces this folder’s saved decisions and opens its files unrated. Photos and videos stay unchanged." = "Esto sustituye las decisiones guardadas de esta carpeta y abre sus archivos sin valorar. Las fotos y vídeos no cambian.";
-"This session came from another location; no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "Esta sesión viene de otra ubicación; no se pudieron verificar aquí los originales exactos. Las decisiones guardadas no cambian. Abrir como nueva sesión las sustituye y abre los archivos actuales sin valorar.";
+"This replaces this folder’s saved decisions and opens its files as Unmarked. Photos and videos stay unchanged." = "Esto sustituye las decisiones guardadas de esta carpeta y abre sus archivos sin marcar. Las fotos y vídeos no cambian.";
+"This session came from another location, and no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked." = "Esta sesión viene de otra ubicación y no se pudieron verificar aquí los originales exactos. Las decisiones guardadas no cambian. Abrir como nueva sesión las sustituye y abre los archivos actuales sin marcar.";
 "This storage does not support the collision-safe rename needed to move {0}." = "Esta unidad no permite el cambio de nombre sin colisiones necesario para trasladar {0}.";
 "This video's format or codec isn't supported by macOS." = "macOS no admite el formato o códec de este vídeo.";
 "This view is already selected" = "Esta vista ya está seleccionada";
@@ -1106,8 +1096,8 @@
 "Toggle the thumbnail browser in Gallery" = "Mostrar u ocultar el explorador de miniaturas en Galería";
 "Top level" = "Nivel superior";
 "Total size" = "Tamaño total";
-"Trash No + Undecided" = "Llevar No y sin decidir a la Papelera";
-"Trash No + Undecided…" = "Llevar No y sin decidir a la Papelera…";
+"Trash No + Unmarked" = "Llevar No y sin marcar a la Papelera";
+"Trash No + Unmarked…" = "Llevar No y sin marcar a la Papelera…";
 "Treat matching RAW + JPEG as one photo" = "Tratar los RAW + JPEG coincidentes como una sola foto";
 "Treat matching RAW and JPEG as one photo" = "Tratar los RAW y JPEG coincidentes como una sola foto";
 "Try a different search term." = "Prueba otro término de búsqueda.";
@@ -1117,7 +1107,7 @@
 "Types" = "Tipos";
 "Unavailable" = "No disponible";
 "Uncertain files remain untouched. Reviewing stays available; Copy, Move, Rename, Organize, and Clean Up are paused until recovery finishes." = "Los archivos inciertos no cambian. Puedes seguir revisando; Copiar, Trasladar, Cambiar nombres, Organizar y Limpiar se pausan hasta terminar la recuperación.";
-"Undecided" = "Sin decidir";
+"Unmarked" = "Sin marcar";
 "Undo" = "Deshacer";
 "Undo Clean Up with ⌘Z before closing this session, while the files remain in Trash." = "Deshaz Limpiar con ⌘Z antes de cerrar esta sesión, mientras los archivos sigan en la Papelera.";
 "Undo Louppe Action" = "Deshacer acción de Louppe";
@@ -1192,7 +1182,7 @@
 "Waveform unavailable" = "Forma de onda no disponible";
 "White balance" = "Balance de blancos";
 "Widest first" = "Primero más amplio";
-"Within this scope, Yes and unrated items stay in the folder." = "En este ámbito, los elementos marcados Sí y sin valorar quedan en la carpeta.";
+"Within this scope, Yes and Unmarked items stay in the folder." = "En este ámbito, los elementos marcados Sí y los que están sin marcar quedan en la carpeta.";
 "Write Sidecars" = "Escribir archivos auxiliares";
 "Write decisions, stars, and colors to XMP sidecars for editing apps. Originals stay unchanged." = "Escribir decisiones, estrellas y colores en archivos XMP auxiliares para apps de edición. Los originales no cambian.";
 "Writing Metadata (XMP)…" = "Escribiendo Metadatos (XMP)…";
@@ -1294,7 +1284,6 @@
 "near duplicates" = "casi duplicados";
 "next row" = "siguiente fila";
 "no color" = "sin color";
-"no decision" = "sin decisión";
 "none" = "ninguno";
 "normal review" = "revisión normal";
 "open folder" = "abrir carpeta";
@@ -1416,11 +1405,8 @@
 "{0} fps" = "{0} fps";
 "{0} hour" = "{0} hora";
 "{0} hours" = "{0} horas";
-"{0} included RAW+JPEG pair has different file decisions and is treated as undecided." = "{0} par RAW+JPEG incluido tiene decisiones distintas por archivo y se trata como sin decidir.";
-"{0} included RAW+JPEG pairs have different file decisions and are treated as undecided." = "{0} pares RAW+JPEG incluidos tienen decisiones distintas por archivo y se tratan como sin decidir.";
 "{0} item couldn't be moved completely. " = "{0} elemento no pudo trasladarse por completo. ";
 "{0} item match more than one route: {1}." = "{0} elemento coincide con más de una ruta: {1}.";
-"{0} item still undecided in this scope — they won't be exported." = "{0} elemento sigue sin decidir en este ámbito; no se exportará.";
 "{0} item · {1} media file" = "{0} elemento · {1} archivo de medios";
 "{0} item · {1} media files" = "{0} elemento · {1} archivos multimedia";
 "{0} items" = "{0} elementos";
@@ -1430,7 +1416,6 @@
 "{0} items found" = "{0} elementos encontrados";
 "{0} items have" = "{0} elementos tienen";
 "{0} items match more than one route: {1}." = "{0} elementos coinciden con más de una ruta: {1}.";
-"{0} items still undecided in this scope — they won't be exported." = "{0} elementos siguen sin decidir en este ámbito; no se exportarán.";
 "{0} items will be copied" = "Se copiarán {0} elementos";
 "{0} items will be moved" = "Se moverán {0} elementos";
 "{0} items will be prepared for XMP publication" = "Se prepararán {0} elementos para publicar XMP";
@@ -1572,7 +1557,7 @@
 
 "I confirm the selected files are the same photos or videos." = "Confirmo que los archivos seleccionados son las mismas fotos o vídeos.";
 
-"Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files." = "La restauración aplica las decisiones anteriores seleccionadas solo a los archivos que no has revisado. No modifica los archivos multimedia.";
+"Restoring applies the selected previous decisions only to files with no current decision, stars, color label, or recorded metadata change. Media files stay unchanged." = "La restauración aplica las decisiones anteriores seleccionadas solo a los archivos sin decisión actual, estrellas, etiqueta de color ni cambio de metadatos registrado. Los archivos multimedia no cambian.";
 
 "Keep Current Decisions" = "Conservar decisiones actuales";
 
@@ -1698,7 +1683,6 @@
 "Show or hide the red preview clipping overlay ({0})" = "Mostrar u ocultar la superposición roja de recorte tonal de la vista previa ({0})";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%." = "Amplía con el regulador o pellizcando; desplázate con dos dedos o arrastrando. {0} restablece el zoom personalizado al 100% centrado y después alterna con Ajustar. {1} alterna el tamaño Teléfono. Haz doble clic en un punto para examinarlo al 100%.";
 "Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts." = "Cambia las teclas de revisión y el comportamiento de la distribución en Ajustes → Atajos de teclado.";
-"{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "{0} marca Sí; {1} marca No. Ambas teclas avanzan al siguiente elemento sin decidir de forma predeterminada (Ajustes → Revisión). Las estrellas y las etiquetas de color son independientes.";
 "Match shortcuts by" = "Identificar atajos por";
 "Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard." = "Las posiciones físicas conservan los mismos movimientos de los dedos en Dvorak y otras distribuciones. Sus nombres corresponden a un teclado QWERTY.";
 "Customize shortcuts" = "Personalizar atajos";
@@ -1747,7 +1731,7 @@
 "Change playback speed; previous / next item without playback" = "Cambiar la velocidad de reproducción; elemento anterior / siguiente sin reproducción";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "Amplía con el regulador o pellizcando; desplázate con dos dedos o arrastrando. Haz doble clic en un punto para inspeccionarlo al 100%. Usa los controles de tamaño para volver a Ajustar, 100% o tamaño Teléfono.";
 "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "Cada tecla indica cuándo se aplica. Las teclas compartidas realizan acciones distintas solo en vistas o tipos de archivo separados.";
-"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent." = "Marca Sí o No con los botones o tus atajos asignados. Ambos avanzan al siguiente elemento sin decidir de forma predeterminada (Ajustes → General → Revisión). Las estrellas y las etiquetas de color son independientes.";
+"Use your assigned shortcuts to mark an item Yes or No. Press again to make it Unmarked; that never advances. By default, a new mark advances to the next item and stops at the end (Settings → General → Review). Stars and color labels are independent." = "Usa tus atajos asignados para marcar un elemento Sí o No. Vuelve a pulsar para dejarlo sin marcar; eso nunca avanza. De forma predeterminada, una marca nueva avanza al siguiente elemento y se detiene al final (Ajustes → General → Revisión). Las estrellas y las etiquetas de color son independientes.";
 "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "Añade varias teclas a una acción. Una tecla solo puede compartirse si sus vistas y tipos de archivo no se solapan.";
 "Find a shortcut" = "Buscar un atajo";
 "No matching shortcuts." = "No hay atajos coincidentes.";
@@ -2100,7 +2084,6 @@
 "Show Folders" = "Mostrar carpetas";
 "Expand All" = "Expandir todo";
 "Collapse All" = "Contraer todo";
-"All reviewed" = "Todo revisado";
 "Next Unfinished Folder" = "Carpeta siguiente sin terminar";
 "Folders width" = "Ancho de carpetas";
 "Folder: {0}, including subfolders" = "Carpeta: {0}, incluidas las subcarpetas";
@@ -2112,7 +2095,7 @@
 "Folder navigation could not be saved. Previous positions are retained." = "No se pudo guardar la navegación por carpetas. Se conservan las posiciones anteriores.";
 
 "Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "Cambia la barra lateral entre Explorador y Carpetas con los botones de arriba; en Cuadrícula, usa el botón lateral. Navega sin reabrir el archivo; se recuerdan las posiciones.";
-"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "Las acciones de archivo y Borrar todas las decisiones se aplican a la carpeta elegida. Elige Todo el contenido para actuar sobre el archivo completo. Las parejas RAW + JPEG permanecen juntas.";
+"File actions, Clear All Decisions and Clear Stars and Labels follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "Las acciones de archivo, Borrar todas las decisiones y Borrar estrellas y etiquetas se aplican a la carpeta elegida. Elige Todo el contenido para actuar sobre el archivo completo. Las parejas RAW + JPEG permanecen juntas.";
 "Reset Folder Navigation" = "Restablecer navegación por carpetas";
 "Clear Yes/No decisions in this folder ({0})" = "Borrar decisiones Sí/No de esta carpeta ({0})";
 
@@ -2168,3 +2151,12 @@
 "Try Again" = "Volver a intentar";
 
 "The sidecar's media family changed or could not be verified. Rescan the folder before changing XMP." = "Los archivos de medios asociados al XMP cambiaron o no se pudieron verificar. Vuelve a explorar la carpeta antes de cambiar el XMP.";
+"  ·  {0} Yes" = "  ·  {0} Sí";
+"  ·  {0} No" = "  ·  {0} No";
+"Review tips" = "Consejos de revisión";
+"Clear Stars and Labels…" = "Borrar estrellas y etiquetas…";
+"Clear Stars and Labels?" = "¿Borrar estrellas y etiquetas?";
+"Clear Stars and Labels" = "Borrar estrellas y etiquetas";
+"Remove stars and color labels while keeping Yes and No decisions" = "Elimina las estrellas y etiquetas de color y conserva las decisiones Sí y No";
+"reset stars" = "restablecer estrellas";
+"remove color labels" = "quitar etiquetas de color";

@@ -70,7 +70,7 @@ final class XMPFilterSortExportTests: XCTestCase {
             sort: forward,
             isGroupingEnabled: true
         )
-        XCTAssertEqual(index.visibleGroups.map(\.title), ["Yes", "Undecided", "Mixed", "No"])
+        XCTAssertEqual(index.visibleGroups.map(\.title), ["Yes", "Unmarked", "Mixed", "No"])
         XCTAssertEqual(
             index.visibleGroups.map(\.id),
             [

@@ -91,7 +91,7 @@ extension SessionStore {
         }
     }
 
-    /// Built on first use by the visible tree, then kept current per decision.
+    /// Built on first use by Next Unfinished Folder, then kept current per decision.
     var archiveFolderProgress: ArchiveFolderProgress? {
         guard let index = archiveFolderIndex, hasArchiveFolders, index.indexedItemCount == items.count else { return nil }
         if let progress = archiveFolderProgressStorage, progress.generation == index.generation,
@@ -115,7 +115,7 @@ extension SessionStore {
         if changed { archiveFolderProgressRevision &+= 1 }
     }
 
-    /// Matches the status bar: Yes or No is reviewed; Mixed pairs are not.
+    /// Next Unfinished Folder: Yes or No is finished; Mixed pairs are not.
     static func isReviewed(_ item: PhotoItem) -> Bool {
         let state = item.ratingState
         return state == .yes || state == .no
@@ -157,15 +157,27 @@ extension SessionStore {
     var archiveNoCount: Int { archiveScopeIndices == nil ? noCount : archiveScopeReviewCounts.no }
     var archiveMixedCount: Int { archiveScopeIndices == nil ? mixedCount : archiveScopeReviewCounts.mixed }
     var archiveRatedCount: Int { archiveYesCount + archiveNoCount + archiveMixedCount }
-    var archiveReviewedCount: Int { archiveYesCount + archiveNoCount }
 
     /// Only the active scope keeps decision snapshots. Normal rating updates
     /// touch their indexed items; toolbar enablement never walks an archive.
     func rebuildArchiveReviewCounts() {
         archiveScopeReviewStates.removeAll(keepingCapacity: true)
         archiveScopeReviewCounts = (0, 0, 0)
+        archiveScopeStarsOrLabelIndices.removeAll(keepingCapacity: true)
         guard let scope = archiveScopeIndices else { return }
-        for index in scope { updateArchiveReviewCount(at: index) }
+        for index in scope {
+            updateArchiveReviewCount(at: index)
+            updateArchiveStarsOrLabel(at: index)
+        }
+    }
+
+    func updateArchiveStarsOrLabel(at index: Int) {
+        guard items.indices.contains(index) else { return }
+        if items[index].hasStarsOrColorLabel {
+            archiveScopeStarsOrLabelIndices.insert(index)
+        } else {
+            archiveScopeStarsOrLabelIndices.remove(index)
+        }
     }
 
     func updateArchiveReviewCount(at index: Int) {

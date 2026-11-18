@@ -522,7 +522,7 @@ are independent; XCTest defaults use disposable storage.
   companion, but Trash Paired JPEGs/RAWs act only on JPEG companions.
 - Pairing projects physical `PhotoFile` records. Grouped scans keep hidden JPEGs
   lightweight; the first split loads missing metadata off-main, and later toggles
-  reuse it without rescan. Different decisions form Mixed, treated as undecided
+  reuse it without rescan. Different decisions form Mixed, treated as Unmarked
   and protected from rating-based Clean Up. Rating a pair updates both files.
   Schema 1 combined entries remain readable; schema 2 adds per-file entries,
   schema 4 physical identity, schema 5 stars/color, and schema 6 original parent
@@ -540,8 +540,18 @@ are independent; XCTest defaults use disposable storage.
   catches only rendered tiles; keep the grid lazy.
 - Review defaults belong to app `UserDefaults`, not sidecars. Apply layout
   defaults only on a new folder or closed session. Same-folder rescan preserves
-  view, sort, and dividers. Yes/No advances in pre-decision visible order so
-  filters/sorts cannot skip the next undecided item. With advancement off, keep
+  view, sort, and dividers. Fixed Yes/No intents (keys, palette, tile menu,
+  VoiceOver) resolve through `Rating.resolvingDecisionToggle`: they clear when
+  every target already has that decision, otherwise mark all (Mixed is marked);
+  explicit Clear Decision stays a clear and the Info/Grid badge still cycles.
+  A toggle-clear stamps `ratedAt`. Only a new mark advances: to the first
+  still-visible item after the current one in the pre-decision visible order,
+  never wrapping; at the end it stays, or falls back to the closest surviving
+  predecessor when a filter hid it. The advance anchors at the highest display
+  position among the marked targets; the current item counts only when it is
+  a target, so marking it alone anchors at itself and a batch is left behind.
+  `SessionView.handleKey` consumes auto-repeated matched Yes/No key-downs after
+  its ownership and modifier gates, with no mutation. With advancement off, keep
   visible selection; never retain a filtered-out current photo.
 - Hierarchy sort uses exact physical parent identity, natural component order,
   and stable byte tie-breaks. Root files/parents precede descendants in both
@@ -556,7 +566,7 @@ are independent; XCTest defaults use disposable storage.
 
 Folder navigation intersects prepared folder membership before ordinary filters,
 prunes hidden selection and preserves the complete `items` array. All file-action
-scopes and Clear All Decisions use the current folder, with explicit Current Folder /
+scopes, Clear All Decisions and Clear Stars and Labels use the current folder, with explicit Current Folder /
 Entire Archive labels. Pair-wide membership includes an item when either physical
 parent matches, counts shared ancestors once, and retains existing pair-wide worker
 semantics. Folder navigation does not restart scanning or reset Pause. Structural
@@ -651,7 +661,7 @@ precedence over remembered scope/position.
   All toggle. Browser retains its width; Folders uses a resizable (180–420 pt,
   default 220, remembered; an AppKit splitter above the row, since SwiftUI
   gestures cannot sit over the native outline) NSOutlineView with native row reuse, disclosure,
-  accessible names/counts, completion checkmarks and Include Subfolders/Show in
+  accessible names/counts and Include Subfolders/Show in
   Finder context actions. Grid's sidebar opens Folders in one click; choosing
   Browser from Grid returns to Gallery. The pane choice is remembered per Mac.
   Root All Media always includes descendants. Expansion restores ancestors before
@@ -663,7 +673,7 @@ precedence over remembered scope/position.
   final set. The outline refuses pointer-initiated first responder (Finder
   sidebar behavior) so arrows keep navigating media after a click; Tab, Full
   Keyboard Access and VoiceOver still focus it for native arrows. Entering a
-  folder without a remembered position starts at its first undecided item.
+  folder without a remembered position starts at its first Unmarked or Mixed item.
   Type-select is off so unassigned letters cannot jump scope. Breadcrumbs
   expose ancestors and direct/subtree scope only inside a subfolder when the
   folder tree is hidden (including Browser mode). All Media has no breadcrumb
@@ -672,8 +682,10 @@ precedence over remembered scope/position.
   retain the original layout. Native borderless value menus retain regular
   header space; media uses the full height when breadcrumbs are redundant.
   Persistence warnings remain independently visible.
-  Scoped decision snapshots update by changed physical-file IDs, keeping progress,
-  completion and Clear enablement constant-time between scope/structure changes.
+  Scoped decision snapshots and the scoped stars-or-label set update by changed
+  physical-file IDs, keeping Yes/No totals and both Clear commands' enablement
+  constant-time between scope/structure changes. Decision edits never reload
+  outline rows; only Next Unfinished Folder keeps direct Yes/No counts per folder.
   Explicit Reset Folder Navigation preserves invalid primary/previous memory
   leaves in a uniquely named sibling directory before writing fresh UI memory.
 
@@ -798,7 +810,8 @@ precedence over remembered scope/position.
 
 - View menu Gallery/Grid choices show Tab / G; Grid Zoom In/Out show ⌘+ / ⌘−.
   File also shows Command Palette ⌘K, Rescan ⌘R, and Export E / ⌘E; Edit shows
-  Undo Z / ⌘Z and Clear All Decisions R. Photo sizes show S (100%) and A (Phone).
+  Undo Z / ⌘Z and Clear All Decisions R; Clear Stars and Labels… follows it with
+  no key. Photo sizes show S (100%) and A (Phone).
   Actions without a dedicated shortcut, including Fit and Close Session, have
   no invented hint. Standard macOS commands retain their system equivalents.
   `MenuShortcutColumns` uses AppKit's native key-equivalent column during explicit
@@ -892,8 +905,10 @@ precedence over remembered scope/position.
   A window-bound mouse monitor returns double-clicks anywhere within the visible
   capsule to Fit before native slider tracking starts. Ordinary clicks/drags
   pass through immediately; removal/detachment removes the monitor.
-  The session has no bottom strip. Toolbar status retains the save readout and
-  opens filter/completion/tips details only when present, using the shared
+  The session has no bottom strip. Toolbar status shows position, the filter
+  denominator, scoped Yes totals, No only when nonzero, Mixed, selection and
+  grouped-review suffixes (whole localized clauses), plus the save readout. It
+  opens quick-start tips only while they are enabled, using the shared
   command gate. Saving has no explainer or duplicate heading.
   Video transport, full-screen, and Picture-in-Picture stay visible during playback.
 - Filter drafts parse only edited endpoints. Open/close never round-trips stored

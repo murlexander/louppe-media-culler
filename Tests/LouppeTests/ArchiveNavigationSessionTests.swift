@@ -73,32 +73,105 @@ final class ArchiveNavigationSessionTests: XCTestCase {
         await finish(store)
     }
 
-    func testFolderCompletionFollowsRatingsUndoAndClear() async throws {
+    func testDirectFolderProgressFollowsRatingsUndoAndClear() async throws {
         let fixture = try Fixture(); defer { fixture.remove() }
         let store = fixture.store()
         store.openFolder(fixture.media)
         try await ready(store)
         let index = try XCTUnwrap(store.archiveFolderIndex)
         let progress = try XCTUnwrap(store.archiveFolderProgress)
-        func complete(_ id: String) -> Bool { progress.isComplete(id, includesDescendants: true, index: index) }
+        func direct(_ id: String) -> Int { progress.directReviewedCount(for: id, index: index) }
         let one = try XCTUnwrap(store.items.firstIndex { $0.primaryFile.id == "A/one.txt" })
         let two = try XCTUnwrap(store.items.firstIndex { $0.primaryFile.id == "A/Nested/two.txt" })
         let revision = store.archiveFolderProgressRevision
         store.rate(.yes, at: one)
         XCTAssertGreaterThan(store.archiveFolderProgressRevision, revision)
-        XCTAssertFalse(complete("A"))
+        XCTAssertEqual(direct("A"), 1)
         store.rate(.no, at: two)
-        XCTAssertTrue(complete("A/Nested"))
-        XCTAssertTrue(complete("A"))
-        XCTAssertFalse(complete(""))
+        XCTAssertEqual(direct("A/Nested"), 1)
+        XCTAssertEqual(direct("A"), 1, "subfolder items are not direct items")
         store.undo()
-        XCTAssertFalse(complete("A"))
-        XCTAssertFalse(complete("A/Nested"))
+        XCTAssertEqual(direct("A/Nested"), 0)
+        store.rate(.no, at: two)
+        store.rate(.no, at: two)
+        XCTAssertEqual(direct("A/Nested"), 0, "a second No toggles back to Unmarked")
         store.rate(.no, at: two)
         store.selectArchiveFolder("A")
         store.clearAllRatings()
-        XCTAssertFalse(complete("A"), "Clear All Decisions reopens the folder")
+        XCTAssertEqual(direct("A"), 0, "Clear All Decisions reopens the folder")
+        XCTAssertEqual(direct("A/Nested"), 0)
         XCTAssertTrue(store.archiveFolderProgress === progress, "folder navigation keeps the prepared progress")
+        await finish(store)
+    }
+
+    func testClearStarsAndLabelsUsesCurrentFolderIncludingHiddenItemsWithOneUndo() async throws {
+        let fixture = try Fixture(); defer { fixture.remove() }
+        let store = fixture.store()
+        store.openFolder(fixture.media)
+        try await ready(store)
+        func index(_ id: String) throws -> Int { try XCTUnwrap(store.items.firstIndex { $0.primaryFile.id == id }) }
+        let a = try index("A/one.txt"), nested = try index("A/Nested/two.txt"), b = try index("B/three.txt")
+        store.setStarRating(.three, at: a)
+        store.setColorLabel(.green, at: nested)
+        store.rate(.yes, at: nested)
+        store.setColorLabel(.blue, at: b)
+        let starsAt = store.items[a].primaryFile.starsChangedAt
+        let colorAt = store.items[nested].primaryFile.colorChangedAt
+        let ratedAt = store.items[nested].primaryFile.ratedAt
+        store.selectArchiveFolder("A")
+        XCTAssertTrue(store.canClearArchiveStarsAndLabels)
+        let action = try XCTUnwrap(ActionPaletteView(store: store).actions.first { $0.id == "clear-stars-labels" })
+        XCTAssertTrue(action.isEnabled)
+        store.filter.searchText = "one"
+        store.flushPendingFilter()
+        XCTAssertEqual(store.visibleIndices, [a], "the nested item is hidden by Filter but in the folder scope")
+        let depth = store.undoStepCountForTesting
+        store.requestClearStarsAndLabels()
+        XCTAssertEqual(store.undoStepCountForTesting, depth + 1)
+        XCTAssertNil(store.items[a].primaryFile.starRating)
+        XCTAssertNil(store.items[nested].primaryFile.colorLabel)
+        XCTAssertEqual(store.items[nested].rating, .yes)
+        XCTAssertEqual(store.items[nested].primaryFile.ratedAt, ratedAt)
+        XCTAssertEqual(store.items[b].primaryFile.colorLabel, .blue, "another folder keeps its label")
+        XCTAssertFalse(store.canClearArchiveStarsAndLabels)
+        XCTAssertFalse(try XCTUnwrap(ActionPaletteView(store: store).actions.first { $0.id == "clear-stars-labels" }).isEnabled)
+        store.undo()
+        XCTAssertEqual(store.items[a].primaryFile.starRating, .three)
+        XCTAssertEqual(store.items[a].primaryFile.starsChangedAt, starsAt)
+        XCTAssertEqual(store.items[nested].primaryFile.colorLabel, .green)
+        XCTAssertEqual(store.items[nested].primaryFile.colorChangedAt, colorAt)
+        XCTAssertTrue(store.canClearArchiveStarsAndLabels)
+        store.filter.searchText = ""
+        store.flushPendingFilter()
+        store.selectArchiveFolder("Empty")
+        XCTAssertFalse(store.canClearArchiveStarsAndLabels)
+        store.selectArchiveFolder("B")
+        XCTAssertTrue(store.canClearArchiveStarsAndLabels)
+        store.setColorLabel(nil, at: try XCTUnwrap(store.visibleIndices.first))
+        XCTAssertFalse(store.canClearArchiveStarsAndLabels, "scoped enablement follows ordinary edits")
+        await finish(store)
+    }
+
+    func testToolbarTotalsShowYesAlwaysAndNoOnlyWhenNonzero() async throws {
+        let fixture = try Fixture(); defer { fixture.remove() }
+        let store = fixture.store()
+        store.openFolder(fixture.media)
+        try await ready(store)
+        let view = SessionView(store: store)
+        let position = L10n.text("Item \(L10n.number(store.currentVisiblePosition.map { $0 + 1 } ?? 0)) of \(L10n.number(4))")
+        XCTAssertEqual(view.subtitle, position + L10n.text("  ·  \(L10n.number(0)) Yes"))
+        let three = try XCTUnwrap(store.items.firstIndex { $0.primaryFile.id == "B/three.txt" })
+        store.rate(.no, at: three)
+        XCTAssertTrue(view.subtitle.hasSuffix(L10n.text("  ·  \(L10n.number(0)) Yes") + L10n.text("  ·  \(L10n.number(1)) No")))
+        XCTAssertFalse(view.subtitle.contains("reviewed"))
+        store.selectArchiveFolder("A")
+        XCTAssertFalse(view.subtitle.contains(L10n.text("  ·  \(L10n.number(1)) No")), "No is scoped and hidden at zero")
+        let one = try XCTUnwrap(store.items.firstIndex { $0.primaryFile.id == "A/one.txt" })
+        store.rate(.yes, at: one)
+        store.filter.searchText = "one"
+        store.flushPendingFilter()
+        XCTAssertEqual(view.subtitle, L10n.text("Item \(L10n.number(1)) of \(L10n.number(1))")
+            + L10n.text(" (of \(L10n.number(2)) total)") + L10n.text("  ·  \(L10n.number(1)) Yes"))
         await finish(store)
     }
 
@@ -122,7 +195,7 @@ final class ArchiveNavigationSessionTests: XCTestCase {
         await finish(store)
     }
 
-    func testScopeProgressAndClearEnablementFollowRatingsUndoAndFiltering() async throws {
+    func testScopeTotalsAndClearEnablementFollowRatingsUndoAndFiltering() async throws {
         let fixture = try Fixture(); defer { fixture.remove() }
         let store = fixture.store()
         store.openFolder(fixture.media)
@@ -134,29 +207,28 @@ final class ArchiveNavigationSessionTests: XCTestCase {
         store.selectArchiveFolder("A")
         XCTAssertEqual(store.archiveRatedCount, 0, "another folder cannot enable Clear here")
         XCTAssertFalse(try XCTUnwrap(ActionPaletteView(store: store).actions.first { $0.id == "clear-decisions" }).isEnabled)
-        XCTAssertEqual(store.archiveReviewedCount, 0)
+        XCTAssertEqual(store.archiveYesCount + store.archiveNoCount, 0)
         store.rate(.yes, at: a)
         XCTAssertEqual(store.archiveYesCount, 1)
         XCTAssertTrue(try XCTUnwrap(ActionPaletteView(store: store).actions.first { $0.id == "clear-decisions" }).isEnabled)
-        XCTAssertEqual(store.archiveReviewedCount, 1)
         store.rate(.no, at: nested)
         XCTAssertEqual(store.archiveNoCount, 1)
-        XCTAssertTrue(store.isReviewComplete, "this folder is complete while the archive is not")
         store.undo()
-        XCTAssertEqual(store.archiveReviewedCount, 1)
-        XCTAssertFalse(store.isReviewComplete)
+        XCTAssertEqual(store.archiveNoCount, 0)
+        XCTAssertEqual(store.archiveYesCount, 1)
         store.filter.searchText = "missing"
         store.flushPendingFilter()
-        XCTAssertEqual(store.archiveReviewedCount, 1, "filtering does not change the folder denominator")
+        XCTAssertEqual(store.archiveYesCount, 1, "filtering does not change the folder totals")
         XCTAssertEqual(store.archiveScopeCount, 2)
         store.setArchiveIncludesDescendants(false)
         XCTAssertEqual(store.archiveScopeCount, 1)
-        XCTAssertTrue(store.isReviewComplete)
+        XCTAssertEqual(store.archiveYesCount, 1)
         store.clearAllRatings()
         XCTAssertEqual(store.archiveRatedCount, 0)
         XCTAssertEqual(store.ratedCount, 1, "unrelated folder decisions remain")
         store.selectArchiveFolder("")
-        XCTAssertEqual(store.archiveReviewedCount, 1)
+        XCTAssertEqual(store.archiveNoCount, 1)
+        XCTAssertEqual(store.archiveYesCount, 0)
         XCTAssertEqual(store.archiveScopeCount, 4)
         await finish(store)
     }
@@ -177,17 +249,14 @@ final class ArchiveNavigationSessionTests: XCTestCase {
         XCTAssertEqual(store.archiveScopeCount, 1)
         XCTAssertEqual(store.archiveMixedCount, 1)
         XCTAssertEqual(store.archiveRatedCount, 1)
-        XCTAssertEqual(store.archiveReviewedCount, 0)
-        XCTAssertFalse(store.isReviewComplete)
+        XCTAssertEqual(store.archiveYesCount + store.archiveNoCount, 0)
         let pair = try XCTUnwrap(store.visibleIndices.first)
         store.rate(.yes, at: pair)
-        XCTAssertEqual(store.archiveYesCount, 1, "two changed physical IDs update one review item")
+        XCTAssertEqual(store.archiveYesCount, 1, "two changed physical IDs update one review item; Mixed is marked, not cleared")
         XCTAssertEqual(store.archiveMixedCount, 0)
-        XCTAssertTrue(store.isReviewComplete)
         store.undo()
         XCTAssertEqual(store.archiveMixedCount, 1)
         XCTAssertEqual(store.archiveYesCount, 0)
-        XCTAssertFalse(store.isReviewComplete)
         store.clearAllRatings()
         XCTAssertEqual(store.archiveRatedCount, 0)
         XCTAssertEqual(a.rating, .undecided)

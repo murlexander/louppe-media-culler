@@ -861,6 +861,95 @@ final class HotkeyTests: XCTestCase {
         sendKeyEvent(code: 2, characters: "d", in: window)
         XCTAssertEqual(store.items[2].rating, .undecided)
     }
+
+    /// Real key-downs through the installed local monitor: a held decision
+    /// key's auto-repeat is consumed with no mark, clear, advance, Undo entry
+    /// or timestamp, while fresh presses still mark and toggle. Edited
+    /// aliases share the same guard; text ownership keeps its keys.
+    func testInstalledMonitorConsumesDecisionKeyRepeatsWithoutAnyChange() throws {
+        _ = NSApplication.shared
+        let domain = "HotkeyTests.Repeat.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        var shortcuts = ReviewShortcutPreferences(interpretation: .keyboardLayout)
+        XCTAssertTrue(shortcuts.add(ReviewShortcutBinding(character: "y", keyCode: 16), for: .yes))
+        shortcuts.save(to: defaults)
+        defaults.set(false, forKey: "louppe.showQuickStart")
+        let store = readyStore(itemCount: 3, firstItemIsVideo: false)
+        let frame = NSRect(x: 0, y: 0, width: 900, height: 620)
+        let container = NSView(frame: frame)
+        let host = NSHostingView(rootView: SessionView(store: store).defaultAppStorage(defaults))
+        host.frame = frame
+        container.addSubview(host)
+        let button = NSButton(title: "Focused control", target: nil, action: nil)
+        button.refusesFirstResponder = false
+        button.frame = NSRect(x: 12, y: 12, width: 140, height: 28)
+        container.addSubview(button)
+        let editor = NSTextView(frame: NSRect(x: 170, y: 12, width: 180, height: 28))
+        editor.isEditable = true
+        container.addSubview(editor)
+        let window = NSWindow(contentRect: frame, styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        let baseline = SessionKeyMonitorTestProbe.activeMonitorCount
+        window.contentView = container
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        window.makeKey()
+        SessionKeyMonitorTestProbe.overrideKeyWindow(with: window)
+        defer {
+            window.contentView = nil
+            window.orderOut(nil)
+            SessionKeyMonitorTestProbe.overrideKeyWindow(with: nil)
+        }
+        XCTAssertTrue(waitForCondition { SessionKeyMonitorTestProbe.activeMonitorCount == baseline + 1 })
+        XCTAssertTrue(window.makeFirstResponder(button))
+
+        // A fresh F marks and advances; its held repeats must not mark the
+        // item it advanced onto or toggle anything back.
+        sendKeyEvent(code: 3, characters: "f", in: window)
+        XCTAssertEqual(store.items[0].rating, .yes)
+        XCTAssertEqual(store.currentIndex, 1)
+        let undoDepth = store.undoStepCountForTesting
+        let markedAt = store.items[0].primaryFile.ratedAt
+        for _ in 0..<3 {
+            sendKeyEvent(code: 3, characters: "f", isARepeat: true, in: window)
+            sendKeyEvent(code: 16, characters: "y", isARepeat: true, in: window)
+            sendKeyEvent(code: 2, characters: "d", isARepeat: true, in: window)
+        }
+        XCTAssertEqual(store.items.map(\.rating), [.yes, .undecided, .undecided])
+        XCTAssertEqual(store.currentIndex, 1)
+        XCTAssertEqual(store.undoStepCountForTesting, undoDepth)
+        XCTAssertEqual(store.items[0].primaryFile.ratedAt, markedAt)
+        XCTAssertNil(store.items[1].primaryFile.ratedAt)
+
+        // The edited alias marks like F; on the last item it stays.
+        sendKeyEvent(code: 16, characters: "y", in: window)
+        XCTAssertEqual(store.items[1].rating, .yes)
+        XCTAssertEqual(store.currentIndex, 2)
+        sendKeyEvent(code: 2, characters: "d", in: window)
+        XCTAssertEqual(store.items[2].rating, .no)
+        XCTAssertEqual(store.currentIndex, 2, "the last item never wraps")
+        // Holding D on an item already No must not toggle it back.
+        sendKeyEvent(code: 2, characters: "d", isARepeat: true, in: window)
+        XCTAssertEqual(store.items[2].rating, .no)
+
+        // A fresh D toggles to Unmarked without advancing, stamps the
+        // clear, and one Undo restores the No with its original date.
+        let noAt = try XCTUnwrap(store.items[2].primaryFile.ratedAt)
+        sendKeyEvent(code: 2, characters: "d", in: window)
+        XCTAssertEqual(store.items[2].rating, .undecided)
+        XCTAssertEqual(store.currentIndex, 2)
+        XCTAssertGreaterThanOrEqual(try XCTUnwrap(store.items[2].primaryFile.ratedAt), noAt)
+        store.undo()
+        XCTAssertEqual(store.items[2].rating, .no)
+        XCTAssertEqual(store.items[2].primaryFile.ratedAt, noAt)
+
+        // Editable text keeps both fresh and repeated letters.
+        XCTAssertTrue(window.makeFirstResponder(editor))
+        sendKeyEvent(code: 3, characters: "f", isARepeat: true, in: window)
+        sendKeyEvent(code: 3, characters: "f", in: window)
+        XCTAssertEqual(store.items[2].rating, .no)
+        XCTAssertEqual(store.undoStepCountForTesting, undoDepth + 2, "Y, D and the toggle, less one Undo")
+    }
 #endif
 
     func testTextEditorBlocksUntilEditingFocusEnds() {
@@ -1804,6 +1893,7 @@ final class HotkeyTests: XCTestCase {
         code: UInt16,
         characters: String,
         modifiers: NSEvent.ModifierFlags = [],
+        isARepeat: Bool = false,
         in window: NSWindow
     ) {
         let event = NSEvent.keyEvent(
@@ -1815,7 +1905,7 @@ final class HotkeyTests: XCTestCase {
             context: nil,
             characters: characters,
             charactersIgnoringModifiers: characters,
-            isARepeat: false,
+            isARepeat: isARepeat,
             keyCode: code
         )!
         NSApp.sendEvent(event)

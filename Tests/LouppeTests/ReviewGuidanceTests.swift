@@ -5,7 +5,7 @@ import XCTest
 
 @MainActor
 final class ReviewGuidanceTests: XCTestCase {
-    func testCompletionAndCleanUpCountsKeepMixedPairsPending() {
+    func testCleanUpCountsKeepMixedPairsProtected() {
         let store = SessionStore()
         store.items = [
             item("YES.JPG", decision: .yes),
@@ -24,17 +24,17 @@ final class ReviewGuidanceTests: XCTestCase {
         XCTAssertEqual(store.noCount, 1)
         XCTAssertEqual(store.undecidedCount, 2)
         XCTAssertEqual(store.mixedCount, 1)
-        XCTAssertFalse(store.isReviewComplete)
         let breakdown = store.cleanUpDecisionBreakdown(for: .keepOnlyYes)
         XCTAssertEqual(breakdown.no, 1)
         XCTAssertEqual(breakdown.undecided, 1)
         XCTAssertEqual(store.cleanUpCounts(for: .keepOnlyYes).photos, 2)
 
         store.rate(.yes, at: 2)
-        XCTAssertFalse(store.isReviewComplete, "a mixed pair still needs one decision")
+        XCTAssertEqual(store.mixedCount, 1)
         store.rate(.yes, at: 3)
-        XCTAssertTrue(store.isReviewComplete)
+        XCTAssertEqual(store.mixedCount, 0, "Yes on a Mixed pair marks both files")
         XCTAssertEqual(store.yesCount + store.noCount, store.items.count)
+        XCTAssertEqual(store.cleanUpDecisionBreakdown(for: .keepOnlyYes).undecided, 0)
     }
 
     func testStatusPopoverOwnsReviewKeysUntilDismissed() throws {

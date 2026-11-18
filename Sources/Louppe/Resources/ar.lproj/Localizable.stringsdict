@@ -722,6 +722,30 @@
 			<string>مسح قرارات نعم أو لا من %2$@ عنصر. تبقى النجوم والتصنيفات اللونية دون تغيير. تراجع باستخدام ⌘Z.</string>
 		</dict>
 	</dict>
+	<key>Clear stars and color labels from %lld items. Yes and No decisions stay unchanged. Undo with ⌘Z.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>مسح النجوم والتصنيفات اللونية من %2$@ عناصر. تبقى قرارات نعم ولا دون تغيير. تراجع باستخدام ⌘Z.</string>
+			<key>one</key>
+			<string>مسح النجوم والتصنيفات اللونية من عنصر واحد. تبقى قرارات نعم ولا دون تغيير. تراجع باستخدام ⌘Z.</string>
+			<key>two</key>
+			<string>مسح النجوم والتصنيفات اللونية من عنصرين. تبقى قرارات نعم ولا دون تغيير. تراجع باستخدام ⌘Z.</string>
+			<key>few</key>
+			<string>مسح النجوم والتصنيفات اللونية من %2$@ عناصر. تبقى قرارات نعم ولا دون تغيير. تراجع باستخدام ⌘Z.</string>
+			<key>many</key>
+			<string>مسح النجوم والتصنيفات اللونية من %2$@ عنصرًا. تبقى قرارات نعم ولا دون تغيير. تراجع باستخدام ⌘Z.</string>
+			<key>other</key>
+			<string>مسح النجوم والتصنيفات اللونية من %2$@ عنصر. تبقى قرارات نعم ولا دون تغيير. تراجع باستخدام ⌘Z.</string>
+		</dict>
+	</dict>
 	<key>Trash %lld items?</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -770,7 +794,7 @@
 			<string>نقل %2$@ عنصر بقرار «لا» إلى سلة المهملات؟</string>
 		</dict>
 	</dict>
-	<key>Trash %lld items marked No or Undecided?</key>
+	<key>Trash %lld No or Unmarked items?</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%1$#@count1@</string>
@@ -781,17 +805,17 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>zero</key>
-			<string>نقل %2$@ عناصر بقرار «لا» أو دون قرار إلى سلة المهملات؟</string>
+			<string>نقل %2$@ عناصر بقرار «لا» أو بلا تحديد إلى سلة المهملات؟</string>
 			<key>one</key>
-			<string>نقل عنصر واحد بقرار «لا» أو دون قرار إلى سلة المهملات؟</string>
+			<string>نقل عنصر واحد بقرار «لا» أو بلا تحديد إلى سلة المهملات؟</string>
 			<key>two</key>
-			<string>نقل عنصرين بقرار «لا» أو دون قرار إلى سلة المهملات؟</string>
+			<string>نقل عنصرين بقرار «لا» أو بلا تحديد إلى سلة المهملات؟</string>
 			<key>few</key>
-			<string>نقل %2$@ عناصر بقرار «لا» أو دون قرار إلى سلة المهملات؟</string>
+			<string>نقل %2$@ عناصر بقرار «لا» أو بلا تحديد إلى سلة المهملات؟</string>
 			<key>many</key>
-			<string>نقل %2$@ عنصرًا بقرار «لا» أو دون قرار إلى سلة المهملات؟</string>
+			<string>نقل %2$@ عنصرًا بقرار «لا» أو بلا تحديد إلى سلة المهملات؟</string>
 			<key>other</key>
-			<string>نقل %2$@ عنصر بقرار «لا» أو دون قرار إلى سلة المهملات؟</string>
+			<string>نقل %2$@ عنصر بقرار «لا» أو بلا تحديد إلى سلة المهملات؟</string>
 		</dict>
 	</dict>
 	<key>Trash JPEG from %lld RAW + JPEG pairs?</key>
@@ -1374,7 +1398,7 @@
 			<string>يبقى دون تغيير %4$@ عنصر من العناصر المخفية</string>
 		</dict>
 	</dict>
-	<key>Includes %lld No and %lld Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</key>
+	<key>Includes %lld No and %lld Unmarked items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>يشمل %1$#@count1@ و%3$#@count2@. لا تحمي النجوم والتصنيفات اللونية هذه العناصر. تبقى أزواج RAW + JPEG ذات القرارات المختلطة في المجلد.</string>
@@ -1404,17 +1428,17 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>zero</key>
-			<string>%4$@ عناصر دون قرار</string>
+			<string>%4$@ عناصر بلا تحديد</string>
 			<key>one</key>
-			<string>عنصر واحد دون قرار</string>
+			<string>عنصر واحد بلا تحديد</string>
 			<key>two</key>
-			<string>عنصرين دون قرار</string>
+			<string>عنصرين بلا تحديد</string>
 			<key>few</key>
-			<string>%4$@ عناصر دون قرار</string>
+			<string>%4$@ عناصر بلا تحديد</string>
 			<key>many</key>
-			<string>%4$@ عنصرًا دون قرار</string>
+			<string>%4$@ عنصرًا بلا تحديد</string>
 			<key>other</key>
-			<string>%4$@ عنصر دون قرار</string>
+			<string>%4$@ عنصر بلا تحديد</string>
 		</dict>
 	</dict>
 	<key>legacy-missing-files-title</key>
@@ -1513,7 +1537,7 @@
 			<string>نقل %2$@ عنصر محدد إلى سلة المهملات…</string>
 		</dict>
 	</dict>
-	<key>%lld included RAW+JPEG pairs have different file decisions and are treated as undecided.</key>
+	<key>%lld included RAW+JPEG pairs have different file decisions and are treated as Unmarked.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%1$#@count1@</string>
@@ -1524,41 +1548,17 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>zero</key>
-			<string>تختلف القرارات بين ملفات %2$@ أزواج RAW+JPEG مضمنة؛ ويُعامل كل زوج كغير محسوم.</string>
+			<string>تختلف القرارات بين ملفات %2$@ أزواج RAW+JPEG مضمنة؛ ويُعامل كل زوج على أنه بلا تحديد.</string>
 			<key>one</key>
-			<string>تختلف القرارات بين ملفات زوج RAW+JPEG مضمن واحد؛ ويُعامل كل زوج كغير محسوم.</string>
+			<string>تختلف القرارات بين ملفات زوج RAW+JPEG مضمن واحد؛ ويُعامل على أنه بلا تحديد.</string>
 			<key>two</key>
-			<string>تختلف القرارات بين ملفات زوجي RAW+JPEG مضمنين؛ ويُعامل كل زوج كغير محسوم.</string>
+			<string>تختلف القرارات بين ملفات زوجي RAW+JPEG مضمنين؛ ويُعامل كل زوج على أنه بلا تحديد.</string>
 			<key>few</key>
-			<string>تختلف القرارات بين ملفات %2$@ أزواج RAW+JPEG مضمنة؛ ويُعامل كل زوج كغير محسوم.</string>
+			<string>تختلف القرارات بين ملفات %2$@ أزواج RAW+JPEG مضمنة؛ ويُعامل كل زوج على أنه بلا تحديد.</string>
 			<key>many</key>
-			<string>تختلف القرارات بين ملفات %2$@ زوج RAW+JPEG مضمنًا؛ ويُعامل كل زوج كغير محسوم.</string>
+			<string>تختلف القرارات بين ملفات %2$@ زوج RAW+JPEG مضمنًا؛ ويُعامل كل زوج على أنه بلا تحديد.</string>
 			<key>other</key>
-			<string>تختلف القرارات بين ملفات %2$@ زوج RAW+JPEG مضمن؛ ويُعامل كل زوج كغير محسوم.</string>
-		</dict>
-	</dict>
-	<key>%lld items still undecided in this scope — they won't be exported.</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%1$#@count1@</string>
-		<key>count1</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>lld</string>
-			<key>zero</key>
-			<string>ما زال %2$@ عناصر غير محسومة ضمن هذا النطاق؛ لن تُصدّر.</string>
-			<key>one</key>
-			<string>ما زال عنصر واحد غير محسوم ضمن هذا النطاق؛ لن يُصدّر.</string>
-			<key>two</key>
-			<string>ما زال عنصران غير محسومين ضمن هذا النطاق؛ لن يُصدّرا.</string>
-			<key>few</key>
-			<string>ما زالت %2$@ عناصر غير محسومة ضمن هذا النطاق؛ لن تُصدّر.</string>
-			<key>many</key>
-			<string>ما زال %2$@ عنصرًا غير محسوم ضمن هذا النطاق؛ لن تُصدّر.</string>
-			<key>other</key>
-			<string>ما زال %2$@ عنصر غير محسوم ضمن هذا النطاق؛ لن تُصدّر.</string>
+			<string>تختلف القرارات بين ملفات %2$@ زوج RAW+JPEG مضمن؛ ويُعامل كل زوج على أنه بلا تحديد.</string>
 		</dict>
 	</dict>
 	<key>%lld Lightroom .acr companions will stay in the source folder, unexported.</key>

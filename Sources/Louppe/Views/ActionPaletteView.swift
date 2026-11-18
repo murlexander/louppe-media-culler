@@ -478,7 +478,7 @@ struct ActionPaletteView: View {
                 id: "mark-yes",
                 category: L10n.text("Review metadata"),
                 title: L10n.text("Mark Yes"),
-                detail: L10n.text("Apply Yes; advance if enabled in Review settings"),
+                detail: L10n.text("Mark Yes; advance if enabled in Review settings. Press again to make it Unmarked."),
                 symbol: "checkmark.circle",
                 shortcut: shortcut(.yes),
                 keywords: [L10n.text("keep photo"), L10n.text("accept photo"), L10n.text("yes decision")],
@@ -489,10 +489,10 @@ struct ActionPaletteView: View {
                 id: "mark-no",
                 category: L10n.text("Review metadata"),
                 title: L10n.text("Mark No"),
-                detail: L10n.text("Apply No; advance if enabled in Review settings"),
+                detail: L10n.text("Mark No; advance if enabled in Review settings. Press again to make it Unmarked."),
                 symbol: "xmark.circle",
                 shortcut: shortcut(.no),
-                keywords: [L10n.text("reject photo"), L10n.text("no decision")],
+                keywords: [L10n.text("reject photo")],
                 isEnabled: store.canRate,
                 perform: { store.rate(.no) }
             ),
@@ -768,7 +768,7 @@ struct ActionPaletteView: View {
             ActionPaletteAction(
                 id: "keep-only-yes",
                 category: L10n.text("Selection and clean up"),
-                title: L10n.text("Trash No + Undecided…"),
+                title: L10n.text("Trash No + Unmarked…"),
                 detail: L10n.text("Confirm which items to trash in the current Clean Up scope"),
                 symbol: "trash",
                 keywords: [L10n.text("clean up"), "delete", "reject", L10n.text("keep only yes")],
@@ -816,6 +816,16 @@ struct ActionPaletteView: View {
                 keywords: [L10n.text("reset yes no"), L10n.text("clear yes no"), L10n.text("remove decisions")],
                 isEnabled: store.archiveRatedCount > 0 && !store.isFileOperationRunning,
                 perform: { store.requestClearAllRatings() }
+            ),
+            ActionPaletteAction(
+                id: "clear-stars-labels",
+                category: L10n.text("Selection and clean up"),
+                title: L10n.text("Clear Stars and Labels…"),
+                detail: L10n.text("Remove stars and color labels while keeping Yes and No decisions"),
+                symbol: "star.slash",
+                keywords: [L10n.text("reset stars"), L10n.text("remove color labels")],
+                isEnabled: store.canClearArchiveStarsAndLabels,
+                perform: { store.requestClearStarsAndLabels() }
             ),
             ActionPaletteAction(
                 id: "gallery",

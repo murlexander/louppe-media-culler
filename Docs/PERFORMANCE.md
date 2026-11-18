@@ -607,15 +607,18 @@ Unchanged representable updates skip expansion work (shared-storage set check).
 Expand/Collapse All use one recursive native call and Option-click disclosure
 reports one final set: 10k folders expand in about 0.6 s and collapse in 0.25 s
 in an unoptimized hidden-window test, versus 12.9 s and 10,001 store publications
-before. Folder completion counts are built once per index generation in
-O(items × depth), then each changed decision walks only its folders' ancestor
-chains; the outline refreshes only visible rows. Next/previous/unfinished folder
+before. Next Unfinished Folder's direct Yes/No counts are built lazily once per
+index generation in O(items × parent folders), then each changed decision updates
+only its own parent folders; decisions never reload outline rows. Next/previous/unfinished folder
 targets are cached per index, selection and progress revision, because SwiftUI
 evaluates menu enablement on every publication.
 Only the active scope retains indexed decision snapshots. Scope/structure changes
 build its counts once; rating/undo/recovery updates visit only changed physical
 IDs, deduplicating paired components through the existing file-to-item map.
-Toolbar counts and Clear enablement are constant-time. Current/viewport changes
+Toolbar Yes/No totals and both Clear commands' enablement are constant-time
+(global tallies at All Media; scoped decision snapshots and a scoped
+stars-or-label set otherwise). Clear Stars and Labels counts its confirmation
+only on request, then clears in one pass with one Undo step, publication and save. Current/viewport changes
 schedule a coalesced capture rather than rebuilding bounded UI memory per input.
 Position restoration checks at most three physical IDs through existing maps rather
 than scanning all files. Bounded UI memory coalesces writes at 500 ms; Close/Open/

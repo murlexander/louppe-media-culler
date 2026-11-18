@@ -38,8 +38,8 @@ struct MediaTileContextMenu: View {
 /// alternatives to the click, double-click, and modifier-click gestures.
 enum MediaTileAccessibility {
     enum RatingAction: String, CaseIterable, Equatable {
-        case yes = "Decide Yes"
-        case no = "Decide No"
+        case yes = "Mark Yes"
+        case no = "Mark No"
         case clear = "Clear Decision"
 
         var rating: Rating {
@@ -73,7 +73,7 @@ enum MediaTileAccessibility {
         switch state {
         case .yes: return L10n.text("Decision Yes")
         case .no: return L10n.text("Decision No")
-        case .undecided: return L10n.text("Undecided")
+        case .undecided: return L10n.text("Unmarked")
         case .mixed: return L10n.text("Mixed decision")
         }
     }

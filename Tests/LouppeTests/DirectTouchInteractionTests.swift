@@ -108,7 +108,7 @@ final class DirectTouchInteractionTests: XCTestCase {
         XCTAssertEqual(opens, 1)
         menu.performActionForItem(at: 1)
         XCTAssertTrue(store.selectedIndices.contains(1))
-        let yes = try XCTUnwrap(menu.items.firstIndex { $0.title == L10n.text("Decide Yes") })
+        let yes = try XCTUnwrap(menu.items.firstIndex { $0.title == L10n.text("Mark Yes") })
         menu.performActionForItem(at: yes)
         XCTAssertEqual(store.items[1].rating, .yes)
         XCTAssertEqual(store.items[0].rating, .yes, "The menu shares the existing selected-items rating behavior")
@@ -120,7 +120,7 @@ final class DirectTouchInteractionTests: XCTestCase {
         defer { store.finishExport(mode: .copy, movedIDs: [], requiresRecovery: false) }
         let blocked = NSHostingMenu(rootView: MediaTileContextMenu(store: store, index: 1, revision: revision, open: {}))
         blocked.update()
-        XCTAssertFalse(try XCTUnwrap(blocked.items.first { $0.title == L10n.text("Decide No") }).isEnabled)
+        XCTAssertFalse(try XCTUnwrap(blocked.items.first { $0.title == L10n.text("Mark No") }).isEnabled)
         XCTAssertEqual(store.items.map(\.primaryURL), paths)
     }
 

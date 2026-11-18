@@ -2,7 +2,6 @@
 "  ·  grouped review" = "  · समूहीकृत समीक्षा";
 "  ·  {0} mixed" = "  · {0} मिश्रित";
 "  ·  {0} selected" = "  · {0} चयनित";
-"  ·  {0}/{1} reviewed" = "  · {0}/{1} की समीक्षा";
 " (including {0})" = " ({0} सहित)";
 " (of {0} total)" = " ({0} कुल)";
 " ({0} and {1})" = " ({0} और {1})";
@@ -105,9 +104,9 @@
 "Application" = "ऐप";
 "Application packets copied unchanged" = "ऐप के पैकेट बिना बदले कॉपी हुए";
 "Applies to video and audio playback." = "वीडियो और ऑडियो प्लेबैक के लिए लागू होता है।";
-"Apply No; advance if enabled in Review settings" = "नहीं चिह्नित करें; समीक्षा सेटिंग में सक्षम होने पर आगे बढ़ें";
+"Mark No; advance if enabled in Review settings. Press again to make it Unmarked." = "“नहीं” चिह्नित करें; समीक्षा सेटिंग में सक्षम होने पर आगे बढ़ें। दोबारा दबाने पर यह अचिह्नित हो जाता है।";
 "Apply Resolutions" = "समाधान लागू करें";
-"Apply Yes; advance if enabled in Review settings" = "हाँ चिह्नित करें; समीक्षा सेटिंग में सक्षम होने पर आगे बढ़ें";
+"Mark Yes; advance if enabled in Review settings. Press again to make it Unmarked." = "“हाँ” चिह्नित करें; समीक्षा सेटिंग में सक्षम होने पर आगे बढ़ें। दोबारा दबाने पर यह अचिह्नित हो जाता है।";
 "Apply a portable color label to the current photo or selection" = "वर्तमान फोटो या चयन को अन्य ऐप में पढ़ा जा सकने वाला रंग लेबल दें";
 "Apply a portable star rating to the current photo or selection" = "वर्तमान फोटो या चयन को अन्य ऐप में पढ़ी जा सकने वाली स्टार रेटिंग दें";
 "Apply the same choice to all conflicts" = "सभी टकरावों पर यही विकल्प लागू करें";
@@ -279,8 +278,6 @@
 "Date taken" = "कैप्चर तारीख";
 "Date taken from" = "कैप्चर तारीख से";
 "Date taken to" = "कैप्चर तारीख तक";
-"Decide No" = "नहीं चिह्नित करें";
-"Decide Yes" = "हाँ चिह्नित करें";
 "Decision" = "निर्णय";
 "Decision No" = "निर्णय नहीं";
 "Decision Yes" = "निर्णय हाँ";
@@ -345,8 +342,6 @@
 "Extend the selection from the current item to the last visible item" = "वर्तमान आइटम से अंतिम दृश्य आइटम तक चयन का विस्तार करें";
 "External modification conflict" = "बाहरी बदलाव से टकराव";
 "F Yes · D No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place." = "F हाँ · D नहीं · तीरों से देखें · ⌘Z पूर्ववत करें। निर्णय अपने आप सहेजते हैं; नहीं चिह्नित फ़ाइलें अपनी जगह रहती हैं।";
-"F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Arrows browse; ⌘Z undoes. Decisions save automatically; No never trashes files." = "F से हाँ और D से नहीं चिह्नित करें। दोनों डिफ़ॉल्ट रूप से अगले अनिर्णीत आइटम पर जाते हैं (सेटिंग्स → समीक्षा)। तीरों से देखें; ⌘Z पूर्ववत करें। निर्णय अपने आप सहेजते हैं; नहीं चिह्नित करने से फ़ाइलें कभी कूड़ेदान में नहीं जातीं।";
-"F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Stars (0–5) and color labels are independent." = "F से हाँ और D से नहीं चिह्नित करें। दोनों डिफ़ॉल्ट रूप से अगले अनिर्णीत आइटम पर जाते हैं (सेटिंग्स → समीक्षा)। स्टार (0–5) और रंग लेबल अलग-अलग हैं।";
 "Failed" = "विफल";
 "Fast" = "तेज़";
 "Fast photo, video, and audio culling for creators.\n\n" = "रचनाकारों के लिए फ़ोटो, वीडियो और ऑडियो का तेज़ चयन।\n\n";
@@ -391,7 +386,7 @@
 "Folders Z–A" = "फ़ोल्डर Z-A";
 "Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session." = "फ़ोल्डर, सामग्री और एक्सटेंशन नहीं बदलेंगे। कुछ भी ओवरराइट नहीं होगा। सत्र बंद करने से पहले ⌘Z से सभी पुराने नाम वापस पाएँ।";
 "For {0}, rollback also failed; check both the source folder and Trash." = "{0} को वापस रखने में भी विफलता हुई; स्रोत फ़ोल्डर और कूड़ेदान जाँचें।";
-"Forgets saved decisions for this folder and opens the current files unrated" = "इस फ़ोल्डर के सहेजे निर्णय भूलकर वर्तमान फ़ाइलें बिना रेटिंग खोलें";
+"Forgets saved decisions for this folder and opens the current files as Unmarked" = "इस फ़ोल्डर के सहेजे निर्णय भूलकर वर्तमान फ़ाइलें अचिह्नित खोलें";
 "Format" = "प्रारूप";
 "Frame rate" = "फ्रेम रेट";
 "From" = "से";
@@ -428,7 +423,6 @@
 "Include XMP sidecars (off by default)" = "XMP साइडकार शामिल करें (डिफ़ॉल्ट रूप से बंद)";
 "Include XMP sidecars for editing apps" = "संपादन ऐप के लिए XMP साइडकार शामिल करें";
 "Included XMP sidecars follow media." = "शामिल XMP साइडकार मीडिया के साथ जाएँगे।";
-"Includes {0} No and {1} Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder." = "इसमें {0} नहीं चिह्नित और {1} अनिर्णीत आइटम हैं। स्टार और रंग लेबल इन आइटम को नहीं बचाते। अलग-अलग निर्णय वाली RAW + JPEG जोड़ियाँ फ़ोल्डर में रहेंगी।";
 "Increase thumbnail size in Grid" = "ग्रिड में थंबनेल आकार बढ़ाएं";
 "Inspect the current Gallery video half a second earlier" = "गैलरी के वर्तमान वीडियो में आधा सेकंड पीछे जाँचें";
 "Inspect the current Gallery video half a second later" = "गैलरी के वर्तमान वीडियो में आधा सेकंड आगे जाँचें";
@@ -519,9 +513,8 @@
 "Making interrupted file operations safe…" = "अधूरी फ़ाइल कार्रवाइयों को सुरक्षित किया जा रहा है…";
 "Malformed XMP" = "XMP का प्रारूप गलत है";
 "Manual" = "मैन्युअल";
-"Mark No" = "नहीं चिह्नित करें";
-"Mark Yes" = "हाँ चिह्नित करें";
-"Mark Yes / No; advance by default (Settings → Review)" = "हाँ / नहीं चिह्नित करें; डिफ़ॉल्ट रूप से अगला आइटम खुलता है (सेटिंग → समीक्षा)";
+"Mark No" = "“नहीं” चिह्नित करें";
+"Mark Yes" = "“हाँ” चिह्नित करें";
 "Mark clipping estimated from the displayed preview" = "दिखाए गए पूर्वावलोकन से अनुमानित क्लिपिंग चिह्नित करें";
 "Mark some items Yes (press F) before exporting." = "निर्यात करने से पहले कुछ आइटम हाँ (प्रेस F) चिह्नित करें।";
 "Match" = "मैच";
@@ -579,7 +572,6 @@
 "Move {0} files?" = "{0} फ़ाइलें स्थानांतरित करें?";
 "Move {0} later" = "{0} बाद में रखें";
 "Trash {0} marked No?" = "“नहीं” चिह्नित {0} आइटम कूड़ेदान में भेजें?";
-"Trash {0} marked No or Undecided?" = "“नहीं” या अनिर्णीत चिह्नित {0} आइटम कूड़ेदान में भेजें?";
 "Trash {0}?" = "{0} कूड़ेदान में भेजें?";
 "Trash No" = "“नहीं” वाले कूड़ेदान में भेजें";
 "Trash No…" = "“नहीं” वाले कूड़ेदान में भेजें…";
@@ -627,7 +619,7 @@
 "Audio levels unavailable" = "ऑडियो स्तर उपलब्ध नहीं हैं";
 "No recognised media was found in “{0}”. Choose another folder or check Supported Formats." = "“{0}” में पहचाना जाने वाला मीडिया नहीं मिला। दूसरा फ़ोल्डर चुनें या समर्थित प्रारूप देखें।";
 "No review group is active" = "कोई समीक्षा समूह सक्रिय नहीं है";
-"No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "कोई सहेजा फ़ाइलनाम इस फ़ोल्डर से मेल नहीं खाता। सहेजे निर्णय नहीं बदले हैं। नया सत्र खोलें उन्हें बदलकर वर्तमान फ़ाइलें बिना रेटिंग खोलेगा।";
+"No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked." = "कोई सहेजा फ़ाइलनाम इस फ़ोल्डर से मेल नहीं खाता। सहेजे निर्णय नहीं बदले हैं। नया सत्र खोलें उन्हें बदलकर वर्तमान फ़ाइलें अचिह्नित खोलेगा।";
 "No stars" = "कोई स्टार नहीं";
 "No still-photo capture times were within the selected burst interval." = "किसी स्थिर फोटो का कैप्चर समय चुने हुए बर्स्ट अंतराल में नहीं था।";
 "None" = "कोई नहीं";
@@ -824,13 +816,11 @@
 "Review Rename…" = "नाम बदलने की समीक्षा करें…";
 "Review Sidecars…" = "साइडकार की समीक्षा करें…";
 "Review a visual overview of the folder" = "फ़ोल्डर का दृश्य अवलोकन करें";
-"Review complete: {0} Yes · {1} No" = "समीक्षा पूरी: {0} हाँ · {1} नहीं";
 "Review folders before their subfolders; files stay chronological." = "अपने सबफ़ोल्डर्स से पहले फ़ोल्डर्स की समीक्षा करें; फाइलें क्रोनोलॉजिकल रहती हैं।";
 "Review groups" = "समीक्षा समूह";
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette (⌘K). Search for RAW, JPEG, or pairing." = "मेल खाने वाली RAW + JPEG फ़ाइलों की साथ में या अलग-अलग समीक्षा फ़िल्टर या कमांड पैलेट (⌘K) में करें। RAW, JPEG या जोड़ियों को खोजें।";
 "Review metadata" = "समीक्षा का मेटाडेटा";
 "Review one photo, video, or audio file at a time" = "एक समय में एक फोटो, वीडियो, या ऑडियो फ़ाइल की समीक्षा करें";
-"Review progress and decision totals" = "प्रगति और निर्णय कुल की समीक्षा";
 "Review the current video or audio recording at double speed" = "वर्तमान वीडियो या ऑडियो रिकॉर्डिंग की 2× गति पर समीक्षा करें";
 "Review the current video or audio recording at normal speed" = "सामान्य गति पर वर्तमान वीडियो या ऑडियो रिकॉर्डिंग की समीक्षा करें";
 "Play the current video or audio recording at 1.5× speed" = "मौजूदा वीडियो या ऑडियो रिकॉर्डिंग 1.5× गति पर चलाएँ";
@@ -1088,8 +1078,8 @@
 "This media family has ambiguous XMP filenames." = "इस मीडिया समूह के XMP फ़ाइलनाम अस्पष्ट हैं।";
 "This media file couldn't be played." = "यह मीडिया फ़ाइल नहीं चल सकी।";
 "This pair spans source folders. Both sidecars stay at the source because they cannot safely share one destination name." = "यह जोड़ी अलग स्रोत फ़ोल्डर में है। दोनों साइडकार स्रोत पर रहेंगे, क्योंकि वे एक ही गंतव्य नाम सुरक्षित रूप से नहीं ले सकते।";
-"This replaces this folder’s saved decisions and opens its files unrated. Photos and videos stay unchanged." = "यह इस फ़ोल्डर के सहेजे निर्णय बदलकर उसकी फ़ाइलें बिना रेटिंग खोलेगा। फोटो और वीडियो नहीं बदलेंगे।";
-"This session came from another location; no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "यह सत्र दूसरी जगह से है; यहाँ ठीक वही मूल फ़ाइलें सत्यापित नहीं हो सकीं। सहेजे निर्णय नहीं बदले हैं। नया सत्र खोलें उन्हें बदलकर वर्तमान फ़ाइलें बिना रेटिंग खोलेगा।";
+"This replaces this folder’s saved decisions and opens its files as Unmarked. Photos and videos stay unchanged." = "यह इस फ़ोल्डर के सहेजे निर्णय बदलकर उसकी फ़ाइलें अचिह्नित खोलेगा। फोटो और वीडियो नहीं बदलेंगे।";
+"This session came from another location, and no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked." = "यह सत्र दूसरी जगह से है, और यहाँ ठीक वही मूल फ़ाइलें सत्यापित नहीं हो सकीं। सहेजे निर्णय नहीं बदले हैं। नया सत्र खोलें उन्हें बदलकर वर्तमान फ़ाइलें अचिह्नित खोलेगा।";
 "This storage does not support the collision-safe rename needed to move {0}." = "यह स्टोरेज {0} स्थानांतरित करने के लिए ज़रूरी टकराव-सुरक्षित नाम बदलना समर्थित नहीं करता।";
 "This video's format or codec isn't supported by macOS." = "macOS इस वीडियो का फ़ॉर्मैट या कोडेक समर्थित नहीं करता।";
 "This view is already selected" = "यह दृष्टिकोण पहले से ही चुना गया है";
@@ -1106,8 +1096,8 @@
 "Toggle the thumbnail browser in Gallery" = "गैलरी में थंबनेल ब्राउज़र को टॉगल करें";
 "Top level" = "शीर्ष स्तर";
 "Total size" = "कुल आकार";
-"Trash No + Undecided" = "“नहीं” और अनिर्णीत वाले कूड़ेदान में भेजें";
-"Trash No + Undecided…" = "“नहीं” और अनिर्णीत वाले कूड़ेदान में भेजें…";
+"Trash No + Unmarked" = "“नहीं” और अचिह्नित वाले कूड़ेदान में भेजें";
+"Trash No + Unmarked…" = "“नहीं” और अचिह्नित वाले कूड़ेदान में भेजें…";
 "Treat matching RAW + JPEG as one photo" = "मेल खाने वाली RAW + JPEG को एक फ़ोटो मानें";
 "Treat matching RAW and JPEG as one photo" = "मेल खाने वाली RAW और JPEG को एक फ़ोटो मानें";
 "Try a different search term." = "कोई दूसरा खोज शब्द आज़माएँ।";
@@ -1117,7 +1107,7 @@
 "Types" = "प्रकार";
 "Unavailable" = "उपलब्ध नहीं है";
 "Uncertain files remain untouched. Reviewing stays available; Copy, Move, Rename, Organize, and Clean Up are paused until recovery finishes." = "अनिश्चित फ़ाइलें नहीं बदलेंगी। समीक्षा जारी रख सकते हैं; कॉपी, स्थानांतरण, नाम बदलना, व्यवस्था और सफ़ाई पुनर्प्राप्ति पूरी होने तक रुकी हैं।";
-"Undecided" = "अभी तय नहीं";
+"Unmarked" = "अचिह्नित";
 "Undo" = "पूर्ववत करें";
 "Undo Clean Up with ⌘Z before closing this session, while the files remain in Trash." = "फ़ाइलें कूड़ेदान में रहते हुए, इस सत्र को बंद करने से पहले ⌘Z से सफ़ाई पूर्ववत करें।";
 "Undo Louppe Action" = "Louppe की कार्रवाई पूर्ववत करें";
@@ -1192,7 +1182,7 @@
 "Waveform unavailable" = "वेवफ़ॉर्म उपलब्ध नहीं है";
 "White balance" = "श्वेत संतुलन";
 "Widest first" = "सबसे चौड़ा पहले";
-"Within this scope, Yes and unrated items stay in the folder." = "इस दायरे में हाँ और अनिर्णीत आइटम फ़ोल्डर में रहेंगे।";
+"Within this scope, Yes and Unmarked items stay in the folder." = "इस दायरे में “हाँ” और अचिह्नित आइटम फ़ोल्डर में रहेंगे।";
 "Write Sidecars" = "साइडकार लिखें";
 "Write decisions, stars, and colors to XMP sidecars for editing apps. Originals stay unchanged." = "संपादन ऐप के लिए निर्णय, स्टार और रंग XMP साइडकार फ़ाइलों में लिखें। मूल फ़ाइलें नहीं बदलतीं।";
 "Writing Metadata (XMP)…" = "मेटाडेटा (XMP) लिखा जा रहा है…";
@@ -1294,7 +1284,6 @@
 "near duplicates" = "लगभग समान फ़ोटो";
 "next row" = "अगली पंक्ति";
 "no color" = "कोई रंग नहीं";
-"no decision" = "कोई निर्णय नहीं";
 "none" = "कोई नहीं";
 "normal review" = "सामान्य समीक्षा";
 "open folder" = "फ़ोल्डर खोलें";
@@ -1416,11 +1405,8 @@
 "{0} fps" = "{0} fps";
 "{0} hour" = "{0} घंटा";
 "{0} hours" = "{0} घंटे";
-"{0} included RAW+JPEG pair has different file decisions and is treated as undecided." = "शामिल {0} RAW+JPEG जोड़ी की फ़ाइलों के निर्णय अलग हैं; इसे अनिर्णीत माना जाएगा।";
-"{0} included RAW+JPEG pairs have different file decisions and are treated as undecided." = "शामिल {0} RAW+JPEG जोड़ियों की फ़ाइलों के निर्णय अलग हैं; इन्हें अनिर्णीत माना जाएगा।";
 "{0} item couldn't be moved completely. " = "{0} आइटम पूरी तरह स्थानांतरित नहीं हो सका। ";
 "{0} item match more than one route: {1}." = "{0} आइटम एक से अधिक मार्ग से मेल खाते हैं: {1}।";
-"{0} item still undecided in this scope — they won't be exported." = "इस दायरे में {0} आइटम अनिर्णीत है — उसका निर्यात नहीं होगा।";
 "{0} item · {1} media file" = "{0} आइटम · {1} मीडिया फ़ाइल";
 "{0} item · {1} media files" = "{0} आइटम · {1} मीडिया फ़ाइलें";
 "{0} items" = "{0} आइटम";
@@ -1430,7 +1416,6 @@
 "{0} items found" = "{0} आइटम मिले";
 "{0} items have" = "{0} आइटम हैं";
 "{0} items match more than one route: {1}." = "{0} आइटम एक से अधिक मार्ग से मेल खाते हैं: {1}।";
-"{0} items still undecided in this scope — they won't be exported." = "इस दायरे में {0} आइटम अनिर्णीत हैं — उनका निर्यात नहीं होगा।";
 "{0} items will be copied" = "{0} आइटम कॉपी किए जाएंगे";
 "{0} items will be moved" = "{0} आइटम स्थानांतरित होंगे";
 "{0} items will be prepared for XMP publication" = "{0} आइटम XMP लिखने के लिए तैयार होंगे";
@@ -1572,7 +1557,7 @@
 
 "I confirm the selected files are the same photos or videos." = "मैं पुष्टि करता/करती हूँ कि चुनी गई फ़ाइलें वही फ़ोटो या वीडियो हैं।";
 
-"Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files." = "बहाली केवल उन फ़ाइलों पर चुने गए पुराने निर्णय लागू करती है जिनकी आपने समीक्षा नहीं की है। इससे मीडिया फ़ाइलें नहीं बदलतीं।";
+"Restoring applies the selected previous decisions only to files with no current decision, stars, color label, or recorded metadata change. Media files stay unchanged." = "बहाली चुने गए पुराने निर्णय केवल उन फ़ाइलों पर लागू करती है जिनमें कोई मौजूदा निर्णय, स्टार, रंग लेबल या दर्ज मेटाडेटा बदलाव नहीं है। मीडिया फ़ाइलें नहीं बदलतीं।";
 
 "Keep Current Decisions" = "वर्तमान निर्णय रखें";
 
@@ -1698,7 +1683,6 @@
 "Show or hide the red preview clipping overlay ({0})" = "प्रीव्यू का लाल क्लिपिंग ओवरले दिखाएँ या छिपाएँ ({0})";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%." = "स्लाइडर या पिंच से ज़ूम करें; दो उँगलियों से स्क्रॉल या ड्रैग करके तस्वीर खिसकाएँ। {0} कस्टम ज़ूम को केंद्रित 100% पर लौटाता है, फिर फ़िट पर बदलता है। {1} फ़ोन आकार चालू / बंद करता है। किसी बिंदु को 100% पर देखने के लिए उस पर डबल-क्लिक करें।";
 "Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts." = "सेटिंग्स → कीबोर्ड शॉर्टकट में समीक्षा कुंजियाँ और कीबोर्ड लेआउट का व्यवहार बदलें।";
-"{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "{0} से हाँ और {1} से नहीं चिह्नित करें। दोनों डिफ़ॉल्ट रूप से अगले अनिर्णीत आइटम पर जाते हैं (सेटिंग्स → समीक्षा)। स्टार और रंग लेबल अलग-अलग हैं।";
 "Match shortcuts by" = "शॉर्टकट मिलान का आधार";
 "Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard." = "भौतिक स्थिति चुनने पर Dvorak और अन्य लेआउट में उँगलियों की चाल समान रहती है। स्थिति के नाम QWERTY कीबोर्ड के अनुसार हैं।";
 "Customize shortcuts" = "शॉर्टकट अनुकूलित करें";
@@ -1747,7 +1731,7 @@
 "Change playback speed; previous / next item without playback" = "प्लेबैक गति बदलें; बिना प्लेबैक के पिछला / अगला आइटम";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "स्लाइडर या पिंच से ज़ूम करें; दो उँगलियों से स्क्रॉल या ड्रैग करके खिसकाएँ। किसी बिंदु को 100% पर जाँचने के लिए डबल-क्लिक करें। फ़िट, 100% या फ़ोन आकार पर लौटने के लिए तस्वीर के आकार के नियंत्रणों का उपयोग करें।";
 "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "नीचे हर कुंजी के साथ बताया गया है कि वह कब लागू होती है। साझा कुंजियाँ केवल अलग दृश्यों या मीडिया संदर्भों में अलग काम करती हैं।";
-"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent." = "बटन या अपने असाइन किए गए शॉर्टकट से हाँ या नहीं चिह्नित करें। डिफ़ॉल्ट रूप से दोनों अगले अनिर्णीत आइटम पर जाते हैं (सेटिंग्स → सामान्य → समीक्षा)। सितारे और रंग लेबल स्वतंत्र हैं।";
+"Use your assigned shortcuts to mark an item Yes or No. Press again to make it Unmarked; that never advances. By default, a new mark advances to the next item and stops at the end (Settings → General → Review). Stars and color labels are independent." = "अपने असाइन किए गए शॉर्टकट से किसी आइटम को “हाँ” या “नहीं” चिह्नित करें। दोबारा दबाने पर यह अचिह्नित हो जाता है; इससे आप आगे नहीं बढ़ते। डिफ़ॉल्ट रूप से नया चिह्न अगले आइटम पर ले जाता है और अंत में रुक जाता है (सेटिंग्स → सामान्य → समीक्षा)। सितारे और रंग लेबल स्वतंत्र हैं।";
 "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "एक कार्रवाई में कई कुंजियाँ जोड़ें। कोई कुंजी तभी साझा की जा सकती है जब उसके दृश्य और मीडिया संदर्भ एक-दूसरे से न मिलें।";
 "Find a shortcut" = "शॉर्टकट खोजें";
 "No matching shortcuts." = "कोई मिलता-जुलता शॉर्टकट नहीं।";
@@ -2100,7 +2084,6 @@
 "Show Folders" = "फ़ोल्डर दिखाएँ";
 "Expand All" = "सभी विस्तृत करें";
 "Collapse All" = "सभी संक्षिप्त करें";
-"All reviewed" = "सभी की समीक्षा हो गई";
 "Next Unfinished Folder" = "अगला अधूरा फ़ोल्डर";
 "Folders width" = "फ़ोल्डर की चौड़ाई";
 "Folder: {0}, including subfolders" = "फ़ोल्डर: {0}, सबफ़ोल्डर सहित";
@@ -2112,7 +2095,7 @@
 "Folder navigation could not be saved. Previous positions are retained." = "फ़ोल्डर नेविगेशन सहेजा नहीं जा सका। पिछले स्थान सुरक्षित हैं।";
 
 "Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "ऊपर के बटनों से साइडबार को ब्राउज़र और फ़ोल्डर के बीच बदलें; ग्रिड में साइडबार बटन इस्तेमाल करें। संग्रह दोबारा खोले बिना ब्राउज़ करें; स्थान याद रखे जाते हैं।";
-"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "फ़ाइल कार्रवाइयाँ और सभी निर्णय साफ़ करें चुने गए फ़ोल्डर पर लागू होते हैं। पूरे संग्रह पर कार्रवाई के लिए सभी मीडिया चुनें। RAW + JPEG जोड़े साथ रहते हैं।";
+"File actions, Clear All Decisions and Clear Stars and Labels follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "फ़ाइल कार्रवाइयाँ, सभी निर्णय साफ़ करें और स्टार और लेबल मिटाएँ चुने गए फ़ोल्डर पर लागू होते हैं। पूरे संग्रह पर कार्रवाई के लिए सभी मीडिया चुनें। RAW + JPEG जोड़े साथ रहते हैं।";
 "Reset Folder Navigation" = "फ़ोल्डर नेविगेशन रीसेट करें";
 "Clear Yes/No decisions in this folder ({0})" = "इस फ़ोल्डर के हाँ/नहीं निर्णय साफ़ करें ({0})";
 
@@ -2168,3 +2151,12 @@
 "Try Again" = "फिर से कोशिश करें";
 
 "The sidecar's media family changed or could not be verified. Rescan the folder before changing XMP." = "XMP से जुड़ी मीडिया फ़ाइलें बदल गई हैं या उनकी पुष्टि नहीं हो सकी। XMP बदलने से पहले फ़ोल्डर को फिर से स्कैन करें।";
+"  ·  {0} Yes" = "  · “हाँ” {0}";
+"  ·  {0} No" = "  · “नहीं” {0}";
+"Review tips" = "समीक्षा सुझाव";
+"Clear Stars and Labels…" = "स्टार और लेबल मिटाएँ…";
+"Clear Stars and Labels?" = "स्टार और लेबल मिटाएँ?";
+"Clear Stars and Labels" = "स्टार और लेबल मिटाएँ";
+"Remove stars and color labels while keeping Yes and No decisions" = "स्टार रेटिंग और रंग लेबल हटाएँ; “हाँ” और “नहीं” के निर्णय रखें";
+"reset stars" = "स्टार रीसेट करें";
+"remove color labels" = "रंग लेबल हटाएँ";

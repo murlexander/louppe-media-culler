@@ -31,16 +31,15 @@ final class ReviewPreferencesTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: ReviewPreferences.Keys.defaultView), "unknown-future-view")
     }
 
-    func testDefaultAdvancementSkipsDecidedItemsAndWrapsToPending() {
+    func testDefaultAdvancementStepsToTheNextItemWhateverItsDecisionAndNeverWraps() {
         let store = readyStore(decisions: [.undecided, .yes, .undecided, .no])
         store.rate(.yes)
-        XCTAssertEqual(store.currentIndex, 2)
+        XCTAssertEqual(store.currentIndex, 1, "the next item, even though it is already Yes")
         store.setIndex(3)
-        store.rate(.yes, at: 0)
-        store.rate(.undecided, at: 0)
-        store.setIndex(3)
-        store.rate(.no)
-        XCTAssertEqual(store.currentIndex, 0)
+        store.rate(.yes)
+        XCTAssertEqual(store.currentIndex, 3, "the last item stays; an earlier Unmarked item is not a target")
+        XCTAssertEqual(store.items[3].rating, .yes)
+        XCTAssertEqual(store.items[2].rating, .undecided)
     }
 
     func testLastDecisionStaysAtLastItemAndUndoRestoresIt() {
@@ -48,7 +47,6 @@ final class ReviewPreferencesTests: XCTestCase {
         store.setIndex(2)
         store.rate(.yes)
         XCTAssertEqual(store.currentIndex, 2)
-        XCTAssertTrue(store.isReviewComplete)
         store.undo()
         XCTAssertEqual(store.items[2].rating, .undecided)
         XCTAssertEqual(store.currentIndex, 2)
@@ -81,18 +79,18 @@ final class ReviewPreferencesTests: XCTestCase {
         XCTAssertEqual(store.items.map(\.rating), [.undecided, .undecided, .undecided])
     }
 
-    func testAdvancementOnRatesBatchAndCollapsesSelectionToNextPending() {
+    func testAdvancementOnRatesBatchAndCollapsesSelectionToTheItemAfterIt() {
         let store = readyStore()
         store.selectRange(to: 1)
         store.rate(.no)
-        XCTAssertEqual(store.currentIndex, 2)
+        XCTAssertEqual(store.currentIndex, 2, "the first item after the batch in display order")
         XCTAssertTrue(store.selectedIndices.isEmpty)
         XCTAssertEqual(store.items.map(\.rating), [.no, .no, .undecided])
         store.undo()
         XCTAssertEqual(store.items.map(\.rating), [.undecided, .undecided, .undecided])
     }
 
-    func testUndecidedFilterDoesNotSkipTheNextItemInEitherDirection() {
+    func testUnmarkedFilterDoesNotSkipTheNextItemInEitherDirection() {
         for ascending in [true, false] {
             let store = readyStore()
             store.sort = PhotoSort(key: .name, ascending: ascending)

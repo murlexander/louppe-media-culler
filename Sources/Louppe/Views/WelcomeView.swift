@@ -103,7 +103,7 @@ struct WelcomeView: View {
             Button(L10n.text("Cancel"), role: .cancel) {}
         } message: {
             Text(
-                L10n.text("This replaces this folder’s saved decisions and opens its files unrated. Photos and videos stay unchanged.")
+                L10n.text("This replaces this folder’s saved decisions and opens its files as Unmarked. Photos and videos stay unchanged.")
             )
         }
         .toolbar { LaunchToolbarTitle() }
@@ -170,7 +170,7 @@ struct WelcomeView: View {
                             isNewSessionConfirmationPresented = true
                         }
                         .accessibilityHint(
-                            L10n.text("Forgets saved decisions for this folder and opens the current files unrated")
+                            L10n.text("Forgets saved decisions for this folder and opens the current files as Unmarked")
                         )
                     }
                 }

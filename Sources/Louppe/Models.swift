@@ -10,6 +10,24 @@ enum Rating: String, Codable, Sendable {
     case undecided
     case yes
     case no
+
+    /// A fixed Yes or No intent toggles: it clears when every target already
+    /// has that decision, and otherwise marks them all. Any opposite,
+    /// Unmarked or Mixed target means mark. `.undecided` is always a clear.
+    func resolvingDecisionToggle(for states: some Sequence<PhotoItemRatingState>) -> Rating {
+        let requested: PhotoItemRatingState
+        switch self {
+        case .undecided: return .undecided
+        case .yes: requested = .yes
+        case .no: requested = .no
+        }
+        var sawTarget = false
+        for state in states {
+            guard state == requested else { return self }
+            sawTarget = true
+        }
+        return sawTarget ? .undecided : self
+    }
 }
 
 /// Portable XMP-style star value. Absence is deliberately distinct from one
@@ -849,6 +867,9 @@ struct PhotoItem: Identifiable, Sendable {
     var hasAnyRating: Bool {
         individualFiles.contains { $0.rating != .undecided }
     }
+    var hasStarsOrColorLabel: Bool {
+        individualFiles.contains { $0.starRating != nil || $0.colorLabel != nil }
+    }
     var individualFiles: [PhotoFile] {
         var files = [primaryFile]
         if let pairedFile { files.append(pairedFile) }
@@ -1188,7 +1209,7 @@ enum CleanUpScope: Hashable, Sendable {
 enum CleanUpMode: Equatable, Sendable {
     /// Trash the currently selected photo(s).
     case selection
-    /// Trash the photos marked No; Yes and unrated photos stay in the folder.
+    /// Trash the photos marked No; Yes and Unmarked photos stay in the folder.
     case trashNo
     /// Keep only the photos marked Yes; everything else is trashed.
     case keepOnlyYes
@@ -1464,7 +1485,7 @@ struct PhotoSort: Equatable, Sendable {
             case .decision:
                 switch item.ratingState {
                 case .yes: return L10n.text("Yes")
-                case .undecided: return L10n.text("Undecided")
+                case .undecided: return L10n.text("Unmarked")
                 case .mixed: return L10n.text("Mixed")
                 case .no: return L10n.text("No")
                 }

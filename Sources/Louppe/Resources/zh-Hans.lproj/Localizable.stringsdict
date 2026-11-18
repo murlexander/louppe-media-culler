@@ -422,6 +422,20 @@
 			<string>清除 %2$@ 项的是/否决定。星级和颜色标签保持不变。可用 ⌘Z 撤销。</string>
 		</dict>
 	</dict>
+	<key>Clear stars and color labels from %lld items. Yes and No decisions stay unchanged. Undo with ⌘Z.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>清除 %2$@ 项的星级和颜色标签。“是”和“否”决定保持不变。可用 ⌘Z 撤销。</string>
+		</dict>
+	</dict>
 	<key>Trash %lld items?</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -450,7 +464,7 @@
 			<string>将标为“否”的 %2$@ 个项目移到废纸篓？</string>
 		</dict>
 	</dict>
-	<key>Trash %lld items marked No or Undecided?</key>
+	<key>Trash %lld No or Unmarked items?</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%1$#@count1@</string>
@@ -461,7 +475,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>other</key>
-			<string>将标为“否”或“未决定”的 %2$@ 项移到废纸篓？</string>
+			<string>将标为“否”或未标记的 %2$@ 项移到废纸篓？</string>
 		</dict>
 	</dict>
 	<key>Trash JPEG from %lld RAW + JPEG pairs?</key>
@@ -794,7 +808,7 @@
 			<string>%4$@ 个隐藏项目保持不变</string>
 		</dict>
 	</dict>
-	<key>Includes %lld No and %lld Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</key>
+	<key>Includes %lld No and %lld Unmarked items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>包括 %1$#@count1@和 %3$#@count2@。星级和颜色标签不会保护这些项目。RAW + JPEG 决定不一致的项目会留在文件夹中。</string>
@@ -814,7 +828,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>other</key>
-			<string>%4$@ 个未决定项目</string>
+			<string>%4$@ 个未标记项目</string>
 		</dict>
 	</dict>
 	<key>legacy-missing-files-title</key>
@@ -873,7 +887,7 @@
 			<string>将选中的 %2$@ 个项目移到废纸篓…</string>
 		</dict>
 	</dict>
-	<key>%lld included RAW+JPEG pairs have different file decisions and are treated as undecided.</key>
+	<key>%lld included RAW+JPEG pairs have different file decisions and are treated as Unmarked.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%1$#@count1@</string>
@@ -884,21 +898,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>other</key>
-			<string>包含的 %2$@ 对 RAW+JPEG 文件决定不同，将按未决定处理。</string>
-		</dict>
-	</dict>
-	<key>%lld items still undecided in this scope — they won't be exported.</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%1$#@count1@</string>
-		<key>count1</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>lld</string>
-			<key>other</key>
-			<string>此范围内仍有 %2$@ 个未决定项目；不会导出它们。</string>
+			<string>包含的 %2$@ 对 RAW+JPEG 文件决定不同，将按未标记处理。</string>
 		</dict>
 	</dict>
 	<key>%lld Lightroom .acr companions will stay in the source folder, unexported.</key>

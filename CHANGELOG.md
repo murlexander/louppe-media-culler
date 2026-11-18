@@ -1,5 +1,12 @@
 # Version History
 
+## 1.15.0 (20) — 2026-11-18
+
+- Treat photos you haven't marked as Unmarked, a normal state rather than unfinished work. The toolbar counts Yes, and No when there are any, instead of review progress; the "Review complete" summary, the folder checkmark and Export's warning about unmarked items are gone.
+- Press F or D again to make a photo Unmarked without moving on. With several selected, the key unmarks them only if all already have that decision. Holding a key never toggles, and ⌘Z undoes.
+- After Yes or No, move to the next item and stop at the last one instead of jumping back to the first unmarked photo.
+- Clear stars and color labels with Edit → Clear Stars and Labels…, which keeps decisions; Clear All Decisions (R) still keeps stars and labels.
+
 ## 1.14.1 (19) — 2026-11-16
 
 - Explain the chosen key under the Settings keyboard map, and assign a free key to an action from there. Pointing at a shortcut lights its key; a filtered shortcut group can be collapsed. Thanks to Andrey Markin (@Mark-Life) for the keyboard map refinements in this update.

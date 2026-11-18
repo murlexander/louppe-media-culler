@@ -102,7 +102,7 @@ struct SessionRecoveryView: View {
                        isOn: $confirmsSamePhotos)
                     .toggleStyle(LouppeToggleStyle(.checkbox))
                     .disabled(selected.isEmpty)
-                Text(L10n.text("Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files."))
+                Text(L10n.text("Restoring applies the selected previous decisions only to files with no current decision, stars, color label, or recorded metadata change. Media files stay unchanged."))
                     .font(.caption).foregroundStyle(.secondary)
                 SheetActions {
                     Button(L10n.text("Keep Current Decisions")) {
@@ -166,7 +166,7 @@ struct SessionRecoveryView: View {
         switch Rating(rawValue: entry.rating) ?? .undecided {
         case .yes: labels.append(L10n.text("Yes"))
         case .no: labels.append(L10n.text("No"))
-        case .undecided: labels.append(L10n.text("Undecided"))
+        case .undecided: labels.append(L10n.text("Unmarked"))
         }
         if let stars = entry.stars { labels.append(String(repeating: "★", count: stars.count)) }
         if let color = entry.colorLabel { labels.append(color.localizedDisplayName) }

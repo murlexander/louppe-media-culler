@@ -221,8 +221,50 @@ final class CaptureScenariosTests: XCTestCase {
             let model = PhotosOrganizationReviewModel(phase: .working(message: "Adding to Album…", completed: 4, total: 10))
             return fixture.sheet(PhotosOrganizationView(model: model, onConfirm: { _ in },
                 onCancelWork: {}, onDismiss: {}, onReload: {}))
+        },
+        // Picks, not progress (1.15): Yes/No totals, Unmarked, no completion marks.
+        Scenario(name: "session-gallery-totals-yes-only", description: "Gallery toolbar totals with Yes only: No stays hidden at zero.") { fixture in
+            fixture.ready(mode: .gallery)
+            fixture.clearNoDecisions()
+            return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
+        Scenario(name: "session-grid-totals-yes-only", description: "Grid toolbar totals with Yes only: No stays hidden at zero.") { fixture in
+            fixture.ready(mode: .grid)
+            fixture.clearNoDecisions()
+            return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
+        Scenario(name: "session-folders-decided", description: "Folder tree with an all-decided folder: ordinary counts, no completion mark.") { fixture in
+            try await fixture.decidedFolders()
+        },
+        Scenario(name: "dialog-clean-up", description: "Trash No + Unmarked confirmation with its No and Unmarked counts (live capture shows the dialog).") { fixture in
+            fixture.ready(mode: .grid)
+            fixture.store.cleanUpScope = .all
+            fixture.store.requestCleanUp(.keepOnlyYes)
+            return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
+        Scenario(name: "dialog-clear-stars-labels", description: "Clear Stars and Labels confirmation for more than 15 items (live capture shows the alert).") { fixture in
+            _ = try fixture.sortedCollection(mode: .grid, direction: .leftToRight)
+            fixture.store.selectAllVisible()
+            fixture.store.setStarRating(.three)
+            fixture.store.setIndex(0)
+            fixture.store.requestClearStarsAndLabels()
+            return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
+        Scenario(name: "help-shortcuts", description: "Louppe Help with the quick start and the shortcut table (F, D, R rows).") { _ in
+            Surface(view: AnyView(LouppeHelpView().frame(width: 720, height: 900)), size: CGSize(width: 720, height: 900))
+        },
+        Scenario(name: "settings-shortcuts-f", description: "Keyboard shortcuts with F chosen: the Mark Yes row.") { _ in
+            Surface(view: AnyView(LouppeSettingsForm { ReviewShortcutsSettingsView(selectedKey: 3) }),
+                    size: CGSize(width: 620, height: 600))
+        },
+        Scenario(name: "settings-shortcuts-d", description: "Keyboard shortcuts with D chosen: the Mark No row.") { _ in
+            Surface(view: AnyView(LouppeSettingsForm { ReviewShortcutsSettingsView(selectedKey: 2) }),
+                    size: CGSize(width: 620, height: 600))
+        },
+        Scenario(name: "settings-shortcuts-r", description: "Keyboard shortcuts with R chosen: Clear all Yes / No decisions.") { _ in
+            Surface(view: AnyView(LouppeSettingsForm { ReviewShortcutsSettingsView(selectedKey: 15) }),
+                    size: CGSize(width: 620, height: 600))
         }
-
     ]
 
     override func setUpWithError() throws {
@@ -467,7 +509,7 @@ final class CaptureScenariosTests: XCTestCase {
                     Button(text("Retry Recovery")) {}
                 }
                 SheetForm(title: text("Check Saved Decisions")) {
-                    Text(text("Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files."))
+                    Text(text("Restoring applies the selected previous decisions only to files with no current decision, stars, color label, or recorded metadata change. Media files stay unchanged."))
                 } actions: {
                     SheetActions {
                         Button(text("Keep Current Decisions")) {}
@@ -588,6 +630,45 @@ final class CaptureScenariosTests: XCTestCase {
             store.viewMode = mode
             store.showBrowser = true
             store.showMetadataPanel = true
+        }
+
+        /// Picks scenarios: turn the fixture's No items into Unmarked.
+        func clearNoDecisions() {
+            for index in store.items.indices where store.items[index].rating == .no {
+                store.rate(.no, at: index)
+            }
+            store.setIndex(0)
+        }
+
+        /// A real scan of nested folders, so the native outline and its
+        /// counts come from production indexing. "Ceremony" is all decided.
+        func decidedFolders() async throws -> Surface {
+            let template = items[0].primaryURL
+            for (folder, count) in [("Ceremony", 3), ("Portraits", 4), ("Portraits/Outdoor", 2)] {
+                let directory = media.appendingPathComponent(folder, isDirectory: true)
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                for index in 1...count {
+                    try FileManager.default.copyItem(at: template,
+                        to: directory.appendingPathComponent(String(format: "IMG_%04d.png", index)))
+                }
+            }
+            store.openFolder(media)
+            let deadline = ContinuousClock.now + .seconds(20)
+            while ContinuousClock.now < deadline {
+                if case .ready = store.phase, !store.isSessionTransitioning { break }
+                try await Task.sleep(for: .milliseconds(15))
+            }
+            guard case .ready = store.phase else { throw CaptureError.invalidSelection("Folder fixture did not open") }
+            for (offset, index) in store.items.indices.filter({ store.items[$0].primaryFile.id.hasPrefix("Ceremony/") }).enumerated() {
+                store.rate(offset == 1 ? .no : .yes, at: index)
+            }
+            store.isGroupingEnabled = false
+            store.viewMode = .gallery
+            store.showBrowser = true
+            store.archiveLeadingPane = .folders
+            store.setArchiveExpandedFolders(["", "Portraits"])
+            store.selectArchiveFolder("Ceremony")
+            return Surface(view: AnyView(SessionView(store: store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         }
 
         func sortedCollection(mode: ViewMode, direction: LayoutDirection) throws -> Surface {

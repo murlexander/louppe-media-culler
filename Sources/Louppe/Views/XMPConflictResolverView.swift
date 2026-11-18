@@ -241,7 +241,7 @@ struct XMPConflictResolverView: View {
         switch rating {
         case .yes: return L10n.text("Yes")
         case .no: return L10n.text("No")
-        case .undecided: return L10n.text("Undecided")
+        case .undecided: return L10n.text("Unmarked")
         }
     }
 

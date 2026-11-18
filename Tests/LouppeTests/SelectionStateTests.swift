@@ -164,7 +164,7 @@ final class SelectionStateTests: XCTestCase {
 
         XCTAssertEqual(store.items.prefix(3).map(\.rating), [.yes, .yes, .yes])
         XCTAssertTrue(store.selectedIndices.isEmpty)
-        XCTAssertEqual(store.currentIndex, 3)
+        XCTAssertEqual(store.currentIndex, 3, "the first item after the batch")
 
         store.undo()
 

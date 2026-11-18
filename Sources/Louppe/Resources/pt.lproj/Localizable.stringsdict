@@ -542,6 +542,24 @@
 			<string>Limpar as decisões Sim/Não de %2$@ itens. Estrelas e etiquetas de cor permanecem iguais. Desfaça com ⌘Z.</string>
 		</dict>
 	</dict>
+	<key>Clear stars and color labels from %lld items. Yes and No decisions stay unchanged. Undo with ⌘Z.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Limpar as estrelas e etiquetas de cor de %2$@ item. As decisões Sim e Não permanecem iguais. Desfaça com ⌘Z.</string>
+			<key>many</key>
+			<string>Limpar as estrelas e etiquetas de cor de %2$@ itens. As decisões Sim e Não permanecem iguais. Desfaça com ⌘Z.</string>
+			<key>other</key>
+			<string>Limpar as estrelas e etiquetas de cor de %2$@ itens. As decisões Sim e Não permanecem iguais. Desfaça com ⌘Z.</string>
+		</dict>
+	</dict>
 	<key>Trash %lld items?</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -578,7 +596,7 @@
 			<string>Mover %2$@ itens marcados “Não” para a Lixeira?</string>
 		</dict>
 	</dict>
-	<key>Trash %lld items marked No or Undecided?</key>
+	<key>Trash %lld No or Unmarked items?</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%1$#@count1@</string>
@@ -589,11 +607,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
-			<string>Mover %2$@ item marcado Não ou Indeciso para a Lixeira?</string>
+			<string>Mover para a Lixeira %2$@ item marcado Não ou sem marcação?</string>
 			<key>many</key>
-			<string>Mover %2$@ itens marcados Não ou Indecisos para a Lixeira?</string>
+			<string>Mover para a Lixeira %2$@ itens marcados Não ou sem marcação?</string>
 			<key>other</key>
-			<string>Mover %2$@ itens marcados Não ou Indecisos para a Lixeira?</string>
+			<string>Mover para a Lixeira %2$@ itens marcados Não ou sem marcação?</string>
 		</dict>
 	</dict>
 	<key>Trash JPEG from %lld RAW + JPEG pairs?</key>
@@ -1026,7 +1044,7 @@
 			<string>%4$@ itens ocultos permanecem intactos</string>
 		</dict>
 	</dict>
-	<key>Includes %lld No and %lld Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</key>
+	<key>Includes %lld No and %lld Unmarked items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>Inclui %1$#@count1@ e %3$#@count2@. Estrelas e rótulos de cor não protegem esses itens. Decisões mistas de RAW + JPEG permanecem na pasta.</string>
@@ -1050,11 +1068,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
-			<string>%4$@ item Indeciso</string>
+			<string>%4$@ item sem marcação</string>
 			<key>many</key>
-			<string>%4$@ itens Indecisos</string>
+			<string>%4$@ itens sem marcação</string>
 			<key>other</key>
-			<string>%4$@ itens Indecisos</string>
+			<string>%4$@ itens sem marcação</string>
 		</dict>
 	</dict>
 	<key>legacy-missing-files-title</key>
@@ -1129,7 +1147,7 @@
 			<string>Mover %2$@ itens selecionados para a Lixeira…</string>
 		</dict>
 	</dict>
-	<key>%lld included RAW+JPEG pairs have different file decisions and are treated as undecided.</key>
+	<key>%lld included RAW+JPEG pairs have different file decisions and are treated as Unmarked.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%1$#@count1@</string>
@@ -1140,29 +1158,11 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
-			<string>%2$@ par RAW+JPEG incluído tem decisões diferentes por arquivo e é tratado como sem decisão.</string>
+			<string>%2$@ par RAW+JPEG incluído tem decisões diferentes por arquivo e é tratado como sem marcação.</string>
 			<key>many</key>
-			<string>%2$@ pares RAW+JPEG incluídos têm decisões diferentes por arquivo e são tratados como sem decisão.</string>
+			<string>%2$@ pares RAW+JPEG incluídos têm decisões diferentes por arquivo e são tratados como sem marcação.</string>
 			<key>other</key>
-			<string>%2$@ pares RAW+JPEG incluídos têm decisões diferentes por arquivo e são tratados como sem decisão.</string>
-		</dict>
-	</dict>
-	<key>%lld items still undecided in this scope — they won't be exported.</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%1$#@count1@</string>
-		<key>count1</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>lld</string>
-			<key>one</key>
-			<string>%2$@ item ainda está sem decisão neste escopo — não será exportado.</string>
-			<key>many</key>
-			<string>%2$@ itens ainda estão sem decisão neste escopo — não serão exportados.</string>
-			<key>other</key>
-			<string>%2$@ itens ainda estão sem decisão neste escopo — não serão exportados.</string>
+			<string>%2$@ pares RAW+JPEG incluídos têm decisões diferentes por arquivo e são tratados como sem marcação.</string>
 		</dict>
 	</dict>
 	<key>%lld Lightroom .acr companions will stay in the source folder, unexported.</key>

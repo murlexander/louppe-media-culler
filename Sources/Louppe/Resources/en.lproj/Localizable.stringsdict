@@ -482,6 +482,22 @@
 			<string>Clear Yes/No decisions from %2$@ items. Stars and color labels stay unchanged. Undo with ⌘Z.</string>
 		</dict>
 	</dict>
+	<key>Clear stars and color labels from %lld items. Yes and No decisions stay unchanged. Undo with ⌘Z.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Clear stars and color labels from %2$@ item. Yes and No decisions stay unchanged. Undo with ⌘Z.</string>
+			<key>other</key>
+			<string>Clear stars and color labels from %2$@ items. Yes and No decisions stay unchanged. Undo with ⌘Z.</string>
+		</dict>
+	</dict>
 	<key>Trash %lld items?</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -514,7 +530,7 @@
 			<string>Trash %2$@ items marked No?</string>
 		</dict>
 	</dict>
-	<key>Trash %lld items marked No or Undecided?</key>
+	<key>Trash %lld No or Unmarked items?</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%1$#@count1@</string>
@@ -525,9 +541,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
-			<string>Trash %2$@ item marked No or Undecided?</string>
+			<string>Trash %2$@ No or Unmarked item?</string>
 			<key>other</key>
-			<string>Trash %2$@ items marked No or Undecided?</string>
+			<string>Trash %2$@ No or Unmarked items?</string>
 		</dict>
 	</dict>
 	<key>Trash JPEG from %lld RAW + JPEG pairs?</key>
@@ -910,7 +926,7 @@
 			<string>%4$@ hidden items stay untouched</string>
 		</dict>
 	</dict>
-	<key>Includes %lld No and %lld Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</key>
+	<key>Includes %lld No and %lld Unmarked items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>Includes %1$#@count1@ and %3$#@count2@. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder.</string>
@@ -932,9 +948,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
-			<string>%4$@ Undecided item</string>
+			<string>%4$@ Unmarked item</string>
 			<key>other</key>
-			<string>%4$@ Undecided items</string>
+			<string>%4$@ Unmarked items</string>
 		</dict>
 	</dict>
 	<key>legacy-missing-files-title</key>
@@ -1001,7 +1017,7 @@
 			<string>Trash %2$@ Selected…</string>
 		</dict>
 	</dict>
-	<key>%lld included RAW+JPEG pairs have different file decisions and are treated as undecided.</key>
+	<key>%lld included RAW+JPEG pairs have different file decisions and are treated as Unmarked.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%1$#@count1@</string>
@@ -1012,25 +1028,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>lld</string>
 			<key>one</key>
-			<string>%2$@ included RAW+JPEG pair has different file decisions and is treated as undecided.</string>
+			<string>%2$@ included RAW+JPEG pair has different file decisions and is treated as Unmarked.</string>
 			<key>other</key>
-			<string>%2$@ included RAW+JPEG pairs have different file decisions and are treated as undecided.</string>
-		</dict>
-	</dict>
-	<key>%lld items still undecided in this scope — they won't be exported.</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%1$#@count1@</string>
-		<key>count1</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>lld</string>
-			<key>one</key>
-			<string>%2$@ item is still undecided in this scope — it won't be exported.</string>
-			<key>other</key>
-			<string>%2$@ items are still undecided in this scope — they won't be exported.</string>
+			<string>%2$@ included RAW+JPEG pairs have different file decisions and are treated as Unmarked.</string>
 		</dict>
 	</dict>
 	<key>%lld Lightroom .acr companions will stay in the source folder, unexported.</key>

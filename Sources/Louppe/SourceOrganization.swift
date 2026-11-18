@@ -1295,6 +1295,8 @@ enum SourceOrganizationPlanner {
             switch metadata.decision {
             case .yes: return "Yes"
             case .no: return "No"
+            // Portable path recipe: earlier Organize runs created "Undecided"
+            // folders, so the UI's "Unmarked" label is not used here (pending Alex).
             case .undecided: return "Undecided"
             case .mixed: return "Mixed"
             }

@@ -2,7 +2,6 @@
 "  ·  grouped review" = "  ·  分组审阅";
 "  ·  {0} mixed" = "  ·  {0} 项混合";
 "  ·  {0} selected" = "  ·  已选 {0} 项";
-"  ·  {0}/{1} reviewed" = "  ·  已审阅 {0}/{1}";
 " (including {0})" = "（包括 {0}）";
 " (of {0} total)" = "（共 {0}）";
 " ({0} and {1})" = "（{0} 和 {1}）";
@@ -105,9 +104,9 @@
 "Application" = "应用程序";
 "Application packets copied unchanged" = "应用程序数据包已原样复制";
 "Applies to video and audio playback." = "适用于视频和音频播放。";
-"Apply No; advance if enabled in Review settings" = "标记为否；若审阅设置已启用自动前进，则前进到下一项";
+"Mark No; advance if enabled in Review settings. Press again to make it Unmarked." = "标记为否；若审阅设置已启用自动前进，则前进到下一项。再按一次即可设为未标记。";
 "Apply Resolutions" = "应用冲突解决方案";
-"Apply Yes; advance if enabled in Review settings" = "标记为是；若审阅设置已启用自动前进，则前进到下一项";
+"Mark Yes; advance if enabled in Review settings. Press again to make it Unmarked." = "标记为是；若审阅设置已启用自动前进，则前进到下一项。再按一次即可设为未标记。";
 "Apply a portable color label to the current photo or selection" = "为当前照片或所选项目设置可供其他应用读取的颜色标签";
 "Apply a portable star rating to the current photo or selection" = "为当前照片或所选项目设置可供其他应用读取的星级评分";
 "Apply the same choice to all conflicts" = "对所有冲突采用相同的选择";
@@ -279,8 +278,6 @@
 "Date taken" = "拍摄日期";
 "Date taken from" = "拍摄日期起点";
 "Date taken to" = "拍摄日期终点";
-"Decide No" = "标记为否";
-"Decide Yes" = "标记为是";
 "Decision" = "决定";
 "Decision No" = "决定：否";
 "Decision Yes" = "决定：是";
@@ -345,8 +342,6 @@
 "Extend the selection from the current item to the last visible item" = "将选择从当前项目扩展至最后一个可见项目";
 "External modification conflict" = "外部修改冲突";
 "F Yes · D No · arrows browse · ⌘Z undo. Decisions save automatically; No leaves files in place." = "F 标为是 · D 标为否 · 方向键浏览 · ⌘Z 撤销。决定自动保存；标为否的文件仍留在原处。";
-"F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Arrows browse; ⌘Z undoes. Decisions save automatically; No never trashes files." = "F 标为是；D 标为否。默认会跳到下一个未决定项目（设置 → 审阅）。方向键浏览；⌘Z 撤销。决定自动保存；标为否绝不会将文件移到废纸篓。";
-"F marks Yes; D marks No. Both advance to the next undecided item by default (Settings → Review). Stars (0–5) and color labels are independent." = "F 标记为是；D 标记为否。默认情况下，两者都会跳转到下一个未决定项目（设置 → 审阅）。星级（0–5）和颜色标签相互独立。";
 "Failed" = "失败";
 "Fast" = "快速";
 "Fast photo, video, and audio culling for creators.\n\n" = "为创作者提供快速的照片、视频和音频筛选。\n\n";
@@ -391,7 +386,7 @@
 "Folders Z–A" = "文件夹 Z–A";
 "Folders, contents, and extensions stay unchanged. Nothing is overwritten. Restore all previous names with ⌘Z before closing this session." = "文件夹、内容和扩展名保持不变。不会覆盖任何文件。关闭会话前，可用 ⌘Z 恢复所有原文件名。";
 "For {0}, rollback also failed; check both the source folder and Trash." = "{0} 的回退也失败了；请检查源文件夹和废纸篓。";
-"Forgets saved decisions for this folder and opens the current files unrated" = "忘记此文件夹保存的决定，并以未评分状态打开当前文件";
+"Forgets saved decisions for this folder and opens the current files as Unmarked" = "忘记此文件夹保存的决定，并以未标记状态打开当前文件";
 "Format" = "格式";
 "Frame rate" = "帧率";
 "From" = "从";
@@ -428,7 +423,6 @@
 "Include XMP sidecars (off by default)" = "包含 XMP 附属文件（默认关闭）";
 "Include XMP sidecars for editing apps" = "包含供编辑应用使用的 XMP 附属文件";
 "Included XMP sidecars follow media." = "包含的 XMP 附属文件会跟随媒体。";
-"Includes {0} No and {1} Undecided items. Stars and color labels do not protect these items. Mixed RAW + JPEG decisions stay in the folder." = "包括 {0} 个标为否的项目和 {1} 个未决定项目。星级和颜色标签不会保护这些项目。决定不同的 RAW + JPEG 配对会留在文件夹中。";
 "Increase thumbnail size in Grid" = "在网格中增加缩略图大小";
 "Inspect the current Gallery video half a second earlier" = "将当前图库视频向后定位 0.5 秒";
 "Inspect the current Gallery video half a second later" = "将当前图库视频向前定位 0.5 秒";
@@ -521,7 +515,6 @@
 "Manual" = "手动";
 "Mark No" = "标记为否";
 "Mark Yes" = "标记为是";
-"Mark Yes / No; advance by default (Settings → Review)" = "标记为是或否；默认自动前进（设置 → 审阅）";
 "Mark clipping estimated from the displayed preview" = "标示根据当前预览估算的剪切区域";
 "Mark some items Yes (press F) before exporting." = "导出前，请先将一些项目标记为是（按 F）。";
 "Match" = "匹配";
@@ -579,7 +572,6 @@
 "Move {0} files?" = "移动 {0} 个文件？";
 "Move {0} later" = "将 {0} 后移";
 "Trash {0} marked No?" = "将标为“否”的 {0} 个项目移到废纸篓？";
-"Trash {0} marked No or Undecided?" = "将标为“否”或“未决定”的 {0} 移到废纸篓？";
 "Trash {0}?" = "将 {0} 移到废纸篓？";
 "Trash No" = "将“否”移到废纸篓";
 "Trash No…" = "将“否”移到废纸篓…";
@@ -627,7 +619,7 @@
 "Audio levels unavailable" = "音频电平不可用";
 "No recognised media was found in “{0}”. Choose another folder or check Supported Formats." = "“{0}”中没有已识别的媒体。请选择另一个文件夹或查看支持的格式。";
 "No review group is active" = "当前未启用审阅分组";
-"No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "保存的文件名均不匹配此文件夹。保存的决定未被修改。作为新会话打开会替换这些决定，并以未评分状态打开当前文件。";
+"No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked." = "保存的文件名均不匹配此文件夹。保存的决定未被修改。作为新会话打开会替换这些决定，并以未标记状态打开当前文件。";
 "No stars" = "无星级评分";
 "No still-photo capture times were within the selected burst interval." = "没有静态照片的拍摄时间落在所选连拍间隔内。";
 "None" = "无";
@@ -824,13 +816,11 @@
 "Review Rename…" = "审阅重命名…";
 "Review Sidecars…" = "审阅附属文件…";
 "Review a visual overview of the folder" = "审阅文件夹的可视概览";
-"Review complete: {0} Yes · {1} No" = "审阅完成：{0} 是 · {1} 否";
 "Review folders before their subfolders; files stay chronological." = "先审阅文件夹，再审阅子文件夹；文件仍按时间顺序排列。";
 "Review groups" = "审阅分组";
 "Review matching RAW + JPEG files together or separately in Filter or the Command Palette (⌘K). Search for RAW, JPEG, or pairing." = "在筛选或命令面板（⌘K）中，可选择一起或分别审阅匹配的 RAW + JPEG 文件。搜索 RAW、JPEG 或配对。";
 "Review metadata" = "审阅元数据";
 "Review one photo, video, or audio file at a time" = "一次审阅一个照片、视频或音频文件";
-"Review progress and decision totals" = "审阅进度和决定总数";
 "Review the current video or audio recording at double speed" = "以 2 倍速审阅当前视频或录音";
 "Review the current video or audio recording at normal speed" = "以正常速度审阅当前视频或录音";
 "Play the current video or audio recording at 1.5× speed" = "以 1.5× 速度播放当前视频或音频";
@@ -1088,8 +1078,8 @@
 "This media family has ambiguous XMP filenames." = "此媒体文件组的 XMP 文件名不明确。";
 "This media file couldn't be played." = "无法播放此媒体文件。";
 "This pair spans source folders. Both sidecars stay at the source because they cannot safely share one destination name." = "此配对跨越源文件夹。两个附属文件都留在源位置，因为它们无法安全共享一个目标名称。";
-"This replaces this folder’s saved decisions and opens its files unrated. Photos and videos stay unchanged." = "这会替换此文件夹保存的决定，并以未评分状态打开文件。照片和视频保持不变。";
-"This session came from another location; no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated." = "此会话来自另一位置；此处无法验证确切的原始文件。保存的决定未被修改。作为新会话打开会替换这些决定，并以未评分状态打开当前文件。";
+"This replaces this folder’s saved decisions and opens its files as Unmarked. Photos and videos stay unchanged." = "这会替换此文件夹保存的决定，并以未标记状态打开文件。照片和视频保持不变。";
+"This session came from another location, and no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked." = "此会话来自另一位置，此处无法验证确切的原始文件。保存的决定未被修改。作为新会话打开会替换这些决定，并以未标记状态打开当前文件。";
 "This storage does not support the collision-safe rename needed to move {0}." = "此存储设备不支持移动 {0} 所需的防冲突重命名。";
 "This video's format or codec isn't supported by macOS." = "macOS 不支持此视频的格式或编解码器。";
 "This view is already selected" = "此视图已选中";
@@ -1106,8 +1096,8 @@
 "Toggle the thumbnail browser in Gallery" = "切换图库中的缩略图浏览器";
 "Top level" = "顶层";
 "Total size" = "总大小";
-"Trash No + Undecided" = "将“否”和“未决定”移到废纸篓";
-"Trash No + Undecided…" = "将“否”和“未决定”移到废纸篓…";
+"Trash No + Unmarked" = "将“否”和“未标记”移到废纸篓";
+"Trash No + Unmarked…" = "将“否”和“未标记”移到废纸篓…";
 "Treat matching RAW + JPEG as one photo" = "将匹配的 RAW + JPEG 作为一张照片";
 "Treat matching RAW and JPEG as one photo" = "将匹配的 RAW 和 JPEG 作为一张照片";
 "Try a different search term." = "请尝试其他搜索词。";
@@ -1117,7 +1107,7 @@
 "Types" = "类型";
 "Unavailable" = "不可用";
 "Uncertain files remain untouched. Reviewing stays available; Copy, Move, Rename, Organize, and Clean Up are paused until recovery finishes." = "无法确定的文件保持不变。仍可审阅；复制、移动、重命名、整理和清理会暂停，直到恢复完成。";
-"Undecided" = "未决定";
+"Unmarked" = "未标记";
 "Undo" = "撤销";
 "Undo Clean Up with ⌘Z before closing this session, while the files remain in Trash." = "文件仍在废纸篓中且会话尚未关闭时，可用 ⌘Z 撤销清理。";
 "Undo Louppe Action" = "撤销 Louppe 操作";
@@ -1192,7 +1182,7 @@
 "Waveform unavailable" = "波形不可用";
 "White balance" = "白平衡";
 "Widest first" = "光圈由大到小";
-"Within this scope, Yes and unrated items stay in the folder." = "在此范围内，标为是和未决定的项目会留在文件夹中。";
+"Within this scope, Yes and Unmarked items stay in the folder." = "在此范围内，标为“是”和未标记的项目会留在文件夹中。";
 "Write Sidecars" = "写入附属文件";
 "Write decisions, stars, and colors to XMP sidecars for editing apps. Originals stay unchanged." = "将决定、星级和颜色写入 XMP 附属文件，供编辑应用读取。原始文件保持不变。";
 "Writing Metadata (XMP)…" = "正在写入元数据（XMP）…";
@@ -1294,7 +1284,6 @@
 "near duplicates" = "近似重复文件";
 "next row" = "下一行";
 "no color" = "无颜色";
-"no decision" = "未决定";
 "none" = "无";
 "normal review" = "常规审阅";
 "open folder" = "打开文件夹";
@@ -1416,11 +1405,8 @@
 "{0} fps" = "{0} fps";
 "{0} hour" = "{0}小时";
 "{0} hours" = "{0}小时";
-"{0} included RAW+JPEG pair has different file decisions and is treated as undecided." = "包含的 {0} 对 RAW+JPEG 文件决定不同，将按未决定处理。";
-"{0} included RAW+JPEG pairs have different file decisions and are treated as undecided." = "包含的 {0} 对 RAW+JPEG 文件决定不同，将按未决定处理。";
 "{0} item couldn't be moved completely. " = "{0} 个项目无法完全移动。 ";
 "{0} item match more than one route: {1}." = "{0} 个项目匹配多条路径：{1}。";
-"{0} item still undecided in this scope — they won't be exported." = "此范围内仍有 {0} 个未决定项目；不会导出它。";
 "{0} item · {1} media file" = "{0} 个项目 · {1} 个媒体文件";
 "{0} item · {1} media files" = "{0} 个项目 · {1} 个媒体文件";
 "{0} items" = "{0} 项";
@@ -1430,7 +1416,6 @@
 "{0} items found" = "找到 {0} 个项目";
 "{0} items have" = "{0} 个项目";
 "{0} items match more than one route: {1}." = "{0} 个项目匹配多条路径：{1}。";
-"{0} items still undecided in this scope — they won't be exported." = "此范围内仍有 {0} 个未决定项目；不会导出它们。";
 "{0} items will be copied" = "将复制 {0} 个项目";
 "{0} items will be moved" = "将移动 {0} 个项目";
 "{0} items will be prepared for XMP publication" = "将准备 {0} 个项目以写入 XMP";
@@ -1572,7 +1557,7 @@
 
 "I confirm the selected files are the same photos or videos." = "我确认所选文件是相同的照片或视频。";
 
-"Restoring applies the selected previous decisions only to files you have not reviewed. It does not change media files." = "恢复只会将所选的之前决定应用到尚未审阅的文件，不会修改媒体文件。";
+"Restoring applies the selected previous decisions only to files with no current decision, stars, color label, or recorded metadata change. Media files stay unchanged." = "恢复只会将所选的之前决定应用到没有当前决定、星级、颜色标签或已记录元数据更改的文件。媒体文件保持不变。";
 
 "Keep Current Decisions" = "保留当前决定";
 
@@ -1715,7 +1700,6 @@
 "Show or hide the red preview clipping overlay ({0})" = "显示或隐藏预览中的红色溢出警告叠加层（{0}）";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. {0} returns custom zoom to centered 100%, then toggles Fit. {1} toggles Phone size. Double-click a point to inspect it at 100%." = "使用滑块或捏合手势缩放；双指滚动或拖移可平移。{0} 将自定义缩放恢复为居中的 100%，再次按下可切换至适应窗口。{1} 切换手机尺寸。连按某一点可在 100% 下查看该位置。";
 "Change review keys and keyboard-layout behavior in Settings → Keyboard shortcuts." = "在设置 → 键盘快捷键中更改审阅按键及键盘布局行为。";
-"{0} marks Yes; {1} marks No. Both advance to the next undecided item by default (Settings → Review). Stars and color labels are independent." = "{0} 标记为是；{1} 标记为否。默认情况下，两者都会前进到下一个未决定项目（设置 → 审阅）。星级和颜色标签相互独立。";
 "Match shortcuts by" = "快捷键匹配方式";
 "Physical positions keep the same finger movements on Dvorak and other layouts. Position names refer to a QWERTY keyboard." = "物理位置模式让你在 Dvorak 和其他布局下保持相同的手指动作。位置名称以 QWERTY 键盘为准。";
 "Customize shortcuts" = "自定义快捷键";
@@ -1764,7 +1748,7 @@
 "Change playback speed; previous / next item without playback" = "更改播放速度；无播放功能时切换到上一个／下一个项目";
 "Zoom with the slider or pinch; pan with two-finger scrolling or dragging. Double-click a point to inspect it at 100%. Use the photo size controls to return to Fit, 100%, or Phone size." = "使用滑块或捏合缩放；双指滚动或拖移以平移。双击某一点以按 100% 查看。使用照片大小控件切换到适应窗口、100% 或手机大小。";
 "Each key below shows when it applies. Shared keys perform different actions only in separate views or media contexts." = "下方每个快捷键都会标明适用情境。只有在不同视图或媒体情境中，同一个键才能执行不同操作。";
-"Mark Yes or No using the buttons or your assigned shortcuts. Both advance to the next undecided item by default (Settings → General → Review). Stars and color labels are independent." = "使用按钮或已分配的快捷键标记“是”或“否”。默认情况下，两者都会前进到下一个未决定的项目（设置 → 通用 → 审阅）。星级和颜色标签独立保存。";
+"Use your assigned shortcuts to mark an item Yes or No. Press again to make it Unmarked; that never advances. By default, a new mark advances to the next item and stops at the end (Settings → General → Review). Stars and color labels are independent." = "使用已分配的快捷键将项目标记为“是”或“否”。再按一次即可设为未标记，且不会前进。默认情况下，新的标记会前进到下一项，并在末尾停止（设置 → 通用 → 审阅）。星级和颜色标签独立保存。";
 "Add several keys to an action. A key can be shared only when its view and media contexts do not overlap." = "可为一个操作添加多个键。只有适用的视图和媒体情境不重叠时，才能共用同一个键。";
 "Find a shortcut" = "查找快捷键";
 "No matching shortcuts." = "没有匹配的快捷键。";
@@ -2117,7 +2101,6 @@
 "Show Folders" = "显示文件夹";
 "Expand All" = "全部展开";
 "Collapse All" = "全部折叠";
-"All reviewed" = "已全部审阅";
 "Next Unfinished Folder" = "下一个未完成的文件夹";
 "Folders width" = "文件夹宽度";
 "Folder: {0}, including subfolders" = "文件夹：{0}，包含子文件夹";
@@ -2129,7 +2112,7 @@
 "Folder navigation could not be saved. Previous positions are retained." = "无法保存文件夹浏览状态。已保留之前的位置。";
 
 "Switch the sidebar between Browser and Folders with the buttons at its top; in Grid, use the sidebar button. Browse without reopening the archive; positions are remembered." = "使用侧边栏顶部的按钮在浏览栏和文件夹之间切换；在网格中，请使用侧边栏按钮。无需重新打开归档即可浏览，并会记住浏览位置。";
-"File actions and Clear All Decisions follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "文件操作和清除所有决定仅适用于所选文件夹。选择“所有媒体”可对整个归档执行操作。RAW + JPEG 配对文件始终一起处理。";
+"File actions, Clear All Decisions and Clear Stars and Labels follow the chosen folder. Choose All Media for archive-wide actions. RAW + JPEG pairs stay together." = "文件操作、“清除所有决定”和“清除星级和标签”仅适用于所选文件夹。选择“所有媒体”可对整个归档执行操作。RAW + JPEG 配对文件始终一起处理。";
 "Reset Folder Navigation" = "重置文件夹导航";
 "Clear Yes/No decisions in this folder ({0})" = "清除此文件夹中的保留/排除决定（{0}）";
 
@@ -2185,3 +2168,12 @@
 "Try Again" = "重试";
 
 "The sidecar's media family changed or could not be verified. Rescan the folder before changing XMP." = "与 XMP 关联的媒体文件已更改或无法验证。更改 XMP 前请重新扫描文件夹。";
+"  ·  {0} Yes" = "  ·  是 {0}";
+"  ·  {0} No" = "  ·  否 {0}";
+"Review tips" = "审阅提示";
+"Clear Stars and Labels…" = "清除星级和标签…";
+"Clear Stars and Labels?" = "清除星级和标签？";
+"Clear Stars and Labels" = "清除星级和标签";
+"Remove stars and color labels while keeping Yes and No decisions" = "清除星级和颜色标签，保留“是”和“否”的决定";
+"reset stars" = "重置星级";
+"remove color labels" = "清除颜色标签";

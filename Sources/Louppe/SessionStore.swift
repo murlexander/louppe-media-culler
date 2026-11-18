@@ -374,6 +374,8 @@ final class SessionStore: ObservableObject {
     }
     var archiveScopeReviewStates: [Int: PhotoItemRatingState] = [:]
     var archiveScopeReviewCounts = (yes: 0, no: 0, mixed: 0)
+    /// Scoped items with stars or a color label, for Clear Stars and Labels.
+    var archiveScopeStarsOrLabelIndices: Set<Int> = []
     @Published var archiveNavigationCanReset = false
     var archiveNavigationMemory: ArchiveNavigationMemory?
     var archiveNavigationRootIdentity: PinnedFolderIdentity?
@@ -911,6 +913,7 @@ final class SessionStore: ObservableObject {
             || isSortPresented
             || isReviewStatusPresented
             || isClearAllRatingsConfirmationPresented
+            || isClearStarsAndLabelsConfirmationPresented
             || isLegacySessionMigrationConfirmationPresented
             || isSessionRecoveryPresented
             || pendingCleanUp != nil
@@ -1017,6 +1020,8 @@ final class SessionStore: ObservableObject {
         case decision
         case stars
         case color
+        /// Clear Stars and Labels: both fields, decisions untouched.
+        case starsAndColor
         case all
     }
     private struct MetadataChange {
@@ -2970,6 +2975,12 @@ final class SessionStore: ObservableObject {
         if dimension == .decision || dimension == .all, archiveFolderProgressStorage != nil {
             updateArchiveFolderProgress(itemIndices: Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] }))
         }
+        if dimension != .decision, archiveScopeIndices != nil {
+            for index in Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] })
+                where archiveScopeReviewStates[index] != nil {
+                updateArchiveStarsOrLabel(at: index)
+            }
+        }
         let changesSort: Bool
         let changesFilter: Bool
         switch dimension {
@@ -2982,6 +2993,10 @@ final class SessionStore: ObservableObject {
         case .color:
             changesSort = sort.key == .colorLabel
             changesFilter = !filter.excludedColorStates.isEmpty
+        case .starsAndColor:
+            changesSort = sort.key == .starRating || sort.key == .colorLabel
+            changesFilter = !filter.excludedStarStates.isEmpty
+                || !filter.excludedColorStates.isEmpty
         case .all:
             changesSort = sort.key == .decision
                 || sort.key == .starRating
@@ -3679,6 +3694,7 @@ final class SessionStore: ObservableObject {
         }
         undoStack = []
         isClearAllRatingsConfirmationPresented = false
+        isClearStarsAndLabelsConfirmationPresented = false
         pendingCleanUp = nil
         if photosBatch == nil { addToRecents(url) }
         let pairingMode = rawJPEGPairingMode
@@ -4227,9 +4243,9 @@ final class SessionStore: ObservableObject {
                 legacySidecarRelocationAuthorization
             canOpenIdentityConflictAsNewSession = true
             if restoration.relocatedLegacySessionHasNoFilenameMatch {
-                scanError = L10n.text("No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated.")
+                scanError = L10n.text("No saved filenames match this folder. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked.")
             } else {
-                scanError = L10n.text("This session came from another location; no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and starts current files unrated.")
+                scanError = L10n.text("This session came from another location, and no exact originals could be verified here. Saved decisions remain untouched. Open as New Session replaces them and opens the current files as Unmarked.")
             }
             return
         }
@@ -4578,25 +4594,37 @@ final class SessionStore: ObservableObject {
 
     // MARK: - Rating
 
-    /// Rates the current photo or selection as one undoable decision. The
-    /// preference applies to this review command; individual tile controls,
-    /// stars, and colors keep their existing non-advancing behavior.
+    /// Marks the current photo or selection Yes or No as one undoable
+    /// decision, or clears it when every target already has that decision
+    /// (`Rating.resolvingDecisionToggle`). Only a new mark advances, and only
+    /// with the Review preference on; a clear, stars and colors never advance.
+    /// `.undecided` is an explicit clear.
     func rate(_ rating: Rating) {
         guard canRate else { return }
         flushPendingFilter()
         let targets = effectiveSelection.sorted()
         guard !targets.isEmpty else { return }
+        let items = self.items
+        let resolved = rating.resolvingDecisionToggle(for: targets.lazy.map { items[$0].ratingState })
         // Retain the displayed order before a decision can change its filter
         // membership or sort position. Advancing from the post-filter current
-        // photo would skip the next undecided item.
+        // photo would skip the next item.
         let previousOrder = visibleIndices
         let previousIndex = currentIndex
         let previousPosition = preparedIndex.location(forItemIndex: currentIndex)?.position
-        applyRating(rating, to: targets)
-        if ReviewPreferences.load(from: reviewDefaults).advancesAfterDecision {
+        let advances = resolved != .undecided
+            && ReviewPreferences.load(from: reviewDefaults).advancesAfterDecision
+        // Advance from the last marked target in display order, so a batch
+        // is left behind rather than landed in. The current item counts only
+        // as a target; marking it alone anchors at itself.
+        let advanceAnchor = advances
+            ? targets.compactMap { preparedIndex.location(forItemIndex: $0)?.position }.max()
+            : nil
+        applyRating(resolved, to: targets)
+        if advances {
             setSelectionIndices([])
             advanceAfterDecision(
-                position: previousPosition,
+                position: advanceAnchor,
                 in: previousOrder
             )
         } else if preparedIndex.location(forItemIndex: previousIndex) == nil {
@@ -4631,20 +4659,25 @@ final class SessionStore: ObservableObject {
         }
     }
 
-    /// An explicit rating action for VoiceOver media tiles. Unlike the F/D
-    /// review flow this does not advance afterward, because the accessible
-    /// action menu belongs to one stable tile. If that tile is part of a
-    /// multi-selection, the action follows Grid click behavior and rates the
-    /// whole selection in one undoable step.
+    /// A tile's context-menu or VoiceOver decision. Yes and No toggle like
+    /// F/D (`Rating.resolvingDecisionToggle`); `.undecided` is an explicit
+    /// clear. Unlike the F/D review flow this does not advance afterward,
+    /// because the action belongs to one stable tile. If that tile is part of
+    /// a multi-selection, the action covers the whole selection in one
+    /// undoable step.
     func rate(_ rating: Rating, at index: Int) {
         guard canRate else { return }
         flushPendingFilter()
         guard items.indices.contains(index) else { return }
+        let items = self.items
         if selectedIndices.count > 1, selectedIndices.contains(index) {
-            applyRating(rating, to: selectedIndices.sorted())
+            let targets = selectedIndices.sorted()
+            applyRating(rating.resolvingDecisionToggle(for: targets.lazy.map { items[$0].ratingState }),
+                        to: targets)
         } else {
             setIndex(index)
-            setRating(rating, atIndex: index, recordUndo: true)
+            setRating(rating.resolvingDecisionToggle(for: CollectionOfOne(items[index].ratingState)),
+                      atIndex: index, recordUndo: true)
         }
     }
 
@@ -4819,6 +4852,66 @@ final class SessionStore: ObservableObject {
         scheduleSave()
     }
 
+    /// Whether clearing stars and color labels is awaiting confirmation.
+    @Published var isClearStarsAndLabelsConfirmationPresented = false
+    /// Items the pending confirmation names; counted once on request.
+    private(set) var clearStarsAndLabelsConfirmationCount = 0
+
+    /// Constant-time enablement: global tallies for All Media, the scoped
+    /// set otherwise. Menus and the palette read it on every publication.
+    var canClearArchiveStarsAndLabels: Bool {
+        guard !isFileOperationRunning else { return false }
+        if archiveScopeIndices != nil { return !archiveScopeStarsOrLabelIndices.isEmpty }
+        return unratedStarCount < items.count || noColorCount < items.count
+    }
+
+    /// Same scope and confirmation rule as Clear All Decisions: up to 15
+    /// items clear at once, more ask first. Counts only on request.
+    func requestClearStarsAndLabels() {
+        guard canClearArchiveStarsAndLabels else { return }
+        let count = archiveScopeIndices != nil
+            ? archiveScopeStarsOrLabelIndices.count
+            : items.reduce(0) { $0 + ($1.hasStarsOrColorLabel ? 1 : 0) }
+        if count > 15 {
+            clearStarsAndLabelsConfirmationCount = count
+            isClearStarsAndLabelsConfirmationPresented = true
+        } else {
+            clearStarsAndLabels()
+        }
+    }
+
+    /// Clear stars and color labels in the current folder scope, keeping
+    /// decisions and their dates. One Undo restores both fields and dates.
+    func clearStarsAndLabels() {
+        guard !isFileOperationRunning else { return }
+        isClearStarsAndLabelsConfirmationPresented = false
+        let items = self.items
+        var changes: [MetadataChange] = []
+        var affected: [Int] = []
+        for index in archiveActionIndices where items[index].hasStarsOrColorLabel {
+            affected.append(index)
+            for snapshot in items[index].metadataSnapshots
+                where snapshot.starRating != nil || snapshot.colorLabel != nil {
+                changes.append(MetadataChange(previous: snapshot))
+            }
+        }
+        guard !changes.isEmpty else { return }
+        pushUndo(.metadata(.starsAndColor, changes, previousFileID: currentItemID))
+        let now = Date()
+        for index in affected {
+            let oldStars = items[index].starRatingState, oldColor = items[index].colorLabelState
+            // Stamp only fields that had a value; empty fields keep their dates.
+            for file in items[index].individualFiles {
+                if file.starRating != nil { file.setStars(nil, changedAt: now) }
+                if file.colorLabel != nil { file.setColor(nil, changedAt: now) }
+            }
+            transitionStarCount(from: oldStars, to: items[index].starRatingState)
+            transitionColorCount(from: oldColor, to: items[index].colorLabelState)
+        }
+        publishMetadataMutation(.starsAndColor, affectedFileIDs: changes.map { $0.previous.fileID })
+        scheduleSave()
+    }
+
     private func transitionRatingCount(
         from old: PhotoItemRatingState,
         to new: PhotoItemRatingState
@@ -4947,6 +5040,9 @@ final class SessionStore: ObservableObject {
                 case .decision: items[index].restoreRating(change.previous)
                 case .stars: items[index].restoreStars(change.previous)
                 case .color: items[index].restoreColor(change.previous)
+                case .starsAndColor:
+                    items[index].restoreStars(change.previous)
+                    items[index].restoreColor(change.previous)
                 case .all: items[index].restoreMetadata(change.previous)
                 }
             }
@@ -4958,6 +5054,9 @@ final class SessionStore: ObservableObject {
                 case .stars:
                     transitionStarCount(from: previous.stars, to: items[index].starRatingState)
                 case .color:
+                    transitionColorCount(from: previous.color, to: items[index].colorLabelState)
+                case .starsAndColor:
+                    transitionStarCount(from: previous.stars, to: items[index].starRatingState)
                     transitionColorCount(from: previous.color, to: items[index].colorLabelState)
                 case .all:
                     let state = items[index].metadataState
@@ -5279,8 +5378,6 @@ final class SessionStore: ObservableObject {
         return currentSessionIsDurable ? L10n.text("Saved") : L10n.text("Saving…")
     }
 
-    var isReviewComplete: Bool { archiveScopeCount > 0 && archiveReviewedCount == archiveScopeCount }
-
     /// Resolve counts only when a confirmation is requested, not per tile.
     func cleanUpDecisionBreakdown(for mode: CleanUpMode) -> (no: Int, undecided: Int) {
         let targets = cleanUpTargets(for: mode)
@@ -5546,7 +5643,7 @@ final class SessionStore: ObservableObject {
         switch mode {
         case .selection: action = L10n.text("Trash Selected")
         case .trashNo: action = L10n.text("Trash No")
-        case .keepOnlyYes: action = L10n.text("Trash No + Undecided")
+        case .keepOnlyYes: action = L10n.text("Trash No + Unmarked")
         case .pairedJPEGs: action = L10n.text("Trash Paired JPEGs")
         case .pairedRAWs: action = L10n.text("Trash Paired RAWs")
         }
@@ -6897,40 +6994,35 @@ final class SessionStore: ObservableObject {
         prefetchAroundCurrent(handingOver: true)
     }
 
+    /// Moves to the first still-visible item after the anchor in the order
+    /// the photographer was reviewing, whatever its decision. Decision sorting
+    /// or a decision filter may have moved or hidden the marked item. At the
+    /// end it stays (never wraps); if a filter hid the anchor and nothing
+    /// follows, it falls back to the closest surviving predecessor.
     private func advanceAfterDecision(
         position: Int?,
         in previousOrder: [Int]
     ) {
         guard !visibleIndices.isEmpty, !previousOrder.isEmpty else { return }
-        let position = position ?? 0
-        // Search the order the photographer was reviewing, wrapping once.
-        // Decision sorting may have moved the rated item to another group.
-        for offset in 1...previousOrder.count {
-            let candidate = previousOrder[(position + offset) % previousOrder.count]
-            if preparedIndex.location(forItemIndex: candidate) != nil,
-               items[candidate].rating == .undecided {
-                currentIndex = candidate
-                prefetchAroundCurrent(handingOver: true)
-                return
-            }
+        let position = min(position ?? 0, previousOrder.count - 1)
+        func isVisible(_ index: Int) -> Bool { preparedIndex.location(forItemIndex: index) != nil }
+        let next = previousOrder.dropFirst(position + 1).first(where: isVisible)
+            ?? (isVisible(previousOrder[position]) ? previousOrder[position] : nil)
+            ?? previousOrder.prefix(position).last(where: isVisible)
+            ?? visibleIndices.first
+        if let next {
+            currentIndex = next
+            prefetchAroundCurrent(handingOver: true)
         }
-        // With every visible item decided, step forward if possible and
-        // stay at the last item instead of wrapping the completed review.
-        restoreVisibleCurrentAfterDecision(
-            position: position,
-            in: previousOrder,
-            advances: true
-        )
     }
 
     private func restoreVisibleCurrentAfterDecision(
         position: Int?,
-        in previousOrder: [Int],
-        advances: Bool = false
+        in previousOrder: [Int]
     ) {
         guard !visibleIndices.isEmpty else { return }
         let position = position ?? 0
-        let start = min(position + (advances ? 1 : 0), previousOrder.count)
+        let start = min(position, previousOrder.count)
         func eligible(_ index: Int) -> Bool {
             preparedIndex.location(forItemIndex: index) != nil
                 && (selectedIndices.isEmpty || selectedIndices.contains(index))
@@ -8281,6 +8373,7 @@ final class SessionStore: ObservableObject {
         undoStack = []
         setSelectionIndices([])
         isClearAllRatingsConfirmationPresented = false
+        isClearStarsAndLabelsConfirmationPresented = false
         pendingCleanUp = nil
         dismissCleanUpError()
         pairingMetadataError = nil

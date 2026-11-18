@@ -472,7 +472,7 @@ final class CleanUpWorkerSafetyTests: XCTestCase {
         XCTAssertTrue(message.contains("B.mov"))
         XCTAssertTrue(message.contains("No files were moved."))
         XCTAssertTrue(message.contains("Rescan Folder"))
-        XCTAssertTrue(message.contains("Trash No + Undecided"))
+        XCTAssertTrue(message.contains("Trash No + Unmarked"))
         XCTAssertFalse(message.contains("179"))
     }
 

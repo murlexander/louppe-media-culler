@@ -47,8 +47,9 @@ greyed out until loading finishes. Esc clears the selection, then cancels.
 
 *Grid for comparing and selecting frames.*
 
-The toolbar shows review progress and save status. Its dropdown holds active
-filter details and review tips. The floating photo control provides Fit and 30–400% zoom.
+The toolbar shows the item position, Yes and No totals (No appears once
+something is marked No) and save status. Unmarked is a normal state, not
+unfinished work. Clicking the status shows review tips while they are enabled. The floating photo control provides Fit and 30–400% zoom.
 Double-click anywhere on the zoom control to Fit.
 Pinch to zoom; pan with two-finger scrolling or dragging.
 **S** returns custom zoom to centered 100%, then toggles Fit; **A** toggles
@@ -56,8 +57,12 @@ Phone size. **Help → Louppe Help** has searchable shortcuts. Restore dismissed
 tips with **Settings → General → Show quick-start tips while reviewing**.
 
 Yes/No, stars, and color labels are independent. **No never trashes files.**
-Ratings save automatically; reopen the folder to continue. The toolbar status
-popover confirms when every item has a decision.
+**Mark Yes** (**F**) and **Mark No** (**D**) on an item already marked that
+way: press again to make it Unmarked; that never moves on. With several items
+selected, they become Unmarked only when all have that decision; otherwise all
+are marked (a Mixed RAW+JPEG pair is marked). A new mark moves to the item after
+the marked ones and stops at the last one; holding a key never repeats it. Ratings save automatically; reopen the folder
+to continue.
 
 Export starts with **All selected** when you select items, otherwise with
 filtered **Keepers (Yes)**. **4–5 stars** includes either decision. Check the
@@ -86,8 +91,7 @@ you are reviewing. Drag the pane's edge to fit long names; double-click the
 edge to restore the standard width.
 
 Counts include subfolders and count a RAW+JPEG pair once when pairing is
-enabled. A checkmark beside a count means every item in that folder is marked
-Yes or No; mixed pairs still need a decision. Empty folders remain visible but
+enabled. Empty folders remain visible but
 dimmed. **All Media** shows the entire archive. When the tree is hidden or
 showing Browser, a breadcrumb inside a subfolder lets you return to an
 ancestor. It stays hidden at All Media and while the folder tree is visible.
@@ -105,11 +109,11 @@ If saved browsing positions cannot be read, **Reset Folder Navigation** starts
 fresh browsing memory and preserves the old memory files beside it. Decisions
 and originals are unaffected.
 
-Export, Clean Up, Rename, Organize and Clear All Decisions follow the current
-folder scope. Their All choice reads **Current Folder**, or **Entire Archive**
+Export, Clean Up, Rename, Organize, Clear All Decisions and Clear Stars and
+Labels follow the current folder scope. Their All choice reads **Current Folder**, or **Entire Archive**
 at All Media. Filtered and Selected narrow it further. Paired RAW+JPEG files stay
 together even when a partner is outside the chosen folder; check the preview and
-confirmation before file work. Review progress and Clear availability follow
+confirmation before file work. Yes/No totals and Clear availability follow
 the folder before metadata filters. Navigate to All Media explicitly for archive-wide work.
 
 ## Apple Photos
@@ -172,7 +176,13 @@ unavailable originals must be made accessible in Photos first.
 - **Filter** can group matching RAW+JPEG files as one item while retaining
   separate decisions, stars, and colors. Without a same-named JPEG, a RAW pairs
   with its HEIC/HEIF, then JPEG XL file in the same folder.
-- **Clean Up** supports All Media, Filtered, and Selected scopes, plus
+- **Edit → Clear All Decisions…** (**R**) makes the folder's items Unmarked
+  and keeps stars and labels. **Edit → Clear Stars and Labels…** removes stars
+  and color labels and keeps decisions. Both ask first above 15 items and undo
+  in one step with **⌘Z**.
+- **Clean Up** offers **Trash No…** and **Trash No + Unmarked…**; the
+  confirmation counts No and Unmarked items separately, and Mixed RAW+JPEG
+  decisions stay. It supports All Media, Filtered, and Selected scopes, plus
   RAW-only or JPEG-only Trash for unambiguous RAW+JPEG pairs. **⌘Z** restores the batch
   before closing the session, while files remain in Trash. **⌘⌫** trashes the
   selection without a dialog; marking **No** never trashes anything.
@@ -295,7 +305,7 @@ sidebar, and expand or collapse folders. Previous/Next Folder skips empty and
 container-only folders; Next from All Media goes to the first folder with direct
 media. Next Unfinished Folder also skips folders whose items all have Yes or No.
 Entering a folder keeps the current item when it belongs there; otherwise it
-starts at the first undecided item. Enclosing Folder returns to the parent,
+starts at the first Unmarked (or Mixed) item. Enclosing Folder returns to the parent,
 including container-only folders.
 Show Current Item’s Folder keeps that item current. Go to All Media restores the
 whole archive. The palette also lists folder paths for archives of up to 2,000 folders.
@@ -307,8 +317,8 @@ assignments and their view/media contexts, including customized keys.
 
 | Shortcut | Action |
 |---|---|
-| **F** | Mark Yes; advance if enabled in Review settings |
-| **D** | Mark No; advance if enabled in Review settings |
+| **F** | Mark Yes; advance if enabled in Review settings. Press again to make it Unmarked |
+| **D** | Mark No; advance if enabled in Review settings. Press again to make it Unmarked |
 | **0–5** | Clear or assign a 1–5 star rating |
 | **← / →** | Previous / next item; in Gallery video, seek 0.5 seconds |
 | **↑ / ↓** | Previous / next item in Gallery; previous / next row in Grid |
@@ -326,7 +336,7 @@ assignments and their view/media contexts, including customized keys.
 | **W** | Show or hide the Info panel |
 | **⌘+ / ⌘−** | Make Grid thumbnails larger / smaller |
 | **E / ⌘E** | Open Export |
-| **R** | Clear all Yes/No decisions |
+| **R** | Clear All Decisions in the current folder (asks first above 15) |
 | **Z / ⌘Z** | Undo the latest review or file action |
 | **⌘O** | Open another folder |
 | **⌘R** | Rescan the current folder |
