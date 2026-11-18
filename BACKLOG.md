@@ -1,6 +1,6 @@
 # Louppe app backlog
 
-Updated on 17 November 2026. **1.14.1 (19) is published** on GitHub, Sparkle and
+Updated on 18 November 2026. **1.14.1 (19) is published** on GitHub, Sparkle and
 Homebrew ([release record](Docs/RELEASE_1.14.1_PREPARATION_2026-11-17.md)). 1.14.1 was
 submitted to the App Store on 17 November and is Waiting for Review, releasing
 automatically after approval; the Store has 1.13.2 (17) until then.
@@ -143,6 +143,36 @@ whole-job XMP measurements put ordinary Copy, Move and publication jobs within
 0.69–1.17× of 1.14.0, so the census redesign below waits. The 1.15 checks above
 remain unverified for 1.14.1.
 
+- [ ] **Archive work — Alex, 18 November 2026.** Planned now, in this order:
+  - **Merge decisions across nested sessions.** A parent archive ignores
+    `.louppe_session.json` files saved by earlier subfolder sessions, and a
+    subfolder session ignores its parent's. On open, read every reachable
+    sidecar: descendants found during the existing walk, plus ancestors that a
+    pin or recent bookmark already grants. Adopt each field (decision, stars,
+    color) from whichever copy has the newest change time, only onto the same
+    verified physical file. Write only the opened folder's sidecar and leave the
+    others byte-for-byte. Clearing already records a timestamp, so newer clears
+    win over older decisions. Show no prompt; one status line reports what was
+    included. Identity conflicts and replaced files are skipped, not imported.
+  - **Drag out.** Drag selected items from Gallery, Browser and Grid into Finder
+    and other apps as file URLs of the originals (RAW+JPEG pairs drag both).
+    Read-only; no copying, moving or promises in this step.
+  - **Move through time.** A year/month scrubber on the Grid's scroll edge built
+    on the existing date grouping, plus **Jump to Date…**. Works within the
+    current folder scope and keeps the remembered browsing anchors.
+- [ ] **Archive work — next.** After the items above.
+  - **Folder review progress.** Show partly reviewed folders in the tree (count
+    or ring next to the existing all-decided checkmark) and add **Next Unreviewed
+    Folder**.
+  - **Open With.** An editor submenu (Lightroom Classic, Capture One, Photoshop,
+    Preview, default app) for selected originals; the next handoff after drag-out.
+  - **Folder-first readiness.** Validate the folder you navigate to first and
+    allow deciding there while the rest of the archive validates. Changes the
+    "complete validation before any save" rule, so write the design first.
+  - **Incremental reconnect.** Skip subtrees whose directory identity and
+    modification time are unchanged since the last validated scan; recheck
+    everything on any doubt. Measure on cold exFAT first.
+
 - [x] **Photos staging cleanup:** yield bounded, freshly journal-checked chunks to pending file-command workers; retain recovery sources and retry markers.
 - [x] **Grid follow after filtering:** pointer decisions preserve browsing position without suppressing the next keyboard follow.
 - [x] **Opening modifier selection:** implicit current, range anchors and Command toggles match Ready through physical-file handoff.
@@ -196,9 +226,23 @@ These are deferred ideas, not committed implementation scope for 1.13.
   deferred; large-folder performance and remembered/pinned archives shipped in 1.13.
   - **Offline browsing.** Retain budgeted thumbnails/metadata for disconnected
     archives, clearly distinguish unavailable originals, and identify the drive
-    needed for full detail or export.
+    needed for full detail or export. Open a disconnected pin read-only from the
+    cache with a "Connect <drive>" banner, and give pinned archives their own
+    cache budget: the metadata index (32 folders, 40,000 entries per snapshot)
+    is too small for one large archive, and other folders can evict it.
   - **Navigation through time.** Move from years to months to shoots to images;
-    retain folder navigation and stable browsing anchors.
+    retain folder navigation and stable browsing anchors. The scrubber and Jump
+    to Date are planned under Agent work; shoots remain here.
+  - **Search across archives.** Query the metadata index of every pin, including
+    disconnected ones (date range, camera, lens, film simulation, rating,
+    decision, filename), and name the drive holding each result. Builds on the
+    arbitrary metadata filters below.
+  - **Backup coverage check.** Read-only: list items on a card or drive that are
+    missing from a chosen archive, matched by identity or size plus EXIF. Pairs
+    with SD-card ingest below.
+  - **Archive health report.** Read-only: RAWs without their companion, orphaned
+    XMP sidecars, zero-byte or unreadable files, and shoots duplicated across
+    folders.
   - **Return to meaningful places.** Saved searches and shoot shortcuts extend
     the remembered browsing positions included in the archive foundation.
   - **Collections across folders.** Gather media for prints, portfolios or other
