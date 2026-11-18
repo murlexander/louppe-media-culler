@@ -1,6 +1,7 @@
 # Louppe app backlog
 
-Updated on 18 November 2026. **1.14.1 (19) is published** on GitHub, Sparkle and
+Updated on 18 November 2026. 1.15 work is in progress and ships after the
+1.14.1 App Store release. **1.14.1 (19) is published** on GitHub, Sparkle and
 Homebrew ([release record](Docs/RELEASE_1.14.1_PREPARATION_2026-11-17.md)). 1.14.1 was
 submitted to the App Store on 17 November and is Waiting for Review, releasing
 automatically after approval; the Store has 1.13.2 (17) until then.
@@ -172,6 +173,14 @@ remain unverified for 1.14.1.
     that unmarked items won't be exported. Clean Up keeps its explicit No and
     Unmarked counts in the confirmation. Separate culling and archive modes may
     come later; a per-folder "reviewed" state was rejected for now.
+  - **Decisions for culling, stars and labels for the archive (Alex,
+    18 November 2026).** Only Yes/No advance (already true; the Settings toggle
+    stays). Clear All Decisions already leaves stars and labels alone. Add
+    **Clear Stars and Labels…** to the menu beside it: same folder scope,
+    confirmation and Undo. Proposals awaiting Alex: **R** unmarks the selected
+    items without advancing, with Clear All Decisions in the menu only; advance
+    goes to the next item and stops at the end instead of wrapping to the first
+    unmarked one.
   - **Scroller date label.** While dragging the existing native Grid scroller
     knob, show only the year and month under it, formatted by
     `AppDateFormat.yearAndMonth`. Nothing on hover, no new bar or command.
