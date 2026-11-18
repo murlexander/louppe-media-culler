@@ -49,9 +49,10 @@ submission replaces one still in review, so coordinate with the App Store sessio
    `dist/release-preparation/<version>-<build>-<date>/direct/`.
 4. `git tag -a v<version> <commit>`, push the tag, `gh release create v<version>
    <ZIP> --title "Louppe v<version>" --notes-file <notes> --verify-tag --latest`,
-   then commit and push `appcast.xml`. Rerun the Homebrew workflow if it loses the
-   push race with the feed commit. Check the public ZIP hash, feed bytes, both
-   Sparkle signatures, latest-download and the six website pages.
+   then commit and push `appcast.xml`. The Homebrew workflow retries its push if
+   the feed commit lands first; rerun it only if all five attempts fail. Check the
+   public ZIP hash, feed bytes, both Sparkle signatures, latest-download and the
+   six website pages.
 5. Idle-gated, upgrade an isolated copy of the previous public archive with the
    retained headless Sparkle driver (`headless-update.swift`, `run-idle-checks.sh`
    in the newest release-preparation folder; update the paths) and compare `Contents/`.
@@ -84,6 +85,14 @@ None counts as passed until run in its stated environment. Owner: **Alex** unles
 - [ ] **Live choice menus:** open the native choices inside Sort/Filter; live captures cover the toolbar popovers themselves.
 - [ ] **Shortcut keyboard map:** VoiceOver and Full Keyboard Access through the chosen-key row, **Assign…** and focus returning to the key after Clear; the open Assign menu in a live capture. Keys stay 27 points high (arrows 12), below the 36-point touch target, and the map has one Tab stop per key rather than arrow-key movement.
 - [ ] **100% RAW panning:** inspect recovered sharp tiles and unavailable overlays while panning away and back on real RAW media; deterministic mounted tests cover the cancellation race.
+
+- [ ] **1.15 nested-session merge:** in the signed App Store build, a child opened alone imports nothing from its parent, and with a pin or recent on the parent (also after renaming it) it imports; in the Developer ID build an ancestor merge through a real pin raises no privacy prompt; nested sidecars on exFAT and other removable volumes.
+- [ ] **1.15 drag-out:** a same-volume Finder drop copies (no modifier, ⌘, ⌥) and leaves the source unchanged; the Dock Trash refuses the drop; dragging from an inactive Louppe window leaves it behind the drop target while a plain click activates it; drag-out and Open With in the sandboxed Store build, including a reopened bookmark.
+- [ ] **1.15 Open With and Maps:** Lightroom Classic, Capture One and Photoshop accept the files; Preview and Default App open them; Open in Maps shows the right point on macOS 14.0–14.3 and 14.4+.
+- [ ] **1.15 touch and pointer:** one-finger Grid/Browser scrolling, Browser tap and Gallery pinch on touch hardware or Sidecar; the scroller date label with a physical mouse and trackpad, with legacy and overlay scroll bars.
+- [ ] **1.15 VoiceOver, RTL and keyboard:** toolbar Yes/No totals and "Review tips"; folder rows read one count; toggle results announced on tile actions; Open With in tile menus and the Open in Maps button; the scroller reads the month without per-move announcements; Arabic toolbar totals at narrow widths and the Clean Up dialog's dual and plural forms; Full Keyboard Access reaches both clear commands.
+- [ ] **1.15 macOS 14:** repeat-key consumption, the Clear Stars and Labels alert, the scroller label's material fallback and the Maps launch path.
+- [ ] **1.15 translations:** native-speaker review of the new and renamed strings in es, pt, zh-Hans, hi and ar.
 
 ### Hardware and environments
 
@@ -140,51 +149,9 @@ whole-job XMP measurements put ordinary Copy, Move and publication jobs within
 0.69–1.17× of 1.14.0, so the census redesign below waits. The 1.15 checks above
 remain unverified for 1.14.1.
 
-- [ ] **Archive work — Alex, 18 November 2026.** Planned now, in this order:
-  - **Merge decisions across nested sessions.** A parent archive ignores
-    `.louppe_session.json` files saved by earlier subfolder sessions, and a
-    subfolder session ignores its parent's. On open, read every reachable
-    sidecar: descendants found during the existing walk, plus ancestors that a
-    pin or recent bookmark already grants. Adopt each field (decision, stars,
-    color) from whichever copy has the latest change time (on an exact tie the
-    opened folder's copy wins), only onto the same
-    verified physical file. Write only the opened folder's sidecar and leave the
-    others byte-for-byte. Clearing already records a timestamp, so newer clears
-    win over older decisions. Show no prompt; one status line reports what was
-    included. Identity conflicts and replaced files are skipped, not imported.
-  - **Drag out.** Drag selected items from Gallery, Browser and Grid into Finder
-    and other apps as file URLs of the originals (RAW+JPEG pairs drag both),
-    allowing only the copy operation: Finder copies even on the same volume and
-    the Trash refuses the drop. Grid starts the drag on tile media (empty canvas
-    keeps the rubber band); Gallery only when not zoomed. No promises yet.
-  - **Open With.** An editor submenu (Lightroom Classic, Capture One, Photoshop,
-    Preview, default app) for the same selected originals as drag-out.
-  - **Open in Maps.** An explicit action on valid GPS coordinates in Info; no
-    lookup before the click (Aymeric feedback, 20 October 2026).
-  - **Picks, not progress (Alex, 18 November 2026).** Undecided is a normal
-    state, not unfinished work. Rename it **Unmarked** in the UI, Help and all
-    six languages (the saved `undecided` value stays for compatibility). The
-    toolbar shows Yes and No totals instead of "N/M reviewed"; remove "Review
-    complete" and the folder tree's all-decided checkmark (Alex confirmed). Export stops warning
-    that unmarked items won't be exported. Clean Up keeps its explicit No and
-    Unmarked counts in the confirmation. Separate culling and archive modes may
-    come later; a per-folder "reviewed" state was rejected for now.
-  - **Decisions for culling, stars and labels for the archive (Alex,
-    18 November 2026).** Only Yes/No advance (already true; the Settings toggle
-    stays). Clear All Decisions already leaves stars and labels alone. Add
-    **Clear Stars and Labels…** to the menu beside it: same folder scope,
-    confirmation and Undo. Pressing a decision's key (or button) again on a photo
-    already marked that way makes it Unmarked, without advancing (with several
-    selected: unmark only when all have that decision, otherwise mark all; a
-    Mixed pair is marked, not unmarked); Undo restores
-    it, key auto-repeat never toggles, and **R** keeps Clear All Decisions.
-    Advance goes to the next item and stops at the end instead of wrapping to
-    the first unmarked one.
-  - **Scroller date label.** While dragging the existing native Grid scroller
-    knob, show only the year and month under it, formatted by
-    `AppDateFormat.yearAndMonth`. Nothing on hover, no new bar or command.
-    Applies when sorted by capture date; items without a date read "No Date".
-- [ ] **Archive work — next.** After the items above.
+- [ ] **Bug since 1.7.0 — a `;` in a file name blocks saving the whole folder.** The scanner encodes `;` as `%3B` in file IDs, but `SessionPersistence.exactFileIDIsCanonical` rebuilds the ID with a literal `;`, so every save of that folder is rejected ("Not saved"); existing sidecars stay intact. Fix: make the validator encode `;` the way the scanner does while still reading sidecars that contain a literal `;`. Waits for Alex's go-ahead.
+- [ ] **1.15 decisions for Alex (defaults shipped as listed).** Organize keeps naming the decision folder `Undecided`; Next Unfinished Folder is unchanged; Open With asks no confirmation for large selections; undated items read "No Date" beside the scroller knob while Grid headers and the Date filter say "Unknown date"; opening a folder still lands on its first unmarked item.
+- [ ] **Archive work — next.**
   - **Folder-first readiness.** Validate the folder you navigate to first and
     allow deciding there while the rest of the archive validates. Changes the
     "complete validation before any save" rule, so write the design first.
@@ -221,15 +188,10 @@ remain unverified for 1.14.1.
 - [ ] **AUD-20 — Expat 2.10.0.** Adopt it in the next dependency refresh (its four
   CVEs are unreachable in Louppe), with the vendored-file and license checks.
 - [ ] **Agent tooling follow-ups (audit of 20 agent threads, 9 November 2026).**
-  The CI docs-only skip and the Homebrew push retry join the 18 November batch.
   The entry-point scripts landed; these remain, highest value first.
   - A guarded installed-app smoke driver (screen lock, frontmost app and point
     ownership checked before every event) for folder click focus, view switching
     and playback; runs only when Alex hands over the desktop.
-  - CI: skip the Swift build and tests for docs-only changes while keeping the
-    credential and link checks.
-  - Homebrew workflow: retry its cask push after a non-fast-forward instead of
-    needing a manual rerun.
   - Move the dated `Docs/*_2026-*.md` reports into `Docs/Archive/<date>/` with
     a link pass.
 
