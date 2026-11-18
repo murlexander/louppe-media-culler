@@ -1066,6 +1066,72 @@ final class SourceOrganizationTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: source), png)
     }
 
+    /// The predicted post-rename ID must use the scanner's `%3B` spelling, or
+    /// a rename to a `;` name loses the current photo and its undo mapping.
+    @MainActor
+    func testRenameToSemicolonNameKeepsCurrentPhotoAndUndo() async throws {
+        let fixture = try makeFixture(named: "RenameSemicolon")
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let png = try XCTUnwrap(Data(base64Encoded:
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        ))
+        try png.write(to: fixture.photos.appendingPathComponent("A.png"))
+        let source = fixture.photos.appendingPathComponent("Original.png")
+        try png.write(to: source)
+        let store = SessionStore(
+            persistence: SessionPersistence(backupDirectory: fixture.root.appendingPathComponent("Backup")),
+            saveTrailingDelay: 0.01,
+            saveMaximumDelay: 0.02,
+            operationJournalDirectory: fixture.journals
+        )
+        store.openFolder(fixture.photos)
+        try await waitUntil {
+            if case .ready = store.phase { return store.items.count == 2 }
+            return false
+        }
+        let index = try XCTUnwrap(store.items.firstIndex { $0.displayName == "Original.png" })
+        store.setIndex(index)
+        store.rate(.yes, at: index)
+        let originalID = try XCTUnwrap(store.currentItem?.id)
+        store.presentSingleFileRenaming(itemID: originalID)
+        let snapshot = try XCTUnwrap(store.sourceFileRenamingPlanningSnapshot(scope: .selected))
+        let plan = try SourceOrganizationPlanner.makePlan(
+            sourceFolder: snapshot.sourceFolder,
+            selectedItems: snapshot.selectedItems,
+            familyContextItems: snapshot.familyContextItems,
+            configuration: FileRenamingPlanner.sourceConfiguration(customBaseName: "Re;named"),
+            knownOriginFolderPathBytesByFileID: snapshot.knownOriginFolderPathBytesByFileID
+        )
+        XCTAssertTrue(plan.canExecute, plan.collisions.map(\.message).joined(separator: " | "))
+        XCTAssertEqual(plan.destinationItemIDBySourceItemID[originalID], "Re%3Bnamed.png")
+        let destination = fixture.photos.appendingPathComponent("Re;named.png")
+
+        store.startSourceRename(plan)
+        try await waitUntil {
+            if case .ready = store.phase {
+                return !store.isFileOperationRunning
+                    && FileManager.default.fileExists(atPath: destination.path)
+            }
+            return false
+        }
+        XCTAssertEqual(store.currentItem?.id, "Re%3Bnamed.png")
+        XCTAssertEqual(store.currentItem?.rating, .yes)
+        let idle = await store.waitForPersistenceIdleForTesting()
+        XCTAssertTrue(idle)
+        XCTAssertEqual(store.sessionSaveStatus, L10n.text("Saved"))
+
+        store.undo()
+        try await waitUntil {
+            if case .ready = store.phase {
+                return !store.isFileOperationRunning
+                    && FileManager.default.fileExists(atPath: source.path)
+            }
+            return false
+        }
+        XCTAssertEqual(store.currentItem?.displayName, "Original.png")
+        XCTAssertEqual(store.currentItem?.rating, .yes)
+    }
+
     /// Release review 4 November 2026: Undo of a decision followed at once by
     /// Undo of a rename must not let the restore's rescan reload the older
     /// saved decision before the decision Undo is saved.

@@ -149,7 +149,6 @@ whole-job XMP measurements put ordinary Copy, Move and publication jobs within
 0.69–1.17× of 1.14.0, so the census redesign below waits. The 1.15 checks above
 remain unverified for 1.14.1.
 
-- [ ] **Bug since 1.7.0 — a `;` in a file name blocks saving the whole folder.** The scanner encodes `;` as `%3B` in file IDs, but `SessionPersistence.exactFileIDIsCanonical` rebuilds the ID with a literal `;`, so every save of that folder is rejected ("Not saved"); existing sidecars stay intact. Fix: make the validator encode `;` the way the scanner does while still reading sidecars that contain a literal `;`. Waits for Alex's go-ahead.
 - [ ] **1.15 decisions for Alex (defaults shipped as listed).** Organize keeps naming the decision folder `Undecided`; Next Unfinished Folder is unchanged; Open With asks no confirmation for large selections; undated items read "No Date" beside the scroller knob while Grid headers and the Date filter say "Unknown date"; opening a folder still lands on its first unmarked item.
 - [ ] **Archive work — next.**
   - **Folder-first readiness.** Validate the folder you navigate to first and

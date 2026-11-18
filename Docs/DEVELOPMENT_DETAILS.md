@@ -353,6 +353,13 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   must not make a durable decision look unsaved or add a clean Quit dependency.
   Actual restored decisions advance the existing dirty/save authority.
 
+- Exact (schema 3+) file IDs are the scanner's spelling: `FolderScanner.scannerURL`
+  (CoreFoundation's constructor, which writes `;` as `%3B`), relative to the
+  folder. The validator, nested-merge keys and predicted rename IDs use the same
+  helper; never rebuild an ID with Swift's `URL(fileURLWithFileSystemRepresentation:)`.
+  1.7–1.14 accepted only a literal `;`; that spelling still reads, keys and
+  normalizes to `%3B`, so one file cannot hold two entries. Invalid UTF-8 names
+  stay rejected, as before.
 - Saves use compact sorted JSON, preserving deterministic keys and every schema
   field/history. Exact bytes still own CAS lineage.
 - Decoding, CAS revision reads, and encoding share a 512 MiB ceiling.

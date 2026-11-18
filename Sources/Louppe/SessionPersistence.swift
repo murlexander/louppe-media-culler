@@ -1351,7 +1351,7 @@ actor SessionPersistence: SessionPersistenceClient {
             )
         }
         return CandidateRead(
-            candidate: .valid(session),
+            candidate: .valid(Self.normalizingExactFileIDs(in: session)),
             revision: revision
         )
     }
@@ -1368,7 +1368,7 @@ actor SessionPersistence: SessionPersistenceClient {
               SessionConstants.supportedSchemaVersions.contains(session.version),
               session.version < 3 || session.fileIDEncoding == .percentEncodedFileSystemPath,
               entriesAreValid(in: session) else { return nil }
-        return session
+        return normalizingExactFileIDs(in: session)
     }
 
     /// A generated snapshot is always newer than a pre-generation snapshot.
@@ -1439,9 +1439,9 @@ actor SessionPersistence: SessionPersistenceClient {
         var recoveryIDs = Set<UUID>()
         for record in session.recoveryEntries ?? [] {
             guard recoveryIDs.insert(record.id).inserted,
-                  record.resolvedFileID.map({ relativeFileIDIsValid(
+                  record.resolvedFileID.map({ relativeFileIDKey(
                     $0, requiresCanonicalPercentEncoding: usesExactIDs
-                  ) }) ?? true else { return false }
+                  ) != nil }) ?? true else { return false }
             // Validate each historical entry independently: several generations
             // may legitimately share the same filename.
             var historical = session
@@ -1450,7 +1450,9 @@ actor SessionPersistence: SessionPersistenceClient {
             guard entriesAreValid(in: historical) else { return false }
         }
         for entry in session.entries {
-            guard relativeFileIDIsValid(
+            // Uniqueness uses the scanner's spelling, so the legacy literal
+            // `;` and `%3B` cannot give one physical file two entries.
+            guard let fileKey = relativeFileIDKey(
                     entry.filename,
                     requiresCanonicalPercentEncoding: usesExactIDs
                   ),
@@ -1477,24 +1479,24 @@ actor SessionPersistence: SessionPersistenceClient {
                         physicalFileIdentityIsValid
                     ) == true,
                   physicalFileIDs.insert(
-                    Data(entry.filename.utf8)
+                    Data(fileKey.utf8)
                   ).inserted else {
                 return false
             }
             if let paired = entry.pairedFilename {
                 guard !paired.contains("/"),
-                      relativeFileIDIsValid(
+                      let pairedKey = relativeFileIDKey(
                         paired,
                         requiresCanonicalPercentEncoding: usesExactIDs
                       ) else {
                     return false
                 }
                 let pairedID: String
-                if let separator = entry.filename.lastIndex(of: "/") {
+                if let separator = fileKey.lastIndex(of: "/") {
                     pairedID =
-                        "\(entry.filename[..<separator])/\(paired)"
+                        "\(fileKey[..<separator])/\(pairedKey)"
                 } else {
-                    pairedID = paired
+                    pairedID = pairedKey
                 }
                 guard physicalFileIDs.insert(
                     Data(pairedID.utf8)
@@ -1540,31 +1542,76 @@ actor SessionPersistence: SessionPersistenceClient {
         }
     }
 
-    private static func relativeFileIDIsValid(
+    /// The key that identifies `fileID`'s physical file, or nil when the ID
+    /// is invalid. Exact IDs key by the scanner's spelling; legacy IDs by
+    /// their own bytes.
+    private static func relativeFileIDKey(
         _ fileID: String,
         requiresCanonicalPercentEncoding: Bool
-    ) -> Bool {
+    ) -> String? {
         guard !fileID.isEmpty,
               !fileID.hasPrefix("/"),
               !fileID.hasSuffix("/"),
               !fileID.contains("//") else {
-            return false
+            return nil
         }
         if requiresCanonicalPercentEncoding {
-            return exactFileIDIsCanonical(fileID)
+            return canonicalExactFileID(fileID)
         }
         let components = (fileID as NSString).pathComponents
-        return !components.contains(".") && !components.contains("..")
+        return !components.contains(".") && !components.contains("..") ? fileID : nil
     }
 
-    /// Schema-3 IDs are the exact ASCII output of
-    /// `URL.path(percentEncoded: true)`, relative to the opened folder.
-    /// Decode and rebuild that filesystem representation so malformed escapes,
-    /// direct Unicode, encoded separators, and alternate spellings cannot
-    /// identify the same physical file under different keys.
-    private static func exactFileIDIsCanonical(_ fileID: String) -> Bool {
+    /// Rewrites each accepted alias of an exact ID to the scanner's spelling,
+    /// so restoration, recovery and nested merging find the scanned file by
+    /// its `file.id`. Today the only alias is a literal `;` (see
+    /// `canonicalExactFileID`); every other ID is returned unchanged. Run only
+    /// on snapshots that passed `entriesAreValid`.
+    static func normalizingExactFileIDs(in session: SessionFile) -> SessionFile {
+        guard session.fileIDEncoding == .percentEncodedFileSystemPath else { return session }
+        // Only a literal `;` is ever rewritten; skip the URL rebuild otherwise.
+        func canonical(_ id: String) -> String {
+            id.utf8.contains(0x3B) ? canonicalExactFileID(id) ?? id : id
+        }
+        func normalize(_ entry: inout SessionEntry) {
+            entry.filename = canonical(entry.filename)
+            entry.pairedFilename = entry.pairedFilename.map(canonical)
+        }
+        var result = session
+        for index in result.entries.indices { normalize(&result.entries[index]) }
+        if let records = result.recoveryEntries {
+            result.recoveryEntries = records.map { record in
+                var record = record
+                normalize(&record.entry)
+                record.resolvedFileID = record.resolvedFileID.map(canonical)
+                return record
+            }
+        }
+        return result
+    }
+
+    /// Schema-3 IDs are the scanner's percent-encoded path
+    /// (`FolderScanner.scannerURL`), relative to the opened folder. Decode and
+    /// rebuild that filesystem representation so malformed escapes, direct
+    /// Unicode, encoded separators, and alternate spellings cannot identify
+    /// the same physical file under different keys. Returns that canonical
+    /// spelling, or nil when `fileID` is invalid.
+    ///
+    /// Compatibility: 1.7–1.14 validated against Swift's
+    /// `URL(fileURLWithFileSystemRepresentation:)`, which on current macOS
+    /// leaves `;` literal while the scanner writes `%3B`. That rejected every
+    /// save of a folder with such a name. The literal-`;` spelling stays
+    /// accepted (keyed, and normalized on read, to `%3B`) so no sidecar the
+    /// old reader accepted is now refused.
+    static func canonicalExactFileID(_ fileID: String) -> String? {
         let encoded = Array(fileID.utf8)
-        guard encoded.allSatisfy({ $0 < 0x80 }) else { return false }
+        guard encoded.allSatisfy({ $0 < 0x80 }) else { return nil }
+        // Fast path: RFC 3986 unreserved bytes and `/` are never escaped, so
+        // such an ID is its own canonical spelling once its components pass
+        // the same checks below. Typical camera names never build a URL.
+        if encoded.allSatisfy(isUnreservedOrSeparator) {
+            return componentsAreValid(encoded[...]) ? fileID : nil
+        }
 
         var raw: [UInt8] = []
         raw.reserveCapacity(encoded.count)
@@ -1575,7 +1622,7 @@ actor SessionPersistence: SessionPersistenceClient {
                 guard index + 2 < encoded.count,
                       let high = hexadecimalNibble(encoded[index + 1]),
                       let low = hexadecimalNibble(encoded[index + 2]) else {
-                    return false
+                    return nil
                 }
                 raw.append((high << 4) | low)
                 index += 3
@@ -1584,20 +1631,10 @@ actor SessionPersistence: SessionPersistenceClient {
                 index += 1
             }
         }
-        guard !raw.contains(0) else { return false }
-        let components = raw.split(
-            separator: 0x2F,
-            omittingEmptySubsequences: false
-        )
-        guard components.allSatisfy({
-            !$0.isEmpty
-                && !($0.count == 1 && $0.first == 0x2E)
-                && !($0.count == 2
-                    && $0.first == 0x2E
-                    && $0.last == 0x2E)
-        }) else {
-            return false
-        }
+        // Swift's URL replaced invalid UTF-8 with U+FFFD, so 1.7–1.14 never
+        // accepted such names; keep refusing them rather than widen the guard.
+        guard !raw.contains(0), String(bytes: raw, encoding: .utf8) != nil else { return nil }
+        guard componentsAreValid(raw[...]) else { return nil }
 
         var representation = [Int8(bitPattern: 0x2F)]
         representation.append(
@@ -1605,14 +1642,35 @@ actor SessionPersistence: SessionPersistenceClient {
         )
         representation.append(0)
         let canonical = representation.withUnsafeBufferPointer { buffer in
-            URL(
-                fileURLWithFileSystemRepresentation: buffer.baseAddress!,
-                isDirectory: false,
-                relativeTo: nil
+            FolderScanner.scannerURL(
+                fileSystemRepresentation: buffer.baseAddress!,
+                isDirectory: false
             ).path(percentEncoded: true)
         }
-        guard canonical.hasPrefix("/") else { return false }
-        return Data(canonical.dropFirst().utf8) == Data(fileID.utf8)
+        guard canonical.hasPrefix("/") else { return nil }
+        let key = String(canonical.dropFirst())
+        if Data(key.utf8) == Data(fileID.utf8) { return key }
+        // The 1.7–1.14 spelling: every `%3B` escape as a literal `;`. In a
+        // canonical key `%` only starts an escape, so this is exact.
+        return Data(key.replacingOccurrences(of: "%3B", with: ";").utf8)
+            == Data(fileID.utf8) ? key : nil
+    }
+
+    /// Non-empty components other than `.` and `..`, split on `/`.
+    private static func componentsAreValid(_ bytes: ArraySlice<UInt8>) -> Bool {
+        bytes.split(separator: 0x2F, omittingEmptySubsequences: false).allSatisfy {
+            !$0.isEmpty
+                && !($0.count == 1 && $0.first == 0x2E)
+                && !($0.count == 2 && $0.first == 0x2E && $0.last == 0x2E)
+        }
+    }
+
+    /// ALPHA, DIGIT, `-`, `.`, `_`, `~` (RFC 3986 unreserved) and `/`.
+    private static func isUnreservedOrSeparator(_ byte: UInt8) -> Bool {
+        switch byte {
+        case 0x30...0x39, 0x41...0x5A, 0x61...0x7A, 0x2D, 0x2E, 0x5F, 0x7E, 0x2F: return true
+        default: return false
+        }
     }
 
     private static func hexadecimalNibble(_ byte: UInt8) -> UInt8? {

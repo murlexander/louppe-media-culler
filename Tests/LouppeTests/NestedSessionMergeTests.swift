@@ -687,11 +687,10 @@ final class NestedSessionMergeTests: XCTestCase {
 
     func testDecomposedSpacedAndReservedNamesMergeInBothDirections() async throws {
         let tree = try makeTree()
-        // NFD é, spaces, % and # in both the folder and the file names. A `;`
-        // name cannot be saved at all yet (the snapshot validator rebuilds
-        // IDs with Swift's URL, which keeps `;`, while the scanner writes %3B).
-        let child = tree.archive.appendingPathComponent("E\u{301}te\u{301} #1 50% x")
-        let cafe = "Cafe\u{301} #2 %.png", spaced = "b b.png"
+        // NFD é, spaces, %, # and ; in both the folder and the file names
+        // (the scanner spells `;` as %3B; 1.7–1.14 could not save it at all).
+        let child = tree.archive.appendingPathComponent("E\u{301}te\u{301} #1 50% x;y")
+        let cafe = "Cafe\u{301} #2 %;.png", spaced = "b b.png"
         try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
         for name in [cafe, spaced] { try FileManager.default.copyItem(at: tree.a, to: child.appendingPathComponent(name)) }
 
@@ -721,6 +720,27 @@ final class NestedSessionMergeTests: XCTestCase {
         XCTAssertEqual(try metadata(reopened, named: cafe).rating, .yes)
         XCTAssertEqual(reopened.nestedSessionMergeSummary, .init(changedFiles: 1, contributingSessions: 1))
         XCTAssertEqual(spy.starts, spy.stops)
+    }
+
+    /// A child sidecar from 1.7–1.14 may spell `;` literally; it still merges
+    /// under the scanner's `%3B` key, and stays byte-for-byte.
+    func testLiteralSemicolonChildSidecarMergesIntoParent() async throws {
+        let tree = try makeTree()
+        let child = tree.archive.appendingPathComponent("Day;3")
+        let photo = child.appendingPathComponent("G;1.png")
+        try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: tree.a, to: photo)
+        try write(SessionFile(version: 7, sourcePath: child.path, scannedAt: at(0), entries: [
+            try entry(photo, "G;1.png", rating: .yes, ratedAt: at(10), stars: .three, starsAt: at(10))],
+                              fileIDEncoding: .percentEncodedFileSystemPath, snapshotGeneration: 1), in: child)
+        let before = bytes([child])
+        let store = store(tree, spy: Spy())
+        try await open(store, tree.archive)
+        XCTAssertEqual(try metadata(store, "Day%3B3/G%3B1.png").rating, .yes)
+        XCTAssertEqual(try metadata(store, "Day%3B3/G%3B1.png").starRating, .three)
+        XCTAssertEqual(store.nestedSessionMergeSummary, .init(changedFiles: 1, contributingSessions: 1))
+        XCTAssertEqual(try saved(tree.archive)["Day%3B3/G%3B1.png"]?.rating, Rating.yes.rawValue)
+        XCTAssertEqual(bytes([child]), before)
     }
 
     // MARK: Save failure and retry

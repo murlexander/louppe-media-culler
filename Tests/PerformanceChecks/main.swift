@@ -3410,6 +3410,40 @@ struct PerformanceChecks {
                 + "\(milliseconds(captureDuration)) ms, background build "
                 + "\(milliseconds(buildDuration)) ms"
         )
+        try exactFileIDValidationScaleBaseline()
+    }
+
+    /// Every read and save validates each exact ID (`canonicalExactFileID`);
+    /// reads also normalize the legacy `;` spelling. Typical camera names stay
+    /// on the fast path; spaced names and `;` names take the URL rebuild.
+    private static func exactFileIDValidationScaleBaseline() throws {
+        let count = 100_000
+        func measure(_ ids: [String]) throws -> Duration {
+            let session = SessionFile(
+                version: SessionConstants.currentSchemaVersion, sourcePath: "/tmp/IDScale", scannedAt: Date(),
+                entries: ids.map { SessionEntry(filename: $0, pairedFilename: nil,
+                                                rating: Rating.undecided.rawValue, ratedAt: nil) },
+                fileIDEncoding: .percentEncodedFileSystemPath)
+            let clock = ContinuousClock()
+            var keys = 0
+            var normalized: SessionFile?
+            let duration = clock.measure {
+                keys = ids.reduce(0) { $0 + (SessionPersistence.canonicalExactFileID($1) == nil ? 0 : 1) }
+                normalized = SessionPersistence.normalizingExactFileIDs(in: session)
+            }
+            try expect(keys == ids.count, "every scanner-spelled ID should validate")
+            try expect(normalized?.entries.last?.filename == ids.last?.replacingOccurrences(of: ";", with: "%3B"),
+                       "normalization should keep scanner IDs and rewrite only the legacy `;` spelling")
+            return duration
+        }
+        let plain = try measure((0..<count).map { String(format: "Day%03d/IMG_%06d.JPG", $0 % 100, $0) })
+        let spaced = try measure((0..<count).map { String(format: "Day%%20%03d/IMG%%20%06d.JPG", $0 % 100, $0) })
+        let legacy = try measure((0..<count).map { String(format: "Day;%03d/IMG_%06d.JPG", $0 % 100, $0) })
+        print(
+            "Exact file IDs \(count): validate + normalize plain \(milliseconds(plain)) ms, "
+                + "spaced \(milliseconds(spaced)) ms, legacy `;` \(milliseconds(legacy)) ms"
+        )
+        try expect(plain < .seconds(2), "validating 100,000 plain IDs should stay well under 2 s")
     }
 
     /// Discovery plus nested-session merge on a real disposable tree: once

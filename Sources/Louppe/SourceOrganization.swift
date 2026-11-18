@@ -659,9 +659,11 @@ enum SourceOrganizationPlanner {
             if let primaryMapping = mappings.last(where: {
                 $0.itemID == item.id && $0.source == item.primaryURL
             }) {
+                // Spell the prediction as the rescan will, or a `;` in the
+                // new name loses the selection and undo mapping.
                 destinationItemIDs[item.id] = FolderScanner.relativeFileIdentity(
-                    of: primaryMapping.destination,
-                    under: sourceFolder
+                    of: FolderScanner.scannerSpelledURL(primaryMapping.destination),
+                    under: FolderScanner.scannerSpelledURL(sourceFolder)
                 )
             }
         }

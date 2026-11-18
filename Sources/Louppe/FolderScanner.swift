@@ -1638,6 +1638,23 @@ enum FolderScanner {
         url.path(percentEncoded: true)
     }
 
+    /// The scanner's file URL for exact filesystem bytes: CoreFoundation's
+    /// constructor, as `FileManager`'s enumerator uses. Swift's
+    /// `URL(fileURLWithFileSystemRepresentation:)` leaves `;` unescaped where
+    /// this writes `%3B`. File IDs, sidecar validation and nested-session keys
+    /// all derive their spelling here so they cannot diverge again.
+    static func scannerURL(fileSystemRepresentation path: UnsafePointer<CChar>, isDirectory: Bool) -> URL {
+        NSURL(fileURLWithFileSystemRepresentation: path, isDirectory: isDirectory, relativeTo: nil) as URL
+    }
+
+    /// `url` re-spelled as discovery would produce it, for IDs predicted from
+    /// URLs that Louppe constructed itself (for example a rename target).
+    static func scannerSpelledURL(_ url: URL) -> URL {
+        url.withUnsafeFileSystemRepresentation { path in
+            path.map { scannerURL(fileSystemRepresentation: $0, isDirectory: url.hasDirectoryPath) }
+        } ?? url
+    }
+
     static func relativeFileIdentity(of url: URL, under root: URL) -> String {
         let path = fileSystemIdentityPath(for: url)
         let rootPath = fileSystemIdentityPath(for: root)
@@ -2302,11 +2319,9 @@ extension FolderScanner {
             String(decoding: bytes, as: UTF8.self).decomposedStringWithCanonicalMapping.lowercased()
         }
 
-        /// CoreFoundation's constructor, as the enumerator uses: Swift's
-        /// `URL(fileURLWithFileSystemRepresentation:)` leaves `;` unescaped
-        /// where the enumerator writes `%3B`, which would change file IDs.
+        /// The enumerator's spelling (`FolderScanner.scannerURL`), which owns file IDs.
         static func url(_ path: [UInt8], isDirectory: Bool) -> URL {
-            withCPath(path) { NSURL(fileURLWithFileSystemRepresentation: $0, isDirectory: isDirectory, relativeTo: nil) as URL }
+            withCPath(path) { FolderScanner.scannerURL(fileSystemRepresentation: $0, isDirectory: isDirectory) }
         }
 
         private static func lstat(_ path: [UInt8], _ info: inout stat) -> Int32 {

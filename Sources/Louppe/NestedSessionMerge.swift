@@ -622,9 +622,9 @@ enum NestedSessionMerge {
         return bytes.first == 47 ? bytes : nil
     }
 
-    /// The scanner's spelling: CoreFoundation's file URL constructor from raw
-    /// bytes, then the percent-encoded path. Percent-encoding is per byte, so
-    /// an ancestor's spelling is a prefix of the opened folder's.
+    /// The scanner's spelling (`FolderScanner.scannerURL` from raw bytes),
+    /// then the percent-encoded path. Percent-encoding is per byte, so an
+    /// ancestor's spelling is a prefix of the opened folder's.
     private static func encodedPath(_ bytes: [UInt8]) -> String {
         url(bytes, isDirectory: false).path(percentEncoded: true)
     }
@@ -634,8 +634,7 @@ enum NestedSessionMerge {
         terminated.append(0)
         return terminated.withUnsafeBufferPointer { buffer in
             buffer.withMemoryRebound(to: CChar.self) {
-                NSURL(fileURLWithFileSystemRepresentation: $0.baseAddress!, isDirectory: isDirectory,
-                      relativeTo: nil) as URL
+                FolderScanner.scannerURL(fileSystemRepresentation: $0.baseAddress!, isDirectory: isDirectory)
             }
         }
     }
