@@ -1141,6 +1141,21 @@ precedence over remembered scope/position.
   Run BrowserScrollTests, GridScrollTests and PersistentVerticalScrollerTests
   before every installation; exercise unconstrained offsets and pixel wheel/
   momentum events as well as settled geometry and vertical follow-navigation.
+- The Grid's scroller date label (`ReviewCollectionKnobLabel`) observes the
+  stock scroller; never subclass or replace it. A window-scoped local monitor
+  arms only when the original press hits the knob (`testPart`), before
+  jump-to-click can move the knob; the scroll view's live-scroll notifications
+  then show, update and hide it inside AppKit's tracking loop. AppKit may post
+  that lifecycle twice per drag. It applies only to Grid sorted by capture date
+  outside Grouped Review, names the first visible item's month (O(log sections)
+  `firstVisiblePosition`, matching the viewport receipt) with
+  `AppDateFormat.yearAndMonth` or “No Date”, and sits inboard of the actual
+  scroller frame, which follows the app-wide direction (left in Arabic), not
+  SwiftUI's. The overlay ignores hits, AX and focus; the month is the scroller's
+  accessibility value description only while dragging. Its real-event tests
+  feed drags from an event-tracking timer, because the nested loop coalesces
+  queued drags, and prove the left gutter in a child process launched with
+  right-to-left direction, because AppKit caches the app direction at first use.
 - View → Gallery/Grid uses an inline native picker bound to the focused
   session’s view mode, with the existing presentation gate and no duplicate
   key equivalents. Toolbar, menu, and G/Tab stay synchronized.

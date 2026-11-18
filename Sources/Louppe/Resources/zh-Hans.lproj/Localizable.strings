@@ -2177,3 +2177,6 @@
 "Remove stars and color labels while keeping Yes and No decisions" = "清除星级和颜色标签，保留“是”和“否”的决定";
 "reset stars" = "重置星级";
 "remove color labels" = "清除颜色标签";
+
+/* 1.15 scroller date label */
+"No Date" = "无日期";

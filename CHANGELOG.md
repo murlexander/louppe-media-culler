@@ -7,6 +7,7 @@
 - After Yes or No, move to the next item and stop at the last one instead of jumping back to the first unmarked photo.
 - Clear stars and color labels with Edit → Clear Stars and Labels…, which keeps decisions; Clear All Decisions (R) still keeps stars and labels.
 - Include decisions, stars and color labels saved earlier in subfolders when you open their parent folder, and from a pinned or recent parent when you open a subfolder. The latest change wins, only the same verified file is updated, and other folders' session files stay untouched.
+- Show the month beside the Grid scroll bar's knob while you drag it, when sorted by capture date.
 
 ## 1.14.1 (19) — 2026-11-16
 

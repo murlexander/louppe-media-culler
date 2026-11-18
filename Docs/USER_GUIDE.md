@@ -47,6 +47,9 @@ greyed out until loading finishes. Esc clears the selection, then cancels.
 
 *Grid for comparing and selecting frames.*
 
+When Grid is sorted by date, dragging the scroll bar's knob shows the month and year
+of the photos you're passing.
+
 The toolbar shows the item position, Yes and No totals (No appears once
 something is marked No) and save status. Unmarked is a normal state, not
 unfinished work. Clicking the status shows review tips while they are enabled. The floating photo control provides Fit and 30–400% zoom.

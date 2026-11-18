@@ -35,7 +35,8 @@ struct GridView: View {
                         viewportSize: geometry.size,
                         locale: locale,
                         onPointerCurrentChange: suppressFollowForPointerAction,
-                        controller: collectionController
+                        controller: collectionController,
+                        showsKnobMonth: store.sort.key == .captureDate && !store.isGroupedReviewActive
                     )
                     .equatable()
                     .environment(\.mediaReadAccess, store.mediaReadAccess)
@@ -126,9 +127,13 @@ struct GridCollectionContent: View, Equatable {
             && lhs.viewportSize == rhs.viewportSize
             && lhs.locale == rhs.locale
             && lhs.groups == rhs.groups
+            && lhs.showsKnobMonth == rhs.showsKnobMonth
     }
 
     var controller: ReviewCollectionController? = nil
+    /// Dragging the scroller knob names the first visible item's capture
+    /// month. Only chronological orders qualify; Grouped Review reorders.
+    var showsKnobMonth = false
 
     #if LOUPPE_TEST_SEAMS
     static var didConstruct: (() -> Void)?
@@ -180,7 +185,14 @@ struct GridCollectionContent: View, Equatable {
                     store.setSelection(Set(frames.filter { $0.value.intersects(rect) }.map(\.key)))
                 },
                 ended: { store.commitSelectionAnchor() }
-            )
+            ),
+            scrollerLabel: showsKnobMonth ? ReviewCollectionScrollerLabel { entry in
+                // Read the live sort: SwiftUI may not update inside AppKit's tracking loop.
+                guard store.sort.key == .captureDate, !store.isGroupedReviewActive,
+                      store.items.indices.contains(entry.index), store.items[entry.index].id == entry.id
+                else { return nil }
+                return store.items[entry.index].captureDate.map(AppDateFormat.yearAndMonth) ?? L10n.text("No Date")
+            } : nil
         ) { entry in
             AnyView(GridCell(store: store, index: entry.index, id: entry.id,
                              onPointerCurrentChange: onPointerCurrentChange,

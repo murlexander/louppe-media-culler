@@ -2160,3 +2160,6 @@
 "Remove stars and color labels while keeping Yes and No decisions" = "स्टार रेटिंग और रंग लेबल हटाएँ; “हाँ” और “नहीं” के निर्णय रखें";
 "reset stars" = "स्टार रीसेट करें";
 "remove color labels" = "रंग लेबल हटाएँ";
+
+/* 1.15 scroller date label */
+"No Date" = "कोई तारीख नहीं";

@@ -45,6 +45,7 @@ struct ReviewCollection: NSViewRepresentable {
     let style: ReviewCollectionStyle
     var controller: ReviewCollectionController?
     var rubberBand: ReviewCollectionRubberBand? = nil
+    var scrollerLabel: ReviewCollectionScrollerLabel? = nil
     let cell: (ReviewCollectionEntry) -> AnyView
     @Environment(\.self) private var environment
 
@@ -60,6 +61,7 @@ struct ReviewCollection: NSViewRepresentable {
         PersistentVerticalScroller.configure(scroll)
         document.configure(projection: projection, style: style, controller: controller,
                            rubberBand: rubberBand, environment: environment, cell: cell)
+        scroll.configureKnobLabel(scrollerLabel, environment: environment)
         return scroll
     }
 
@@ -68,15 +70,31 @@ struct ReviewCollection: NSViewRepresentable {
         (scroll.documentView as? ReviewCollectionDocument)?.configure(
             projection: projection, style: style, controller: controller,
             rubberBand: rubberBand, environment: environment, cell: cell)
+        scroll.configureKnobLabel(scrollerLabel, environment: environment)
     }
 
     static func dismantleNSView(_ scroll: ReviewCollectionScrollView, coordinator: ()) {
         (scroll.documentView as? ReviewCollectionDocument)?.dismantle()
+        scroll.configureKnobLabel(nil, environment: EnvironmentValues())
     }
 }
 
 final class ReviewCollectionScrollView: NSScrollView {
+    /// Created only for a collection that opts into the knob readout.
+    private(set) var knobLabel: ReviewCollectionKnobLabel?
+
+    func configureKnobLabel(_ label: ReviewCollectionScrollerLabel?, environment: EnvironmentValues) {
+        if label != nil, knobLabel == nil { knobLabel = ReviewCollectionKnobLabel(scroll: self) }
+        knobLabel?.configure(label, environment: environment)
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        knobLabel?.bind()
+    }
+
     override func scrollWheel(with event: NSEvent) {
+        knobLabel?.noteWheel()
         ForegroundWorkCoordinator.shared.noteInteraction()
         super.scrollWheel(with: event)
         // Distinguish native input from programmatic follow/layout without
@@ -495,6 +513,14 @@ final class ReviewCollectionDocument: NSView {
         if !updating, let projection, let geometry {
             realizeViewport(projection: projection, geometry: geometry)
         }
+    }
+
+    /// The scroller readout's anchor: the first visible item in reading order.
+    func firstVisibleEntry() -> (position: Int, entry: ReviewCollectionEntry)? {
+        guard let projection, let geometry, let clip = enclosingScrollView?.contentView,
+              let position = geometry.firstVisiblePosition(in: clip.bounds),
+              projection.entries.indices.contains(position) else { return nil }
+        return (position, projection.entries[position])
     }
 
     func snapshotViewport() -> ReviewCollectionViewportReceipt? {

@@ -2160,3 +2160,6 @@
 "Remove stars and color labels while keeping Yes and No decisions" = "Remove as estrelas e etiquetas de cor e mantém as decisões Sim e Não";
 "reset stars" = "redefinir estrelas";
 "remove color labels" = "remover etiquetas de cor";
+
+/* 1.15 scroller date label */
+"No Date" = "Sem data";

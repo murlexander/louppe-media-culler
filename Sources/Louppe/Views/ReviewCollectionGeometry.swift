@@ -171,6 +171,28 @@ struct ReviewCollectionGeometry {
                       width: itemWidth, height: itemHeight)
     }
 
+    /// The first item in reading order whose row intersects `visible`: the same
+    /// item a viewport receipt names. O(log sections) without visiting rows.
+    func firstVisiblePosition(in visible: CGRect) -> Int? {
+        var low = 0
+        var high = sections.count
+        while low < high {
+            let mid = (low + high) / 2
+            if sections[mid].bottom <= visible.minY { low = mid + 1 } else { high = mid }
+        }
+        let stride = itemHeight + spacing
+        for section in sections[low...] {
+            if section.itemsTop >= visible.maxY { return nil }
+            guard !section.entryRange.isEmpty else { continue }
+            var row = max(0, Int(floor((visible.minY - section.itemsTop) / stride)))
+            if section.itemsTop + CGFloat(row) * stride + itemHeight <= visible.minY { row += 1 }
+            let position = section.entryRange.lowerBound + row * columns
+            guard position < section.entryRange.upperBound else { continue }
+            return section.itemsTop + CGFloat(row) * stride < visible.maxY ? position : nil
+        }
+        return nil
+    }
+
     func elements(in rect: CGRect, projection: ReviewCollectionProjection) -> [Element] {
         guard !sections.isEmpty else { return [] }
         var low = 0
