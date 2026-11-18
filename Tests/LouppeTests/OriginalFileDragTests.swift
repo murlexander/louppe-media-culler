@@ -375,6 +375,85 @@ final class OriginalFileDragTests: XCTestCase {
                           "Each lane checks cancellation before every file")
     }
 
+    func testStalledSweepIsNeverStackedAndOnlyTheNewestGestureReads() async throws {
+        let fixture = try SelectionInteractionFixture()
+        defer { fixture.remove() }
+        let store = try fixture.readyStore(count: 4)
+        store.setIndex(0)
+        let (host, window) = mount(GridView(store: store), size: CGSize(width: 700, height: 560))
+        defer { close(store, window) }
+        try await SelectionInteractionFixture.settle(host)
+        let surface = try mediaSurface(forItem: 0, store: store, in: host)
+
+        // A stalled network share: every read blocks until the gate opens.
+        let gate = DragGate()
+        let entered = DragEntryLog()
+        OriginalFileDragArm.presenceCheckForTesting = { file in
+            entered.record(file.fileID)
+            gate.waitUntilOpen()
+            return true
+        }
+        defer { OriginalFileDragArm.presenceCheckForTesting = nil; gate.open() }
+        OriginalFileDragArm.isPointerHeld = { true }
+        defer { OriginalFileDragArm.isPointerHeld = { NSEvent.pressedMouseButtons & 1 != 0 } }
+        let scopes = DragReadCounter()
+        let access = MediaReadAccess(authorizedURL: fixture.root, resourceAccess: SecurityScopedResourceAccess(
+            start: { _ in scopes.increment(); return true }, stop: { _ in scopes.decrement() }))
+        func targets(_ prefix: String) -> OriginalFileTargets {
+            OriginalFileTargets(files: (0..<40).map {
+                OriginalFileTarget(fileID: "\(prefix)\($0)", url: URL(fileURLWithPath: "/Volumes/NAS/\(prefix)\($0).CR3"),
+                                   itemIndex: 0)
+            }, leaderFileIndex: 0)
+        }
+        func gesture(_ prefix: String, number: Int) throws -> OriginalFileDragArm {
+            let arm = OriginalFileDragArm()
+            let payload = targets(prefix)
+            arm.arm(event: try mouse(.leftMouseDown, surface, CGPoint(x: 0.5, y: 0.72), window, number: number),
+                    at: .zero, resolve: {
+                OriginalFileDragPlan(targets: payload, mediaFrame: surface.bounds, leaderImage: nil,
+                                     readAccess: access, cachedImage: { _ in nil }, isStillValid: { true })
+            })
+            arm.dragged(try mouse(.leftMouseDragged, surface, CGPoint(x: 0.9, y: 0.95), window, number: number + 1),
+                        to: CGPoint(x: 20, y: 20), in: surface)
+            XCTAssertTrue(arm.hasPendingSweepForTesting)
+            return arm
+        }
+
+        let first = try gesture("a", number: 1)
+        let deadline = ContinuousClock.now + .seconds(5)
+        while entered.count < OriginalFileTargets.checkConcurrency, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        XCTAssertEqual(entered.count, OriginalFileTargets.checkConcurrency, "Every lane is blocked")
+        // Cancel and re-arm twice while the first sweep's reads are stuck.
+        first.mouseUp()
+        let second = try gesture("b", number: 3)
+        try await Task.sleep(for: .milliseconds(100))
+        second.mouseUp()
+        let third = try gesture("c", number: 5)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(entered.count, OriginalFileTargets.checkConcurrency, "No further reads enter while reads are blocked")
+        XCTAssertEqual(scopes.value, 3, "Each sweep keeps its read scope until the stuck reads return")
+        XCTAssertTrue(started.isEmpty)
+
+        gate.open()
+        await third.waitForExistenceCheckForTesting()
+        let ids = entered.ids
+        XCTAssertFalse(ids.contains { $0.hasPrefix("b") }, "The superseded gesture never reads")
+        XCTAssertEqual(ids.filter { $0.hasPrefix("a") }.count, OriginalFileTargets.checkConcurrency,
+                       "The cancelled sweep stops after its in-flight reads")
+        XCTAssertEqual(ids.filter { $0.hasPrefix("c") }.count, 40, "The newest gesture checks every file")
+        let firstC = try XCTUnwrap(ids.firstIndex { $0.hasPrefix("c") })
+        XCTAssertFalse(ids[firstC...].contains { $0.hasPrefix("a") }, "Its reads begin only after the stuck ones return")
+        XCTAssertEqual(started.count, 1, "The held pointer gets its drag")
+        XCTAssertEqual(try pasteboardURLs(try XCTUnwrap(started.first).items).count, 40)
+        XCTAssertEqual(scopes.value, 1, "Only the live drag session keeps a read scope")
+        started.forEach { $0.source.finish() }
+        started = []
+        XCTAssertEqual(scopes.value, 0)
+        _ = second
+    }
+
     func testHeldPointerStartsTheDragWhenTheCheckEnds() async throws {
         let fixture = try SelectionInteractionFixture()
         defer { fixture.remove() }
@@ -811,6 +890,23 @@ private final class DragReadCounter: @unchecked Sendable {
     func increment() { lock.withLock { count += 1 } }
     func decrement() { lock.withLock { count -= 1 } }
     func reset() { lock.withLock { count = 0 } }
+}
+
+/// Blocks injected reads until opened, like a stalled network volume.
+private final class DragGate: @unchecked Sendable {
+    private let condition = NSCondition()
+    private var isOpen = false
+    func open() { condition.lock(); isOpen = true; condition.broadcast(); condition.unlock() }
+    func waitUntilOpen() { condition.lock(); while !isOpen { condition.wait() }; condition.unlock() }
+}
+
+/// The order in which injected reads began.
+private final class DragEntryLog: @unchecked Sendable {
+    private let lock = NSLock()
+    private var entries: [String] = []
+    var ids: [String] { lock.withLock { entries } }
+    var count: Int { lock.withLock { entries.count } }
+    func record(_ id: String) { lock.withLock { entries.append(id) } }
 }
 
 /// What macOS and Launch Services do to a file opened elsewhere: an extended

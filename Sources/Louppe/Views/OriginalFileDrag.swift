@@ -163,13 +163,19 @@ enum OriginalFileDragStarter {
 /// plain click resolves nothing and reads no files. Past 8 points the
 /// originals are resolved and one cancellable off-main identity sweep runs
 /// on bounded lanes. The session begins on the next drag event or, if the
-/// pointer is held still, as soon as the sweep ends. At most one sweep runs
-/// at a time and it ends with its gesture.
+/// pointer is held still, as soon as the sweep ends. At most one sweep reads
+/// files at a time and it ends with its gesture: a cancelled sweep stops at
+/// the next file, but a read blocked on a stalled volume can't be
+/// interrupted, so a newer gesture waits for it before reading anything.
+/// Only the newest waiting gesture survives.
 @MainActor
 final class OriginalFileDragArm {
     typealias Resolver = @MainActor () -> OriginalFileDragPlan?
     static let thresholdSquared: CGFloat = 8 * 8
     private static var activeSweep: OriginalFileSweepCancellation?
+    /// The latest sweep's off-main work, including its wait for the one
+    /// before; it ends only after that sweep's reads have returned.
+    private static var sweepIO: Task<OriginalFileTargets?, Never>?
 
     /// Starting a session after release would drop at the pointer at once,
     /// so a completed sweep starts one only while the button is still down.
@@ -231,13 +237,20 @@ final class OriginalFileDragArm {
         if let presenceCheckForTesting = Self.presenceCheckForTesting { isPresent = presenceCheckForTesting }
         #endif
         let check = isPresent
+        let previous = Self.sweepIO
+        let io = Task.detached(priority: .userInitiated) { () -> OriginalFileTargets? in
+            // Earlier reads may still be blocked; never stack a second sweep.
+            _ = await previous?.value
+            return withExtendedLifetime(token) {
+                guard !cancellation.isCancelled else { return nil }
+                return targets.existing(isCancelled: { cancellation.isCancelled }, isPresent: check)
+            }
+        }
+        Self.sweepIO = io
         self.check = Task { [weak self] in
-            let present = await Task.detached(priority: .userInitiated) {
-                withExtendedLifetime(token) {
-                    targets.existing(isCancelled: { cancellation.isCancelled }, isPresent: check)
-                }
-            }.value
+            let present = await io.value
             if Self.activeSweep === cancellation { Self.activeSweep = nil }
+            if Self.sweepIO == io { Self.sweepIO = nil }
             guard let self, !Task.isCancelled, !cancellation.isCancelled, self.isArmed else { return }
             self.available = present
             self.checkFinished = true
