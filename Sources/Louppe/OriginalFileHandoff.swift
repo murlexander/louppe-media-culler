@@ -167,27 +167,34 @@ extension SessionStore {
     func originalFileTargets(for origin: OriginalFilesOrigin) -> OriginalFileTargets? {
         guard canHandOffOriginals else { return nil }
         let selection = effectiveSelection
-        let indices: [Int]
+        let members: Set<Int>
         let leaderItem: Int?
         switch origin {
         case .selection:
-            indices = Array(selection)
+            members = selection
             leaderItem = selection.contains(currentIndex) ? currentIndex : nil
         case .item(let index, let revision):
             guard items.indices.contains(index),
                   items[index].contentRevision == revision,
                   visiblePosition(ofItem: index) != nil else { return nil }
-            indices = selection.contains(index) ? Array(selection) : [index]
+            members = selection.contains(index) ? selection : [index]
             leaderItem = index
         }
-        let ordered = indices
-            .compactMap { index -> (position: Int, index: Int)? in
-                guard items.indices.contains(index),
-                      let position = visiblePosition(ofItem: index) else { return nil }
-                return (position, index)
-            }
-            .sorted { $0.position < $1.position }
-            .map(\.index)
+        let ordered: [Int]
+        if members.count == visibleIndices.count {
+            // Select All (or as many as are visible): the visible order is
+            // already the payload order; walking it replaces the sort.
+            ordered = visibleIndices.filter(members.contains)
+        } else {
+            ordered = members
+                .compactMap { index -> (position: Int, index: Int)? in
+                    guard items.indices.contains(index),
+                          let position = visiblePosition(ofItem: index) else { return nil }
+                    return (position, index)
+                }
+                .sorted { $0.position < $1.position }
+                .map(\.index)
+        }
         var seen = Set<String>()
         var files: [OriginalFileTarget] = []
         var leaderFileIndex: Int?

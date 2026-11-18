@@ -82,27 +82,26 @@ enum OriginalFileDragItems {
                      grabPoint: CGPoint) -> [NSDraggingItem] {
         let leaderFrame = frame(for: plan.mediaFrame, grabPoint: grabPoint)
         // The leader first, then its neighbours in payload order.
-        var imageOrder = [targets.leaderFileIndex]
-        imageOrder += targets.files.indices.filter { $0 != targets.leaderFileIndex }
-        let imaged = Array(imageOrder.prefix(maximumImages))
-        var images: [Int: NSImage] = [:]
-        for fileIndex in imaged {
-            let itemIndex = targets.files[fileIndex].itemIndex
-            let isLeaderItem = itemIndex == targets.files[targets.leaderFileIndex].itemIndex
-            images[fileIndex] = (isLeaderItem ? plan.leaderImage : nil)
-                ?? plan.cachedImage(itemIndex)
-                ?? genericIcon
+        var imaged = [targets.leaderFileIndex]
+        for fileIndex in targets.files.indices where imaged.count < maximumImages {
+            if fileIndex != targets.leaderFileIndex { imaged.append(fileIndex) }
         }
-        return targets.files.indices.map { fileIndex in
-            let item = NSDraggingItem(pasteboardWriter: targets.files[fileIndex].url as NSURL)
-            if let image = images[fileIndex], let rank = imaged.firstIndex(of: fileIndex) {
-                let offset = CGFloat(rank) * stackOffset
-                item.setDraggingFrame(leaderFrame.offsetBy(dx: offset, dy: offset), contents: image)
-            } else {
-                item.setDraggingFrame(leaderFrame, contents: nil)
-            }
+        let leaderItem = targets.files[targets.leaderFileIndex].itemIndex
+        var items = targets.files.map { file in
+            // Every file shares the leader's frame; only the stack has pixels.
+            let item = NSDraggingItem(pasteboardWriter: file.url as NSURL)
+            item.draggingFrame = leaderFrame
             return item
         }
+        for (rank, fileIndex) in imaged.enumerated() {
+            let itemIndex = targets.files[fileIndex].itemIndex
+            let image = (itemIndex == leaderItem ? plan.leaderImage : nil)
+                ?? plan.cachedImage(itemIndex)
+                ?? genericIcon
+            let offset = CGFloat(rank) * stackOffset
+            items[fileIndex].setDraggingFrame(leaderFrame.offsetBy(dx: offset, dy: offset), contents: image)
+        }
+        return items
     }
 
     /// The media rectangle scaled to a bounded drag image, keeping the

@@ -177,11 +177,17 @@ final class OriginalFileDragTests: XCTestCase {
         let session = try XCTUnwrap(started.first)
         let urls = try pasteboardURLs(session.items)
         XCTAssertEqual(urls.count, 1_200)
-        XCTAssertEqual(Set(urls), Set(store.items.map(\.primaryURL)))
+        XCTAssertEqual(urls, store.visibleIndices.map { store.items[$0].primaryURL.standardizedFileURL },
+                       "Select All keeps the visible order")
         let imaged = session.items.filter { ($0.imageComponents ?? []).contains { $0.contents != nil } }
-        XCTAssertLessThanOrEqual(imaged.count, OriginalFileDragItems.maximumImages,
-                                 "Drag images stay bounded regardless of selection size")
-        XCTAssertGreaterThan(imaged.count, 0)
+        XCTAssertEqual(imaged.count, OriginalFileDragItems.maximumImages,
+                       "Drag images stay bounded regardless of selection size")
+        let leader = session.items[session.source.targets.leaderFileIndex]
+        XCTAssertEqual(session.source.targets.files[session.source.targets.leaderFileIndex].itemIndex, 1)
+        XCTAssertTrue(imaged.contains { $0 === leader }, "The grabbed item leads the image stack")
+        for item in session.items where !imaged.contains(where: { $0 === item }) {
+            XCTAssertEqual(item.draggingFrame, leader.draggingFrame, "Every other file shares the leader's frame")
+        }
         for item in imaged {
             XCTAssertLessThanOrEqual(max(item.draggingFrame.width, item.draggingFrame.height),
                                      OriginalFileDragItems.maximumImageSide + 0.5)
