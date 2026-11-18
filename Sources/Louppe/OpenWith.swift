@@ -248,12 +248,21 @@ struct OpenWithPlan: Equatable, Sendable {
         case .defaultApplication:
             var order: [String] = []
             var groups: [String: (URL, [URL])] = [:]
+            // Launch Services returns the same few handlers for every file;
+            // standardize each distinct one once.
+            var keys: [URL: String] = [:]
             for url in present {
                 guard let application = workspace.defaultApplicationURL(toOpen: url) else {
                     plan.unhandled.append(url)
                     continue
                 }
-                let key = application.standardizedFileURL.path
+                let key: String
+                if let known = keys[application] {
+                    key = known
+                } else {
+                    key = application.standardizedFileURL.path
+                    keys[application] = key
+                }
                 if groups[key] == nil { order.append(key); groups[key] = (application, []) }
                 groups[key]?.1.append(url)
             }

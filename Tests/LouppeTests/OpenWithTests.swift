@@ -117,6 +117,20 @@ final class OpenWithTests: XCTestCase {
         XCTAssertEqual(plan.missing, [missing], "Missing originals are reported, never sent")
         XCTAssertEqual(workspace.openCount, 0, "Planning opens nothing")
 
+        // Another spelling of the same handler joins its group; a per-file
+        // override keeps its own app; request order follows the files.
+        let viewer = workspace.install("/Applications/Viewer.app", "com.example.viewer")
+        workspace.defaults[other] = URL(fileURLWithPath: "/Applications/./JPEG.app", isDirectory: true)
+        workspace.defaults[jpeg] = viewer
+        workspace.defaults[text] = jpegApp
+        let regrouped = OpenWithPlan.make(targets: targets, choice: .defaultApplication, workspace: workspace)
+        XCTAssertEqual(regrouped.requests, [
+            .init(applicationURL: rawApp, urls: [raw]),
+            .init(applicationURL: viewer, urls: [jpeg]),
+            .init(applicationURL: jpegApp, urls: [text, other]),
+        ])
+        workspace.defaults = [raw: rawApp, jpeg: jpegApp, other: jpegApp, missing: jpegApp]
+
         let preview = workspace.install("/System/Applications/Preview.app", "com.apple.Preview")
         let editor = PhotoEditorApplication(kind: .preview, url: preview, bundleIdentifier: "com.apple.Preview", title: "Preview")
         let named = OpenWithPlan.make(targets: targets, choice: .editor(editor), workspace: workspace)
