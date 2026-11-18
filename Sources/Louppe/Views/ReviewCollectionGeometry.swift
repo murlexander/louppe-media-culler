@@ -123,10 +123,10 @@ struct ReviewCollectionGeometry {
         let available: CGFloat
         switch style {
         case .browser:
-            available = ReviewCollectionMetrics.browserTileSize
+            available = ReviewCollectionMetrics.browserTileWidth
             columns = 1
-            itemWidth = ReviewCollectionMetrics.browserTileSize
-            itemHeight = ReviewCollectionMetrics.browserTileSize
+            itemWidth = ReviewCollectionMetrics.browserTileWidth
+            itemHeight = ReviewCollectionMetrics.browserTileHeight
             horizontalOrigin = ReviewCollectionMetrics.browserHorizontalInset
         case .grid(let thumbnailSize):
             available = ReviewCollectionMetrics.gridAvailableWidth(clipWidth: width)
@@ -253,7 +253,7 @@ struct ReviewGroupHeader: View {
     }
 }
 
-/// Vertical placement of a fitted photo in its square slot (top-left origin).
+/// Vertical placement of a fitted photo in its slot (top-left origin).
 /// Grid rests photos on their filename caption; the filmstrip centers them.
 enum TileMediaAlignment: Sendable {
     case center
@@ -261,7 +261,7 @@ enum TileMediaAlignment: Sendable {
 }
 
 /// The photo and every tile adornment share this aspect-fit rectangle.
-/// Unknown or nonvisual media keeps the original square slot.
+/// Unknown or nonvisual media fills the whole slot.
 enum TileMediaGeometry {
     static func fittedRect(in slot: CGRect, imageSize: CGSize?,
                            alignment: TileMediaAlignment = .center) -> CGRect {
@@ -280,15 +280,15 @@ enum TileMediaGeometry {
     }
 }
 
-/// Accepts the unchanged square proposal, placing its single decorated photo
+/// Accepts the unchanged slot proposal, placing its single decorated photo
 /// inside it without per-cell geometry readers or layout preferences.
 struct TilePhotoLayout: Layout {
     let imageSize: CGSize?
     var alignment: TileMediaAlignment = .center
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let side = ReviewCollectionMetrics.browserTileSize
-        return proposal.replacingUnspecifiedDimensions(by: CGSize(width: side, height: side))
+        proposal.replacingUnspecifiedDimensions(by: CGSize(width: ReviewCollectionMetrics.browserTileWidth,
+                                                            height: ReviewCollectionMetrics.browserTileHeight))
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {

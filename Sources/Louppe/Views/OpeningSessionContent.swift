@@ -210,8 +210,7 @@ private struct OpeningCell: View {
                              isCurrent: state.currentItem?.id == item.id, isSelected: isSelected,
                              mediaAlignment: surface == .grid ? .bottom : .center,
                              showsRatingBadge: true)
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1, contentMode: .fit)
+                .openingTileFrame(surface)
             if surface == .grid { ReviewGridCaption(title: item.displayName) }
         }
         .contentShape(Rectangle())
@@ -233,6 +232,19 @@ private struct OpeningCell: View {
             setColor: { _ in },
             toggleSelection: { state.select(item.id, toggling: true) }
         )
+    }
+}
+
+private extension View {
+    /// Ready's slot: Grid's square, Browser's shorter 102 × 80 frame, so
+    /// previews keep their size when Ready takes over.
+    @ViewBuilder
+    func openingTileFrame(_ surface: OpeningViewportSurface) -> some View {
+        if surface == .grid {
+            frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit)
+        } else {
+            frame(width: ReviewCollectionMetrics.browserTileWidth, height: ReviewCollectionMetrics.browserTileHeight)
+        }
     }
 }
 

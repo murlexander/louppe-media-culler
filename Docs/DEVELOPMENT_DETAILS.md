@@ -1053,8 +1053,15 @@ precedence over remembered scope/position.
   glyphs open shared cue names/values without selecting; Inspect in Info is explicit.
   Analysis statuses remain internal/filter state; tiles and Info show only matching
   cues, with no checked badge or empty quality-cues section.
-  Browser/Grid cues sit inside each square at bottom left, with stars/color at
-  top left and Yes/No at top right. All visible badges share a 20-point height
+  Browser/Grid cues sit inside each photo at bottom left, with stars/color at
+  top left and Yes/No at top right. Grid keeps that one row. Browser lays out
+  decision, stars, color and duration together (`BrowserTileBadges`,
+  `TileBadgeLayout.browserBadges`): stars and color move into the spare slot
+  width beside a narrow portrait, or wrap above the cue/duration row, and the
+  top row rises above a short photo, so no badge covers another or the cues'
+  whole 36-point target. Browser's cue icons join that layout and wrap to
+  stay inside the slot; a side column switches sides to clear a long duration.
+  All visible badges share a 20-point height
   and 6-point corner inset. Cues and color labels use individual dark circles;
   stars and duration use capsules. Grid retains a 40-point decision hit target
   aligned to the visible circle, and its canvas drag gate defers to controls. High ISO uses
@@ -1182,8 +1189,9 @@ precedence over remembered scope/position.
 - `PersistentVerticalScroller` keeps the native legacy scroller and gutter.
   Never substitute a hand-drawn subclass. Resolve mounted scroll views
   synchronously and coalesce initial deferred lookup to avoid queued work
-  delaying the indicator. Browser constrains its padded thumbnail column to
-  the 122-point clip width, excluding the native gutter. Its flexible outer
+  delaying the indicator. Browser slots are 102 × 80 points, and it constrains
+  its padded thumbnail column to the 122-point clip width, excluding the
+  native gutter. Its flexible outer
   document retains the full native pane width for short folders; only an empty
   gutter-width tail extends outside the clip. Align the column at physical X=0
   in both LTR and RTL, and keep the bridge on the column before this wrapper.

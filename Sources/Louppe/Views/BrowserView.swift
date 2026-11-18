@@ -163,6 +163,9 @@ struct BrowserRow: View {
                     // This observed row rebuilds the thumbnail's scalar
                     // metadata snapshots when shared file decisions change.
                     showsRatingBadge: true,
+                    badgePlacement: .browser(reservesCueRow: item.mediaKind == .photo
+                        && store.qualityCuePreferences.hasEnabledRules),
+                    browserCues: AnyView(QualityCueTileIcons(store: store, item: item, wraps: true)),
                     tileOverlay: AnyView(
                         ZStack {
                             // Native pointer surface under the cue controls:
@@ -183,16 +186,11 @@ struct BrowserRow: View {
                                 }
                             )
                             .accessibilityHidden(true)
-                            Color.clear.allowsHitTesting(false)
-                                .overlay(alignment: .bottomLeading) {
-                                    QualityCueTileIcons(store: store, item: item)
-                                        .padding(TileBadgeLayout.inset)
-                                }
                         }
                     )
                 )
-                .frame(width: ReviewCollectionMetrics.browserTileSize,
-                       height: ReviewCollectionMetrics.browserTileSize)
+                .frame(width: ReviewCollectionMetrics.browserTileWidth,
+                       height: ReviewCollectionMetrics.browserTileHeight)
                 .mediaTileAccessibility(
                     item: item,
                     isCurrent: item.id == store.currentItem?.id,

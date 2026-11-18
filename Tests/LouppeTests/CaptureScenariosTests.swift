@@ -117,6 +117,24 @@ final class CaptureScenariosTests: XCTestCase {
         Scenario(name: "session-sorted-gallery-rtl", description: "Current item after reversing the review order.") { fixture in
             try fixture.sortedCollection(mode: .gallery, direction: .rightToLeft)
         },
+        Scenario(name: "session-gallery-filmstrip", description: "Browser with landscape, portrait, square and panorama photos, video and audio; portraits carry stars, a color label and a decision.") { fixture in
+            try fixture.filmstrip(direction: .leftToRight)
+        },
+        Scenario(name: "session-gallery-filmstrip-rtl", description: "Browser with landscape, portrait, square and panorama photos, video and audio; portraits carry stars, a color label and a decision.") { fixture in
+            try fixture.filmstrip(direction: .rightToLeft)
+        },
+        Scenario(name: "session-gallery-filmstrip-cues", description: "Browser with quality cues on: a 2:3 portrait with four cues, stars and a label, and an hour-long 9:16 video.") { fixture in
+            try await fixture.filmstripWithCues(direction: .leftToRight)
+        },
+        Scenario(name: "session-gallery-filmstrip-cues-rtl", description: "Browser with quality cues on: a 2:3 portrait with four cues, stars and a label, and an hour-long 9:16 video.") { fixture in
+            try await fixture.filmstripWithCues(direction: .rightToLeft)
+        },
+        Scenario(name: "session-grid-filmstrip-cues", description: "Grid two size steps down with quality cues on: four cues on a 2:3 portrait.") { fixture in
+            try await fixture.filmstripWithCues(direction: .leftToRight, mode: .grid)
+        },
+        Scenario(name: "session-grid-filmstrip", description: "Grid two size steps down with the filmstrip's narrow portraits: badges stay on one row.") { fixture in
+            try fixture.filmstrip(direction: .leftToRight, mode: .grid)
+        },
         Scenario(name: "session-sorted-grid", description: "Current item after reversing the review order.") { fixture in
             try fixture.sortedCollection(mode: .grid, direction: .leftToRight)
         },
@@ -753,6 +771,83 @@ final class CaptureScenariosTests: XCTestCase {
                            size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         }
 
+        /// Mixed aspect ratios with every Browser badge: portraits are the
+        /// narrowest fitted frames that must still hold stars, label and decision.
+        /// The filmstrip with every cue rule on. The 2:3 portrait is half white,
+        /// half black at ISO 12,800 and 1/2 s (four cues); the video runs an hour.
+        func filmstripWithCues(direction: LayoutDirection, mode: ViewMode = .gallery) async throws -> Surface {
+            let surface = try filmstrip(direction: direction, mode: mode, cues: true)
+            var preferences = store.qualityCuePreferences
+            preferences.isEnabled = true
+            preferences.isHighISOEnabled = true
+            preferences.isSlowShutterEnabled = true
+            preferences.isHighlightClippingEnabled = true
+            preferences.isShadowClippingEnabled = true
+            store.updateQualityCuePreferences(preferences)
+            store.startQualityCueAnalysis()
+            let portrait = try XCTUnwrap(store.items.first { $0.id.hasSuffix("_PORTRAIT.png") })
+            let deadline = ContinuousClock.now + .seconds(20)
+            while store.qualityCues(for: portrait).count < 4, ContinuousClock.now < deadline {
+                store.prioritizeQualityCues(for: portrait)
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            XCTAssertEqual(store.qualityCues(for: portrait).count, 4)
+            return surface
+        }
+
+        func filmstrip(direction: LayoutDirection, mode: ViewMode = .gallery, cues: Bool = false) throws -> Surface {
+            let shapes: [(String, CGSize, Rating, StarRating?, PhotoColorLabel?)] = [
+                ("LANDSCAPE", CGSize(width: 900, height: 600), .yes, .four, .purple),
+                ("PORTRAIT", CGSize(width: 600, height: 900), .yes, .five, .red),
+                ("PORTRAIT_4x5", CGSize(width: 720, height: 900), .no, .three, .green),
+                ("PHONE", CGSize(width: 506, height: 900), .yes, .two, .yellow),
+                ("SQUARE", CGSize(width: 800, height: 800), .undecided, .one, .blue),
+                ("PANORAMA", CGSize(width: 1600, height: 400), .yes, .five, .purple),
+            ]
+            var result: [PhotoItem] = []
+            for (index, shape) in shapes.enumerated() {
+                let name = String(format: "%02d_%@.png", index + 1, shape.0)
+                let url = media.appendingPathComponent(name)
+                let clipped = cues && shape.0 == "PORTRAIT"
+                let data = try clipped ? Self.clippedImage(size: shape.1) : Self.image(index: index, size: shape.1)
+                try data.write(to: url)
+                result.append(PhotoItem(id: name, primaryURL: url, pairedURL: nil,
+                    captureDate: Date(timeIntervalSince1970: 1_792_430_000 + Double(index) * 60),
+                    cameraModel: "Synthetic camera", lensModel: nil,
+                    shutterSpeed: clipped ? 0.5 : nil, iso: clipped ? 12_800 : nil, fileSize: Int64(data.count),
+                    rating: shape.2, starRating: shape.3, colorLabel: shape.4))
+            }
+            var video = items[items.count - 1]
+            if cues {
+                let url = media.appendingPathComponent("PORTRAIT_VIDEO.mov")
+                try FileManager.default.copyItem(at: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+                    .deletingLastPathComponent().appendingPathComponent("Fixtures/PhotosPortrait/portrait.mov"), to: url)
+                video = PhotoItem(id: url.lastPathComponent, primaryURL: url, pairedURL: nil, captureDate: nil,
+                                  cameraModel: nil, lensModel: nil, fileSize: 1)
+            }
+            result.append(PhotoItem(id: video.id, primaryURL: video.primaryURL, pairedURL: nil,
+                captureDate: Date(timeIntervalSince1970: 1_792_430_800), cameraModel: nil, lensModel: nil,
+                mediaKind: .video, duration: cues ? 3_600 : 8,
+                videoDimensions: cues ? CGSize(width: 180, height: 320) : CGSize(width: 640, height: 360),
+                videoIsPlayable: true, fileSize: 1, rating: .yes, starRating: .three, colorLabel: cues ? .red : nil))
+            let repository = URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            let audio = media.appendingPathComponent("AUDIO_001.mov")
+            try FileManager.default.copyItem(
+                at: repository.appendingPathComponent("Tests/Fixtures/AudioTrackSelection/alternate-levels.mov"), to: audio)
+            result.append(PhotoItem(id: audio.lastPathComponent, primaryURL: audio, pairedURL: nil,
+                captureDate: Date(timeIntervalSince1970: 1_792_430_900),
+                cameraModel: nil, lensModel: nil, mediaKind: .audio, duration: 1, audioIsPlayable: true,
+                fileSize: 1, rating: .no))
+            items = result + items.prefix(items.count - 1)
+            ready(mode: mode)
+            store.gridThumbSize = 170 / 1.25 / 1.25
+            store.setIndex(1)
+            store.setSelection([1, 2])
+            return Surface(view: AnyView(SessionView(store: store).environment(\.layoutDirection, direction)),
+                           size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        }
+
         func welcome(recent: Bool, drives showsDrives: Bool) throws -> Surface {
             if recent {
                 store.recentFolders = try ["Disposable photos", "Weekend review", "Studio selects"].map { name in
@@ -789,18 +884,32 @@ final class CaptureScenariosTests: XCTestCase {
         }
 
         // Same generated mountain fixture idiom as UIConsistencyVisualTests.
-        private static func image(index: Int) throws -> Data {
-            let image = NSImage(size: CGSize(width: 900, height: 600))
+        /// Top half white, bottom half black: highlight and shadow clipping.
+        private static func clippedImage(size: CGSize) throws -> Data {
+            let image = NSImage(size: size)
+            image.lockFocus()
+            NSColor.white.setFill()
+            NSRect(origin: .zero, size: size).fill()
+            NSColor.black.setFill()
+            NSRect(x: 0, y: 0, width: size.width, height: size.height / 2).fill()
+            image.unlockFocus()
+            let bitmap = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(image.tiffRepresentation)))
+            return try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+        }
+
+        private static func image(index: Int, size: CGSize = CGSize(width: 900, height: 600)) throws -> Data {
+            let image = NSImage(size: size)
             image.lockFocus()
             NSColor(calibratedHue: 0.5 + Double(index) * 0.018, saturation: 0.3, brightness: 0.8, alpha: 1).setFill()
-            NSRect(x: 0, y: 0, width: 900, height: 600).fill()
+            NSRect(origin: .zero, size: size).fill()
             NSColor(calibratedHue: 0.2 + Double(index) * 0.01, saturation: 0.4, brightness: 0.45, alpha: 1).setFill()
+            let x = size.width / 900, y = size.height / 600
             let mountain = NSBezierPath()
             mountain.move(to: .zero)
-            mountain.line(to: NSPoint(x: 300, y: 440 - index * 8))
-            mountain.line(to: NSPoint(x: 580, y: 180))
-            mountain.line(to: NSPoint(x: 750, y: 360))
-            mountain.line(to: NSPoint(x: 900, y: 0))
+            mountain.line(to: NSPoint(x: 300 * x, y: CGFloat(440 - index * 8) * y))
+            mountain.line(to: NSPoint(x: 580 * x, y: 180 * y))
+            mountain.line(to: NSPoint(x: 750 * x, y: 360 * y))
+            mountain.line(to: NSPoint(x: size.width, y: 0))
             mountain.close()
             mountain.fill()
             image.unlockFocus()

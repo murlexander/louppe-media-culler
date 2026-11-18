@@ -189,7 +189,9 @@ struct ColorLabelMark: View {
     }
 }
 
-/// Small noninteractive summary for Browser and Grid thumbnails.
+/// Small noninteractive summary for Grid thumbnails: one row at the photo's
+/// top leading corner. Browser places the same badges with
+/// `BrowserTileBadges`.
 struct MetadataBadgeStrip: View {
     let starRatingState: PhotoItemStarRatingState
     let colorLabelState: PhotoItemColorLabelState
@@ -199,21 +201,10 @@ struct MetadataBadgeStrip: View {
         if starRatingState != .unrated || colorLabelState != .none {
             HStack(spacing: TileBadgeLayout.spacing) {
                 if starRatingState != .unrated {
-                    starBadge
+                    TileStarBadge(state: starRatingState)
                 }
                 if colorLabelState != .none {
-                    if showsColorNames {
-                        Text(colorTitle)
-                            .font(.caption2.weight(.semibold))
-                            .lineLimit(1)
-                            .padding(.horizontal, 5)
-                            .frame(height: TileBadgeLayout.height)
-                            .mediaBadgeBackdrop(Capsule(), role: .text)
-                    } else {
-                        ColorLabelMark(state: colorLabelState)
-                            .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
-                            .mediaBadgeBackdrop(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                    }
+                    TileColorLabelBadge(state: colorLabelState, showsName: showsColorNames)
                 }
             }
             .frame(height: TileBadgeLayout.height)
@@ -223,32 +214,80 @@ struct MetadataBadgeStrip: View {
             .accessibilityHidden(true)
         }
     }
+}
 
-    private var colorTitle: String {
-        switch colorLabelState {
+/// The color label as a swatch, or its name with Differentiate Without Color.
+struct TileColorLabelBadge: View {
+    let state: PhotoItemColorLabelState
+    var showsName = false
+
+    var body: some View {
+        if showsName {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .lineLimit(1)
+                .padding(.horizontal, 5)
+                .frame(height: TileBadgeLayout.height)
+                .mediaBadgeBackdrop(Capsule(), role: .text)
+        } else {
+            ColorLabelMark(state: state)
+                .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
+                .mediaBadgeBackdrop(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+    }
+
+    private var title: String {
+        switch state {
         case .none: L10n.text("None")
         case .mixed: L10n.text("Mixed")
         case .label(let label): label.localizedDisplayName
         }
     }
+}
 
-    private var starBadge: some View {
-        Group {
-            switch starRatingState {
-            case .unrated:
-                EmptyView()
-            case .stars(let rating):
-                HStack(spacing: 1) {
-                    Image(systemName: "star.fill")
-                    Text(L10n.number(rating.count))
-                }
-            case .mixed:
-                Text("★–")
+/// The star count as a capsule; `isVertical` stacks the star over the count
+/// for the narrow column beside portrait media in Browser.
+struct TileStarBadge: View {
+    let state: PhotoItemStarRatingState
+    var isVertical = false
+
+    var body: some View {
+        if isVertical {
+            VStack(spacing: 0) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: TileBadgeLayout.iconSize - 2, weight: .semibold))
+                Text(count)
+                    .font(.system(size: TileBadgeLayout.iconSize, weight: .semibold))
             }
+            .padding(.vertical, 4)
+            .frame(width: TileBadgeLayout.height)
+            .mediaBadgeBackdrop(Capsule())
+        } else {
+            Group {
+                switch state {
+                case .unrated:
+                    EmptyView()
+                case .stars(let rating):
+                    HStack(spacing: 1) {
+                        Image(systemName: "star.fill")
+                        Text(L10n.number(rating.count))
+                    }
+                case .mixed:
+                    Text("★–")
+                }
+            }
+            .font(.system(size: TileBadgeLayout.iconSize, weight: .semibold))
+            .padding(.horizontal, 5)
+            .frame(height: TileBadgeLayout.height)
+            .mediaBadgeBackdrop(Capsule())
         }
-        .font(.system(size: TileBadgeLayout.iconSize, weight: .semibold))
-        .padding(.horizontal, 5)
-        .frame(height: TileBadgeLayout.height)
-        .mediaBadgeBackdrop(Capsule())
+    }
+
+    private var count: String {
+        switch state {
+        case .unrated: ""
+        case .stars(let rating): L10n.number(rating.count)
+        case .mixed: "–"
+        }
     }
 }

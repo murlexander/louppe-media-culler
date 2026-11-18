@@ -52,12 +52,15 @@ struct QualityCueTileIcons: View {
     /// Measured evidence publishes here; the store publishes everything else.
     @ObservedObject private var cuePublication: QualityCuePublication
     let item: PhotoItem
+    /// Browser wraps the icons to the width its badge layout offers.
+    var wraps = false
     @State private var showsDetails = false
 
-    init(store: SessionStore, item: PhotoItem) {
+    init(store: SessionStore, item: PhotoItem, wraps: Bool = false) {
         self.store = store
         cuePublication = store.qualityCuePublication
         self.item = item
+        self.wraps = wraps
     }
 
     var body: some View {
@@ -65,17 +68,7 @@ struct QualityCueTileIcons: View {
         Group {
             if !cues.isEmpty {
                 Button { showsDetails = true } label: {
-                    HStack(spacing: TileBadgeLayout.spacing) {
-                        ForEach(cues) { cue in
-                            Image(systemName: cue.kind.symbol)
-                                .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
-                                .mediaBadgeBackdrop(Circle(), role: .glyph)
-                                .accessibilityHidden(true)
-                        }
-                    }
-                    .font(.system(size: TileBadgeLayout.iconSize, weight: .medium))
-                    .frame(minWidth: 36, minHeight: TileBadgeLayout.cueTargetHeight, alignment: .bottomLeading)
-                    .contentShape(Rectangle())
+                    QualityCueIconRow(symbols: cues.map(\.kind.symbol), wraps: wraps)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.white)
@@ -90,6 +83,64 @@ struct QualityCueTileIcons: View {
             }
         }
         .onAppear { store.prioritizeQualityCues(for: item) }
+    }
+}
+
+/// The cue icons and their 36-point target. `wraps` flows them onto more
+/// rows within the offered width (Browser); otherwise one row (Grid).
+struct QualityCueIconRow: View {
+    let symbols: [String]
+    var wraps = false
+
+    var body: some View {
+        Group {
+            if wraps {
+                CueIconFlowLayout { icons }
+            } else {
+                HStack(spacing: TileBadgeLayout.spacing) { icons }
+            }
+        }
+        .font(.system(size: TileBadgeLayout.iconSize, weight: .medium))
+        .frame(minWidth: 36, minHeight: TileBadgeLayout.cueTargetHeight, alignment: .bottomLeading)
+        .contentShape(Rectangle())
+    }
+
+    private var icons: some View {
+        ForEach(Array(symbols.enumerated()), id: \.offset) { _, symbol in
+            Image(systemName: symbol)
+                .frame(width: TileBadgeLayout.height, height: TileBadgeLayout.height)
+                .mediaBadgeBackdrop(Circle(), role: .glyph)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+/// Equal badge-sized icons in leading-aligned rows that fit the proposed width.
+private struct CueIconFlowLayout: Layout {
+    private func columns(_ width: CGFloat?, count: Int) -> Int {
+        let step = TileBadgeLayout.height + TileBadgeLayout.spacing
+        guard let width, width.isFinite else { return max(1, count) }
+        return max(1, min(count, Int((width + TileBadgeLayout.spacing) / step)))
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard !subviews.isEmpty else { return .zero }
+        let columns = columns(proposal.width, count: subviews.count)
+        let rows = (subviews.count + columns - 1) / columns
+        let step = TileBadgeLayout.height + TileBadgeLayout.spacing
+        return CGSize(width: CGFloat(columns) * step - TileBadgeLayout.spacing,
+                      height: CGFloat(rows) * step - TileBadgeLayout.spacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let columns = columns(bounds.width, count: subviews.count)
+        let step = TileBadgeLayout.height + TileBadgeLayout.spacing
+        for (index, subview) in subviews.enumerated() {
+            subview.place(at: CGPoint(x: bounds.minX + CGFloat(index % columns) * step,
+                                      y: bounds.minY + CGFloat(index / columns) * step),
+                          anchor: .topLeading, proposal: ProposedViewSize(width: TileBadgeLayout.height,
+                                                                         height: TileBadgeLayout.height))
+        }
     }
 }
 

@@ -4,11 +4,14 @@ import CoreGraphics
 /// layout, arrow-key columns and measurement all read these values, so the
 /// columns a user sees and the columns arrows move through cannot diverge.
 enum ReviewCollectionMetrics {
-    /// Browser thumbnails are square; tiles without a proposal use this too.
-    static let browserTileSize: CGFloat = 102
+    /// Browser slots are shorter than wide, so about eleven frames show where
+    /// square slots showed eight. Landscape photos keep their full width;
+    /// tiles without a proposal use this size too.
+    static let browserTileWidth: CGFloat = 102
+    static let browserTileHeight: CGFloat = 80
     static let browserHorizontalInset: CGFloat = 10
     /// The original padded thumbnail column, excluding the scrollbar gutter.
-    static let browserColumnWidth = browserTileSize + 2 * browserHorizontalInset
+    static let browserColumnWidth = browserTileWidth + 2 * browserHorizontalInset
     /// The column plus exactly enough room for a native non-overlay scrollbar.
     @MainActor
     static let browserWidth = browserColumnWidth + PersistentVerticalScroller.gutterWidth

@@ -14,6 +14,7 @@
 - Show the month beside the Grid scroll bar's knob while you drag it, when sorted by capture date.
 - Press P in Gallery to outline sharp, in-focus edges and see where focus landed without zooming; it works at Fit and 100%, with or without the clipping overlay (also in View → Focus Peaking).
 - Save decisions in folders whose file names contain a semicolon; since 1.7 such folders couldn't save. Renaming a photo to a name with a semicolon also keeps it selected and undoable.
+- Show about eleven photos in the Browser where eight fitted before. On narrow portraits, stars and color labels sit beside the photo instead of covering the Yes/No mark or the video length.
 
 ## 1.14.1 (19) — 2026-11-16
 

@@ -321,7 +321,7 @@ final class ReviewCollectionDocument: NSView {
                     measure(AnyView(ReviewGridCaption(title: "Ag")),
                             width: ReviewCollectionMetrics.gridAvailableWidth(clipWidth: size.width)),
                     measure(AnyView(ReviewGroupHeader(title: "Ag", style: style)),
-                            width: style == .browser ? ReviewCollectionMetrics.browserTileSize
+                            width: style == .browser ? ReviewCollectionMetrics.browserTileWidth
                                 : ReviewCollectionMetrics.gridAvailableWidth(clipWidth: size.width)))
             }
             guard let templates = measuredTemplates else { return }

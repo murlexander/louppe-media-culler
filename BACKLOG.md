@@ -272,9 +272,6 @@ These are deferred ideas, not committed implementation scope for 1.13.
     segmented control. Segments are equal width, so counts inside labels overflow
     the 340-point Filter panel at large totals; a row aligned under the segments
     fits Hindi but must follow NSSegmentedControl's app-level RTL mirroring.
-  - **Denser Browser filmstrip.** About 11 frames instead of 8 (for example
-    102 × 80 slots). Check that portrait tiles still fit star, label and decision
-    badges, and keep the 122-point column and 36-point targets.
   - **Optional neutral-grey photo surround in light mode.** Reduces glare when
     judging exposure. Reopens the decision below to keep one neutral photo
     background; decide that first.
