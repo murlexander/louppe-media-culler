@@ -79,6 +79,8 @@ swiftc "${optimization[@]}" \
     Sources/Louppe/PhotosLibraryOrganization.swift \
     Sources/Louppe/PhotosOrganizationPresentation.swift \
     Sources/Louppe/SessionOpeningWorker.swift \
+    Sources/Louppe/OriginalFileHandoff.swift \
+    Sources/Louppe/OpenWith.swift \
     Sources/Louppe/SessionStore.swift \
     Sources/Louppe/SessionStore+ArchiveNavigation.swift \
     Sources/Louppe/SessionStore+ArchiveFolderCommands.swift \

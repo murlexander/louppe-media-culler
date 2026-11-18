@@ -35,6 +35,14 @@ struct OriginalFileTarget: Equatable, Sendable {
     }
 }
 
+/// Cancels one existence sweep from any thread.
+final class OriginalFileSweepCancellation: @unchecked Sendable {
+    private let lock = NSLock()
+    private var cancelled = false
+    var isCancelled: Bool { lock.withLock { cancelled } }
+    func cancel() { lock.withLock { cancelled = true } }
+}
+
 /// Session-resolved originals in visible order, primary before companion.
 /// Resolution reads no files; `existing()` filters off-main before handoff.
 struct OriginalFileTargets: Equatable, Sendable {

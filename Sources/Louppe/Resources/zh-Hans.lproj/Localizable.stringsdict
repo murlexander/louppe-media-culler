@@ -1626,5 +1626,33 @@
 			<string>此 Mac 上没有默认打开其中 %2$@ 个文件的应用。请改为从“打开方式”中选择应用。</string>
 		</dict>
 	</dict>
+	<key>Open %lld files in %@?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>要在“%3$@”中打开 %2$@ 个文件吗？</string>
+		</dict>
+	</dict>
+	<key>Open %lld files in their default apps?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>要在默认应用中打开 %2$@ 个文件吗？</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

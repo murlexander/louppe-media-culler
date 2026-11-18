@@ -266,6 +266,12 @@ final class CaptureScenariosTests: XCTestCase {
             fixture.clearNoDecisions()
             return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         },
+        Scenario(name: "dialog-open-with-many", description: "Open With confirmation for 312 originals in Photoshop (live capture shows the alert; nothing opens).") { fixture in
+            try openWithConfirmation(fixture, defaultApp: false)
+        },
+        Scenario(name: "dialog-open-with-many-default", description: "Open With confirmation for 312 originals in their default apps (live capture shows the alert).") { fixture in
+            try openWithConfirmation(fixture, defaultApp: true)
+        },
         Scenario(name: "session-folders-decided", description: "Folder tree with an all-decided folder: ordinary counts, no completion mark.") { fixture in
             try await fixture.decidedFolders()
         },
@@ -844,6 +850,23 @@ extension CaptureScenariosTests {
 
 /// Scroller date label (1.15): eight months of dated photos, grouped by day.
 extension CaptureScenariosTests {
+    /// A held Open With plan above the limit; the fake workspace opens nothing.
+    private static func openWithConfirmation(_ fixture: Fixture, defaultApp: Bool) throws -> Surface {
+        fixture.ready(mode: .grid)
+        let editor = PhotoEditorApplication(kind: .photoshop,
+            url: URL(fileURLWithPath: "/Applications/Adobe Photoshop 2026/Adobe Photoshop 2026.app"),
+            bundleIdentifier: "com.adobe.Photoshop", title: "Adobe Photoshop 2026")
+        let urls = (0..<312).map { fixture.media.appendingPathComponent(String(format: "IMG_%04d.CR3", $0)) }
+        let targets = OriginalFileTargets(files: urls.enumerated().map {
+            OriginalFileTarget(fileID: $0.element.lastPathComponent, url: $0.element, itemIndex: $0.offset)
+        }, leaderFileIndex: 0)
+        fixture.store.pendingOpenWith = PendingOpenWith(targets: targets,
+            plan: OpenWithPlan(requests: [.init(applicationURL: editor.url, urls: urls)]),
+            choice: defaultApp ? .defaultApplication : .editor(editor),
+            workspace: FakeOpenWithWorkspace(), readToken: nil, sourceFolder: fixture.store.sourceFolder)
+        return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+    }
+
     private static func datedGrid(_ fixture: Fixture, undatedTail: Int = 0) throws -> Surface {
         let template = fixture.items[0].primaryURL
         let calendar = Calendar.current

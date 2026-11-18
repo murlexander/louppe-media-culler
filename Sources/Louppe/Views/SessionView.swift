@@ -225,6 +225,14 @@ struct SessionView: View {
             } message: { alert in
                 Text(alert.message)
             }
+            .alert(store.pendingOpenWith?.title ?? "", isPresented: isOpenWithConfirmationPresented,
+                   presenting: store.pendingOpenWith) { pending in
+                Button(L10n.text("Open")) { OriginalFilesOpener.confirm(pending, store: store) }
+                    .keyboardShortcut(.defaultAction)
+                Button(L10n.text("Cancel"), role: .cancel) { OriginalFilesOpener.cancelPending(store: store) }
+            } message: { pending in
+                Text(pending.message)
+            }
             .alert(L10n.text("Clean Up"), isPresented: isCleanUpErrorPresented) {
                 if !store.cleanUpStalePhotos.isEmpty {
                     Button(L10n.text("Rescan Folder")) {
@@ -302,6 +310,14 @@ struct SessionView: View {
         Binding(
             get: { store.originalHandoffAlert != nil },
             set: { if !$0 { store.originalHandoffAlert = nil } }
+        )
+    }
+
+    /// Internal so tests drive the same binding the alert dismisses through.
+    var isOpenWithConfirmationPresented: Binding<Bool> {
+        Binding(
+            get: { store.pendingOpenWith != nil },
+            set: { if !$0 { OriginalFilesOpener.cancelPending(store: store) } }
         )
     }
 

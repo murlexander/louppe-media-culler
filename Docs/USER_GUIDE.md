@@ -214,7 +214,8 @@ unavailable originals must be made accessible in Photos first.
   the Command Palette) opens the same originals in place in Lightroom Classic,
   Capture One, Photoshop or Preview, whichever are installed, or in each file's
   **Default App**. Louppe only hands the files over; what the app does next,
-  such as importing them into a catalog, is up to that app.
+  such as importing them into a catalog, is up to that app. Opening more than
+  50 files at once asks first; a RAW+JPEG pair counts as two files.
 
 **Settings → General** holds review defaults, RAW display, quality cues,
 iCloud access, getting-started tips, updates, and optional support.

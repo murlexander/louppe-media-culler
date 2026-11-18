@@ -2110,5 +2110,41 @@
 			<string>Ninguna app de este Mac abre %2$@ de estos archivos de forma predeterminada. Elige una app en Abrir con.</string>
 		</dict>
 	</dict>
+	<key>Open %lld files in %@?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>¿Abrir %2$@ archivo en %3$@?</string>
+			<key>many</key>
+			<string>¿Abrir %2$@ archivos en %3$@?</string>
+			<key>other</key>
+			<string>¿Abrir %2$@ archivos en %3$@?</string>
+		</dict>
+	</dict>
+	<key>Open %lld files in their default apps?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>¿Abrir %2$@ archivo en su app predeterminada?</string>
+			<key>many</key>
+			<string>¿Abrir %2$@ archivos en sus apps predeterminadas?</string>
+			<key>other</key>
+			<string>¿Abrir %2$@ archivos en sus apps predeterminadas?</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

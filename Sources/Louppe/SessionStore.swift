@@ -424,6 +424,10 @@ final class SessionStore: ObservableObject {
     @Published var pairingMetadataError: String?
     /// Open With / Open in Maps failures, shown as one short session alert.
     @Published var originalHandoffAlert: OriginalHandoffAlert?
+    /// Open With of more than 50 originals, awaiting confirmation.
+    @Published var pendingOpenWith: PendingOpenWith?
+    /// The last confirmed request, so one confirmation never opens twice.
+    var confirmedOpenWithID: UUID?
     /// The first transition to separate review may read metadata from hidden
     /// JPEG partners. The current session remains visible while this is true.
     @Published private(set) var isChangingRawJPEGPairingMode = false
@@ -925,6 +929,7 @@ final class SessionStore: ObservableObject {
             || cleanUpError != nil
             || pairingMetadataError != nil
             || originalHandoffAlert != nil
+            || pendingOpenWith != nil
             || isRecoveringInterruptedOperations
             || operationRecoveryReportRequiresAcknowledgement
     }
@@ -3679,6 +3684,7 @@ final class SessionStore: ObservableObject {
         scanError = nil
         pairingMetadataError = nil
         originalHandoffAlert = nil
+        pendingOpenWith = nil
         phase = .scanning(found: 0)
         openingProgress = SessionOpeningProgress(stage: .folderIdentity, completed: 0, total: nil)
         openingMetrics = nil
@@ -8407,6 +8413,7 @@ final class SessionStore: ObservableObject {
         dismissCleanUpError()
         pairingMetadataError = nil
         originalHandoffAlert = nil
+        pendingOpenWith = nil
         currentIndex = 0
         filter = PhotoFilter()
         applyReviewDefaults()

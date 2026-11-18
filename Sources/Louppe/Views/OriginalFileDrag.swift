@@ -158,14 +158,6 @@ enum OriginalFileDragStarter {
     }
 }
 
-/// Cancels one existence sweep from any thread.
-final class OriginalFileSweepCancellation: @unchecked Sendable {
-    private let lock = NSLock()
-    private var cancelled = false
-    var isCancelled: Bool { lock.withLock { cancelled } }
-    func cancel() { lock.withLock { cancelled = true } }
-}
-
 /// Pointer arming shared by Grid media, Browser tiles and Gallery Fit/Phone
 /// photos. Mouse-down only records the event and a deferred resolver, so a
 /// plain click resolves nothing and reads no files. Past 8 points the

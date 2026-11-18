@@ -2836,5 +2836,53 @@
 			<string>لا يوجد تطبيق على هذا الـ Mac يفتح %2$@ من هذه الملفات افتراضيًا. اختر تطبيقًا من «فتح باستخدام» بدلًا من ذلك.</string>
 		</dict>
 	</dict>
+	<key>Open %lld files in %@?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>فتح %2$@ ملفات في %3$@؟</string>
+			<key>one</key>
+			<string>فتح ملف واحد في %3$@؟</string>
+			<key>two</key>
+			<string>فتح ملفين في %3$@؟</string>
+			<key>few</key>
+			<string>فتح %2$@ ملفات في %3$@؟</string>
+			<key>many</key>
+			<string>فتح %2$@ ملفًا في %3$@؟</string>
+			<key>other</key>
+			<string>فتح %2$@ ملف في %3$@؟</string>
+		</dict>
+	</dict>
+	<key>Open %lld files in their default apps?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>فتح %2$@ ملفات في تطبيقاتها الافتراضية؟</string>
+			<key>one</key>
+			<string>فتح ملف واحد في تطبيقه الافتراضي؟</string>
+			<key>two</key>
+			<string>فتح ملفين في تطبيقيهما الافتراضيين؟</string>
+			<key>few</key>
+			<string>فتح %2$@ ملفات في تطبيقاتها الافتراضية؟</string>
+			<key>many</key>
+			<string>فتح %2$@ ملفًا في تطبيقاتها الافتراضية؟</string>
+			<key>other</key>
+			<string>فتح %2$@ ملف في تطبيقاتها الافتراضية؟</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -2171,6 +2171,8 @@
 "Open with Default App" = "Abrir com o app padrão";
 "Open each selected original in its default app" = "Abre cada original selecionado no seu app padrão";
 "{0} is no longer installed on this Mac." = "{0} não está mais instalado neste Mac.";
+"{0} will open each file. The originals stay where they are." = "{0} abrirá cada arquivo. Os originais ficam onde estão.";
+"Each file will open in its default app. The originals stay where they are." = "Cada arquivo será aberto no seu app padrão. Os originais ficam onde estão.";
 "The originals are missing or changed since Louppe scanned them. Rescan the folder or reconnect its drive, then try again." = "Os originais estão ausentes ou mudaram desde que o Louppe os escaneou. Escaneie a pasta novamente ou reconecte o disco e tente outra vez.";
 "Open in Maps" = "Abrir no Mapas";
 "Maps couldn't show this location. Try again." = "O Mapas não conseguiu mostrar este local. Tente novamente.";

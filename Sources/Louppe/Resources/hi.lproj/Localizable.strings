@@ -2171,6 +2171,8 @@
 "Open with Default App" = "डिफ़ॉल्ट ऐप में खोलें";
 "Open each selected original in its default app" = "हर चुनी गई मूल फ़ाइल उसके डिफ़ॉल्ट ऐप में खोलें";
 "{0} is no longer installed on this Mac." = "{0} अब इस Mac पर इंस्टॉल नहीं है।";
+"{0} will open each file. The originals stay where they are." = "{0} हर फ़ाइल खोलेगा। मूल फ़ाइलें अपनी जगह पर रहेंगी।";
+"Each file will open in its default app. The originals stay where they are." = "हर फ़ाइल अपने डिफ़ॉल्ट ऐप में खुलेगी। मूल फ़ाइलें अपनी जगह पर रहेंगी।";
 "The originals are missing or changed since Louppe scanned them. Rescan the folder or reconnect its drive, then try again." = "मूल फ़ाइलें गायब हैं या Louppe के स्कैन करने के बाद बदल गई हैं। फ़ोल्डर दोबारा स्कैन करें या उसकी ड्राइव फिर से कनेक्ट करें, फिर से कोशिश करें।";
 "Open in Maps" = "नक़्शे में खोलें";
 "Maps couldn't show this location. Try again." = "नक़्शे यह स्थान नहीं दिखा सका। फिर से कोशिश करें।";

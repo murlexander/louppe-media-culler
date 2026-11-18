@@ -1148,7 +1148,12 @@ precedence over remembered scope/position.
   Every installed copy is
   listed, same names gain their version. `OpenWithPlan` sends one request per
   named editor, groups Default App by each file's handler, and reports missing
-  or unhandled files through `originalHandoffAlert`. File → Open With follows
+  or unhandled files through `originalHandoffAlert`. A plan sending more than
+  `OpenWithPlan.confirmationLimit` (50) physical files is held as
+  `pendingOpenWith` (a session presentation gate) behind an Open/Cancel alert,
+  unless another session presentation came up while planning (then it is
+  dropped). Open re-plans off-main from the held targets, sends once without
+  asking again, and reports files that dropped out as missing. File → Open With follows
   Export; tile and Gallery context menus place it after selection actions;
   the palette has flat **Open with …** rows. No key equivalent. Tests inject
   `OpenWithWorkspace`.

@@ -2171,6 +2171,8 @@
 "Open with Default App" = "Open with Default App";
 "Open each selected original in its default app" = "Open each selected original in its default app";
 "{0} is no longer installed on this Mac." = "{0} is no longer installed on this Mac.";
+"{0} will open each file. The originals stay where they are." = "{0} will open each file. The originals stay where they are.";
+"Each file will open in its default app. The originals stay where they are." = "Each file will open in its default app. The originals stay where they are.";
 "The originals are missing or changed since Louppe scanned them. Rescan the folder or reconnect its drive, then try again." = "The originals are missing or changed since Louppe scanned them. Rescan the folder or reconnect its drive, then try again.";
 "Open in Maps" = "Open in Maps";
 "Maps couldn't show this location. Try again." = "Maps couldn't show this location. Try again.";

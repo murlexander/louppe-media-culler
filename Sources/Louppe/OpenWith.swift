@@ -222,6 +222,13 @@ struct OpenWithPlan: Equatable, Sendable {
     var unhandled: [URL] = []
     var editorUnavailable = false
 
+    /// More originals than this in one action ask first; this many open directly.
+    static let confirmationLimit = 50
+
+    /// Physical files that will be sent: a RAW+JPEG pair counts as two.
+    var openingFileCount: Int { requests.reduce(0) { $0 + $1.urls.count } }
+    var requiresConfirmation: Bool { openingFileCount > Self.confirmationLimit }
+
     static func make(targets: OriginalFileTargets, choice: OpenWithChoice,
                      workspace: any OpenWithWorkspace) -> OpenWithPlan {
         var plan = OpenWithPlan()
@@ -258,6 +265,38 @@ struct OpenWithPlan: Equatable, Sendable {
     }
 }
 
+/// A planned Open With above `OpenWithPlan.confirmationLimit`, held with its
+/// read access until the confirmation is answered. Nothing opens before then;
+/// Open plans again from `targets`, so files changed meanwhile are left out.
+struct PendingOpenWith: Identifiable {
+    let id = UUID()
+    let targets: OriginalFileTargets
+    /// The plan the question was asked about; its count is the title's.
+    let plan: OpenWithPlan
+    let choice: OpenWithChoice
+    let workspace: any OpenWithWorkspace
+    let readToken: MediaReadAccess.Token?
+    let sourceFolder: URL?
+
+    var title: String {
+        switch choice {
+        case .editor(let editor):
+            L10n.plural("Open %lld files in %@?", plan.openingFileCount, arguments: [editor.title])
+        case .defaultApplication:
+            L10n.plural("Open %lld files in their default apps?", plan.openingFileCount)
+        }
+    }
+
+    var message: String {
+        switch choice {
+        case .editor(let editor):
+            L10n.text("\(editor.title) will open each file. The originals stay where they are.")
+        case .defaultApplication:
+            L10n.text("Each file will open in its default app. The originals stay where they are.")
+        }
+    }
+}
+
 /// One dispatcher for File, tile and Gallery menus and the Command Palette.
 @MainActor
 enum OriginalFilesOpener {
@@ -278,17 +317,59 @@ enum OriginalFilesOpener {
         let token = store.mediaReadAccess?.begin()
         let source = store.sourceFolder
         Task { @MainActor [weak store] in
-            let plan = await Task.detached(priority: .userInitiated) {
-                withExtendedLifetime(token) {
-                    OpenWithPlan.make(targets: targets, choice: choice, workspace: workspace)
-                }
-            }.value
+            let plan = await makePlan(targets: targets, choice: choice, workspace: workspace, readToken: token)
             #if LOUPPE_TEST_SEAMS
             didFinishPlanning?(plan)
             #endif
             guard let store, store.sourceFolder == source else { return }
+            if plan.requiresConfirmation && !plan.editorUnavailable {
+                // Another sheet, alert or the palette came up while planning:
+                // the alert could stay hidden behind it and hold the session
+                // gate, so the request is dropped and nothing opens.
+                guard !store.isSessionCommandPresentationActive else { return }
+                store.pendingOpenWith = PendingOpenWith(targets: targets, plan: plan, choice: choice,
+                    workspace: workspace, readToken: token, sourceFolder: source)
+                return
+            }
             execute(plan, choice: choice, store: store, workspace: workspace, readToken: token)
         }
+    }
+
+    /// The confirmation's Open button. The alert may clear its binding before
+    /// running the action, so the presented value is passed in rather than
+    /// read back from the store; one confirmation opens at most once. The
+    /// files are checked again off-main, and Open never asks twice, even if
+    /// the count changed; files that dropped out are reported as missing.
+    static func confirm(_ pending: PendingOpenWith, store: SessionStore) {
+        guard store.confirmedOpenWithID != pending.id else { return }
+        store.confirmedOpenWithID = pending.id
+        if store.pendingOpenWith?.id == pending.id { store.pendingOpenWith = nil }
+        Task { @MainActor [weak store] in
+            let plan = await makePlan(targets: pending.targets, choice: pending.choice,
+                                      workspace: pending.workspace, readToken: pending.readToken)
+            #if LOUPPE_TEST_SEAMS
+            didFinishPlanning?(plan)
+            #endif
+            guard let store, store.sourceFolder == pending.sourceFolder else { return }
+            execute(plan, choice: pending.choice, store: store,
+                    workspace: pending.workspace, readToken: pending.readToken)
+        }
+    }
+
+    /// Cancel, Esc, or the alert dismissing itself: drops the held plan and
+    /// its read access; nothing opens.
+    static func cancelPending(store: SessionStore) {
+        store.pendingOpenWith = nil
+    }
+
+    private static func makePlan(targets: OriginalFileTargets, choice: OpenWithChoice,
+                                 workspace: any OpenWithWorkspace,
+                                 readToken: MediaReadAccess.Token?) async -> OpenWithPlan {
+        await Task.detached(priority: .userInitiated) {
+            withExtendedLifetime(readToken) {
+                OpenWithPlan.make(targets: targets, choice: choice, workspace: workspace)
+            }
+        }.value
     }
 
     private static func execute(_ plan: OpenWithPlan, choice: OpenWithChoice, store: SessionStore,
