@@ -150,6 +150,8 @@ whole-job XMP measurements put ordinary Copy, Move and publication jobs within
 remain unverified for 1.14.1.
 
 - [ ] **A file name that isn't valid UTF-8 blocks saving its folder** (exFAT, SMB or old HFS volumes; APFS refuses such names). The scanner writes the bytes as `%FF`-style escapes and the session check rejects them, as it did `;` before 1.15. Either skip such files at scan time or accept their exact bytes; check whether the scanner lists them first.
+- [ ] **Live capture of dialog scenarios crashes the test host.** `capture_ui.sh --live` on `dialog-clean-up` or `dialog-clear-stars-labels` ends the XCTest process with SIGSEGV (an over-release while the autorelease pool drains). Offscreen captures work, and the installed 1.15 app shows both confirmations correctly.
+- [ ] **Semicolon fast-path performance check is too loose.** `Tests/PerformanceChecks/main.swift` allows plain IDs 2 s per 100k; losing the fast path (≈0.33 s) would still pass. Compare plain IDs against the spaced-ID measurement from the same run instead, e.g. `plain < spaced / 2`.
 - [ ] **Archive work — next.**
   - **Folder-first readiness.** Validate the folder you navigate to first and
     allow deciding there while the rest of the archive validates. Changes the
