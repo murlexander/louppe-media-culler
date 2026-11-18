@@ -78,6 +78,19 @@ final class CaptureScenariosTests: XCTestCase {
             fixture.store.setSelection([0, 1, 2])
             return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         },
+        // 1.15 focus peaking, beside the existing clipping overlay
+        Scenario(name: "session-gallery-clipping", description: "Gallery with the X clipping overlay on a photo-like image with a sharp subject (pair with session-gallery-peaking).") { fixture in
+            try CaptureScenariosTests.overlaySession(fixture, bright: false, clipping: true, peaking: false)
+        },
+        Scenario(name: "session-gallery-peaking", description: "Gallery with P focus peaking: the sharp subject is marked, the soft background stays clear.") { fixture in
+            try CaptureScenariosTests.overlaySession(fixture, bright: false, clipping: false, peaking: true)
+        },
+        Scenario(name: "session-gallery-peaking-bright", description: "Focus peaking on a bright, high-key photo.") { fixture in
+            try CaptureScenariosTests.overlaySession(fixture, bright: true, clipping: false, peaking: true)
+        },
+        Scenario(name: "session-gallery-peaking-clipping", description: "Clipping and focus peaking together: strokes over the red tint.") { fixture in
+            try CaptureScenariosTests.overlaySession(fixture, bright: false, clipping: true, peaking: true)
+        },
         Scenario(name: "session-photos-timeout", description: "Playable disposable Photos original after a failed metadata scan.") { fixture in
             try await fixture.photosPortrait(scanFails: true)
         },
@@ -845,6 +858,39 @@ extension CaptureScenariosTests {
             captureDate: first.captureDate, cameraModel: first.cameraModel, lensModel: first.lensModel,
             aperture: 5.6, shutterSpeed: 1.0 / 250, iso: 200, fileSize: first.fileSize, rating: first.rating,
             starRating: first.primaryFile.starRating, colorLabel: first.primaryFile.colorLabel)
+    }
+}
+
+/// Focus peaking (1.15): a sharp subject over a soft background.
+extension CaptureScenariosTests {
+    private static func overlaySession(_ fixture: Fixture, bright: Bool, clipping: Bool, peaking: Bool) throws -> Surface {
+        let width = 1800, height = 1200
+        let sharp = try XCTUnwrap(FocusPeakingFixture.detail(width: width, height: height, noise: 0.01, bright: bright))
+        let soft = try XCTUnwrap(FocusPeakingFixture.blurred(sharp, sigma: 5, noise: 0.01))
+        let space = try XCTUnwrap(CGColorSpace(name: CGColorSpace.sRGB))
+        let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                              space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        let bounds = CGRect(x: 0, y: 0, width: width, height: height)
+        context.draw(soft, in: bounds)
+        // The in-focus subject: an oval through the middle of the frame.
+        context.addEllipse(in: bounds.insetBy(dx: CGFloat(width) * 0.22, dy: CGFloat(height) * 0.14))
+        context.clip()
+        context.draw(sharp, in: bounds)
+        let image = try XCTUnwrap(context.makeImage())
+        let url = fixture.media.appendingPathComponent("PEAKING_0001.jpg")
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithURL(url as CFURL, UTType.jpeg.identifier as CFString, 1, nil))
+        CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.92] as CFDictionary)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        let first = fixture.items[0]
+        let size = try XCTUnwrap(url.resourceValues(forKeys: [.fileSizeKey]).fileSize)
+        fixture.items.insert(PhotoItem(id: url.lastPathComponent, primaryURL: url, pairedURL: nil,
+            captureDate: first.captureDate?.addingTimeInterval(-60), cameraModel: first.cameraModel, lensModel: first.lensModel,
+            aperture: 2, shutterSpeed: 1.0 / 500, iso: 400, fileSize: Int64(size), rating: .undecided), at: 0)
+        fixture.ready(mode: .gallery)
+        fixture.store.setIndex(0)
+        fixture.store.showClippingWarnings = clipping
+        fixture.store.showFocusPeaking = peaking
+        return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
     }
 }
 

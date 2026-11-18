@@ -195,6 +195,7 @@ struct PhotosGalleryView: View {
         } else {
             FullImageView(item: resolved, zoomMode: $store.zoomMode,
                 showsClippingWarnings: store.showClippingWarnings,
+                showsFocusPeaking: store.showFocusPeaking,
                 actualSizeViewport: store.actualSizeViewport, zoomScale: store.photoZoomScale,
                 onZoomToActual: { store.zoomToActual(at: $0) }, onZoomToFit: { store.zoomToFit() },
                 onZoomScaleChanged: { store.reportPhotoZoomScaleFromGesture($0, ended: $1) },

@@ -421,6 +421,26 @@ private struct FocusedLouppeSessionCommands: Commands {
 
             Divider()
 
+            // Checkmarks show the state; the X and P keys stay owned by
+            // SessionView's monitor, so neither item has a key equivalent.
+            Toggle(isOn: Binding(
+                get: { focusedStore?.showClippingWarnings == true },
+                set: { _ in _ = actionableStore?.toggleClippingWarnings() }
+            )) {
+                Text(L10n.text("Clipping Overlay"))
+            }
+            .disabled(actionableStore?.canToggleClippingWarnings != true)
+
+            Toggle(isOn: Binding(
+                get: { focusedStore?.showFocusPeaking == true },
+                set: { _ in _ = actionableStore?.toggleFocusPeaking() }
+            )) {
+                Text(L10n.text("Focus Peaking"))
+            }
+            .disabled(actionableStore?.canToggleFocusPeaking != true)
+
+            Divider()
+
             Menu(L10n.text("Review Groups")) {
                 Button(L10n.text("Analyze Folder Locally")) {
                     actionableStore?.analyzeDuplicateAndBurstGroups()

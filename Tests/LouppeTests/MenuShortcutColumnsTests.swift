@@ -206,6 +206,17 @@ final class MenuShortcutColumnsTests: XCTestCase {
         XCTAssertEqual(target.count, 1)
     }
 
+    func testViewMenuOverlayTogglesShowXAndPOnlyForGalleryPhotos() {
+        let preferences = ReviewShortcutPreferences()
+        func hint(_ title: String, _ context: ReviewShortcutContext) -> String? {
+            MenuShortcutColumns.entries(preferences: preferences, context: context).first { $0.title == L10n.text(.init(stringLiteral: title)) }?.hint
+        }
+        XCTAssertEqual(hint("Clipping Overlay", galleryPhoto), "X")
+        XCTAssertEqual(hint("Focus Peaking", galleryPhoto), "P")
+        let gridPhoto = ReviewShortcutContext(viewMode: .grid, mediaKind: .photo, isPlayable: false, canSeekVideo: false)
+        XCTAssertEqual(hint("Focus Peaking", gridPhoto), "")
+    }
+
     func testPreferenceEditsAndContextsReplaceHintsWithoutStaleAliases() {
         var preferences = ReviewShortcutPreferences()
         preferences.interpretation = .keyboardLayout

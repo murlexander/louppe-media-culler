@@ -105,6 +105,7 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
     case clearStars, oneStar, twoStars, threeStars, fourStars, fiveStars
     // Append only: default assignment IDs depend on case order.
     case folders, previousFolder, nextFolder
+    case focusPeaking
 
     var title: String {
         switch self {
@@ -123,6 +124,7 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
         case .nextFolder: L10n.text("Next Folder")
         case .info: L10n.text("Show / Hide Info")
         case .clipping: L10n.text("Toggle clipping overlay")
+        case .focusPeaking: L10n.text("Toggle focus peaking")
         case .grid: L10n.text("Switch Gallery / Grid")
         case .export: L10n.text("Open Export")
         case .clear: L10n.text("Clear all Yes / No decisions")
@@ -142,7 +144,7 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
         case .yes, .no, .export, .clear, .undo: .review
         case .previous, .next, .previousRow, .nextRow, .previousFolder, .nextFolder: .navigation
         case .playPause, .seekBackward, .seekForward: .playback
-        case .browser, .folders, .info, .clipping, .grid, .actualSize, .phoneSize: .view
+        case .browser, .folders, .info, .clipping, .focusPeaking, .grid, .actualSize, .phoneSize: .view
         case .clearStars, .oneStar, .twoStars, .threeStars, .fourStars, .fiveStars: .stars
         }
     }
@@ -163,6 +165,7 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
         case .nextFolder: "]"
         case .info: "w"
         case .clipping: "x"
+        case .focusPeaking: "p"
         case .grid: "g"
         case .export: "e"
         case .clear: "r"
@@ -183,7 +186,7 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
         case .playPause: .playable
         case .seekBackward, .seekForward: .galleryVideo
         case .browser: .gallery
-        case .clipping, .actualSize, .phoneSize: .galleryPhotos
+        case .clipping, .focusPeaking, .actualSize, .phoneSize: .galleryPhotos
         default: .all
         }
     }
@@ -202,7 +205,7 @@ enum ReviewShortcutAction: String, CaseIterable, Codable, Sendable {
     var allowedScopes: [ReviewShortcutScope] {
         ReviewShortcutScope.allCases.filter { !$0.contexts.intersection(contexts).isEmpty }
     }
-    var isSafeDuringFileOperation: Bool { [.browser, .folders, .info, .clipping, .grid].contains(self) }
+    var isSafeDuringFileOperation: Bool { [.browser, .folders, .info, .clipping, .focusPeaking, .grid].contains(self) }
 }
 
 enum ReviewShortcutInterpretation: String, CaseIterable, Codable, Sendable {
@@ -318,7 +321,7 @@ struct ReviewShortcutPreferences: Codable, Equatable, Sendable {
         for mode in ReviewShortcutInterpretation.allCases {
             interpretation = mode
             let saved = mode == .keyboardLayout ? layoutBindings : physicalBindings
-            for action in [ReviewShortcutAction.folders, .previousFolder, .nextFolder] where saved[action.rawValue] == nil {
+            for action in [ReviewShortcutAction.folders, .previousFolder, .nextFolder, .focusPeaking] where saved[action.rawValue] == nil {
                 let defaults = Self.defaultAssignments(for: action)
                 let retained = defaults.filter { candidate in
                     !ReviewShortcutAction.allCases.contains { other in

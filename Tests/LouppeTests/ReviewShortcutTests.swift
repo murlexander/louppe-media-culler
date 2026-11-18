@@ -192,6 +192,42 @@ final class ReviewShortcutTests: XCTestCase {
         XCTAssertEqual(ReviewShortcutPreferences.decode(preferences.encoded), preferences)
     }
 
+    func testFocusPeakingIsAppendedWithAFreePDefaultForGalleryPhotosOnly() {
+        // Default assignment IDs follow case order, so new actions go last.
+        XCTAssertEqual(ReviewShortcutAction.allCases.suffix(4), [.folders, .previousFolder, .nextFolder, .focusPeaking])
+        XCTAssertEqual(ReviewShortcutAction.focusPeaking.group, .view)
+        XCTAssertTrue(ReviewShortcutAction.focusPeaking.isSafeDuringFileOperation)
+        let others = ReviewShortcutAction.allCases.filter { $0 != .focusPeaking }
+        XCTAssertFalse(others.map(\.defaultCharacter).contains("p"))
+        for layout in ReviewShortcutInterpretation.allCases {
+            var preferences = ReviewShortcutPreferences()
+            preferences.interpretation = layout
+            for context in ReviewShortcutContext.allCases {
+                let action = preferences.match(for: event(code: 35, character: "p"), context: context)?.action
+                XCTAssertEqual(action, context == .galleryPhoto ? .focusPeaking : nil, "\(layout), \(context)")
+            }
+        }
+    }
+
+    func testSavedPBindingFromBeforeFocusPeakingSurvivesInBothModes() throws {
+        for mode in ReviewShortcutInterpretation.allCases {
+            // A pre-1.15 file: Info on P, no focusPeaking entry in either map.
+            let info = #"[{"id":"\#(UUID().uuidString)","binding":{"character":"p","keyCode":35},"scope":"all"}]"#
+            let raw = #"{"schemaVersion":2,"interpretation":"\#(mode.rawValue)","layoutBindings":{"info":\#(info)},"physicalBindings":{"info":\#(info)}}"#
+            let loaded = try JSONDecoder().decode(ReviewShortcutPreferences.self, from: Data(raw.utf8))
+            XCTAssertEqual(loaded.interpretation, mode)
+            for interpretation in ReviewShortcutInterpretation.allCases {
+                var view = loaded
+                view.interpretation = interpretation
+                XCTAssertEqual(view.assignments(for: .info).map(\.binding.character), ["p"], "\(mode), \(interpretation)")
+                XCTAssertTrue(view.assignments(for: .focusPeaking).isEmpty, "Peaking yields its default key")
+                XCTAssertEqual(view.match(for: event(code: 35, character: "p"), context: .galleryPhoto)?.action, .info)
+            }
+            XCTAssertEqual(ReviewShortcutPreferences.decode(raw), loaded, "The saved configuration is kept, not reset")
+            XCTAssertEqual(ReviewShortcutPreferences.decode(loaded.encoded), loaded)
+        }
+    }
+
     func testAllDefaultNavigationAliasesMatchEveryRuntimeContext() {
         let preferences = ReviewShortcutPreferences()
         for context in ReviewShortcutContext.allCases {

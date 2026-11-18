@@ -48,6 +48,7 @@ swiftc "${optimization[@]}" \
     Sources/Louppe/QualityCueEvidenceCache.swift \
     Sources/Louppe/QualityCueWorkPolicy.swift \
     Sources/Louppe/HighResolutionImagePipeline.swift \
+    Sources/Louppe/FocusPeaking.swift \
     Sources/Louppe/ZoomViewport.swift \
     Sources/Louppe/VideoPlaybackController.swift \
     Sources/Louppe/DurableFileIO.swift \

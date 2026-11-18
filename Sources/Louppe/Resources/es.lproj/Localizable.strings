@@ -2177,3 +2177,9 @@
 "Open in Maps" = "Abrir en Mapas";
 "Maps couldn't show this location. Try again." = "Mapas no pudo mostrar esta ubicación. Inténtalo de nuevo.";
 "Show this photo's location in Apple Maps" = "Mostrar la ubicación de esta foto en Mapas de Apple";
+"Toggle focus peaking" = "Mostrar u ocultar realce de enfoque";
+"Show Focus Peaking" = "Mostrar realce de enfoque";
+"Hide Focus Peaking" = "Ocultar realce de enfoque";
+"Mark sharp, in-focus edges on the photo" = "Marcar en la foto los bordes nítidos y enfocados";
+"Clipping Overlay" = "Aviso de recorte tonal";
+"Focus Peaking" = "Realce de enfoque";

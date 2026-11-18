@@ -679,6 +679,13 @@ precedence over remembered scope/position.
   retire cancelled waiters individually. The last waiter drops queued source
   pixels; running transforms retain their lane until exit, and operation identity
   prevents retired completions from consuming or caching replacement requests.
+- Focus peaking (`FocusPeaking.swift`) uses only stock Core Image filters on
+  the GPU. Fit measures the decoded Fit pixels already on screen (never the
+  thumbnail or clipping tint), keyed by representation and pixel size, and
+  draws a transparent layer above the photo and clipping tint. While off, its
+  task ID is nil, so navigation starts no work and no context exists. 100%
+  bakes strokes into tiles from the lazy recipe, so filters see neighbouring
+  pixels and seams match; with clipping, strokes go over the tinted tile.
 - Keep `GalleryView`'s `FullImageView` persistent; do not add `.id(item.id)`.
   Its AppKit viewport preserves normalized inspection position across photos.
   `FullImageView.loadedItemID` prevents stale preview display.

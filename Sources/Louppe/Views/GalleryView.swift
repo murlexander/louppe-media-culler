@@ -32,6 +32,9 @@ struct GalleryView: View {
                             showsClippingWarnings:
                                 store.showClippingWarnings
                                 && store.selectedIndices.count <= 1,
+                            showsFocusPeaking:
+                                store.showFocusPeaking
+                                && store.selectedIndices.count <= 1,
                             actualSizeViewport: store.actualSizeViewport,
                             zoomScale: store.photoZoomScale,
                             onZoomToActual: { position in

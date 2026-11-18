@@ -648,9 +648,10 @@ Quit take a finite checkpoint independently of decision durability. See
 | Thumbnails | 1,200 objects; 256 MiB decoded |
 | Full previews | 8 objects; 384 MiB decoded |
 | Clipping previews | 2 objects; 128 MiB decoded |
+| Focus peaking layers | 2 objects; 128 MiB decoded; computed from the decoded Fit preview on one lane |
 | Histograms | 256 numeric results; temporary 1,024-pixel previews. JPEG XL measures the cached or decoding Fit preview, else a temporary uncached 4,096-pixel decode (Info, and the cue in Grid), reduced to 1,024 |
 | RAW histograms | 128 numeric results; temporary extended-linear RGBA-float bitmap near 1,024 pixels on longest side |
-| Actual-size tiles | 128 MiB total; 1,024 × 1,024 source-pixel tiles, normal and clipping variants; lazy recipes retain no whole bitmap (JPEG XL recipes do) |
+| Actual-size tiles | 128 MiB total; 1,024 × 1,024 source-pixel tiles, normal, clipping and focus-peaking variants; lazy recipes retain no whole bitmap (JPEG XL recipes do) |
 | Disk thumbnails | 512 MiB; 90-day age; utility pass at most daily after launch delay, plus live passes after 64 MiB of writes before the total is known, then when known total + writes exceed 512 MiB; evicts to 448 MiB; one pass at a time; undeleted files stay counted and fail the pass; live retries after failed passes wait 1, 2, 4, then 8 intervals of writes until one succeeds; test hosts use a disposable root and prune only with injected limits |
 | Archive metadata snapshots | 250k entries/32 MiB each; 256 unpinned folders; 256 MiB total, pins evicted last |
 
@@ -672,7 +673,7 @@ fresh source decode; replacements never inherit old pixels, even for slow RAW.
 | Deferred work | Dwell |
 |---|---|
 | Neighbour prefetch | 60 ms debounce |
-| Full/clipping view decode | 40 ms; memory hits remain immediate. The full preview is requested at once when the previous preview change was 150 ms or more ago; clipping and the thumbnail stand-in keep 40 ms |
+| Full/clipping view decode, focus peaking | 40 ms; memory hits remain immediate. The full preview is requested at once when the previous preview change was 150 ms or more ago; clipping and the thumbnail stand-in keep 40 ms |
 | 100% recipe for the current Fit photo | 500 ms after the full preview mounts, then admitted as neighbour work; JPEG XL only after 100% has shown a JPEG XL photo in this process |
 | Secondary Info EXIF/histogram | 80 ms; EXIF reads use one lane, and a retired waiter never starts a read; a JPEG XL histogram waits for a Fit that is decoding and never starts one |
 | RAW histogram in Info | 700 ms; separate utility lane; background quality requests have no dwell |

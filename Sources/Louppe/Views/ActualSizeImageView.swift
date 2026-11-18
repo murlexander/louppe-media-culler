@@ -9,6 +9,9 @@ struct ActualSizeImageView: NSViewRepresentable {
     let item: PhotoItem
     let preview: NSImage?
     let showsClippingWarnings: Bool
+    var showsFocusPeaking = false
+    /// Fit-preview strokes, drawn wherever the canvas shows preview pixels.
+    var peakingLayer: NSImage? = nil
     let viewport: ActualSizeViewport
     let onDoubleClick: () -> Void
     let onLoading: (Bool) -> Void
@@ -32,6 +35,8 @@ struct ActualSizeImageView: NSViewRepresentable {
             item: item,
             preview: preview,
             showsClippingWarnings: showsClippingWarnings,
+            showsFocusPeaking: showsFocusPeaking,
+            peakingLayer: peakingLayer,
             viewport: viewport,
             onDoubleClick: onDoubleClick,
             onLoading: onLoading,
@@ -151,6 +156,8 @@ final class ActualSizeScrollView: NSScrollView {
         item: PhotoItem,
         preview: NSImage?,
         showsClippingWarnings: Bool,
+        showsFocusPeaking: Bool = false,
+        peakingLayer: NSImage? = nil,
         viewport: ActualSizeViewport,
         onDoubleClick: @escaping () -> Void = {},
         onLoading: @escaping (Bool) -> Void,
@@ -199,8 +206,9 @@ final class ActualSizeScrollView: NSScrollView {
             }
         }
         canvas.setPreview(preview)
-        let clippingChanged = canvas.setShowsClippingWarnings(
-            showsClippingWarnings
+        canvas.setPeakingLayer(showsFocusPeaking ? peakingLayer : nil)
+        let clippingChanged = canvas.setOverlays(
+            clipping: showsClippingWarnings, focusPeaking: showsFocusPeaking
         )
 
         let requestedRevision = item.contentRevision
@@ -663,6 +671,7 @@ private final class ActualSizeCanvasView: NSView {
 
     private var itemKey: String?
     private var preview: NSImage?
+    private var peakingLayer: NSImage?
     private var backingScale: CGFloat = 1
     private var imageFrame: CGRect = .zero
     private var tiles: [ZoomTileCoordinate: DisplayTile] = [:]
@@ -671,6 +680,7 @@ private final class ActualSizeCanvasView: NSView {
     private var generation: UInt64 = 0
     private var reportsTileActivity = false
     private var showsClippingWarnings = false
+    private var showsFocusPeaking = false
     private var usesSourceTiles = true
 
     func beginItem(key: String) {
@@ -697,6 +707,12 @@ private final class ActualSizeCanvasView: NSView {
         needsDisplay = true
     }
 
+    func setPeakingLayer(_ layer: NSImage?) {
+        guard peakingLayer !== layer else { return }
+        peakingLayer = layer
+        needsDisplay = true
+    }
+
     func setUsesSourceTiles(_ value: Bool) {
         guard usesSourceTiles != value else { return }
         usesSourceTiles = value
@@ -711,7 +727,8 @@ private final class ActualSizeCanvasView: NSView {
                 tilePipeline.retainTileRequests(
                     sourceKey: source.key,
                     coordinates: [],
-                    showsClippingWarnings: showsClippingWarnings
+                    showsClippingWarnings: showsClippingWarnings,
+                    showsFocusPeaking: showsFocusPeaking
                 )
             }
         }
@@ -719,11 +736,13 @@ private final class ActualSizeCanvasView: NSView {
         needsDisplay = true
     }
 
+    /// Clipping and peaking are baked into tiles, so a change re-requests them.
     @discardableResult
-    func setShowsClippingWarnings(_ value: Bool) -> Bool {
-        guard showsClippingWarnings != value else { return false }
+    func setOverlays(clipping: Bool, focusPeaking: Bool) -> Bool {
+        guard showsClippingWarnings != clipping || showsFocusPeaking != focusPeaking else { return false }
         stopReportingActivity()
-        showsClippingWarnings = value
+        showsClippingWarnings = clipping
+        showsFocusPeaking = focusPeaking
         failedCoordinates = []
         tiles = [:]
         pending = [:]
@@ -833,7 +852,8 @@ private final class ActualSizeCanvasView: NSView {
         tilePipeline.retainTileRequests(
             sourceKey: source.key,
             coordinates: coordinates,
-            showsClippingWarnings: showsClippingWarnings
+            showsClippingWarnings: showsClippingWarnings,
+            showsFocusPeaking: showsFocusPeaking
         )
         requestMissingTiles(source: source)
     }
@@ -906,6 +926,10 @@ private final class ActualSizeCanvasView: NSView {
                 respectFlipped: true,
                 hints: nil
             )
+            // Below 100% the canvas shows preview pixels, so their strokes
+            // come from the Fit layer; tiles carry their own above 100%.
+            peakingLayer?.draw(in: imageFrame, from: .zero, operation: .sourceOver,
+                               fraction: 1, respectFlipped: true, hints: nil)
         }
         guard usesSourceTiles else { return }
         NSGraphicsContext.current?.imageInterpolation = .none
@@ -941,6 +965,8 @@ private final class ActualSizeCanvasView: NSView {
             respectFlipped: true,
             hints: nil
         )
+        peakingLayer?.draw(in: rect, from: .zero, operation: .sourceOver,
+                           fraction: 1, respectFlipped: true, hints: nil)
     }
 
     private func fittedPreviewFrame() -> CGRect {
@@ -963,13 +989,15 @@ private final class ActualSizeCanvasView: NSView {
         let requestGeneration = generation
         let pipeline = tilePipeline
         let clipping = showsClippingWarnings
+        let focusPeaking = showsFocusPeaking
         for (coordinate, requestID) in requests {
             Task { @MainActor [weak self] in
                 guard self?.pending[coordinate] == requestID else { return }
                 let tile = await pipeline.tile(
                     for: source,
                     coordinate: coordinate,
-                    showsClippingWarnings: clipping
+                    showsClippingWarnings: clipping,
+                    showsFocusPeaking: focusPeaking
                 )
                 guard let self else { return }
                 guard self.generation == requestGeneration,

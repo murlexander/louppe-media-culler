@@ -2194,3 +2194,9 @@
 "Open in Maps" = "在“地图”中打开";
 "Maps couldn't show this location. Try again." = "“地图”无法显示此位置。请再试一次。";
 "Show this photo's location in Apple Maps" = "在 Apple“地图”中显示此照片的位置";
+"Toggle focus peaking" = "切换峰值对焦";
+"Show Focus Peaking" = "显示峰值对焦";
+"Hide Focus Peaking" = "隐藏峰值对焦";
+"Mark sharp, in-focus edges on the photo" = "在照片上标示清晰的合焦边缘";
+"Clipping Overlay" = "剪切叠层";
+"Focus Peaking" = "峰值对焦";

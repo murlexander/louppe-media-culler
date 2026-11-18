@@ -251,7 +251,7 @@ These are deferred ideas, not committed implementation scope for 1.13.
 - [ ] Arbitrary metadata filters beyond Fuji film simulation. Design supported
   tag discovery, typed value matching and bounded indexing; avoid repeated
   per-file reads when changing filters. Aymeric feedback, 20 October 2026.
-- [ ] Focus peaking and detail/edge inspection.
+- [ ] Detail/edge inspection beyond focus peaking (P, 1.15).
 - [ ] Inline burst comparison with matched crops/synchronized zoom in the existing
   Gallery/Info surfaces; avoid new screens or user-facing modes by default.
 - [ ] Scrollable subject/detail inspection in Info: user-selected region first,

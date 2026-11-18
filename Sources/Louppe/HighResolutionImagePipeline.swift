@@ -73,6 +73,7 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
         let sourceKey: String
         let coordinate: ZoomTileCoordinate
         let showsClippingWarnings: Bool
+        let showsFocusPeaking: Bool
     }
 
     private final class PendingSource {
@@ -476,7 +477,8 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     func tile(
         for source: ZoomImageSource,
         coordinate: ZoomTileCoordinate,
-        showsClippingWarnings: Bool = false
+        showsClippingWarnings: Bool = false,
+        showsFocusPeaking: Bool = false
     ) async -> ZoomImageTile? {
         guard coordinate.pixelRect(sourceSize: source.pixelSize) != nil else {
             return nil
@@ -484,7 +486,8 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
         let key = TileKey(
             sourceKey: source.key,
             coordinate: coordinate,
-            showsClippingWarnings: showsClippingWarnings
+            showsClippingWarnings: showsClippingWarnings,
+            showsFocusPeaking: showsFocusPeaking
         )
         return await withCheckedContinuation { continuation in
             lock.lock()
@@ -514,7 +517,8 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
                     self.validatedTile(
                         source: source,
                         coordinate: coordinate,
-                        showsClippingWarnings: showsClippingWarnings
+                        showsClippingWarnings: showsClippingWarnings,
+                        showsFocusPeaking: showsFocusPeaking
                     )
                 }
                 self.finishTile(key: key, operation: operation, tile: tile)
@@ -537,11 +541,13 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     func retainTileRequests(
         sourceKey: String,
         coordinates: Set<ZoomTileCoordinate>,
-        showsClippingWarnings: Bool = false
+        showsClippingWarnings: Bool = false,
+        showsFocusPeaking: Bool = false
     ) {
         cancelTileRequests { key in
             key.sourceKey != sourceKey
                 || key.showsClippingWarnings != showsClippingWarnings
+                || key.showsFocusPeaking != showsFocusPeaking
                 || !coordinates.contains(key.coordinate)
         }
     }
@@ -608,14 +614,16 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     private func validatedTile(
         source: ZoomImageSource,
         coordinate: ZoomTileCoordinate,
-        showsClippingWarnings: Bool
+        showsClippingWarnings: Bool,
+        showsFocusPeaking: Bool
     ) -> ZoomImageTile? {
         // A cached CIImage recipe can open the URL lazily on its first render.
         // Validate each new tile, not just the original recipe construction.
         let render = {
             if let testingTile = self.testingTile { return testingTile(source, coordinate) }
             return self.renderTile(source: source, coordinate: coordinate,
-                                   showsClippingWarnings: showsClippingWarnings)
+                                   showsClippingWarnings: showsClippingWarnings,
+                                   showsFocusPeaking: showsFocusPeaking)
         }
         if let revision = source.sourceRevision { return revision.read(render) }
         return render()
@@ -624,7 +632,8 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
     private func renderTile(
         source: ZoomImageSource,
         coordinate: ZoomTileCoordinate,
-        showsClippingWarnings: Bool
+        showsClippingWarnings: Bool,
+        showsFocusPeaking: Bool
     ) -> ZoomImageTile? {
         guard let topLeftRect = coordinate.pixelRect(
             sourceSize: source.pixelSize
@@ -637,34 +646,41 @@ final class HighResolutionImagePipeline: @unchecked Sendable {
             width: topLeftRect.width,
             height: topLeftRect.height
         )
-        guard let rendered =
-                context.createCGImage(
-                    source.image,
-                    from: coreImageRect,
-                    format: .RGBA8,
-                    colorSpace: outputColorSpace
-                )
-                ?? (source.decoder == .appleDefault ? softwareContext.createCGImage(
-                    source.image,
-                    from: coreImageRect,
-                    format: .RGBA8,
-                    colorSpace: outputColorSpace
-                ) : nil)
-        else { return nil }
-        let image: CGImage
+        // Peaking reads the whole lazy recipe, so its filters see the
+        // neighbouring pixels and tiles meet without seams. Without clipping
+        // the strokes render in the same pass as the photo.
+        let peaking = showsFocusPeaking ? FocusPeakingProcessor.overlay(for: source.image) : nil
+        let photo = showsClippingWarnings ? source.image : peaking.map { $0.composited(over: source.image) } ?? source.image
+        guard let rendered = render(photo, from: coreImageRect, decoder: source.decoder) else { return nil }
+        var image = rendered
         if showsClippingWarnings {
             guard let warned =
                     ClippingWarningProcessor.overlay(on: rendered)
             else { return nil }
             image = warned
-        } else {
-            image = rendered
+            // Strokes go over the red clipping tint and are measured on the
+            // photo's own pixels, never on the tint.
+            if let peaking {
+                let tinted = CIImage(cgImage: warned).transformed(
+                    by: CGAffineTransform(translationX: coreImageRect.minX, y: coreImageRect.minY)
+                )
+                guard let combined = render(peaking.composited(over: tinted), from: coreImageRect,
+                                            decoder: source.decoder) else { return nil }
+                image = combined
+            }
         }
         return ZoomImageTile(
             coordinate: coordinate,
             pixelRect: topLeftRect,
             image: image
         )
+    }
+
+    private func render(_ image: CIImage, from rect: CGRect, decoder: AppleRawDecoder) -> CGImage? {
+        context.createCGImage(image, from: rect, format: .RGBA8, colorSpace: outputColorSpace)
+            ?? (decoder == .appleDefault
+                ? softwareContext.createCGImage(image, from: rect, format: .RGBA8, colorSpace: outputColorSpace)
+                : nil)
     }
 
     private func finishSource(

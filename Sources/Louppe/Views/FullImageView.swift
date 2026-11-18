@@ -25,6 +25,7 @@ struct FullImageView: View {
     private let imagePipeline: ImagePipeline
     @Binding var zoomMode: ZoomMode
     let showsClippingWarnings: Bool
+    let showsFocusPeaking: Bool
     let actualSizeViewport: ActualSizeViewport
     let zoomScale: CGFloat
     /// Fit/phone-size double-click asks the store to enter 100% at this point.
@@ -49,6 +50,7 @@ struct FullImageView: View {
     @State private var fallbackRevision: PhotoContentRevision?
     @State private var actualRenderingFailed = false
     @State private var clippingImage: NSImage?
+    @State private var peaking: PeakingLayer?
     /// Low-res stand-in (the Browser thumbnail) shown while the real
     /// decode runs, so switching photos never flashes an empty pane.
     @State private var preview: NSImage?
@@ -66,6 +68,24 @@ struct FullImageView: View {
     /// never invalidates the view.
     private final class PreviewChangeClock {
         var last: ContinuousClock.Instant?
+    }
+
+    /// Peaking strokes for one photo representation; any size tier of the
+    /// same content, mode and decoder lines up with the displayed pixels.
+    private struct PeakingLayer {
+        let image: NSImage
+        let contentRevision: PhotoContentRevision
+        let mode: RawDisplayMode
+        let decoder: AppleRawDecoder
+    }
+
+    /// Nil while peaking is off, so navigation starts no peaking task.
+    private struct PeakingLoadID: Hashable {
+        let contentRevision: PhotoContentRevision
+        let mode: RawDisplayMode
+        let decoder: AppleRawDecoder
+        let sizing: FitDecodeSizing
+        let source: ObjectIdentifier
     }
 
     private struct ClippingLoadID: Hashable {
@@ -104,6 +124,7 @@ struct FullImageView: View {
         item: PhotoItem,
         zoomMode: Binding<ZoomMode>,
         showsClippingWarnings: Bool = false,
+        showsFocusPeaking: Bool = false,
         actualSizeViewport: ActualSizeViewport,
         zoomScale: CGFloat = 1,
         onZoomToActual: @escaping (NormalizedImagePosition) -> Void,
@@ -119,6 +140,7 @@ struct FullImageView: View {
         self.imagePipeline = imagePipeline
         self._zoomMode = zoomMode
         self.showsClippingWarnings = showsClippingWarnings
+        self.showsFocusPeaking = showsFocusPeaking
         self.actualSizeViewport = actualSizeViewport
         self.zoomScale = zoomScale
         self.onZoomToActual = onZoomToActual
@@ -183,6 +205,19 @@ struct FullImageView: View {
         let presentationPreview = showsClippingWarnings
             ? displayedClippingImage ?? displayedPreview
             : displayedPreview
+        // Peaking measures the decoded Fit pixels (never the thumbnail or the
+        // clipping tint) and draws over whichever of them is shown. The zoom
+        // canvas also gets it in every mode: it draws preview pixels below
+        // 100% and while tiles load, and its own magnification (not the
+        // store's coarser zoom readout) decides when tiles replace them.
+        let peakingSource = showsFocusPeaking ? displayedImage ?? retainedTierImage : nil
+        let peakingLoadID = peakingSource.map {
+            PeakingLoadID(contentRevision: contentRevision, mode: mode, decoder: rawDecoder,
+                          sizing: sizing, source: ObjectIdentifier($0))
+        }
+        let peakingLayer = showsFocusPeaking ? peaking.flatMap {
+            $0.contentRevision == contentRevision && $0.mode == mode && $0.decoder == rawDecoder ? $0.image : nil
+        } : nil
         Group {
             if !item.isSupported {
                 ContentUnavailableView {
@@ -203,6 +238,8 @@ struct FullImageView: View {
                         item: item,
                         preview: presentationImage ?? presentationPreview,
                         showsClippingWarnings: showsClippingWarnings,
+                        showsFocusPeaking: showsFocusPeaking,
+                        peakingLayer: peakingLayer,
                         viewport: actualSizeViewport,
                         onDoubleClick: onZoomToFit,
                         onLoading: onLoading,
@@ -223,6 +260,7 @@ struct FullImageView: View {
                             item: item,
                             mode: .fit,
                             image: presentationImage,
+                            peakingLayer: peakingLayer,
                             decoder: rawDecoder,
                             pinchResetGeneration: fittedPinchResetGeneration,
                             onMeasuredScale: onFittedScaleMeasured,
@@ -245,6 +283,7 @@ struct FullImageView: View {
                             item: item,
                             mode: .small,
                             image: presentationImage,
+                            peakingLayer: peakingLayer,
                             decoder: rawDecoder,
                             maximumSize: CGSize(width: 400, height: 600),
                             pinchResetGeneration: fittedPinchResetGeneration,
@@ -291,6 +330,7 @@ struct FullImageView: View {
                             item: item,
                             mode: zoomMode,
                             image: presentationPreview,
+                            peakingLayer: peakingLayer,
                             decoder: rawDecoder,
                             warmsZoomSource: false,
                             maximumSize: zoomMode == .small
@@ -481,6 +521,29 @@ struct FullImageView: View {
                   clippingRevision == requestedRevision else { return }
             clippingImage = loaded
         }
+        .task(id: peakingLoadID) { await loadPeaking(peakingLoadID, source: peakingSource) }
+    }
+
+    private func loadPeaking(_ id: PeakingLoadID?, source: NSImage?) async {
+        guard let id, let cgImage = source?.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            if peaking != nil { peaking = nil }
+            return
+        }
+        let representation = ImagePipeline.fullCacheKey(for: item, mode: id.mode, decoder: id.decoder, sizing: id.sizing)
+        let key = FocusPeakingPipeline.key(representation: representation, source: cgImage)
+        let pipeline = FocusPeakingPipeline.shared
+        func publish(_ image: NSImage) {
+            peaking = PeakingLayer(image: image, contentRevision: id.contentRevision, mode: id.mode, decoder: id.decoder)
+        }
+        if let cached = pipeline.cachedMask(forKey: key) { return publish(cached) }
+        // Another photo's layer is never shown; release it now.
+        if let current = peaking, current.contentRevision != id.contentRevision { peaking = nil }
+        // Same key-repeat protection as clipping: transient photos start no work.
+        try? await Task.sleep(nanoseconds: Self.navigationDebounceNanoseconds)
+        guard !Task.isCancelled,
+              let mask = await pipeline.mask(forKey: key, source: cgImage),
+              !Task.isCancelled else { return }
+        publish(mask)
     }
 
     private var fittedRepresentation: PhotoRepresentation {
@@ -548,6 +611,8 @@ private struct ZoomableFittedImage: View {
     let item: PhotoItem
     let mode: ZoomMode
     let image: NSImage
+    /// Transparent focus-peaking strokes for the same photo, scaled with it.
+    var peakingLayer: NSImage? = nil
     var decoder: AppleRawDecoder = .appleDefault
     /// Only the settled full preview prepares the 100% recipe after a dwell.
     var warmsZoomSource = true
@@ -577,6 +642,14 @@ private struct ZoomableFittedImage: View {
                         width: imageFrame.width,
                         height: imageFrame.height
                     )
+                    .overlay {
+                        if let peakingLayer {
+                            Image(nsImage: peakingLayer)
+                                .resizable()
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                    }
                     .contentShape(Rectangle())
                     .overlay {
                         FittedImageDoubleClickOverlay(

@@ -269,6 +269,14 @@ For RAW files, the histogram switches from **Preview** to **RAW** after a scaled
 linear analysis, independent of photo rendering. Other photo formats have no
 source tag. The **X** overlay measures the displayed rendering.
 
+**Focus peaking** (**P**, or **View → Focus Peaking**) outlines crisp, in-focus
+edges in light purple, so you can see where focus landed without zooming. It
+measures the displayed photo, works at Fit and 100%, and draws over the clipping
+overlay when both are on. Edges count as sharp by their width, not their
+contrast: a soft photo shows few or no outlines, and smooth areas and grain stay
+clear. Fit measures the downsized preview, which looks sharper than 100%; check
+critical focus at 100%.
+
 **Filter → Quality cues** finds High ISO, Slow shutter, Near-white and Near-black
 areas. Set their switches and thresholds in **Settings → General → Quality Cues**; cues
 appear inside Browser/Grid tiles and above the Info histogram. Checks prioritize
@@ -352,6 +360,7 @@ assignments and their view/media contexts, including customized keys.
 | **S** | Toggle true 100% zoom in Gallery |
 | **A** | Toggle phone-sized preview in Gallery |
 | **X** | Show or hide the clipping overlay in Gallery |
+| **P** | Show or hide focus peaking in Gallery |
 | **Tab / G** | Switch between Gallery and Grid |
 | **Q** | Show or hide the Gallery thumbnail browser; switch from Folders to Browser |
 | **T** | Show or hide Folders in Gallery or Grid |

@@ -7,7 +7,7 @@ import AppKit
 /// Hotkey map (README's table must stay in sync with `handleKey`):
 ///   F yes · D no · 0–5 stars · S 100% zoom · A phone-size zoom
 ///   R clear all decisions
-///   Q browser · W info panel · X preview clipping overlay · E export
+///   Q browser · W info panel · X preview clipping overlay · P focus peaking · E export
 ///   Space/K video or audio play/pause (photo: Space = next)
 ///   ←/→ prev/next (Gallery video: seek −/+ 0.5 seconds) · J/L always prev/next
 ///   ↑/↓ prev/next in the Gallery view · same-column photo in the Grid view
@@ -1117,6 +1117,7 @@ struct SessionView: View {
         case .nextFolder: return store.selectNextArchiveFolder()
         case .info: withAnimation(reduceMotion ? nil : .default) { store.showMetadataPanel.toggle() }; return true
         case .clipping: return store.toggleClippingWarnings()
+        case .focusPeaking: return store.toggleFocusPeaking()
         case .grid: store.toggleViewMode(); return true
         case .export:
             guard store.canExport else { return false }

@@ -393,6 +393,8 @@ final class SessionStore: ObservableObject {
     @Published private(set) var photoZoomScale: CGFloat = 1
     private var lastGestureZoomPublication: CFAbsoluteTime = 0
     @Published var showClippingWarnings = false
+    /// Gallery focus-peaking strokes; off with each new folder, like clipping.
+    @Published var showFocusPeaking = false
     let actualSizeViewport = ActualSizeViewport()
     @Published var gridThumbSize: CGFloat = 170
     /// Number of adaptive columns currently visible in the Grid view.
@@ -3642,6 +3644,7 @@ final class SessionStore: ObservableObject {
             actualSizeViewport.reset()
             photoZoomScale = 1
             showClippingWarnings = false
+            showFocusPeaking = false
         }
         let preservesCurrentFilter = isSameFolder && !items.isEmpty
         if let override = nextScanResumeIdentityOverride,
@@ -7185,6 +7188,16 @@ final class SessionStore: ObservableObject {
         return true
     }
 
+    /// Same availability as clipping: one supported photo in Gallery.
+    var canToggleFocusPeaking: Bool { canToggleClippingWarnings }
+
+    @discardableResult
+    func toggleFocusPeaking() -> Bool {
+        guard canToggleFocusPeaking else { return false }
+        showFocusPeaking.toggle()
+        return true
+    }
+
     /// ⌘+ / ⌘− in the Grid view: bigger thumbnails mean fewer per row.
     func zoomGrid(larger: Bool) {
         let next = larger ? gridThumbSize * 1.25 : gridThumbSize / 1.25
@@ -8363,6 +8376,7 @@ final class SessionStore: ObservableObject {
         zoomMode = .fit
         photoZoomScale = 1
         showClippingWarnings = false
+        showFocusPeaking = false
         actualSizeViewport.reset()
         scanTask?.cancel()
         cancelMetadataRechecks()

@@ -2177,3 +2177,9 @@
 "Open in Maps" = "नक़्शे में खोलें";
 "Maps couldn't show this location. Try again." = "नक़्शे यह स्थान नहीं दिखा सका। फिर से कोशिश करें।";
 "Show this photo's location in Apple Maps" = "इस फ़ोटो का स्थान Apple नक़्शे में दिखाएँ";
+"Toggle focus peaking" = "फ़ोकस पीकिंग चालू / बंद करें";
+"Show Focus Peaking" = "फ़ोकस पीकिंग दिखाएँ";
+"Hide Focus Peaking" = "फ़ोकस पीकिंग छिपाएँ";
+"Mark sharp, in-focus edges on the photo" = "फ़ोटो पर तीखे, फ़ोकस वाले किनारे चिह्नित करें";
+"Clipping Overlay" = "क्लिपिंग ओवरले";
+"Focus Peaking" = "फ़ोकस पीकिंग";

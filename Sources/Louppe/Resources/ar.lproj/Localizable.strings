@@ -2177,3 +2177,9 @@
 "Open in Maps" = "فتح في الخرائط";
 "Maps couldn't show this location. Try again." = "تعذّر على الخرائط عرض هذا الموقع. حاول مرة أخرى.";
 "Show this photo's location in Apple Maps" = "عرض موقع هذه الصورة في خرائط Apple";
+"Toggle focus peaking" = "إظهار أو إخفاء إبراز التركيز";
+"Show Focus Peaking" = "إظهار إبراز التركيز";
+"Hide Focus Peaking" = "إخفاء إبراز التركيز";
+"Mark sharp, in-focus edges on the photo" = "تحديد الحواف الحادة الواقعة في نطاق التركيز على الصورة";
+"Clipping Overlay" = "تراكب فقدان التفاصيل";
+"Focus Peaking" = "إبراز التركيز";

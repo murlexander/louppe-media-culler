@@ -408,6 +408,38 @@ final class HotkeyTests: XCTestCase {
         XCTAssertFalse(store.showClippingWarnings)
     }
 
+    func testPTogglesFocusPeakingOnlyForSingleGalleryPhotoAndCombinesWithClipping() {
+        let store = readyStore(itemCount: 3, firstItemIsVideo: false)
+        let view = SessionView(store: store)
+
+        XCTAssertTrue(view.handleKey(keyEvent(code: 35, characters: "p")))
+        XCTAssertTrue(store.showFocusPeaking)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 7, characters: "x")))
+        XCTAssertTrue(store.showClippingWarnings, "Clipping and peaking can be on together")
+        XCTAssertTrue(store.showFocusPeaking)
+        XCTAssertTrue(view.handleKey(keyEvent(code: 35, characters: "p")))
+        XCTAssertFalse(store.showFocusPeaking)
+        XCTAssertTrue(store.showClippingWarnings)
+
+        store.viewMode = .grid
+        XCTAssertFalse(view.handleKey(keyEvent(code: 35, characters: "p")))
+        XCTAssertFalse(store.showFocusPeaking)
+
+        store.viewMode = .gallery
+        store.selectAllVisible()
+        XCTAssertFalse(view.handleKey(keyEvent(code: 35, characters: "p")))
+        XCTAssertFalse(store.showFocusPeaking)
+    }
+
+    func testPDoesNotToggleFocusPeakingForVideo() {
+        let store = readyStore(itemCount: 2, firstItemIsVideo: true)
+        let view = SessionView(store: store)
+
+        XCTAssertFalse(view.handleKey(keyEvent(code: 35, characters: "p")))
+        XCTAssertFalse(store.showFocusPeaking)
+        XCTAssertFalse(store.toggleFocusPeaking())
+    }
+
     func testDestructiveShortcutPassesThroughOutsideUnobstructedSessionContext() {
         let store = readyStore(itemCount: 2, firstItemIsVideo: false)
         let view = SessionView(store: store)

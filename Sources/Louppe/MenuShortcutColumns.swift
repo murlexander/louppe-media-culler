@@ -209,6 +209,8 @@ final class MenuShortcutColumns {
             entry("Zoom Out", command: .zoomOut),
             entry("View Photo at 100%", action: .actualSize),
             entry("View Photo at Phone Size", action: .phoneSize),
+            entry("Clipping Overlay", action: .clipping),
+            entry("Focus Peaking", action: .focusPeaking),
         ]
     }
 

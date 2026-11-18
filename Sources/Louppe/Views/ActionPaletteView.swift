@@ -931,6 +931,17 @@ struct ActionPaletteView: View {
                 isEnabled: store.canToggleClippingWarnings,
                 perform: { _ = store.toggleClippingWarnings() }
             ),
+            ActionPaletteAction(
+                id: "focus-peaking",
+                category: L10n.text("View"),
+                title: store.showFocusPeaking ? L10n.text("Hide Focus Peaking") : L10n.text("Show Focus Peaking"),
+                detail: L10n.text("Mark sharp, in-focus edges on the photo"),
+                symbol: "scope",
+                shortcut: shortcut(.focusPeaking),
+                keywords: ["focus", "sharpness", "edges", "peaking"],
+                isEnabled: store.canToggleFocusPeaking,
+                perform: { _ = store.toggleFocusPeaking() }
+            ),
         ] + archiveFolderActions()
     }
 
