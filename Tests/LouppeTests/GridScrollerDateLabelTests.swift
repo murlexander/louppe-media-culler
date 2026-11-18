@@ -187,8 +187,8 @@ final class GridScrollerDateLabelTests: XCTestCase {
 
         // The undated tail is longer than the viewport.
         try dragKnob(scroll, to: [0.5, 1], diagonal: 0)
-        XCTAssertEqual(samples.last?.text, L10n.text("No Date"))
-        XCTAssertEqual(samples.last?.expected, L10n.text("No Date"))
+        XCTAssertEqual(samples.last?.text, L10n.text("Unknown date"))
+        XCTAssertEqual(samples.last?.expected, L10n.text("Unknown date"))
 
         // Newest first keeps undated items last.
         samples = []
@@ -254,7 +254,7 @@ final class GridScrollerDateLabelTests: XCTestCase {
         let scroll = try gridScroll(in: host)
         record(scroll, store: store)
         try dragKnob(scroll, to: [0.5, 1], diagonal: 0)
-        XCTAssertEqual(samples.last?.text, L10n.text("No Date"))
+        XCTAssertEqual(samples.last?.text, L10n.text("Unknown date"))
         // New identities the mounted projection has not seen yet: until
         // SwiftUI delivers them, every lookup is stale and resolves nothing.
         store.items = store.items.enumerated().map { index, _ in
@@ -303,7 +303,7 @@ final class GridScrollerDateLabelTests: XCTestCase {
         XCTAssertGreaterThan(samples.count, changed, "The drag continued after the change")
         for sample in samples.dropFirst(changed) where sample.visible {
             XCTAssertEqual(sample.text, sample.expected)
-            XCTAssertEqual(sample.text, L10n.text("No Date"), "Only the current, undated items are named")
+            XCTAssertEqual(sample.text, L10n.text("Unknown date"), "Only the current, undated items are named")
         }
         XCTAssertFalse(try XCTUnwrap(scroll.knobLabel).isShowing)
         XCTAssertEqual(scroll.contentView.bounds.minX, 0, accuracy: 0.01)
@@ -399,13 +399,13 @@ final class GridScrollerDateLabelTests: XCTestCase {
         let scroll = try gridScroll(in: host)
         record(scroll, store: store)
         try dragKnob(scroll, to: [0.1, 0.3, 0.5, 0.7, 1], diagonal: 0)
-        let rawMonths = Set((1...12).map { AppDateFormat.yearAndMonth(month($0)) } + [L10n.text("No Date")])
+        let rawMonths = Set((1...12).map { AppDateFormat.yearAndMonth(month($0)) } + [L10n.text("Unknown date")])
         XCTAssertGreaterThanOrEqual(samples.count, 3)
         for sample in samples where sample.visible {
             XCTAssertEqual(sample.text, sample.expected)
             XCTAssertTrue(sample.text.map(rawMonths.contains) ?? false, "RAW sort date, not the JPEG's: \(sample.text ?? "")")
         }
-        XCTAssertEqual(samples.last?.text, L10n.text("No Date"), "A date-less RAW reads No Date despite its dated JPEG")
+        XCTAssertEqual(samples.last?.text, L10n.text("Unknown date"), "A date-less RAW reads Unknown date despite its dated JPEG")
     }
 
     func testOverlayStyleScrollerKeepsTheLabelClearOfTheKnob() async throws {
@@ -564,7 +564,7 @@ final class GridScrollerDateLabelTests: XCTestCase {
         let document = scroll.documentView as! ReviewCollectionDocument
         let expected = document.snapshotViewport().flatMap { receipt in
             store.items.first { $0.individualFiles.contains { $0.id == receipt.physicalFileID } }
-        }.map { $0.captureDate.map(AppDateFormat.yearAndMonth) ?? L10n.text("No Date") }
+        }.map { $0.captureDate.map(AppDateFormat.yearAndMonth) ?? L10n.text("Unknown date") }
         samples.append(Sample(clipX: scroll.contentView.bounds.minX, clipY: scroll.contentView.bounds.minY,
                               text: label.text, expected: expected, frame: label.frame,
                               knob: scroll.convert(scroller.rect(for: .knob), from: scroller),

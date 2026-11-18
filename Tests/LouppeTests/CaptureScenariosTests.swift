@@ -290,6 +290,9 @@ final class CaptureScenariosTests: XCTestCase {
         Scenario(name: "session-grid-scroller-date-plain", description: "The same Grid position without a knob drag: no label.") { fixture in
             try datedGrid(fixture)
         },
+        Scenario(name: "session-grid-scroller-date-undated", description: "Grid by date scrolled to its undated tail: the knob label reads Unknown date, like the group header.") { fixture in
+            try datedGrid(fixture, undatedTail: 40)
+        },
         Scenario(name: "help-shortcuts", description: "Louppe Help with the quick start and the shortcut table (F, D, R rows).") { _ in
             Surface(view: AnyView(LouppeHelpView().frame(width: 720, height: 900)), size: CGSize(width: 720, height: 900))
         },
@@ -380,7 +383,8 @@ final class CaptureScenariosTests: XCTestCase {
                     }
                     if scenario.name.hasPrefix("session-sorted-") { fixture.store.sort.ascending = false }
                     if scenario.name.hasPrefix("session-grid-scroller-date") {
-                        try Self.scrollGrid(in: controller, showsKnobLabel: scenario.name == "session-grid-scroller-date")
+                        try Self.scrollGrid(in: controller, showsKnobLabel: scenario.name != "session-grid-scroller-date-plain",
+                                            fraction: scenario.name == "session-grid-scroller-date-undated" ? 1 : 0.42)
                     }
                     if scenario.name == "sheet-export-xmp-failure" {
                         Task { @MainActor in
@@ -840,7 +844,7 @@ extension CaptureScenariosTests {
 
 /// Scroller date label (1.15): eight months of dated photos, grouped by day.
 extension CaptureScenariosTests {
-    private static func datedGrid(_ fixture: Fixture) throws -> Surface {
+    private static func datedGrid(_ fixture: Fixture, undatedTail: Int = 0) throws -> Surface {
         let template = fixture.items[0].primaryURL
         let calendar = Calendar.current
         fixture.items = try (0..<160).map { index in
@@ -849,7 +853,7 @@ extension CaptureScenariosTests {
             try FileManager.default.copyItem(at: template, to: url)
             let date = calendar.date(from: DateComponents(year: 2025, month: 3 + index / 20,
                                                           day: 2 + (index % 20) / 4 * 5, hour: 9, minute: index % 4))
-            return PhotoItem(id: name, primaryURL: url, pairedURL: nil, captureDate: date,
+            return PhotoItem(id: name, primaryURL: url, pairedURL: nil, captureDate: index < 160 - undatedTail ? date : nil,
                              cameraModel: nil, lensModel: nil, fileSize: 1)
         }
         fixture.ready(mode: .grid)
@@ -862,12 +866,12 @@ extension CaptureScenariosTests {
 
     /// Native scroll to a fixed offset; the seam then presents the label as
     /// a drag would, using the real knob, formatter and first visible item.
-    private static func scrollGrid(in controller: NSViewController, showsKnobLabel: Bool) throws {
+    private static func scrollGrid(in controller: NSViewController, showsKnobLabel: Bool, fraction: CGFloat) throws {
         let scroll = try XCTUnwrap(OffscreenCapture.descendants(of: controller.view)
             .compactMap { $0 as? ReviewCollectionScrollView }.first { $0.knobLabel != nil })
         let clip = scroll.contentView
         let range = (scroll.documentView?.frame.height ?? 0) - clip.bounds.height
-        clip.scroll(to: NSPoint(x: 0, y: (range * 0.42).rounded()))
+        clip.scroll(to: NSPoint(x: 0, y: (range * fraction).rounded()))
         scroll.reflectScrolledClipView(clip)
         scroll.layoutSubtreeIfNeeded()
         if showsKnobLabel { scroll.knobLabel?.presentForCapture() }

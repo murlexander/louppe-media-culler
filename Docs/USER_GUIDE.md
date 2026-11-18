@@ -48,7 +48,7 @@ greyed out until loading finishes. Esc clears the selection, then cancels.
 *Grid for comparing and selecting frames.*
 
 When Grid is sorted by date, dragging the scroll bar's knob shows the month and year
-of the photos you're passing.
+of the photos you're passing, or “Unknown date” for items without a capture date.
 
 The toolbar shows the item position, Yes and No totals (No appears once
 something is marked No) and save status. Unmarked is a normal state, not

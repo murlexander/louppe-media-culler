@@ -411,7 +411,7 @@ final class LocalizationTests: XCTestCase {
         let retired = ["Undecided", "  ·  {0}/{1} reviewed", "Review complete: {0} Yes · {1} No", "All reviewed",
                        "Review progress and decision totals", "no decision", "Trash No + Undecided…",
                        "Mark or clear Yes", "Mark or clear No", "Decide Yes", "Decide No",
-                       "Next Unfinished Folder"]
+                       "Next Unfinished Folder", "No Date"]
         let retiredPlurals = ["%lld items still undecided in this scope — they won't be exported.",
                               "Trash %lld items marked No or Undecided?"]
         for language in L10n.supportedLanguages {

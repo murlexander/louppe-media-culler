@@ -1202,9 +1202,9 @@ precedence over remembered scope/position.
   that lifecycle twice per drag. It applies only to Grid sorted by capture date
   outside Grouped Review, names the first visible item's month (O(log sections)
   `firstVisiblePosition`, matching the viewport receipt) with
-  `AppDateFormat.yearAndMonth` or “No Date”, and sits inboard of the actual
-  scroller frame, which follows the app-wide direction (left in Arabic), not
-  SwiftUI's. The overlay ignores hits, AX and focus; the month is the scroller's
+  `AppDateFormat.yearAndMonth` or “Unknown date” (the key Grid group headers and
+  the Date filter use), and sits inboard of the actual scroller frame, which
+  follows the app-wide direction (left in Arabic), not SwiftUI's. The overlay ignores hits, AX and focus; the month is the scroller's
   accessibility value description only while dragging. Its real-event tests
   feed drags from an event-tracking timer, because the nested loop coalesces
   queued drags, and prove the left gutter in a child process launched with

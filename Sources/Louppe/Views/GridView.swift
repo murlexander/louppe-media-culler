@@ -194,7 +194,7 @@ struct GridCollectionContent: View, Equatable {
                 guard store.sort.key == .captureDate, !store.isGroupedReviewActive,
                       store.items.indices.contains(entry.index), store.items[entry.index].id == entry.id
                 else { return nil }
-                return store.items[entry.index].captureDate.map(AppDateFormat.yearAndMonth) ?? L10n.text("No Date")
+                return store.items[entry.index].captureDate.map(AppDateFormat.yearAndMonth) ?? L10n.text("Unknown date")
             } : nil
         ) { entry in
             AnyView(GridCell(store: store, index: entry.index, id: entry.id,
