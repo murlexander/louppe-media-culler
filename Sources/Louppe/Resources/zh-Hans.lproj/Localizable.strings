@@ -2101,7 +2101,7 @@
 "Show Folders" = "显示文件夹";
 "Expand All" = "全部展开";
 "Collapse All" = "全部折叠";
-"Next Unfinished Folder" = "下一个未完成的文件夹";
+"Next Folder with Unmarked Items" = "下一个含未标记项目的文件夹";
 "Folders width" = "文件夹宽度";
 "Folder: {0}, including subfolders" = "文件夹：{0}，包含子文件夹";
 "Folder: {0}, direct items only" = "文件夹：{0}，仅限直接包含的项目";

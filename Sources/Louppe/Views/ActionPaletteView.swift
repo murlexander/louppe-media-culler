@@ -939,11 +939,11 @@ struct ActionPaletteView: View {
         let index = store.archiveFolderIndex
         let selected = store.archiveSelectedFolderID
         let detail = store.archiveScopeDescription ?? L10n.text("All Media")
-        func action(_ id: String, _ title: String, shortcut: String? = nil,
+        func action(_ id: String, _ title: String, shortcut: String? = nil, keywords: [String] = [],
                     enabled: Bool = true, perform: @escaping @MainActor () -> Void) -> ActionPaletteAction {
             .init(id: id, category: L10n.text("Folders"), title: title,
                   detail: detail, symbol: "folder", shortcut: shortcut,
-                  keywords: ["tree", "sidebar", "directory", "parent", "folder"],
+                  keywords: ["tree", "sidebar", "directory", "parent", "folder"] + keywords,
                   isEnabled: available && enabled, perform: perform)
         }
         var result = [
@@ -959,7 +959,9 @@ struct ActionPaletteView: View {
             action("next-folder", L10n.text("Next Folder"), shortcut: shortcut(.nextFolder),
                 enabled: store.archiveFolderTargets?.next != nil,
                 perform: { store.selectNextArchiveFolder() }),
-            action("next-unfinished-folder", L10n.text("Next Unfinished Folder"),
+            // The command ID predates the rename; "unfinished" still finds it.
+            action("next-unfinished-folder", L10n.text("Next Folder with Unmarked Items"),
+                keywords: ["unfinished", "unreviewed", "undecided", "mixed"],
                 enabled: store.archiveFolderTargets?.nextUnfinished != nil,
                 perform: { store.selectNextUnfinishedArchiveFolder() }),
             action("previous-folder", L10n.text("Previous Folder"), shortcut: shortcut(.previousFolder),

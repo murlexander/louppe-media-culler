@@ -408,6 +408,18 @@ final class MenuShortcutColumnsTests: XCTestCase {
         withExtendedLifetime((columns, target, store)) {}
     }
 
+    func testViewMenuNamesNextFolderWithUnmarkedItemsWithoutAShortcut() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let app = try String(contentsOf: root.appendingPathComponent("Sources/Louppe/LouppeApp.swift"), encoding: .utf8)
+        XCTAssertFalse(app.contains("Next Unfinished Folder"))
+        let next = try XCTUnwrap(app.range(of: "L10n.text(\"Next Folder\")"))
+        let unmarked = try XCTUnwrap(app.range(of: "L10n.text(\"Next Folder with Unmarked Items\")"))
+        XCTAssertLessThan(next.lowerBound, unmarked.lowerBound, "it follows Next Folder in the View menu")
+        let entries = MenuShortcutColumns.entries(preferences: ReviewShortcutPreferences(interpretation: .keyboardLayout),
+                                                  commandPreferences: CommandShortcutPreferences(), context: galleryPhoto)
+        XCTAssertNil(entries.first { $0.title == L10n.text("Next Folder with Unmarked Items") }, "no default shortcut")
+    }
+
     private func event(_ character: String, code: UInt16, modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
         NSEvent.keyEvent(
             with: .keyDown, location: .zero, modifierFlags: modifiers, timestamp: 0,

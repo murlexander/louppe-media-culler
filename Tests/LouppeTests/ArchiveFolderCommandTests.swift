@@ -135,7 +135,7 @@ final class ArchiveFolderCommandTests: XCTestCase {
         XCTAssertFalse(view.handleKey(event("t", 17), context: .focusedSession, shortcutPreferences: prefs))
     }
 
-    func testNextUnfinishedFolderSkipsFoldersWhoseDirectItemsAreReviewed() throws {
+    func testNextFolderWithUnmarkedItemsSkipsFoldersWhoseDirectItemsAreMarked() throws {
         let store = makeStore()
         XCTAssertEqual(store.archiveNextUnfinishedFolderID(after: ""), "2/child")
         let child = try XCTUnwrap(store.items.firstIndex { $0.primaryFile.id == "2/child/a.JPG" })
@@ -148,7 +148,27 @@ final class ArchiveFolderCommandTests: XCTestCase {
         store.undo()
         XCTAssertEqual(store.archiveNextUnfinishedFolderID(after: ""), "10", "Undo of the last rating reopens its folder")
         let actions = ActionPaletteView(store: store).actions
-        XCTAssertNotNil(actions.first { $0.id == "next-unfinished-folder" })
+        let command = try XCTUnwrap(actions.first { $0.id == "next-unfinished-folder" }, "the command ID stays stable")
+        XCTAssertEqual(command.title, L10n.text("Next Folder with Unmarked Items"))
+        XCTAssertEqual(command.title, "Next Folder with Unmarked Items")
+        for query in ["unmarked items", "next folder unmarked", "unfinished"] {
+            XCTAssertEqual(ActionPaletteSearch.results(for: query, in: actions).first?.id, "next-unfinished-folder", query)
+        }
+    }
+
+    func testNextFolderWithUnmarkedItemsStopsAtMixedPairs() throws {
+        let store = makeStore(paths: ["A/1.JPG", "B/2.JPG"])
+        func file(_ id: String, _ rating: Rating) -> PhotoFile {
+            PhotoFile(id: id, url: URL(string: root.absoluteString + id)!, captureDate: nil, cameraModel: nil,
+                      lensModel: nil, fileSize: 1, rating: rating)
+        }
+        store.items = [PhotoItem(primaryFile: file("A/1.JPG", .no)),
+                       PhotoItem(primaryFile: file("B/2.NEF", .yes), pairedFile: file("B/2.JPG", .no))]
+        store.archiveFolderIndex = ArchiveFolderIndex(root: root, directories: [], items: store.items)
+        XCTAssertEqual(store.items[1].ratingState, .mixed)
+        XCTAssertEqual(store.archiveNextUnfinishedFolderID(after: ""), "B", "No is marked; a Mixed pair is not")
+        store.rate(.yes, at: 1)
+        XCTAssertNil(store.archiveNextUnfinishedFolderID(after: ""), "every direct item is Yes or No")
     }
 
     func testEnteringAFolderStartsAtItsFirstUndecidedItemUnlessTheCurrentItemBelongsToIt() throws {

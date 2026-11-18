@@ -722,7 +722,7 @@ precedence over remembered scope/position.
   Scoped decision snapshots and the scoped stars-or-label set update by changed
   physical-file IDs, keeping Yes/No totals and both Clear commands' enablement
   constant-time between scope/structure changes. Decision edits never reload
-  outline rows; only Next Unfinished Folder keeps direct Yes/No counts per folder.
+  outline rows; only Next Folder with Unmarked Items keeps direct Yes/No counts per folder.
   Explicit Reset Folder Navigation preserves invalid primary/previous memory
   leaves in a uniquely named sibling directory before writing fresh UI memory.
 

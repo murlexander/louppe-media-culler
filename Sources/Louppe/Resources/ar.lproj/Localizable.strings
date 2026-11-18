@@ -2084,7 +2084,7 @@
 "Show Folders" = "إظهار المجلدات";
 "Expand All" = "توسيع الكل";
 "Collapse All" = "طي الكل";
-"Next Unfinished Folder" = "المجلد التالي غير المكتمل";
+"Next Folder with Unmarked Items" = "المجلد التالي الذي يحتوي على عناصر بلا تحديد";
 "Folders width" = "عرض المجلدات";
 "Folder: {0}, including subfolders" = "المجلد: {0}، بما في ذلك المجلدات الفرعية";
 "Folder: {0}, direct items only" = "المجلد: {0}، العناصر المباشرة فقط";

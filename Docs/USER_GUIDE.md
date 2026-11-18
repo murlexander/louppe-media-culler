@@ -325,7 +325,8 @@ saved keys and contexts. Escape retains its native selection/cancel behavior.
 Use View or the Command Palette to choose Browser or Folders, show or hide the
 sidebar, and expand or collapse folders. Previous/Next Folder skips empty and
 container-only folders; Next from All Media goes to the first folder with direct
-media. Next Unfinished Folder also skips folders whose items all have Yes or No.
+media. Next Folder with Unmarked Items goes to the next folder whose own items
+(not its subfolders') include an Unmarked item or a Mixed pair.
 Entering a folder keeps the current item when it belongs there; otherwise it
 starts at the first Unmarked (or Mixed) item. Enclosing Folder returns to the parent,
 including container-only folders.

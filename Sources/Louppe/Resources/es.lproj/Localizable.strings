@@ -2084,7 +2084,7 @@
 "Show Folders" = "Mostrar carpetas";
 "Expand All" = "Expandir todo";
 "Collapse All" = "Contraer todo";
-"Next Unfinished Folder" = "Carpeta siguiente sin terminar";
+"Next Folder with Unmarked Items" = "Carpeta siguiente con elementos sin marcar";
 "Folders width" = "Ancho de carpetas";
 "Folder: {0}, including subfolders" = "Carpeta: {0}, incluidas las subcarpetas";
 "Folder: {0}, direct items only" = "Carpeta: {0}, solo elementos directos";

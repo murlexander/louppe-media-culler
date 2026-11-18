@@ -2084,7 +2084,7 @@
 "Show Folders" = "फ़ोल्डर दिखाएँ";
 "Expand All" = "सभी विस्तृत करें";
 "Collapse All" = "सभी संक्षिप्त करें";
-"Next Unfinished Folder" = "अगला अधूरा फ़ोल्डर";
+"Next Folder with Unmarked Items" = "अचिह्नित आइटम वाला अगला फ़ोल्डर";
 "Folders width" = "फ़ोल्डर की चौड़ाई";
 "Folder: {0}, including subfolders" = "फ़ोल्डर: {0}, सबफ़ोल्डर सहित";
 "Folder: {0}, direct items only" = "फ़ोल्डर: {0}, केवल सीधे मौजूद आइटम";

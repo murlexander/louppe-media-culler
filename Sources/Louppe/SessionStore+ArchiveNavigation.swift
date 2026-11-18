@@ -91,7 +91,7 @@ extension SessionStore {
         }
     }
 
-    /// Built on first use by Next Unfinished Folder, then kept current per decision.
+    /// Built on first use by Next Folder with Unmarked Items, then kept current per decision.
     var archiveFolderProgress: ArchiveFolderProgress? {
         guard let index = archiveFolderIndex, hasArchiveFolders, index.indexedItemCount == items.count else { return nil }
         if let progress = archiveFolderProgressStorage, progress.generation == index.generation,
@@ -115,7 +115,7 @@ extension SessionStore {
         if changed { archiveFolderProgressRevision &+= 1 }
     }
 
-    /// Next Unfinished Folder: Yes or No is finished; Mixed pairs are not.
+    /// Next Folder with Unmarked Items: Yes or No counts as marked; Unmarked and Mixed pairs do not.
     static func isReviewed(_ item: PhotoItem) -> Bool {
         let state = item.ratingState
         return state == .yes || state == .no

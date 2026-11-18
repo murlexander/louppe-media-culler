@@ -1,6 +1,6 @@
 import Foundation
 
-/// Direct Yes/No counts per folder for Next Unfinished Folder. An item counts
+/// Direct Yes/No counts per folder for Next Folder with Unmarked Items. An item counts
 /// once in each physical parent folder it belongs to (a cross-folder pair
 /// counts in both). Built once per index generation, then updated per changed
 /// decision in O(parent folders); it never reads media or the disk.

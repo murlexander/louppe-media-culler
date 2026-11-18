@@ -410,12 +410,17 @@ final class LocalizationTests: XCTestCase {
                         "zh-Hans": "未标记", "hi": "अचिह्नित", "ar": "بلا تحديد"]
         let retired = ["Undecided", "  ·  {0}/{1} reviewed", "Review complete: {0} Yes · {1} No", "All reviewed",
                        "Review progress and decision totals", "no decision", "Trash No + Undecided…",
-                       "Mark or clear Yes", "Mark or clear No", "Decide Yes", "Decide No"]
+                       "Mark or clear Yes", "Mark or clear No", "Decide Yes", "Decide No",
+                       "Next Unfinished Folder"]
         let retiredPlurals = ["%lld items still undecided in this scope — they won't be exported.",
                               "Trash %lld items marked No or Undecided?"]
         for language in L10n.supportedLanguages {
             let strings = try catalog(language)
             XCTAssertEqual(strings["Unmarked"], unmarked[language], language)
+            let nextFolder = try XCTUnwrap(strings["Next Folder with Unmarked Items"], language)
+            let term = try XCTUnwrap(unmarked[language])
+            XCTAssertTrue(nextFolder.contains(term) || nextFolder.contains(term.lowercased(with: Locale(identifier: language))),
+                          "\(language) uses the fixed Unmarked term: \(nextFolder)")
             for key in retired { XCTAssertNil(strings[key], "\(language): \(key)") }
             let path = try XCTUnwrap(L10n.resourceBundle.path(forResource: "Localizable", ofType: "stringsdict",
                                                               inDirectory: nil, forLocalization: language))

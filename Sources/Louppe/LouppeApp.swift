@@ -371,7 +371,7 @@ private struct FocusedLouppeSessionCommands: Commands {
                 .disabled(actionableStore?.canSelectPreviousArchiveFolder != true)
             Button(L10n.text("Next Folder")) { actionableStore?.selectNextArchiveFolder() }
                 .disabled(actionableStore?.canSelectNextArchiveFolder != true)
-            Button(L10n.text("Next Unfinished Folder")) { actionableStore?.selectNextUnfinishedArchiveFolder() }
+            Button(L10n.text("Next Folder with Unmarked Items")) { actionableStore?.selectNextUnfinishedArchiveFolder() }
                 .disabled(actionableStore?.canSelectNextUnfinishedArchiveFolder != true)
             Button(L10n.text("Show Current Item’s Folder")) { actionableStore?.revealCurrentItemArchiveFolder() }
                 .disabled(actionableStore?.canRevealCurrentItemArchiveFolder != true)

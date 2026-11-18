@@ -623,9 +623,9 @@ Unchanged representable updates skip expansion work (shared-storage set check).
 Expand/Collapse All use one recursive native call and Option-click disclosure
 reports one final set: 10k folders expand in about 0.6 s and collapse in 0.25 s
 in an unoptimized hidden-window test, versus 12.9 s and 10,001 store publications
-before. Next Unfinished Folder's direct Yes/No counts are built lazily once per
+before. Next Folder with Unmarked Items' direct Yes/No counts are built lazily once per
 index generation in O(items × parent folders), then each changed decision updates
-only its own parent folders; decisions never reload outline rows. Next/previous/unfinished folder
+only its own parent folders; decisions never reload outline rows. Next/previous/unmarked-items folder
 targets are cached per index, selection and progress revision, because SwiftUI
 evaluates menu enablement on every publication.
 Only the active scope retains indexed decision snapshots. Scope/structure changes

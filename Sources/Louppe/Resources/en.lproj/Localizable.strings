@@ -2084,7 +2084,7 @@
 "Show Folders" = "Show Folders";
 "Expand All" = "Expand All";
 "Collapse All" = "Collapse All";
-"Next Unfinished Folder" = "Next Unfinished Folder";
+"Next Folder with Unmarked Items" = "Next Folder with Unmarked Items";
 "Folders width" = "Folders width";
 "Folder: {0}, including subfolders" = "Folder: {0}, including subfolders";
 "Folder: {0}, direct items only" = "Folder: {0}, direct items only";

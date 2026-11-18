@@ -2084,7 +2084,7 @@
 "Show Folders" = "Mostrar pastas";
 "Expand All" = "Expandir tudo";
 "Collapse All" = "Recolher tudo";
-"Next Unfinished Folder" = "Pasta seguinte não concluída";
+"Next Folder with Unmarked Items" = "Pasta seguinte com itens sem marcação";
 "Folders width" = "Largura das pastas";
 "Folder: {0}, including subfolders" = "Pasta: {0}, incluindo subpastas";
 "Folder: {0}, direct items only" = "Pasta: {0}, apenas itens diretos";

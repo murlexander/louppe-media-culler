@@ -43,8 +43,8 @@ extension SessionStore {
         }?.id
     }
 
-    /// The next folder, in the same order as Next Folder, that still has a
-    /// direct item without Yes or No. Folders finished earlier are skipped.
+    /// Next Folder with Unmarked Items: the next folder, in Next Folder order, with a
+    /// direct item that is Unmarked or Mixed (neither Yes nor No).
     func archiveNextUnfinishedFolderID(after id: String) -> String? {
         guard let index = archiveFolderIndex, let position = index.ordinal(for: id),
               let progress = archiveFolderProgress else { return nil }
