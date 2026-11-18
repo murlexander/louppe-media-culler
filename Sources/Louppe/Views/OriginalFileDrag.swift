@@ -270,8 +270,9 @@ final class OriginalFileDragArm {
         latestPoint = point
         sourceView = view
         guard plan != nil else {
-            // First crossing: resolve now, never on mouse-down.
-            guard let resolved = resolver?() else { disarm(); return false }
+            // First crossing: resolve now, never on mouse-down. A plan whose
+            // item changed since the press is stale: cancel before any read.
+            guard let resolved = resolver?(), resolved.isStillValid() else { disarm(); return false }
             plan = resolved
             beginSweep(for: resolved)
             return false

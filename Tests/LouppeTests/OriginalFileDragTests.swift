@@ -308,6 +308,46 @@ final class OriginalFileDragTests: XCTestCase {
         XCTAssertEqual(store.zoomMode, .actual)
     }
 
+    func testGalleryDragPressedOnOnePhotoNeverDragsTheNext() async throws {
+        let fixture = try SelectionInteractionFixture()
+        defer { fixture.remove() }
+        let store = try fixture.readyStore(count: 4)
+        store.viewMode = .gallery
+        store.setIndex(2)
+        let (host, window) = mount(GalleryView(store: store), size: CGSize(width: 900, height: 600))
+        defer { close(store, window) }
+        _ = try await waitForView(FittedImageDoubleClickView.self, in: host)
+        try await Task.sleep(for: .milliseconds(300)) // Photo B's preview is now cached.
+        store.setIndex(1)
+        let fitted = try await waitForView(FittedImageDoubleClickView.self, in: host)
+        try await Task.sleep(for: .milliseconds(300))
+        let counter = DragReadCounter()
+        OriginalFileDragArm.presenceCheckForTesting = { _ in counter.increment(); return true }
+        defer { OriginalFileDragArm.presenceCheckForTesting = nil }
+
+        // Press on A, step to B with the button held, then cross the threshold.
+        NSApp.sendEvent(try mouse(.leftMouseDown, fitted, CGPoint(x: 0.5, y: 0.5), window, number: 1))
+        XCTAssertTrue(fitted.dragArm.isArmed)
+        store.goNext()
+        XCTAssertEqual(store.currentIndex, 2)
+        try await SelectionInteractionFixture.settle(host)
+        let current = try await waitForView(FittedImageDoubleClickView.self, in: host)
+        XCTAssertTrue(current === fitted, "The cached photo reuses the fitted view (the case under test)")
+        NSApp.sendEvent(try mouse(.leftMouseDragged, fitted, CGPoint(x: 0.7, y: 0.7), window, number: 2))
+        XCTAssertFalse(fitted.dragArm.hasPendingSweepForTesting, "The stale gesture reads nothing")
+        XCTAssertFalse(fitted.dragArm.isArmed, "The stale gesture is cancelled")
+        NSApp.sendEvent(try mouse(.leftMouseDragged, fitted, CGPoint(x: 0.8, y: 0.8), window, number: 3))
+        NSApp.sendEvent(try mouse(.leftMouseUp, fitted, CGPoint(x: 0.8, y: 0.8), window, number: 4))
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertTrue(started.isEmpty, "Neither A nor B is dragged")
+        XCTAssertEqual(counter.value, 0, "No file of either photo is read")
+
+        // A new press on B drags B.
+        try await drag(fitted, from: CGPoint(x: 0.5, y: 0.5), to: CGPoint(x: 0.7, y: 0.7), window: window)
+        XCTAssertEqual(started.count, 1)
+        XCTAssertEqual(try pasteboardURLs(try XCTUnwrap(started.first).items), [store.items[2].primaryURL])
+    }
+
     func testGalleryPinchDisarmsDrag() async throws {
         let fixture = try SelectionInteractionFixture()
         defer { fixture.remove() }

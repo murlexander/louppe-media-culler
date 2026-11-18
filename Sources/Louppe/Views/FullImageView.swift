@@ -897,11 +897,15 @@ final class FittedImageDoubleClickView: NSView {
     override func mouseDown(with event: NSEvent) {
         guard event.clickCount == 2 else {
             // A first down may become a copy-only drag of the originals.
+            // The provider and pixels are the pressed photo's: this view is
+            // reused when the keyboard steps to a cached photo, and a
+            // gesture that outlives its photo is cancelled, never retargeted.
             var resolve: OriginalFileDragArm.Resolver?
-            if !pinchIsActive, dragPlan != nil {
+            if !pinchIsActive, let pressedPlan = dragPlan {
+                let pressedImage = dragImage
                 resolve = { [weak self] () -> OriginalFileDragPlan? in
-                    guard let self, let dragPlan = self.dragPlan else { return nil }
-                    return dragPlan(self.bounds, self.dragImage)
+                    guard let self else { return nil }
+                    return pressedPlan(self.bounds, pressedImage)
                 }
             }
             dragArm.arm(event: event, at: convert(event.locationInWindow, from: nil), resolve: resolve)
