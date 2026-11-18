@@ -219,6 +219,12 @@ struct SessionView: View {
             } message: {
                 Text(store.pairingMetadataError ?? "")
             }
+            .alert(store.originalHandoffAlert?.title ?? "", isPresented: isOriginalHandoffAlertPresented,
+                   presenting: store.originalHandoffAlert) { _ in
+                Button(L10n.text("OK")) { store.originalHandoffAlert = nil }
+            } message: { alert in
+                Text(alert.message)
+            }
             .alert(L10n.text("Clean Up"), isPresented: isCleanUpErrorPresented) {
                 if !store.cleanUpStalePhotos.isEmpty {
                     Button(L10n.text("Rescan Folder")) {
@@ -289,6 +295,13 @@ struct SessionView: View {
         Binding(
             get: { store.pairingMetadataError != nil },
             set: { if !$0 { store.pairingMetadataError = nil } }
+        )
+    }
+
+    private var isOriginalHandoffAlertPresented: Binding<Bool> {
+        Binding(
+            get: { store.originalHandoffAlert != nil },
+            set: { if !$0 { store.originalHandoffAlert = nil } }
         )
     }
 

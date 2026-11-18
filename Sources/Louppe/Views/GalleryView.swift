@@ -67,6 +67,11 @@ struct GalleryView: View {
                             },
                             imagePipeline: imagePipeline
                         )
+                        .environment(\.originalFileDragProvider, dragProvider(for: item))
+                        .contextMenu {
+                            OpenWithMenu(store: store, origin: .item(index: store.currentIndex,
+                                                                     revision: item.contentRevision))
+                        }
                     }
                 } else if !store.visibleIndices.isEmpty {
                     ContentUnavailableView {
@@ -94,5 +99,18 @@ struct GalleryView: View {
             .clipped()
         }
         .background(SessionRenderMarker(kind: .gallery))
+    }
+
+    /// Fit and Phone photos drag their originals (the selection when this
+    /// photo is in it). A zoomed photo pans instead, so it gets no provider.
+    private func dragProvider(for item: PhotoItem) -> OriginalFileDragProvider? {
+        guard store.zoomMode != .actual, store.canDragOriginal(at: store.currentIndex) else { return nil }
+        let index = store.currentIndex
+        let revision = item.contentRevision
+        return OriginalFileDragProvider { [store] frame, image in
+            store.originalFileDragPlan(index: index, revision: revision, mediaFrame: frame,
+                                       leaderImage: image,
+                                       additionalCheck: { store.zoomMode != .actual && store.currentIndex == index })
+        }
     }
 }

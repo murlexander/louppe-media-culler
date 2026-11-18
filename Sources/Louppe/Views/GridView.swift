@@ -169,6 +169,8 @@ struct GridCollectionContent: View, Equatable {
                     let playable = Set(frames.keys.filter {
                         store.items.indices.contains($0) && store.items[$0].isPlayableMedia
                     })
+                    // Media of a local item belongs to drag-out; see GridPointerOrigin.
+                    let draggable = Set(frames.keys.filter { store.canDragOriginal(at: $0) })
                     return GridRubberBandHitTest.shouldTrackCanvasDrag(
                         startingAt: point, tileFrames: frames, playableVideoIndices: playable,
                         rightToLeft: layoutDirection == .rightToLeft,
@@ -179,7 +181,8 @@ struct GridCollectionContent: View, Equatable {
                                 ?? TileMediaGeometry.imageSize(for: item, loadedImage: ImagePipeline.shared.cachedThumbnail(for: item))
                             else { return nil }
                             return (index, size)
-                        }))
+                        }),
+                        draggableIndices: draggable)
                 },
                 changed: { rect, frames in
                     store.setSelection(Set(frames.filter { $0.value.intersects(rect) }.map(\.key)))
@@ -207,6 +210,7 @@ struct GridCollectionContent: View, Equatable {
 /// the badge, selection frame, and accessibility value update immediately.
 struct GridCell: View {
     @ObservedObject var store: SessionStore
+    @Environment(\.layoutDirection) private var layoutDirection
     let index: Int
     let id: String
     let onPointerCurrentChange: () -> Void
@@ -236,7 +240,8 @@ struct GridCell: View {
                         .overlay {
                             GridImmediateClickSurface(
                                 onSingleClick: actions.selectPhoto,
-                                onDoubleClick: actions.openInGallery
+                                onDoubleClick: actions.openInGallery,
+                                dragPlan: { point, bounds in mediaDragResolver(item: item, point: point, slot: bounds) }
                             )
                             .mediaTileAccessibility(
                                 item: item,
@@ -295,6 +300,28 @@ struct GridCell: View {
             .contextMenu {
                 MediaTileContextMenu(store: store, index: index, revision: item.contentRevision, open: actions.openInGallery)
             }
+        }
+    }
+
+    /// Only a down on this tile's fitted media (not its controls or letterbox)
+    /// arms drag-out; the rubber band's classification uses the same rule.
+    /// Mouse-down does only this geometry; the originals resolve at the threshold.
+    private func mediaDragResolver(item: PhotoItem, point: CGPoint, slot: CGRect) -> OriginalFileDragArm.Resolver? {
+        guard store.canDragOriginal(at: index), store.items[index].contentRevision == item.contentRevision
+        else { return nil }
+        let imageSize = tileImageSizes.sizes[item.contentRevision]
+            ?? TileMediaGeometry.imageSize(for: item, loadedImage: ImagePipeline.shared.cachedThumbnail(for: item))
+        let origin = GridRubberBandHitTest.origin(
+            startingAt: point, tileFrames: [index: slot],
+            playableVideoIndices: item.isPlayableMedia ? [index] : [],
+            rightToLeft: layoutDirection == .rightToLeft,
+            imageSizes: imageSize.map { [index: $0] } ?? [:],
+            draggableIndices: [index])
+        guard origin == .media(index) else { return nil }
+        let media = TileMediaGeometry.fittedRect(in: slot, imageSize: imageSize, alignment: .bottom)
+        let revision = item.contentRevision
+        return { [store, index] in
+            store.originalFileDragPlan(index: index, revision: revision, mediaFrame: media)
         }
     }
 
@@ -376,32 +403,44 @@ struct GridCell: View {
 /// arrives with `clickCount == 2` and opens the already-selected item.
 struct GridImmediateClickSurface: NSViewRepresentable {
     let onSingleClick: (NSEvent.ModifierFlags) -> Void
-    let onDoubleClick: () -> Void
+    /// Nil keeps every click a single click (Browser's plain behavior).
+    var onDoubleClick: (() -> Void)?
+    /// Returns a plan when a mouse-down at this top-left point may drag the
+    /// originals out. Drag never changes selection; only mouse-up clicks do.
+    var dragPlan: (@MainActor (CGPoint, CGRect) -> OriginalFileDragArm.Resolver?)? = nil
 
     func makeNSView(context: Context) -> ClickView {
-        ClickView(
+        let view = ClickView(
             onSingleClick: onSingleClick,
             onDoubleClick: onDoubleClick
         )
+        view.dragPlan = dragPlan
+        return view
     }
 
     func updateNSView(_ nsView: ClickView, context: Context) {
         nsView.onSingleClick = onSingleClick
         nsView.onDoubleClick = onDoubleClick
+        nsView.dragPlan = dragPlan
     }
 
     final class ClickView: NSView {
         private static let dragThresholdSquared: CGFloat = 8 * 8
 
         var onSingleClick: (NSEvent.ModifierFlags) -> Void
-        var onDoubleClick: () -> Void
+        var onDoubleClick: (() -> Void)?
+        var dragPlan: (@MainActor (CGPoint, CGRect) -> OriginalFileDragArm.Resolver?)?
+        let dragArm = OriginalFileDragArm()
         private var mouseDownLocation: CGPoint?
         private var exceededDragThreshold = false
         private let touchActions = DirectTouchClickActions()
 
+        // Top-left coordinates match the Grid document and GridPointerOrigin.
+        override var isFlipped: Bool { true }
+
         init(
             onSingleClick: @escaping (NSEvent.ModifierFlags) -> Void,
-            onDoubleClick: @escaping () -> Void
+            onDoubleClick: (() -> Void)?
         ) {
             self.onSingleClick = onSingleClick
             self.onDoubleClick = onDoubleClick
@@ -411,8 +450,9 @@ struct GridImmediateClickSurface: NSViewRepresentable {
                 self.window?.makeFirstResponder(nil)
                 self.onSingleClick(modifiers)
             }
-            touchActions.doubleTap = { [weak self] _ in self?.onDoubleClick() }
-            touchActions.install(on: self, includesSingleTap: true)
+            touchActions.doubleTap = { [weak self] _ in self?.onDoubleClick?() }
+            touchActions.install(on: self, includesSingleTap: true,
+                                 includesDoubleTap: onDoubleClick != nil)
         }
 
         @available(*, unavailable)
@@ -422,6 +462,10 @@ struct GridImmediateClickSurface: NSViewRepresentable {
 
         override var acceptsFirstResponder: Bool { false }
 
+        /// An inactive window stays put while a drag starts here; a plain
+        /// click still activates and orders it front on mouse-up, as in Finder.
+        override func shouldDelayWindowOrdering(for event: NSEvent) -> Bool { dragPlan != nil }
+
         override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
             true
         }
@@ -430,8 +474,11 @@ struct GridImmediateClickSurface: NSViewRepresentable {
             // A photo click returns keyboard navigation to the session instead
             // of leaving Space/arrows owned by the last toolbar control.
             window?.makeFirstResponder(nil)
-            mouseDownLocation = convert(event.locationInWindow, from: nil)
+            let point = convert(event.locationInWindow, from: nil)
+            mouseDownLocation = point
             exceededDragThreshold = false
+            dragArm.arm(event: event, at: point,
+                        resolve: event.clickCount == 1 ? dragPlan?(point, bounds) : nil)
         }
 
         override func mouseDragged(with event: NSEvent) {
@@ -442,12 +489,14 @@ struct GridImmediateClickSurface: NSViewRepresentable {
             if dx * dx + dy * dy >= Self.dragThresholdSquared {
                 exceededDragThreshold = true
             }
+            dragArm.dragged(event, to: current, in: self)
         }
 
         override func mouseUp(with event: NSEvent) {
             defer {
                 mouseDownLocation = nil
                 exceededDragThreshold = false
+                dragArm.mouseUp()
             }
             guard let start = mouseDownLocation else { return }
             let end = convert(event.locationInWindow, from: nil)
@@ -457,7 +506,7 @@ struct GridImmediateClickSurface: NSViewRepresentable {
                   dx * dx + dy * dy < Self.dragThresholdSquared else {
                 return
             }
-            if event.clickCount >= 2 {
+            if event.clickCount >= 2, let onDoubleClick {
                 onDoubleClick()
             } else {
                 onSingleClick(event.modifierFlags)
@@ -512,6 +561,18 @@ struct GridCellActions {
     }
 }
 
+/// Where a Grid pointer-down belongs. One classification decides both the
+/// rubber band (canvas only) and the media drag surface (media only), so a
+/// gesture has exactly one owner from mouse-down to mouse-up.
+enum GridPointerOrigin: Equatable {
+    /// Gaps, letterbox, captions and ineligible media: rubber-band selection.
+    case canvas
+    /// Fitted media of a tile whose originals can be dragged out.
+    case media(Int)
+    /// Decision, quality-cue or Play target: the native control owns it.
+    case control
+}
+
 /// Classifies the starting point of a Grid drag from the tile geometry already
 /// needed for selection. Control locations are deterministic within each
 /// fitted photo rectangle, so this avoids one GeometryReader and preference value
@@ -529,13 +590,27 @@ enum GridRubberBandHitTest {
         tileFrames: [Int: CGRect],
         playableVideoIndices: Set<Int>,
         rightToLeft: Bool = false,
-        imageSizes: [Int: CGSize] = [:]
+        imageSizes: [Int: CGSize] = [:],
+        draggableIndices: Set<Int> = []
     ) -> Bool {
+        origin(startingAt: point, tileFrames: tileFrames, playableVideoIndices: playableVideoIndices,
+               rightToLeft: rightToLeft, imageSizes: imageSizes,
+               draggableIndices: draggableIndices) == .canvas
+    }
+
+    static func origin(
+        startingAt point: CGPoint,
+        tileFrames: [Int: CGRect],
+        playableVideoIndices: Set<Int>,
+        rightToLeft: Bool = false,
+        imageSizes: [Int: CGSize] = [:],
+        draggableIndices: Set<Int> = []
+    ) -> GridPointerOrigin {
         guard let (index, tileFrame) = tileFrames.first(where: {
             $0.value.contains(point)
         }) else {
             // Gaps and padding are intentional selection-canvas origins.
-            return true
+            return .canvas
         }
 
         // GridCell's media area is a square at the top of the cell; the
@@ -546,7 +621,7 @@ enum GridRubberBandHitTest {
             width: tileFrame.width,
             height: tileFrame.width
         )
-        guard slotFrame.contains(point) else { return true }
+        guard slotFrame.contains(point) else { return .canvas }
         let mediaFrame = TileMediaGeometry.fittedRect(in: slotFrame, imageSize: imageSizes[index],
                                                       alignment: .bottom)
 
@@ -559,7 +634,7 @@ enum GridRubberBandHitTest {
             width: ratingControlRegionSize,
             height: ratingControlRegionSize
         )
-        if ratingFrame.contains(point) { return false }
+        if ratingFrame.contains(point) { return .control }
         if !playableVideoIndices.contains(index) {
             let cueRegionHeight = TileBadgeLayout.cueTargetHeight + TileBadgeLayout.inset
             let cueFrame = CGRect(
@@ -570,7 +645,7 @@ enum GridRubberBandHitTest {
                 width: TileBadgeLayout.maximumCueRowWidth + TileBadgeLayout.inset,
                 height: cueRegionHeight
             )
-            if cueFrame.contains(point) { return false }
+            if cueFrame.contains(point) { return .control }
         }
 
         if playableVideoIndices.contains(index) {
@@ -581,10 +656,11 @@ enum GridRubberBandHitTest {
                 width: playbackControlRegionSize,
                 height: playbackControlRegionSize
             )
-            if playbackFrame.contains(point) { return false }
+            if playbackFrame.contains(point) { return .control }
         }
 
-        // Everything else, including the filename, is selection canvas.
-        return true
+        // Fitted media drags its originals; letterbox stays selection canvas.
+        if draggableIndices.contains(index), mediaFrame.contains(point) { return .media(index) }
+        return .canvas
     }
 }

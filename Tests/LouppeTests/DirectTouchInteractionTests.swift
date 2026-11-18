@@ -103,7 +103,9 @@ final class DirectTouchInteractionTests: XCTestCase {
         let revision = store.items[1].contentRevision
         let menu = NSHostingMenu(rootView: MediaTileContextMenu(store: store, index: 1, revision: revision, open: { opens += 1 }))
         menu.update()
-        XCTAssertEqual(menu.items.filter { !$0.isSeparatorItem }.count, 5)
+        XCTAssertEqual(menu.items.filter { !$0.isSeparatorItem }.count, 6)
+        XCTAssertNotNil(try XCTUnwrap(menu.items.first { $0.title == L10n.text("Open With") }).submenu,
+                        "Open With is a native submenu for touch and pointer users")
         menu.performActionForItem(at: 0)
         XCTAssertEqual(opens, 1)
         menu.performActionForItem(at: 1)
@@ -121,6 +123,11 @@ final class DirectTouchInteractionTests: XCTestCase {
         let blocked = NSHostingMenu(rootView: MediaTileContextMenu(store: store, index: 1, revision: revision, open: {}))
         blocked.update()
         XCTAssertFalse(try XCTUnwrap(blocked.items.first { $0.title == L10n.text("Mark No") }).isEnabled)
+        let blockedOpenWith = try XCTUnwrap(blocked.items.first { $0.title == L10n.text("Open With") })
+        // AppKit may keep a submenu parent enabled; none of its rows may be.
+        let blockedRows = try XCTUnwrap(blockedOpenWith.submenu).items.filter { !$0.isSeparatorItem }
+        XCTAssertFalse(blockedRows.isEmpty)
+        XCTAssertFalse(blockedRows.contains(where: \.isEnabled), "Open With waits for running file operations")
         XCTAssertEqual(store.items.map(\.primaryURL), paths)
     }
 

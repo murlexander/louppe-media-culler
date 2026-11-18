@@ -2180,3 +2180,16 @@
 
 /* 1.15 scroller date label */
 "No Date" = "无日期";
+
+/* 1.15 drag-out, Open With, Maps */
+"Open With" = "打开方式";
+"Default App" = "默认应用";
+"Open with {0}" = "用“{0}”打开";
+"Open the selected originals in place" = "在原位置打开所选原始文件";
+"Open with Default App" = "用默认应用打开";
+"Open each selected original in its default app" = "用各自的默认应用打开每个所选原始文件";
+"{0} is no longer installed on this Mac." = "此 Mac 上已不再安装“{0}”。";
+"The originals are missing or changed since Louppe scanned them. Rescan the folder or reconnect its drive, then try again." = "原始文件已丢失，或在 Louppe 扫描后发生了更改。请重新扫描文件夹或重新连接其所在的驱动器，然后再试一次。";
+"Open in Maps" = "在“地图”中打开";
+"Maps couldn't show this location. Try again." = "“地图”无法显示此位置。请再试一次。";
+"Show this photo's location in Apple Maps" = "在 Apple“地图”中显示此照片的位置";

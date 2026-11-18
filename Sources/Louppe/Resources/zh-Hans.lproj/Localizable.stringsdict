@@ -1598,5 +1598,33 @@
 			<string>%4$@ 个较早的文件夹会话</string>
 		</dict>
 	</dict>
+	<key>%lld originals are missing or changed since Louppe scanned them, so they weren't opened. Rescan the folder or reconnect its drive.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>%2$@ 个原始文件已丢失，或在 Louppe 扫描后发生了更改，因此未打开。请重新扫描文件夹或重新连接其所在的驱动器。</string>
+		</dict>
+	</dict>
+	<key>No app on this Mac opens %lld of these files by default. Choose an app from Open With instead.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>此 Mac 上没有默认打开其中 %2$@ 个文件的应用。请改为从“打开方式”中选择应用。</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

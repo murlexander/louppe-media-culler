@@ -2625,4 +2625,60 @@ struct MetadataField: Identifiable {
     let id: String
     let label: String
     let value: String
+    /// Full-precision position behind the GPS readout. Only Info's explicit
+    /// Open in Maps action uses it; it is never logged or sent elsewhere.
+    var coordinate: PhotoGPSCoordinate? = nil
+}
+
+/// A short, local failure report for Open With and Open in Maps. It never
+/// contains GPS coordinates; file names come from the session's own items.
+struct OriginalHandoffAlert: Equatable, Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.title == rhs.title && lhs.message == rhs.message
+    }
+}
+
+/// A validated, signed WGS-84 position read from a photo's EXIF GPS tags.
+struct PhotoGPSCoordinate: Equatable, Sendable {
+    let latitude: Double
+    let longitude: Double
+
+    /// Standard EXIF stores magnitudes plus N/S and E/W references. A valid
+    /// reference decides the sign (even for an already signed value); a
+    /// missing or malformed one keeps the number's own sign. 0,0 is valid
+    /// when both numbers are present; out-of-range or non-finite values fail.
+    init?(latitude rawLatitude: Double?, latitudeRef: String?,
+          longitude rawLongitude: Double?, longitudeRef: String?) {
+        guard let latitude = MediaNumeric.latitude(rawLatitude),
+              let longitude = MediaNumeric.longitude(rawLongitude) else { return nil }
+        self.latitude = Self.signed(latitude, reference: latitudeRef, positive: "N", negative: "S")
+        self.longitude = Self.signed(longitude, reference: longitudeRef, positive: "E", negative: "W")
+    }
+
+    init(latitude: Double, longitude: Double) {
+        self.latitude = latitude
+        self.longitude = longitude
+    }
+
+    private static func signed(_ value: Double, reference: String?, positive: String, negative: String) -> Double {
+        let magnitude = abs(value)
+        let result: Double
+        switch reference?.trimmingCharacters(in: .whitespaces).uppercased() {
+        case positive: result = magnitude
+        case negative: result = -magnitude
+        default: result = value
+        }
+        return result == 0 ? 0 : result // Normalize -0.
+    }
+
+    /// Info's readout: five decimals of magnitude with one compass letter.
+    var displayString: String {
+        String(format: "%.5f°%@, %.5f°%@",
+               abs(latitude), latitude < 0 ? "S" : "N",
+               abs(longitude), longitude < 0 ? "W" : "E")
+    }
 }

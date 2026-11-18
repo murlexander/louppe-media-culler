@@ -662,7 +662,9 @@ precedence over remembered scope/position.
   Production items reject v4/v3 bytes; identity-less compatibility still requires
   a cache timestamp at least as recent as the captured source timestamp.
 - Uncached image/RAW/histogram/audio reads check `MediaSourceRevision` before/after
-  I/O; new tiles check even with a cached lazy recipe. Validated memory hits
+  I/O (volume device, inode, size, modification and birth time; not the inode
+  change time, which xattrs written by Open With's recipient and permission
+  changes bump; text previews compare the same way); new tiles check even with a cached lazy recipe. Validated memory hits
   avoid filesystem reads. Cold player preparation uses one bounded `lstat`;
   ready-to-play checks run off-main. Mismatch offers Rescan.
 - Histogram/clipping analysis unpremultiplies nonzero alpha before luminance
@@ -764,8 +766,8 @@ precedence over remembered scope/position.
   out-of-bounds and modal input. Existing pointer handlers retain their latency
   and modifier-event semantics. NSScrollView owns one-finger photo panning and
   pinch zoom; Browser/Grid touch drags scroll rather than rubber-band-select.
-  Native tile context menus expose Gallery, selection and the existing gated
-  rating actions. Their selection/rating behavior matches the shared store;
+  Native tile context menus expose Gallery, selection, Open With and the existing
+  gated rating actions. Their selection/rating behavior matches the shared store;
   actions reject a changed content revision at the menu's original index.
   Custom Fit, transport and quality-cue targets reach 36 points; decision targets
   remain 40 points. Grid's drag exclusion includes the larger cue target.
@@ -1107,6 +1109,57 @@ precedence over remembered scope/position.
   cycles rating once. `GridImmediateClickSurface` commits the first mouse-up
   immediately and opens only on the second click; exclusive SwiftUI single/double
   gestures delay selection.
+- Drag-out and Open With share `SessionStore.originalFileTargets(for:)`
+  (`OriginalFileHandoff.swift`): the effective selection for File/palette; for a
+  tile or the Gallery photo, the selection when it contains that item, else the
+  item alone (revision-checked). Files follow prepared visible order, primary
+  before companion; resolution reads no files. Ready folder sessions only:
+  `photosBatch` and `photosMedia` items are excluded. Menu enablement
+  (`canHandOffOriginals(_:)`) is constant-time; existence is checked off-main
+  when acting, and missing originals are left out (none: no drag, an Open With
+  alert). A menu whose item was replaced reports the same alert.
+- `OriginalFileDragArm` serves Grid media, Browser tiles and Gallery Fit/Phone
+  photos. Mouse-down records only the event and a deferred resolver (Grid also
+  classifies the point), so a plain click resolves nothing and reads no files.
+  The first drag past 8 points resolves the originals and starts one cancellable
+  off-main sweep (one app-wide, cancelled with its gesture, at most 8 files at
+  once). Each original must still match its scanned identity
+  (volume, inode, size, content-modification and birth times; the inode change
+  time is ignored, as in Clean Up, since opening a file elsewhere adds xattrs); a same-name
+  replacement counts as missing, for Open With too. The next drag event, or the
+  sweep's end while the button is still held, starts `beginDraggingSession`
+  from the latest drag event,
+  with one `NSURL` item per original and at most four drag images (memory
+  thumbnails or one shared icon). `OriginalFileDragSource` returns only `.copy`
+  in both contexts and ignores modifiers, holds a read token until the session
+  ends, and makes `RootView`'s folder drop refuse Louppe's own drag. Source
+  views accept the first mouse and delay window ordering; a drag calls
+  `NSApp.preventWindowOrdering()`, while a plain click orders the window front
+  on mouse-up as usual. No file
+  promises; selection changes stay on mouse-up. `GridPointerOrigin` classifies
+  each Grid down once for both owners: fitted media of a local item drags,
+  letterbox/caption/gaps rubber-band, controls keep their clicks. Browser tiles
+  use the same native click surface (touch single tap only, scroll-cancellable).
+  `ActualSizeImageView` (100%/custom zoom) has no drag path.
+- Open With: `PhotoEditorCatalog` resolves installed Lightroom Classic, Capture
+  One (exact numbered IDs plus RAW/JPEG handlers matching its ID families),
+  Photoshop and Preview off-main, cached for 30 seconds; becoming active only
+  marks it stale, and the next Open With menu or palette build refreshes it.
+  Every installed copy is
+  listed, same names gain their version. `OpenWithPlan` sends one request per
+  named editor, groups Default App by each file's handler, and reports missing
+  or unhandled files through `originalHandoffAlert`. File → Open With follows
+  Export; tile and Gallery context menus place it after selection actions;
+  the palette has flat **Open with …** rows. No key equivalent. Tests inject
+  `OpenWithWorkspace`.
+- Info's GPS field carries a typed `PhotoGPSCoordinate` from the same read as
+  its readout (a valid N/S/E/W reference sets the sign; otherwise the number
+  keeps its own). A void fix (`GPSStatus` V) or exactly 0,0 keeps the readout
+  but has no coordinate. **Open in Maps**, a native push button like Info's
+  Rename Files…, sits below that readout and calls
+  `MapsLauncher` only on click: `MKMapItem(location:address:)` on macOS 26+,
+  a placemark item before, `openInMaps(launchOptions:completionHandler:)` on
+  14.4+ and the synchronous call on 14.0–14.3. No geocoding or logging.
 - `PersistentVerticalScroller` keeps the native legacy scroller and gutter.
   Never substitute a hand-drawn subclass. Resolve mounted scroll views
   synchronously and coalesce initial deferred lookup to avoid queued work

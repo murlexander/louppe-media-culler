@@ -422,6 +422,8 @@ final class SessionStore: ObservableObject {
     /// the photographer can opt into pair-wide actions for this app lifetime.
     @Published private(set) var rawJPEGPairingMode: RawJPEGPairingMode = .separate
     @Published var pairingMetadataError: String?
+    /// Open With / Open in Maps failures, shown as one short session alert.
+    @Published var originalHandoffAlert: OriginalHandoffAlert?
     /// The first transition to separate review may read metadata from hidden
     /// JPEG partners. The current session remains visible while this is true.
     @Published private(set) var isChangingRawJPEGPairingMode = false
@@ -922,6 +924,7 @@ final class SessionStore: ObservableObject {
             || pendingCleanUp != nil
             || cleanUpError != nil
             || pairingMetadataError != nil
+            || originalHandoffAlert != nil
             || isRecoveringInterruptedOperations
             || operationRecoveryReportRequiresAcknowledgement
     }
@@ -3675,6 +3678,7 @@ final class SessionStore: ObservableObject {
         sourceFolder = standardizedURL
         scanError = nil
         pairingMetadataError = nil
+        originalHandoffAlert = nil
         phase = .scanning(found: 0)
         openingProgress = SessionOpeningProgress(stage: .folderIdentity, completed: 0, total: nil)
         openingMetrics = nil
@@ -4456,6 +4460,12 @@ final class SessionStore: ObservableObject {
             currentIsVisible: preparedIndex.location(forItemIndex: currentIndex) != nil,
             itemCount: items.count
         )
+    }
+
+    /// Position in the prepared visible order, or nil when the item is hidden.
+    /// Constant time; drag-out and Open With order their payload with it.
+    func visiblePosition(ofItem index: Int) -> Int? {
+        preparedIndex.location(forItemIndex: index)?.position
     }
 
     var effectiveDecisionState: PhotoItemRatingState {
@@ -8396,6 +8406,7 @@ final class SessionStore: ObservableObject {
         pendingCleanUp = nil
         dismissCleanUpError()
         pairingMetadataError = nil
+        originalHandoffAlert = nil
         currentIndex = 0
         filter = PhotoFilter()
         applyReviewDefaults()

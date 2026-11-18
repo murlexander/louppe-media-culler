@@ -543,6 +543,7 @@ struct FullImageView: View {
 /// letterboxed surroundings—owns the location-aware double-click gesture.
 private struct ZoomableFittedImage: View {
     @Environment(\.mediaReadAccess) private var mediaReadAccess
+    @Environment(\.originalFileDragProvider) private var dragProvider
     @Environment(\.displayScale) private var displayScale
     let item: PhotoItem
     let mode: ZoomMode
@@ -580,6 +581,8 @@ private struct ZoomableFittedImage: View {
                     .overlay {
                         FittedImageDoubleClickOverlay(
                             onDoubleClick: onDoubleClick,
+                            dragPlan: dragProvider?.plan,
+                            dragImage: image,
                             onMagnify: { position, factor, backingScale, ended in
                                 livePinchPosition = position
                                 livePinchFactor = min(max(factor, 0.25), 4)
@@ -677,11 +680,16 @@ private struct ZoomableFittedImage: View {
 /// the tiled 100% viewport.
 private struct FittedImageDoubleClickOverlay: NSViewRepresentable {
     let onDoubleClick: (NormalizedImagePosition) -> Void
+    /// Fit and Phone only; 100% and custom zoom use the panning canvas.
+    let dragPlan: (@MainActor (CGRect, NSImage?) -> OriginalFileDragPlan?)?
+    let dragImage: NSImage
     let onMagnify: (NormalizedImagePosition, CGFloat, CGFloat, Bool) -> Void
 
     func makeNSView(context: Context) -> FittedImageDoubleClickView {
         let view = FittedImageDoubleClickView()
         view.onDoubleClick = onDoubleClick
+        view.dragPlan = dragPlan
+        view.dragImage = dragImage
         view.onMagnify = onMagnify
         return view
     }
@@ -691,6 +699,8 @@ private struct FittedImageDoubleClickOverlay: NSViewRepresentable {
         context: Context
     ) {
         nsView.onDoubleClick = onDoubleClick
+        nsView.dragPlan = dragPlan
+        nsView.dragImage = dragImage
         nsView.onMagnify = onMagnify
     }
 }
@@ -700,6 +710,10 @@ final class FittedImageDoubleClickView: NSView {
     override var isFlipped: Bool { true }
 
     var onDoubleClick: (NormalizedImagePosition) -> Void = { _ in }
+    var dragPlan: (@MainActor (CGRect, NSImage?) -> OriginalFileDragPlan?)?
+    /// The pixels on screen, reused as the drag image (never re-decoded).
+    var dragImage: NSImage?
+    let dragArm = OriginalFileDragArm()
     var onMagnify: (NormalizedImagePosition, CGFloat, CGFloat, Bool) -> Void = { _, _, _, _ in }
     private var magnificationFactor: CGFloat = 1
     private var lastPinchPosition: NormalizedImagePosition?
@@ -757,6 +771,7 @@ final class FittedImageDoubleClickView: NSView {
     }
 
     func beginPinch() {
+        dragArm.disarm()
         pinchIsActive = true
         magnificationFactor = 1
         lastPinchPosition = nil
@@ -807,7 +822,19 @@ final class FittedImageDoubleClickView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
-        guard event.clickCount == 2 else { return }
+        guard event.clickCount == 2 else {
+            // A first down may become a copy-only drag of the originals.
+            var resolve: OriginalFileDragArm.Resolver?
+            if !pinchIsActive, dragPlan != nil {
+                resolve = { [weak self] () -> OriginalFileDragPlan? in
+                    guard let self, let dragPlan = self.dragPlan else { return nil }
+                    return dragPlan(self.bounds, self.dragImage)
+                }
+            }
+            dragArm.arm(event: event, at: convert(event.locationInWindow, from: nil), resolve: resolve)
+            return
+        }
+        dragArm.disarm()
         let point = convert(event.locationInWindow, from: nil)
         guard let position = FittedImageGeometry.normalizedPosition(
             at: point,
@@ -816,5 +843,22 @@ final class FittedImageDoubleClickView: NSView {
             return
         }
         onDoubleClick(position)
+    }
+
+    /// A photo in an inactive window can still be dragged out, as in Finder.
+    /// A single click only arms the drag, so this adds no click-through action.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { dragPlan != nil }
+
+    /// A drag leaves an inactive window behind its drop target; a plain click
+    /// orders it front on mouse-up as usual.
+    override func shouldDelayWindowOrdering(for event: NSEvent) -> Bool { dragPlan != nil }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard !pinchIsActive else { dragArm.disarm(); return }
+        dragArm.dragged(event, to: convert(event.locationInWindow, from: nil), in: self)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        dragArm.mouseUp()
     }
 }

@@ -1836,5 +1836,37 @@
 			<string>%4$@ earlier folder sessions</string>
 		</dict>
 	</dict>
+	<key>%lld originals are missing or changed since Louppe scanned them, so they weren't opened. Rescan the folder or reconnect its drive.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ original is missing or changed since Louppe scanned it, so it wasn't opened. Rescan the folder or reconnect its drive.</string>
+			<key>other</key>
+			<string>%2$@ originals are missing or changed since Louppe scanned them, so they weren't opened. Rescan the folder or reconnect its drive.</string>
+		</dict>
+	</dict>
+	<key>No app on this Mac opens %lld of these files by default. Choose an app from Open With instead.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>No app on this Mac opens %2$@ of these files by default. Choose an app from Open With instead.</string>
+			<key>other</key>
+			<string>No app on this Mac opens %2$@ of these files by default. Choose an app from Open With instead.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -164,19 +164,35 @@ struct BrowserRow: View {
                     // metadata snapshots when shared file decisions change.
                     showsRatingBadge: true,
                     tileOverlay: AnyView(
-                        Color.clear.allowsHitTesting(false)
-                            .overlay(alignment: .bottomLeading) {
-                                QualityCueTileIcons(store: store, item: item)
-                                    .padding(TileBadgeLayout.inset)
-                            }
+                        ZStack {
+                            // Native pointer surface under the cue controls:
+                            // ⇧-click: range · ⌘-click: add/remove · click: jump,
+                            // committed on mouse-up. A drag past 8 points copies
+                            // the originals out instead; one-finger touch scrolls.
+                            GridImmediateClickSurface(
+                                onSingleClick: { modifiers in
+                                    store.handleThumbnailClick(at: index, modifiers: modifiers,
+                                                               plainClick: onPlainClick)
+                                },
+                                onDoubleClick: nil,
+                                dragPlan: { _, bounds in
+                                    guard store.canDragOriginal(at: index) else { return nil }
+                                    let revision = item.contentRevision
+                                    return { store.originalFileDragPlan(index: index, revision: revision,
+                                                                        mediaFrame: bounds) }
+                                }
+                            )
+                            .accessibilityHidden(true)
+                            Color.clear.allowsHitTesting(false)
+                                .overlay(alignment: .bottomLeading) {
+                                    QualityCueTileIcons(store: store, item: item)
+                                        .padding(TileBadgeLayout.inset)
+                                }
+                        }
                     )
                 )
                 .frame(width: ReviewCollectionMetrics.browserTileSize,
                        height: ReviewCollectionMetrics.browserTileSize)
-                .onTapGesture {
-                    // ⇧-click: range · ⌘-click: add/remove · click: jump.
-                    store.handleThumbnailClick(at: index, plainClick: onPlainClick)
-                }
                 .mediaTileAccessibility(
                     item: item,
                     isCurrent: item.id == store.currentItem?.id,

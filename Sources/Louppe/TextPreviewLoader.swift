@@ -32,7 +32,10 @@ actor TextPreviewLoader {
         defer { withExtendedLifetime(lease) {} }
         try Task.checkCancellation()
         let before = try FileOperationJournal.captureIdentity(at: item.primaryURL)
-        if let expected = item.primaryFile.scannedIdentity, before != expected {
+        // As for images: attribute/permission-only changes (inode change time)
+        // are the same document; the read itself stays bracketed exactly below.
+        if let expected = item.primaryFile.scannedIdentity,
+           !FileOperationJournal.identitiesMatch(expected: expected, actual: before, includeStatusChange: false) {
             throw PreviewError.changed
         }
         let descriptor = item.primaryURL.withUnsafeFileSystemRepresentation { path in

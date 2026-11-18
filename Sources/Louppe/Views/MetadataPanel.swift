@@ -365,7 +365,29 @@ struct MetadataPanel: View {
                     .font(.callout)
                     .textSelection(.enabled)
             }
+            if let coordinate = field.coordinate {
+                openInMapsButton(coordinate)
+            }
         }
+    }
+
+    /// A sibling of the GPS readout, outside its combined accessibility
+    /// element. Nothing is looked up or sent until it is clicked.
+    private func openInMapsButton(_ coordinate: PhotoGPSCoordinate) -> some View {
+        // The same native push button as Info's Rename Files….
+        Button(L10n.text("Open in Maps")) {
+            MapsLauncher.open(coordinate) {
+                store.originalHandoffAlert = OriginalHandoffAlert(
+                    title: L10n.text("Open in Maps"),
+                    message: L10n.text("Maps couldn't show this location. Try again."))
+            }
+        }
+        .help(L10n.text("Show this photo's location in Apple Maps"))
+        .accessibilityHint(L10n.text("Show this photo's location in Apple Maps"))
+        .accessibilityIdentifier("louppe.openInMaps")
+        #if LOUPPE_TEST_SEAMS
+        .background { OpenInMapsTestMarker().allowsHitTesting(false).accessibilityHidden(true) }
+        #endif
     }
 
     private var filenameControl: some View {
@@ -802,3 +824,15 @@ private struct MediaPlaybackSpeedControl: View {
         rate.rounded() == rate ? "\(Int(rate))×" : "\(rate)×"
     }
 }
+
+#if LOUPPE_TEST_SEAMS
+/// Lets mounted tests find the SwiftUI-drawn Open in Maps button's frame.
+struct OpenInMapsTestMarker: NSViewRepresentable {
+    func makeNSView(context: Context) -> MarkerView { MarkerView() }
+    func updateNSView(_ nsView: MarkerView, context: Context) {}
+
+    final class MarkerView: NSView {
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    }
+}
+#endif

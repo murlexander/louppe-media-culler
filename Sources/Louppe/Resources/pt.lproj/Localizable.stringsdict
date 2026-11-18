@@ -2074,5 +2074,41 @@
 			<string>%4$@ sessões de pasta anteriores</string>
 		</dict>
 	</dict>
+	<key>%lld originals are missing or changed since Louppe scanned them, so they weren't opened. Rescan the folder or reconnect its drive.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ original está ausente ou mudou desde que o Louppe o escaneou e não foi aberto. Escaneie a pasta novamente ou reconecte o disco.</string>
+			<key>many</key>
+			<string>%2$@ originais estão ausentes ou mudaram desde que o Louppe os escaneou e não foram abertos. Escaneie a pasta novamente ou reconecte o disco.</string>
+			<key>other</key>
+			<string>%2$@ originais estão ausentes ou mudaram desde que o Louppe os escaneou e não foram abertos. Escaneie a pasta novamente ou reconecte o disco.</string>
+		</dict>
+	</dict>
+	<key>No app on this Mac opens %lld of these files by default. Choose an app from Open With instead.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Nenhum app deste Mac abre %2$@ destes arquivos por padrão. Escolha um app em Abrir com.</string>
+			<key>many</key>
+			<string>Nenhum app deste Mac abre %2$@ destes arquivos por padrão. Escolha um app em Abrir com.</string>
+			<key>other</key>
+			<string>Nenhum app deste Mac abre %2$@ destes arquivos por padrão. Escolha um app em Abrir com.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

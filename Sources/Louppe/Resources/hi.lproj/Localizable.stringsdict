@@ -1836,5 +1836,37 @@
 			<string>%4$@ पिछले फ़ोल्डर सत्रों</string>
 		</dict>
 	</dict>
+	<key>%lld originals are missing or changed since Louppe scanned them, so they weren't opened. Rescan the folder or reconnect its drive.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ मूल फ़ाइल गायब है या Louppe के स्कैन करने के बाद बदल गई है, इसलिए वह नहीं खोली गई। फ़ोल्डर दोबारा स्कैन करें या उसकी ड्राइव फिर से कनेक्ट करें।</string>
+			<key>other</key>
+			<string>%2$@ मूल फ़ाइलें गायब हैं या Louppe के स्कैन करने के बाद बदल गई हैं, इसलिए वे नहीं खोली गईं। फ़ोल्डर दोबारा स्कैन करें या उसकी ड्राइव फिर से कनेक्ट करें।</string>
+		</dict>
+	</dict>
+	<key>No app on this Mac opens %lld of these files by default. Choose an app from Open With instead.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>इस Mac पर कोई ऐप डिफ़ॉल्ट रूप से इनमें से %2$@ फ़ाइल नहीं खोलता। इसके बजाय “इसके साथ खोलें” से कोई ऐप चुनें।</string>
+			<key>other</key>
+			<string>इस Mac पर कोई ऐप डिफ़ॉल्ट रूप से इनमें से %2$@ फ़ाइलें नहीं खोलता। इसके बजाय “इसके साथ खोलें” से कोई ऐप चुनें।</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -1,5 +1,7 @@
 import AppKit
+import ImageIO
 import SwiftUI
+import UniformTypeIdentifiers
 import XCTest
 #if !APP_STORE
 import Sparkle
@@ -48,6 +50,32 @@ final class CaptureScenariosTests: XCTestCase {
         },
         Scenario(name: "session-gallery-ready", description: "Ready Gallery session with toolbar, Browser and Info.") { fixture in
             fixture.ready(mode: .gallery)
+            return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
+        // 1.15 drag-out, Open With, Maps
+        Scenario(name: "session-gallery-exif", description: "Gallery Info for a disposable JPEG with camera EXIF and no GPS (pair with session-gallery-gps).") { fixture in
+            try CaptureScenariosTests.rewriteFirstPhotoAsJPEG(fixture, gps: false)
+            fixture.ready(mode: .gallery)
+            return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
+        Scenario(name: "session-gallery-gps", description: "Gallery Info with a disposable GPS photo: Open in Maps below the GPS readout.") { fixture in
+            try CaptureScenariosTests.rewriteFirstPhotoAsJPEG(fixture, gps: true)
+            fixture.ready(mode: .gallery)
+            return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
+        Scenario(name: "session-grid-open-with", description: "Grid selection with a RAW+JPEG pair for the tile Open With menu (live: right-click a selected tile).") { fixture in
+            // Pair the second photo with a disposable RAW, so Open With and
+            // drag-out carry both originals of that tile.
+            let jpeg = fixture.items[1].primaryURL
+            let raw = jpeg.deletingPathExtension().appendingPathExtension("CR3")
+            try Data("Disposable RAW stand-in".utf8).write(to: raw)
+            let second = fixture.items[1]
+            fixture.items[1] = PhotoItem(id: raw.lastPathComponent, primaryURL: raw, pairedURL: jpeg,
+                captureDate: second.captureDate, cameraModel: second.cameraModel, lensModel: second.lensModel,
+                fileSize: second.fileSize, rating: second.rating)
+            fixture.ready(mode: .grid)
+            fixture.store.setIndex(0)
+            fixture.store.setSelection([0, 1, 2])
             return Surface(view: AnyView(SessionView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         },
         Scenario(name: "session-photos-timeout", description: "Playable disposable Photos original after a failed metadata scan.") { fixture in
@@ -776,6 +804,37 @@ private extension CaptureScenariosTests {
     @MainActor
     final class CaptureSheetPresentation: ObservableObject {
         @Published var isPresented = false
+    }
+}
+
+extension CaptureScenariosTests {
+    /// The first generated photo, rewritten as a JPEG with camera tags and
+    /// optionally GPS, so the Info pair differs only in the GPS block.
+    private static func rewriteFirstPhotoAsJPEG(_ fixture: Fixture, gps: Bool) throws {
+        let png = fixture.items[0].primaryURL
+        let source = try XCTUnwrap(CGImageSourceCreateWithURL(png as CFURL, nil))
+        let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        let url = png.deletingPathExtension().appendingPathExtension("jpg")
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithURL(url as CFURL, UTType.jpeg.identifier as CFString, 1, nil))
+        var properties: [CFString: Any] = [
+            kCGImagePropertyTIFFDictionary: [kCGImagePropertyTIFFModel: "Synthetic camera"],
+            kCGImagePropertyExifDictionary: [kCGImagePropertyExifFNumber: 5.6, kCGImagePropertyExifExposureTime: 1.0 / 250,
+                                             kCGImagePropertyExifISOSpeedRatings: [200], kCGImagePropertyExifFocalLength: 23],
+        ]
+        if gps {
+            properties[kCGImagePropertyGPSDictionary] = [
+                kCGImagePropertyGPSLatitude: 48.85837, kCGImagePropertyGPSLatitudeRef: "N",
+                kCGImagePropertyGPSLongitude: 2.29448, kCGImagePropertyGPSLongitudeRef: "E",
+            ]
+        }
+        CGImageDestinationAddImage(destination, image, properties as CFDictionary)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        try FileManager.default.removeItem(at: png)
+        let first = fixture.items[0]
+        fixture.items[0] = PhotoItem(id: url.lastPathComponent, primaryURL: url, pairedURL: nil,
+            captureDate: first.captureDate, cameraModel: first.cameraModel, lensModel: first.lensModel,
+            aperture: 5.6, shutterSpeed: 1.0 / 250, iso: 200, fileSize: first.fileSize, rating: first.rating,
+            starRating: first.primaryFile.starRating, colorLabel: first.primaryFile.colorLabel)
     }
 }
 

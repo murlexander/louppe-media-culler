@@ -26,6 +26,7 @@ struct ActionPaletteView: View {
         [shortcut(action), commandShortcut(command)].filter { !$0.isEmpty }.joined(separator: " / ")
     }
 
+    @ObservedObject private var editorCatalog = PhotoEditorCatalog.shared
     @State private var query = ""
     @State private var selectedActionID: String?
     @State private var selectionRevealGeneration = 0
@@ -43,6 +44,7 @@ struct ActionPaletteView: View {
         .background(Color.appBackground)
         .tint(Color.louppeAccent)
         .onAppear {
+            editorCatalog.refreshIfStale()
             chooseFirstEnabledAction()
             isSearchFocusRequested = true
         }
@@ -224,6 +226,7 @@ struct ActionPaletteView: View {
                 isEnabled: store.canExport,
                 perform: { store.presentExport() }
             ),
+        ] + openWithActions() + [
             ActionPaletteAction(
                 id: "rename-files-from-metadata",
                 category: L10n.text("Files"),
@@ -1016,6 +1019,36 @@ struct ActionPaletteView: View {
     private func run(_ action: ActionPaletteAction) {
         guard action.isEnabled else { return }
         store.dismissActionPalette(then: action.perform)
+    }
+
+    /// Flat rows for installed editors, then each file's default app.
+    /// They resolve the selection when run, after the palette closes.
+    private func openWithActions() -> [ActionPaletteAction] {
+        let isEnabled = store.canHandOffOriginals(.selection)
+        let keywords = ["open with", "editor", "app", "application", "original", L10n.text("Open With")]
+        return editorCatalog.editors.map { editor in
+            ActionPaletteAction(
+                id: "open-with-\(editor.id)",
+                category: L10n.text("Files"),
+                title: L10n.text("Open with \(editor.title)"),
+                detail: L10n.text("Open the selected originals in place"),
+                symbol: "arrow.up.forward.app",
+                keywords: keywords,
+                isEnabled: isEnabled,
+                perform: { OriginalFilesOpener.open(.selection, with: .editor(editor), store: store) }
+            )
+        } + [
+            ActionPaletteAction(
+                id: "open-with-default-app",
+                category: L10n.text("Files"),
+                title: L10n.text("Open with Default App"),
+                detail: L10n.text("Open each selected original in its default app"),
+                symbol: "arrow.up.forward.app",
+                keywords: keywords,
+                isEnabled: isEnabled,
+                perform: { OriginalFilesOpener.open(.selection, with: .defaultApplication, store: store) }
+            ),
+        ]
     }
 
     private func starActions() -> [ActionPaletteAction] {

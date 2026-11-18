@@ -9,9 +9,9 @@ final class DirectTouchClickActions: NSObject, NSGestureRecognizerDelegate {
     var doubleTap: ((NSPoint) -> Void)?
     private(set) var recognizers: [NSClickGestureRecognizer] = []
 
-    func install(on view: NSView, includesSingleTap: Bool = false) {
+    func install(on view: NSView, includesSingleTap: Bool = false, includesDoubleTap: Bool = true) {
         guard #available(macOS 27.0, *), recognizers.isEmpty else { return }
-        for count in includesSingleTap ? [1, 2] : [2] {
+        for count in (includesSingleTap ? [1] : []) + (includesDoubleTap ? [2] : []) {
             let recognizer = NSClickGestureRecognizer(target: self, action: #selector(activate(_:)))
             recognizer.buttonMask = 0 // Direct touches only; keep immediate mouse handling.
             recognizer.allowedTouchTypes = .direct

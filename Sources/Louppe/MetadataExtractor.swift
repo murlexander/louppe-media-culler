@@ -14,6 +14,12 @@ struct MediaSourceRevision: Sendable {
         identity = item.primaryFile.scannedIdentity
     }
 
+    /// Any physical file (a pair's companion too) with its scanned identity.
+    init(url: URL, identity: FileOperationJournal.FileIdentity?) {
+        self.url = url
+        self.identity = identity
+    }
+
     func matchesCurrentFile() -> Bool {
         // Synthetic/legacy items have no scan identity; preserve their API.
         guard let identity else { return true }
@@ -35,8 +41,14 @@ struct MediaSourceRevision: Sendable {
                     && $0.nanoseconds == Int64(actual.tv_nsec)
             } ?? true
         }
+        // The inode change time is deliberately not compared, as in
+        // `FileOperationJournal.identitiesMatch(includeStatusChange: false)`:
+        // Launch Services writes `com.apple.lastuseddate#PS`/`com.apple.macl`
+        // when another app opens the file (Open With), and permission changes
+        // bump it too, without changing content. Inode, size, modification and
+        // birth time still detect a replacement or rewrite. Cache keys keep the
+        // scanned identity, so nothing is invalidated by such a change.
         return matches(identity.modificationTime, current.st_mtimespec)
-            && matches(identity.statusChangeTime, current.st_ctimespec)
             && matches(identity.birthTime, current.st_birthtimespec)
     }
 
@@ -245,25 +257,10 @@ enum MetadataExtractor {
         }
         add("Type", item.fileTypeLabel)
 
-        if let lat = MediaNumeric.latitude(
-            finiteNumericValue(gps[kCGImagePropertyGPSLatitude])
-        ),
-           let lon = MediaNumeric.longitude(
-               finiteNumericValue(gps[kCGImagePropertyGPSLongitude])
-           ) {
-            let requestedLatRef =
-                (gps[kCGImagePropertyGPSLatitudeRef] as? String)?
-                .uppercased()
-            let requestedLonRef =
-                (gps[kCGImagePropertyGPSLongitudeRef] as? String)?
-                .uppercased()
-            let latRef = requestedLatRef.flatMap {
-                ["N", "S"].contains($0) ? $0 : nil
-            } ?? (lat < 0 ? "S" : "N")
-            let lonRef = requestedLonRef.flatMap {
-                ["E", "W"].contains($0) ? $0 : nil
-            } ?? (lon < 0 ? "W" : "E")
-            add("GPS", String(format: "%.5f°%@, %.5f°%@", lat, latRef, lon, lonRef))
+        if let coordinate = gpsCoordinate(from: gps) {
+            // The readout stays; Open in Maps needs a position the camera vouched for.
+            fields.append(MetadataField(id: "GPS", label: "GPS", value: coordinate.displayString,
+                                        coordinate: mapsCoordinate(coordinate, gps: gps)))
         }
         guard revision.matchesCurrentFile() else { return changedFileFields(for: item) }
         return fields
@@ -332,6 +329,26 @@ enum MetadataExtractor {
         guard let denominator = MediaNumeric.roundedPositiveInt(1 / seconds)
         else { return "—" }
         return "1/\(denominator)s"
+    }
+
+    /// The typed and displayed GPS position come from this one reading of
+    /// the raw tags; the readout is never parsed back into numbers.
+    static func gpsCoordinate(from gps: [CFString: Any]) -> PhotoGPSCoordinate? {
+        PhotoGPSCoordinate(
+            latitude: finiteNumericValue(gps[kCGImagePropertyGPSLatitude]),
+            latitudeRef: gps[kCGImagePropertyGPSLatitudeRef] as? String,
+            longitude: finiteNumericValue(gps[kCGImagePropertyGPSLongitude]),
+            longitudeRef: gps[kCGImagePropertyGPSLongitudeRef] as? String
+        )
+    }
+
+    /// Nil when EXIF marks the fix void (`GPSStatus` "V") or both values are
+    /// exactly 0, the usual placeholder of cameras without a fix.
+    static func mapsCoordinate(_ coordinate: PhotoGPSCoordinate, gps: [CFString: Any]) -> PhotoGPSCoordinate? {
+        let status = (gps[kCGImagePropertyGPSStatus] as? String)?
+            .trimmingCharacters(in: .whitespaces).uppercased()
+        guard status != "V", !(coordinate.latitude == 0 && coordinate.longitude == 0) else { return nil }
+        return coordinate
     }
 
     static func finiteNumericValue(_ value: Any?) -> Double? {

@@ -7,6 +7,10 @@
 - After Yes or No, move to the next item and stop at the last one instead of jumping back to the first unmarked photo.
 - Clear stars and color labels with Edit → Clear Stars and Labels…, which keeps decisions; Clear All Decisions (R) still keeps stars and labels.
 - Include decisions, stars and color labels saved earlier in subfolders when you open their parent folder, and from a pinned or recent parent when you open a subfolder. The latest change wins, only the same verified file is updated, and other folders' session files stay untouched.
+- Drag photos and videos from Grid or Browser, and photos from Gallery, into Finder or another app to copy their originals. RAW+JPEG pairs bring both files, and the Trash refuses them.
+- Open the selected originals in Lightroom Classic, Capture One, Photoshop, Preview or each file's default app from File → Open With or an item's context menu.
+- Open a photo's location in Apple Maps from Info; nothing is looked up until you click.
+- Keep showing photos after another app opens them or their tags or permissions change; before, they could read as changed until the folder was scanned again.
 - Show the month beside the Grid scroll bar's knob while you drag it, when sorted by capture date.
 
 ## 1.14.1 (19) — 2026-11-16

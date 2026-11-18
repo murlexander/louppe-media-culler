@@ -2163,3 +2163,16 @@
 
 /* 1.15 scroller date label */
 "No Date" = "कोई तारीख नहीं";
+
+/* 1.15 drag-out, Open With, Maps */
+"Open With" = "इसके साथ खोलें";
+"Default App" = "डिफ़ॉल्ट ऐप";
+"Open with {0}" = "{0} में खोलें";
+"Open the selected originals in place" = "चुनी गई मूल फ़ाइलें उनकी जगह पर खोलें";
+"Open with Default App" = "डिफ़ॉल्ट ऐप में खोलें";
+"Open each selected original in its default app" = "हर चुनी गई मूल फ़ाइल उसके डिफ़ॉल्ट ऐप में खोलें";
+"{0} is no longer installed on this Mac." = "{0} अब इस Mac पर इंस्टॉल नहीं है।";
+"The originals are missing or changed since Louppe scanned them. Rescan the folder or reconnect its drive, then try again." = "मूल फ़ाइलें गायब हैं या Louppe के स्कैन करने के बाद बदल गई हैं। फ़ोल्डर दोबारा स्कैन करें या उसकी ड्राइव फिर से कनेक्ट करें, फिर से कोशिश करें।";
+"Open in Maps" = "नक़्शे में खोलें";
+"Maps couldn't show this location. Try again." = "नक़्शे यह स्थान नहीं दिखा सका। फिर से कोशिश करें।";
+"Show this photo's location in Apple Maps" = "इस फ़ोटो का स्थान Apple नक़्शे में दिखाएँ";

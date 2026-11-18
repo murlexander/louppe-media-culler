@@ -21,6 +21,8 @@ struct MediaTileContextMenu: View {
             if isCurrentItem { store.toggleSelection(of: index) }
         }
         Divider()
+        OpenWithMenu(store: store, origin: .item(index: index, revision: revision))
+        Divider()
         ForEach(MediaTileAccessibility.RatingAction.allCases, id: \.self) { action in
             Button(L10n.label(action.rawValue)) {
                 if isCurrentItem { store.rate(action.rating, at: index) }

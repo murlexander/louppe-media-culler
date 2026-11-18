@@ -2788,5 +2788,53 @@
 			<string>%4$@ جلسة مجلد سابقة</string>
 		</dict>
 	</dict>
+	<key>%lld originals are missing or changed since Louppe scanned them, so they weren't opened. Rescan the folder or reconnect its drive.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ من الملفات الأصلية مفقودة أو تغيّرت منذ أن فحصها Louppe، لذا لم تُفتح. أعد فحص المجلد أو أعد توصيل محركه.</string>
+			<key>one</key>
+			<string>ملف أصلي واحد مفقود أو تغيّر منذ أن فحصه Louppe، لذا لم يُفتح. أعد فحص المجلد أو أعد توصيل محركه.</string>
+			<key>two</key>
+			<string>ملفان أصليان مفقودان أو تغيّرا منذ أن فحصهما Louppe، لذا لم يُفتحا. أعد فحص المجلد أو أعد توصيل محركه.</string>
+			<key>few</key>
+			<string>%2$@ ملفات أصلية مفقودة أو تغيّرت منذ أن فحصها Louppe، لذا لم تُفتح. أعد فحص المجلد أو أعد توصيل محركه.</string>
+			<key>many</key>
+			<string>%2$@ ملفًا أصليًا مفقودًا أو متغيّرًا منذ أن فحصها Louppe، لذا لم تُفتح. أعد فحص المجلد أو أعد توصيل محركه.</string>
+			<key>other</key>
+			<string>%2$@ ملف أصلي مفقود أو متغيّر منذ أن فحصها Louppe، لذا لم تُفتح. أعد فحص المجلد أو أعد توصيل محركه.</string>
+		</dict>
+	</dict>
+	<key>No app on this Mac opens %lld of these files by default. Choose an app from Open With instead.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>لا يوجد تطبيق على هذا الـ Mac يفتح %2$@ من هذه الملفات افتراضيًا. اختر تطبيقًا من «فتح باستخدام» بدلًا من ذلك.</string>
+			<key>one</key>
+			<string>لا يوجد تطبيق على هذا الـ Mac يفتح %2$@ من هذه الملفات افتراضيًا. اختر تطبيقًا من «فتح باستخدام» بدلًا من ذلك.</string>
+			<key>two</key>
+			<string>لا يوجد تطبيق على هذا الـ Mac يفتح %2$@ من هذه الملفات افتراضيًا. اختر تطبيقًا من «فتح باستخدام» بدلًا من ذلك.</string>
+			<key>few</key>
+			<string>لا يوجد تطبيق على هذا الـ Mac يفتح %2$@ من هذه الملفات افتراضيًا. اختر تطبيقًا من «فتح باستخدام» بدلًا من ذلك.</string>
+			<key>many</key>
+			<string>لا يوجد تطبيق على هذا الـ Mac يفتح %2$@ من هذه الملفات افتراضيًا. اختر تطبيقًا من «فتح باستخدام» بدلًا من ذلك.</string>
+			<key>other</key>
+			<string>لا يوجد تطبيق على هذا الـ Mac يفتح %2$@ من هذه الملفات افتراضيًا. اختر تطبيقًا من «فتح باستخدام» بدلًا من ذلك.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

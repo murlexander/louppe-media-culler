@@ -44,10 +44,14 @@ struct RootView: View {
         .onDrop(
             of: [UTType.fileURL.identifier],
             isTargeted: $isFolderDropTarget,
-            perform: folderOpening.openDroppedFolder
+            perform: { providers in
+                // Louppe's own drag-out carries photos, not a folder to open.
+                guard !OriginalFileDragSource.hasActiveSession else { return false }
+                return folderOpening.openDroppedFolder(providers)
+            }
         )
         .overlay {
-            if isFolderDropTarget { FolderDropTargetOverlay() }
+            if isFolderDropTarget, !OriginalFileDragSource.hasActiveSession { FolderDropTargetOverlay() }
         }
         .sheet(isPresented: $store.isPhotosLibraryPresented) {
             PhotosLibraryView(store: store, browser: store.photosBrowser)

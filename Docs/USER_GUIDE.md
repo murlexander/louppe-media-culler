@@ -202,6 +202,19 @@ unavailable originals must be made accessible in Photos first.
 - Export Copy and Move support All Media, Filtered, and Selected scopes.
   **Route copies to multiple folders** previews decision, stars, color,
   file-type, or media-type rules before copying.
+- Drag photos, videos or other files from Grid, Browser or a Gallery photo at
+  Fit or Phone size into Finder or another app to **copy** their originals;
+  RAW+JPEG pairs bring both files. Dragging a selected item drags the whole
+  selection; dragging any other item drags only that one. Louppe offers only
+  Copy: Finder copies even on the same drive, and the Trash refuses the drop.
+  In Grid, drag the photo itself; dragging from empty space or a filename still
+  selects a range. A zoomed Gallery photo pans instead. Missing originals, and
+  files replaced since Louppe scanned them, are left out (Open With too). Apple Photos items can't be dragged; use Export → Copy.
+- **File → Open With** (also in the Grid, Browser and Gallery context menus and
+  the Command Palette) opens the same originals in place in Lightroom Classic,
+  Capture One, Photoshop or Preview, whichever are installed, or in each file's
+  **Default App**. Louppe only hands the files over; what the app does next,
+  such as importing them into a catalog, is up to that app.
 
 **Settings → General** holds review defaults, RAW display, quality cues,
 iCloud access, getting-started tips, updates, and optional support.
@@ -264,6 +277,10 @@ set decisions.
 **Filter → Capture bursts** groups consecutive photo times within the chosen gap;
 set the interval in **Settings → General → Capture bursts**. It can merge separate shutter
 presses or cameras. Inferred dates are labeled.
+
+When a photo has valid GPS coordinates, **Info** shows them with an **Open in
+Maps** button (not for a fix the camera marked void, or 0,0). Louppe looks nothing up and sends nothing until you click it; Maps then
+shows that point.
 
 Text previews are read-only and selectable. TXT, TEXT, MD/MARKDOWN, XML,
 JSON, CSV, TSV, LOG, YAML, and YML appear alongside media. Markdown supports

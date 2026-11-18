@@ -314,6 +314,10 @@ private struct FocusedLouppeSessionCommands: Commands {
                 actionableStore?.canExport != true
             )
 
+            // The selection's originals, opened in place; no key equivalent.
+            OpenWithMenu(store: store, origin: .selection)
+                .disabled(actionableStore?.canHandOffOriginals(.selection) != true)
+
             Divider()
 
             // Clean Up asks for confirmation in the session window

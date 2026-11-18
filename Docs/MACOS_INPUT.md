@@ -39,6 +39,8 @@ tile taps yield to their enclosing scroll view with
 instead of assuming `NSApp.currentEvent` owns a delayed action.
 
 Browser/Grid keep native one-finger scrolling and pointer rubber-band selection.
+Drag-out of originals is pointer-only: a one-finger touch drag still scrolls,
+and Browser's native tile surface adds a touch single tap without a double tap.
 Their native context menus provide Add/Remove from Selection and decision
 actions for people working without modifier keys. The photo's native scroll
 view owns touch pan and pinch; custom double-tap actions share the pointer's
