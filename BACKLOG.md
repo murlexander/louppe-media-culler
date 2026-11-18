@@ -149,7 +149,7 @@ whole-job XMP measurements put ordinary Copy, Move and publication jobs within
 0.69–1.17× of 1.14.0, so the census redesign below waits. The 1.15 checks above
 remain unverified for 1.14.1.
 
-- [ ] **1.15 decisions for Alex (defaults shipped as listed).** Organize keeps naming the decision folder `Undecided`; Next Unfinished Folder is unchanged; Open With asks no confirmation for large selections; undated items read "No Date" beside the scroller knob while Grid headers and the Date filter say "Unknown date"; opening a folder still lands on its first unmarked item.
+- [ ] **A file name that isn't valid UTF-8 blocks saving its folder** (exFAT, SMB or old HFS volumes; APFS refuses such names). The scanner writes the bytes as `%FF`-style escapes and the session check rejects them, as it did `;` before 1.15. Either skip such files at scan time or accept their exact bytes; check whether the scanner lists them first.
 - [ ] **Archive work — next.**
   - **Folder-first readiness.** Validate the folder you navigate to first and
     allow deciding there while the rest of the archive validates. Changes the
