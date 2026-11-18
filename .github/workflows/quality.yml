@@ -11,7 +11,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: quality-${{ github.ref }}
+  # Each push gets its own group, so a push run is never cancelled or replaced
+  # while queued: a later docs-only push compares against this push's commit
+  # and would otherwise leave its code untested. PR runs still cancel.
+  group: quality-${{ github.event_name == 'push' && github.sha || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -31,36 +34,54 @@ jobs:
       - name: Redacted credential scan
         run: ./Scripts/check_credentials.sh --all-refs
 
+      # Skip the steps below for documentation-only changes. The job still
+      # reports success, so a required "verify" check never waits forever.
+      - name: Detect documentation-only change
+        id: changes
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: ./.github/scripts/classify_changes.sh "$EVENT_NAME" "$BASE_SHA" "$HEAD_SHA"
+
       - name: Report Apple toolchain
+        if: steps.changes.outputs.code != 'false'
         run: |
           xcodebuild -version
           swift --version
           xcrun --sdk macosx --show-sdk-version
 
       - name: Strict Swift 6 build
+        if: steps.changes.outputs.code != 'false'
         run: |
           swift build --disable-keychain \
             -Xswiftc -strict-concurrency=complete \
             -Xswiftc -warnings-as-errors
 
       - name: XCTest
+        if: steps.changes.outputs.code != 'false'
         env:
           LOUPPE_FOREGROUND_UI: "1"
         run: swift test --disable-keychain
 
       - name: Deterministic logic and recovery checks
+        if: steps.changes.outputs.code != 'false'
         env:
           LOUPPE_SKIP_REAL_TRASH: "1"
         run: ./Tests/run_performance_checks.sh
 
       - name: Scrollbar checks
+        if: steps.changes.outputs.code != 'false'
         run: ./Tests/run_scrollbar_checks.sh
 
       - name: Native video checks
+        if: steps.changes.outputs.code != 'false'
         run: ./Tests/run_video_checks.sh
 
       - name: Release build-order regression checks
+        if: steps.changes.outputs.code != 'false'
         run: python3 -I Tests/test_release_build_order.py
 
       - name: Release build and local preflight
+        if: steps.changes.outputs.code != 'false'
         run: ./build_app.sh

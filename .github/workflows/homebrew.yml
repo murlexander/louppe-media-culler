@@ -23,18 +23,9 @@ jobs:
         with:
           ref: main
 
-      - name: Verify the latest stable ZIP and update the cask
+      # Verifies the ZIP and renders the cask on the newest main, then pushes.
+      # Retries when the feed commit (appcast.xml) moves main first.
+      - name: Verify the latest stable ZIP and publish the cask
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 Scripts/update_homebrew_cask.py
-
-      - name: Publish the updated package definition
-        run: |
-          if git diff --quiet -- Casks/louppe.rb; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Casks/louppe.rb
-          git commit -m "Update Homebrew cask for latest Louppe release"
-          git push origin HEAD:main
+        run: ./.github/scripts/publish_cask.sh

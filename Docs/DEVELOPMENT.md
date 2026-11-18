@@ -31,6 +31,12 @@ Provider folder, because the default backend ad-hoc signs debug and test
 bundles. Xcode 27 deprecates `--build-system native`; only `build_app.sh` and the
 speed runner still use it.
 
+CI skips the build and tests when a change touches only top-level Markdown,
+`LICENSE` or `Docs/` (not `CHANGELOG.md` or `Docs/UPDATES.md`, which the build
+and tests read; [classifier](../.github/scripts/classify_changes.sh)). The
+credential scan always runs, and the check still reports success. A docs-only
+push doesn't re-test earlier code, so a red code run stays red on its own commit.
+
 Tests that activate the app or make windows key skip unless
 `LOUPPE_FOREGROUND_UI=1` (`test.sh --foreground`; CI sets it). A few older tests
 still order windows onscreen without taking focus. The app writes `.louppe_session.json` into

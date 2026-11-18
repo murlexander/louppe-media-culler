@@ -26,8 +26,10 @@ The workflow verifies GitHub hash/size and app identity, version, updater,
 minimum macOS, and architecture, then commits only cask version/checksum to
 `main`. Prereleases are excluded; it never publishes releases or changes the feed.
 
-Check workflow success and its permission to push. If the ZIP arrived after
-publication, rerun **Update Homebrew package**. Architecture or minimum-macOS
+Check workflow success and its permission to push. If `main` moves first
+(usually the feed commit), it re-renders the cask on the new tip and retries the
+push up to five times. If the ZIP arrived after publication, rerun **Update
+Homebrew package**. Architecture or minimum-macOS
 changes stop automation pending compatibility review.
 
 Manual check/update:
