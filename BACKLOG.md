@@ -169,7 +169,7 @@ remain unverified for 1.14.1.
     state, not unfinished work. Rename it **Unmarked** in the UI, Help and all
     six languages (the saved `undecided` value stays for compatibility). The
     toolbar shows Yes and No totals instead of "N/M reviewed"; remove "Review
-    complete" and the folder tree's all-decided checkmark. Export stops warning
+    complete" and the folder tree's all-decided checkmark (Alex confirmed). Export stops warning
     that unmarked items won't be exported. Clean Up keeps its explicit No and
     Unmarked counts in the confirmation. Separate culling and archive modes may
     come later; a per-folder "reviewed" state was rejected for now.
@@ -178,7 +178,9 @@ remain unverified for 1.14.1.
     stays). Clear All Decisions already leaves stars and labels alone. Add
     **Clear Stars and Labels…** to the menu beside it: same folder scope,
     confirmation and Undo. Pressing a decision's key (or button) again on a photo
-    already marked that way makes it Unmarked, without advancing; Undo restores
+    already marked that way makes it Unmarked, without advancing (with several
+    selected: unmark only when all have that decision, otherwise mark all; a
+    Mixed pair is marked, not unmarked); Undo restores
     it, key auto-repeat never toggles, and **R** keeps Clear All Decisions.
     Advance goes to the next item and stops at the end instead of wrapping to
     the first unmarked one.
