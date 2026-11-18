@@ -164,15 +164,19 @@ remain unverified for 1.14.1.
     Preview, default app) for the same selected originals as drag-out.
   - **Open in Maps.** An explicit action on valid GPS coordinates in Info; no
     lookup before the click (Aymeric feedback, 20 October 2026).
+  - **Picks, not progress (Alex, 18 November 2026).** Undecided is a normal
+    state, not unfinished work. Rename it **Unmarked** in the UI, Help and all
+    six languages (the saved `undecided` value stays for compatibility). The
+    toolbar shows Yes and No totals instead of "N/M reviewed"; remove "Review
+    complete" and the folder tree's all-decided checkmark. Export stops warning
+    that unmarked items won't be exported. Clean Up keeps its explicit No and
+    Unmarked counts in the confirmation. Separate culling and archive modes may
+    come later; a per-folder "reviewed" state was rejected for now.
   - **Scroller date label.** While dragging the existing native Grid scroller
     knob, show only the year and month under it, formatted by
     `AppDateFormat.yearAndMonth`. Nothing on hover, no new bar or command.
     Applies when sorted by capture date; items without a date read "No Date".
 - [ ] **Archive work — next.** After the items above.
-  - **Folder review progress.** Show partly reviewed folders in the tree and add
-    **Next Unreviewed Folder**. Waits on the review-model question (Alex,
-    18 November 2026): picks-only reviewing leaves rejects undecided, and archive
-    photos need no decision, so "every file decided" is the wrong measure.
   - **Folder-first readiness.** Validate the folder you navigate to first and
     allow deciding there while the rest of the archive validates. Changes the
     "complete validation before any save" rule, so write the design first.
