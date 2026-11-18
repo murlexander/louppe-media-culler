@@ -79,6 +79,16 @@ final class LouppeSpeedReviewRetentionTests: XCTestCase {
             }
             assertProjection(store)
             XCTAssertEqual(store.selectedIndices.count, count)
+            // Select All → F on an already uniform Yes selection clears it.
+            try report.measure(name: "batch.select-all-toggle-clear.decision-sort", count: count, prepare: {
+                store.rate(.undecided)
+                store.rate(.yes)
+                XCTAssertEqual(store.yesCount, count)
+            }) {
+                store.rate(.yes)
+            }
+            XCTAssertEqual(store.ratedCount, 0)
+            assertProjection(store)
             store.clearSelection()
 
             // Cue clearing: one cue, then an empty selection (neutral filter).

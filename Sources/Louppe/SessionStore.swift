@@ -4639,10 +4639,10 @@ final class SessionStore: ObservableObject {
     func rate(_ rating: Rating) {
         guard canRate else { return }
         flushPendingFilter()
-        let targets = effectiveSelection.sorted()
-        guard !targets.isEmpty else { return }
-        let items = self.items
-        let resolved = rating.resolvingDecisionToggle(for: targets.lazy.map { items[$0].ratingState })
+        // One locked read per physical file serves the toggle, the tallies
+        // and Undo; a uniform 100k selection is not read twice.
+        guard let before = Self.decisionBeforeImages(for: effectiveSelection.sorted(), in: items) else { return }
+        let resolved = rating.resolvingDecisionToggle(for: before.states)
         // Retain the displayed order before a decision can change its filter
         // membership or sort position. Advancing from the post-filter current
         // photo would skip the next item.
@@ -4653,11 +4653,16 @@ final class SessionStore: ObservableObject {
             && ReviewPreferences.load(from: reviewDefaults).advancesAfterDecision
         // Advance from the last marked target in display order, so a batch
         // is left behind rather than landed in. The current item counts only
-        // as a target; marking it alone anchors at itself.
-        let advanceAnchor = advances
-            ? targets.compactMap { preparedIndex.location(forItemIndex: $0)?.position }.max()
-            : nil
-        applyRating(resolved, to: targets)
+        // as a target; marking it alone anchors at itself. A running maximum
+        // keeps a whole-folder mark from allocating every position.
+        var advanceAnchor: Int?
+        if advances {
+            for index in before.targets {
+                guard let position = preparedIndex.location(forItemIndex: index)?.position else { continue }
+                if position > advanceAnchor ?? Int.min { advanceAnchor = position }
+            }
+        }
+        applyRating(resolved, before: before)
         if advances {
             setSelectionIndices([])
             advanceAfterDecision(
@@ -4708,9 +4713,8 @@ final class SessionStore: ObservableObject {
         guard items.indices.contains(index) else { return }
         let items = self.items
         if selectedIndices.count > 1, selectedIndices.contains(index) {
-            let targets = selectedIndices.sorted()
-            applyRating(rating.resolvingDecisionToggle(for: targets.lazy.map { items[$0].ratingState }),
-                        to: targets)
+            guard let before = Self.decisionBeforeImages(for: selectedIndices.sorted(), in: items) else { return }
+            applyRating(rating.resolvingDecisionToggle(for: before.states), before: before)
         } else {
             setIndex(index)
             setRating(rating.resolvingDecisionToggle(for: CollectionOfOne(items[index].ratingState)),
@@ -4720,27 +4724,61 @@ final class SessionStore: ObservableObject {
 
     /// Applies one rating to several photos as a single undoable step.
     private func applyRating(_ rating: Rating, to targets: [Int]) {
+        guard let before = Self.decisionBeforeImages(for: targets, in: items) else { return }
+        applyRating(rating, before: before)
+    }
+
+    /// `before` must have been read in this main-actor turn: its states are
+    /// the tallies' starting point and its changes become the Undo step.
+    private func applyRating(_ rating: Rating, before: DecisionBeforeImages) {
         // One borrowed value: metadata lives in shared storage, so this never
         // copies or republishes items, and avoids a `@Published` read per file.
         let items = self.items
-        let valid = targets.filter { items.indices.contains($0) }
-        guard !valid.isEmpty else { return }
-        let changes = Self.metadataChanges(for: valid, in: items)
-        pushUndo(.metadata(.decision, changes, previousFileID: currentItemID))
+        pushUndo(.metadata(.decision, before.changes, previousFileID: currentItemID))
         let now = Date()
+        // Both files of a pair receive the same decision, so every target
+        // ends in this one state.
+        let marked: PhotoItemRatingState = switch rating {
+        case .yes: .yes
+        case .no: .no
+        case .undecided: .undecided
+        }
         // Ratings live in shared lock-backed storage whose reference identity
         // does not change. Update it first, then publish once so lazy Browser
         // and Grid rows cannot redraw the old snapshot and miss the mutation.
-        for index in valid {
-            let previousState = items[index].ratingState
+        for (index, previousState) in zip(before.targets, before.states) {
             items[index].setRating(rating, ratedAt: now)
-            transitionRatingCount(
-                from: previousState,
-                to: items[index].ratingState
-            )
+            transitionRatingCount(from: previousState, to: marked)
         }
-        publishMetadataMutation(.decision, affectedFileIDs: changes.map { $0.previous.fileID })
+        publishMetadataMutation(.decision, affectedFileIDs: before.changes.map { $0.previous.fileID })
         scheduleSave()
+    }
+
+    /// In-range targets with their complete Undo before-images (primary then
+    /// paired file, as `metadataChanges`) and each target's decision state
+    /// derived from those same images: one locked read per physical file.
+    private struct DecisionBeforeImages {
+        let targets: [Int]
+        let changes: [MetadataChange]
+        let states: [PhotoItemRatingState]
+    }
+
+    private static func decisionBeforeImages(for targets: [Int], in items: [PhotoItem]) -> DecisionBeforeImages? {
+        let valid = targets.filter { items.indices.contains($0) }
+        guard !valid.isEmpty else { return nil }
+        // One slot per photo; pairs grow it. Undo charges the actual capacity.
+        var changes: [MetadataChange] = []
+        changes.reserveCapacity(valid.count)
+        var states: [PhotoItemRatingState] = []
+        states.reserveCapacity(valid.count)
+        for index in valid {
+            let primary = items[index].primaryFile.metadataSnapshot
+            let paired = items[index].pairedFile?.metadataSnapshot
+            changes.append(MetadataChange(previous: primary))
+            if let paired { changes.append(MetadataChange(previous: paired)) }
+            states.append(PhotoItemMetadataState(primary: primary, paired: paired).decision)
+        }
+        return DecisionBeforeImages(targets: valid, changes: changes, states: states)
     }
 
     /// Complete per-physical-file before-images, primary then paired file.
