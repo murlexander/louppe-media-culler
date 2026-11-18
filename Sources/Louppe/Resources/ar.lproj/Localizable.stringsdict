@@ -2745,5 +2745,48 @@
 			<string>%4$@ عنصر غير مطابق</string>
 		</dict>
 	</dict>
+	<key>Included %lld decisions from %lld earlier folder sessions.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>تم تضمين %1$#@count1@ من %3$#@count2@.</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%2$@ قرارات</string>
+			<key>one</key>
+			<string>قرار واحد</string>
+			<key>two</key>
+			<string>قرارين</string>
+			<key>few</key>
+			<string>%2$@ قرارات</string>
+			<key>many</key>
+			<string>%2$@ قرارًا</string>
+			<key>other</key>
+			<string>%2$@ قرار</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>zero</key>
+			<string>%4$@ جلسات مجلدات سابقة</string>
+			<key>one</key>
+			<string>جلسة مجلد سابقة واحدة</string>
+			<key>two</key>
+			<string>جلستي مجلد سابقتين</string>
+			<key>few</key>
+			<string>%4$@ جلسات مجلدات سابقة</string>
+			<key>many</key>
+			<string>%4$@ جلسة مجلد سابقة</string>
+			<key>other</key>
+			<string>%4$@ جلسة مجلد سابقة</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

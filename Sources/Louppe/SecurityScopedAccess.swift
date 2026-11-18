@@ -152,6 +152,14 @@ enum SecurityScopedFolderBookmarks {
         return urls
     }
 
+    /// Stored recent-folder bookmarks for nested-session merging. Read-only:
+    /// no resolution, refresh or write; path-only legacy recents grant nothing.
+    static func nestedSessionGrants(from defaults: UserDefaults = .standard) -> [NestedSessionGrant] {
+        (storedEntries(forKey: recentsKey, from: defaults) ?? []).compactMap { entry in
+            entry.bookmark.map { NestedSessionGrant(path: entry.path, bookmark: $0) }
+        }
+    }
+
     static func save(
         _ urls: [URL],
         to defaults: UserDefaults = .standard,

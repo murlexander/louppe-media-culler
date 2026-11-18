@@ -119,6 +119,12 @@ enum SessionOpeningWorker {
         /// SessionStore runs this after loading pin positions and folder
         /// memory, which follow the worker's final barrier.
         var didLoadOpeningStateForTesting: (@Sendable () -> Void)? = nil
+        #if LOUPPE_TEST_SEAMS
+        /// Replaces live bookmark resolution and scope for ancestor grants.
+        var nestedSessionGrantAccess: NestedSessionMerge.GrantAccess? = nil
+        /// Runs before each foreign sidecar read; throwing makes it unreadable.
+        var willReadNestedSession: (@Sendable (URL) throws -> Void)? = nil
+        #endif
     }
 
     static func prepare(
@@ -135,6 +141,7 @@ enum SessionOpeningWorker {
         preview: (@Sendable (OpeningSessionSnapshot) async -> Void)? = nil,
         metadataReady: (@Sendable (OpeningMetadataUpdate) -> Void)? = nil,
         metadataInterest: OpeningMetadataInterest? = nil,
+        nestedSessions: NestedSessionMerge.Environment? = NestedSessionMerge.Environment(),
         hooks: Hooks = Hooks()
     ) async throws -> SessionOpeningPreparation {
         let cancelFlag = FolderScanner.CancelFlag()
@@ -219,11 +226,24 @@ enum SessionOpeningWorker {
             )
             recorder.record(.persistenceRead, seconds: ProcessInfo.processInfo.systemUptime - readStart)
             try checkpoint(.decisionRestoration)
-            let pendingRestoration = try recorder.measure(.decisionRestoration) {
+            var pendingRestoration = try recorder.measure(.decisionRestoration) {
                 try SessionOpeningRestoration.prepare(
                     scanned: inventory.items, url: folder, persistenceResult: saved,
                     replaceSavedSession: replaceSavedSession, isCancelled: { cancelFlag.isSet }
                 )
+            }
+            // Other folders' saved decisions join the worker-owned files
+            // before any preview exposes them. Photos and Open as New Session
+            // never merge.
+            if photosBatch == nil { try checkpoint(.nestedSessionMerge) }
+            if photosBatch == nil, !replaceSavedSession, let nestedSessions,
+               pendingRestoration.permitsNestedSessionMerge(persistenceResult: saved) {
+                let mergeStart = ProcessInfo.processInfo.systemUptime
+                pendingRestoration.nestedSessionMerge = try await NestedSessionMerge.apply(
+                    to: pendingRestoration.items, root: folder, rootIdentity: identity,
+                    descendants: inventory.sessionSidecarFolders, environment: nestedSessions,
+                    isCancelled: { cancelFlag.isSet })
+                recorder.record(.nestedSessionMerge, seconds: ProcessInfo.processInfo.systemUptime - mergeStart)
             }
             var didPublishPreview = false
             if allowsPreview, !didPublishCachedPreview, let preview,

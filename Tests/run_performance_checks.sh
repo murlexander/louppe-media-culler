@@ -70,6 +70,7 @@ swiftc "${optimization[@]}" \
     Sources/Louppe/OpeningSessionState.swift \
     Sources/Louppe/SessionOpeningFacets.swift \
     Sources/Louppe/SessionOpeningRestoration.swift \
+    Sources/Louppe/NestedSessionMerge.swift \
     Sources/Louppe/PhotosReviewDecisions.swift \
     Sources/Louppe/PhotosLibrary.swift \
     Sources/Louppe/PhotosMedia.swift \

@@ -1809,5 +1809,32 @@
 			<string>%4$@ unmatched</string>
 		</dict>
 	</dict>
+	<key>Included %lld decisions from %lld earlier folder sessions.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Included %1$#@count1@ from %3$#@count2@.</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ decision</string>
+			<key>other</key>
+			<string>%2$@ decisions</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ earlier folder session</string>
+			<key>other</key>
+			<string>%4$@ earlier folder sessions</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

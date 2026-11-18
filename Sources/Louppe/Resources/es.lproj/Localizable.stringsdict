@@ -2043,5 +2043,36 @@
 			<string>%4$@ sin coincidencia</string>
 		</dict>
 	</dict>
+	<key>Included %lld decisions from %lld earlier folder sessions.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count1@ de %3$#@count2@.</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Se incluyó %2$@ decisión</string>
+			<key>many</key>
+			<string>Se incluyeron %2$@ de decisiones</string>
+			<key>other</key>
+			<string>Se incluyeron %2$@ decisiones</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ sesión de carpeta anterior</string>
+			<key>many</key>
+			<string>%4$@ de sesiones de carpeta anteriores</string>
+			<key>other</key>
+			<string>%4$@ sesiones de carpeta anteriores</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

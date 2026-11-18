@@ -103,8 +103,10 @@ inventory before those filters, so a nonempty folder can have no filter matches.
 Louppe remembers each folder's current item and independent Browser/Grid position,
 plus the expanded folders. Missing or replaced directories fall back to a verified
 ancestor. Originals, decisions and the archive's single save location stay intact.
-Opening a parent archive reads its own saved decisions; it does not merge
-sidecars from subfolders previously reviewed as separate sessions.
+Opening a folder also includes decisions saved by earlier sessions of its
+subfolders, and of a parent folder you pinned or opened recently; for each
+file the most recent decision, stars and color win. Only the opened folder's
+session file is written; one line reports what was included.
 If saved browsing positions cannot be read, **Reset Folder Navigation** starts
 fresh browsing memory and preserves the old memory files beside it. Decisions
 and originals are unaffected.

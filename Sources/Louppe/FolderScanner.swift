@@ -183,13 +183,19 @@ enum FolderScanner {
         let items: [PhotoItem]
         let rawJPEGFileIDs: [(raw: String, jpeg: String)]
         let directories: [ArchiveFolderIndex.Directory]
+        /// Included descendant folders whose listing held an exact
+        /// `.louppe_session.json` name, in walk order. Only the name was seen;
+        /// `NestedSessionMerge` opens and validates each one. Never the root.
+        let sessionSidecarFolders: [SessionSidecarFolder]
 
         init(root: URL, items: [PhotoItem], rawJPEGFileIDs: [(raw: String, jpeg: String)],
-             directories: [ArchiveFolderIndex.Directory] = []) {
+             directories: [ArchiveFolderIndex.Directory] = [],
+             sessionSidecarFolders: [SessionSidecarFolder] = []) {
             self.root = root
             self.items = items
             self.rawJPEGFileIDs = rawJPEGFileIDs
             self.directories = directories
+            self.sessionSidecarFolders = sessionSidecarFolders
         }
         var physicalFileCount: Int {
             items.reduce(0) { $0 + $1.individualFiles.count }
@@ -206,6 +212,14 @@ enum FolderScanner {
                 return (raw, jpeg)
             }
         }
+    }
+
+    /// A descendant folder that listed a session sidecar during discovery.
+    struct SessionSidecarFolder: Sendable {
+        /// The folder's exact percent-encoded ID relative to the opened root.
+        let directoryID: String
+        let url: URL
+        let identity: FileOperationJournal.FileIdentity
     }
 
     /// Thread-safe cancellation signal for a scan. `Task.isCancelled` only
@@ -362,22 +376,29 @@ enum FolderScanner {
         var files: [URL] = []
         var facts: [FileFacts?] = []
         var directories = [rootDirectory]
+        var sidecarFolders: [SessionSidecarFolder] = []
         try walk.assemble(isCancelled: isCancelled) { entry in
             try beforeEnumeratingURLForTesting?(entry.url)
             switch entry {
-            case .directory(let url, let identity):
-                directories.append(directoryRecord(url: url, identity: identity, root: root))
+            case .directory(let url, let identity, let hasSessionSidecar):
+                let record = directoryRecord(url: url, identity: identity, root: root)
+                directories.append(record)
+                if hasSessionSidecar {
+                    sidecarFolders.append(.init(directoryID: record.id, url: url, identity: identity))
+                }
             case .file(let url, let fileFacts):
                 files.append(url)
                 facts.append(fileFacts)
             }
         }
         if isCancelled() { throw CancellationError() }
-        return try pairInventory(
+        let paired = try pairInventory(
             root: root, files: files, facts: facts, directories: directories,
             pairingMode: pairingMode, isCancelled: isCancelled, recorder: recorder,
             discoveryStart: discoveryStart, stageWillBegin: stageWillBegin, progress: progress
         )
+        return Inventory(root: paired.root, items: paired.items, rawJPEGFileIDs: paired.rawJPEGFileIDs,
+                         directories: paired.directories, sessionSidecarFolders: sidecarFolders)
     }
 
     /// The FileManager-enumerator discovery used before 30 October 2026.
@@ -1714,12 +1735,12 @@ extension FolderScanner {
     ///   order, independent of worker timing.
     fileprivate final class DiscoveryWalk: @unchecked Sendable {
         enum Entry {
-            case directory(URL, FileOperationJournal.FileIdentity)
+            case directory(URL, FileOperationJournal.FileIdentity, hasSessionSidecar: Bool)
             case file(URL, FileFacts)
 
             var url: URL {
                 switch self {
-                case .directory(let url, _), .file(let url, _): return url
+                case .directory(let url, _, _), .file(let url, _): return url
                 }
             }
         }
@@ -1735,6 +1756,7 @@ extension FolderScanner {
             var url: URL?
             var identity: FileOperationJournal.FileIdentity?
             var children: [Child] = []
+            var hasSessionSidecar = false
         }
 
         private struct FileResult {
@@ -1761,6 +1783,8 @@ extension FolderScanner {
             var order: [(isDirectory: Bool, index: Int)] = []
             /// Visible files, links and other non-folder entries of any kind.
             var visibleNonDirectoryCount = 0
+            /// The exact sidecar name was listed (hidden; never a child).
+            var hasSessionSidecar = false
 
             var visibleChildren: [(name: String, isDirectory: Bool)] {
                 directories.map { (String(decoding: $0.path.lastComponent, as: UTF8.self), true) }
@@ -1787,6 +1811,7 @@ extension FolderScanner {
         }
 
         static let maximumWorkers = min(8, max(1, ProcessInfo.processInfo.activeProcessorCount))
+        private static let sessionSidecarName = Array(SessionConstants.sidecarName.utf8)
         private static let filesPerBatch = 64
         private static let progressInterval: TimeInterval = 0.02
 
@@ -1890,7 +1915,7 @@ extension FolderScanner {
                     let node = nodes[index]
                     guard node.included, let url = node.url, let identity = node.identity else { continue }
                     if isCancelled() { throw CancellationError() }
-                    try visit(.directory(url, identity))
+                    try visit(.directory(url, identity, hasSessionSidecar: node.hasSessionSidecar))
                     stack.append((index, 0))
                 case .file(let slot):
                     guard let result = files[slot] else { continue }
@@ -2024,6 +2049,7 @@ extension FolderScanner {
             }
             let firstSlot = fileResults.count
             fileResults.append(contentsOf: repeatElement(nil, count: listing.files.count))
+            nodes[parent].hasSessionSidecar = listing.hasSessionSidecar
             nodes[parent].children = listing.order.map { entry in
                 entry.isDirectory ? .directory(directoryNodes[entry.index]) : .file(firstSlot + entry.index)
             }
@@ -2158,6 +2184,9 @@ extension FolderScanner {
                 if first == 46 { // "."
                     if name.count > 2, name[1] == 95 { // "._"
                         appleDoubleNames.insert(Self.foldedName(name.dropFirst(2)))
+                    } else if name.elementsEqual(Self.sessionSidecarName) {
+                        // Recorded by name only; the merge reader opens it.
+                        listing.hasSessionSidecar = true
                     }
                     continue
                 }

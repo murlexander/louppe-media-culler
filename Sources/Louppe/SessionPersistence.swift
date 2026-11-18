@@ -1356,6 +1356,21 @@ actor SessionPersistence: SessionPersistenceClient {
         )
     }
 
+    /// Read-only decode for a sidecar owned by another folder (nested-session
+    /// merge): the same size ceiling, decoder, schema and entry rules as
+    /// `readCandidate`, without its path, backup or lineage checks.
+    static let maximumForeignSnapshotBytes = defaultMaximumSnapshotBytes
+
+    static func decodeForeignSnapshot(_ data: Data) -> SessionFile? {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let session = try? decoder.decode(SessionFile.self, from: data),
+              SessionConstants.supportedSchemaVersions.contains(session.version),
+              session.version < 3 || session.fileIDEncoding == .percentEncodedFileSystemPath,
+              entriesAreValid(in: session) else { return nil }
+        return session
+    }
+
     /// A generated snapshot is always newer than a pre-generation snapshot.
     /// When both copies predate generations, preserve the legacy timestamp
     /// ordering. Equal generations represent the same logical checkpoint, so

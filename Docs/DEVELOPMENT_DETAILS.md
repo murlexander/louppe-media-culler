@@ -401,6 +401,41 @@ selected-folder entitlements in `Packaging/Louppe.entitlements`.
   Items** discards missing entries. Close/Quit preserve both legacy copies
   byte-for-byte.
 
+Opening merges other folders' sessions (`NestedSessionMerge`, on the opening
+worker after local restoration and before any preview). Discovery records an
+exact `.louppe_session.json` name in each included descendant folder during
+the existing walk; ancestors are read only from a stored pin or recent bookmark
+that resolves silently (`.withoutUI`, `.withoutMounting`, never refreshed or
+rewritten; every pin and carried recent whose bookmark bytes record the
+opened folder's volume is resolved off the main and pin actors, so a parent
+renamed since it was stored still counts and its stored path decides nothing;
+bookmarks on another or an unknown volume, such as an unreachable network
+mount, are never resolved, so an ancestor above a mount point is not read),
+starts its security scope (in both builds: reading without it could raise a
+privacy prompt in the Developer ID build), and reaches the opened folder by a
+no-follow descent matching its identity before any of its sidecars is read; a
+second descent reads each level while its directory keeps the identity the
+first one saw. Nothing above the highest such grant
+or beside the opened folder is opened; no grant means no ancestor read and no
+prompt. Each sidecar leaf is read relative to a verified folder descriptor
+(no-follow, regular, ≤512 MiB, unchanged during the read) and validated by
+the root reader's rules; only schema ≥4 `entries` with dated fields count, and
+recovery history never does. Keys rebase by exact percent-encoded prefix and
+require `persistedIdentityMatches` on the scanned file. Per field, the latest
+date wins; the opened copy wins a tie, then the folder closest to the file;
+undated foreign fields are skipped and dated clears are values. The merge is
+skipped for Photos, Open as New Session, blocked/relocated/legacy-confirmation
+reads, and archive navigation (it does not reopen). A real change publishes
+the `nestedSessionMergeSummary` notice (hard links count once) and marks the
+session dirty once before Ready's save, unless Quit has begun or the opened
+folder is not writable (`faccessat` off-main): then the merged values stay in
+memory, ride the ordinary Ready save, and merge again on the next open, so a
+read-only folder warns and quits exactly as without them. Save, retry and CAS
+stay on the opened root's access. Other sidecars are never written. Undo
+restores old dates, so a newer copy elsewhere can win on the next open.
+Sidecar change dates have whole-second precision, so two changes to the same
+field in the same second are an exact tie and the opened folder's copy wins.
+
 Welcome's Pin Folder… chooser pins directly without opening/scanning/saving the
 source; reviewing has no pin toolbar button. Pins and positions use their own
 durable Application Support document, never a source sidecar or cache. Pin

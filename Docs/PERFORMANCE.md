@@ -439,6 +439,22 @@ Close, Open, Rescan, Quit and file operations flush a waiting fingerprint even
 when decisions are already durable; that optional write can make them wait on
 slow storage, but its failure never blocks them.
 
+## Nested session merge
+
+Discovery only compares hidden names against the sidecar name; folders with
+no nested sidecar and no covering grant add no reads (0.1 ms for 100,000
+files). Each nested sidecar costs one bounded read; JSON decoding dominates,
+so batches of up to 32 descendant or ancestor sidecars, each added as it is
+read (flushed before 64 MiB of raw bytes; an oversized valid sidecar goes
+alone), decode on four workers, each folding its
+document into a sparse per-file reducer as soon as it is decoded. More
+workers added lock contention, not speed. Opening metrics record it as its
+own `nestedSessionMerge` stage; resolving the pin and carried recent
+bookmarks that record the opened folder's volume (silently, never mounting;
+other volumes are filtered from the bookmark bytes without I/O) is part of it. On 18 November 2026 (optimized
+harness), 100,000 files fully covered by 2,000 nested sidecars merged in
+0.97 s; the cost recurs on each open while those sidecars exist.
+
 ## Shared review-metadata storage
 
 Copying `@Published [PhotoItem]` for F/D cost 20.5 ms at 100,000 items.

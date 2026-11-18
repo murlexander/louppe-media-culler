@@ -143,6 +143,11 @@ final class CaptureScenariosTests: XCTestCase {
             fixture.store.presentOperationRecoveryReportForTesting(report)
             return Surface(view: AnyView(RootView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
         },
+        Scenario(name: "session-nested-merge-notice", description: "Decisions included from earlier folder sessions, over a disposable Gallery session.") { fixture in
+            fixture.ready(mode: .gallery)
+            fixture.store.nestedSessionMergeSummary = .init(changedFiles: 12, contributingSessions: 3)
+            return Surface(view: AnyView(RootView(store: fixture.store)), size: CGSize(width: 1280, height: 800), requiresToolbar: true)
+        },
         Scenario(name: "sheet-export", description: "Export setup beside its progress and result states.") { fixture in
             fixture.ready(mode: .gallery)
             return fixture.sheet(ExportView(store: fixture.store))

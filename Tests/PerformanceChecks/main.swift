@@ -88,6 +88,7 @@ struct PerformanceChecks {
         try metadataFilterSortAndExportScaleBaseline()
         try ratingMutationScaleBaseline()
         try await sessionSnapshotScaleBaseline()
+        try await nestedSessionMergeScaleBaseline()
         try selectionStatePreservesImplicitCurrentAndToggleRules()
         try selectionStateRangesFiltersAndRemapsByID()
         try visibleLocationMapTracksDerivedState()
@@ -98,12 +99,12 @@ struct PerformanceChecks {
         try batchRatingUndoRestoresEveryRating()
         try exportMoveRemovalUpdatesSessionState()
         if ProcessInfo.processInfo.environment["LOUPPE_SKIP_REAL_TRASH"] == "1" {
-            print("Performance checks passed (72/75; 3 real Trash checks explicitly skipped)")
+            print("Performance checks passed (73/76; 3 real Trash checks explicitly skipped)")
         } else {
             try cleanUpPairRoundTripsThroughTrash()
             try cleanUpPairFailureRollsBackFirstFile()
             try cleanUpRollbackPreservesRacingSourceReplacement()
-            print("Performance checks passed (75/75)")
+            print("Performance checks passed (76/76)")
         }
     }
 
@@ -3409,6 +3410,67 @@ struct PerformanceChecks {
                 + "\(milliseconds(captureDuration)) ms, background build "
                 + "\(milliseconds(buildDuration)) ms"
         )
+    }
+
+    /// Discovery plus nested-session merge on a real disposable tree: once
+    /// with no nested sidecars (the common case, which must stay free) and
+    /// once with a sidecar in every folder covering all of its files.
+    private static func nestedSessionMergeScaleBaseline() async throws {
+        let folders = Int(ProcessInfo.processInfo.environment["LOUPPE_NESTED_FOLDERS"] ?? "") ?? 500
+        let perFolder = Int(ProcessInfo.processInfo.environment["LOUPPE_NESTED_FILES_PER_FOLDER"] ?? "") ?? 20
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LouppeNestedMerge-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        var sidecars: [(URL, Data)] = []
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        for folder in 0..<folders {
+            let directory = root.appendingPathComponent(String(format: "Day%04d", folder), isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            var entries: [SessionEntry] = []
+            for index in 0..<perFolder {
+                let name = String(format: "IMG_%05d.JPG", index)
+                let file = directory.appendingPathComponent(name)
+                guard FileManager.default.createFile(atPath: file.path, contents: Data([0xFF, 0xD8, 0xFF])) else {
+                    throw CocoaError(.fileWriteUnknown)
+                }
+                entries.append(SessionEntry(filename: name, pairedFilename: nil, rating: Rating.yes.rawValue,
+                    ratedAt: Date(timeIntervalSince1970: 1_700_000_000), stars: .three,
+                    starsChangedAt: Date(timeIntervalSince1970: 1_700_000_000),
+                    fileIdentity: try FileOperationJournal.captureIdentity(at: file)))
+            }
+            sidecars.append((directory.appendingPathComponent(SessionConstants.sidecarName),
+                try encoder.encode(SessionFile(version: 7, sourcePath: directory.path, scannedAt: Date(),
+                    entries: entries, fileIDEncoding: .percentEncodedFileSystemPath))))
+        }
+        let identity = try SessionPersistence.SourceFolderIdentity.capture(at: root)
+        let clock = ContinuousClock()
+        func run() async throws -> (Duration, Duration, NestedSessionMerge.Summary, Int) {
+            let discoveryStart = clock.now
+            let inventory = try FolderScanner.discoverInventory(root)
+            let discovery = discoveryStart.duration(to: clock.now)
+            let mergeStart = clock.now
+            let summary = try await NestedSessionMerge.apply(
+                to: inventory.items, root: root, rootIdentity: identity,
+                descendants: inventory.sessionSidecarFolders,
+                environment: .init(), isCancelled: { false })
+            return (discovery, mergeStart.duration(to: clock.now), summary, inventory.physicalFileCount)
+        }
+        let plain = try await run()
+        try expect(plain.3 == folders * perFolder, "nested merge fixture should discover every file")
+        try expect(plain.2 == NestedSessionMerge.Summary(), "no nested sidecar should merge nothing")
+        for (url, data) in sidecars { try data.write(to: url) }
+        let nested = try await run()
+        try expect(nested.2 == .init(changedFiles: folders * perFolder, contributingSessions: folders),
+                   "every nested sidecar should contribute its files")
+        // Generous bounds (measured about 100x lower) that still catch a
+        // per-file read or an O(files × sidecars) regression.
+        try expect(plain.1 < .milliseconds(100), "nested merge without sidecars should cost almost nothing")
+        try expect(nested.1 < .seconds(1) + .microseconds(200 * folders * perFolder),
+                   "nested merge should stay near linear in covered files")
+        print("Nested merge \(folders * perFolder) files: no sidecars discovery \(milliseconds(plain.0)) ms + merge "
+              + "\(milliseconds(plain.1)) ms; \(folders) sidecars discovery \(milliseconds(nested.0)) ms + merge "
+              + "\(milliseconds(nested.1)) ms")
     }
 
     private static func milliseconds(_ duration: Duration) -> String {

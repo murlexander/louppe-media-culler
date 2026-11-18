@@ -603,6 +603,16 @@ actor PinnedFoldersPersistence {
         return records.first { $0.identity == identity }?.position
     }
 
+    /// Stored pin bookmarks for nested-session merging; read-only, no
+    /// resolution or refresh. An unreadable document grants nothing.
+    func nestedSessionGrants() -> [NestedSessionGrant] {
+        guard (try? load()) != nil else { return [] }
+        return records.compactMap { record in
+            guard record.isPinned, let bookmark = record.bookmark else { return nil }
+            return NestedSessionGrant(path: record.path, bookmark: bookmark)
+        }
+    }
+
     private func trimUnpinned(_ proposed: inout [Record]) {
         while proposed.count > Self.maximumRecords,
               let oldest = proposed.indices.filter({ !proposed[$0].isPinned })
@@ -724,6 +734,11 @@ final class PinnedFoldersStore: ObservableObject {
     func savePosition(_ position: PinnedFolderPosition, for identity: PinnedFolderIdentity) async -> Bool {
         do { _ = try await persistence.savePosition(position, for: identity); return true }
         catch { statusMessage = error.localizedDescription; return false }
+    }
+
+    /// Silent: no status message or published snapshot; never on the main actor.
+    nonisolated func nestedSessionGrants() async -> [NestedSessionGrant] {
+        await persistence.nestedSessionGrants()
     }
 
     func position(for identity: PinnedFolderIdentity) async -> PinnedFolderPosition? {

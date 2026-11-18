@@ -1809,5 +1809,32 @@
 			<string>%4$@ बेजोड़</string>
 		</dict>
 	</dict>
+	<key>Included %lld decisions from %lld earlier folder sessions.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%3$#@count2@ से %1$#@count1@ शामिल किए गए।</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ निर्णय</string>
+			<key>other</key>
+			<string>%2$@ निर्णय</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%4$@ पिछले फ़ोल्डर सत्र</string>
+			<key>other</key>
+			<string>%4$@ पिछले फ़ोल्डर सत्रों</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

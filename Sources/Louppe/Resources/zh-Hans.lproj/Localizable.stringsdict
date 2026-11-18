@@ -1575,5 +1575,28 @@
 			<string>未匹配 %4$@ 项</string>
 		</dict>
 	</dict>
+	<key>Included %lld decisions from %lld earlier folder sessions.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>已从 %3$#@count2@中纳入 %1$#@count1@。</string>
+		<key>count1</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>%2$@ 个决定</string>
+		</dict>
+		<key>count2</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>%4$@ 个较早的文件夹会话</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -14,6 +14,16 @@ struct SessionOpeningRestoration: Sendable {
     let unmatchedLegacyPhysicalFileCount: Int
     let legacySessionNeedsConfirmation: Bool
     let hasIdentityConflicts: Bool
+    /// What `NestedSessionMerge` applied on top of this restoration.
+    var nestedSessionMerge = NestedSessionMerge.Summary()
+
+    /// Other folders' sidecars merge only into a session that can save
+    /// without a prompt; blocked, relocated or legacy sessions keep today's
+    /// confirmation flow untouched.
+    func permitsNestedSessionMerge(persistenceResult: SessionPersistence.ReadResult) -> Bool {
+        persistenceResult.blockingMessage == nil && persistenceResult.access != nil
+            && !requiresNewSessionConfirmation && !legacySessionNeedsConfirmation
+    }
 
     func permitsPreview(persistenceResult: SessionPersistence.ReadResult) -> Bool {
         persistenceResult.blockingMessage == nil && persistenceResult.access != nil
@@ -24,7 +34,7 @@ struct SessionOpeningRestoration: Sendable {
     /// Preserve the restoration bookkeeping; enrichment preserves each physical
     /// file's complete review metadata and does not run restoration again.
     func replacingItems(_ items: [PhotoItem]) -> Self {
-        Self(items: items, sessionRecoveryEntries: sessionRecoveryEntries,
+        var replaced = Self(items: items, sessionRecoveryEntries: sessionRecoveryEntries,
              sessionContentProofs: sessionContentProofs,
              retainedMissingSessionEntries: retainedMissingSessionEntries,
              restoredOrganizationOrigins: restoredOrganizationOrigins,
@@ -33,6 +43,8 @@ struct SessionOpeningRestoration: Sendable {
              unmatchedLegacyPhysicalFileCount: unmatchedLegacyPhysicalFileCount,
              legacySessionNeedsConfirmation: legacySessionNeedsConfirmation,
              hasIdentityConflicts: hasIdentityConflicts)
+        replaced.nestedSessionMerge = nestedSessionMerge
+        return replaced
     }
 
     static func prepare(

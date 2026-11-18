@@ -89,6 +89,13 @@ struct RootView: View {
                 if case .ready = store.phase, store.showsSessionRecoveryNotice {
                     SessionRecoveryBanner(store: store)
                 }
+                if let notice = store.nestedSessionMergeNotice {
+                    StatusBanner(systemImage: "checkmark.circle",
+                                 dismissal: .init(label: L10n.text("Dismiss notification"),
+                                                  action: store.dismissNestedSessionMergeNotice)) {
+                        Text(notice)
+                    }
+                }
                 if let warning = store.persistenceWarning {
                     PersistenceWarningBanner(
                         message: warning,

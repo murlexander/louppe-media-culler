@@ -11,6 +11,7 @@ enum SessionOpeningStage: String, CaseIterable, Sendable {
     case chronologicalSort
     case persistenceRead
     case decisionRestoration
+    case nestedSessionMerge
     case previewIdentityValidation
     case previewPublication
     case finalIdentityValidation

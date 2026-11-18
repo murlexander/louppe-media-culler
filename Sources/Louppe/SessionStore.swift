@@ -564,6 +564,9 @@ final class SessionStore: ObservableObject {
     var sessionRecoveryEntries: [SessionRecoveryEntry] { sessionRecoveryEntryStorage }
     @Published var isSessionRecoveryPresented = false
     @Published private(set) var isSessionRecoveryNoticeDismissed = false
+    /// What this Ready session included from other folders' sidecars; nil
+    /// when nothing contributed or the notice was dismissed.
+    @Published var nestedSessionMergeSummary: NestedSessionMerge.Summary?
     /// Only the recovery banner and sheet show progress. A first-time rating's
     /// fingerprint must not redraw the window when there is nothing to recover.
     private(set) var sessionContentCheck: SessionContentCheckState = .idle {
@@ -3696,6 +3699,10 @@ final class SessionStore: ObservableObject {
         isClearAllRatingsConfirmationPresented = false
         isClearStarsAndLabelsConfirmationPresented = false
         pendingCleanUp = nil
+        // Captured before this open can evict an older ancestor from recents.
+        let nestedSessions = photosBatch == nil && !replaceSavedSession
+            ? nestedSessionEnvironment(recents: SecurityScopedFolderBookmarks.nestedSessionGrants(from: reviewDefaults))
+            : nil
         if photosBatch == nil { addToRecents(url) }
         let pairingMode = rawJPEGPairingMode
         let openingSort = sort
@@ -3771,7 +3778,7 @@ final class SessionStore: ObservableObject {
                             )
                         }
                     }, metadataReady: { metadataBuffer.append($0) },
-                    metadataInterest: metadataInterest, hooks: openingHooks
+                    metadataInterest: metadataInterest, nestedSessions: nestedSessions, hooks: openingHooks
                 )
                 try Task.checkCancellation()
                 var rememberedPosition: PinnedFolderRestoredPosition?
@@ -4354,6 +4361,17 @@ final class SessionStore: ObservableObject {
             isLegacySessionMigrationConfirmationPresented = true
         } else {
             persistenceWarning = persistenceResult.recoveryMessage
+            let merge = restoration.nestedSessionMerge
+            if merge.changedFiles > 0 {
+                nestedSessionMergeSummary = merge
+                // Values merged from other folders are a session change, not
+                // optional maintenance of the opened baseline. Stay clean after
+                // Quit begins or when the opened folder can't be written: the
+                // other sidecars are untouched, so the next open merges the
+                // same values again, and the open must not warn or block Quit
+                // where an open without them would not.
+                if merge.rootIsWritable, !isPreparingForTermination { markSessionChanged() }
+            }
             saveSession()
         }
     }
@@ -7365,6 +7383,7 @@ final class SessionStore: ObservableObject {
         sessionRecoveryEntryStorage = []
         isSessionRecoveryPresented = false
         isSessionRecoveryNoticeDismissed = false
+        nestedSessionMergeSummary = nil
         sessionContentProofs = [:]
         sessionContentCapturedProofs = [:]
         sessionContentFailures = []
