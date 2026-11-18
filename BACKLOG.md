@@ -149,23 +149,30 @@ remain unverified for 1.14.1.
     subfolder session ignores its parent's. On open, read every reachable
     sidecar: descendants found during the existing walk, plus ancestors that a
     pin or recent bookmark already grants. Adopt each field (decision, stars,
-    color) from whichever copy has the newest change time, only onto the same
+    color) from whichever copy has the latest change time (on an exact tie the
+    opened folder's copy wins), only onto the same
     verified physical file. Write only the opened folder's sidecar and leave the
     others byte-for-byte. Clearing already records a timestamp, so newer clears
     win over older decisions. Show no prompt; one status line reports what was
     included. Identity conflicts and replaced files are skipped, not imported.
   - **Drag out.** Drag selected items from Gallery, Browser and Grid into Finder
-    and other apps as file URLs of the originals (RAW+JPEG pairs drag both).
-    Read-only; no copying, moving or promises in this step.
-  - **Move through time.** A year/month scrubber on the Grid's scroll edge built
-    on the existing date grouping, plus **Jump to Date…**. Works within the
-    current folder scope and keeps the remembered browsing anchors.
-- [ ] **Archive work — next.** After the items above.
-  - **Folder review progress.** Show partly reviewed folders in the tree (count
-    or ring next to the existing all-decided checkmark) and add **Next Unreviewed
-    Folder**.
+    and other apps as file URLs of the originals (RAW+JPEG pairs drag both),
+    allowing only the copy operation: Finder copies even on the same volume and
+    the Trash refuses the drop. Grid starts the drag on tile media (empty canvas
+    keeps the rubber band); Gallery only when not zoomed. No promises yet.
   - **Open With.** An editor submenu (Lightroom Classic, Capture One, Photoshop,
-    Preview, default app) for selected originals; the next handoff after drag-out.
+    Preview, default app) for the same selected originals as drag-out.
+  - **Open in Maps.** An explicit action on valid GPS coordinates in Info; no
+    lookup before the click (Aymeric feedback, 20 October 2026).
+  - **Scroller date label.** While dragging the existing native Grid scroller
+    knob, show only the year and month under it, formatted by
+    `AppDateFormat.yearAndMonth`. Nothing on hover, no new bar or command.
+    Applies when sorted by capture date; items without a date read "No Date".
+- [ ] **Archive work — next.** After the items above.
+  - **Folder review progress.** Show partly reviewed folders in the tree and add
+    **Next Unreviewed Folder**. Waits on the review-model question (Alex,
+    18 November 2026): picks-only reviewing leaves rejects undecided, and archive
+    photos need no decision, so "every file decided" is the wrong measure.
   - **Folder-first readiness.** Validate the folder you navigate to first and
     allow deciding there while the rest of the archive validates. Changes the
     "complete validation before any save" rule, so write the design first.
@@ -217,10 +224,6 @@ remain unverified for 1.14.1.
 
 These are deferred ideas, not committed implementation scope for 1.13.
 
-- [ ] **Photo location lookup — Aymeric feedback, 20 October 2026.** Add an
-  explicit Open in Maps action to valid GPS coordinates in Info. Do not look up
-  locations before the click. Deferred from 1.13 by Alex on 29 October 2026;
-  an embedded shoot map remains a separate idea.
 - [ ] **Archive gateway — Alex, 25 October 2026.** Make Louppe a familiar front
   door to existing media, with culling as one activity. Product ideas below are
   deferred; large-folder performance and remembered/pinned archives shipped in 1.13.
@@ -262,7 +265,7 @@ These are deferred ideas, not committed implementation scope for 1.13.
   pattern before adding recipe controls. Keep exact previews, family/collision
   checks, and journaled undo.
 - [ ] **Embedded shoot map.** Consider only after demand justifies the interface
-  and resource costs; the explicit GPS-to-Maps action is the location lookup above.
+  and resource costs; the explicit Open in Maps action is planned under Agent work.
 - [ ] Portable recovery beyond the same relative filename: copied-and-renamed
   or reorganized copies need explicit remapping/verified content discovery.
   Physical originals already follow unique disk identity. Design recovery-history
