@@ -1237,7 +1237,10 @@ precedence over remembered scope/position.
   `AppDateFormat.yearAndMonth` or “Unknown date” (the key Grid group headers and
   the Date filter use), and sits inboard of the actual scroller frame, which
   follows the app-wide direction (left in Arabic), not SwiftUI's. The overlay ignores hits, AX and focus; the month is the scroller's
-  accessibility value description only while dragging. Its real-event tests
+  accessibility value description only while it is shown. With no visible
+  entry the label hides and the scroller's own value returns at once. Each
+  newly exposed first row costs one month format and each month change one
+  re-host and fit; both measured too cheap to cache. Its real-event tests
   feed drags from an event-tracking timer, because the nested loop coalesces
   queued drags, and prove the left gutter in a child process launched with
   right-to-left direction, because AppKit caches the app direction at first use.

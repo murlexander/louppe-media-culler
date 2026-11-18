@@ -37,7 +37,10 @@ final class ReviewCollectionKnobLabel {
     /// Called synchronously after each presentation update while tracking,
     /// shown or hidden, inside AppKit's tracking loop during a real drag.
     static var didUpdate: ((ReviewCollectionKnobLabel) -> Void)?
+    /// Label texts resolved (one month format each).
     private(set) var lookupCount = 0
+    /// Overlay re-hosts, each with one `fittingSize` pass.
+    var fitCount: Int { overlay.fitCount }
     #endif
 
     init(scroll: ReviewCollectionScrollView) {
@@ -173,20 +176,29 @@ final class ReviewCollectionKnobLabel {
             scroll.addSubview(overlay, positioned: .above, relativeTo: nil)
         }
         var changed = false
-        if let entry = document.firstVisibleEntry(), entry.position != lastPosition {
-            #if LOUPPE_TEST_SEAMS
-            lookupCount += 1
-            #endif
-            lastPosition = entry.position
-            let next = label.text(entry.entry)
-            if next != text {
-                text = next
-                changed = true
-                if let next { overlay.show(text: next, environment: environment) }
+        if let entry = document.firstVisibleEntry() {
+            if entry.position != lastPosition {
+                #if LOUPPE_TEST_SEAMS
+                lookupCount += 1
+                #endif
+                lastPosition = entry.position
+                let next = label.text(entry.entry)
+                if next != text {
+                    text = next
+                    changed = true
+                    if let next { overlay.show(text: next, environment: environment) }
+                }
             }
+        } else if lastPosition != nil || text != nil {
+            // Nothing is visible: never keep naming the previous month.
+            lastPosition = nil
+            text = nil
+            changed = true
         }
         guard let text else {
             overlay.isHidden = true
+            // While no month is named, VoiceOver reads the scroller's own value.
+            if changed, let prior = priorValueDescription { scroller.setAccessibilityValueDescription(prior) }
             return
         }
         // VoiceOver reads the month with the scroller's numeric value; no
@@ -220,6 +232,9 @@ final class ReviewCollectionKnobLabel {
 final class ReviewCollectionKnobLabelOverlay: NSView {
     private let host = NSHostingView(rootView: AnyView(EmptyView()))
     private(set) var fittedSize = CGSize.zero
+    #if LOUPPE_TEST_SEAMS
+    private(set) var fitCount = 0
+    #endif
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -249,6 +264,9 @@ final class ReviewCollectionKnobLabelOverlay: NSView {
             .environment(\.layoutDirection, environment.layoutDirection))
         host.invalidateIntrinsicContentSize()
         fittedSize = host.fittingSize
+        #if LOUPPE_TEST_SEAMS
+        fitCount += 1
+        #endif
     }
 }
 

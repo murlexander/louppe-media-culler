@@ -245,6 +245,94 @@ final class GridScrollerDateLabelTests: XCTestCase {
         XCTAssertLessThanOrEqual(document.retainedHostCount, 200, "Only viewport cells stay realized")
     }
 
+    /// Work per knob drag: one month format per newly exposed first row and
+    /// one re-host and fit per month change, never more. Formats stay
+    /// uncached and fits unreused: both cost little next to realizing a row.
+    func testKnobDragFormatsPerFirstRowAndFitsPerMonthChange() async throws {
+        _ = NSApplication.shared
+        let store = datedStore(dated: 100_000, undated: 0)
+        let (host, window) = mount(store, rightToLeft: false)
+        defer { window.close() }
+        try await settle(host)
+        let scroll = try gridScroll(in: host)
+        let label = try XCTUnwrap(scroll.knobLabel)
+        var texts: [String] = []
+        ReviewCollectionKnobLabel.didUpdate = { label in label.text.map { texts.append($0) } }
+
+        // Small steps inside one month (each month is a twelfth of the travel).
+        var lookups = label.lookupCount, fits = label.fitCount
+        try dragKnob(scroll, to: (0..<12).map { 0.27 + CGFloat($0) * 0.004 }, diagonal: 0)
+        let sameMonth = (updates: texts.count, formats: label.lookupCount - lookups, fits: label.fitCount - fits)
+        XCTAssertEqual(Set(texts).count, 1, "The drag stays inside one month")
+        XCTAssertGreaterThan(sameMonth.updates, 5)
+        XCTAssertLessThanOrEqual(sameMonth.formats, sameMonth.updates, "At most one format per update")
+        XCTAssertEqual(sameMonth.fits, 1, "One month, one fit")
+
+        // Jumps back and forth across a month boundary.
+        texts = []
+        lookups = label.lookupCount
+        fits = label.fitCount
+        try dragKnob(scroll, to: [0.23, 0.27, 0.23, 0.27, 0.23, 0.27, 0.23, 0.27], diagonal: 0)
+        let crossing = (updates: texts.count, formats: label.lookupCount - lookups, fits: label.fitCount - fits,
+                        changes: 1 + zip(texts, texts.dropFirst()).filter { $0 != $1 }.count)
+        XCTAssertEqual(Set(texts).count, 2, "Two months alternate")
+        XCTAssertEqual(crossing.fits, crossing.changes, "One fit per shown month change, none for a repeat")
+
+        // Unit costs behind the decision not to cache.
+        let clock = ContinuousClock()
+        let dates = (0..<1_000).map { Date(timeIntervalSince1970: 1_700_000_000 + Double($0) * 3_600) }
+        let format = clock.measure { for date in dates { _ = AppDateFormat.yearAndMonth(date) } } / dates.count
+        let overlay = ReviewCollectionKnobLabelOverlay()
+        let fit = clock.measure {
+            for index in 0..<100 { overlay.show(text: texts[index % texts.count], environment: EnvironmentValues()) }
+        } / 100
+        print("KNOB_LABEL_WORK same-month updates \(sameMonth.updates) formats \(sameMonth.formats) fits "
+              + "\(sameMonth.fits); boundary updates \(crossing.updates) formats \(crossing.formats) fits "
+              + "\(crossing.fits) month changes \(crossing.changes); format \(format), re-host+fit \(fit)")
+    }
+
+    /// A drag reaching a stretch with no visible entry names no month and
+    /// gives VoiceOver the scroller's own value back.
+    func testNoVisibleEntryClearsTheMonthAndRestoresTheScrollerValue() async throws {
+        _ = NSApplication.shared
+        let store = datedStore()
+        let (host, window) = mount(store, rightToLeft: false)
+        defer { window.close() }
+        try await settle(host)
+        let scroll = try gridScroll(in: host)
+        let scroller = try XCTUnwrap(scroll.verticalScroller)
+        let document = try XCTUnwrap(scroll.documentView as? ReviewCollectionDocument)
+        let prior = scroller.accessibilityValueDescription()
+        var emptied = false
+        var afterEmpty: [(text: String?, showing: Bool, value: String?)] = []
+        ReviewCollectionKnobLabel.didUpdate = { label in
+            if emptied {
+                afterEmpty.append((label.text, label.isShowing, scroller.accessibilityValueDescription()))
+                return
+            }
+            guard let text = label.text, label.isShowing else { return }
+            XCTAssertEqual(scroller.accessibilityValueDescription(), text, "VoiceOver reads the month while shown")
+            emptied = true
+            // The projection loses every entry inside the drag; the next live
+            // scroll finds nothing visible.
+            document.configure(projection: ReviewCollectionProjection(sections: []), style: .grid(thumbnailSize: 90),
+                               controller: nil, rubberBand: nil, environment: EnvironmentValues(),
+                               cell: { _ in AnyView(EmptyView()) })
+            NotificationCenter.default.post(name: NSScrollView.didLiveScrollNotification, object: scroll)
+        }
+        try dragKnob(scroll, to: [0.3, 0.5, 0.7], diagonal: 0)
+        XCTAssertTrue(emptied)
+        let first = try XCTUnwrap(afterEmpty.first, "The label updated after the projection emptied")
+        XCTAssertNil(first.text, "No month without a visible entry")
+        XCTAssertFalse(first.showing)
+        XCTAssertEqual(first.value, prior, "The scroller's own value returns at once, not only at mouse-up")
+        for sample in afterEmpty {
+            XCTAssertNil(sample.text)
+            XCTAssertFalse(sample.showing)
+        }
+        XCTAssertEqual(scroller.accessibilityValueDescription(), prior)
+    }
+
     func testNewDragNeverOpensWithThePreviousMonth() async throws {
         _ = NSApplication.shared
         let store = datedStore()
