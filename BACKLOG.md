@@ -153,6 +153,7 @@ remain unverified for 1.14.1.
 
 - [ ] **Proposal — unreadable folder names on cards.** A folder whose name isn't valid Unicode (made on Windows; macOS can't open it) fails the whole scan with an error naming it. Opening the rest of the card with that folder left out and a notice would need a notice banner and translations, and changes the rule that an unreadable folder fails visibly. Needs Alex's decision.
 - [ ] **Live capture of dialog scenarios crashes the test host.** `capture_ui.sh --live` on `dialog-clean-up` or `dialog-clear-stars-labels` ends the XCTest process with SIGSEGV (an over-release while the autorelease pool drains). Offscreen captures work, and the installed 1.15 app shows both confirmations correctly.
+- [ ] **Custom accent color.** Let users pick the accent color in Settings, with Louppe purple (#9853A6) as the default and a reset to it. Every `louppeAccent` use (32 files) and `louppeFilledAccent` follow the choice; the dark and Increase Contrast variants in `Palette.swift` must be derived for custom colors with white-ink contrast kept on filled controls. Yes/no rating green and red stay fixed. Update the one-accent rule in `AGENTS.md` § UI conventions when it ships.
 - [ ] **Archive work — next.**
   - **Folder-first readiness.** Validate the folder you navigate to first and
     allow deciding there while the rest of the archive validates. Changes the
