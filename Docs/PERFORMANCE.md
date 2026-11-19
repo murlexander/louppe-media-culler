@@ -1038,7 +1038,9 @@ for All (the archive folder scope), Filtered, and Selected.
 One byte per displayed item records conservative decision and physical-pair-member
 eligibility. Structural rebuilds refresh it after pairing and the physical-file map;
 item replacement/reset clears it. Decision publications update only affected
-displayed indices, including keyboard/menu edits, clear, Undo, and recovery. Mixed
+displayed indices, including keyboard/menu edits, clear, Undo, and recovery. A
+batch decision passes its target indices and the one state it wrote, so these
+counters, archive review counts and folder progress need no re-read. Mixed
 pairs have no rating-based eligibility; content revisions are not decision keys.
 
 Archive-scope changes rebuild All counters and membership. Visibility publication

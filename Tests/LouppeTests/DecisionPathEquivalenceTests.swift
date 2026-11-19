@@ -97,6 +97,143 @@ final class DecisionPathEquivalenceTests: XCTestCase {
         store.beginTerminationPreparation()
     }
 
+    // MARK: - Counts from the known decision
+
+    /// Marks, toggle-offs, tile/badge batches, Undo and re-marks over pairs,
+    /// cross-folder pairs, HEIF companions, Mixed pairs and scoped selections:
+    /// every incremental counter equals a full recount after each step, and
+    /// each mark stamps one time on every target file.
+    func testBatchDecisionCountersMatchAFullRecountTogetherAndSeparate() throws {
+        for separate in [false, true] {
+            let root = try disposableRoot()
+            let (store, cleanup) = makeStore(countersFixture(root: root, separate: separate), root: root)
+            defer { cleanup() }
+            store.replaceArchiveFolderIndex(ArchiveFolderIndex(root: root, directories: [], items: store.items))
+            _ = store.archiveFolderProgress // Built on first use; then maintained per decision.
+            XCTAssertEqual(store.decisionCounterMismatchesForTesting, [])
+            var random = Generator(state: separate ? 0x5E9A : 0x70CE)
+            let ratings: [Rating] = [.yes, .no, .undecided]
+            let count = store.items.count
+            for step in 0..<500 {
+                let before = store.items.map(\.metadataSnapshots)
+                let start = Date()
+                var stampsTargets: [Int] = []
+                switch random.next(14) {
+                case 0, 1, 2:
+                    store.setSelection(Set((0..<random.next(count)).map { _ in random.next(count) }))
+                    stampsTargets = store.effectiveSelection.sorted()
+                    store.rate(ratings[random.next(3)])
+                case 3:
+                    store.selectAllVisible()
+                    stampsTargets = store.effectiveSelection.sorted()
+                    store.rate(random.next(2) == 0 ? .yes : .no) // Repeats toggle off.
+                case 4:
+                    let index = random.next(count)
+                    store.setSelection(Set((0..<6).map { _ in random.next(count) }).union([index]))
+                    stampsTargets = store.selectedIndices.count > 1 && store.selectedIndices.contains(index)
+                        ? store.selectedIndices.sorted() : [index]
+                    store.rate(ratings[random.next(2)], at: index)
+                case 5:
+                    let index = random.next(count)
+                    store.setSelection(Set((0..<6).map { _ in random.next(count) }).union([index]))
+                    stampsTargets = store.selectedIndices.count > 1 && store.selectedIndices.contains(index)
+                        ? store.selectedIndices.sorted() : [index]
+                    store.toggleRating(at: index)
+                case 6, 7:
+                    store.undo()
+                case 8:
+                    store.selectArchiveFolder(["", "A", "B", "A/C"][random.next(4)])
+                case 9:
+                    store.setArchiveIncludesDescendants(random.next(2) == 0)
+                case 10:
+                    store.filter.excludedDecisionStates = [[], [.yes], [.undecided], [.mixed]][random.next(4)]
+                    store.flushPendingFilter()
+                case 11:
+                    store.setSelection([])
+                    store.currentIndex = store.visibleIndices.isEmpty ? 0 : store.visibleIndices[random.next(store.visibleIndices.count)]
+                    stampsTargets = store.effectiveSelection.sorted()
+                    store.rate(ratings[random.next(2)])
+                case 12:
+                    store.setStarRating(random.next(2) == 0 ? .two : nil)
+                default:
+                    store.clearAllRatings()
+                }
+                XCTAssertEqual(store.decisionCounterMismatchesForTesting, [], "step \(step), separate \(separate)")
+                // Any target whose files changed got exactly one new stamp, shared by both files.
+                for index in stampsTargets where store.items.indices.contains(index)
+                    && store.items[index].metadataSnapshots != before[index] {
+                    let stamps = Set(store.items[index].metadataSnapshots.map(\.ratedAt))
+                    XCTAssertEqual(stamps.count, 1, "step \(step)")
+                    XCTAssertTrue(stamps.allSatisfy { $0.map { $0 >= start } ?? false }, "step \(step)")
+                }
+            }
+            // Undo walks every retained step back to the opening state exactly.
+            while store.canUndo { store.undo() }
+            XCTAssertEqual(store.decisionCounterMismatchesForTesting, [])
+        }
+    }
+
+    /// Ten physical families per subfolder pattern; ratings start varied.
+    private func countersFixture(root: URL, separate: Bool) -> [PhotoItem] {
+        let ratings: [Rating] = [.yes, .no, .undecided]
+        func file(_ id: String, _ rating: Rating) -> PhotoFile {
+            PhotoFile(id: id, url: root.appendingPathComponent(id), captureDate: nil,
+                      cameraModel: nil, lensModel: nil, fileSize: 1, rating: rating,
+                      ratedAt: rating == .undecided ? nil : Date(timeIntervalSince1970: 1_000))
+        }
+        var items: [PhotoItem] = []
+        for i in 0..<12 {
+            let rating = ratings[i % 3]
+            let other = ratings[(i + i / 3) % 3] // Some pairs start Mixed.
+            let families: [(String, String?)] = [
+                ("A/X\(i).NEF", "B/X\(i).JPG"),       // Cross-folder pair.
+                ("A/C/Y\(i).NEF", "A/C/Y\(i).JPG"),   // Same-folder pair.
+                ("A/H\(i).NEF", "A/H\(i).HEIC"),      // Paired for review, never a JPEG target.
+                ("B/S\(i).JPG", nil),
+                ("R\(i).JPG", nil),
+            ]
+            for (primary, paired) in families {
+                if let paired {
+                    if separate {
+                        items.append(PhotoItem(primaryFile: file(primary, rating)))
+                        items.append(PhotoItem(primaryFile: file(paired, other)))
+                    } else {
+                        items.append(PhotoItem(primaryFile: file(primary, rating), pairedFile: file(paired, other)))
+                    }
+                } else {
+                    items.append(PhotoItem(primaryFile: file(primary, rating)))
+                }
+            }
+        }
+        return items
+    }
+
+    private func makeStore(_ items: [PhotoItem], root: URL) -> (SessionStore, () -> Void) {
+        let name = "DecisionPathEquivalence.\(UUID())"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.set(false, forKey: CameraQualityWarningPreferences.Keys.isHighlightClippingEnabled)
+        defaults.set(false, forKey: CameraQualityWarningPreferences.Keys.isShadowClippingEnabled)
+        defaults.set(false, forKey: ReviewPreferences.Keys.advancesAfterDecision)
+        let store = SessionStore(
+            persistence: SessionPersistence(backupDirectory: root.appendingPathComponent("Backups")),
+            saveTrailingDelay: 60, saveMaximumDelay: 60, reviewDefaults: defaults)
+        store.items = items
+        store.rebuildDerivedDataForTesting(sourceFolder: root)
+        store.phase = .ready
+        store.pauseQualityCueAnalysis()
+        return (store, {
+            store.beginTerminationPreparation()
+            defaults.removePersistentDomain(forName: name)
+        })
+    }
+
+    private func disposableRoot() throws -> URL {
+        let root = URL(fileURLWithPath: "/private/tmp/Louppe-DecisionPath-\(UUID())")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+        return root
+    }
+
     // MARK: - Helpers
 
     private func wait(_ condition: () -> Bool, file: StaticString = #filePath, line: UInt = #line) async throws {

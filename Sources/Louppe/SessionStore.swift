@@ -1680,6 +1680,60 @@ final class SessionStore: ObservableObject {
         ))
     }
 
+    /// Every incrementally maintained decision counter that differs from a
+    /// full recount of the current items, by name. Empty means consistent.
+    var decisionCounterMismatchesForTesting: [String] {
+        var mismatches: [String] = []
+        let facets = SessionOpeningFacets(items: items)
+        if facets.ratingTally != ratingTally || facets.mixedRatingCount != mixedRatingCount {
+            mismatches.append("rating tally")
+        }
+        if cleanUpFacts.count == items.count {
+            var facts = items.map { CleanUpFact.decision($0.ratingState) }
+            for pair in pairMemberCleanUpPairs {
+                if let index = itemIndexByFileID[pair.jpeg.id] { facts[index] |= CleanUpFact.jpeg }
+                if let index = itemIndexByFileID[pair.raw.id] { facts[index] |= CleanUpFact.raw }
+            }
+            if facts != cleanUpFacts { mismatches.append("Clean Up facts") }
+            func availability(_ indices: some Sequence<Int>) -> CleanUpAvailability {
+                var result = CleanUpAvailability()
+                for index in indices where facts.indices.contains(index) { result.add(facts[index]) }
+                return result
+            }
+            if availability(archiveScopeIndices ?? Array(items.indices)) != archiveCleanUpAvailability {
+                mismatches.append("Clean Up All")
+            }
+            if availability(visibleIndices) != filteredCleanUpAvailability { mismatches.append("Clean Up Filtered") }
+            if availability(effectiveSelection) != selectedCleanUpAvailability { mismatches.append("Clean Up Selected") }
+        } else if !cleanUpFacts.isEmpty {
+            mismatches.append("Clean Up facts size")
+        }
+        if let scope = archiveScopeIndices {
+            var states: [Int: PhotoItemRatingState] = [:]
+            var counts = (yes: 0, no: 0, mixed: 0)
+            for index in scope where items.indices.contains(index) {
+                let state = items[index].ratingState
+                states[index] = state
+                if state == .yes { counts.yes += 1 }
+                if state == .no { counts.no += 1 }
+                if state == .mixed { counts.mixed += 1 }
+            }
+            if states != archiveScopeReviewStates || counts != archiveScopeReviewCounts {
+                mismatches.append("archive review counts")
+            }
+        }
+        if let progress = archiveFolderProgressStorage, let index = archiveFolderIndex,
+           progress.generation == index.generation, progress.itemCount == items.count {
+            let fresh = ArchiveFolderProgress(index: index) { Self.isReviewed(self.items[$0]) }
+            if index.orderedFolderIDs.contains(where: {
+                fresh.directReviewedCount(for: $0, index: index) != progress.directReviewedCount(for: $0, index: index)
+            }) {
+                mismatches.append("archive folder progress")
+            }
+        }
+        return mismatches
+    }
+
     /// Retained Undo history for memory measurements and eviction tests.
     var undoStepCountForTesting: Int { undoStack.count }
     var undoRetainedMetadataChangesForTesting: Int {
@@ -2967,26 +3021,51 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    /// A batch decision just wrote one state to both physical files of each
+    /// distinct displayed item, so the counters need no re-read.
+    private struct UniformDecision {
+        let itemIndices: [Int]
+        let state: PhotoItemRatingState
+    }
+
     /// Review metadata is lock-backed and therefore does not replace the
     /// `PhotoItem` value. Refresh only a prepared sort/filter that depends on
     /// the changed dimension, then publish the new scalar snapshot to tiles.
     private func publishMetadataMutation(
         _ dimension: MetadataDimension,
         affectedFileIDs: [String],
-        preservingCurrent: Bool = false
+        preservingCurrent: Bool = false,
+        uniformDecision: UniformDecision? = nil
     ) {
         sessionContentPendingFileIDs.formUnion(affectedFileIDs)
+        // A stale physical-file map keeps the general path, exactly as before.
+        let uniform = itemStructureNeedsRebuild ? nil : uniformDecision
         if dimension == .decision || dimension == .all {
-            updateCleanUpAvailability(affectedFileIDs: affectedFileIDs)
+            if let uniform {
+                updateCleanUpAvailability(itemIndices: uniform.itemIndices, decision: uniform.state)
+            } else {
+                updateCleanUpAvailability(affectedFileIDs: affectedFileIDs)
+            }
         }
         if dimension == .decision || dimension == .all, archiveScopeIndices != nil {
-            for index in Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] })
-                where archiveScopeReviewStates[index] != nil {
-                updateArchiveReviewCount(at: index)
+            if let uniform {
+                for index in uniform.itemIndices where archiveScopeReviewStates[index] != nil {
+                    updateArchiveReviewCount(at: index, state: uniform.state)
+                }
+            } else {
+                for index in Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] })
+                    where archiveScopeReviewStates[index] != nil {
+                    updateArchiveReviewCount(at: index)
+                }
             }
         }
         if dimension == .decision || dimension == .all, archiveFolderProgressStorage != nil {
-            updateArchiveFolderProgress(itemIndices: Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] }))
+            if let uniform {
+                updateArchiveFolderProgress(itemIndices: uniform.itemIndices,
+                                            reviewed: Self.isReviewed(uniform.state))
+            } else {
+                updateArchiveFolderProgress(itemIndices: Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] }))
+            }
         }
         if dimension != .decision, archiveScopeIndices != nil {
             for index in Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] })
@@ -4750,7 +4829,8 @@ final class SessionStore: ObservableObject {
             items[index].setRating(rating, ratedAt: now)
             transitionRatingCount(from: previousState, to: marked)
         }
-        publishMetadataMutation(.decision, affectedFileIDs: before.changes.map { $0.previous.fileID })
+        publishMetadataMutation(.decision, affectedFileIDs: before.changes.map { $0.previous.fileID },
+                                uniformDecision: UniformDecision(itemIndices: before.targets, state: marked))
         scheduleSave()
     }
 
@@ -5226,7 +5306,7 @@ final class SessionStore: ObservableObject {
         }
     }
 
-    private struct CleanUpAvailability {
+    private struct CleanUpAvailability: Equatable {
         var no = 0
         var notYes = 0
         var jpeg = 0
@@ -5309,23 +5389,35 @@ final class SessionStore: ObservableObject {
         let selection = effectiveSelection
         for index in Set(affectedFileIDs.compactMap { itemIndexByFileID[$0] })
             where cleanUpFacts.indices.contains(index) {
-            let old = cleanUpFacts[index]
-            let new = (old & (CleanUpFact.jpeg | CleanUpFact.raw))
-                | CleanUpFact.decision(items[index].ratingState)
-            guard old != new else { continue }
-            cleanUpFacts[index] = new
-            if cleanUpArchiveMembership?.contains(index) ?? true {
-                archiveCleanUpAvailability.add(old, by: -1)
-                archiveCleanUpAvailability.add(new)
-            }
-            if preparedIndex.location(forItemIndex: index) != nil {
-                filteredCleanUpAvailability.add(old, by: -1)
-                filteredCleanUpAvailability.add(new)
-            }
-            if selection.contains(index) {
-                selectedCleanUpAvailability.add(old, by: -1)
-                selectedCleanUpAvailability.add(new)
-            }
+            setCleanUpDecision(CleanUpFact.decision(items[index].ratingState), at: index, selection: selection)
+        }
+    }
+
+    /// Distinct displayed items that all now hold `decision`.
+    private func updateCleanUpAvailability(itemIndices: [Int], decision: PhotoItemRatingState) {
+        let selection = effectiveSelection
+        let facts = CleanUpFact.decision(decision)
+        for index in itemIndices where cleanUpFacts.indices.contains(index) {
+            setCleanUpDecision(facts, at: index, selection: selection)
+        }
+    }
+
+    private func setCleanUpDecision(_ decision: UInt8, at index: Int, selection: Set<Int>) {
+        let old = cleanUpFacts[index]
+        let new = (old & (CleanUpFact.jpeg | CleanUpFact.raw)) | decision
+        guard old != new else { return }
+        cleanUpFacts[index] = new
+        if cleanUpArchiveMembership?.contains(index) ?? true {
+            archiveCleanUpAvailability.add(old, by: -1)
+            archiveCleanUpAvailability.add(new)
+        }
+        if preparedIndex.location(forItemIndex: index) != nil {
+            filteredCleanUpAvailability.add(old, by: -1)
+            filteredCleanUpAvailability.add(new)
+        }
+        if selection.contains(index) {
+            selectedCleanUpAvailability.add(old, by: -1)
+            selectedCleanUpAvailability.add(new)
         }
     }
 

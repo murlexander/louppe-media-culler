@@ -102,6 +102,15 @@ extension SessionStore {
     }
 
     func updateArchiveFolderProgress(itemIndices: Set<Int>) {
+        updateArchiveFolderProgress(itemIndices: itemIndices) { Self.isReviewed(self.items[$0]) }
+    }
+
+    /// Items that all now hold one known decision.
+    func updateArchiveFolderProgress(itemIndices: [Int], reviewed: Bool) {
+        updateArchiveFolderProgress(itemIndices: itemIndices) { _ in reviewed }
+    }
+
+    private func updateArchiveFolderProgress(itemIndices: some Sequence<Int>, isReviewed: (Int) -> Bool) {
         guard let index = archiveFolderIndex, let progress = archiveFolderProgressStorage,
               progress.generation == index.generation, progress.itemCount == items.count else {
             archiveFolderProgressStorage = nil
@@ -110,15 +119,18 @@ extension SessionStore {
         }
         var changed = false
         for item in itemIndices where items.indices.contains(item) {
-            if progress.set(item: item, reviewed: Self.isReviewed(items[item]), index: index) { changed = true }
+            if progress.set(item: item, reviewed: isReviewed(item), index: index) { changed = true }
         }
         if changed { archiveFolderProgressRevision &+= 1 }
     }
 
     /// Next Folder with Unmarked Items: Yes or No counts as marked; Unmarked and Mixed pairs do not.
     static func isReviewed(_ item: PhotoItem) -> Bool {
-        let state = item.ratingState
-        return state == .yes || state == .no
+        isReviewed(item.ratingState)
+    }
+
+    static func isReviewed(_ state: PhotoItemRatingState) -> Bool {
+        state == .yes || state == .no
     }
 
     var canExpandAllArchiveFolders: Bool { archiveExpansionSummary.canExpand }
@@ -180,9 +192,10 @@ extension SessionStore {
         }
     }
 
-    func updateArchiveReviewCount(at index: Int) {
+    /// `state`, when known, is the item's current decision; otherwise it is read.
+    func updateArchiveReviewCount(at index: Int, state: PhotoItemRatingState? = nil) {
         guard items.indices.contains(index) else { return }
-        let new = items[index].ratingState
+        let new = state ?? items[index].ratingState
         let old = archiveScopeReviewStates.updateValue(new, forKey: index)
         guard old != new else { return }
         if old == .yes { archiveScopeReviewCounts.yes -= 1 }
