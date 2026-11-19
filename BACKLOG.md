@@ -177,14 +177,18 @@ remain unverified for 1.14.1.
     live with the same error.
   - [x] Prevent hardened-runtime signature false failures from early-exit pipes; fixtures retain unsigned, wrong-team and missing-runtime rejection.
   - [x] Check native Filter search focus-ring coloring: retain the system keyboard-focus indicator. The macOS 27.2 SDK has no per-field color setter; suppressing/replacing the ring would lose native focus behavior.
-- [ ] **AUD-06 — Remaining projection costs.** Date grouping, empty-facet labels
-  and ASCII search are done (100k, optimized: filter toggles ≤ 28 ms, Name → date
-  12 ms, search apply 20 ms). Grouped restore under other keys still takes
-  68–100 ms (camera, subfolder, file type copy items through `sameGroup`;
-  ungrouped 4–7 ms). Decision-facet predicates spend ~14 ms reading locked
-  metadata. The content-check queue walk is ~58% of the 363 ms Select All →
-  decision. Measure first; preserve serial proofs, ties, physical/recovery maps,
-  selection and saves.
+- [ ] **AUD-06 — Remaining projection costs.** At 100k (optimized), filter
+  toggles take ≤ 28 ms, Name → date 12 ms and search apply 20 ms. Grouped restore
+  under other keys still takes 68–100 ms (camera, subfolder, file type copy items
+  through `sameGroup`; ungrouped 4–7 ms), and decision-facet predicates spend
+  ~14 ms reading locked metadata. On 100k RAW+JPEG pairs, Select All → decision
+  still spends ~265 ms walking the 200k pending proof IDs on the main actor when
+  it starts the content-check queue (~470 ms total, ~100 ms with the queue already
+  running), and Undo of that batch takes ~325 ms (general count path). Moving
+  queue admission off the main actor must keep proof order, pause/resume,
+  close/rescan, decisions or Undo during admission, and recovery priority.
+  Measure first; preserve serial proofs, ties, physical/recovery maps, selection
+  and saves.
 - [ ] **Toolchain.** Move packaging and the speed runner to SwiftPM's default
   backend: handle its release resource-bundle layout (`Contents/Info.plist`) and
   folder-derived bundle identifier, then retire `--build-system native`.

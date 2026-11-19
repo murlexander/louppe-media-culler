@@ -957,7 +957,10 @@ snapshot, never immutable `searchableText`. Decision/star/color sorts use finite
 buckets over a validated cached chronological permutation. Structural boundaries
 validate chronological order once and sort exceptional arbitrary input. Metadata
 edits reuse that permutation; missing/Mixed ordering and chronological ties stay
-identical to the comparison sort. Search/camera-setting drafts
+identical to the comparison sort. A decision that keeps every edited item's decision-filter
+membership, under a non-decision sort with no search, quality-cue, recovery or
+structural projection pending, keeps the projection and applies only the
+selection and current-item rules. Search/camera-setting drafts
 use 150 ms debounce and one valid filter assignment per commit.
 
 Date/exposure controls stay visible. Folder-wide full ranges are neutral and

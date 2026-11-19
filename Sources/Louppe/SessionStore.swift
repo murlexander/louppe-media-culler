@@ -1680,6 +1680,13 @@ final class SessionStore: ObservableObject {
         ))
     }
 
+    /// The reference behavior for differential tests: every decision under a
+    /// decision filter re-projects the whole session.
+    var reprojectsEveryDecisionForTesting = false
+    private(set) var keptDecisionProjectionsForTesting = 0
+    /// Arriving cue evidence changed membership; its projection is paced.
+    func markQualityCueFilterStaleForTesting() { qualityCueFilterNeedsRefresh = true }
+
     /// Every incrementally maintained decision counter that differs from a
     /// full recount of the current items, by name. Empty means consistent.
     var decisionCounterMismatchesForTesting: [String] {
@@ -2537,6 +2544,8 @@ final class SessionStore: ObservableObject {
 
     func applyFilter(preservingCurrent: Bool = false) {
         qualityCueFilterNeedsRefresh = false
+        // Date ranges resolve whole days in this calendar (`PreparedPhotoFilter`).
+        projectedCalendar = Calendar.current
         let cueMatches = filter.selectedQualityCues.isEmpty ? nil : preparedQualityCueMatches()
         preparedIndex.applyFilter(
             filter,
@@ -2548,6 +2557,11 @@ final class SessionStore: ObservableObject {
         )
         applyGroupedReviewLayoutIfNeeded()
         publishPreparedVisibility()
+        applySelectionAndCurrentRules(preservingCurrent: preservingCurrent)
+    }
+
+    /// Selection and current-item rules after the projection is published.
+    private func applySelectionAndCurrentRules(preservingCurrent: Bool) {
         // Photos that just got filtered out must leave the selection too —
         // an invisible photo shouldn't silently receive a rating.
         if !selectedIndices.isEmpty {
@@ -3035,7 +3049,8 @@ final class SessionStore: ObservableObject {
         _ dimension: MetadataDimension,
         affectedFileIDs: [String],
         preservingCurrent: Bool = false,
-        uniformDecision: UniformDecision? = nil
+        uniformDecision: UniformDecision? = nil,
+        keepsDecisionFilterMembership: Bool = false
     ) {
         sessionContentPendingFileIDs.formUnion(affectedFileIDs)
         // A stale physical-file map keeps the general path, exactly as before.
@@ -3104,11 +3119,44 @@ final class SessionStore: ObservableObject {
             if changesSort {
                 preparedIndex.rebuildPreparedSort(items, sort: sort)
             }
-            if changesSort || changesFilter {
+            if !changesSort, changesFilter, dimension == .decision, keepsDecisionFilterMembership,
+               projectionIsCurrent {
+                // Same members in the same order: the projection, its groups
+                // and the Clean Up counters (updated above) already hold.
+#if LOUPPE_TEST_SEAMS
+                keptDecisionProjectionsForTesting += 1
+#endif
+                applySelectionAndCurrentRules(preservingCurrent: preservingCurrent)
+            } else if changesSort || changesFilter {
                 applyFilter(preservingCurrent: preservingCurrent)
             }
         }
         reviewStateRevision &+= 1
+    }
+
+    /// No structural, search, quality-cue or recovery projection is waiting.
+    private var projectionIsCurrent: Bool {
+#if LOUPPE_TEST_SEAMS
+        if reprojectsEveryDecisionForTesting { return false }
+#endif
+        return !itemStructureNeedsRebuild && filterDebounce == nil
+            && !qualityCueFilterNeedsRefresh && !contentResultsNeedProjection
+            && (!filter.dateEnabled || projectedCalendar == Calendar.current)
+    }
+
+    /// `Calendar.current` at the last projection; a time zone or calendar
+    /// change since then can move date-range bounds.
+    private var projectedCalendar: Calendar?
+
+    /// Whether every edited item, moving from `states` to `state`, keeps its
+    /// decision-filter membership. Order is unaffected unless sorted by decision.
+    private func keepsDecisionFilterMembership(
+        from states: some Sequence<PhotoItemRatingState>, to state: PhotoItemRatingState
+    ) -> Bool {
+        let excluded = filter.excludedDecisionStates
+        guard !excluded.isEmpty else { return true }
+        let hidden = excluded.contains(state)
+        return states.allSatisfy { excluded.contains($0) == hidden }
     }
 
     private func publishPreparedVisibility() {
@@ -4830,7 +4878,8 @@ final class SessionStore: ObservableObject {
             transitionRatingCount(from: previousState, to: marked)
         }
         publishMetadataMutation(.decision, affectedFileIDs: before.changes.map { $0.previous.fileID },
-                                uniformDecision: UniformDecision(itemIndices: before.targets, state: marked))
+                                uniformDecision: UniformDecision(itemIndices: before.targets, state: marked),
+                                keepsDecisionFilterMembership: keepsDecisionFilterMembership(from: before.states, to: marked))
         scheduleSave()
     }
 
@@ -4885,11 +4934,11 @@ final class SessionStore: ObservableObject {
         }
         let previousState = items[index].ratingState
         items[index].setRating(rating, ratedAt: Date())
-        transitionRatingCount(
-            from: previousState,
-            to: items[index].ratingState
-        )
-        publishMetadataMutation(.decision, affectedFileIDs: items[index].individualFiles.map(\.id))
+        let newState = items[index].ratingState
+        transitionRatingCount(from: previousState, to: newState)
+        publishMetadataMutation(.decision, affectedFileIDs: items[index].individualFiles.map(\.id),
+                                keepsDecisionFilterMembership: keepsDecisionFilterMembership(
+                                    from: CollectionOfOne(previousState), to: newState))
         scheduleSave()
     }
 

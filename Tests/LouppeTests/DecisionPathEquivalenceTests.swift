@@ -173,6 +173,197 @@ final class DecisionPathEquivalenceTests: XCTestCase {
         }
     }
 
+    // MARK: - Decision-filter membership
+
+    /// A store that keeps an unchanged projection runs in lockstep with one
+    /// that re-projects after every decision (the previous behavior): visible
+    /// order, date groups and titles, selection, current item, decisions and
+    /// Clean Up availability must match after each step. Covers single and
+    /// batch marks, toggle-off, tile and badge batches, Undo, partial and full
+    /// selections, pending search, grouping on and off, archive scopes, and
+    /// advancing from the old order.
+    func testKeptDecisionProjectionMatchesAFullReprojection() throws {
+        for advances in [false, true] {
+            let root = try disposableRoot()
+            let (fast, cleanFast) = makeStore(membershipFixture(root: root), root: root, advances: advances)
+            let (reference, cleanReference) = makeStore(membershipFixture(root: root), root: root, advances: advances)
+            defer { cleanFast(); cleanReference() }
+            reference.reprojectsEveryDecisionForTesting = true
+            for store in [fast, reference] {
+                store.replaceArchiveFolderIndex(ArchiveFolderIndex(root: root, directories: [], items: store.items))
+                store.filter.excludedDecisionStates = [.no]
+                store.flushPendingFilter()
+            }
+            var random = Generator(state: advances ? 0xAD7 : 0x57A7)
+            let filters: [Set<PhotoItemRatingState>] = [[.no], [.yes], [.undecided], [.mixed], [.no, .mixed],
+                                                        [.yes, .no, .mixed]]
+            let ratings: [Rating] = [.yes, .no, .undecided]
+            for step in 0..<600 {
+                let visible = fast.visibleIndices
+                let pick = visible.isEmpty ? 0 : visible[random.next(visible.count)]
+                let subset = Set((0..<random.next(12)).compactMap { _ in visible.isEmpty ? nil : visible[random.next(visible.count)] })
+                let operation = random.next(16)
+                let rating = ratings[random.next(operation < 6 ? 2 : 3)]
+                let filter = filters[random.next(filters.count)]
+                let flag = random.next(2) == 0
+                let folder = ["", "A", "B"][random.next(3)]
+                for store in [fast, reference] {
+                    switch operation {
+                    case 0, 1, 2: store.rate(rating) // Current item or explicit selection.
+                    case 3, 4:
+                        store.setSelection(subset)
+                        store.rate(rating)
+                    case 5:
+                        store.selectAllVisible()
+                        store.rate(rating)
+                    case 6: store.rate(rating, at: pick)
+                    case 7: store.toggleRating(at: pick)
+                    case 8: store.undo()
+                    case 9:
+                        store.filter.excludedDecisionStates = filter
+                        store.flushPendingFilter()
+                    case 10: store.filter.searchText = flag ? "" : "R2" // Pending until the next decision.
+                    case 11: store.isGroupingEnabled = flag
+                    case 12: store.setIndex(pick)
+                    case 13: store.setSelection(subset)
+                    case 14: store.selectArchiveFolder(folder)
+                    default: store.setSelection([])
+                    }
+                }
+                assertSameReview(fast, reference, "step \(step), advances \(advances), operation \(operation)")
+            }
+            XCTAssertGreaterThan(fast.keptDecisionProjectionsForTesting, 50, "the kept projection must be exercised")
+            XCTAssertEqual(reference.keptDecisionProjectionsForTesting, 0)
+        }
+    }
+
+    /// Unmarked filter + F changes membership: the photo must leave at once.
+    func testUnmarkedFilterDecisionStillReprojects() throws {
+        let root = try disposableRoot()
+        let (store, cleanup) = makeStore(membershipFixture(root: root), root: root, advances: false)
+        defer { cleanup() }
+        store.filter.excludedDecisionStates = [.yes, .no, .mixed]
+        store.flushPendingFilter()
+        let unmarked = try XCTUnwrap(store.visibleIndices.first)
+        store.setIndex(unmarked)
+        let visibleCount = store.visibleIndices.count
+        store.rate(.yes)
+        XCTAssertEqual(store.keptDecisionProjectionsForTesting, 0)
+        XCTAssertNil(store.visiblePosition(ofItem: unmarked))
+        XCTAssertEqual(store.visibleIndices.count, visibleCount - 1)
+        XCTAssertNotNil(store.visiblePosition(ofItem: store.currentIndex))
+        XCTAssertEqual(store.decisionCounterMismatchesForTesting, [])
+        // A No → Yes edit under the same filter keeps membership (both hidden).
+        store.undo()
+        XCTAssertEqual(store.visibleIndices.count, visibleCount)
+    }
+
+    /// Paced cue evidence and pending search are projected, not skipped.
+    /// A date range resolves whole days in the current calendar. After a
+    /// time zone change, a decision must re-project, not keep stale bounds.
+    func testTimeZoneChangeUnderADateRangeReprojects() throws {
+        let original = NSTimeZone.default
+        defer { NSTimeZone.default = original }
+        NSTimeZone.default = TimeZone(identifier: "UTC")!
+        let root = try disposableRoot()
+        let base = 1_790_000_000.0 // Hourly items across two UTC days.
+        let items = (0..<48).map { hour in
+            PhotoItem(primaryFile: PhotoFile(
+                id: "H\(hour).JPG", url: root.appendingPathComponent("H\(hour).JPG"),
+                captureDate: Date(timeIntervalSince1970: base + Double(hour * 3_600)),
+                cameraModel: nil, lensModel: nil, fileSize: 1))
+        }
+        let (store, cleanup) = makeStore(items, root: root)
+        defer { cleanup() }
+        store.filter.excludedDecisionStates = [.no]
+        store.filter.dateEnabled = true
+        store.filter.dateMode = .range
+        store.filter.dateFrom = Date(timeIntervalSince1970: base + 12 * 3_600)
+        store.filter.dateTo = store.filter.dateFrom
+        store.applyFilter()
+        let utcVisible = store.visibleIndices
+        XCTAssertFalse(utcVisible.isEmpty)
+        NSTimeZone.default = TimeZone(identifier: "Pacific/Kiritimati")! // UTC+14
+        var fresh = PreparedSessionIndex()
+        fresh.rebuildItems(store.items, sort: store.sort)
+        fresh.applyFilter(store.filter, to: store.items, sort: store.sort, isGroupingEnabled: store.isGroupingEnabled)
+        XCTAssertNotEqual(fresh.visibleIndices, utcVisible, "the fixture must straddle the shifted day")
+        store.setIndex(try XCTUnwrap(utcVisible.first))
+        store.rate(.yes) // Undecided → Yes keeps decision-filter membership.
+        XCTAssertEqual(store.keptDecisionProjectionsForTesting, 0)
+        fresh.applyFilter(store.filter, to: store.items, sort: store.sort, isGroupingEnabled: store.isGroupingEnabled)
+        XCTAssertEqual(store.visibleIndices, fresh.visibleIndices)
+        // With the calendar unchanged since that projection, the shortcut applies again.
+        store.setIndex(try XCTUnwrap(store.visibleIndices.first { store.items[$0].ratingState == .undecided }))
+        store.rate(.yes)
+        XCTAssertEqual(store.keptDecisionProjectionsForTesting, 1)
+    }
+
+    func testPendingCueProjectionAndSearchAreNotSkipped() throws {
+        let root = try disposableRoot()
+        let (store, cleanup) = makeStore(membershipFixture(root: root), root: root, advances: false)
+        defer { cleanup() }
+        store.filter.excludedDecisionStates = [.no]
+        store.flushPendingFilter()
+        store.setIndex(try XCTUnwrap(store.visibleIndices.first { store.items[$0].ratingState == .undecided }))
+        store.markQualityCueFilterStaleForTesting()
+        store.rate(.yes)
+        XCTAssertEqual(store.keptDecisionProjectionsForTesting, 0, "a stale cue projection takes the full path")
+        // Search typed just before the decision is applied first, then kept.
+        let unsearched = store.visibleIndices.count
+        store.filter.searchText = "R2"
+        let target = try XCTUnwrap(store.visibleIndices.first { store.items[$0].ratingState == .undecided })
+        store.rate(.yes, at: target)
+        XCTAssertEqual(store.keptDecisionProjectionsForTesting, 1)
+        XCTAssertLessThan(store.visibleIndices.count, unsearched, "the search applied before the decision")
+        var fresh = PreparedSessionIndex()
+        fresh.rebuildItems(store.items, sort: store.sort)
+        fresh.applyFilter(store.filter, to: store.items, sort: store.sort, isGroupingEnabled: store.isGroupingEnabled)
+        XCTAssertEqual(store.visibleIndices, fresh.visibleIndices)
+    }
+
+    private func assertSameReview(_ fast: SessionStore, _ reference: SessionStore, _ message: String,
+                                  file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(fast.visibleIndices, reference.visibleIndices, message, file: file, line: line)
+        XCTAssertEqual(fast.visibleGroups.map(\.id), reference.visibleGroups.map(\.id), message, file: file, line: line)
+        XCTAssertEqual(fast.visibleGroups.map(\.indices), reference.visibleGroups.map(\.indices), message,
+                       file: file, line: line)
+        XCTAssertEqual(fast.visibleGroupTitles, reference.visibleGroupTitles, message, file: file, line: line)
+        XCTAssertEqual(fast.gridGroups, reference.gridGroups, message, file: file, line: line)
+        XCTAssertEqual(fast.selectedIndices, reference.selectedIndices, message, file: file, line: line)
+        XCTAssertEqual(fast.currentIndex, reference.currentIndex, message, file: file, line: line)
+        XCTAssertEqual(fast.items.map(\.ratingState), reference.items.map(\.ratingState), message, file: file, line: line)
+        XCTAssertEqual(fast.decisionCounterMismatchesForTesting, [], message, file: file, line: line)
+        for scope in [CleanUpScope.all, .filtered, .selected] {
+            fast.cleanUpScope = scope
+            reference.cleanUpScope = scope
+            for mode in [CleanUpMode.selection, .trashNo, .keepOnlyYes, .pairedJPEGs, .pairedRAWs] {
+                XCTAssertEqual(fast.hasCleanUpTargets(for: mode), reference.hasCleanUpTargets(for: mode),
+                               "\(message), \(scope), \(mode)", file: file, line: line)
+            }
+        }
+    }
+
+    /// Four capture days, pairs, singles and Mixed pairs in two folders.
+    private func membershipFixture(root: URL) -> [PhotoItem] {
+        let ratings: [Rating] = [.yes, .no, .undecided]
+        func file(_ id: String, _ rating: Rating, day: Int, offset: Int) -> PhotoFile {
+            PhotoFile(id: id, url: root.appendingPathComponent(id),
+                      captureDate: Date(timeIntervalSince1970: 1_790_000_000 + Double(day * 86_400 + offset * 60)),
+                      cameraModel: nil, lensModel: nil, fileSize: 1, rating: rating)
+        }
+        return (0..<48).map { i in
+            let folder = i.isMultiple(of: 2) ? "A" : "B"
+            let name = i.isMultiple(of: 3) ? "R\(i)" : "P\(i)"
+            let rating = ratings[i % 3]
+            let primary = file("\(folder)/\(name).NEF", rating, day: i % 4, offset: i)
+            guard !i.isMultiple(of: 5) else { return PhotoItem(primaryFile: primary) }
+            return PhotoItem(primaryFile: primary, pairedFile: file("\(folder)/\(name).JPG",
+                                                                 i.isMultiple(of: 7) ? ratings[(i + 1) % 3] : rating,
+                                                                 day: i % 4, offset: i))
+        }
+    }
+
     /// Ten physical families per subfolder pattern; ratings start varied.
     private func countersFixture(root: URL, separate: Bool) -> [PhotoItem] {
         let ratings: [Rating] = [.yes, .no, .undecided]
@@ -208,12 +399,12 @@ final class DecisionPathEquivalenceTests: XCTestCase {
         return items
     }
 
-    private func makeStore(_ items: [PhotoItem], root: URL) -> (SessionStore, () -> Void) {
+    private func makeStore(_ items: [PhotoItem], root: URL, advances: Bool = false) -> (SessionStore, () -> Void) {
         let name = "DecisionPathEquivalence.\(UUID())"
         let defaults = UserDefaults(suiteName: name)!
         defaults.set(false, forKey: CameraQualityWarningPreferences.Keys.isHighlightClippingEnabled)
         defaults.set(false, forKey: CameraQualityWarningPreferences.Keys.isShadowClippingEnabled)
-        defaults.set(false, forKey: ReviewPreferences.Keys.advancesAfterDecision)
+        defaults.set(advances, forKey: ReviewPreferences.Keys.advancesAfterDecision)
         let store = SessionStore(
             persistence: SessionPersistence(backupDirectory: root.appendingPathComponent("Backups")),
             saveTrailingDelay: 60, saveMaximumDelay: 60, reviewDefaults: defaults)
