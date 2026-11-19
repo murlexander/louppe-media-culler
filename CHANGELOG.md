@@ -16,6 +16,7 @@
 - Save decisions in folders whose file names contain a semicolon; since 1.7 such folders couldn't save. Renaming a photo to a name with a semicolon also keeps it selected and undoable.
 - Show about eleven photos in the Browser where eight fitted before. On narrow portraits, stars and color labels sit beside the photo instead of covering the Yes/No mark or the video length.
 - Name the folder when a card can't be opened because a folder on it has a name macOS can't read (usually one made on Windows), instead of an empty path and an unrelated file name.
+- Mark a whole large folder at once without a long pause: Select All then F on 100,000 RAW+JPEG pairs took about 3 seconds and now takes about half a second.
 
 ## 1.14.1 (19) — 2026-11-16
 

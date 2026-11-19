@@ -427,7 +427,10 @@ targets and candidate records are indexed once per structural generation. Unique
 physical originals follow renames without a preliminary full-content read;
 copies still require same-path content proof or explicit confirmation. Subsequent
 fingerprint scheduling queues only touched physical IDs rather than flattening,
-sorting and walking the whole folder on every decision. The Ready-session 100k
+sorting and walking the whole folder on every decision. Starting a check walks the
+pending IDs once and sorts precomputed keys (recovery history first, then exact
+ID); never hash or move whole files in the comparator, which took 2.7 s for
+200k files (`run_performance_checks.sh` bounds it against a plain ID sort). The Ready-session 100k
 single-decision check measured 0.3 ms on 12 October 2026. Refresh
 only affected sort/filter projections, preserving the current photo. Reuse the
 existing save debounce/deadline. Fingerprint-only checkpoints do not advance the

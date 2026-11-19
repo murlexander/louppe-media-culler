@@ -98,14 +98,15 @@ struct PerformanceChecks {
         try await pairingToggleStaysReadyAndPersistsIndividualRatings()
         try clearAllRatingsPublishesOnceForLargeSessions()
         try batchRatingUndoRestoresEveryRating()
+        try proofQueuePreparationStaysNearAPlainIDSort()
         try exportMoveRemovalUpdatesSessionState()
         if ProcessInfo.processInfo.environment["LOUPPE_SKIP_REAL_TRASH"] == "1" {
-            print("Performance checks passed (73/76; 3 real Trash checks explicitly skipped)")
+            print("Performance checks passed (74/77; 3 real Trash checks explicitly skipped)")
         } else {
             try cleanUpPairRoundTripsThroughTrash()
             try cleanUpPairFailureRollsBackFirstFile()
             try cleanUpRollbackPreservesRacingSourceReplacement()
-            print("Performance checks passed (76/76)")
+            print("Performance checks passed (77/77)")
         }
     }
 
@@ -4275,6 +4276,66 @@ struct PerformanceChecks {
             "one undo should restore every rating in the batch"
         )
         try expect(store.ratedCount == 0, "undo should restore the tally")
+    }
+
+    /// Select All → decision on scanned RAW+JPEG pairs starts the serial
+    /// content-proof queue. Its preparation (one walk and one sort of the
+    /// pending files) must stay within a small multiple of sorting the same IDs
+    /// as plain strings: sorting whole `PhotoFile` values with two hashed
+    /// lookups per comparison took 2.7 s for 200,000 files. A ratio of two
+    /// measurements in the same build, not a time limit.
+    @MainActor
+    private static func proofQueuePreparationStaysNearAPlainIDSort() throws {
+        let count = 50_000
+        let store = SessionStore(sessionContentVerification: { _, _ in
+            try await Task.sleep(for: .seconds(3_600))
+            throw CancellationError()
+        })
+        var inode: UInt64 = 0
+        store.items = (0..<count).map { i in
+            let folder = String(format: "2026-10-%02d", 1 + i % 28)
+            func file(_ name: String) -> PhotoFile {
+                inode += 1
+                return PhotoFile(
+                    id: "\(folder)/\(name)", url: URL(fileURLWithPath: "/private/tmp/louppe-proof-order/\(folder)/\(name)"),
+                    captureDate: nil, cameraModel: nil, lensModel: nil, fileSize: 1,
+                    scannedIdentity: FileOperationJournal.FileIdentity(
+                        volumeRootPath: "/", volumeUUIDString: nil, systemNumber: 1, fileNumber: inode,
+                        logicalSize: 1, modificationTime: nil, statusChangeTime: nil, birthTime: nil))
+            }
+            let stem = String(format: "DSCF%06d", (i * 7_919) % count)
+            return PhotoItem(primaryFile: file("\(stem).RAF"), pairedFile: file("\(stem).JPG"))
+        }
+        store.sort.ascending = false
+        store.phase = .ready
+        store.pauseQualityCueAnalysis()
+        store.toggleSessionContentChecks() // Paused: the decision alone.
+        let ids = Array(Set(store.items.flatMap { $0.individualFiles.map(\.id) }))
+        let clock = ContinuousClock()
+        var decision = Duration.seconds(3_600)
+        var preparation = Duration.seconds(3_600)
+        var reference = Duration.seconds(3_600)
+        // Fastest of three each: concurrent builds slow single samples.
+        for rating in [Rating.yes, .no, .yes] {
+            store.selectAllVisible() // A decision may advance and clear the selection.
+            decision = min(decision, clock.measure { store.rate(rating) })
+            try expect(store.items.allSatisfy { $0.rating == rating }, "every item should take the decision")
+            preparation = min(preparation, clock.measure { store.toggleSessionContentChecks() })
+            try expect(store.sessionContentCheck == .checking(done: 0, total: 2 * count),
+                       "every rated physical file should join the proof queue")
+            store.toggleSessionContentChecks()
+            try expect(store.sessionContentCheck == .paused, "pausing should cancel the queued proofs")
+            var sorted: [String] = []
+            reference = min(reference, clock.measure { sorted = ids.sorted() })
+            try expect(sorted.count == 2 * count, "the reference sorts every ID")
+        }
+        // Measured: 3.4× optimized and 4.0× unoptimized; the old sort 23× and 12×.
+        let ratio = preparation / reference
+        try expect(ratio < 8,
+                   "proof-queue preparation (\(milliseconds(preparation)) ms) should stay within 8× a plain "
+                       + "sort of the same IDs (\(milliseconds(reference)) ms)")
+        print("Proof queue for \(2 * count) files: \(milliseconds(preparation)) ms (\(String(format: "%.1f", ratio))× "
+              + "plain ID sort \(milliseconds(reference)) ms); Select All → Yes \(milliseconds(decision)) ms")
     }
 
     @MainActor
