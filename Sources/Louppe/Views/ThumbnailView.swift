@@ -88,9 +88,6 @@ enum TileBadgeLayout {
         let decision = showsDecision
             ? CGRect(x: media.maxX - inset - height, y: topY, width: height, height: height) : nil
         let obstacles = [decision, duration, cueRect].compactMap { $0 }
-        func isClear(_ rect: CGRect) -> Bool {
-            !obstacles.contains { rect.insetBy(dx: 0.25, dy: 0.25).intersects($0) }
-        }
         let start = media.minX + inset
         let rowsEnd = hasBottomRow ? bottomTop - spacing : media.maxY
         func rowY(_ row: Int) -> CGFloat { topY + CGFloat(row) * (height + spacing) }

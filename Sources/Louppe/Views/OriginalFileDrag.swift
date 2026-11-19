@@ -87,7 +87,7 @@ enum OriginalFileDragItems {
             if fileIndex != targets.leaderFileIndex { imaged.append(fileIndex) }
         }
         let leaderItem = targets.files[targets.leaderFileIndex].itemIndex
-        var items = targets.files.map { file in
+        let items = targets.files.map { file in
             // Every file shares the leader's frame; only the stack has pixels.
             let item = NSDraggingItem(pasteboardWriter: file.url as NSURL)
             item.draggingFrame = leaderFrame
