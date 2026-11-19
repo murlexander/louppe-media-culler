@@ -479,7 +479,7 @@ final class OriginalFileDragTests: XCTestCase {
         let third = try gesture("c", number: 5)
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertEqual(entered.count, OriginalFileTargets.checkConcurrency, "No further reads enter while reads are blocked")
-        XCTAssertEqual(scopes.value, 3, "Each sweep keeps its read scope until the stuck reads return")
+        XCTAssertEqual(scopes.value, 1, "Only the blocked sweep holds a read scope; a waiting gesture takes one when its reads start")
         XCTAssertTrue(started.isEmpty)
 
         gate.open()

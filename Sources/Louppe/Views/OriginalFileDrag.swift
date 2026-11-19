@@ -166,12 +166,13 @@ enum OriginalFileDragStarter {
 /// files at a time and it ends with its gesture: a cancelled sweep stops at
 /// the next file, but a read blocked on a stalled volume can't be
 /// interrupted, so a newer gesture waits for it before reading anything.
-/// Only the newest waiting gesture survives.
+/// Only the newest waiting gesture survives, and a waiting gesture holds no
+/// read scope: it takes one when its reads start.
 @MainActor
 final class OriginalFileDragArm {
     typealias Resolver = @MainActor () -> OriginalFileDragPlan?
     static let thresholdSquared: CGFloat = 8 * 8
-    private static var activeSweep: OriginalFileSweepCancellation?
+    private static var activeSweep: DragSweep?
     /// The latest sweep's off-main work, including its wait for the one
     /// before; it ends only after that sweep's reads have returned.
     private static var sweepIO: Task<OriginalFileTargets?, Never>?
@@ -194,7 +195,7 @@ final class OriginalFileDragArm {
     private var available: OriginalFileTargets?
     private var checkFinished = false
     private var check: Task<Void, Never>?
-    private var sweep: OriginalFileSweepCancellation?
+    private var sweep: DragSweep?
     private(set) var isArmed = false
     /// True once a session started from this gesture; mouse-up is then ignored.
     private(set) var didStart = false
@@ -226,11 +227,9 @@ final class OriginalFileDragArm {
 
     private func beginSweep(for plan: OriginalFileDragPlan) {
         Self.activeSweep?.cancel()
-        let cancellation = OriginalFileSweepCancellation()
+        let cancellation = DragSweep(targets: plan.targets, readAccess: plan.readAccess)
         Self.activeSweep = cancellation
         sweep = cancellation
-        let targets = plan.targets
-        let token = plan.readAccess?.begin()
         var isPresent: (@Sendable (OriginalFileTarget) -> Bool)? = nil
         #if LOUPPE_TEST_SEAMS
         if let presenceCheckForTesting = Self.presenceCheckForTesting { isPresent = presenceCheckForTesting }
@@ -240,9 +239,10 @@ final class OriginalFileDragArm {
         let io = Task.detached(priority: .userInitiated) { () -> OriginalFileTargets? in
             // Earlier reads may still be blocked; never stack a second sweep.
             _ = await previous?.value
+            guard let work = cancellation.take() else { return nil }
+            let token = work.readAccess?.begin()
             return withExtendedLifetime(token) {
-                guard !cancellation.isCancelled else { return nil }
-                return targets.existing(isCancelled: { cancellation.isCancelled }, isPresent: check)
+                work.targets.existing(isCancelled: { cancellation.isCancelled }, isPresent: check)
             }
         }
         Self.sweepIO = io
@@ -307,6 +307,37 @@ final class OriginalFileDragArm {
     }
     var hasPendingSweepForTesting: Bool { sweep != nil }
     #endif
+}
+
+/// One gesture's sweep. Its selection and read access wait here while an
+/// earlier sweep's reads are blocked; cancelling (a newer gesture or
+/// mouse-up) drops them at once, so a queued gesture holds neither.
+final class DragSweep: @unchecked Sendable {
+    typealias Work = (targets: OriginalFileTargets, readAccess: MediaReadAccess?)
+    private let lock = NSLock()
+    private var cancelled = false
+    private var work: Work?
+
+    init(targets: OriginalFileTargets, readAccess: MediaReadAccess?) {
+        work = (targets, readAccess)
+    }
+
+    var isCancelled: Bool { lock.withLock { cancelled } }
+
+    func cancel() {
+        lock.withLock {
+            cancelled = true
+            work = nil
+        }
+    }
+
+    /// The work, once; nil after cancellation.
+    func take() -> Work? {
+        lock.withLock {
+            defer { work = nil }
+            return cancelled ? nil : work
+        }
+    }
 }
 
 /// Supplies Gallery's fitted photo surface with its drag plan. Absent while

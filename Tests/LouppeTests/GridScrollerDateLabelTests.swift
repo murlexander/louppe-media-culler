@@ -279,6 +279,7 @@ final class GridScrollerDateLabelTests: XCTestCase {
         XCTAssertEqual(crossing.fits, crossing.changes, "One fit per shown month change, none for a repeat")
 
         // Unit costs behind the decision not to cache.
+        guard !texts.isEmpty else { return XCTFail("No month updates to time") }
         let clock = ContinuousClock()
         let dates = (0..<1_000).map { Date(timeIntervalSince1970: 1_700_000_000 + Double($0) * 3_600) }
         let format = clock.measure { for date in dates { _ = AppDateFormat.yearAndMonth(date) } } / dates.count
