@@ -2217,11 +2217,13 @@ struct PreparedPhotoFilter {
     }
 
     func matches(_ item: PhotoItem) -> Bool {
-        if excludedMediaKinds.contains(item.mediaKind) { return false }
-        if excludedTypes.contains(item.fileTypeLabel) { return false }
-        if excludedCameras.contains(item.cameraLabel) { return false }
-        if excludedLenses.contains(item.lensLabel) { return false }
-        if excludedFilmSimulations.contains(item.filmSimulationFacet) { return false }
+        // An empty facet excludes nothing; skip deriving its label.
+        if !excludedMediaKinds.isEmpty, excludedMediaKinds.contains(item.mediaKind) { return false }
+        if !excludedTypes.isEmpty, excludedTypes.contains(item.fileTypeLabel) { return false }
+        if !excludedCameras.isEmpty, excludedCameras.contains(item.cameraLabel) { return false }
+        if !excludedLenses.isEmpty, excludedLenses.contains(item.lensLabel) { return false }
+        if !excludedFilmSimulations.isEmpty,
+           excludedFilmSimulations.contains(item.filmSimulationFacet) { return false }
         if !excludedVideoResolutions.isEmpty {
             guard item.isVideo else { return false }
             if excludedVideoResolutions.contains(
@@ -2234,7 +2236,7 @@ struct PreparedPhotoFilter {
                 return false
             }
         }
-        if excludedSubfolders.contains(item.subfolderLabel) { return false }
+        if !excludedSubfolders.isEmpty, excludedSubfolders.contains(item.subfolderLabel) { return false }
         if !excludedDecisionStates.isEmpty
             || !excludedStarStates.isEmpty
             || !excludedColorStates.isEmpty {

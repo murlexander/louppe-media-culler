@@ -940,7 +940,12 @@ No per-volume tasks or recursive media scans.
 Cache locale-folded `PhotoItem.searchableText`, capture day/year, aperture, shutter,
 ISO, video resolution, frame rate, and codec at scan. Filters/sorts never reopen
 files. Compare `captureDay` directly in `sameGroup`; avoid per-pair
-`Calendar.current`. One `PreparedPhotoFilter` prepares query, whole-day bounds,
+`Calendar.current`. Date grouping reads only each visible photo's cached
+`captureDay`, splits where adjacent days differ, slices `visibleIndices`, and
+takes each group's ID and title from its first member. Other keys still copy
+items through `sameGroup`. Empty facets skip deriving their labels.
+`ProjectionEquivalenceTests` keeps the earlier projection as the reference.
+One `PreparedPhotoFilter` prepares query, whole-day bounds,
 and ranges before traversal. Decision/star/color exclusions use one mutable
 snapshot, never immutable `searchableText`. Decision/star/color sorts use finite
 buckets over a validated cached chronological permutation. Structural boundaries

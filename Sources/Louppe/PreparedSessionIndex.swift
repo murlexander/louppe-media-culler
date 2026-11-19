@@ -585,6 +585,10 @@ struct PreparedSessionIndex: Sendable {
             return groups
         }
 
+        if key == .captureDate {
+            return makeCaptureDayGroups(for: items)
+        }
+
         for index in visibleIndices {
             let item = items[index]
             if let previousItem, !key.sameGroup(previousItem, item) {
@@ -595,6 +599,39 @@ struct PreparedSessionIndex: Sendable {
             previousItem = item
         }
         closeRun()
+        return groups
+    }
+
+    /// Same runs as `sameGroup` for capture dates: adjacent cached scan-time
+    /// day values split groups, and each group's ID and title come from its
+    /// first visible member. Reading only `captureDay` per photo and slicing
+    /// `visibleIndices` avoids copying every `PhotoItem` and growing runs.
+    private func makeCaptureDayGroups(for items: [PhotoItem]) -> [PhotoGroup] {
+        let key = PhotoSort.Key.captureDate
+        var groups: [PhotoGroup] = []
+        var start = visibleIndices.startIndex
+        var previousDay = items[visibleIndices[start]].captureDay
+
+        func closeGroup(endingAt end: Int) {
+            let first = items[visibleIndices[start]]
+            groups.append(
+                PhotoGroup(
+                    id: key.groupID(for: first),
+                    title: key.groupTitle(for: first),
+                    indices: Array(visibleIndices[start..<end])
+                )
+            )
+        }
+
+        for position in visibleIndices.indices.dropFirst() {
+            let day = items[visibleIndices[position]].captureDay
+            if day != previousDay {
+                closeGroup(endingAt: position)
+                start = position
+            }
+            previousDay = day
+        }
+        closeGroup(endingAt: visibleIndices.endIndex)
         return groups
     }
 }
