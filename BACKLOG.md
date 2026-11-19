@@ -93,6 +93,8 @@ None counts as passed until run in its stated environment. Owner: **Alex** unles
 - [ ] **1.15 VoiceOver, RTL and keyboard:** toolbar Yes/No totals and "Review tips"; folder rows read one count; toggle results announced on tile actions; Open With in tile menus and the Open in Maps button; the scroller reads the month without per-move announcements; Arabic toolbar totals at narrow widths and the Clean Up dialog's dual and plural forms; Full Keyboard Access reaches both clear commands.
 - [ ] **1.15 macOS 14:** repeat-key consumption, the Clear Stars and Labels alert, the scroller label's material fallback and the Maps launch path.
 - [ ] **1.15 translations:** native-speaker review of the new and renamed strings in es, pt, zh-Hans, hi and ar.
+- [ ] **1.15 focus peaking:** live P on real RAW at Fit and 100% (high-ISO shadows, low-key portraits, soft and sharp frames), the stroke color over bright, dark and purple-heavy photos, and P with Clipping in a live window; thresholds were tuned on synthetic charts, JPEG previews and three NEFs.
+- [ ] **1.15 Browser filmstrip:** the 102 × 80 frames live with real thumbnails, cues and badges on portraits, panoramas and video, in LTR and RTL; Browser tap targets on touch hardware.
 
 ### Hardware and environments
 
@@ -149,6 +151,7 @@ whole-job XMP measurements put ordinary Copy, Move and publication jobs within
 0.69–1.17× of 1.14.0, so the census redesign below waits. The 1.15 checks above
 remain unverified for 1.14.1.
 
+- [ ] **Proposal — unreadable folder names on cards.** A folder whose name isn't valid Unicode (made on Windows; macOS can't open it) fails the whole scan with an error naming it. Opening the rest of the card with that folder left out and a notice would need a notice banner and translations, and changes the rule that an unreadable folder fails visibly. Needs Alex's decision.
 - [ ] **Live capture of dialog scenarios crashes the test host.** `capture_ui.sh --live` on `dialog-clean-up` or `dialog-clear-stars-labels` ends the XCTest process with SIGSEGV (an over-release while the autorelease pool drains). Offscreen captures work, and the installed 1.15 app shows both confirmations correctly.
 - [ ] **Archive work — next.**
   - **Folder-first readiness.** Validate the folder you navigate to first and
