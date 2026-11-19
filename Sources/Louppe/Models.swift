@@ -2161,6 +2161,9 @@ struct PreparedPhotoFilter {
     let durationRange: ClosedRange<Double>?
     let videoFrameRateRange: ClosedRange<Double>?
     let searchTokens: [Substring]
+    /// UTF-8 bytes of every search token when all are non-empty printable
+    /// ASCII; nil sends every item through the general matcher.
+    private let printableASCIISearchTokens: [[UInt8]]?
 
     init(_ filter: PhotoFilter, calendar: Calendar = .current) {
         excludedMediaKinds = filter.excludedMediaKinds
@@ -2214,6 +2217,7 @@ struct PreparedPhotoFilter {
         )
         let query = PhotoItem.normalizeForSearch(filter.searchText.trimmingCharacters(in: .whitespaces))
         searchTokens = query.split(whereSeparator: \.isWhitespace)
+        printableASCIISearchTokens = Self.printableASCIIBytes(of: searchTokens)
     }
 
     func matches(_ item: PhotoItem) -> Bool {
@@ -2280,10 +2284,58 @@ struct PreparedPhotoFilter {
                   videoFrameRateRange.contains(frameRate)
             else { return false }
         }
-        for token in searchTokens where !item.searchableText.contains(token) {
+        return matchesSearch(item.searchableText)
+    }
+
+    /// Both sides are already search-folded. When the text and every token are
+    /// printable ASCII, each byte is one Character, so a byte-substring search
+    /// gives exactly the general matcher's answer; anything else uses it.
+    func matchesSearch(_ text: String) -> Bool {
+        if searchTokens.isEmpty { return true }
+        if let printableASCIISearchTokens,
+           let result = Self.printableASCIIMatch(text, tokens: printableASCIISearchTokens) {
+            return result
+        }
+        return Self.generalSearchMatch(text, tokens: searchTokens)
+    }
+
+    static func generalSearchMatch(_ text: String, tokens: [Substring]) -> Bool {
+        for token in tokens where !text.contains(token) {
             return false
         }
         return true
+    }
+
+    static func printableASCIIBytes(of tokens: [Substring]) -> [[UInt8]]? {
+        var result: [[UInt8]] = []
+        result.reserveCapacity(tokens.count)
+        for token in tokens {
+            let bytes = Array(token.utf8)
+            guard !bytes.isEmpty, bytes.allSatisfy(isPrintableASCII) else { return nil }
+            result.append(bytes)
+        }
+        return result
+    }
+
+    /// nil when `text` is not contiguous printable ASCII.
+    static func printableASCIIMatch(_ text: String, tokens: [[UInt8]]) -> Bool? {
+        text.utf8.withContiguousStorageIfAvailable { haystack -> Bool? in
+            guard haystack.allSatisfy(isPrintableASCII) else { return nil }
+            for token in tokens {
+                guard token.count <= haystack.count,
+                      let base = haystack.baseAddress else { return false }
+                let found = token.withUnsafeBytes { needle in
+                    memmem(base, haystack.count, needle.baseAddress!, needle.count) != nil
+                }
+                if !found { return false }
+            }
+            return true
+        } ?? nil
+    }
+
+    @inline(__always)
+    private static func isPrintableASCII(_ byte: UInt8) -> Bool {
+        byte &- 0x20 < 0x5F
     }
 
     private static func validRange(

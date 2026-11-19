@@ -11,7 +11,7 @@ equivalence, real JPEG I/O and optional RAW measurements. See
 [the 12 October 2026 inspection](Archive/2026-10-12/PERFORMANCE_REVIEW_2026-10-12.md) and
 [implemented results](Archive/2026-10-12/PERFORMANCE_IMPLEMENTATION_2026-10-12.md) for evidence,
 limits and the implementation acceptance list. These complement the existing
-75 safety checks.
+76 safety checks.
 
 For checkpoint capture alone, run
 `Tests/run_performance_checks.sh --snapshot-only --optimized` (omit
@@ -946,7 +946,10 @@ takes each group's ID and title from its first member. Other keys still copy
 items through `sameGroup`. Empty facets skip deriving their labels.
 `ProjectionEquivalenceTests` keeps the earlier projection as the reference.
 One `PreparedPhotoFilter` prepares query, whole-day bounds,
-and ranges before traversal. Decision/star/color exclusions use one mutable
+and ranges before traversal. When folded text and every token are printable
+ASCII, search compares bytes; other strings use the general `contains`
+(`SearchMatchEquivalenceTests`). The performance checks bound date grouping
+and two-token search as ratios of an ungrouped restore and an equal camera filter. Decision/star/color exclusions use one mutable
 snapshot, never immutable `searchableText`. Decision/star/color sorts use finite
 buckets over a validated cached chronological permutation. Structural boundaries
 validate chronological order once and sort exceptional arbitrary input. Metadata

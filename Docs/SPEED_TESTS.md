@@ -120,7 +120,7 @@ hashes when comparing candidates, including untracked production Swift files.
 
 The first investigation and implementation acceptance list are in
 [the performance review](Archive/2026-10-12/PERFORMANCE_REVIEW_2026-10-12.md). This suite complements
-`run_performance_checks.sh`; it does not replace its 75 safety checks or native
+`run_performance_checks.sh`; it does not replace its 76 safety checks or native
 UI, volume/provider, cancellation, and memory-budget acceptance tests.
 
 The [implemented results](Archive/2026-10-12/PERFORMANCE_IMPLEMENTATION_2026-10-12.md) retain actual

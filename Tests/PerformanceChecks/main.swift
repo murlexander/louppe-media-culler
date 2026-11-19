@@ -85,6 +85,7 @@ struct PerformanceChecks {
         try scannerAndPreparedIndexShareDefaultOrder()
         try preparedSessionIndexKeepsStableGroupIdentity()
         try preparedSessionIndexScaleBaselines()
+        try dateGroupingAndSearchStayProportional()
         try metadataFilterSortAndExportScaleBaseline()
         try ratingMutationScaleBaseline()
         try await sessionSnapshotScaleBaseline()
@@ -3261,6 +3262,97 @@ struct PerformanceChecks {
                     + "filter/group \(milliseconds(filterDuration)) ms"
             )
         }
+    }
+
+    /// AUD-06: date grouping and printable-ASCII search must stay a small
+    /// multiple of work every projection already does. Ratios within one
+    /// process tolerate a busy Mac better than absolute bounds. Before these
+    /// paths (19 November 2026, M2 Pro): grouped/ungrouped restore ×2.4
+    /// unoptimized, ×11 optimized; search/equal camera filter ×3.3 and ×11.
+    /// After: grouping ×1.7/×3.1, search ×2.4/×1.6 at most. Search items carry
+    /// no date, so a localized day label (for example Arabic digits) cannot
+    /// push them off the fast path; the check fails if any item would leave it.
+    private static func dateGroupingAndSearchStayProportional() throws {
+        let itemCount = 100_000
+        // 400 photos per day from 08:00 local time stay within one capture day.
+        let base = Calendar.current.date(
+            bySettingHour: 8, minute: 0, second: 0, of: Date(timeIntervalSince1970: 1_700_000_000)
+        )!
+        let trips = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot",
+                     "golf", "hotel", "india", "juliett", "kilo", "lima"]
+        let items = (0..<itemCount).map { offset in
+            let id = String(format: "%@/DSC_%06d.JPG", trips[offset % 12], offset)
+            return PhotoItem(primaryFile: PhotoFile(
+                id: id, url: URL(fileURLWithPath: "/private/tmp/louppe-performance-projection/\(id)"),
+                captureDate: base.addingTimeInterval(Double(offset / 400) * 86_400 + Double(offset % 400) * 30),
+                cameraModel: "Camera \(offset % 12)", lensModel: nil, fileSize: 1))
+        }
+        let searchItems = (0..<itemCount).map { offset in
+            let id = String(format: "%@/DSC_%06d.JPG", trips[offset % 12], offset)
+            return PhotoItem(primaryFile: PhotoFile(
+                id: id, url: URL(fileURLWithPath: "/private/tmp/louppe-performance-projection/\(id)"),
+                captureDate: nil, cameraModel: "Camera \(offset % 12)", lensModel: nil, fileSize: 1))
+        }
+        var index = PreparedSessionIndex()
+        index.rebuildItems(items, sort: PhotoSort())
+        var searchIndex = PreparedSessionIndex()
+        searchIndex.rebuildItems(searchItems, sort: PhotoSort())
+        let unrestricted = PhotoFilter()
+        // Both filters keep the same photos, so projection work is equal.
+        var camera = PhotoFilter()
+        camera.excludedCameras = Set((0..<12).filter { $0 != 1 }.map { "Camera \($0)" })
+        var search = PhotoFilter()
+        search.searchText = "dsc bravo"
+        let asciiTokens = PreparedPhotoFilter.printableASCIIBytes(of: PreparedPhotoFilter(search).searchTokens)
+        try expect(asciiTokens != nil, "search fixture tokens must be printable ASCII")
+        try expect(
+            searchItems.allSatisfy {
+                PreparedPhotoFilter.printableASCIIMatch($0.searchableText, tokens: asciiTokens ?? []) != nil
+            },
+            "every search fixture item must qualify for the printable-ASCII path"
+        )
+        let clock = ContinuousClock()
+        func median(prepare: () -> Void, _ operation: () -> Void) -> Duration {
+            var samples: [Duration] = []
+            for _ in 0..<7 {
+                prepare()
+                samples.append(clock.measure(operation))
+            }
+            return samples.sorted()[samples.count / 2]
+        }
+        func apply(_ filter: PhotoFilter, grouped: Bool = true) {
+            index.applyFilter(filter, to: items, sort: PhotoSort(), isGroupingEnabled: grouped)
+        }
+        // Restoring every photo rebuilds groups and presentation maps.
+        let groupedRestore = median(prepare: { apply(camera) }) { apply(unrestricted) }
+        let expectedTrip = items.indices.filter { $0 % 12 == 1 }
+        try expect(index.visibleGroups.count == itemCount / 400, "each capture day should form one group")
+        try expect(index.visibleLocations.count == itemCount, "restore should map every photo")
+        let ungroupedRestore = median(prepare: { apply(camera, grouped: false) }) {
+            apply(unrestricted, grouped: false)
+        }
+        func applySearchItems(_ filter: PhotoFilter) {
+            searchIndex.applyFilter(filter, to: searchItems, sort: PhotoSort(), isGroupingEnabled: true)
+        }
+        let cameraToggle = median(prepare: { applySearchItems(unrestricted) }) { applySearchItems(camera) }
+        try expect(searchIndex.visibleIndices == expectedTrip, "camera filter should keep exactly one trip")
+        let searchApply = median(prepare: { applySearchItems(unrestricted) }) { applySearchItems(search) }
+        try expect(searchIndex.visibleIndices == expectedTrip, "search should keep exactly one trip")
+        let groupingRatio = groupedRestore / ungroupedRestore
+        let searchRatio = searchApply / cameraToggle
+        print(
+            "Projection 100k grouped/ungrouped restore \(milliseconds(groupedRestore))/"
+                + "\(milliseconds(ungroupedRestore)) ms (×\(String(format: "%.2f", groupingRatio))), "
+                + "search/camera \(milliseconds(searchApply))/\(milliseconds(cameraToggle)) ms "
+                + "(×\(String(format: "%.2f", searchRatio)))"
+        )
+#if LOUPPE_PERFORMANCE_OPTIMIZED
+        let groupingLimit = 6.0, searchLimit = 3.5
+#else
+        let groupingLimit = 2.05, searchLimit = 2.85
+#endif
+        try expect(groupingRatio < groupingLimit, "date grouping should cost under ×\(groupingLimit) an ungrouped restore")
+        try expect(searchRatio < searchLimit, "two ASCII search tokens should cost under ×\(searchLimit) an equal camera filter")
     }
 
     private static func metadataFilterSortAndExportScaleBaseline() throws {

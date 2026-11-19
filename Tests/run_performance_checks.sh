@@ -7,7 +7,7 @@ optimization=()
 snapshot_only=0
 for option in "$@"; do
     case "$option" in
-        --optimized) optimization=(-O) ;;
+        --optimized) optimization=(-O -D LOUPPE_PERFORMANCE_OPTIMIZED) ;;
         --snapshot-only) snapshot_only=1 ;;
         *) echo "Usage: $0 [--optimized] [--snapshot-only]" >&2; exit 2 ;;
     esac
